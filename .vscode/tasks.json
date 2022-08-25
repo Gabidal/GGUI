@@ -1,0 +1,35 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "Buildarna",
+            "command": "g++.exe",
+            "args": [
+                "main.cpp",
+                "-o",
+                "Build/GGUI",
+                "-g"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$msCompile",
+                {
+                    "fileLocation": "autoDetect",
+                    "pattern": {
+                      "regexp": "^([^\\s].*)\\s*:\\s+(?:fatal\\s+)?(error|warning)\\s+(LNK\\d+)\\s*:\\s*(.*)\\[(.*)\\]$",
+                      "kind": "file",
+                      "severity": 2,
+                      "code": 3,
+                      "message": 4,
+                      "file": 5
+                    }
+                  }
+            ],
+            "group": "build",
+            "detail": "Buildarna"
+        }
+    ],
+    "version": "2.0.0"
+}
