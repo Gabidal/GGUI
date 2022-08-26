@@ -5,18 +5,18 @@
 #include "Constants.h"
 
 namespace Utils{
-    string (*Bold)(string text);
-    string (*Color)(string text, string color);
+    std::string (*Bold)(std::string text);
+    std::string (*Color)(std::string text, std::string color);
 
         #if _WIN32
             #include <windows.h>
 
             void Init(){
-                Bold = [](string Text){
-                    return string("\033[1m") + Text;
+                Bold = [](std::string Text){
+                    return std::string("\033[1m") + Text;
                 };
 
-                Color = [](string Text, string Color){
+                Color = [](std::string Text, std::string Color){
                     return Color + Text + COLOR::RESET;
                 };
             }
@@ -26,7 +26,7 @@ namespace Utils{
 }
 
 namespace RENDERER{
-    vector<Text> Frame_Buffer;                   //2D clean vector whitout bold nor color
+    std::vector<WINDOW::UTF> Frame_Buffer;                   //2D clean vector whitout bold nor color
 
     int Max_Width = 0;
     int Max_Height = 0;
@@ -71,12 +71,12 @@ namespace RENDERER{
             SetConsoleCursorPosition( hStdOut, homeCoords );
         }
 
-        void Render_Frame(string& Frame){
+        void Render_Frame(std::string& Frame){
             ClearScreen();
             printf(Frame.data());
         }
     
-        void Set_Cursor_At(Coordinates C){
+        void Set_Cursor_At(WINDOW::Coordinates C){
             using namespace Utils;
 
             COORD c;
@@ -126,7 +126,7 @@ namespace RENDERER{
     }
 
     //Returns a char if given ASCII, or a short if given UNICODE
-    Text* Get(Coordinates Abselute_Position){
+    WINDOW::UTF* Get(WINDOW::Coordinates Abselute_Position){
         if (Abselute_Position.X >= Get_Max_Width() || 
             Abselute_Position.Y >= Get_Max_Height() ||
             Abselute_Position.X < 0 || 
@@ -148,13 +148,112 @@ namespace RENDERER{
         Frame_Buffer.resize(Max_Height * Max_Width);
     }
 
-    //This function inserts the window into the screen buffer
-    void Render_Window(Window* w){
+    std::vector<WINDOW::UTF> Add_Overhead(WINDOW::Window* w){
+        if (!w->Show_Border)
+            return;
 
-        
+        std::vector<WINDOW::UTF> Result;
+        Result.resize(w->Height * w->Width);
 
+        for (int y = 0; y < w->Height; y++){
+            for (int x = 0; x < w->Width; x++){
+                //top left corner
+                if (y == 0 && x == 0){
+                    Result[y * w->Width + x] = SYMBOLS::TOP_LEFT_CORNER;
+                }
+                //top right corner
+                else if (y == 0 && x == w->Width - 1){
+                    Result[y * w->Width + x] = SYMBOLS::TOP_RIGHT_CORNER;
+                }
+                //bottom left corner
+                else if (y == w->Height - 1 && x == 0){
+                    Result[y * w->Width + x] = SYMBOLS::BOTTOM_LEFT_CORNER;
+                }
+                //bottom right corner
+                else if (y == w->Height - 1 && x == w->Width - 1){
+                    Result[y * w->Width + x] = SYMBOLS::BOTTOM_RIGHT_CORNER;
+                }
+                //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
+                else if (y == 0 && x < w->Title.size()){
+                    Result[y * w->Width + x] = w->Title[x];
+                }
+                //The roof border
+                else if (y == 0){
+                    Result[y * w->Width + x] = SYMBOLS::TOP;
+                }
+                //The floor border
+                else if (y == w->Height - 1){
+                    Result[y * w->Width + x] = SYMBOLS::BOTTOM;
+                }
+                //The left border
+                else if (x == 0){
+                    Result[y * w->Width + x] = SYMBOLS::LEFT;
+                }
+                //The right border
+                else if (x == w->Width - 1){
+                    Result[y * w->Width + x] = SYMBOLS::RIGHT;
+                }
+            }
+        }
+
+        return Result;
     }
 
+    void Nest_Window(WINDOW::Window* Parent, WINDOW::Window* Child, std::vector<WINDOW::UTF>& Parent_Buffer, std::vector<WINDOW::UTF> Child_Buffer){
+        for (int Child_Y = 0; Child_Y < Child->Height; Child_Y++){
+            for (int Child_X = 0; Child_X < Child->Width; Child_X++){
+                Parent_Buffer[(Child->Y + Child_Y) * Parent->Width + Child->X + Child_X] = Child_Buffer[Child_Y * Child->Width + Child_X];
+            }
+        }
+    }
+
+    void Nest_UTF_Text(WINDOW::Window* Parent, vector<WINDOW::UTF>& Text, std::vector<WINDOW::UTF>& Parent_Buffer){
+        for (int Parent_Y = 0; Parent_Y < Parent->Width; Parent_Y++){
+            for (int Parent_X = 0; Parent_X < Parent->Height; Parent_X++){
+                if (Parent_Y * Parent->Width + Parent_X < Text.size()){
+                    Parent_Buffer[Parent_Y * Parent->Width + Parent_X] = Text[Parent_Y * Parent->Width + Parent_X];
+                }
+            }
+        }
+    }
+
+    //Returns nested buffer of AST window's
+    std::vector<WINDOW::UTF> Render_Window(WINDOW::Window* w){
+        std::vector<WINDOW::UTF> Result;
+        Result.resize(w->Width * w->Height);
+
+        //This will add the borders if nessesary and the title of the window.
+        Result = Add_Overhead(w);
+
+
+        //This will add the content of the window to the Result buffer
+        if (w->Content.size() > 0){
+            Nest_UTF_Text(w, w->Content, Result);
+        }
+
+        //This will add the child windows to the Result buffer
+        for (auto& c : w->Childs){
+            Nest_Window(w, c, Result, Render_Window(c));
+        }
+
+        return Result;
+    }
+
+    std::string Liquify_UTF_Text(std::vector<WINDOW::UTF> Text, int Width, int Height){
+        std::string Result;
+        Result.resize(Width * Height);
+
+
+        for (int y = 0; y < Height; y++){
+            for (int x = 0; x < Width; x++){
+                Result += Text[y * Width + x].To_String();
+            }
+
+            Result += "\n";
+        }
+
+        return Result;
+    }
 }
 
 #endif

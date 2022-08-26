@@ -3,20 +3,27 @@
 
 #include <string>
 
-using namespace std;
-
 namespace COLOR{
+    inline std::string RESET = "";
+    inline std::string BLACK = "";
+    inline std::string RED = "";
+    inline std::string GREEN = "";
+    inline std::string YELLOW = "";
+    inline std::string BLUE = "";
+    inline std::string MAGENTA = "";
+    inline std::string CYAN = "";
+    inline std::string WHITE = "";
+}
 
-    inline string RESET = "";
-    inline string BLACK = "";
-    inline string RED = "";
-    inline string GREEN = "";
-    inline string YELLOW = "";
-    inline string BLUE = "";
-    inline string MAGENTA = "";
-    inline string CYAN = "";
-    inline string WHITE = "";
-
+namespace SYMBOLS{
+    inline short TOP_LEFT_CORNER = 0x23BE;
+    inline short BOTTOM_LEFT_CORNER = 0x23BF;
+    inline short TOP_RIGHT_CORNER = 0x23CB;
+    inline short BOTTOM_RIGHT_CORNER = 0x23CC;
+    inline short LEFT = 0x23B8;
+    inline short RIGHT = 0x23B9;
+    inline short TOP = 0x23BA;
+    inline short BOTTOM = 0x23BD;
 }
 
 namespace Constants{
