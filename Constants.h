@@ -16,18 +16,16 @@ namespace COLOR{
 }
 
 namespace SYMBOLS{
-    inline short TOP_LEFT_CORNER = 0x23BE;
-    inline short BOTTOM_LEFT_CORNER = 0x23BF;
-    inline short TOP_RIGHT_CORNER = 0x23CB;
-    inline short BOTTOM_RIGHT_CORNER = 0x23CC;
-    inline short LEFT = 0x23B8;
-    inline short RIGHT = 0x23B9;
-    inline short TOP = 0x23BA;
-    inline short BOTTOM = 0x23BD;
+    inline std::string TOP_LEFT_CORNER = "\e(0\x6c\e(B";
+    inline std::string BOTTOM_LEFT_CORNER = "\e(0\x6d\e(B";
+    inline std::string TOP_RIGHT_CORNER = "\e(0\x6b\e(B";
+    inline std::string BOTTOM_RIGHT_CORNER = "\e(0\x6a\e(B";
+    inline std::string VERTICAL_LINE = "\e(0\x78\e(B";
+    inline std::string HORIZONTAL_LINE = "\e(0\x71\e(B";
 }
 
 namespace Constants{
-    void Init(){
+    inline void Init(){
         #if _WIN32
             COLOR::RESET = "\033[0m";
             COLOR::BLACK = "\033[30m";

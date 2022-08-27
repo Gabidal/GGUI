@@ -5,10 +5,11 @@
             "label": "Buildarna",
             "command": "g++.exe",
             "args": [
-                "main.cpp",
+                "*.cpp",
                 "-o",
                 "Build/GGUI",
-                "-g"
+                "-g",
+                "-fpermissive"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
