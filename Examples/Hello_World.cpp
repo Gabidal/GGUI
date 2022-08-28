@@ -4,8 +4,9 @@ using namespace std;
 
 
 int main(){
-    RENDERER::Pause_Renderer();
-    GGUI::Window* Main = RENDERER::Init_Renderer();
+    //Pause renderer and resume renderer are only for super optimization purposes, if you dont need blazing fast TUI you can just ignore them.
+    GGUI::Pause_Renderer();
+    GGUI::Window* Main = GGUI::Init_Renderer();
     Main->Show_Border(true);
     
     GGUI::Window* Text = new GGUI::Window("Hello World!", {{0, 0}, 20, 10, true});
@@ -16,7 +17,7 @@ int main(){
     
     Main->Add_Child(Text);
 
-    RENDERER::Resume_Renderer();
+    GGUI::Resume_Renderer();
 
     while(true){ 
         //Your programm here :D

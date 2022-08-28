@@ -6,6 +6,7 @@
             "command": "g++.exe",
             "args": [
                 "*.cpp",
+                "./Elements/*.cpp",
                 "-o",
                 "Build/GGUI",
                 "-g",

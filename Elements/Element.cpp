@@ -1,25 +1,10 @@
-#include "Window.h"
-#include "Renderer.h"
+#include "Element.h"
 
-GGUI::Window::Window(std::string title, Flags f){
-    Title = title;
-    *((Flags*)this) = f;
-
-    RENDERER::Update_Frame();
-}
-
-void GGUI::Window::Set_Title(std::string t){
-    Title = t;
-    RENDERER::Update_Frame();
-}
-
-std::string GGUI::Window::Get_Title(){
-    return Title;
-}
+#include "../Renderer.h"
 
 void GGUI::Element::Show_Border(bool b){
     Border = b;
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 bool GGUI::Element::Has_Border(){
@@ -35,7 +20,7 @@ void GGUI::Element::Add_Child(Element* Child){
         Child->Position.X -= 1;
         Child->Position.Y -= 1;
 
-        RENDERER::Report(
+        GGUI::Report(
             "Window exeeded bounds\n"
             "Starts at: {" + std::to_string(Child->Position.X) + ", " + std::to_string(Child->Position.Y) + "}\n"
             "Ends at: {" + std::to_string(Child->Position.X + Child->Width) + ", " + std::to_string(Child->Position.Y + Child->Height) + "}\n"
@@ -47,7 +32,7 @@ void GGUI::Element::Add_Child(Element* Child){
 
     Child->Parent = this;
     Childs.push_back(Child);
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 std::vector<GGUI::Element*> GGUI::Element::Get_Childs(){
@@ -58,7 +43,7 @@ void GGUI::Element::Remove_Element(Element* handle){
     for (int i = 0; i < Childs.size(); i++){
         if (Childs[i] == handle){
             Childs.erase(Childs.begin() + i);
-            RENDERER::Update_Frame();
+            GGUI::Update_Frame();
             return;
         }
     }
@@ -66,13 +51,13 @@ void GGUI::Element::Remove_Element(Element* handle){
 
 void GGUI::Element::Remove_Element(int index){
     Childs.erase(Childs.begin() + index);
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 void GGUI::Element::Set_Dimensions(int width, int height){
     Width = width;
     Height = height;
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 int GGUI::Element::Get_Width(){
@@ -85,7 +70,7 @@ int GGUI::Element::Get_Height(){
 
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 GGUI::Coordinates GGUI::Element::Get_Position(){
@@ -148,7 +133,7 @@ void GGUI::Element::Set_Back_Ground_Colour(RGB color){
     if (Border_Back_Ground_Color == Back_Ground_Colour)
         Border_Back_Ground_Color = color;
     Dirty = true;
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Back_Ground_Colour(){
@@ -158,7 +143,7 @@ GGUI::RGB GGUI::Element::Get_Back_Ground_Colour(){
 void GGUI::Element::Set_Border_Colour(RGB color){
     Border_Colour = color;
     Dirty = true;
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Colour(){
@@ -168,7 +153,7 @@ GGUI::RGB GGUI::Element::Get_Border_Colour(){
 void GGUI::Element::Set_Border_Back_Ground_Color(RGB color){
     Border_Back_Ground_Color = color;
     Dirty = true;
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Back_Ground_Color(){
@@ -178,18 +163,11 @@ GGUI::RGB GGUI::Element::Get_Border_Back_Ground_Color(){
 void GGUI::Element::Set_Text_Colour(RGB color){
     Text_Colour = color;
     Dirty = true;
-    RENDERER::Update_Frame();
+    GGUI::Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Text_Colour(){
     return Text_Colour;
-}
-
-//Returns nested buffer of AST window's
-std::vector<GGUI::UTF> GGUI::Window::Render(){
-    std::vector<GGUI::UTF> Result = Element::Render();
-
-    return Result;
 }
 
 //Returns nested buffer of AST window's
@@ -250,44 +228,6 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
             // else if (y == 0 && x < w->Get_Title().size()){
             //     Result[y * w->Width + x] = GGUI::UTF(w->Get_Title()[x - 1], w->Get_Text_Colour(), COLOR::RESET);
             // }
-            //The roof border
-            else if (y == 0 || y == w->Height - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
-            }
-            //The left border
-            else if (x == 0 || x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
-            }
-        }
-    }
-}
-
-void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result){
-    if (!w->Has_Border())
-        return;
-
-    for (int y = 0; y < w->Height; y++){
-        for (int x = 0; x < w->Width; x++){
-            //top left corner
-            if (y == 0 && x == 0){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
-            }
-            //top right corner
-            else if (y == 0 && x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
-            }
-            //bottom left corner
-            else if (y == w->Height - 1 && x == 0){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
-            }
-            //bottom right corner
-            else if (y == w->Height - 1 && x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
-            }
-            //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
-            else if (y == 0 && x < ((GGUI::Window*)w)->Get_Title().size()){
-                Result[y * w->Width + x] = GGUI::UTF(((GGUI::Window*)w)->Get_Title()[x - 1], w->Compose_All_Border_RGB_Values());
-            }
             //The roof border
             else if (y == 0 || y == w->Height - 1){
                 Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());

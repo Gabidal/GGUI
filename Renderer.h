@@ -3,11 +3,11 @@
 
 #include <iostream>
 
-#include "Window.h"
+#include "Elements/Window.h"
 
 #include <thread>
 
-namespace RENDERER{
+namespace GGUI{
     inline std::vector<GGUI::UTF> Abstract_Frame_Buffer;                   //2D clean vector whitout bold nor color
     inline std::string Frame_Buffer;                                       //string with bold and color, this what gets drawn to console.
     inline bool Pause_Render = false;                              //if true, the render will not be updated, good for window creation.
