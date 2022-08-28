@@ -143,45 +143,47 @@ int GGUI::Element::Get_Fitting_Height(Element* child){
     return Result;
 }
 
-void GGUI::Element::Set_Back_Ground_Colour(std::string color){
+void GGUI::Element::Set_Back_Ground_Colour(RGB color){
     Back_Ground_Colour = color;
+    if (Border_Back_Ground_Color == Back_Ground_Colour)
+        Border_Back_Ground_Color = color;
     RENDERER::Update_Frame();
 }
 
-std::string GGUI::Element::Get_Back_Ground_Colour(){
+GGUI::RGB GGUI::Element::Get_Back_Ground_Colour(){
     return Back_Ground_Colour;
 }
 
-void GGUI::Element::Set_Border_Colour(std::string color){
+void GGUI::Element::Set_Border_Colour(RGB color){
     Border_Colour = color;
     RENDERER::Update_Frame();
 }
 
-std::string GGUI::Element::Get_Border_Colour(){
+GGUI::RGB GGUI::Element::Get_Border_Colour(){
     return Border_Colour;
 }
 
-void GGUI::Element::Set_Text_Colour(std::string color){
+void GGUI::Element::Set_Border_Back_Ground_Color(RGB color){
+    Border_Back_Ground_Color = color;
+    RENDERER::Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Border_Back_Ground_Color(){
+    return Border_Back_Ground_Color;
+}
+
+void GGUI::Element::Set_Text_Colour(RGB color){
     Text_Colour = color;
     RENDERER::Update_Frame();
 }
 
-std::string GGUI::Element::Get_Text_Colour(){
+GGUI::RGB GGUI::Element::Get_Text_Colour(){
     return Text_Colour;
 }
 
 //Returns nested buffer of AST window's
 std::vector<GGUI::UTF> GGUI::Window::Render(){
-    std::vector<GGUI::UTF> Result;
-    Result.resize(this->Width * this->Height);
-
-    //This will add the borders if nessesary and the title of the window.
-    Add_Overhead(this, Result);
-
-    //This will add the child windows to the Result buffer
-    for (auto& c : this->Get_Childs()){
-        Nest_Element(this, c, Result, c->Render());
-    }
+    std::vector<GGUI::UTF> Result = Element::Render();
 
     return Result;
 }
@@ -191,6 +193,9 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     std::vector<GGUI::UTF> Result;
     Result.resize(this->Width * this->Height);
 
+    //Apply the color system to the resized result list
+    Apply_Colors(this, Result);
+
     //This will add the borders if nessesary and the title of the window.
     Add_Overhead(this, Result);
 
@@ -200,6 +205,17 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     }
 
     return Result;
+}
+
+void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
+
+    for (auto& utf : Result){
+        utf.Pre_Fix = w->Compose_All_Text_RGB_Values();
+        
+        if (utf.Pre_Fix != "")
+            utf.Post_Fix = Constants::RESET_TEXT_COLOUR + Constants::RESET_BACK_GROUND_COLOUR;
+    }
+
 }
 
 void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result){
@@ -210,19 +226,19 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
         for (int x = 0; x < w->Width; x++){
             //top left corner
             if (y == 0 && x == 0){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //top right corner
             else if (y == 0 && x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom left corner
             else if (y == w->Height - 1 && x == 0){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom right corner
             else if (y == w->Height - 1 && x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
             // else if (y == 0 && x < w->Get_Title().size()){
@@ -230,11 +246,11 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
             // }
             //The roof border
             else if (y == 0 || y == w->Height - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
             }
             //The left border
             else if (x == 0 || x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
             }
         }
     }
@@ -248,31 +264,31 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
         for (int x = 0; x < w->Width; x++){
             //top left corner
             if (y == 0 && x == 0){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //top right corner
             else if (y == 0 && x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom left corner
             else if (y == w->Height - 1 && x == 0){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom right corner
             else if (y == w->Height - 1 && x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
-            else if (y == 0 && x < ((Window*)w)->Get_Title().size()){
-                Result[y * w->Width + x] = GGUI::UTF(((Window*)w)->Get_Title()[x - 1], w->Get_Text_Colour(), COLOR::RESET);
+            else if (y == 0 && x < ((GGUI::Window*)w)->Get_Title().size()){
+                Result[y * w->Width + x] = GGUI::UTF(((GGUI::Window*)w)->Get_Title()[x - 1], w->Compose_All_Border_RGB_Values());
             }
             //The roof border
             else if (y == 0 || y == w->Height - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
             }
             //The left border
             else if (x == 0 || x == w->Width - 1){
-                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Get_Border_Colour(), COLOR::RESET);
+                Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
             }
         }
     }

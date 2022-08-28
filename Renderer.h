@@ -4,30 +4,8 @@
 #include <iostream>
 
 #include "Window.h"
-#include "Constants.h"
 
 #include <thread>
-
-namespace Utils{
-    inline std::string (*Bold)(std::string text);
-    inline std::string (*Color)(std::string text, std::string color);
-
-        #if _WIN32
-            #include <windows.h>
-
-            inline void Init(){
-                Bold = [](std::string Text){
-                    return std::string("\033[1m") + Text;
-                };
-
-                Color = [](std::string Text, std::string Color){
-                    return Color + Text + COLOR::RESET;
-                };
-            }
-        #else            
-            inline void Init();
-        #endif
-}
 
 namespace RENDERER{
     inline std::vector<GGUI::UTF> Abstract_Frame_Buffer;                   //2D clean vector whitout bold nor color
@@ -39,86 +17,74 @@ namespace RENDERER{
     inline int Max_Width = 0;
     inline int Max_Height = 0;
 
-    #if _WIN32
-        inline void ClearScreen()
-        {
-            using namespace Utils;
+    inline void Set_Cursor_At(GGUI::Coordinates C){
+        std::cout << GGUI::Constants::ESC + std::to_string(C.X) + GGUI::Constants::SEPERATE + std::to_string(C.Y) + "H" << std::endl;
+    }
 
-            HANDLE                     hStdOut;
-            CONSOLE_SCREEN_BUFFER_INFO csbi;
-            DWORD                      count;
-            DWORD                      cellCount;
-            COORD                      homeCoords = { 0, 0 };
+#if _WIN32
+    #include <windows.h>
 
-            hStdOut = GetStdHandle( STD_OUTPUT_HANDLE );
-            if (hStdOut == INVALID_HANDLE_VALUE) return;
+    inline void ClearScreen()
+    {
+        HANDLE                     hStdOut;
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        DWORD                      count;
+        DWORD                      cellCount;
+        COORD                      homeCoords = { 0, 0 };
 
-            /* Get the number of cells in the current buffer */
-            if (!GetConsoleScreenBufferInfo( hStdOut, &csbi )) return;
-            cellCount = csbi.dwSize.X *csbi.dwSize.Y;
+        hStdOut = GetStdHandle( STD_OUTPUT_HANDLE );
+        if (hStdOut == INVALID_HANDLE_VALUE) return;
 
-            /* Fill the entire buffer with spaces */
-            if (!FillConsoleOutputCharacter(
-                hStdOut,
-                (TCHAR) ' ',
-                cellCount,
-                homeCoords,
-                &count
-                )) return;
+        /* Get the number of cells in the current buffer */
+        if (!GetConsoleScreenBufferInfo( hStdOut, &csbi )) return;
+        cellCount = csbi.dwSize.X *csbi.dwSize.Y;
 
-            /* Fill the entire buffer with the current colors and attributes */
-            if (!FillConsoleOutputAttribute(
-                hStdOut,
-                csbi.wAttributes,
-                cellCount,
-                homeCoords,
-                &count
-                )) return;
+        /* Fill the entire buffer with spaces */
+        if (!FillConsoleOutputCharacter(
+            hStdOut,
+            (TCHAR) ' ',
+            cellCount,
+            homeCoords,
+            &count
+            )) return;
 
-            /* Move the cursor home */
-            SetConsoleCursorPosition( hStdOut, homeCoords );
-        }
+        /* Fill the entire buffer with the current colors and attributes */
+        if (!FillConsoleOutputAttribute(
+            hStdOut,
+            csbi.wAttributes,
+            cellCount,
+            homeCoords,
+            &count
+            )) return;
 
-        inline void Set_Cursor_At(GGUI::Coordinates C){
-            using namespace Utils;
+        /* Move the cursor home */
+        SetConsoleCursorPosition( hStdOut, homeCoords );
+    }
 
-            COORD c;
-            c.X = C.X;
-            c.Y = C.Y;
+    inline void Render_Frame(){
+        ClearScreen();
 
-            SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
-        }
+        unsigned long long tmp = 0;
+        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
+    }
 
-        inline void Render_Frame(){
-            using namespace Utils;
+    inline void Update_Max_Width_And_Height(){
+        CONSOLE_SCREEN_BUFFER_INFO info;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
-            ClearScreen();
+        GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 
-            unsigned long long tmp = 0;
-            WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
-        }
-    
-        inline void Update_Max_Width_And_Height(){
-            using namespace Utils;
-
-            CONSOLE_SCREEN_BUFFER_INFO info;
-
-            GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-
-            Max_Width = info.srWindow.Right - info.srWindow.Left;
-            Max_Height = info.srWindow.Bottom - info.srWindow.Top;
-        }
-    
-    #else
-        void ClearScreen();
-
-        void Render_Frame(string& Frame);
-    
-        void Set_Cursor_At(Coordinates C);
-
-        void Update_Max_Width_And_Height();
-    #endif
+        Max_Width = info.srWindow.Right - info.srWindow.Left;
+        Max_Height = info.srWindow.Bottom - info.srWindow.Top;
+    }
+#else
+    inline void Render_Frame(){}
+    inline void Update_Max_Width_And_Height(){}
+    inline void ClearScreen()
+    {
+        std::cout << GGUI::Constants::CLEAR_SCREEN;
+    }
+#endif
 
     inline int Get_Max_Width(){
         if (Max_Width == 0 && Max_Height == 0){
@@ -182,14 +148,6 @@ namespace RENDERER{
         return Result;
     }
 
-    inline void Pause_Renderer(){
-        Pause_Render = true;
-    }
-
-    inline void Resume_Renderer(){
-        Pause_Render = false;
-    }
-
     inline void Update_Frame(){
         if (Pause_Render)
             return;
@@ -198,12 +156,22 @@ namespace RENDERER{
 
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
     }
+    
+    inline void Pause_Renderer(){
+        Pause_Render = true;
+    }
+
+    inline void Resume_Renderer(){
+        Pause_Render = false;
+
+        Update_Frame();
+    }
+
 
     //Inits GGUI and returns the main window.
     inline GGUI::Window* Init_Renderer(){
         Update_Max_Width_And_Height();
-        Constants::Init();
-        Utils::Init();
+        GGUI::Constants::Init();
 
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
@@ -215,7 +183,7 @@ namespace RENDERER{
 
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
 
-        std::thread Renderer([](){
+        std::thread Renderer([&](){
             while (true){
                 if (Pause_Render)
                     continue;
@@ -248,16 +216,22 @@ namespace RENDERER{
         }
 
         Pause_Renderer();
-        //Main = GGUI::Window("ERROR!", {0, 0, INT32_MAX}, Problem, false, longest_row, longest_Height, COLOR::RED, COLOR::WHITE, COLOR::YELLOW);
+        Main = GGUI::Window("ERROR!", {
+            {0, 0, INT32_MAX}, longest_row, longest_Height, true, 
+            GGUI::COLOR::BLACK, 
+            GGUI::COLOR::RED, 
+
+            GGUI::COLOR::BLACK, 
+            GGUI::COLOR::RED, 
+        });
         Resume_Renderer();
 
         Update_Frame();
 
         //sleep
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-        //std::exit(1);
+        std::exit(1);
     }
-
 
 }
 
