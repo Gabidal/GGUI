@@ -147,6 +147,7 @@ void GGUI::Element::Set_Back_Ground_Colour(RGB color){
     Back_Ground_Colour = color;
     if (Border_Back_Ground_Color == Back_Ground_Colour)
         Border_Back_Ground_Color = color;
+    Dirty = true;
     RENDERER::Update_Frame();
 }
 
@@ -156,6 +157,7 @@ GGUI::RGB GGUI::Element::Get_Back_Ground_Colour(){
 
 void GGUI::Element::Set_Border_Colour(RGB color){
     Border_Colour = color;
+    Dirty = true;
     RENDERER::Update_Frame();
 }
 
@@ -165,6 +167,7 @@ GGUI::RGB GGUI::Element::Get_Border_Colour(){
 
 void GGUI::Element::Set_Border_Back_Ground_Color(RGB color){
     Border_Back_Ground_Color = color;
+    Dirty = true;
     RENDERER::Update_Frame();
 }
 
@@ -174,6 +177,7 @@ GGUI::RGB GGUI::Element::Get_Border_Back_Ground_Color(){
 
 void GGUI::Element::Set_Text_Colour(RGB color){
     Text_Colour = color;
+    Dirty = true;
     RENDERER::Update_Frame();
 }
 
@@ -208,6 +212,8 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 }
 
 void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
+    if (!w->Dirty)
+        return;
 
     for (auto& utf : Result){
         utf.Pre_Fix = w->Compose_All_Text_RGB_Values();

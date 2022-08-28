@@ -13,7 +13,6 @@ int main(){
     Text->Set_Border_Back_Ground_Color(GGUI::COLOR::LIGHT_BLUE);
     Text->Set_Text_Colour(GGUI::COLOR::CYAN);
     
-    
     Main->Add_Child(Text);
 
     RENDERER::Resume_Renderer();

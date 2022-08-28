@@ -177,6 +177,7 @@ namespace GGUI{
         RGB Border_Back_Ground_Color = RGB(0, 0, 0);
         
         class Element* Parent = nullptr;
+        bool Dirty = false;
 
         std::string Compose_All_Text_RGB_Values(){
             return Text_Colour.Get_Over_Head(true) + 
