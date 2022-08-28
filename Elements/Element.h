@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <functional>
+#include <chrono>
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -29,6 +31,13 @@ namespace GGUI{
         inline std::string CLEAR_SCREEN = ESC + "2J";
 
         inline void Init();
+    }
+
+    namespace TIME{
+        inline unsigned int MILLISECOND = 1; 
+        inline unsigned int SECOND = MILLISECOND * 1000;
+        inline unsigned int MINUTE = SECOND * 60;
+        inline unsigned int HOUR = MINUTE * 60;
     }
 
     class RGB{
@@ -165,6 +174,19 @@ namespace GGUI{
         }
     };
 
+    class Memory{
+    public:
+        size_t Start_Time = 0;
+        size_t End_Time = 0;
+        std::function<void()> Job;
+
+        Memory(size_t end, std::function<void()> job){
+            Start_Time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            End_Time = end;
+            Job = job;
+        }
+    };
+
     class Flags{
     public:
         Coordinates Position;
@@ -178,6 +200,7 @@ namespace GGUI{
         RGB Border_Colour = RGB(255, 255, 255);
         RGB Border_Back_Ground_Color = RGB(0, 0, 0);
         
+        //INTERNAL FLAGS
         class Element* Parent = nullptr;
         bool Dirty = false;
 
@@ -216,7 +239,7 @@ namespace GGUI{
 
         void Add_Child(Element* Child);
 
-        std::vector<Element*> Get_Childs();
+        std::vector<Element*>& Get_Childs();
 
         void Remove_Element(Element* handle);
 

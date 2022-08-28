@@ -12,13 +12,13 @@ bool GGUI::Element::Has_Border(){
 }
 
 void GGUI::Element::Add_Child(Element* Child){
-    Child->Position.X += 1;
-    Child->Position.Y += 1;
+    Child->Position.X += Has_Border();
+    Child->Position.Y += Has_Border();
 
     if (Child->Position.X + Child->Width >= this->Width || Child->Position.Y + Child->Height >= this->Height){
         //reset the child coordinates.
-        Child->Position.X -= 1;
-        Child->Position.Y -= 1;
+        Child->Position.X -= Has_Border();
+        Child->Position.Y -= Has_Border();
 
         GGUI::Report(
             "Window exeeded bounds\n"
@@ -35,7 +35,7 @@ void GGUI::Element::Add_Child(Element* Child){
     GGUI::Update_Frame();
 }
 
-std::vector<GGUI::Element*> GGUI::Element::Get_Childs(){
+std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){
     return Childs;
 }
 

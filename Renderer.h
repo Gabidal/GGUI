@@ -2,20 +2,27 @@
 #define _RENDERER_H_
 
 #include <iostream>
-
-#include "Elements/Window.h"
-
+#include <functional>
 #include <thread>
 
+#include "Elements/Window.h"
+#include "Elements/Text_Field.h"
+
+
+
 namespace GGUI{
-    inline std::vector<GGUI::UTF> Abstract_Frame_Buffer;                   //2D clean vector whitout bold nor color
-    inline std::string Frame_Buffer;                                       //string with bold and color, this what gets drawn to console.
+    inline std::vector<GGUI::UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
+    inline std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     inline bool Pause_Render = false;                              //if true, the render will not be updated, good for window creation.
 
-    inline GGUI::Window Main;                                     //Main window
+    inline GGUI::Window Main;                                   //Main window
 
     inline int Max_Width = 0;
     inline int Max_Height = 0;
+
+    inline std::vector<GGUI::Memory> Remember;
+
+    inline const time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 100;
 
     inline void Set_Cursor_At(GGUI::Coordinates C){
         std::cout << GGUI::Constants::ESC + std::to_string(C.X) + GGUI::Constants::SEPERATE + std::to_string(C.Y) + "H" << std::endl;
@@ -66,7 +73,6 @@ namespace GGUI{
 
         unsigned long long tmp = 0;
         WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
     }
 
     inline void Update_Max_Width_And_Height(){
@@ -167,6 +173,26 @@ namespace GGUI{
         Update_Frame();
     }
 
+    inline void Recall_Memories(){
+        size_t Current_Time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+        for (int i = 0; i < Remember.size(); i++){
+            //first calculate the time difference between the start if the task and the end task
+            size_t Time_Difference = Current_Time - Remember[i].Start_Time;
+
+            //if the time difference is greater than the time limit, then delete the memory
+            if (Time_Difference > Remember[i].End_Time){
+                Pause_Renderer();
+                Remember[i].Job();
+
+                Remember.erase(Remember.begin() + i);
+
+                i--;
+                
+                Resume_Renderer();
+            }
+        }
+    }
 
     //Inits GGUI and returns the main window.
     inline GGUI::Window* Init_Renderer(){
@@ -188,49 +214,64 @@ namespace GGUI{
                 if (Pause_Render)
                     continue;
                 Render_Frame();
+                
+                std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
             }
         });
 
+        std::thread Job_Scheduler([&](){
+            while (true){
+                Recall_Memories();
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
+            }
+        });
+        
+
         Renderer.detach();
+
+        Job_Scheduler.detach();
 
         return &Main;
     }
 
     inline void Report(std::string Problem){
-        //calculate the most longest row of text and set it as the width
-        int longest_row = 0;
-        int Current_Row = 0;
-
-        int longest_Height = 0;
-        for (auto& c : Problem){
-            if (c == '\n'){
-                if (Current_Row > longest_row)
-                    longest_row = Current_Row;
-                
-                Current_Row = 0;
-                longest_Height++;
-            }
-            else{
-                Current_Row++;
-            }
-        }
-
         Pause_Renderer();
-        Main = GGUI::Window("ERROR!", {
-            {0, 0, INT32_MAX}, longest_row, longest_Height, true, 
+
+        std::pair<int, int> size = GGUI::Text_Field::Get_Text_Dimensions(Problem);
+
+        GGUI::Window* tmp = new GGUI::Window("ERROR!", {
+            {0, 0, INT32_MAX}, size.first, size.second, true, 
             GGUI::COLOR::BLACK, 
             GGUI::COLOR::RED, 
 
             GGUI::COLOR::BLACK, 
             GGUI::COLOR::RED, 
         });
+
+        Main.Add_Child(tmp);
+
+        Remember.push_back(Memory(
+            TIME::SECOND * 5,
+            [=](){
+                GGUI::Window* Right_tmp = nullptr;
+
+                int i = 0;
+                for (auto c : Main.Get_Childs()){
+                    if (c == tmp){
+                        Right_tmp = (GGUI::Window*)c;
+                        break;
+                    }
+                    i++;
+                }
+
+                Main.Get_Childs().erase(Main.Get_Childs().begin() + i);
+
+                delete Right_tmp;
+            }
+        ));
+
         Resume_Renderer();
-
-        Update_Frame();
-
-        //sleep
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-        std::exit(1);
     }
 
 }
