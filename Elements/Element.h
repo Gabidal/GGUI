@@ -233,7 +233,7 @@ namespace GGUI{
 
         int Get_Fitting_Height(Element* child);
 
-        void Show_Border(bool b);
+        virtual void Show_Border(bool b);
 
         bool Has_Border();
 
@@ -280,6 +280,9 @@ namespace GGUI{
         virtual void Apply_Colors(Element* w, std::vector<UTF>& Result);
 
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
+    
+        std::pair<int, int> Get_Fitting_Dimensions();
+    
     };
 }
 

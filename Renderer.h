@@ -122,19 +122,16 @@ namespace GGUI{
         }
     }
 
-    inline void Nest_UTF_Text(GGUI::Window* Parent, std::vector<GGUI::UTF>& Text, std::vector<GGUI::UTF>& Parent_Buffer){
+    inline void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){
+        GGUI::Coordinates C = child->Get_Position();
+
+        int i = 0;
         for (int Parent_Y = 0; Parent_Y < Parent->Height; Parent_Y++){
-
-            if (Parent_Y + Parent->Has_Border() >= Parent->Height - Parent->Has_Border()){
-                return;
-            }
-
             for (int Parent_X = 0; Parent_X < Parent->Width; Parent_X++){
-                if (Parent_X + Parent->Has_Border() >= Parent->Width - Parent->Has_Border()){
-                    break; //last row cannot have text when border occupies it.
-                }
-                if (Parent_Y * Parent->Width + Parent_X < Text.size()){
-                    Parent_Buffer[(Parent_Y + Parent->Has_Border()) * Parent->Width + (Parent_X + Parent->Has_Border())] = Text[Parent_Y * Parent->Width + Parent_X];
+                if (Parent_Y >= C.Y && Parent_X >= C.X &&
+                    Parent_Y <= C.Y + child->Height && Parent_X <= C.X + child->Width)
+                {
+                    Parent_Buffer[Parent_Y * Parent->Width + Parent_X] = Text[i++];
                 }
             }
         }
