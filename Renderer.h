@@ -182,21 +182,6 @@ namespace GGUI{
         }
     }
 
-    inline void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){
-        GGUI::Coordinates C = child->Get_Position();
-
-        int i = 0;
-        for (int Parent_Y = 0; Parent_Y < Parent->Height; Parent_Y++){
-            for (int Parent_X = 0; Parent_X < Parent->Width; Parent_X++){
-                if (Parent_Y >= C.Y && Parent_X >= C.X &&
-                    Parent_Y <= C.Y + child->Height && Parent_X <= C.X + child->Width)
-                {
-                    Parent_Buffer[Parent_Y * Parent->Width + Parent_X] = Text[i++];
-                }
-            }
-        }
-    }
-
     inline std::string Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
         std::string Result = "";
 
@@ -356,10 +341,18 @@ namespace GGUI{
     inline void Report(std::string Problem){
         Pause_Renderer();
 
-        std::pair<int, int> size = GGUI::Text_Field::Get_Text_Dimensions(Problem);
+        GGUI::Text_Field* txt = new GGUI::Text_Field(Problem);
+
+        bool Has_Border = true;
+
+        int w = txt->Width + Has_Border * 2;
+        int h = txt->Height + Has_Border * 2;
+
+        int W_Center = (Max_Width - w) / 2;
+        int H_Center = (Max_Height - h) / 2;
 
         GGUI::Window* tmp = new GGUI::Window("ERROR!", {
-            {0, 0, INT32_MAX}, size.first, size.second, true, 
+            {W_Center, H_Center, INT32_MAX}, w, h, Has_Border, 
             GGUI::COLOR::BLACK, 
             GGUI::COLOR::RED, 
 
@@ -367,10 +360,12 @@ namespace GGUI{
             GGUI::COLOR::RED, 
         });
 
+        tmp->Add_Child(txt);
+
         Main.Add_Child(tmp);
 
         Remember.push_back(Memory(
-            TIME::SECOND * 5,
+            TIME::SECOND * 10,
             [=](GGUI::Event* e){
                 GGUI::Window* Right_tmp = nullptr;
 
@@ -390,6 +385,36 @@ namespace GGUI{
         ));
 
         Resume_Renderer();
+    }
+
+    inline void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){
+        if (Parent == child){
+            std::string R = 
+                std::string("Cannot nest element to it self\n") +
+                std::string("Element name: ") + Parent->Get_Name();
+
+            if (Parent->Parent){
+                R += std::string("\n") + 
+                std::string("Inside of: ") + Parent->Parent->Get_Name();
+            }
+
+            Report(
+                R
+            );
+        }
+
+        GGUI::Coordinates C = child->Get_Position();
+
+        int i = 0;
+        for (int Parent_Y = 0; Parent_Y < Parent->Height; Parent_Y++){
+            for (int Parent_X = 0; Parent_X < Parent->Width; Parent_X++){
+                if (Parent_Y >= C.Y && Parent_X >= C.X &&
+                    Parent_Y <= C.Y + child->Height && Parent_X <= C.X + child->Width)
+                {
+                    Parent_Buffer[Parent_Y * Parent->Width + Parent_X] = Text[i++];
+                }
+            }
+        }
     }
 
 }

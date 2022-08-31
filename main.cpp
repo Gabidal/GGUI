@@ -17,6 +17,8 @@ int main(){
     Text->Set_Text_Colour(GGUI::COLOR::CYAN);
     //Text->Show_Border(true);
 
+    Text->Set_Position({50, 50});
+
     Text->On_Click([=](GGUI::Event* e){
         Text->Remove();
     });

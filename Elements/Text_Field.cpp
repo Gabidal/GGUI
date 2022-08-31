@@ -27,7 +27,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
             break;
         }
 
-        GGUI::Nest_UTF_Text(this, this, Text_Buffer, Result);
+        Result = Text_Buffer;
 
         Apply_Colors(this, Result);
 
@@ -192,6 +192,10 @@ void GGUI::Text_Field::Set_Text_Position(TEXT_LOCATION Text_Position){
 
 GGUI::TEXT_LOCATION GGUI::Text_Field::Get_Text_Position(){
     return Text_Position;
+}
+
+std::string GGUI::Text_Field::Get_Name(){
+    return "Text_Field";
 }
 
 

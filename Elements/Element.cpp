@@ -22,10 +22,10 @@ void GGUI::Element::Add_Child(Element* Child){
             Child->Position.Y -= Has_Border();
 
             GGUI::Report(
-                "Window exeeded bounds\n"
-                "Starts at: {" + std::to_string(Child->Position.X) + ", " + std::to_string(Child->Position.Y) + "}\n"
-                "Ends at: {" + std::to_string(Child->Position.X + Child->Width) + ", " + std::to_string(Child->Position.Y + Child->Height) + "}\n"
-                "Max is at: {" + std::to_string(this->Width) + ", " + std::to_string(this->Height) + "}\n"
+                "Window exeeded bounds\n "
+                "Starts at: {" + std::to_string(Child->Position.X) + ", " + std::to_string(Child->Position.Y) + "}\n "
+                "Ends at: {" + std::to_string(Child->Position.X + Child->Width) + ", " + std::to_string(Child->Position.Y + Child->Height) + "}\n "
+                "Max is at: {" + std::to_string(this->Width) + ", " + std::to_string(this->Height) + "}\n "
             );
 
             return;

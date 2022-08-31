@@ -23,6 +23,8 @@ namespace GGUI{
         std::vector<UTF> Render() override;
         
         void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
+
+        std::string Get_Name() override;
     };
 }
 

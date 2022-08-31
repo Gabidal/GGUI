@@ -367,6 +367,10 @@ namespace GGUI{
             }
         }
 
+        virtual std::string Get_Name(){
+            return "Element";
+        }
+
         //Makes suicide.
         void Remove(){
             if (Parent){

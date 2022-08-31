@@ -69,6 +69,8 @@ namespace GGUI{
         
         bool Resize_To(Element* parent) override;
 
+        std::string Get_Name() override;
+
         static std::vector<UTF> Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
         static std::vector<UTF> Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
         static std::vector<UTF> Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
