@@ -29,7 +29,7 @@ namespace GGUI{
         Text_Field(std::string Text){
             Data = Text;
 
-            std::pair<int, int> D = Get_Text_Dimensions(Text);
+            std::pair<int, int> D = Get_Text_Dimensions(Data);
             Width = D.first;
             Height = D.second;
         }
@@ -63,9 +63,11 @@ namespace GGUI{
         
         void Show_Border(bool state) override;
         
-        static std::pair<int, int> Get_Text_Dimensions(std::string text); 
+        static std::pair<int, int> Get_Text_Dimensions(std::string& text); 
 
         std::vector<UTF> Render() override;
+        
+        bool Resize_To(Element* parent) override;
 
         static std::vector<UTF> Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
         static std::vector<UTF> Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);

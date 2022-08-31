@@ -59,16 +59,18 @@ void GGUI::Text_Field::Show_Border(bool state){
     Update_Frame();
 }
 
-std::pair<int, int> GGUI::Text_Field::Get_Text_Dimensions(std::string text){
+std::pair<int, int> GGUI::Text_Field::Get_Text_Dimensions(std::string& text){
     //calculate the most longest row of text and set it as the width
     int longest_row = 0;
     int Current_Row = 0;
 
     int longest_Height = 1;
-    for (auto& c : text){
-        if (c == '\n'){
+    for (int c = 0; c < text.size(); c++){
+        if (text[c] == '\n'){
             Current_Row = 0;
             longest_Height++;
+
+            text.erase(text.begin() + c--);
         }
         else{
             Current_Row++;
@@ -79,6 +81,23 @@ std::pair<int, int> GGUI::Text_Field::Get_Text_Dimensions(std::string text){
     }
 
     return {longest_row, longest_Height};
+}
+
+bool GGUI::Text_Field::Resize_To(Element* parent){
+    std::pair<int, int> Max_Dimensions = parent->Get_Fitting_Dimensions(this);
+
+    int New_Width = Max_Dimensions.first - Has_Border() * 2;
+    int New_Height = Data.size() / New_Width + Has_Border() * 2;
+
+    //now we can check if the new_height is larger than the max_height
+    if (New_Height > Max_Dimensions.second){
+        return false;
+    }
+    
+    Width = New_Width;
+    Height = New_Height;
+
+    return true;
 }
 
 //The Text buffer needs to contain already left centered text.
@@ -98,15 +117,19 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
         if (This_Text_Row_Length > 0){
             //This means that the text has enough size to take all space on this row.
             for (int X = 0; X < self->Width; X++){
-                Result[Y * self->Width + X] = Text[i++];
+                if (i < Text.size()){
+                    Result[Y * self->Width + X] = Text[i++];
+                }
             }
         }
         else{
             //This means we have to center the text here
             int Starting_X = Width_Center - This_Text_Row_Length / 2;
 
-            for (int X = 0; X < This_Text_Row_Length; X++){
-                Result[Y * self->Width + X + Starting_X] = Text[i++];
+            for (int X = 0; X < This_Text_Row_Length; X++){       
+                if (i < Text.size()){
+                    Result[Y * self->Width + X + Starting_X] = Text[i++];
+                }
             }
         }
     }
@@ -117,14 +140,16 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
 std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
 
-    bool Has_border = self->Has_Border();
+    bool Has_border = self->Has_Border() * 2;
 
     Result.resize(self->Height * self->Width);
 
     int i = 0;
     for (int Y = Has_border; Y < self->Height - Has_border; Y++){
         for (int X = Has_border; X < self->Width -Has_border; X++){
-            Result[Y * self->Width + X] = Text[i++];
+            if (i < Text.size()){
+                Result[Y * self->Width + X] = Text[i++];
+            }
         }
     }
     
@@ -139,8 +164,10 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::st
     int i = 0;
     for (int Y = 0; Y < self->Height; Y++){
         for (int X = 0; X < self->Width; X++){
-            int Reverse_X = self->Width - X - 1;
-            Result[Y * self->Width + Reverse_X] = Text[i++];
+            if (i < Text.size()){
+                int Reverse_X = self->Width - X - 1;
+                Result[Y * self->Width + Reverse_X] = Text[i++];
+            }
         }
     }
     

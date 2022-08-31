@@ -8,7 +8,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/Build/GGUI.exe",
         "cwd": "${workspaceFolder}",
-        "preLaunchTask": "Buildarna"
+        //"preLaunchTask": "Buildarna"
       }
     ]
   }

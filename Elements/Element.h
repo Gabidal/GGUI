@@ -30,14 +30,26 @@ namespace GGUI{
         inline std::string END_COMMAND = "m";
         inline std::string CLEAR_SCREEN = ESC + "2J";
 
+        inline unsigned long long NON = 1 << 0;
+        inline unsigned long long ENTER = 1 << 1;
+        inline unsigned long long ESCAPE = 1 << 2;
+        inline unsigned long long BACKSPACE = 1 << 3;
+        inline unsigned long long TAB = 1 << 4;
+        inline unsigned long long UP = 1 << 5;
+        inline unsigned long long DOWN = 1 << 6;
+        inline unsigned long long LEFT = 1 << 7;
+        inline unsigned long long RIGHT = 1 << 8;
+
+        inline unsigned long long KEY_PRESS = 1 << 9;
+
         inline void Init();
     }
 
     namespace TIME{
-        inline unsigned int MILLISECOND = 1; 
-        inline unsigned int SECOND = MILLISECOND * 1000;
-        inline unsigned int MINUTE = SECOND * 60;
-        inline unsigned int HOUR = MINUTE * 60;
+        inline const  unsigned int MILLISECOND = 1; 
+        inline const  unsigned int SECOND = MILLISECOND * 1000;
+        inline const  unsigned int MINUTE = SECOND * 60;
+        inline const  unsigned int HOUR = MINUTE * 60;
     }
 
     class RGB{
@@ -174,13 +186,56 @@ namespace GGUI{
         }
     };
 
-    class Memory{
+    class Event{
+    public:
+        unsigned long long Criteria;
+    };
+
+    class Input : public Event{
+    public:
+        char Data = 0;
+        unsigned int X = 0;
+        unsigned int Y = 0;
+        int Scale = 1;
+
+        Input(char d, unsigned long long t){
+            Data = d;
+            Criteria = t;
+        }
+
+        Input(Coordinates c, unsigned long long t, int s = 1){
+            X = c.X;
+            Y = c.Y;
+            Criteria = t;
+            Scale = s;
+        }
+    };
+
+    class Action : public Event{
+    public:
+        class Element* Host;
+
+        std::function<void(GGUI::Event* e)> Job;
+    
+        Action(){}
+        Action(unsigned long long criteria, std::function<void(GGUI::Event* e)> job){
+            Criteria = criteria;
+            Job = job;
+        }
+
+        Action(unsigned long long criteria, std::function<void(GGUI::Event* e)> job, class Element* host){
+            Criteria = criteria;
+            Job = job;
+            Host = host;
+        }
+    };
+
+    class Memory : public Action{
     public:
         size_t Start_Time = 0;
         size_t End_Time = 0;
-        std::function<void()> Job;
 
-        Memory(size_t end, std::function<void()> job){
+        Memory(size_t end, std::function<void(GGUI::Event* e)>job){
             Start_Time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             End_Time = end;
             Job = job;
@@ -199,39 +254,28 @@ namespace GGUI{
 
         RGB Border_Colour = RGB(255, 255, 255);
         RGB Border_Back_Ground_Color = RGB(0, 0, 0);
+
+        RGB Text_Focus_Color = RGB(255, 255, 255);
+        RGB Back_Ground_Focus_Color = RGB(50, 50, 50);
+
+        RGB Border_Focus_Color = RGB(255, 255, 255);
+        RGB Border_Focus_Back_Ground_Color = RGB(50, 50, 50);
         
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
         bool Dirty = false;
 
-        std::string Compose_All_Text_RGB_Values(){
-            return Text_Colour.Get_Over_Head(true) + 
-            Text_Colour.Get_Colour() + 
-            Constants::END_COMMAND + 
-            Back_Ground_Colour.Get_Over_Head(false) + 
-            Back_Ground_Colour.Get_Colour() +
-            Constants::END_COMMAND;
-        }
-
-        std::string Compose_All_Border_RGB_Values(){
-            return Border_Colour.Get_Over_Head(true) + 
-            Border_Colour.Get_Colour() + 
-            Constants::END_COMMAND + 
-            Border_Back_Ground_Color.Get_Over_Head(false) + 
-            Border_Back_Ground_Color.Get_Colour() +
-            Constants::END_COMMAND;
-        }
     };
 
     class Element : public Flags{
     public:
         std::vector<Element*> Childs;
 
+        bool Focused = false;
+
         Element() {}
 
-        int Get_Fitting_Width(Element* child);
-
-        int Get_Fitting_Height(Element* child);
+        std::pair<int, int> Get_Fitting_Dimensions(Element* child);
 
         virtual void Show_Border(bool b);
 
@@ -241,9 +285,9 @@ namespace GGUI{
 
         std::vector<Element*>& Get_Childs();
 
-        void Remove_Element(Element* handle);
+        bool Remove(Element* handle);
 
-        void Remove_Element(int index);
+        bool Remove(int index);
 
         void Set_Dimensions(int width, int height);
 
@@ -279,10 +323,63 @@ namespace GGUI{
 
         virtual void Apply_Colors(Element* w, std::vector<UTF>& Result);
 
+        virtual bool Resize_To(Element* parent){
+            return false;
+        }
+
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
+
+        std::string Compose_All_Text_RGB_Values(){
+            if (Focused){
+                return Text_Focus_Color.Get_Over_Head(true) + 
+                Text_Focus_Color.Get_Colour() + 
+                Constants::END_COMMAND + 
+                Back_Ground_Focus_Color.Get_Over_Head(false) + 
+                Back_Ground_Focus_Color.Get_Colour() +
+                Constants::END_COMMAND;
+            }
+            else{
+                return Text_Colour.Get_Over_Head(true) + 
+                Text_Colour.Get_Colour() + 
+                Constants::END_COMMAND + 
+                Back_Ground_Colour.Get_Over_Head(false) + 
+                Back_Ground_Colour.Get_Colour() +
+                Constants::END_COMMAND;
+            }
+        }
+
+        std::string Compose_All_Border_RGB_Values(){
+            if (Focused){
+                return Border_Focus_Color.Get_Over_Head(true) + 
+                Border_Focus_Color.Get_Colour() + 
+                Constants::END_COMMAND + 
+                Border_Focus_Back_Ground_Color.Get_Over_Head(false) + 
+                Border_Focus_Back_Ground_Color.Get_Colour() +
+                Constants::END_COMMAND;
+            }
+            else{
+                return Border_Colour.Get_Over_Head(true) + 
+                Border_Colour.Get_Colour() + 
+                Constants::END_COMMAND + 
+                Border_Back_Ground_Color.Get_Over_Head(false) + 
+                Border_Back_Ground_Color.Get_Colour() +
+                Constants::END_COMMAND;
+            }
+        }
+
+        //Makes suicide.
+        void Remove(){
+            if (Parent){
+                Parent->Remove(this);
+            }
+        }
+
+        //Event handlers
+        void On_Click(std::function<void(GGUI::Event* e)> action);
+
     
-        std::pair<int, int> Get_Fitting_Dimensions();
-    
+
+
     };
 }
 

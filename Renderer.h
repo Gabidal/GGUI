@@ -8,8 +8,6 @@
 #include "Elements/Window.h"
 #include "Elements/Text_Field.h"
 
-
-
 namespace GGUI{
     inline std::vector<GGUI::UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     inline std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
@@ -21,6 +19,13 @@ namespace GGUI{
     inline int Max_Height = 0;
 
     inline std::vector<GGUI::Memory> Remember;
+
+    inline std::vector<GGUI::Action*> Event_Handlers;
+    inline std::vector<GGUI::Input*> Inputs;
+
+    inline GGUI::Element* Focused_On = nullptr;
+
+    inline Coordinates Mouse;
 
     inline const time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 100;
 
@@ -83,6 +88,40 @@ namespace GGUI{
         Max_Width = info.srWindow.Right - info.srWindow.Left;
         Max_Height = info.srWindow.Bottom - info.srWindow.Top;
     }
+
+    //Is called on every cycle.
+    inline void Query_Inputs(){
+        const int Inputs_Per_Second = 20;
+        const int Inputs_Per_Query = Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS);
+
+        INPUT_RECORD Input[Inputs_Per_Query];
+
+        int Buffer_Size = 0;
+
+        ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, Inputs_Per_Query, (LPDWORD)&Buffer_Size);
+
+        for (int i = 0; i < Buffer_Size; i++){
+            if (Input[i].EventType == KEY_EVENT){
+                if (Input[i].Event.KeyEvent.bKeyDown){
+                    if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
+                        GGUI::Mouse.Y--;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
+                        GGUI::Mouse.Y++;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
+                        GGUI::Mouse.X--;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
+                        GGUI::Mouse.X++;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
+                        Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
+                    }
+                }
+            }
+        }
+    }
 #else
     inline void Render_Frame(){}
     inline void Update_Max_Width_And_Height(){}
@@ -90,7 +129,28 @@ namespace GGUI{
     {
         std::cout << GGUI::Constants::CLEAR_SCREEN;
     }
+    inline void Enable_Features(){
+        
+    }
 #endif
+
+    inline bool Collides(GGUI::Element* a, GGUI::Element* b){
+        int A_X = a->Position.X;
+        int A_Y = a->Position.Y;
+
+        int B_X = b->Position.X;
+        int B_Y = b->Position.Y;
+        return (A_X < B_X + b->Width && A_X + a->Width > B_X && A_Y < B_Y + b->Height && A_Y + a->Height > B_Y);
+    }
+
+    inline bool Collides(GGUI::Element* a, GGUI::Coordinates b){
+        int A_X = a->Position.X;
+        int A_Y = a->Position.Y;
+
+        int B_X = b.X;
+        int B_Y = b.Y;
+        return (A_X < B_X + 1 && A_X + a->Width > B_X && A_Y < B_Y + 1 && A_Y + a->Height > B_Y);
+    }
 
     inline int Get_Max_Width(){
         if (Max_Width == 0 && Max_Height == 0){
@@ -180,7 +240,7 @@ namespace GGUI{
             //if the time difference is greater than the time limit, then delete the memory
             if (Time_Difference > Remember[i].End_Time){
                 Pause_Renderer();
-                Remember[i].Job();
+                Remember[i].Job((Event*)&Remember[i]);
 
                 Remember.erase(Remember.begin() + i);
 
@@ -189,6 +249,58 @@ namespace GGUI{
                 Resume_Renderer();
             }
         }
+    }
+
+    inline bool Is(unsigned long long f, unsigned long long Flag){
+        return (f & Flag) == Flag;
+    }
+
+    inline void Update_Focused_Element(GGUI::Element* new_candidate){
+        if (Focused_On == new_candidate)
+            return;
+
+        //put the previus focused candidate into not-focus
+        if (Focused_On)
+            Focused_On->Focused = false;
+
+        //switch the candidate
+        Focused_On = new_candidate;
+        
+        //set the new candidate to focused.
+        Focused_On->Focused = true;
+        Focused_On->Dirty = true;
+
+        Update_Frame();
+    }
+
+    inline void Un_Focus_Element(){
+        Focused_On->Focused = false;
+        Focused_On->Dirty = true;
+
+        Focused_On = nullptr;
+
+        Update_Frame();
+    }
+
+    inline void Event_Handler(){
+        if (Focused_On && !Collides(Focused_On, GGUI::Mouse)){
+            Un_Focus_Element();
+        }
+
+        Query_Inputs();
+        for (auto& e : Event_Handlers){
+            //update the focused
+            if (Collides(e->Host, GGUI::Mouse)){
+                Update_Focused_Element(e->Host);
+            }
+            
+            for (int i = 0; i < Inputs.size(); i++){
+                if (Is(e->Criteria, Inputs[i]->Criteria)){
+                    e->Job(Inputs[i]);
+                }
+            }
+        }
+        Inputs.clear();
     }
 
     //Inits GGUI and returns the main window.
@@ -224,10 +336,19 @@ namespace GGUI{
             }
         });
         
+        std::thread Event_Scheduler([&](){
+            while (true){
+                Event_Handler();
+                std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
+            }
+        });
+        
 
         Renderer.detach();
 
         Job_Scheduler.detach();
+
+        Event_Scheduler.detach();
 
         return &Main;
     }
@@ -250,7 +371,7 @@ namespace GGUI{
 
         Remember.push_back(Memory(
             TIME::SECOND * 5,
-            [=](){
+            [=](GGUI::Event* e){
                 GGUI::Window* Right_tmp = nullptr;
 
                 int i = 0;
