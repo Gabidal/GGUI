@@ -1,4 +1,4 @@
-#include "Renderer.h"
+#include "ggui.h"
 
 using namespace std;
 
@@ -6,6 +6,10 @@ int main(){
     GGUI::Pause_Renderer();
     
     GGUI::Window* Main = GGUI::Init_Renderer();
+
+    GGUI::List_View* l = new GGUI::List_View({}, GGUI::Grow_Direction::ROW, false); 
+
+    Main->Add_Child(l);
     
     GGUI::Text_Field* Text = new GGUI::Text_Field(
         "A AA AAA AAAA AAAAA AAAAAA AAAAAAA AAAAAAAA \n"
@@ -17,13 +21,13 @@ int main(){
     Text->Set_Text_Colour(GGUI::COLOR::CYAN);
     //Text->Show_Border(true);
 
-    Text->Set_Position({50, 50});
-
     Text->On_Click([=](GGUI::Event* e){
         Text->Remove();
     });
     
-    Main->Add_Child(Text);
+    l->Add_Child(Text);
+    l->Add_Child(new GGUI::Text_Field(*Text));
+    l->Add_Child(new GGUI::Text_Field(*Text));
 
     GGUI::Resume_Renderer();
 

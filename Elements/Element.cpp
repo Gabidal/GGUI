@@ -245,8 +245,12 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 }
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
+    
     for (int Child_Y = 0; Child_Y < Child->Height; Child_Y++){
         for (int Child_X = 0; Child_X < Child->Width; Child_X++){
+            if (Child->Position.Y + Child_Y >= Parent->Height || Child->Position.X + Child_X >= Parent->Width){
+                break;
+            }
             Parent_Buffer[(Child->Position.Y + Child_Y) * Parent->Width + Child->Position.X + Child_X] = Child_Buffer[Child_Y * Child->Width + Child_X];
         }
     }

@@ -281,7 +281,7 @@ namespace GGUI{
 
         bool Has_Border();
 
-        void Add_Child(Element* Child);
+        virtual void Add_Child(Element* Child);
 
         std::vector<Element*>& Get_Childs();
 
@@ -318,6 +318,12 @@ namespace GGUI{
         RGB Get_Text_Colour();
 
         virtual std::vector<UTF> Render();
+
+        virtual void Update_Parent(Element* deleted){
+            //normally elements dont do anything
+            if (Parent)
+                Parent->Update_Parent(deleted);
+        }
 
         virtual void Add_Overhead(Element* w, std::vector<UTF>& Result);
 
