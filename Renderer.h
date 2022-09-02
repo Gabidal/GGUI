@@ -135,6 +135,9 @@ namespace GGUI{
 #endif
 
     inline bool Collides(GGUI::Element* a, GGUI::Element* b){
+        if (a == b)
+            return false;
+            
         int A_X = a->Position.X;
         int A_Y = a->Position.Y;
 

@@ -1,6 +1,11 @@
 #include "List_View.h"
 #include "../Renderer.h"
 
+//undefine these before algorithm.h is included
+#undef min
+#undef max
+#include <algorithm>
+
 void GGUI::List_View::Add_Child(Element* e){
 
     int max_width = 0;
@@ -24,23 +29,15 @@ void GGUI::List_View::Add_Child(Element* e){
     }
     else{
         if (Flow_Priority == Grow_Direction::ROW){
-            if (e->Height > Height && e->Height <= max_height){
-                Height = e->Height;
-            }
-            if (e->Width + Width <= max_width){
-                Width += e->Width;
-            }
+            Height = std::min(std::max(e->Height, Height), max_height);
+            Width = std::min(e->Width + Width, max_width);
 
             e->Position.X = Last_Child_X;
             Last_Child_X += e->Width;
         }
         else{
-            if (e->Width > Width && e->Width <= max_width){
-                Width = e->Width;
-            }
-            if (e->Height + Height <= max_height){
-                Height += e->Height;
-            }
+            Width = std::min(std::max(e->Width, Width), max_height);
+            Height = std::min(e->Height + Height, max_width);
 
             e->Position.Y = Last_Child_Y;
             Last_Child_Y += e->Height;

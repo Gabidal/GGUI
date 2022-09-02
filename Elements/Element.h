@@ -380,6 +380,7 @@ namespace GGUI{
         //Makes suicide.
         void Remove(){
             if (Parent){
+                Update_Parent(this);
                 Parent->Remove(this);
             }
         }

@@ -120,8 +120,8 @@ std::pair<int, int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
             break;
         }
         
-        for (auto& c : Childs){
-            if (Collides(&tmp, c)){
+        for (auto c : Childs){
+            if (Collides(child, c)){
                 //there are already other childs occupying this area so we can stop here.
                 return {tmp.Width, tmp.Height};
             }
