@@ -6,6 +6,8 @@ int main(){
     GGUI::Pause_Renderer();
     
     GGUI::Window* Main = GGUI::Init_Renderer();
+    Main->Set_Title("GGUI");
+    Main->Show_Border(true);
 
     GGUI::List_View* l = new GGUI::List_View({}, GGUI::Grow_Direction::ROW, false); 
 
@@ -31,8 +33,10 @@ int main(){
 
     GGUI::Resume_Renderer();
 
-    while(true){ 
-        //Your programm here :D
-    }
+    // _sleep(GGUI::TIME::MINUTE);
 
+    // std::cout << Main->Get_Childs().size() << std::endl;
+
+    while (true){
+    }
 }

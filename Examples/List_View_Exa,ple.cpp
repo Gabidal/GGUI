@@ -19,7 +19,7 @@ int main(){
     Text->Set_Back_Ground_Colour(GGUI::COLOR::DARK_MAGENTA);
     Text->Set_Border_Back_Ground_Color(GGUI::COLOR::LIGHT_BLUE);
     Text->Set_Text_Colour(GGUI::COLOR::CYAN);
-    //Text->Show_Border(true);
+    Text->Show_Border(true);
 
     Text->On_Click([=](GGUI::Event* e){
         Text->Remove();
@@ -29,7 +29,10 @@ int main(){
     //Notice that the copy constructor wont set up any event handlers of text tot he new owner.
     //In this case the On_Click event remembers the Original Text element memory address and not the new copyed one!
     l->Add_Child(new GGUI::Text_Field(*Text));
-    l->Add_Child(new GGUI::Text_Field(*Text));
+    //This in turn will copy the event handlers and update their Host.
+    l->Add_Child(Text->Copy());
+
+    //You can also press SHIFT to togle element HOP mode to hop easily between elements.
 
     GGUI::Resume_Renderer();
 

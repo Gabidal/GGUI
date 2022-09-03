@@ -483,6 +483,16 @@ namespace GGUI{
             while (true){
                 if (Pause_Render)
                     continue;
+
+                GGUI::Update_Max_Width_And_Height();
+
+                if (GGUI::Max_Width != Main.Width || GGUI::Max_Height != Main.Height){
+                    Main.Width = GGUI::Max_Width;
+                    Main.Height = GGUI::Max_Height;
+
+                    Update_Frame();
+                }
+
                 Render_Frame();
                 
                 std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
@@ -491,14 +501,10 @@ namespace GGUI{
 
         std::thread Job_Scheduler([&](){
             while (true){
-                Recall_Memories();
+                if (Pause_Render)
+                    continue;
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
-            }
-        });
-        
-        std::thread Event_Scheduler([&](){
-            while (true){
+                Recall_Memories();
                 Event_Handler();
                 std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
             }
@@ -508,8 +514,6 @@ namespace GGUI{
         Renderer.detach();
 
         Job_Scheduler.detach();
-
-        Event_Scheduler.detach();
 
         return &Main;
     }
