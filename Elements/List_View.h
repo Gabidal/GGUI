@@ -38,6 +38,8 @@ namespace GGUI{
 
         void Update_Parent(Element* deleted) override;
 
+        Element* Copy() override;
+
     };
 }
 

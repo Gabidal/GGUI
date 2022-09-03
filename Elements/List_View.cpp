@@ -50,11 +50,29 @@ void GGUI::List_View::Add_Child(Element* e){
     }
 }
 
-// std::vector<GGUI::UTF> GGUI::List_View::Render(){
+GGUI::Element* GGUI::List_View::Copy(){
+    List_View* new_element = new List_View();
 
-    
+    *new_element = *this;
 
-// }
+    //now also update the event handlers.
+    for (auto& e : GGUI::Event_Handlers){
+
+        if (e->Host == this){
+            //copy the event and make a new one
+            Action* new_action = new Action(*e);
+
+            //update the host
+            new_action->Host = new_element;
+
+            //add the new action to the event handlers list
+            GGUI::Event_Handlers.push_back(new_action);
+        }
+
+    }
+
+    return new_element;
+}
 
 std::string GGUI::List_View::Get_Name(){
     return "List_View";

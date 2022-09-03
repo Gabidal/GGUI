@@ -4,9 +4,11 @@
 #include <iostream>
 #include <functional>
 #include <thread>
+#include <map>
 
 #include "Elements/Window.h"
 #include "Elements/Text_Field.h"
+#include "Elements/List_View.h"
 
 namespace GGUI{
     inline std::vector<GGUI::UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
@@ -123,15 +125,61 @@ namespace GGUI{
         }
     }
 #else
-    inline void Render_Frame(){}
-    inline void Update_Max_Width_And_Height(){}
     inline void ClearScreen()
     {
         std::cout << GGUI::Constants::CLEAR_SCREEN;
     }
-    inline void Enable_Features(){
-        
+
+    inline void Render_Frame(){
+        ClearScreen();
+
+        unsigned long long tmp = 0;
+        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
     }
+
+    inline void Update_Max_Width_And_Height(){
+        CONSOLE_SCREEN_BUFFER_INFO info;
+
+        GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+
+        Max_Width = info.srWindow.Right - info.srWindow.Left;
+        Max_Height = info.srWindow.Bottom - info.srWindow.Top;
+    }
+
+    //Is called on every cycle.
+    inline void Query_Inputs(){
+        const int Inputs_Per_Second = 20;
+        const int Inputs_Per_Query = Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS);
+
+        INPUT_RECORD Input[Inputs_Per_Query];
+
+        int Buffer_Size = 0;
+
+        ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, Inputs_Per_Query, (LPDWORD)&Buffer_Size);
+
+        for (int i = 0; i < Buffer_Size; i++){
+            if (Input[i].EventType == KEY_EVENT){
+                if (Input[i].Event.KeyEvent.bKeyDown){
+                    if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
+                        GGUI::Mouse.Y--;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
+                        GGUI::Mouse.Y++;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
+                        GGUI::Mouse.X--;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
+                        GGUI::Mouse.X++;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
+                        Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
+                    }
+                }
+            }
+        }
+    }
+
 #endif
 
     inline bool Collides(GGUI::Element* a, GGUI::Element* b){

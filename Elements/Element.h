@@ -377,6 +377,9 @@ namespace GGUI{
             return "Element";
         }
 
+        
+        virtual Element* Copy();
+
         //Makes suicide.
         void Remove(){
             if (Parent){

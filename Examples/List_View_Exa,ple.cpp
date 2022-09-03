@@ -26,8 +26,10 @@ int main(){
     });
     
     l->Add_Child(Text);
+    //Notice that the copy constructor wont set up any event handlers of text tot he new owner.
+    //In this case the On_Click event remembers the Original Text element memory address and not the new copyed one!
     l->Add_Child(new GGUI::Text_Field(*Text));
-    l->Add_Child(Text->Copy());
+    l->Add_Child(new GGUI::Text_Field(*Text));
 
     GGUI::Resume_Renderer();
 

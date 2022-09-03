@@ -269,5 +269,30 @@ void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){
     GGUI::Event_Handlers.push_back(a);
 }
 
+GGUI::Element* GGUI::Element::Copy(){
+    Element* new_element = new Element();
+
+    *new_element = *this;
+
+    //now also update the event handlers.
+    for (auto& e : GGUI::Event_Handlers){
+
+        if (e->Host == this){
+            //copy the event and make a new one
+            Action* new_action = new Action(*e);
+
+            //update the host
+            new_action->Host = new_element;
+
+            //add the new action to the event handlers list
+            GGUI::Event_Handlers.push_back(new_action);
+        }
+
+    }
+
+    return new_element;
+}
+
+
 
 
