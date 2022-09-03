@@ -1,10 +1,14 @@
 #ifndef _RENDERER_H_
 #define _RENDERER_H_
 
+#undef min
+#undef max
+
 #include <iostream>
 #include <functional>
 #include <thread>
 #include <map>
+#include <atomic>
 
 #include "Elements/Window.h"
 #include "Elements/Text_Field.h"
@@ -13,7 +17,7 @@
 namespace GGUI{
     inline std::vector<GGUI::UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     inline std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
-    inline bool Pause_Render = false;                              //if true, the render will not be updated, good for window creation.
+    inline std::atomic_bool Pause_Render = false;                     //if true, the render will not be updated, good for window creation.
 
     inline GGUI::Window Main;                                   //Main window
 
@@ -227,10 +231,11 @@ namespace GGUI{
         Max_Height = info.srWindow.Bottom - info.srWindow.Top;
     }
 
+    void Update_Frame();
     //Is called on every cycle.
     inline void Query_Inputs(){
         const int Inputs_Per_Second = 20;
-        const int Inputs_Per_Query = Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS);
+        const int Inputs_Per_Query = std::max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
 
         INPUT_RECORD Input[Inputs_Per_Query];
 
@@ -267,8 +272,22 @@ namespace GGUI{
                     }
                 }
             }
+            else if (Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
+
+                Update_Max_Width_And_Height();
+
+                Main.Width = Max_Width;
+                Main.Height = Max_Height;
+
+                Update_Frame();
+            }
         }
     }
+
+    inline void Init_Platform_Stuff(){
+        SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), -1);
+    }
+
 #else
     inline void ClearScreen()
     {
@@ -372,7 +391,7 @@ namespace GGUI{
     }
 
     inline void Update_Frame(){
-        if (Pause_Render)
+        if (Pause_Render.load())
             return;
 
         Abstract_Frame_Buffer = Main.Render();
@@ -468,6 +487,8 @@ namespace GGUI{
     inline GGUI::Window* Init_Renderer(){
         Update_Max_Width_And_Height();
         GGUI::Constants::Init();
+        Init_Platform_Stuff();
+
 
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
@@ -481,17 +502,8 @@ namespace GGUI{
 
         std::thread Renderer([&](){
             while (true){
-                if (Pause_Render)
+                if (Pause_Render.load())
                     continue;
-
-                GGUI::Update_Max_Width_And_Height();
-
-                if (GGUI::Max_Width != Main.Width || GGUI::Max_Height != Main.Height){
-                    Main.Width = GGUI::Max_Width;
-                    Main.Height = GGUI::Max_Height;
-
-                    Update_Frame();
-                }
 
                 Render_Frame();
                 
@@ -501,7 +513,7 @@ namespace GGUI{
 
         std::thread Job_Scheduler([&](){
             while (true){
-                if (Pause_Render)
+                if (Pause_Render.load())
                     continue;
 
                 Recall_Memories();
