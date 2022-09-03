@@ -39,6 +39,8 @@ namespace GGUI{
         inline unsigned long long DOWN = 1 << 6;
         inline unsigned long long LEFT = 1 << 7;
         inline unsigned long long RIGHT = 1 << 8;
+        inline unsigned long long SPACE = 1 << 9;
+        inline unsigned long long SHIFT = 1 << 10;
 
         inline unsigned long long KEY_PRESS = 1 << 9;
 

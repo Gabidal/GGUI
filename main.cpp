@@ -26,7 +26,7 @@ int main(){
     });
     
     l->Add_Child(Text);
-    l->Add_Child(new GGUI::Text_Field(*Text));
+    l->Add_Child(Text->Copy());
     l->Add_Child(Text->Copy());
 
     GGUI::Resume_Renderer();

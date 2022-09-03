@@ -27,13 +27,149 @@ namespace GGUI{
 
     inline GGUI::Element* Focused_On = nullptr;
 
-    inline Coordinates Mouse;
+    inline Coordinates Mouse;    
+    //move 1 by 1, or element by element.
+    inline bool Mouse_Movement_Method = false;
 
     inline const time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 100;
 
-    inline void Set_Cursor_At(GGUI::Coordinates C){
-        std::cout << GGUI::Constants::ESC + std::to_string(C.X) + GGUI::Constants::SEPERATE + std::to_string(C.Y) + "H" << std::endl;
+    inline bool Collides(GGUI::Element* a, GGUI::Element* b){
+        if (a == b)
+            return false;
+            
+        int A_X = a->Position.X;
+        int A_Y = a->Position.Y;
+
+        int B_X = b->Position.X;
+        int B_Y = b->Position.Y;
+        return (A_X < B_X + b->Width && A_X + a->Width > B_X && A_Y < B_Y + b->Height && A_Y + a->Height > B_Y);
     }
+
+    inline bool Collides(GGUI::Element* a, GGUI::Coordinates b){
+        int A_X = a->Position.X;
+        int A_Y = a->Position.Y;
+
+        int B_X = b.X;
+        int B_Y = b.Y;
+        return (A_X < B_X + 1 && A_X + a->Width > B_X && A_Y < B_Y + 1 && A_Y + a->Height > B_Y);
+    }
+
+    inline Element* Get_Accurate_Element_From(Coordinates c, Element* Parent){
+        
+        //first check if the c is in bounds of Parent.
+        if (!Collides(Parent, c)){
+            return nullptr;
+        }
+
+        for (auto child : Parent->Get_Childs()){
+            if (Collides(child, c)){
+                return Get_Accurate_Element_From(c, child);
+            }
+        }
+
+        return Parent;
+    }
+
+    inline bool Find_Upper_Element(){
+        if (!Mouse_Movement_Method)
+            return false;
+
+        //finds what element is upper relative to this element that the mouse is hovering on top of.
+        //first get the current element.
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+
+        if (Current_Element == nullptr){
+            return false;
+        }
+
+        Coordinates tmp_c = Current_Element->Position;
+
+        tmp_c.Y--;
+
+        Element* Upper_Element = Get_Accurate_Element_From(tmp_c, &Main);
+
+        if (Upper_Element && Upper_Element != (Element*)&Main){
+            Mouse = tmp_c;
+        }
+
+        return true;
+    }
+
+    inline bool Find_Lower_Element(){
+        if (!Mouse_Movement_Method)
+            return false;
+
+        //finds what element is upper relative to this element that the mouse is hovering on top of.
+        //first get the current element.
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+
+        if (Current_Element == nullptr){
+            return false;
+        }
+
+        Coordinates tmp_c = Current_Element->Position;
+
+        tmp_c.Y += Current_Element->Height + 1;
+
+        Element* Lower_Element = Get_Accurate_Element_From(tmp_c, &Main);
+
+        if (Lower_Element && Lower_Element != (Element*)&Main){
+            Mouse = tmp_c;
+        }
+
+        return true;
+    }
+
+    inline bool Find_Left_Element(){
+        if (!Mouse_Movement_Method)
+            return false;
+
+        //finds what element is upper relative to this element that the mouse is hovering on top of.
+        //first get the current element.
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+
+        if (Current_Element == nullptr){
+            return false;
+        }
+
+        Coordinates tmp_c = Current_Element->Position;
+
+        tmp_c.X--;
+
+        Element* Left_Element = Get_Accurate_Element_From(tmp_c, &Main);
+
+        if (Left_Element && Left_Element != (Element*)&Main){
+            Mouse = tmp_c;
+        }
+
+        return true;
+    }
+
+    inline bool Find_Right_Element(){
+        if (!Mouse_Movement_Method)
+            return false;
+
+        //finds what element is upper relative to this element that the mouse is hovering on top of.
+        //first get the current element.
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+
+        if (Current_Element == nullptr){
+            return false;
+        }
+
+        Coordinates tmp_c = Current_Element->Position;
+
+        tmp_c.X += Current_Element->Width + 1;
+
+        Element* Right_Element = Get_Accurate_Element_From(tmp_c, &Main);
+
+        if (Right_Element && Right_Element != (Element*)&Main){
+            Mouse = tmp_c;
+        }
+
+        return true;
+    }
+
 
 #if _WIN32
     #include <windows.h>
@@ -106,19 +242,28 @@ namespace GGUI{
             if (Input[i].EventType == KEY_EVENT){
                 if (Input[i].Event.KeyEvent.bKeyDown){
                     if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
-                        GGUI::Mouse.Y--;
+                        if (!Find_Upper_Element())
+                            GGUI::Mouse.Y--;
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
-                        GGUI::Mouse.Y++;
+                        if (!Find_Lower_Element())
+                            GGUI::Mouse.Y++;
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
-                        GGUI::Mouse.X--;
+                        if (!Find_Left_Element())
+                            GGUI::Mouse.X--;
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
-                        GGUI::Mouse.X++;
+                        if (!Find_Right_Element())
+                            GGUI::Mouse.X++;
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
                         Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
+                        Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                        //shift if the actuator for the mouse movement swithcer
+                        Mouse_Movement_Method = !Mouse_Movement_Method;
                     }
                 }
             }
@@ -181,27 +326,6 @@ namespace GGUI{
     }
 
 #endif
-
-    inline bool Collides(GGUI::Element* a, GGUI::Element* b){
-        if (a == b)
-            return false;
-            
-        int A_X = a->Position.X;
-        int A_Y = a->Position.Y;
-
-        int B_X = b->Position.X;
-        int B_Y = b->Position.Y;
-        return (A_X < B_X + b->Width && A_X + a->Width > B_X && A_Y < B_Y + b->Height && A_Y + a->Height > B_Y);
-    }
-
-    inline bool Collides(GGUI::Element* a, GGUI::Coordinates b){
-        int A_X = a->Position.X;
-        int A_Y = a->Position.Y;
-
-        int B_X = b.X;
-        int B_Y = b.Y;
-        return (A_X < B_X + 1 && A_X + a->Width > B_X && A_Y < B_Y + 1 && A_Y + a->Height > B_Y);
-    }
 
     inline int Get_Max_Width(){
         if (Max_Width == 0 && Max_Height == 0){
@@ -291,13 +415,23 @@ namespace GGUI{
         return (f & Flag) == Flag;
     }
 
+    inline void Un_Focus_Element(){
+        Focused_On->Focused = false;
+        Focused_On->Dirty = true;
+
+        Focused_On = nullptr;
+
+        Update_Frame();
+    }
+
     inline void Update_Focused_Element(GGUI::Element* new_candidate){
         if (Focused_On == new_candidate)
             return;
 
         //put the previus focused candidate into not-focus
-        if (Focused_On)
-            Focused_On->Focused = false;
+        if (Focused_On){
+            Un_Focus_Element();
+        }
 
         //switch the candidate
         Focused_On = new_candidate;
@@ -305,15 +439,6 @@ namespace GGUI{
         //set the new candidate to focused.
         Focused_On->Focused = true;
         Focused_On->Dirty = true;
-
-        Update_Frame();
-    }
-
-    inline void Un_Focus_Element(){
-        Focused_On->Focused = false;
-        Focused_On->Dirty = true;
-
-        Focused_On = nullptr;
 
         Update_Frame();
     }
