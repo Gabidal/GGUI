@@ -3,8 +3,11 @@
 #include "../Renderer.h"
 
 void GGUI::Element::Show_Border(bool b){
+    if (b != Border){
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+    }
     Border = b;
-    GGUI::Update_Frame();
+    Update_Frame();
 }
 
 bool GGUI::Element::Has_Border(){
@@ -32,9 +35,10 @@ void GGUI::Element::Add_Child(Element* Child){
         }
     }
 
+    Dirty.Dirty(STAIN_TYPE::DEEP);
     Child->Parent = this;
     Childs.push_back(Child);
-    GGUI::Update_Frame();
+    Update_Frame();
 }
 
 std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){
@@ -45,7 +49,8 @@ bool GGUI::Element::Remove(Element* handle){
     for (int i = 0; i < Childs.size(); i++){
         if (Childs[i] == handle){
             Childs.erase(Childs.begin() + i);
-            GGUI::Update_Frame();
+            Dirty.Dirty(STAIN_TYPE::DEEP);
+            Update_Frame();
             return true;
         }
     }
@@ -57,14 +62,21 @@ bool GGUI::Element::Remove(int index){
         return false;
     }
     Childs.erase(Childs.begin() + index);
-    GGUI::Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::DEEP);
+    Update_Frame();
     return true;
 }
 
 void GGUI::Element::Set_Dimensions(int width, int height){
-    Width = width;
-    Height = height;
-    GGUI::Update_Frame();
+    if (width != Width || height != Height){    
+        Width = width;
+        Height = height;
+        Dirty.Dirty(STAIN_TYPE::STRECH);
+        Dirty.Dirty(STAIN_TYPE::COLOR);
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Dirty.Dirty(STAIN_TYPE::DEEP);
+        Update_Frame();
+    }
 }
 
 int GGUI::Element::Get_Width(){
@@ -77,7 +89,13 @@ int GGUI::Element::Get_Height(){
 
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
-    GGUI::Update_Frame();
+    if (Parent){
+        Report(
+            "Cannot move element who is orphan."
+        );
+    }
+    Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+    Update_Frame();
 }
 
 GGUI::Coordinates GGUI::Element::Get_Position(){
@@ -136,8 +154,8 @@ void GGUI::Element::Set_Back_Ground_Colour(RGB color){
     Back_Ground_Colour = color;
     if (Border_Back_Ground_Color == Back_Ground_Colour)
         Border_Back_Ground_Color = color;
-    Dirty = true;
-    GGUI::Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Back_Ground_Colour(){
@@ -146,8 +164,8 @@ GGUI::RGB GGUI::Element::Get_Back_Ground_Colour(){
 
 void GGUI::Element::Set_Border_Colour(RGB color){
     Border_Colour = color;
-    Dirty = true;
-    GGUI::Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Colour(){
@@ -156,8 +174,8 @@ GGUI::RGB GGUI::Element::Get_Border_Colour(){
 
 void GGUI::Element::Set_Border_Back_Ground_Color(RGB color){
     Border_Back_Ground_Color = color;
-    Dirty = true;
-    GGUI::Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Back_Ground_Color(){
@@ -166,8 +184,8 @@ GGUI::RGB GGUI::Element::Get_Border_Back_Ground_Color(){
 
 void GGUI::Element::Set_Text_Colour(RGB color){
     Text_Colour = color;
-    Dirty = true;
-    GGUI::Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Text_Colour(){
@@ -176,26 +194,39 @@ GGUI::RGB GGUI::Element::Get_Text_Colour(){
 
 //Returns nested buffer of AST window's
 std::vector<GGUI::UTF> GGUI::Element::Render(){
-    std::vector<GGUI::UTF> Result;
-    Result.resize(this->Width * this->Height);
+    std::vector<GGUI::UTF> Result = Render_Buffer;
+
+    if (Dirty.is(STAIN_TYPE::STRECH)){
+        Result.clear();
+        Result.resize(this->Width * this->Height);
+        Dirty.Clean(STAIN_TYPE::STRECH);
+    }
 
     //Apply the color system to the resized result list
-    Apply_Colors(this, Result);
+    if (Dirty.is(STAIN_TYPE::COLOR))
+        Apply_Colors(this, Result);
 
     //This will add the borders if nessesary and the title of the window.
-    Add_Overhead(this, Result);
+    if (Dirty.is(STAIN_TYPE::EDGE))
+        Add_Overhead(this, Result);
+
 
     //This will add the child windows to the Result buffer
-    for (auto& c : this->Get_Childs()){
-        Nest_Element(this, c, Result, c->Render());
+    if (Dirty.is(STAIN_TYPE::DEEP)){
+        Dirty.Clean(STAIN_TYPE::DEEP);
+        for (auto& c : this->Get_Childs()){
+                Nest_Element(this, c, Result, c->Render());
+        }
     }
+
+    Render_Buffer = Result;
 
     return Result;
 }
 
+//These are just utility functions for internal purposes, dont need to sed Dirty.
 void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
-    if (!w->Dirty)
-        return;
+    Dirty.Clean(STAIN_TYPE::COLOR);
 
     for (auto& utf : Result){
         utf.Pre_Fix = w->Compose_All_Text_RGB_Values();
@@ -203,12 +234,13 @@ void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
         if (utf.Pre_Fix != "")
             utf.Post_Fix = Constants::RESET_TEXT_COLOUR + Constants::RESET_BACK_GROUND_COLOUR;
     }
-
 }
 
 void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result){
     if (!w->Has_Border())
         return;
+
+    Dirty.Clean(STAIN_TYPE::EDGE);
 
     for (int y = 0; y < w->Height; y++){
         for (int x = 0; x < w->Width; x++){
@@ -255,6 +287,7 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
         }
     }
 }
+//End of utility functions.
 
 void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){
     Action* a = new Action(
@@ -292,6 +325,7 @@ GGUI::Element* GGUI::Element::Copy(){
 
     return new_element;
 }
+
 
 
 

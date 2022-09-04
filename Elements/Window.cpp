@@ -4,13 +4,12 @@
 GGUI::Window::Window(std::string title, Flags f){
     Title = title;
     *((Flags*)this) = f;
-
-    GGUI::Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE | STAIN_TYPE::STRECH);
 }
 
 void GGUI::Window::Set_Title(std::string t){
     Title = t;
-    GGUI::Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::EDGE);
 }
 
 std::string GGUI::Window::Get_Title(){
@@ -27,6 +26,8 @@ std::vector<GGUI::UTF> GGUI::Window::Render(){
 void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result){
     if (!w->Has_Border())
         return;
+
+    Dirty.Clean(STAIN_TYPE::EDGE);
 
     for (int y = 0; y < w->Height; y++){
         for (int x = 0; x < w->Width; x++){

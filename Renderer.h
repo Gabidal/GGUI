@@ -227,8 +227,8 @@ namespace GGUI{
 
         GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 
-        Max_Width = info.srWindow.Right - info.srWindow.Left;
-        Max_Height = info.srWindow.Bottom - info.srWindow.Top;
+        Max_Width = info.srWindow.Right - info.srWindow.Left - 1;
+        Max_Height = info.srWindow.Bottom - info.srWindow.Top - 1;
     }
 
     void Update_Frame();
@@ -276,10 +276,7 @@ namespace GGUI{
 
                 Update_Max_Width_And_Height();
 
-                Main.Width = Max_Width;
-                Main.Height = Max_Height;
-
-                Update_Frame();
+                Main.Set_Dimensions(Max_Width, Max_Height);
             }
         }
     }
@@ -393,10 +390,16 @@ namespace GGUI{
     inline void Update_Frame(){
         if (Pause_Render.load())
             return;
+        
+        Pause_Render = true;
 
         Abstract_Frame_Buffer = Main.Render();
 
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
+
+        Pause_Render = false;
+
+        Render_Frame();
     }
     
     inline void Pause_Renderer(){
@@ -436,11 +439,9 @@ namespace GGUI{
 
     inline void Un_Focus_Element(){
         Focused_On->Focused = false;
-        Focused_On->Dirty = true;
+        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR);
 
         Focused_On = nullptr;
-
-        Update_Frame();
     }
 
     inline void Update_Focused_Element(GGUI::Element* new_candidate){
@@ -457,9 +458,7 @@ namespace GGUI{
         
         //set the new candidate to focused.
         Focused_On->Focused = true;
-        Focused_On->Dirty = true;
-
-        Update_Frame();
+        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR);
     }
 
     inline void Event_Handler(){
@@ -493,23 +492,15 @@ namespace GGUI{
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
 
-        Main.Width = Get_Max_Width();
-        Main.Height = Get_Max_Height();
+        Main.Width = Max_Width;
+        Main.Height = Max_Height;
+        Main.Dirty.Dirty(STAIN_TYPE::STRECH | STAIN_TYPE::COLOR);
 
         Abstract_Frame_Buffer = Main.Render();
 
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
 
-        std::thread Renderer([&](){
-            while (true){
-                if (Pause_Render.load())
-                    continue;
-
-                Render_Frame();
-                
-                std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
-            }
-        });
+        Render_Frame();
 
         std::thread Job_Scheduler([&](){
             while (true){
@@ -523,7 +514,7 @@ namespace GGUI{
         });
         
 
-        Renderer.detach();
+        //Renderer.detach();
 
         Job_Scheduler.detach();
 

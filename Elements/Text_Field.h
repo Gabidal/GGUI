@@ -16,7 +16,6 @@ namespace GGUI{
     class Text_Field : public Element{
         std::string Data = "";
         TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT;
-        std::vector<UTF> Previus_Render_Buffer;
         
     public:
 

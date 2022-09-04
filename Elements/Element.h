@@ -6,6 +6,7 @@
 #include <map>
 #include <functional>
 #include <chrono>
+#include <atomic>
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -265,7 +266,48 @@ namespace GGUI{
         
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
-        bool Dirty = false;
+    };
+
+    enum class STAIN_TYPE{
+        CLEAN = 0,        //No change
+        COLOR = 1 << 0,  //BG and other color related changes
+        EDGE = 1 << 1,   //title and border changes.
+        DEEP = 1 << 2,   //children changes. Deep because the childs are connected via AST.
+        STRECH = 1 << 3,  //width and or height changes.
+        TEXT = 1 << 4,   //text changes, this is primarily for text_field
+    };
+ 
+    inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
+        return (unsigned int)a | (unsigned int)b;
+    }
+
+    inline unsigned int operator|(STAIN_TYPE a, unsigned int b){
+        return (unsigned int)a | b;
+    }
+
+    inline unsigned int operator|(unsigned int a, STAIN_TYPE b){
+        return a | (unsigned int)b;
+    }
+
+    class STAIN{
+    public:
+        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH);
+
+        bool is(STAIN_TYPE f){
+            return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
+        }
+
+        void Clean(STAIN_TYPE f){
+            Type = (STAIN_TYPE)((unsigned int)Type & ~(unsigned int)f);
+        }
+
+        void Dirty(STAIN_TYPE f){
+            Type = (STAIN_TYPE)((unsigned int)Type | (unsigned int)f);
+        }
+
+        void Dirty(unsigned int f){
+            Type = (STAIN_TYPE)((unsigned int)Type | f);
+        }
 
     };
 
@@ -274,6 +316,10 @@ namespace GGUI{
         std::vector<Element*> Childs;
 
         bool Focused = false;
+
+        //Internal
+        std::vector<UTF> Render_Buffer;
+        STAIN Dirty;
 
         Element() {}
 
@@ -379,7 +425,8 @@ namespace GGUI{
             return "Element";
         }
 
-        
+        bool Has_Internal_Changes();
+
         virtual Element* Copy();
 
         //Makes suicide.

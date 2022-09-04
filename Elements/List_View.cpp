@@ -43,10 +43,10 @@ void GGUI::List_View::Add_Child(Element* e){
             Last_Child_Y += e->Height;
         }
 
+        Dirty.Dirty(STAIN_TYPE::DEEP);
         e->Parent = this;
         Childs.push_back(e);
         Update_Parent(this);
-        GGUI::Update_Frame();
     }
 }
 

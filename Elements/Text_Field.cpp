@@ -3,14 +3,19 @@
 
 
 std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
-    std::vector<GGUI::UTF> Result;
+    std::vector<GGUI::UTF> Result = Render_Buffer;
 
-    if (Dirty || (Previus_Render_Buffer.size() == 0 && Data.size() > 0)){
+    if (Dirty.is(STAIN_TYPE::STRECH)){
+        Result.clear();
         Result.resize(this->Width * this->Height);
+        Dirty.Clean(STAIN_TYPE::STRECH);
+    }
 
-        //make a smaller buffer for the inner text.
-        std::vector<GGUI::UTF> Text_Buffer;
+    //make a smaller buffer for the inner text.
+    std::vector<GGUI::UTF> Text_Buffer;
 
+    if (Dirty.is(STAIN_TYPE::TEXT)){
+        Dirty.Clean(STAIN_TYPE::TEXT);
         switch (Text_Position)
         {
         case TEXT_LOCATION::CENTER:
@@ -28,18 +33,16 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
         }
 
         Result = Text_Buffer;
+    }
 
+    if (Dirty.is(STAIN_TYPE::COLOR))
         Apply_Colors(this, Result);
 
+    if (Dirty.is(STAIN_TYPE::EDGE))
         Add_Overhead(this, Result);
 
-        Previus_Render_Buffer = Result;
-    }
-    else{
-        Result = Previus_Render_Buffer;
-    }
+    Render_Buffer = Result;
 
-    Dirty = false;
     return Result;
 }
 
@@ -56,7 +59,7 @@ void GGUI::Text_Field::Show_Border(bool state){
     }
     
     Border = state;
-    Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::EDGE);
 }
 
 std::pair<int, int> GGUI::Text_Field::Get_Text_Dimensions(std::string& text){
@@ -96,6 +99,8 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
     
     Width = New_Width;
     Height = New_Height;
+
+    Dirty.Dirty(STAIN_TYPE::STRECH);
 
     return true;
 }
@@ -176,8 +181,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::st
 
 void GGUI::Text_Field::Set_Data(std::string Data){
     this->Data = Data;
-    Dirty = true;
-    Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::TEXT);
 }
 
 std::string GGUI::Text_Field::Get_Data(){
@@ -186,8 +190,7 @@ std::string GGUI::Text_Field::Get_Data(){
 
 void GGUI::Text_Field::Set_Text_Position(TEXT_LOCATION Text_Position){
     this->Text_Position = Text_Position;
-    Dirty = true;
-    Update_Frame();
+    Dirty.Dirty(STAIN_TYPE::TEXT);
 }
 
 GGUI::TEXT_LOCATION GGUI::Text_Field::Get_Text_Position(){
