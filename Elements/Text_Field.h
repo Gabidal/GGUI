@@ -23,6 +23,7 @@ namespace GGUI{
 
         Text_Field(Flags f){
             *((Flags*)this) = f;
+            Dirty.Dirty(STAIN_TYPE::TEXT);
         }
 
         Text_Field(std::string Text){
@@ -31,6 +32,7 @@ namespace GGUI{
             std::pair<int, int> D = Get_Text_Dimensions(Data);
             Width = D.first;
             Height = D.second;
+            Dirty.Dirty(STAIN_TYPE::TEXT);
         }
 
         Text_Field(std::string Text, TEXT_LOCATION Text_Position){
@@ -40,6 +42,7 @@ namespace GGUI{
             std::pair<int, int> D = Get_Text_Dimensions(Text);
             Width = D.first;
             Height = D.second;
+            Dirty.Dirty(STAIN_TYPE::TEXT);
         }
         
         Text_Field(std::string Text, Flags f, TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT){
@@ -47,9 +50,15 @@ namespace GGUI{
             *((Flags*)this) = f;
             this->Text_Position = Text_Position;
             
-            std::pair<int, int> D = Get_Text_Dimensions(Text);
+            std::pair<unsigned int, unsigned int> D = Get_Text_Dimensions(Text);
             Width = D.first;
             Height = D.second;
+
+            if (Border){
+                Width += 2;
+                Height += 2;
+            }
+            Dirty.Dirty(STAIN_TYPE::TEXT);
         }
 
         void Set_Data(std::string Data);

@@ -33,30 +33,30 @@ int main(){
         GGUI::COLOR::BLACK,
     });
 
-    // GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
-    //     {0, 0},
-    //     20, 10,
-    //     true,
-    //     GGUI::COLOR::CYAN,
-    //     GGUI::COLOR::BLACK,
+    GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
+        {0, 0},
+        20, 10,
+        true,
+        GGUI::COLOR::CYAN,
+        GGUI::COLOR::BLACK,
 
-    //     GGUI::COLOR::CYAN,
-    //     GGUI::COLOR::BLACK,
+        GGUI::COLOR::CYAN,
+        GGUI::COLOR::BLACK,
 
-    //     GGUI::COLOR::RED,
-    //     GGUI::COLOR::BLACK,
+        GGUI::COLOR::RED,
+        GGUI::COLOR::BLACK,
 
-    //     GGUI::COLOR::RED,
-    //     GGUI::COLOR::BLACK,
-    // },
-    // GGUI::TEXT_LOCATION::LEFT
-    // );
+        GGUI::COLOR::RED,
+        GGUI::COLOR::BLACK,
+    },
+    GGUI::TEXT_LOCATION::LEFT
+    );
 
     
     Main->Add_Child(l);
 
     l->Add_Child(a);
-    //l->Add_Child(b);
+    l->Add_Child(b);
 
     GGUI::Resume_Renderer();
 
