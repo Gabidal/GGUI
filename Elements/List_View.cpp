@@ -37,14 +37,18 @@ void GGUI::List_View::Add_Child(Element* e){
     else{
         if (Flow_Priority == Grow_Direction::ROW){
             Height = std::min(std::max(Child_Needs_Minimum_Height_Of, Height), max_height);
-            Width = std::min(Child_Needs_Minimum_Width_Of + Width, max_width);
+            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Width){
+                Width = std::min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
+            }
 
             e->Position.X = Last_Child_X;
             Last_Child_X += e->Width;
         }
         else{
             Width = std::min(std::max(Child_Needs_Minimum_Width_Of, Width), max_height);
-            Height = std::min(Child_Needs_Minimum_Height_Of + Height, max_width);
+            if (Last_Child_X + Child_Needs_Minimum_Height_Of > Height){
+                Height = std::min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
+            }
 
             e->Position.Y = Last_Child_Y;
             Last_Child_Y += e->Height;

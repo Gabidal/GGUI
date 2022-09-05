@@ -52,7 +52,6 @@ int main(){
     GGUI::TEXT_LOCATION::LEFT
     );
 
-    
     Main->Add_Child(l);
 
     l->Add_Child(a);
