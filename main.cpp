@@ -16,22 +16,22 @@ int main(){
      }, GGUI::Grow_Direction::ROW, false);
      l->Show_Border(true);
 
-    // GGUI::Window* a = new GGUI::Window("Window A", {
-    //     {0, 0},
-    //     20, 10,
-    //     true,
-    //     GGUI::COLOR::CYAN,
-    //     GGUI::COLOR::BLACK,
+    GGUI::Window* a = new GGUI::Window("Window A", {
+        {0, 0},
+        20, 10,
+        true,
+        GGUI::COLOR::CYAN,
+        GGUI::COLOR::BLACK,
 
-    //     GGUI::COLOR::CYAN,
-    //     GGUI::COLOR::BLACK,
+        GGUI::COLOR::CYAN,
+        GGUI::COLOR::BLACK,
 
-    //     GGUI::COLOR::RED,
-    //     GGUI::COLOR::BLACK,
+        GGUI::COLOR::RED,
+        GGUI::COLOR::BLACK,
 
-    //     GGUI::COLOR::RED,
-    //     GGUI::COLOR::BLACK,
-    // });
+        GGUI::COLOR::RED,
+        GGUI::COLOR::BLACK,
+    });
 
     // GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
     //     {0, 0},
@@ -55,7 +55,7 @@ int main(){
     
     Main->Add_Child(l);
 
-    //l->Add_Child(a);
+    l->Add_Child(a);
     //l->Add_Child(b);
 
     GGUI::Resume_Renderer();

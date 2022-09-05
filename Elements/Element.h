@@ -130,11 +130,11 @@ namespace GGUI{
 
     class Coordinates{
     public:
-        int X = 0;  //Horizontal
-        int Y = 0;  //Vertical
-        int Z = 0;  //priority (the higher the more likely it will be at top).
+        unsigned int X = 0;  //Horizontal
+        unsigned int Y = 0;  //Vertical
+        unsigned int Z = 0;  //priority (the higher the more likely it will be at top).
 
-        Coordinates(int x = 0, int y = 0, int z = 0){
+        Coordinates(unsigned int x = 0, unsigned int y = 0, unsigned int z = 0){
             X = x;
             Y = y;
             Z = z;
@@ -248,8 +248,8 @@ namespace GGUI{
     class Flags{
     public:
         Coordinates Position;
-        int Width = 0;
-        int Height = 0;
+        unsigned int Width = 0;
+        unsigned int Height = 0;
         bool Border = false;
 
         RGB Text_Colour = RGB(255, 255, 255);
@@ -323,7 +323,7 @@ namespace GGUI{
 
         Element() {}
 
-        std::pair<int, int> Get_Fitting_Dimensions(Element* child);
+        std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
 
         virtual void Show_Border(bool b);
 

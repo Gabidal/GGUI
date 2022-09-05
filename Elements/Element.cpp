@@ -20,14 +20,8 @@ bool GGUI::Element::Has_Border(){
 }
 
 void GGUI::Element::Add_Child(Element* Child){
-    Child->Position.X += Has_Border();
-    Child->Position.Y += Has_Border();
-
     if (Child->Position.X + Child->Width >= this->Width || Child->Position.Y + Child->Height >= this->Height){
         if (Child->Resize_To(this) == false){
-            //reset the child coordinates.
-            Child->Position.X -= Has_Border();
-            Child->Position.Y -= Has_Border();
 
             GGUI::Report(
                 "Window exeeded bounds\n "
@@ -125,7 +119,7 @@ GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
     return Result;
 }
 
-std::pair<int, int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
+std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
     GGUI::Element tmp = *child;
     tmp.Width = 0;
     tmp.Height = 0;

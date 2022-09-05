@@ -528,11 +528,11 @@ namespace GGUI{
 
         bool Has_Border = true;
 
-        int w = txt->Width + Has_Border * 2;
-        int h = txt->Height + Has_Border * 2;
+        unsigned int w = txt->Width + Has_Border * 2;
+        unsigned int h = txt->Height + Has_Border * 2;
 
-        int W_Center = (Max_Width - w) / 2;
-        int H_Center = (Max_Height - h) / 2;
+        unsigned int W_Center = (Max_Width - w) / 2;
+        unsigned int H_Center = (Max_Height - h) / 2;
 
         GGUI::Window* tmp = new GGUI::Window("ERROR!", {
             {W_Center, H_Center, INT32_MAX}, w, h, Has_Border, 

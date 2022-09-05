@@ -8,11 +8,11 @@
 
 void GGUI::List_View::Add_Child(Element* e){
 
-    int max_width = 0;
-    int max_height = 0;
+    unsigned int max_width = 0;
+    unsigned int max_height = 0;
 
     if (Parent){
-        std::pair<int, int> Max_Dimensions = Parent->Get_Fitting_Dimensions(this);
+        std::pair<unsigned int, unsigned int> Max_Dimensions = Parent->Get_Fitting_Dimensions(this);
 
         max_width = Max_Dimensions.first;
         max_height = Max_Dimensions.second;
@@ -22,6 +22,13 @@ void GGUI::List_View::Add_Child(Element* e){
         max_height = Max_Height;
     }
 
+    unsigned int Max_Inner_Space_Height = Height - Has_Border() * 2;
+    unsigned int Max_Inner_Space_Width = Width - Has_Border() * 2;
+
+    unsigned int Child_Needs_Minimum_Height_Of = e->Height + Has_Border() * 2;
+    unsigned int Child_Needs_Minimum_Width_Of = e->Width + Has_Border() * 2;
+
+
     if (Wrap_Overflow){
         Report(
             "Overflow wrapping is not supported!"
@@ -29,15 +36,15 @@ void GGUI::List_View::Add_Child(Element* e){
     }
     else{
         if (Flow_Priority == Grow_Direction::ROW){
-            Height = std::min(std::max(e->Height, Height), max_height);
-            Width = std::min(e->Width + Width, max_width);
+            Height = std::min(std::max(Child_Needs_Minimum_Height_Of, Height), max_height);
+            Width = std::min(Child_Needs_Minimum_Width_Of + Width, max_width);
 
             e->Position.X = Last_Child_X;
             Last_Child_X += e->Width;
         }
         else{
-            Width = std::min(std::max(e->Width, Width), max_height);
-            Height = std::min(e->Height + Height, max_width);
+            Width = std::min(std::max(Child_Needs_Minimum_Width_Of, Width), max_height);
+            Height = std::min(Child_Needs_Minimum_Height_Of + Height, max_width);
 
             e->Position.Y = Last_Child_Y;
             Last_Child_Y += e->Height;
