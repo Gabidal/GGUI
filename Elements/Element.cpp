@@ -2,6 +2,11 @@
 
 #include "../Renderer.h"
 
+#undef min
+#undef max
+
+#include <algorithm>
+
 void GGUI::Element::Show_Border(bool b){
     if (b != Border){
         Dirty.Dirty(STAIN_TYPE::EDGE);
@@ -278,14 +283,32 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
     
-    for (int Child_Y = 0; Child_Y < Child->Height; Child_Y++){
-        for (int Child_X = 0; Child_X < Child->Width; Child_X++){
-            if (Child->Position.Y + Child_Y >= Parent->Height || Child->Position.X + Child_X >= Parent->Width){
-                break;
-            }
-            Parent_Buffer[(Child->Position.Y + Child_Y) * Parent->Width + Child->Position.X + Child_X] = Child_Buffer[Child_Y * Child->Width + Child_X];
+    unsigned int Max_Allowed_Height = Parent->Height - Parent->Has_Border();    //remove bottom borders from calculation
+    unsigned int Max_Allowed_Width = Parent->Width - Parent->Has_Border();     //remove right borders from calculation
+
+    unsigned int Min_Allowed_Height = 0 + Parent->Has_Border();                        //add top borders from calculation
+    unsigned int Min_Allowed_Width = 0 + Parent->Has_Border();                         //add left borders from calculation
+
+    unsigned int Child_Start_Y = Min_Allowed_Height + Child->Position.Y;
+    unsigned int Child_Start_X = Min_Allowed_Width + Child->Position.X;
+
+    unsigned int Child_End_Y = std::min(Child_Start_Y + Child->Height, Max_Allowed_Height);
+    unsigned int Child_End_X = std::min(Child_Start_X + Child->Width, Max_Allowed_Width);
+
+    for (int y = Child_Start_Y; y < Child_End_Y; y++){
+        for (int x = Child_Start_X; x < Child_End_X; x++){
+            Parent_Buffer[y * Parent->Width + x] = Child_Buffer[(y - Child_Start_Y) * Child->Width + (x - Child_Start_X)];
         }
     }
+
+    // for (int Child_Y = 0; Child_Y < Child->Height; Child_Y++){
+    //     for (int Child_X = 0; Child_X < Child->Width; Child_X++){
+    //         if (Child->Position.Y + Child_Y >= Parent->Height || Child->Position.X + Child_X >= Parent->Width){
+    //             break;
+    //         }
+    //         Parent_Buffer[(Child->Position.Y + Child_Y) * Parent->Width + Child->Position.X + Child_X] = Child_Buffer[Child_Y * Child->Width + Child_X];
+    //     }
+    // }
 }
 //End of utility functions.
 
