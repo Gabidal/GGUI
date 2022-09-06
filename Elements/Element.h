@@ -266,6 +266,7 @@ namespace GGUI{
         
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
+        bool Show = true;
     };
 
     enum class STAIN_TYPE{
@@ -309,6 +310,10 @@ namespace GGUI{
             Type = (STAIN_TYPE)((unsigned int)Type | f);
         }
 
+        void Stain_All(){
+            Dirty((STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH));
+        }
+
     };
 
     class Element : public Flags{
@@ -329,11 +334,19 @@ namespace GGUI{
 
         bool Has_Border();
 
+        void Display(bool f);
+
+        bool Is_Displayed(){
+            return Show;
+        }
+
         virtual void Add_Child(Element* Child);
+
+        bool Children_Changed();
 
         std::vector<Element*>& Get_Childs();
 
-        bool Remove(Element* handle);
+        virtual bool Remove(Element* handle);
 
         bool Remove(int index);
 
@@ -367,11 +380,7 @@ namespace GGUI{
 
         virtual std::vector<UTF> Render();
 
-        virtual void Update_Parent(Element* deleted){
-            //normally elements dont do anything
-            if (Parent)
-                Parent->Update_Parent(deleted);
-        }
+        virtual void Update_Parent(Element* New_Element);
 
         virtual void Add_Overhead(Element* w, std::vector<UTF>& Result);
 
@@ -430,12 +439,7 @@ namespace GGUI{
         virtual Element* Copy();
 
         //Makes suicide.
-        void Remove(){
-            if (Parent){
-                Update_Parent(this);
-                Parent->Remove(this);
-            }
-        }
+        void Remove();
 
         //Event handlers
         void On_Click(std::function<void(GGUI::Event* e)> action);

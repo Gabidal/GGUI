@@ -4,7 +4,8 @@
 GGUI::Window::Window(std::string title, Flags f){
     Title = title;
     *((Flags*)this) = f;
-    Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE | STAIN_TYPE::STRECH);
+    // Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE | STAIN_TYPE::STRECH);
+    Dirty.Stain_All();
 }
 
 void GGUI::Window::Set_Title(std::string t){
@@ -48,7 +49,7 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
                 Result[y * w->Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
-            else if (y == 0 && x < ((GGUI::Window*)w)->Get_Title().size()){
+            else if (y == 0 && x <= ((GGUI::Window*)w)->Get_Title().size()){
                 Result[y * w->Width + x] = GGUI::UTF(((GGUI::Window*)w)->Get_Title()[x - 1], w->Compose_All_Border_RGB_Values());
             }
             //The roof border

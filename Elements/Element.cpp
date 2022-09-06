@@ -48,32 +48,60 @@ bool GGUI::Element::Remove(Element* handle){
     for (int i = 0; i < Childs.size(); i++){
         if (Childs[i] == handle){
             Childs.erase(Childs.begin() + i);
-            Dirty.Dirty(STAIN_TYPE::DEEP);
-            Update_Frame();
+            Update_Parent(handle);
             return true;
         }
     }
     return false;
 }
 
+void GGUI::Element::Update_Parent(Element* New_Element){
+    //normally elements dont do anything
+    if (!New_Element->Is_Displayed()){
+        Dirty.Stain_All();
+    }
+
+    if (Parent){
+        Parent->Update_Parent(New_Element);
+    }
+    else{
+        Update_Frame(); //the most top (Main) will not flush all the updates to render.
+    }
+}
+
+void GGUI::Element::Display(bool f){
+    Show = f;
+    Update_Frame();
+}
+
 bool GGUI::Element::Remove(int index){
     if (index > Childs.size() - 1){
         return false;
     }
+    Element* tmp = Childs[index];
     Childs.erase(Childs.begin() + index);
-    Dirty.Dirty(STAIN_TYPE::DEEP);
-    Update_Frame();
+    Update_Parent(tmp);
     return true;
+}
+
+void GGUI::Element::Remove(){
+    if (Parent){
+        //tell the parent what is about to happen.
+        //you need to update the parent before removing the child, 
+        //otherwise the code cannot erase it when it is not found!
+        Parent->Remove(this);
+    }
 }
 
 void GGUI::Element::Set_Dimensions(int width, int height){
     if (width != Width || height != Height){    
         Width = width;
         Height = height;
-        Dirty.Dirty(STAIN_TYPE::STRECH);
-        Dirty.Dirty(STAIN_TYPE::COLOR);
-        Dirty.Dirty(STAIN_TYPE::EDGE);
-        Dirty.Dirty(STAIN_TYPE::DEEP);
+        // Dirty.Dirty(STAIN_TYPE::STRECH);
+        // Dirty.Dirty(STAIN_TYPE::COLOR);
+        // Dirty.Dirty(STAIN_TYPE::EDGE);
+        // Dirty.Dirty(STAIN_TYPE::DEEP);
+        Dirty.Stain_All();
         Update_Frame();
     }
 }
@@ -209,6 +237,10 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     if (Dirty.is(STAIN_TYPE::EDGE))
         Add_Overhead(this, Result);
 
+    //if inned children have changed whitout this changing, then this will trigger.
+    if (Children_Changed()){
+        Dirty.Dirty(STAIN_TYPE::DEEP);
+    }
 
     //This will add the child windows to the Result buffer
     if (Dirty.is(STAIN_TYPE::DEEP)){
@@ -343,7 +375,17 @@ GGUI::Element* GGUI::Element::Copy(){
     return new_element;
 }
 
+bool GGUI::Element::Children_Changed(){
+    if (Dirty.Type != STAIN_TYPE::CLEAN)
+        return true;
 
+    for (auto& e : Childs){
+        if (e->Children_Changed())
+            return true;
+    }
+
+    return false;
+}
 
 
 

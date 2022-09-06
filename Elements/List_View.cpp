@@ -89,68 +89,90 @@ std::string GGUI::List_View::Get_Name(){
     return "List_View";
 }
 
-void GGUI::List_View::Update_Parent(Element* deleted){
-    if (deleted == this){
-        if (Parent)
-            Parent->Update_Parent(this);
-        return;
+void GGUI::List_View::Update_Parent(Element* New_Element){
+    if (!New_Element->Is_Displayed()){
+        Dirty.Stain_All();
     }
 
-    if (Flow_Priority == Grow_Direction::ROW){    
-        if (deleted->Height == Height){
-            Height = 0;
-        }
-        //First find the nodes that are after the deleted
-        int i = 0;
-        for (; i < Childs.size(); i++){
-            if (Childs[i] == deleted){
-                break;
-            }
-            //check the first half for new max width
-            else {
-                if (Childs[i]->Height > Height){
-                    Height = Childs[i]->Height;
-                }
-            }
-        }
-        for (int j = i + 1; j < Childs.size(); j++){
+    if (Parent)
+        Parent->Update_Parent(New_Element);
+}
 
-            Childs[j]->Position.X -= deleted->Width;
+bool GGUI::List_View::Remove(Element* remove){
 
-            //check on second half for max width
-            if (Childs[j]->Height > Height){
-                Height = Childs[j]->Height;
-            }
+    unsigned int removable_index = 0;
+    
+    unsigned int max_width = 0;
+    unsigned int max_height = 0;
 
-        }
+    if (Parent){
+        std::pair<unsigned int, unsigned int> Max_Dimensions = Parent->Get_Fitting_Dimensions(this);
+
+        max_width = Max_Dimensions.first;
+        max_height = Max_Dimensions.second;
     }
     else{
-        if (deleted->Width == Width){
-            Width = 0;
+        max_width = Max_Width;
+        max_height = Max_Height;
+    }
+
+    //first find the removable elements index.
+    for (;removable_index < Childs.size() && Childs[removable_index] != remove; removable_index++);
+
+    Width = 0;
+    Height = 0;
+
+    //now for every element past this index position needs to be altered so that this removed element didn't ever exist.
+    if (Flow_Priority == Grow_Direction::ROW){
+        Last_Child_X = 0;
+
+        for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
+            Childs[i]->Position.X -= remove->Width;
         }
-        //First find the nodes that are after the deleted
-        int i = 0;
-        for (; i < Childs.size(); i++){
-            if (Childs[i] == deleted){
-                break;
-            }
-            //check the first half for new max width
-            else {
-                if (Childs[i]->Width > Width){
-                    Width = Childs[i]->Width;
-                }
-            }
-        }
-        for (int j = i + 1; j < Childs.size(); j++){
 
-            Childs[j]->Position.Y -= deleted->Height;
+        for (auto c : Childs){
+            if (c == remove)
+                continue;
+            
+            unsigned int Child_Needs_Minimum_Height_Of = c->Height + Has_Border() * 2;
+            unsigned int Child_Needs_Minimum_Width_Of = c->Width + Has_Border() * 2;
 
-            //check on second half for max width
-            if (Childs[j]->Width > Width){
-                Width = Childs[j]->Width;
+            Height += std::min(std::max(Child_Needs_Minimum_Height_Of, Height), max_height);
+            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Width){
+                Width += std::min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
             }
 
+            Last_Child_X += c->Width;
         }
     }
+    else{        
+        Last_Child_Y = 0;
+
+        for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
+            Childs[i]->Position.Y -= remove->Height;
+        }
+
+        for (auto c : Childs){
+            if (c == remove)
+                continue;
+
+            unsigned int Child_Needs_Minimum_Height_Of = c->Height + Has_Border() * 2;
+            unsigned int Child_Needs_Minimum_Width_Of = c->Width + Has_Border() * 2;
+
+            Width += std::min(std::max(Child_Needs_Minimum_Width_Of, Width), max_height);
+            if (Last_Child_Y + Child_Needs_Minimum_Height_Of > Height){
+                Height += std::min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
+            }
+
+            Last_Child_Y += c->Height;
+        }
+    }
+
+    remove->Display(false);
+
+    Element::Remove(remove);
+
+    return true;
 }
+
 

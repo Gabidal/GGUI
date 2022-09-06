@@ -93,7 +93,7 @@ namespace GGUI{
         Element* Upper_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Upper_Element && Upper_Element != (Element*)&Main){
-            Mouse = tmp_c;
+            Mouse = Upper_Element->Position;
         }
 
         return true;
@@ -118,7 +118,7 @@ namespace GGUI{
         Element* Lower_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Lower_Element && Lower_Element != (Element*)&Main){
-            Mouse = tmp_c;
+            Mouse = Lower_Element->Position;
         }
 
         return true;
@@ -143,7 +143,7 @@ namespace GGUI{
         Element* Left_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Left_Element && Left_Element != (Element*)&Main){
-            Mouse = tmp_c;
+            Mouse = Left_Element->Position;
         }
 
         return true;
@@ -168,7 +168,7 @@ namespace GGUI{
         Element* Right_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Right_Element && Right_Element != (Element*)&Main){
-            Mouse = tmp_c;
+            Mouse = Right_Element->Position;
         }
 
         return true;
@@ -269,6 +269,9 @@ namespace GGUI{
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                         //shift if the actuator for the mouse movement swithcer
                         Mouse_Movement_Method = !Mouse_Movement_Method;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
+                        int Break_Point_Here = 1;
                     }
                 }
             }
@@ -390,7 +393,6 @@ namespace GGUI{
     inline void Update_Frame(){
         if (Pause_Render.load())
             return;
-        
         Pause_Render = true;
 
         Abstract_Frame_Buffer = Main.Render();
@@ -398,7 +400,6 @@ namespace GGUI{
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
 
         Pause_Render = false;
-
         Render_Frame();
     }
     
@@ -438,14 +439,13 @@ namespace GGUI{
     }
 
     inline void Un_Focus_Element(){
+        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         Focused_On->Focused = false;
-        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR);
-
         Focused_On = nullptr;
     }
 
     inline void Update_Focused_Element(GGUI::Element* new_candidate){
-        if (Focused_On == new_candidate)
+        if (Focused_On == new_candidate || new_candidate == &Main)
             return;
 
         //put the previus focused candidate into not-focus
@@ -458,16 +458,21 @@ namespace GGUI{
         
         //set the new candidate to focused.
         Focused_On->Focused = true;
-        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR);
+        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        Update_Frame();
     }
 
     inline void Event_Handler(){
         if (Focused_On && !Collides(Focused_On, GGUI::Mouse)){
             Un_Focus_Element();
+            Update_Frame();
         }
 
         Query_Inputs();
         for (auto& e : Event_Handlers){
+            if (!e->Host->Is_Displayed())
+                continue;
+
             //update the focused
             if (Collides(e->Host, GGUI::Mouse)){
                 Update_Focused_Element(e->Host);
@@ -476,6 +481,8 @@ namespace GGUI{
             for (int i = 0; i < Inputs.size(); i++){
                 if (Is(e->Criteria, Inputs[i]->Criteria)){
                     e->Job(Inputs[i]);
+                    //dont let anyone else react to this event.
+                    Inputs.erase(Inputs.begin() + i);
                 }
             }
         }
@@ -484,6 +491,11 @@ namespace GGUI{
 
     //Inits GGUI and returns the main window.
     inline GGUI::Window* Init_Renderer(){
+        //Save the state before the init
+        bool Default_State = Pause_Render;
+        //pause the renderer
+        Pause_Render = true;
+
         Update_Max_Width_And_Height();
         GGUI::Constants::Init();
         Init_Platform_Stuff();
@@ -500,8 +512,6 @@ namespace GGUI{
 
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
 
-        Render_Frame();
-
         std::thread Job_Scheduler([&](){
             while (true){
                 if (Pause_Render.load())
@@ -512,11 +522,10 @@ namespace GGUI{
                 std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
             }
         });
-        
-
-        //Renderer.detach();
 
         Job_Scheduler.detach();
+
+        Pause_Render = Default_State;
 
         return &Main;
     }

@@ -4,17 +4,17 @@ using namespace std;
 
 int main(){
     GGUI::Pause_Renderer();
-    
+
     GGUI::Window* Main = GGUI::Init_Renderer();
     Main->Set_Back_Ground_Colour({230, 50, 100});
     Main->Set_Title("GGUI");
     Main->Show_Border(true);
 
-     GGUI::List_View* l = new GGUI::List_View({
-        {0, 0},
-        20, 10
-     }, GGUI::Grow_Direction::ROW, false);
-     l->Show_Border(true);
+    GGUI::List_View* l = new GGUI::List_View({
+    {0, 0},
+    20, 10
+    }, GGUI::Grow_Direction::ROW, false);
+    l->Show_Border(true);
 
     GGUI::Window* a = new GGUI::Window("Window A", {
         {0, 0},
@@ -31,6 +31,10 @@ int main(){
 
         GGUI::COLOR::RED,
         GGUI::COLOR::BLACK,
+    });
+
+    a->On_Click([=](GGUI::Event* e){
+        a->Remove();
     });
 
     GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
@@ -51,6 +55,10 @@ int main(){
     },
     GGUI::TEXT_LOCATION::LEFT
     );
+
+    b->On_Click([=](GGUI::Event* e){
+        b->Remove();
+    });
 
     Main->Add_Child(l);
 
