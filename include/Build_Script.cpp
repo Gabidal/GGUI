@@ -11,8 +11,7 @@ int main(){
 #endif
 
     string Command = string("g++ -c ./GGUI_Body.cpp -c -O3 -fpermissive") + Double_Command_Mark + 
-    string("ar rcs ./libGGUI.lib ./GGUI_Body.o");
+    string("ar rcs GGUI.lib ./GGUI_Body.o");
 
     system(Command.c_str());
-
 }
