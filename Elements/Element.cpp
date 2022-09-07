@@ -47,6 +47,11 @@ std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){
 bool GGUI::Element::Remove(Element* handle){
     for (int i = 0; i < Childs.size(); i++){
         if (Childs[i] == handle){
+            //If the mouse if focused on this about to be deleted element, change mouse position into it's parent Position.
+            if (Focused_On == Childs[i]){
+                Mouse = Childs[i]->Parent->Position;
+            }
+
             Childs.erase(Childs.begin() + i);
             Update_Parent(handle);
             return true;
@@ -79,6 +84,12 @@ bool GGUI::Element::Remove(int index){
         return false;
     }
     Element* tmp = Childs[index];
+
+    //If the mouse if focused on this about to be deleted element, change mouse position into it's parent Position.
+    if (Focused_On == tmp){
+        Mouse = tmp->Parent->Position;
+    }
+
     Childs.erase(Childs.begin() + index);
     Update_Parent(tmp);
     return true;
@@ -90,6 +101,11 @@ void GGUI::Element::Remove(){
         //you need to update the parent before removing the child, 
         //otherwise the code cannot erase it when it is not found!
         Parent->Remove(this);
+    }
+    else{
+        Report(
+            std::string("Cannot remove ") + Get_Name() + std::string(", with no parent\n")
+        );
     }
 }
 
@@ -344,7 +360,12 @@ void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){
         [=](GGUI::Event* e){
             if (Collides(this, Mouse)){
                 action(e);
+
+                //action succesfully executed.
+                return true;
             }
+            //action failed.
+            return false;
         },
         this
     );

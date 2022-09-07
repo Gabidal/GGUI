@@ -218,15 +218,15 @@ namespace GGUI{
     public:
         class Element* Host;
 
-        std::function<void(GGUI::Event* e)> Job;
+        std::function<bool(GGUI::Event* e)> Job;
     
         Action(){}
-        Action(unsigned long long criteria, std::function<void(GGUI::Event* e)> job){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job){
             Criteria = criteria;
             Job = job;
         }
 
-        Action(unsigned long long criteria, std::function<void(GGUI::Event* e)> job, class Element* host){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job, class Element* host){
             Criteria = criteria;
             Job = job;
             Host = host;
@@ -238,7 +238,7 @@ namespace GGUI{
         size_t Start_Time = 0;
         size_t End_Time = 0;
 
-        Memory(size_t end, std::function<void(GGUI::Event* e)>job){
+        Memory(size_t end, std::function<bool(GGUI::Event* e)>job){
             Start_Time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             End_Time = end;
             Job = job;

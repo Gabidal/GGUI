@@ -270,9 +270,6 @@ namespace GGUI{
                         //shift if the actuator for the mouse movement swithcer
                         Mouse_Movement_Method = !Mouse_Movement_Method;
                     }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
-                        int Break_Point_Here = 1;
-                    }
                 }
             }
             else if (Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
@@ -480,9 +477,11 @@ namespace GGUI{
             
             for (int i = 0; i < Inputs.size(); i++){
                 if (Is(e->Criteria, Inputs[i]->Criteria)){
-                    e->Job(Inputs[i]);
-                    //dont let anyone else react to this event.
-                    Inputs.erase(Inputs.begin() + i);
+                    //check if this job could be runned succesfully.
+                    if (e->Job(Inputs[i])){
+                        //dont let anyone else react to this event.
+                        Inputs.erase(Inputs.begin() + i);
+                    }
                 }
             }
         }
@@ -573,6 +572,9 @@ namespace GGUI{
                 Main.Get_Childs().erase(Main.Get_Childs().begin() + i);
 
                 delete Right_tmp;
+
+                //job succesfully done
+                return true;
             }
         ));
 
