@@ -1,0 +1,3 @@
+include/a.exe
+include/GGUI_Body.o
+include/libGGUI.lib
