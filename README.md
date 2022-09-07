@@ -1,17 +1,39 @@
-# GGUI - GG-UI
+# GGUI
 
-## GGUI is a lightweight Terminal user interface
-## GGUI tries to give the user single .lib and .h file to use for their projects.
+## Lightweight Terminal User Interface
+
+<img src="Banner.png"/>
+
+## Hello World example
+```C++
+#include "GGUI.h"
+
+using namespace GGUI;
+
+int main() 
+{
+    Window* Main = Init_Renderer();
+
+    Main->Set_Title("Your App UI");
+
+    Text_Field* Txt = new Text_Field("Hello World!");
+
+    Main->Add_Child(Txt);
+
+    // Your code here...
+}
+```
+### For more examples see Examples folder. 
 
 # Features
-- ## ANSI escape sequense support.
+- ## ANSI escape sequence support.
 - ## Multiplatform support.
 - ## Only one .lib and .h file
 - ## All elements have
-    - BG colours
-    - FG colours
+    - Background colours
+    - Foreground colours
     - Border's and border colors
-    - On focus BG & FG colors
+    - On focus Background & Foreground colors
     - Nesting
     - Event handling e.g On_Click()
 - ## Window features
@@ -26,13 +48,17 @@
     - Free move with arrow keys.
     - Element selection navigation toggle with shift key.
 
-# For Dev build
-### Use vscode .tasks & launch.json files.
+# Developing this project further
+### Use vscode "tasks.json" and "launch.json" files.
 
-# For Use Build
-### cd include
-### g++ .\Build_GGUI_To_LIB.cpp -O3
-### ./a.exe
+# Building this project
+```bash
+cd include
+g++ ./Build_Script.cpp -O3
+./a
+```
 
-# Integrate GGUI to your project
-- ### g++ some_other_project_main.cpp libGGUI.lib
+# Add GGUI to your project
+```
+g++ ... GGUI.lib
+```
