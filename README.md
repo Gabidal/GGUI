@@ -26,25 +26,25 @@ int main()
 ### For more examples see Examples folder. 
 
 # Features
-- ## ANSI escape sequence support.
-- ## Multiplatform support.
-- ## Only one .lib and .h file
-- ## All elements have
+- **ANSI escape sequence support.**
+- **Multiplatform support.**
+- **Only one .lib and .h file**
+- **All elements have**
     - Background colours
     - Foreground colours
     - Border's and border colors
     - On focus Background & Foreground colors
     - Nesting
     - Event handling e.g On_Click()
-- ## Window features
+- **Window features**
     - Title
-- ## Text_Field features
+- **Text_Field features**
     - Inner Text
     - Text alignment (center, left, right)
-- ## List_View features
+- **List_View features**
     - Flow direction
 
-- ## Mouse movement features
+- **Mouse movement features**
     - Free move with arrow keys.
     - Element selection navigation toggle with shift key.
 
