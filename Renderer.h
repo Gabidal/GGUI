@@ -15,27 +15,30 @@
 #include "Elements/List_View.h"
 
 namespace GGUI{
-    extern std::vector<GGUI::UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
+    extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
 
-    extern GGUI::Window Main;                                   //Main window
+    extern Window Main;                                   //Main window
 
     extern int Max_Width;
     extern int Max_Height;
 
-    extern std::vector<GGUI::Memory> Remember;
+    extern std::vector<Memory> Remember;
 
-    extern std::vector<GGUI::Action*> Event_Handlers;
-    extern std::vector<GGUI::Input*> Inputs;
+    extern std::vector<Action*> Event_Handlers;
+    extern std::vector<Input*> Inputs;
 
-    extern GGUI::Element* Focused_On;
+    extern Element* Focused_On;
 
     extern Coordinates Mouse;    
     //move 1 by 1, or element by element.
     extern bool Mouse_Movement_Method;
 
-    extern const time_t UPDATE_SPEED_MIILISECONDS;
+    extern time_t UPDATE_SPEED_MIILISECONDS;
+    extern int Inputs_Per_Second;
+    extern int Inputs_Per_Query;
+
 
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 

@@ -12,7 +12,7 @@ int main(){
 
     GGUI::List_View* l = new GGUI::List_View({
     {0, 0},
-    20, 10
+    50, 10
     }, GGUI::Grow_Direction::ROW, false);
     l->Show_Border(true);
 
@@ -55,6 +55,9 @@ int main(){
     },
     GGUI::TEXT_LOCATION::LEFT
     );
+
+    b->Enable_Text_Input();
+    b->Enable_Dynamic_Size();
 
     b->On_Click([=](GGUI::Event* e){
         b->Remove();

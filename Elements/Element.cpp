@@ -70,6 +70,7 @@ void GGUI::Element::Update_Parent(Element* New_Element){
         Parent->Update_Parent(New_Element);
     }
     else{
+        Dirty.Stain_All();
         Update_Frame(); //the most top (Main) will not flush all the updates to render.
     }
 }

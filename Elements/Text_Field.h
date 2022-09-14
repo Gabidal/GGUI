@@ -16,6 +16,10 @@ namespace GGUI{
     class Text_Field : public Element{
         std::string Data = "";
         TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT;
+        bool Allow_Text_Input = false;
+        //if text can be inputted even when the text is outof bounds.
+        bool Allow_Input_Overflow = false;
+        bool Allow_Dynamic_Size = false;
         
     public:
 
@@ -71,7 +75,7 @@ namespace GGUI{
         
         void Show_Border(bool state) override;
         
-        static std::pair<int, int> Get_Text_Dimensions(std::string& text); 
+        static std::pair<unsigned int, unsigned int> Get_Text_Dimensions(std::string& text); 
 
         std::vector<UTF> Render() override;
         
@@ -80,6 +84,24 @@ namespace GGUI{
         std::string Get_Name() override;
 
         Element* Copy() override;
+
+        //async function, 
+        void Input(std::function<void(char)> Then);
+
+        void Enable_Text_Input();
+
+        void Disable_Text_Input();
+
+        //Non visual updates dont need to update frame
+        void Enable_Input_Overflow();
+
+        //Non visual updates dont need to update frame
+        void Disable_Input_Overflow();
+
+        void Enable_Dynamic_Size();
+
+        void Disable_Dynamic_Size();
+
 
         static std::vector<UTF> Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
         static std::vector<UTF> Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);

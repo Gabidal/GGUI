@@ -60,9 +60,11 @@ void GGUI::Text_Field::Show_Border(bool state){
     
     Border = state;
     Dirty.Dirty(STAIN_TYPE::EDGE);
+
+    Update_Frame();
 }
 
-std::pair<int, int> GGUI::Text_Field::Get_Text_Dimensions(std::string& text){
+std::pair<unsigned int, unsigned int> GGUI::Text_Field::Get_Text_Dimensions(std::string& text){
     //calculate the most longest row of text and set it as the width
     int longest_row = 0;
     int Current_Row = 0;
@@ -101,6 +103,7 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
     Height = New_Height;
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
+    Update_Frame();
 
     return true;
 }
@@ -182,6 +185,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::st
 void GGUI::Text_Field::Set_Data(std::string Data){
     this->Data = Data;
     Dirty.Dirty(STAIN_TYPE::TEXT);
+    Update_Frame();
 }
 
 std::string GGUI::Text_Field::Get_Data(){
@@ -191,6 +195,7 @@ std::string GGUI::Text_Field::Get_Data(){
 void GGUI::Text_Field::Set_Text_Position(TEXT_LOCATION Text_Position){
     this->Text_Position = Text_Position;
     Dirty.Dirty(STAIN_TYPE::TEXT);
+    Update_Frame();
 }
 
 GGUI::TEXT_LOCATION GGUI::Text_Field::Get_Text_Position(){
@@ -225,6 +230,121 @@ GGUI::Element* GGUI::Text_Field::Copy(){
     return new_element;
 }
 
+void GGUI::Text_Field::Input(std::function<void(char)> Then){
+    Action* a = new Action(
+        Constants::KEY_PRESS,
+        [=](GGUI::Event* e){
+            if (Focused && Allow_Text_Input){
+                //We know the event was gifted as Input*
+                GGUI::Input* input = (GGUI::Input*)e;
+
+                //First 
+                Then(input->Data);
+                Update_Frame();
+
+                return true;
+            }
+            //action failed.
+            return false;
+        },
+        this
+    );
+    GGUI::Event_Handlers.push_back(a);
+}
+
+void GGUI::Text_Field::Enable_Text_Input(){
+
+    Allow_Text_Input = true;
+
+    //Check if an event handler of this caliber was launched already on previus text input enabling.
+    for (auto& e : GGUI::Event_Handlers){
+        if (e->Host == this && e->Criteria == Constants::KEY_PRESS){
+            return;
+        }
+    }
+
+    //If there was no event handlers for this job type, then make new ones.
+    Input([=](char input){
+        std::pair<unsigned int, unsigned int> Dimensions = Get_Text_Dimensions(Data);
+
+        if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
+
+            std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
+            if ((Width + 1 > max_dimensions.first || Height + 1 > max_dimensions.second) && Allow_Input_Overflow){
+                
+                Data.push_back(input);
+                Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
+                Update_Frame();
+
+            }
+            else if (Allow_Dynamic_Size){
+
+                Width++;
+                Height++;
+
+                Data.push_back(input);
+                Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::STRECH | STAIN_TYPE::EDGE | STAIN_TYPE::COLOR);
+                Update_Frame();
+
+            }
+            else{
+                Report(
+                    "The text field is too small to fit the text. Either increase the size of the text field or allow dynamic size."
+                );
+            }
+        }
+        else{
+            Data.push_back(input);
+            Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
+            Update_Frame();
+        }
+    });
+
+    Action* back_space = new Action(
+        Constants::BACKSPACE,
+        [=](GGUI::Event* e){
+            if (Focused && Allow_Text_Input){
+                
+                if (Data.size() > 0){
+                    Data.pop_back();
+                    Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
+                    Update_Frame();
+
+                }
+
+                return true;
+            }
+            //action failed.
+            return false;
+        },
+        this
+    );
+    GGUI::Event_Handlers.push_back(back_space);
 
 
+}
 
+void GGUI::Text_Field::Disable_Text_Input(){
+    Allow_Text_Input = false;
+    Update_Frame();
+}
+
+void GGUI::Text_Field::Enable_Input_Overflow(){
+
+    Allow_Input_Overflow = true;
+}
+
+void GGUI::Text_Field::Disable_Input_Overflow(){
+
+    Allow_Input_Overflow = false;
+}
+
+void GGUI::Text_Field::Enable_Dynamic_Size(){
+
+    Allow_Dynamic_Size = true;
+}
+
+void GGUI::Text_Field::Disable_Dynamic_Size(){
+
+    Allow_Dynamic_Size = false;
+}

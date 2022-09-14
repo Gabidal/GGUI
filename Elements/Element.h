@@ -43,16 +43,17 @@ namespace GGUI{
         inline unsigned long long SPACE = 1 << 9;
         inline unsigned long long SHIFT = 1 << 10;
 
-        inline unsigned long long KEY_PRESS = 1 << 9;
+        //key_Press includes [a-z, A-Z] & [0-9]
+        inline unsigned long long KEY_PRESS = 1 << 11;
 
         inline void Init();
     }
 
     namespace TIME{
-        inline const  unsigned int MILLISECOND = 1; 
-        inline const  unsigned int SECOND = MILLISECOND * 1000;
-        inline const  unsigned int MINUTE = SECOND * 60;
-        inline const  unsigned int HOUR = MINUTE * 60;
+        inline constexpr static  unsigned int MILLISECOND = 1; 
+        inline constexpr static  unsigned int SECOND = MILLISECOND * 1000;
+        inline constexpr static  unsigned int MINUTE = SECOND * 60;
+        inline constexpr static  unsigned int HOUR = MINUTE * 60;
     }
 
     class RGB{
@@ -235,11 +236,11 @@ namespace GGUI{
 
     class Memory : public Action{
     public:
-        size_t Start_Time = 0;
+        std::chrono::high_resolution_clock::time_point Start_Time;
         size_t End_Time = 0;
 
         Memory(size_t end, std::function<bool(GGUI::Event* e)>job){
-            Start_Time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
         }
@@ -328,6 +329,7 @@ namespace GGUI{
 
         Element() {}
 
+        //returns borders in mind.
         std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
 
         virtual void Show_Border(bool b);

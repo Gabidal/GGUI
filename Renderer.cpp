@@ -1,27 +1,31 @@
 #include "Renderer.h"
 
 namespace GGUI{
-    std::vector<GGUI::UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
+    std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
+    std::atomic_bool Pause_Event_Thread = false;                //if true, the event handler will pause.
 
-    GGUI::Window Main;                                          //Main window
+    Window Main;                                          //Main window
 
     int Max_Width = 0;
     int Max_Height = 0;
 
-    std::vector<GGUI::Memory> Remember;
+    std::vector<Memory> Remember;
 
-    std::vector<GGUI::Action*> Event_Handlers;
-    std::vector<GGUI::Input*> Inputs;
+    std::vector<Action*> Event_Handlers;
+    std::vector<Input*> Inputs;
 
-    GGUI::Element* Focused_On = nullptr;
+    Element* Focused_On = nullptr;
 
-    GGUI::Coordinates Mouse;
+    Coordinates Mouse;
     //move 1 by 1, or element by element.
     bool Mouse_Movement_Method = false;
 
-    const time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 100;
+    inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 100;
+
+    inline int Inputs_Per_Second = 20;
+    inline int Inputs_Per_Query = std::max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
 
     bool Collides(GGUI::Element* a, GGUI::Element* b){
         if (a == b)
@@ -217,17 +221,17 @@ namespace GGUI{
         Max_Height = info.srWindow.Bottom - info.srWindow.Top - 1;
     }
 
-    void Update_Frame();
+    void Update_Frame(bool Lock_Event_Thread);
     //Is called on every cycle.
-    void Query_Inputs(){
-        const int Inputs_Per_Second = 20;
-        const int Inputs_Per_Query = std::max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
 
+    void Query_Inputs(){
         INPUT_RECORD Input[Inputs_Per_Query];
 
         int Buffer_Size = 0;
 
-        ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, Inputs_Per_Query, (LPDWORD)&Buffer_Size);
+        if (GetNumberOfConsoleInputEvents(GetStdHandle(STD_INPUT_HANDLE), (LPDWORD)&Buffer_Size) && Buffer_Size > 0){
+            ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, Inputs_Per_Query, (LPDWORD)&Buffer_Size);
+        }
 
         for (int i = 0; i < Buffer_Size; i++){
             if (Input[i].EventType == KEY_EVENT){
@@ -255,6 +259,12 @@ namespace GGUI{
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                         //shift if the actuator for the mouse movement swithcer
                         Mouse_Movement_Method = !Mouse_Movement_Method;
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
+                        Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
+                    }
+                    else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0){
+                        Inputs.push_back(new GGUI::Input(Input[i].Event.KeyEvent.uChar.AsciiChar, Constants::KEY_PRESS));
                     }
                 }
             }
@@ -376,13 +386,15 @@ namespace GGUI{
     void Update_Frame(){
         if (Pause_Render.load())
             return;
-        Pause_Render = true;
+
+        Pause_Event_Thread = true;
 
         Abstract_Frame_Buffer = Main.Render();
 
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
 
-        Pause_Render = false;
+        //Unlock the event handler.
+        Pause_Event_Thread = false;
         Render_Frame();
     }
 
@@ -397,23 +409,24 @@ namespace GGUI{
     }
 
     void Recall_Memories(){
-        size_t Current_Time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
         for (int i = 0; i < Remember.size(); i++){
             //first calculate the time difference between the start if the task and the end task
-            size_t Time_Difference = Current_Time - Remember[i].Start_Time;
+            size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Remember[i].Start_Time).count();
 
             //if the time difference is greater than the time limit, then delete the memory
             if (Time_Difference > Remember[i].End_Time){
-                Pause_Renderer();
+                //Pause_Renderer();
                 Remember[i].Job((Event*)&Remember[i]);
 
                 Remember.erase(Remember.begin() + i);
 
                 i--;
                 
-                Resume_Renderer();
+                //Resume_Renderer();
             }
+
         }
     }
 
@@ -477,9 +490,12 @@ namespace GGUI{
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_Renderer(){
         //Save the state before the init
-        bool Default_State = Pause_Render;
+        bool Default_Render_State = Pause_Render;
+        bool Default_Event_State = Pause_Event_Thread;
+
         //pause the renderer
         Pause_Render = true;
+        Pause_Event_Thread = true;
 
         Update_Max_Width_And_Height();
         GGUI::Constants::Init();
@@ -498,8 +514,9 @@ namespace GGUI{
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
 
         std::thread Job_Scheduler([&](){
+            int i = 0;
             while (true){
-                if (Pause_Render.load())
+                if (Pause_Event_Thread.load())
                     continue;
 
                 Recall_Memories();
@@ -510,7 +527,7 @@ namespace GGUI{
 
         Job_Scheduler.detach();
 
-        Pause_Render = Default_State;
+        Pause_Render = Default_Render_State;
 
         return &Main;
     }
@@ -544,20 +561,9 @@ namespace GGUI{
         Remember.push_back(Memory(
             TIME::SECOND * 10,
             [=](GGUI::Event* e){
-                GGUI::Window* Right_tmp = nullptr;
+                tmp->Remove();
 
-                int i = 0;
-                for (auto c : Main.Get_Childs()){
-                    if (c == tmp){
-                        Right_tmp = (GGUI::Window*)c;
-                        break;
-                    }
-                    i++;
-                }
-
-                Main.Get_Childs().erase(Main.Get_Childs().begin() + i);
-
-                delete Right_tmp;
+                //delete tmp;
 
                 //job succesfully done
                 return true;
