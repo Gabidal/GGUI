@@ -10,7 +10,9 @@
                 "-o",
                 "Build/GGUI",
                 "-g",
-                "-fpermissive"
+                //"-Wall",
+                "-fpermissive",
+                
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

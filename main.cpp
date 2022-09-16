@@ -59,10 +59,6 @@ int main(){
     b->Enable_Text_Input();
     b->Enable_Dynamic_Size();
 
-    b->On_Click([=](GGUI::Event* e){
-        b->Remove();
-    });
-
     Main->Add_Child(l);
 
     l->Add_Child(a);

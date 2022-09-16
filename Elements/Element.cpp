@@ -175,7 +175,8 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
         if (tmp.Position.X + tmp.Width < Width - Border_Size){
             tmp.Width++;
         }
-        else if (tmp.Position.Y + tmp.Height < Height - Border_Size){
+        
+        if (tmp.Position.Y + tmp.Height < Height - Border_Size){
             tmp.Height++;
         }
         else if (tmp.Position.X + tmp.Width >= Width - Border_Size && tmp.Position.Y + tmp.Height >= Height - Border_Size){

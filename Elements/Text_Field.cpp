@@ -1,6 +1,8 @@
 #include "Text_Field.h"
 #include "../Renderer.h"
 
+#include <algorithm>
+
 
 std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
@@ -148,16 +150,40 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
 std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
 
-    bool Has_border = self->Has_Border() * 2;
+    bool Has_border = self->Has_Border();
 
     Result.resize(self->Height * self->Width);
 
+    std::vector<int> New_Line_Indicies;
+
+    for (int i = 0; i < Text.size(); i++){
+
+        if (Text[i] == '\n'){
+            New_Line_Indicies.push_back(i);
+
+            Text.erase(Text.begin() + i--);
+        }
+    }
+
+    std::reverse(New_Line_Indicies.begin(), New_Line_Indicies.end());
+
     int i = 0;
-    for (int Y = Has_border; Y < self->Height - Has_border; Y++){
-        for (int X = Has_border; X < self->Width -Has_border; X++){
+    for (int Y = Has_border; Y < (self->Height - Has_border); Y++){
+        for (int X = Has_border; X < (self->Width - Has_border); X++){
             if (i < Text.size()){
+
+                if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+                    New_Line_Indicies.pop_back();
+                    break;  //close the x loop and increase the Y loop.
+                }
+
                 Result[Y * self->Width + X] = Text[i++];
             }
+        }
+
+        //every wrapped line acts like a newline so delete the next newline
+        if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+            New_Line_Indicies.pop_back();
         }
     }
     
@@ -232,7 +258,7 @@ GGUI::Element* GGUI::Text_Field::Copy(){
 
 void GGUI::Text_Field::Input(std::function<void(char)> Then){
     Action* a = new Action(
-        Constants::KEY_PRESS,
+        Constants::KEY_PRESS | Constants::ENTER,
         [=](GGUI::Event* e){
             if (Focused && Allow_Text_Input){
                 //We know the event was gifted as Input*
@@ -265,27 +291,32 @@ void GGUI::Text_Field::Enable_Text_Input(){
 
     //If there was no event handlers for this job type, then make new ones.
     Input([=](char input){
-        std::pair<unsigned int, unsigned int> Dimensions = Get_Text_Dimensions(Data);
+        std::string tmp_Data = Data;
+        tmp_Data.push_back(input);
+
+        std::pair<unsigned int, unsigned int> Dimensions = Get_Text_Dimensions(tmp_Data);
 
         if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
 
             std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
             if ((Width + 1 > max_dimensions.first || Height + 1 > max_dimensions.second) && Allow_Input_Overflow){
-                
                 Data.push_back(input);
                 Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
                 Update_Frame();
-
             }
             else if (Allow_Dynamic_Size){
 
-                Width++;
-                Height++;
-
+                //check what to grow.
+                if (Dimensions.first > Width - (Has_Border() * 2)){
+                    Width++;
+                }
+                else if (Dimensions.second > Height - (Has_Border() * 2)){
+                    Height++;
+                }
+                
                 Data.push_back(input);
                 Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::STRECH | STAIN_TYPE::EDGE | STAIN_TYPE::COLOR);
                 Update_Frame();
-
             }
             else{
                 Report(
@@ -293,7 +324,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
                 );
             }
         }
-        else{
+        else{                
             Data.push_back(input);
             Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
             Update_Frame();

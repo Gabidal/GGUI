@@ -22,7 +22,7 @@ namespace GGUI{
     //move 1 by 1, or element by element.
     bool Mouse_Movement_Method = false;
 
-    inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 100;
+    inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
 
     inline int Inputs_Per_Second = 20;
     inline int Inputs_Per_Query = std::max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
@@ -253,7 +253,7 @@ namespace GGUI{
                             GGUI::Mouse.X++;
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
-                        Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
+                        Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));

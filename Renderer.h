@@ -18,6 +18,7 @@ namespace GGUI{
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
+    extern std::atomic_bool Pause_Event_Thread;
 
     extern Window Main;                                   //Main window
 
