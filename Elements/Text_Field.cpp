@@ -193,15 +193,42 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
 std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
 
+    bool Has_border = self->Has_Border();
+
     Result.resize(self->Height * self->Width);
 
+    std::vector<int> New_Line_Indicies;
+
+    for (int i = 0; i < Text.size(); i++){
+
+        if (Text[i] == '\n'){
+            New_Line_Indicies.push_back(i);
+
+            Text.erase(Text.begin() + i--);
+        }
+    }
+
+    std::reverse(New_Line_Indicies.begin(), New_Line_Indicies.end());
+
     int i = 0;
-    for (int Y = 0; Y < self->Height; Y++){
-        for (int X = 0; X < self->Width; X++){
+    for (int Y = Has_border; Y < (self->Height - Has_border); Y++){
+        for (int X = Has_border; X < (self->Width - Has_border); X++){
             if (i < Text.size()){
-                int Reverse_X = self->Width - X - 1;
-                Result[Y * self->Width + Reverse_X] = Text[i++];
+
+                if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+                    New_Line_Indicies.pop_back();
+                    break;  //close the x loop and increase the Y loop.
+                }
+
+                int Reversed_X = self->Width - X - 1;
+
+                Result[Y * self->Width + Reversed_X] = Text[i++];
             }
+        }
+
+        //every wrapped line acts like a newline so delete the next newline
+        if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+            New_Line_Indicies.pop_back();
         }
     }
     
@@ -299,7 +326,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
         if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
 
             std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
-            if ((Width + 1 > max_dimensions.first || Height + 1 > max_dimensions.second) && Allow_Input_Overflow){
+            if (Allow_Input_Overflow){
                 Data.push_back(input);
                 Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
                 Update_Frame();

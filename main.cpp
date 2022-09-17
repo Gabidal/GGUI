@@ -57,7 +57,7 @@ int main(){
     );
 
     b->Enable_Text_Input();
-    b->Enable_Dynamic_Size();
+    b->Enable_Input_Overflow();
 
     Main->Add_Child(l);
 

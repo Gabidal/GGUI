@@ -15,6 +15,7 @@
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
+    
     namespace SYMBOLS{
         inline std::string TOP_LEFT_CORNER = "\e(0\x6c\e(B";
         inline std::string BOTTOM_LEFT_CORNER = "\e(0\x6d\e(B";
@@ -47,16 +48,17 @@ namespace GGUI{
         inline unsigned long long SPACE = 1 << 9;
         inline unsigned long long SHIFT = 1 << 10;
 
-        inline unsigned long long KEY_PRESS = 1 << 9;
+        //key_Press includes [a-z, A-Z] & [0-9]
+        inline unsigned long long KEY_PRESS = 1 << 11;
 
         inline void Init();
     }
 
     namespace TIME{
-        inline const  unsigned int MILLISECOND = 1; 
-        inline const  unsigned int SECOND = MILLISECOND * 1000;
-        inline const  unsigned int MINUTE = SECOND * 60;
-        inline const  unsigned int HOUR = MINUTE * 60;
+        inline constexpr static  unsigned int MILLISECOND = 1; 
+        inline constexpr static  unsigned int SECOND = MILLISECOND * 1000;
+        inline constexpr static  unsigned int MINUTE = SECOND * 60;
+        inline constexpr static  unsigned int HOUR = MINUTE * 60;
     }
 
     class RGB{
@@ -239,11 +241,11 @@ namespace GGUI{
 
     class Memory : public Action{
     public:
-        size_t Start_Time = 0;
+        std::chrono::high_resolution_clock::time_point Start_Time;
         size_t End_Time = 0;
 
         Memory(size_t end, std::function<bool(GGUI::Event* e)>job){
-            Start_Time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
         }
@@ -332,6 +334,7 @@ namespace GGUI{
 
         Element() {}
 
+        //returns borders in mind.
         std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
 
         virtual void Show_Border(bool b);
@@ -452,25 +455,43 @@ namespace GGUI{
 
 
     };
+    
+    enum class Grow_Direction{
+        ROW,
+        COLUMN
+    };
 
-    class Window : public Element{
-        std::string Title = "";  //if this is empty then no title
+    class List_View : public Element{
     public:
-        Window(){}
+        Grow_Direction Flow_Priority;
+        bool Wrap_Overflow = false;
 
-        Window(std::string title, Flags f);
+        //cache
+        unsigned int Last_Child_X = 0;
+        unsigned int Last_Child_Y = 0;
 
-        void Set_Title(std::string t);
+        std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
-        std::string Get_Title();
+        List_View(){}
 
-        std::vector<UTF> Render() override;
+        List_View(Flags f, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false){
+            *((Flags*)this) = f;
+            Flow_Priority = flow_priority;
+            Wrap_Overflow = wrap;
+        }
+
+        void Add_Child(Element* e) override;
         
-        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
+        //std::vector<UTF> Render() override;
 
         std::string Get_Name() override;
 
+        void Update_Parent(Element* deleted) override;
+
+        bool Remove(Element* e) override;
+
         Element* Copy() override;
+
     };
 
     enum class TEXT_LOCATION{
@@ -482,6 +503,10 @@ namespace GGUI{
     class Text_Field : public Element{
         std::string Data = "";
         TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT;
+        bool Allow_Text_Input = false;
+        //if text can be inputted even when the text is outof bounds.
+        bool Allow_Input_Overflow = false;
+        bool Allow_Dynamic_Size = false;
         
     public:
 
@@ -537,7 +562,7 @@ namespace GGUI{
         
         void Show_Border(bool state) override;
         
-        static std::pair<int, int> Get_Text_Dimensions(std::string& text); 
+        static std::pair<unsigned int, unsigned int> Get_Text_Dimensions(std::string& text); 
 
         std::vector<UTF> Render() override;
         
@@ -547,48 +572,147 @@ namespace GGUI{
 
         Element* Copy() override;
 
+        //async function, 
+        void Input(std::function<void(char)> Then);
+
+        void Enable_Text_Input();
+
+        void Disable_Text_Input();
+
+        //Non visual updates dont need to update frame
+        void Enable_Input_Overflow();
+
+        //Non visual updates dont need to update frame
+        void Disable_Input_Overflow();
+
+        void Enable_Dynamic_Size();
+
+        void Disable_Dynamic_Size();
+
+
         static std::vector<UTF> Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
         static std::vector<UTF> Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
         static std::vector<UTF> Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
     };
 
-    enum class Grow_Direction{
-        ROW,
-        COLUMN
-    };
-
-    class List_View : public Element{
+    class Window : public Element{
+        std::string Title = "";  //if this is empty then no title
     public:
-        Grow_Direction Flow_Priority;
-        bool Wrap_Overflow = false;
+        Window(){}
 
-        //cache
-        unsigned int Last_Child_X = 0;
-        unsigned int Last_Child_Y = 0;
+        Window(std::string title, Flags f);
 
-        std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
+        void Set_Title(std::string t);
 
-        List_View(){}
+        std::string Get_Title();
 
-        List_View(Flags f, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false){
-            *((Flags*)this) = f;
-            Flow_Priority = flow_priority;
-            Wrap_Overflow = wrap;
-        }
-
-        void Add_Child(Element* e) override;
+        std::vector<UTF> Render() override;
         
-        //std::vector<UTF> Render() override;
+        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
 
         std::string Get_Name() override;
 
-        void Update_Parent(Element* deleted) override;
-
-        bool Remove(Element* e) override;
-
         Element* Copy() override;
-
     };
+    
+    extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
+    extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
+    extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
+    extern std::atomic_bool Pause_Event_Thread;
+
+    extern Window Main;                                   //Main window
+
+    extern int Max_Width;
+    extern int Max_Height;
+
+    extern std::vector<Memory> Remember;
+
+    extern std::vector<Action*> Event_Handlers;
+    extern std::vector<Input*> Inputs;
+
+    extern Element* Focused_On;
+
+    extern Coordinates Mouse;    
+    //move 1 by 1, or element by element.
+    extern bool Mouse_Movement_Method;
+
+    extern time_t UPDATE_SPEED_MIILISECONDS;
+    extern int Inputs_Per_Second;
+    extern int Inputs_Per_Query;
+
+
+    extern bool Collides(GGUI::Element* a, GGUI::Element* b);
+
+    extern bool Collides(GGUI::Element* a, GGUI::Coordinates b);
+
+    extern Element* Get_Accurate_Element_From(Coordinates c, Element* Parent);
+
+    extern bool Find_Upper_Element();
+
+    extern bool Find_Lower_Element();
+
+    extern bool Find_Left_Element();
+
+    extern bool Find_Right_Element();
+
+
+#if _WIN32
+    #include <windows.h>
+
+    extern void ClearScreen();
+
+    extern void Render_Frame();
+
+    extern void Update_Max_Width_And_Height();
+
+    void Update_Frame();
+    //Is called on every cycle.
+    extern void Query_Inputs();
+
+    extern void Init_Platform_Stuff();
+
+#else
+    extern void ClearScreen();
+
+    extern void Render_Frame();
+
+    extern void Update_Max_Width_And_Height();
+    //Is called on every cycle.
+    extern void Query_Inputs();
+
+#endif
+
+    extern int Get_Max_Width();
+
+    extern int Get_Max_Height();
+
+    //Returns a char if given ASCII, or a short if given UNICODE
+    extern GGUI::UTF* Get(GGUI::Coordinates Abselute_Position);
+
+    extern std::string Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height);
+
+    extern void Update_Frame();
+    
+    extern void Pause_Renderer();
+
+    extern void Resume_Renderer();
+
+    extern void Recall_Memories();
+
+    extern bool Is(unsigned long long f, unsigned long long Flag);
+
+    extern void Un_Focus_Element();
+
+    extern void Update_Focused_Element(GGUI::Element* new_candidate);
+
+    extern void Event_Handler();
+
+    //Inits GGUI and returns the main window.
+    extern GGUI::Window* Init_Renderer();
+
+    extern void Report(std::string Problem);
+
+    extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 }
 
 #endif
