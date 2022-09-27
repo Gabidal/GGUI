@@ -10,11 +10,25 @@
 
 
 GGUI::Element::Element(std::string Class){
-    
+    Add_Class("default");
+
     Name = std::to_string((unsigned long long)this);
 
     Add_Class(Class);
 
+    Parse_Classes();
+}
+
+GGUI::Element::Element() {
+    Add_Class("default");
+    Name = std::to_string((unsigned long long)this);
+    Parse_Classes();
+}
+
+GGUI::Element::Element(std::map<std::string, VALUE*> css){
+    Add_Class("default");
+    Style = css;
+    Name = std::to_string((unsigned long long)this);
     Parse_Classes();
 }
 
@@ -43,6 +57,11 @@ void GGUI::Element::Parse_Classes(){
     //Go through all classes and their styles and accumulate them.
     for(auto& Class : Classes){
 
+        // The class wantwd has not been yet constructed.
+        if (GGUI::Classes.find(Class) == GGUI::Classes.end()){
+            Dirty.Dirty(STAIN_TYPE::CLASS);
+        }
+
         std::map<std::string, VALUE*> Current = GGUI::Classes[Class];
 
         for (auto& Current_Style : Current){
@@ -58,11 +77,7 @@ void GGUI::Element::Add_Class(std::string class_name){
         Classes.push_back(Class_Names[class_name]);
     }
     else{
-        Class_Names.insert({
-            class_name,
-            Class_Names.size()
-        });
-        Classes.push_back(Class_Names[class_name]);
+        Classes.push_back(GGUI::Get_Free_Class_ID(class_name));
     }
 }
 
@@ -345,6 +360,12 @@ GGUI::RGB GGUI::Element::Get_Text_Color(){
 //Returns nested buffer of AST window's
 std::vector<GGUI::UTF> GGUI::Element::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
+
+    if (Dirty.is(STAIN_TYPE::CLASS)){
+        Parse_Classes();
+
+        Dirty.Clean(STAIN_TYPE::CLASS);
+    }
 
     if (Dirty.is(STAIN_TYPE::STRECH)){
         Result.clear();

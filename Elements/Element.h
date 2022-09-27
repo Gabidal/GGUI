@@ -341,6 +341,7 @@ namespace GGUI{
         DEEP = 1 << 2,   //children changes. Deep because the childs are connected via AST.
         STRECH = 1 << 3,  //width and or height changes.
         TEXT = 1 << 4,   //text changes, this is primarily for text_field
+        CLASS = 1 << 5, //This is used to tell the renderer that there are still un_parsed classes.
     };
  
     inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
@@ -401,16 +402,11 @@ namespace GGUI{
         std::map<std::string, VALUE*> Style;
     public:
 
-        Element() {
-            Name = std::to_string((unsigned long long)this);
-        }
+        Element();
 
         Element(std::string Class);
 
-        Element(std::map<std::string, VALUE*> css){
-            Style = css;
-            Name = std::to_string((unsigned long long)this);
-        }
+        Element(std::map<std::string, VALUE*> css);
 
         template<typename T>
         T* At(std::string s){

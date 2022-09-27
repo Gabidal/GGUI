@@ -9,8 +9,6 @@ namespace GGUI{
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
     std::atomic_bool Pause_Event_Thread = false;                //if true, the event handler will pause.
 
-    Window Main;                                          //Main window
-
     int Max_Width = 0;
     int Max_Height = 0;
 
@@ -35,6 +33,8 @@ namespace GGUI{
     inline std::map<int, std::map<std::string, VALUE*>> Classes;
 
     inline std::map<std::string, int> Class_Names;
+
+    Window Main;                                          //Main window
 
     bool Collides(GGUI::Element* a, GGUI::Element* b){
         if (a == b)
@@ -506,6 +506,32 @@ namespace GGUI{
         Inputs.clear();
     }
 
+    int Get_Free_Class_ID(std::string n){
+        if (Class_Names.find(n) != Class_Names.end()){
+            return Class_Names[n];
+        }
+        else{
+            Class_Names[n] = Class_Names.size();
+
+            return Class_Names[n];
+        }
+    }
+
+    void Init_Classes(){
+        // Add default class
+        std::string DEFAULT_NAME = "default";
+        std::map<std::string, VALUE*> DEFAULT = {
+            {STYLES::Text_Color, new RGB_VALUE(COLOR::WHITE)},
+            {STYLES::Back_Ground_Color, new RGB_VALUE(COLOR::BLACK)},
+
+            {STYLES::Border_Colour, new RGB_VALUE(COLOR::WHITE)},
+            {STYLES::Border_Back_Ground_Color, new RGB_VALUE(COLOR::BLACK)},
+        };
+
+        int new_ID = Get_Free_Class_ID(DEFAULT_NAME);
+        Classes[new_ID] = DEFAULT;
+    }
+
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_Renderer(){
         //Save the state before the init
@@ -519,6 +545,7 @@ namespace GGUI{
         Update_Max_Width_And_Height();
         GGUI::Constants::Init();
         Init_Platform_Stuff();
+        Init_Classes();
 
 
         //now we need to allocate the buffer string by the width and height of the terminal

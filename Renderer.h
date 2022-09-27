@@ -18,9 +18,7 @@ namespace GGUI{
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
-    extern std::atomic_bool Pause_Event_Thread;
-
-    extern Window Main;                                   //Main window
+    extern std::atomic_bool Pause_Event_Thread;                                 //Main window
 
     extern int Max_Width;
     extern int Max_Height;
@@ -44,6 +42,8 @@ namespace GGUI{
 
     extern std::map<int, std::map<std::string, VALUE*>> Classes;
     extern std::map<std::string, int> Class_Names;
+
+    extern Window Main;  
 
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 
@@ -121,6 +121,10 @@ namespace GGUI{
     extern void Update_Focused_Element(GGUI::Element* new_candidate);
 
     extern void Event_Handler();
+
+    extern int Get_Free_Class_ID(std::string n);
+
+    extern void Init_Classes();
 
     //Inits GGUI and returns the main window.
     extern GGUI::Window* Init_Renderer();
