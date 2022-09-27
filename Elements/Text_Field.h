@@ -14,6 +14,7 @@ namespace GGUI{
     };
 
     class Text_Field : public Element{
+    protected:
         std::string Data = "";
         TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT;
         bool Allow_Text_Input = false;
@@ -25,43 +26,13 @@ namespace GGUI{
 
         Text_Field(){}
 
-        Text_Field(Flags f){
-            *((Flags*)this) = f;
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
-
-        Text_Field(std::string Text){
-            Data = Text;
-
-            std::pair<int, int> D = Get_Text_Dimensions(Data);
-            Width = D.first;
-            Height = D.second;
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
-
-        Text_Field(std::string Text, TEXT_LOCATION Text_Position){
+        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {}, TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT) : Element(css) {
             Data = Text;
             this->Text_Position = Text_Position;
             
             std::pair<int, int> D = Get_Text_Dimensions(Text);
-            Width = D.first;
-            Height = D.second;
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
-        
-        Text_Field(std::string Text, Flags f, TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT){
-            Data = Text;
-            *((Flags*)this) = f;
-            this->Text_Position = Text_Position;
-            
-            std::pair<unsigned int, unsigned int> D = Get_Text_Dimensions(Text);
-            Width = D.first;
-            Height = D.second;
-
-            if (Border){
-                Width += 2;
-                Height += 2;
-            }
+            At<NUMBER_VALUE>(STYLES::Width)->Value = D.first;
+            At<NUMBER_VALUE>(STYLES::Height)->Value = D.second;
             Dirty.Dirty(STAIN_TYPE::TEXT);
         }
 

@@ -22,10 +22,7 @@ namespace GGUI{
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
-        List_View(){}
-
-        List_View(Flags f, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false){
-            *((Flags*)this) = f;
+        List_View(std::map<std::string, VALUE*> css = {}, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false) : Element(css){
             Flow_Priority = flow_priority;
             Wrap_Overflow = wrap;
         }

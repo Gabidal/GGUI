@@ -16,9 +16,9 @@ int main(){
         "B BB BBB BBBB BBBBB BBBBBB BBBBBBB BBBBBBBB \n"
         "C CC CCC CCCC CCCCC CCCCCC CCCCCCC CCCCCCCC \n"
     );
-    Text->Set_Back_Ground_Colour(GGUI::COLOR::DARK_MAGENTA);
+    Text->Set_Back_Ground_Color(GGUI::COLOR::DARK_MAGENTA);
     Text->Set_Border_Back_Ground_Color(GGUI::COLOR::LIGHT_BLUE);
-    Text->Set_Text_Colour(GGUI::COLOR::CYAN);
+    Text->Set_Text_Color(GGUI::COLOR::CYAN);
     Text->Show_Border(true);
 
     Text->On_Click([=](GGUI::Event* e){

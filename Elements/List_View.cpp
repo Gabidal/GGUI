@@ -2,12 +2,13 @@
 #include "../Renderer.h"
 
 //undefine these before algorithm.h is included
-#undef min
-#undef max
+
 #include <algorithm>
+#undef RGB
+#undef BOOL
+#undef NUMBER
 
 void GGUI::List_View::Add_Child(Element* e){
-
     unsigned int max_width = 0;
     unsigned int max_height = 0;
 
@@ -22,11 +23,11 @@ void GGUI::List_View::Add_Child(Element* e){
         max_height = Max_Height;
     }
 
-    unsigned int Max_Inner_Space_Height = Height - Has_Border() * 2;
-    unsigned int Max_Inner_Space_Width = Width - Has_Border() * 2;
+    unsigned int Max_Inner_Space_Height = Get_Height() - Has_Border() * 2;
+    unsigned int Max_Inner_Space_Width = Get_Width() - Has_Border() * 2;
 
-    unsigned int Child_Needs_Minimum_Height_Of = e->Height + Has_Border() * 2;
-    unsigned int Child_Needs_Minimum_Width_Of = e->Width + Has_Border() * 2;
+    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Has_Border() * 2;
+    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Has_Border() * 2;
 
 
     if (Wrap_Overflow){
@@ -35,27 +36,29 @@ void GGUI::List_View::Add_Child(Element* e){
         );
     }
     else{
+        e->Set_Parent(this);
+
         if (Flow_Priority == Grow_Direction::ROW){
-            Height = std::min(std::max(Child_Needs_Minimum_Height_Of, Height), max_height);
-            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Width){
-                Width = std::min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
+            At<NUMBER_VALUE>(STYLES::Height)->Value = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
+            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Get_Width()){
+                At<NUMBER_VALUE>(STYLES::Width)->Value = Min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
             }
 
-            e->Position.X = Last_Child_X;
-            Last_Child_X += e->Width;
+            e->Set_Position({Last_Child_X, e->Get_Position().Y});
+            Last_Child_X += e->Get_Width();
         }
         else{
-            Width = std::min(std::max(Child_Needs_Minimum_Width_Of, Width), max_height);
-            if (Last_Child_X + Child_Needs_Minimum_Height_Of > Height){
-                Height = std::min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
+            At<NUMBER_VALUE>(STYLES::Width)->Value = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_height);
+            if (Last_Child_X + Child_Needs_Minimum_Height_Of > Get_Height()){
+                At<NUMBER_VALUE>(STYLES::Height)->Value = Min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
             }
 
-            e->Position.Y = Last_Child_Y;
-            Last_Child_Y += e->Height;
+            e->Set_Position({e->Get_Position().X, Last_Child_Y});
+            Last_Child_Y += e->Get_Height();
         }
 
         Dirty.Dirty(STAIN_TYPE::DEEP);
-        e->Parent = this;
+        Element_Names.insert({e->Get_Name(), e});
         Childs.push_back(e);
         Update_Parent(this);
     }
@@ -119,52 +122,51 @@ bool GGUI::List_View::Remove(Element* remove){
     //first find the removable elements index.
     for (;removable_index < Childs.size() && Childs[removable_index] != remove; removable_index++);
 
-    Width = 0;
-    Height = 0;
+    Set_Dimensions(0, 0);
 
     //now for every element past this index position needs to be altered so that this removed element didn't ever exist.
     if (Flow_Priority == Grow_Direction::ROW){
         Last_Child_X = 0;
 
         for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
-            Childs[i]->Position.X -= remove->Width;
+            Childs[i]->Set_Position({Childs[i]->Get_Position().X - remove->Get_Width(), Childs[i]->Get_Position().Y});
         }
 
         for (auto c : Childs){
             if (c == remove)
                 continue;
             
-            unsigned int Child_Needs_Minimum_Height_Of = c->Height + Has_Border() * 2;
-            unsigned int Child_Needs_Minimum_Width_Of = c->Width + Has_Border() * 2;
+            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Has_Border() * 2;
+            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Has_Border() * 2;
 
-            Height += std::min(std::max(Child_Needs_Minimum_Height_Of, Height), max_height);
-            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Width){
-                Width += std::min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
+            Set_Height(Get_Height() + Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height));
+            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Get_Width()){
+                Set_Width(Get_Width() + Min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of));
             }
 
-            Last_Child_X += c->Width;
+            Last_Child_X += c->Get_Width();
         }
     }
     else{        
         Last_Child_Y = 0;
 
         for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
-            Childs[i]->Position.Y -= remove->Height;
+            Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - remove->Get_Height()});
         }
 
         for (auto c : Childs){
             if (c == remove)
                 continue;
 
-            unsigned int Child_Needs_Minimum_Height_Of = c->Height + Has_Border() * 2;
-            unsigned int Child_Needs_Minimum_Width_Of = c->Width + Has_Border() * 2;
+            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Has_Border() * 2;
+            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Has_Border() * 2;
 
-            Width += std::min(std::max(Child_Needs_Minimum_Width_Of, Width), max_height);
-            if (Last_Child_Y + Child_Needs_Minimum_Height_Of > Height){
-                Height += std::min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
+            Set_Width(Get_Width() + Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_height));
+            if (Last_Child_Y + Child_Needs_Minimum_Height_Of > Get_Height()){
+                Set_Height(Get_Height() + Min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of));
             }
 
-            Last_Child_Y += c->Height;
+            Last_Child_Y += c->Get_Height();
         }
     }
 

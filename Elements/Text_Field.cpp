@@ -9,7 +9,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
 
     if (Dirty.is(STAIN_TYPE::STRECH)){
         Result.clear();
-        Result.resize(this->Width * this->Height);
+        Result.resize(At<NUMBER_VALUE>(STYLES::Width)->Value * At<NUMBER_VALUE>(STYLES::Height)->Value);
         Dirty.Clean(STAIN_TYPE::STRECH);
     }
 
@@ -49,18 +49,18 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
 }
 
 void GGUI::Text_Field::Show_Border(bool state){
-    if (state && Border == false){
+    if (state && ((BOOL_VALUE*)Style[STYLES::Border])->Value == false){
         //enlarge the text field area to compas the borders
-        Width += 2;
-        Height += 2;
+        At<NUMBER_VALUE>(STYLES::Width)->Value += 2;
+        At<NUMBER_VALUE>(STYLES::Height)->Value += 2;
     }
-    else if (!state && Border == true){
+    else if (!state && ((BOOL_VALUE*)Style[STYLES::Border])->Value == true){
         //shrink the text field area to compas the borders
-        Width -= 2;
-        Height -= 2;
+        At<NUMBER_VALUE>(STYLES::Width)->Value -= 2;
+        At<NUMBER_VALUE>(STYLES::Height)->Value -= 2;
     }
     
-    Border = state;
+    At<BOOL_VALUE>(STYLES::Border)->Value = state;
     Dirty.Dirty(STAIN_TYPE::EDGE);
 
     Update_Frame();
@@ -101,8 +101,8 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
         return false;
     }
     
-    Width = New_Width;
-    Height = New_Height;
+    At<NUMBER_VALUE>(STYLES::Width)->Value = New_Width;
+    At<NUMBER_VALUE>(STYLES::Height)->Value = New_Height;
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
@@ -114,21 +114,24 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
 std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
 
-    int Width_Center = self->Width / 2;
+    int self_width = self->Get_Number_Style(STYLES::Width);
+    int self_height = self->Get_Number_Style(STYLES::Height);
 
-    Result.resize(self->Height * self->Width);
+    int Width_Center = self_width / 2;
+
+    Result.resize(self_height * self_width);
 
     int i = 0;
-    for (int Y = 0; Y < self->Height; Y++){
+    for (int Y = 0; Y < self_height; Y++){
 
-        int This_Text_Row_Length = (Text.size() - (Y * self->Width));
+        int This_Text_Row_Length = (Text.size() - (Y * self_width));
 
         //check if this row of text reaches tot he two ends of this wrapped width.
         if (This_Text_Row_Length > 0){
             //This means that the text has enough size to take all space on this row.
-            for (int X = 0; X < self->Width; X++){
+            for (int X = 0; X < self_width; X++){
                 if (i < Text.size()){
-                    Result[Y * self->Width + X] = Text[i++];
+                    Result[Y * self_width + X] = Text[i++];
                 }
             }
         }
@@ -138,7 +141,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
 
             for (int X = 0; X < This_Text_Row_Length; X++){       
                 if (i < Text.size()){
-                    Result[Y * self->Width + X + Starting_X] = Text[i++];
+                    Result[Y * self_width + X + Starting_X] = Text[i++];
                 }
             }
         }
@@ -149,10 +152,13 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
 
 std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
+    
+    int self_width = self->Get_Number_Style(STYLES::Width);
+    int self_height = self->Get_Number_Style(STYLES::Height);
 
     bool Has_border = self->Has_Border();
 
-    Result.resize(self->Height * self->Width);
+    Result.resize(self_height * self_width);
 
     std::vector<int> New_Line_Indicies;
 
@@ -168,8 +174,8 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
     std::reverse(New_Line_Indicies.begin(), New_Line_Indicies.end());
 
     int i = 0;
-    for (int Y = Has_border; Y < (self->Height - Has_border); Y++){
-        for (int X = Has_border; X < (self->Width - Has_border); X++){
+    for (int Y = Has_border; Y < (self_height - Has_border); Y++){
+        for (int X = Has_border; X < (self_width - Has_border); X++){
             if (i < Text.size()){
 
                 if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
@@ -177,7 +183,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
                     break;  //close the x loop and increase the Y loop.
                 }
 
-                Result[Y * self->Width + X] = Text[i++];
+                Result[Y * self_width + X] = Text[i++];
             }
         }
 
@@ -192,10 +198,13 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
 
 std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
+    
+    int self_width = self->Get_Number_Style(STYLES::Width);
+    int self_height = self->Get_Number_Style(STYLES::Height);
 
     bool Has_border = self->Has_Border();
 
-    Result.resize(self->Height * self->Width);
+    Result.resize(self_height * self_width);
 
     std::vector<int> New_Line_Indicies;
 
@@ -211,8 +220,8 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::st
     std::reverse(New_Line_Indicies.begin(), New_Line_Indicies.end());
 
     int i = 0;
-    for (int Y = Has_border; Y < (self->Height - Has_border); Y++){
-        for (int X = Has_border; X < (self->Width - Has_border); X++){
+    for (int Y = Has_border; Y < (self_height - Has_border); Y++){
+        for (int X = Has_border; X < (self_width - Has_border); X++){
             if (i < Text.size()){
 
                 if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
@@ -220,9 +229,9 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::st
                     break;  //close the x loop and increase the Y loop.
                 }
 
-                int Reversed_X = self->Width - X - 1;
+                int Reversed_X = self_width - X - 1;
 
-                Result[Y * self->Width + Reversed_X] = Text[i++];
+                Result[Y * self_width + Reversed_X] = Text[i++];
             }
         }
 
@@ -323,7 +332,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
 
         std::pair<unsigned int, unsigned int> Dimensions = Get_Text_Dimensions(tmp_Data);
 
-        if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
+        if (Dimensions.first > At<NUMBER_VALUE>(STYLES::Width)->Value - (Has_Border() * 2) || Dimensions.second > At<NUMBER_VALUE>(STYLES::Height)->Value - (Has_Border() * 2)){
 
             std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
             if (Allow_Input_Overflow){
@@ -334,11 +343,11 @@ void GGUI::Text_Field::Enable_Text_Input(){
             else if (Allow_Dynamic_Size){
 
                 //check what to grow.
-                if (Dimensions.first > Width - (Has_Border() * 2)){
-                    Width++;
+                if (Dimensions.first > At<NUMBER_VALUE>(STYLES::Width)->Value - (Has_Border() * 2)){
+                    At<NUMBER_VALUE>(STYLES::Width)->Value++;
                 }
-                else if (Dimensions.second > Height - (Has_Border() * 2)){
-                    Height++;
+                else if (Dimensions.second > At<NUMBER_VALUE>(STYLES::Height)->Value - (Has_Border() * 2)){
+                    At<NUMBER_VALUE>(STYLES::Height)->Value++;
                 }
                 
                 Data.push_back(input);

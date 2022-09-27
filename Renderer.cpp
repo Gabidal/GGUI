@@ -1,5 +1,8 @@
 #include "Renderer.h"
 
+#include <map>
+#include <string>
+
 namespace GGUI{
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
@@ -16,6 +19,8 @@ namespace GGUI{
     std::vector<Action*> Event_Handlers;
     std::vector<Input*> Inputs;
 
+    std::map<std::string, Element*> Element_Names;
+
     Element* Focused_On = nullptr;
 
     Coordinates Mouse;
@@ -25,27 +30,32 @@ namespace GGUI{
     inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
 
     inline int Inputs_Per_Second = 20;
-    inline int Inputs_Per_Query = std::max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
+    inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
+
+    inline std::map<int, std::map<std::string, VALUE*>> Classes;
+
+    inline std::map<std::string, int> Class_Names;
 
     bool Collides(GGUI::Element* a, GGUI::Element* b){
         if (a == b)
             return false;
             
-        int A_X = a->Position.X;
-        int A_Y = a->Position.Y;
+        int A_X = a->Get_Position().X;
+        int A_Y = a->Get_Position().Y;
 
-        int B_X = b->Position.X;
-        int B_Y = b->Position.Y;
-        return (A_X < B_X + b->Width && A_X + a->Width > B_X && A_Y < B_Y + b->Height && A_Y + a->Height > B_Y);
+        int B_X = b->Get_Position().X;
+        int B_Y = b->Get_Position().Y;
+
+        return (A_X < B_X + b->Get_Width() && A_X + a->Get_Width() > B_X && A_Y < B_Y + b->Get_Height() && A_Y + a->Get_Height() > B_Y);
     }
 
     bool Collides(GGUI::Element* a, GGUI::Coordinates b){
-        int A_X = a->Position.X;
-        int A_Y = a->Position.Y;
+        int A_X = a->Get_Position().X;
+        int A_Y = a->Get_Position().Y;
 
         int B_X = b.X;
         int B_Y = b.Y;
-        return (A_X < B_X + 1 && A_X + a->Width > B_X && A_Y < B_Y + 1 && A_Y + a->Height > B_Y);
+        return (A_X < B_X + 1 && A_X + a->Get_Width() > B_X && A_Y < B_Y + 1 && A_Y + a->Get_Height() > B_Y);
     }
 
     Element* Get_Accurate_Element_From(Coordinates c, Element* Parent){
@@ -76,14 +86,14 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Position;
+        Coordinates tmp_c = Current_Element->Get_Position();
 
         tmp_c.Y--;
 
         Element* Upper_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Upper_Element && Upper_Element != (Element*)&Main){
-            Mouse = Upper_Element->Position;
+            Mouse = Upper_Element->Get_Position();
         }
 
         return true;
@@ -101,14 +111,14 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Position;
+        Coordinates tmp_c = Current_Element->Get_Position();
 
-        tmp_c.Y += Current_Element->Height + 1;
+        tmp_c.Y += Current_Element->Get_Height() + 1;
 
         Element* Lower_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Lower_Element && Lower_Element != (Element*)&Main){
-            Mouse = Lower_Element->Position;
+            Mouse = Lower_Element->Get_Position();
         }
 
         return true;
@@ -126,14 +136,14 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Position;
+        Coordinates tmp_c = Current_Element->Get_Position();
 
         tmp_c.X--;
 
         Element* Left_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Left_Element && Left_Element != (Element*)&Main){
-            Mouse = Left_Element->Position;
+            Mouse = Left_Element->Get_Position();
         }
 
         return true;
@@ -151,22 +161,31 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Position;
+        Coordinates tmp_c = Current_Element->Get_Position();
 
-        tmp_c.X += Current_Element->Width + 1;
+        tmp_c.X += Current_Element->Get_Width() + 1;
 
         Element* Right_Element = Get_Accurate_Element_From(tmp_c, &Main);
 
         if (Right_Element && Right_Element != (Element*)&Main){
-            Mouse = Right_Element->Position;
+            Mouse = Right_Element->Get_Position();
         }
 
         return true;
     }
 
+    unsigned long long Min(unsigned long long a, unsigned long long b){
+        return a < b ? a : b;
+    }
+
+    unsigned long long Max(unsigned long long a, unsigned long long b){
+        return a > b ? a : b;
+    }
+
 
     #if _WIN32
     #include <windows.h>
+
 
     void ClearScreen()
     {
@@ -391,7 +410,7 @@ namespace GGUI{
 
         Abstract_Frame_Buffer = Main.Render();
 
-        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
+        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Get_Width(), Main.Get_Height());
 
         //Unlock the event handler.
         Pause_Event_Thread = false;
@@ -435,8 +454,8 @@ namespace GGUI{
     }
 
     void Un_Focus_Element(){
-        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
-        Focused_On->Focused = false;
+        Focused_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        Focused_On->Set_Focus(false);
         Focused_On = nullptr;
     }
 
@@ -453,8 +472,8 @@ namespace GGUI{
         Focused_On = new_candidate;
         
         //set the new candidate to focused.
-        Focused_On->Focused = true;
-        Focused_On->Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        Focused_On->Set_Focus(true);
+        Focused_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         Update_Frame();
     }
 
@@ -505,13 +524,13 @@ namespace GGUI{
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
 
-        Main.Width = Max_Width;
-        Main.Height = Max_Height;
-        Main.Dirty.Dirty(STAIN_TYPE::STRECH | STAIN_TYPE::COLOR);
+        Main.Set_Width(Max_Width);
+        Main.Set_Height(Max_Height);
+        Main.Get_Dirty().Dirty(STAIN_TYPE::STRECH | STAIN_TYPE::COLOR);
 
         Abstract_Frame_Buffer = Main.Render();
 
-        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Width, Main.Height);
+        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Get_Width(), Main.Get_Height());
 
         std::thread Job_Scheduler([&](){
             int i = 0;
@@ -539,19 +558,30 @@ namespace GGUI{
 
         bool Has_Border = true;
 
-        unsigned int w = txt->Width + Has_Border * 2;
-        unsigned int h = txt->Height + Has_Border * 2;
+        unsigned int w = txt->Get_Width() + Has_Border * 2;
+        unsigned int h = txt->Get_Height() + Has_Border * 2;
 
         unsigned int W_Center = (Max_Width - w) / 2;
         unsigned int H_Center = (Max_Height - h) / 2;
 
-        GGUI::Window* tmp = new GGUI::Window("ERROR!", {
-            {W_Center, H_Center, INT32_MAX}, w, h, Has_Border, 
-            GGUI::COLOR::BLACK, 
-            GGUI::COLOR::RED, 
+        // GGUI::Window* tmp = new GGUI::Window("ERROR!", {
+        //     {W_Center, H_Center, INT32_MAX}, w, h, Has_Border, 
+        //     GGUI::COLOR::BLACK, 
+        //     GGUI::COLOR::RED, 
 
-            GGUI::COLOR::BLACK, 
-            GGUI::COLOR::RED, 
+        //     GGUI::COLOR::BLACK, 
+        //     GGUI::COLOR::RED, 
+        // });
+
+        GGUI::Window* tmp = new GGUI::Window("ERROR!", {
+            {STYLES::Position, new COORDINATES_VALUE({W_Center, H_Center, INT32_MAX})},
+            {STYLES::Width, new NUMBER_VALUE(w)},
+            {STYLES::Height, new NUMBER_VALUE(h)},
+            {STYLES::Border, new BOOL_VALUE(Has_Border)},
+            {STYLES::Back_Ground_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
+            {STYLES::Text_Color, new RGB_VALUE(GGUI::COLOR::RED)},
+            {STYLES::Border_Back_Ground_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
+            {STYLES::Border_Colour, new RGB_VALUE(GGUI::COLOR::RED)},
         });
 
         tmp->Add_Child(txt);
@@ -579,9 +609,9 @@ namespace GGUI{
                 std::string("Cannot nest element to it self\n") +
                 std::string("Element name: ") + Parent->Get_Name();
 
-            if (Parent->Parent){
+            if (Parent->Get_Parent()){
                 R += std::string("\n") + 
-                std::string("Inside of: ") + Parent->Parent->Get_Name();
+                std::string("Inside of: ") + Parent->Get_Parent()->Get_Name();
             }
 
             Report(
@@ -592,12 +622,12 @@ namespace GGUI{
         GGUI::Coordinates C = child->Get_Position();
 
         int i = 0;
-        for (int Parent_Y = 0; Parent_Y < Parent->Height; Parent_Y++){
-            for (int Parent_X = 0; Parent_X < Parent->Width; Parent_X++){
+        for (int Parent_Y = 0; Parent_Y < Parent->Get_Height(); Parent_Y++){
+            for (int Parent_X = 0; Parent_X < Parent->Get_Width(); Parent_X++){
                 if (Parent_Y >= C.Y && Parent_X >= C.X &&
-                    Parent_Y <= C.Y + child->Height && Parent_X <= C.X + child->Width)
+                    Parent_Y <= C.Y + child->Get_Height() && Parent_X <= C.X + child->Get_Width())
                 {
-                    Parent_Buffer[Parent_Y * Parent->Width + Parent_X] = Text[i++];
+                    Parent_Buffer[Parent_Y * Parent->Get_Width() + Parent_X] = Text[i++];
                 }
             }
         }

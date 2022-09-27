@@ -29,6 +29,8 @@ namespace GGUI{
 
     extern std::vector<Action*> Event_Handlers;
     extern std::vector<Input*> Inputs;
+    
+    extern std::map<std::string, Element*> Element_Names;
 
     extern Element* Focused_On;
 
@@ -40,6 +42,8 @@ namespace GGUI{
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 
+    extern std::map<int, std::map<std::string, VALUE*>> Classes;
+    extern std::map<std::string, int> Class_Names;
 
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 
@@ -55,9 +59,20 @@ namespace GGUI{
 
     extern bool Find_Right_Element();
 
+    extern unsigned long long Min(unsigned long long a, unsigned long long b);
+
+    extern unsigned long long Max(unsigned long long a, unsigned long long b);
+
 
 #if _WIN32
     #include <windows.h>
+
+    #undef RGB
+    #undef BOOL
+    #undef NUMBER
+    #undef min
+    #undef max
+
 
     extern void ClearScreen();
 

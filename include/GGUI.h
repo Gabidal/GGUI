@@ -28,10 +28,10 @@ namespace GGUI{
     namespace Constants{
         inline std::string ESC = "\e[";
         inline std::string SEPERATE = ";";
-        inline std::string TEXT_COLOUR = "38";
-        inline std::string BACK_GROUND_COLOUR = "48";
-        inline std::string RESET_TEXT_COLOUR;
-        inline std::string RESET_BACK_GROUND_COLOUR;
+        inline std::string Text_Color = "38";
+        inline std::string Back_Ground_Color = "48";
+        inline std::string RESET_Text_Color;
+        inline std::string RESET_Back_Ground_Color;
         inline std::string USE_RGB = "2";
         inline std::string END_COMMAND = "m";
         inline std::string CLEAR_SCREEN = ESC + "2J";
@@ -90,10 +90,10 @@ namespace GGUI{
     
         std::string Get_Over_Head(bool Is_Text_Color = true){
             if(Is_Text_Color){
-                return Constants::ESC + Constants::TEXT_COLOUR + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
             }
             else{
-                return Constants::ESC + Constants::BACK_GROUND_COLOUR + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC + Constants::Back_Ground_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
             }
         }
     
@@ -130,8 +130,8 @@ namespace GGUI{
     }
 
     void Constants::Init(){
-        RESET_TEXT_COLOUR = ESC + TEXT_COLOUR + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
-        RESET_BACK_GROUND_COLOUR = ESC + BACK_GROUND_COLOUR + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
+        RESET_Text_Color = ESC + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
+        RESET_Back_Ground_Color = ESC + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
     }
 
     class Coordinates{
@@ -172,7 +172,7 @@ namespace GGUI{
             Pre_Fix = pre_fix;
 
             if (pre_fix != "")
-                Post_Fix = Constants::RESET_TEXT_COLOUR + Constants::RESET_BACK_GROUND_COLOUR;
+                Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
         }
 
         UTF(std::string data, std::string pre_fix = ""){
@@ -180,7 +180,7 @@ namespace GGUI{
             Pre_Fix = pre_fix;
 
             if (pre_fix != "")
-                Post_Fix = Constants::RESET_TEXT_COLOUR + Constants::RESET_BACK_GROUND_COLOUR;
+                Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
             
             Is_Unicode = true;
         }
@@ -251,15 +251,15 @@ namespace GGUI{
         }
     };
 
-    class Flags{
+    class Style{
     public:
         Coordinates Position;
         unsigned int Width = 0;
         unsigned int Height = 0;
         bool Border = false;
 
-        RGB Text_Colour = RGB(255, 255, 255);
-        RGB Back_Ground_Colour = RGB(0, 0, 0);
+        RGB Text_Color = RGB(255, 255, 255);
+        RGB Back_Ground_Color = RGB(0, 0, 0);
 
         RGB Border_Colour = RGB(255, 255, 255);
         RGB Border_Back_Ground_Color = RGB(0, 0, 0);
@@ -322,7 +322,7 @@ namespace GGUI{
 
     };
 
-    class Element : public Flags{
+    class Element : public Style{
     public:
         std::vector<Element*> Childs;
 
@@ -369,9 +369,9 @@ namespace GGUI{
 
         Coordinates Get_Absolute_Position();
 
-        void Set_Back_Ground_Colour(RGB color);
+        void Set_Back_Ground_Color(RGB color);
 
-        RGB Get_Back_Ground_Colour();
+        RGB Get_Back_Ground_Color();
         
         void Set_Border_Colour(RGB color);
         
@@ -381,9 +381,9 @@ namespace GGUI{
         
         RGB Get_Border_Back_Ground_Color();
         
-        void Set_Text_Colour(RGB color);
+        void Set_Text_Color(RGB color);
         
-        RGB Get_Text_Colour();
+        RGB Get_Text_Color();
 
         virtual std::vector<UTF> Render();
 
@@ -409,11 +409,11 @@ namespace GGUI{
                 Constants::END_COMMAND;
             }
             else{
-                return Text_Colour.Get_Over_Head(true) + 
-                Text_Colour.Get_Colour() + 
+                return Text_Color.Get_Over_Head(true) + 
+                Text_Color.Get_Colour() + 
                 Constants::END_COMMAND + 
-                Back_Ground_Colour.Get_Over_Head(false) + 
-                Back_Ground_Colour.Get_Colour() +
+                Back_Ground_Color.Get_Over_Head(false) + 
+                Back_Ground_Color.Get_Colour() +
                 Constants::END_COMMAND;
             }
         }
@@ -474,8 +474,8 @@ namespace GGUI{
 
         List_View(){}
 
-        List_View(Flags f, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false){
-            *((Flags*)this) = f;
+        List_View(Style f, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false){
+            *((Style*)this) = f;
             Flow_Priority = flow_priority;
             Wrap_Overflow = wrap;
         }
@@ -512,8 +512,8 @@ namespace GGUI{
 
         Text_Field(){}
 
-        Text_Field(Flags f){
-            *((Flags*)this) = f;
+        Text_Field(Style f){
+            *((Style*)this) = f;
             Dirty.Dirty(STAIN_TYPE::TEXT);
         }
 
@@ -536,9 +536,9 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::TEXT);
         }
         
-        Text_Field(std::string Text, Flags f, TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT){
+        Text_Field(std::string Text, Style f, TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT){
             Data = Text;
-            *((Flags*)this) = f;
+            *((Style*)this) = f;
             this->Text_Position = Text_Position;
             
             std::pair<unsigned int, unsigned int> D = Get_Text_Dimensions(Text);
@@ -600,7 +600,7 @@ namespace GGUI{
     public:
         Window(){}
 
-        Window(std::string title, Flags f);
+        Window(std::string title, Style f);
 
         void Set_Title(std::string t);
 
@@ -658,6 +658,12 @@ namespace GGUI{
 
 #if _WIN32
     #include <windows.h>
+    
+    #undef RGB
+    #undef BOOL
+    #undef NUMBER
+    #undef min
+    #undef max
 
     extern void ClearScreen();
 

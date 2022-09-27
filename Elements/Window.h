@@ -14,7 +14,11 @@ namespace GGUI{
     public:
         Window(){}
 
-        Window(std::string title, Flags f);
+        Window(std::string title, std::vector<std::string> classes = {});
+
+        Window(std::map<std::string, VALUE*> css) : Element(css){}
+        
+        Window(std::string title, std::map<std::string, VALUE*> css) : Element(css), Title(title){}
 
         void Set_Title(std::string t);
 
