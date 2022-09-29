@@ -574,9 +574,7 @@ namespace GGUI{
             return "Element";
         }
 
-        void Set_Name(std::string name){
-            Name = name;
-        }
+        void Set_Name(std::string name);
 
         bool Has_Internal_Changes();
 

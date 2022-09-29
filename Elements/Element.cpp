@@ -550,6 +550,12 @@ bool GGUI::Element::Children_Changed(){
     return false;
 }
 
+void GGUI::Element::Set_Name(std::string name){
+    Name = name;
+
+    Element_Names[name] = this;
+}
+
 GGUI::Element* GGUI::Element::Get_Element(std::string name){
     Element* Result = nullptr;
 

@@ -21,28 +21,28 @@ int main(){
         {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
     }, GGUI::Grow_Direction::ROW, false);
 
-    // GGUI::Window* a = new GGUI::Window("Window A", {
-    //     {GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
+    GGUI::Window* a = new GGUI::Window("Window A", {
+        {GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
         
-    //     {GGUI::STYLES::Width, new GGUI::NUMBER_VALUE(50)},
-    //     {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
+        {GGUI::STYLES::Width, new GGUI::NUMBER_VALUE(50)},
+        {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
 
-    //     {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-    //     {GGUI::STYLES::Text_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
+        {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
+        {GGUI::STYLES::Text_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
 
-    //     {GGUI::STYLES::Border_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-    //     {GGUI::STYLES::Border_Colour, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
+        {GGUI::STYLES::Border_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
+        {GGUI::STYLES::Border_Colour, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
 
-    //     {GGUI::STYLES::Back_Ground_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
-    //     {GGUI::STYLES::Text_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
+        {GGUI::STYLES::Back_Ground_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
+        {GGUI::STYLES::Text_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
 
-    //     {GGUI::STYLES::Border_Focus_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
-    //     {GGUI::STYLES::Border_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-    // });
+        {GGUI::STYLES::Border_Focus_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
+        {GGUI::STYLES::Border_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
+    });
 
-    // a->On_Click([=](GGUI::Event* e){
-    //     a->Remove();
-    // });
+    a->On_Click([=](GGUI::Event* e){
+        a->Remove();
+    });
 
     // GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
     //     {0, 0},
@@ -89,15 +89,15 @@ int main(){
 
     Main->Add_Child(l);
 
-    //a->Set_Name("A");
+    a->Set_Name("A");
     b->Set_Name("B");
 
-    //l->Add_Child(a);
+    l->Add_Child(a);
     l->Add_Child(b);
 
-    // std::vector<GGUI::Text_Field*> r = Main->Get_Elements<GGUI::Text_Field>();
+    std::vector<GGUI::Text_Field*> r = Main->Get_Elements<GGUI::Text_Field>();
 
-    // GGUI::Element* r2 = Main->Get_Element("A");
+    GGUI::Element* r2 = Main->Get_Element("A");
 
     GGUI::Resume_Renderer();
 
