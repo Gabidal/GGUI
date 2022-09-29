@@ -54,6 +54,9 @@ void GGUI::Element::Set_Style(std::string style_name, VALUE* value){
 
 void GGUI::Element::Parse_Classes(){
 
+    bool Remember_To_Affect_Width_And_Height_Because_Of_Border = false;
+    bool Previus_Border_Value = At<BOOL_VALUE>(STYLES::Border)->Value;
+
     //Go through all classes and their styles and accumulate them.
     for(auto& Class : Classes){
 
@@ -66,8 +69,28 @@ void GGUI::Element::Parse_Classes(){
 
         for (auto& Current_Style : Current){
 
+            if (Current_Style.first == GGUI::STYLES::Border){
+                Remember_To_Affect_Width_And_Height_Because_Of_Border = true;
+            }
+
             Style[Current_Style.first] = Current_Style.second;
 
+        }
+    }
+
+    if (Remember_To_Affect_Width_And_Height_Because_Of_Border){
+        if (Previus_Border_Value != At<BOOL_VALUE>(STYLES::Border)->Value){
+
+            if (At<BOOL_VALUE>(STYLES::Border)->Value){
+                At<NUMBER_VALUE>(STYLES::Width)->Value += 2;
+                At<NUMBER_VALUE>(STYLES::Height)->Value += 2;
+            }
+            else{
+                At<NUMBER_VALUE>(STYLES::Width)->Value -= 2;
+                At<NUMBER_VALUE>(STYLES::Height)->Value -= 2;
+            }
+
+            Dirty.Dirty(STAIN_TYPE::DEEP);
         }
     }
 }
@@ -253,7 +276,7 @@ void GGUI::Element::Set_Height(int height){
 
 void GGUI::Element::Set_Position(Coordinates c){
     At<COORDINATES_VALUE>(STYLES::Position)->Value = c;
-    if (Parent){
+    if (!Parent){
         Report(
             "Cannot move element who is orphan."
         );
@@ -467,7 +490,7 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
 
     for (int y = Child_Start_Y; y < Child_End_Y; y++){
         for (int x = Child_Start_X; x < Child_End_X; x++){
-            Parent_Buffer[y * Child->At<NUMBER_VALUE>(STYLES::Width)->Value + x] = Child_Buffer[(y - Child_Start_Y) * Child->At<NUMBER_VALUE>(STYLES::Height)->Value + (x - Child_Start_X)];
+            Parent_Buffer[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = Child_Buffer[(y - Child_Start_Y) * Child->At<NUMBER_VALUE>(STYLES::Width)->Value + (x - Child_Start_X)];
         }
     }
 }

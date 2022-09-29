@@ -31,8 +31,14 @@ namespace GGUI{
             this->Text_Position = Text_Position;
             
             std::pair<int, int> D = Get_Text_Dimensions(Text);
-            At<NUMBER_VALUE>(STYLES::Width)->Value = D.first;
-            At<NUMBER_VALUE>(STYLES::Height)->Value = D.second;
+
+            if (At<NUMBER_VALUE>(STYLES::Width)->Value == 0 || At<NUMBER_VALUE>(STYLES::Width)->Value < D.first){
+                At<NUMBER_VALUE>(STYLES::Width)->Value = D.first;
+            }
+            if (At<NUMBER_VALUE>(STYLES::Height)->Value == 0 || At<NUMBER_VALUE>(STYLES::Height)->Value < D.second){
+                At<NUMBER_VALUE>(STYLES::Height)->Value = D.second;
+            }
+
             Dirty.Dirty(STAIN_TYPE::TEXT);
         }
 

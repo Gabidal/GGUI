@@ -358,7 +358,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH);
+        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::TEXT | STAIN_TYPE::CLASS);
 
         bool is(STAIN_TYPE f){
             return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
@@ -377,7 +377,7 @@ namespace GGUI{
         }
 
         void Stain_All(){
-            Dirty((STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH));
+            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::TEXT | STAIN_TYPE::CLASS);
         }
 
     };

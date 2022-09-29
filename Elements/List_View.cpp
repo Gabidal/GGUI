@@ -103,6 +103,7 @@ void GGUI::List_View::Update_Parent(Element* New_Element){
 
 bool GGUI::List_View::Remove(Element* remove){
 
+    GGUI::Pause_Render = true;
     unsigned int removable_index = 0;
     
     unsigned int max_width = 0;
@@ -171,6 +172,8 @@ bool GGUI::List_View::Remove(Element* remove){
     }
 
     remove->Display(false);
+    
+    GGUI::Pause_Render = false;
 
     Element::Remove(remove);
 

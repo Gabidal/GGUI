@@ -7,6 +7,13 @@
 std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
 
+    if (Dirty.is(STAIN_TYPE::CLASS)){
+        Parse_Classes();
+
+        Dirty.Clean(STAIN_TYPE::CLASS);
+    }
+
+
     if (Dirty.is(STAIN_TYPE::STRECH)){
         Result.clear();
         Result.resize(At<NUMBER_VALUE>(STYLES::Width)->Value * At<NUMBER_VALUE>(STYLES::Height)->Value);
