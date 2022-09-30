@@ -9,14 +9,14 @@ int main(){
 
     GGUI::Window* Main = GGUI::Init_Renderer();
     Main->Set_Back_Ground_Color({230, 50, 100});
-    Main->Set_Title("GGUI");
-    Main->Show_Border(true);
+    // Main->Set_Title("GGUI");
+    // Main->Show_Border(true);
 
     GGUI::List_View* l = new GGUI::List_View({
-        {GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
+        //{GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
 
-        {GGUI::STYLES::Width, new GGUI::NUMBER_VALUE(50)},
-        {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
+        // {GGUI::STYLES::Width, new GGUI::NUMBER_VALUE(50)},
+        // {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
 
         {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
     }, GGUI::Grow_Direction::ROW, false);
@@ -93,6 +93,7 @@ int main(){
     b->Set_Name("B");
 
     l->Add_Child(a);
+
     l->Add_Child(b);
 
     std::vector<GGUI::Text_Field*> r = Main->Get_Elements<GGUI::Text_Field>();

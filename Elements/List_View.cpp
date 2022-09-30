@@ -23,6 +23,9 @@ void GGUI::List_View::Add_Child(Element* e){
         max_height = Max_Height;
     }
 
+    
+
+
     unsigned int Max_Inner_Space_Height = Get_Height() - Has_Border() * 2;
     unsigned int Max_Inner_Space_Width = Get_Width() - Has_Border() * 2;
 
@@ -48,7 +51,7 @@ void GGUI::List_View::Add_Child(Element* e){
             Last_Child_X += e->Get_Width();
         }
         else{
-            At<NUMBER_VALUE>(STYLES::Width)->Value = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_height);
+            At<NUMBER_VALUE>(STYLES::Width)->Value = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
             if (Last_Child_X + Child_Needs_Minimum_Height_Of > Get_Height()){
                 At<NUMBER_VALUE>(STYLES::Height)->Value = Min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
             }

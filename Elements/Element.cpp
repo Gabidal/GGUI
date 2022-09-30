@@ -74,7 +74,6 @@ void GGUI::Element::Parse_Classes(){
             }
 
             Style[Current_Style.first] = Current_Style.second;
-
         }
     }
 
@@ -309,6 +308,8 @@ GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
 
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
     GGUI::Element tmp = *child;
+    tmp.Style.clear();
+
     tmp.At<NUMBER_VALUE>(STYLES::Width)->Value = 0;
     tmp.At<NUMBER_VALUE>(STYLES::Height)->Value = 0;
 
