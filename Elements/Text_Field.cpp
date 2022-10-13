@@ -16,7 +16,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
 
     if (Dirty.is(STAIN_TYPE::STRECH)){
         Result.clear();
-        Result.resize(At<NUMBER_VALUE>(STYLES::Width)->Value * At<NUMBER_VALUE>(STYLES::Height)->Value);
+        Result.resize(Width * Height);
         Dirty.Clean(STAIN_TYPE::STRECH);
     }
 
@@ -56,15 +56,15 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
 }
 
 void GGUI::Text_Field::Show_Border(bool state){
-    if (state && ((BOOL_VALUE*)Style[STYLES::Border])->Value == false){
+    if (state && At<BOOL_VALUE>(STYLES::Border)->Value == false){
         //enlarge the text field area to compas the borders
-        At<NUMBER_VALUE>(STYLES::Width)->Value += 2;
-        At<NUMBER_VALUE>(STYLES::Height)->Value += 2;
+        Width += 2;
+        Height += 2;
     }
-    else if (!state && ((BOOL_VALUE*)Style[STYLES::Border])->Value == true){
+    else if (!state && At<BOOL_VALUE>(STYLES::Border)->Value == true){
         //shrink the text field area to compas the borders
-        At<NUMBER_VALUE>(STYLES::Width)->Value -= 2;
-        At<NUMBER_VALUE>(STYLES::Height)->Value -= 2;
+        Width -= 2;
+        Height -= 2;
     }
     
     At<BOOL_VALUE>(STYLES::Border)->Value = state;
@@ -108,8 +108,8 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
         return false;
     }
     
-    At<NUMBER_VALUE>(STYLES::Width)->Value = New_Width;
-    At<NUMBER_VALUE>(STYLES::Height)->Value = New_Height;
+    Width = New_Width;
+    Height = New_Height;
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
@@ -121,8 +121,8 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
 std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
 
-    int self_width = self->Get_Number_Style(STYLES::Width);
-    int self_height = self->Get_Number_Style(STYLES::Height);
+    int self_width = self->Get_Width();
+    int self_height = self->Get_Height();
 
     int Width_Center = self_width / 2;
 
@@ -160,8 +160,8 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
 std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
     
-    int self_width = self->Get_Number_Style(STYLES::Width);
-    int self_height = self->Get_Number_Style(STYLES::Height);
+    int self_width = self->Get_Width();
+    int self_height = self->Get_Height();
 
     bool Has_border = self->Has_Border();
 
@@ -206,8 +206,8 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
 std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
     std::vector<GGUI::UTF> Result; 
     
-    int self_width = self->Get_Number_Style(STYLES::Width);
-    int self_height = self->Get_Number_Style(STYLES::Height);
+    int self_width = self->Get_Width();
+    int self_height = self->Get_Height();
 
     bool Has_border = self->Has_Border();
 
@@ -339,7 +339,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
 
         std::pair<unsigned int, unsigned int> Dimensions = Get_Text_Dimensions(tmp_Data);
 
-        if (Dimensions.first > At<NUMBER_VALUE>(STYLES::Width)->Value - (Has_Border() * 2) || Dimensions.second > At<NUMBER_VALUE>(STYLES::Height)->Value - (Has_Border() * 2)){
+        if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
 
             std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
             if (Allow_Input_Overflow){
@@ -350,11 +350,11 @@ void GGUI::Text_Field::Enable_Text_Input(){
             else if (Allow_Dynamic_Size){
 
                 //check what to grow.
-                if (Dimensions.first > At<NUMBER_VALUE>(STYLES::Width)->Value - (Has_Border() * 2)){
-                    At<NUMBER_VALUE>(STYLES::Width)->Value++;
+                if (Dimensions.first > Width - (Has_Border() * 2)){
+                    Width++;
                 }
-                else if (Dimensions.second > At<NUMBER_VALUE>(STYLES::Height)->Value - (Has_Border() * 2)){
-                    At<NUMBER_VALUE>(STYLES::Height)->Value++;
+                else if (Dimensions.second > Height - (Has_Border() * 2)){
+                    Height++;
                 }
                 
                 Data.push_back(input);

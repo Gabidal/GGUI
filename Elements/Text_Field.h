@@ -32,11 +32,11 @@ namespace GGUI{
             
             std::pair<int, int> D = Get_Text_Dimensions(Text);
 
-            if (At<NUMBER_VALUE>(STYLES::Width)->Value == 0 || At<NUMBER_VALUE>(STYLES::Width)->Value < D.first){
-                At<NUMBER_VALUE>(STYLES::Width)->Value = D.first;
+            if (Width == 0 || Width < D.first){
+                Width = D.first;
             }
-            if (At<NUMBER_VALUE>(STYLES::Height)->Value == 0 || At<NUMBER_VALUE>(STYLES::Height)->Value < D.second){
-                At<NUMBER_VALUE>(STYLES::Height)->Value = D.second;
+            if (Height == 0 || Height < D.second){
+                Height = D.second;
             }
 
             Dirty.Dirty(STAIN_TYPE::TEXT);

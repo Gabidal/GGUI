@@ -9,10 +9,18 @@
 #undef max
 
 
-GGUI::Element::Element(std::string Class){
+GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Add_Class("default");
 
     Name = std::to_string((unsigned long long)this);
+
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Parent(parent);
+
+    if (parent)
+        Set_Position(position);
 
     Add_Class(Class);
 
@@ -25,10 +33,21 @@ GGUI::Element::Element() {
     Parse_Classes();
 }
 
-GGUI::Element::Element(std::map<std::string, VALUE*> css){
+GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Add_Class("default");
+
     Style = css;
+
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Parent(parent);
+
+    if (parent)
+        Set_Position(position);
+
     Name = std::to_string((unsigned long long)this);
+
     Parse_Classes();
 }
 
@@ -81,12 +100,12 @@ void GGUI::Element::Parse_Classes(){
         if (Previus_Border_Value != At<BOOL_VALUE>(STYLES::Border)->Value){
 
             if (At<BOOL_VALUE>(STYLES::Border)->Value){
-                At<NUMBER_VALUE>(STYLES::Width)->Value += 2;
-                At<NUMBER_VALUE>(STYLES::Height)->Value += 2;
+                Width += 2;
+                Height += 2;
             }
             else{
-                At<NUMBER_VALUE>(STYLES::Width)->Value -= 2;
-                At<NUMBER_VALUE>(STYLES::Height)->Value -= 2;
+                Width -= 2;
+                Height -= 2;
             }
 
             Dirty.Dirty(STAIN_TYPE::DEEP);
@@ -130,15 +149,15 @@ bool GGUI::Element::Has_Border(){
 }
 
 void GGUI::Element::Add_Child(Element* Child){
-    if (Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.X + Child->At<NUMBER_VALUE>(STYLES::Width)->Value >= At<NUMBER_VALUE>(STYLES::Width)->Value || 
-    Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.Y + Child->At<NUMBER_VALUE>(STYLES::Height)->Value >= At<NUMBER_VALUE>(STYLES::Height)->Value){
+    if (Child->Position.X + Child->Width >= Width || 
+    Child->Position.Y + Child->Height >= Height){
         if (Child->Resize_To(this) == false){
 
             GGUI::Report(
                 "Window exeeded bounds\n "
-                "Starts at: {" + std::to_string(Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.X) + ", " + std::to_string(Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.Y) + "}\n "
-                "Ends at: {" + std::to_string(Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.X + Child->At<NUMBER_VALUE>(STYLES::Width)->Value) + ", " + std::to_string(Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.Y + Child->At<NUMBER_VALUE>(STYLES::Height)->Value) + "}\n "
-                "Max is at: {" + std::to_string(At<NUMBER_VALUE>(STYLES::Width)->Value) + ", " + std::to_string(At<NUMBER_VALUE>(STYLES::Height)->Value) + "}\n "
+                "Starts at: {" + std::to_string(Child->Position.X) + ", " + std::to_string(Child->Position.Y) + "}\n "
+                "Ends at: {" + std::to_string(Child->Position.X + Child->Width) + ", " + std::to_string(Child->Position.Y + Child->Height) + "}\n "
+                "Max is at: {" + std::to_string(Width) + ", " + std::to_string(Height) + "}\n "
             );
 
             return;
@@ -163,7 +182,7 @@ bool GGUI::Element::Remove(Element* handle){
         if (Childs[i] == handle){
             //If the mouse if focused on this about to be deleted element, change mouse position into it's parent Position.
             if (Focused_On == Childs[i]){
-                Mouse = Childs[i]->Parent->At<COORDINATES_VALUE>(STYLES::Position)->Value;
+                Mouse = Childs[i]->Parent->Position;
             }
 
             Childs.erase(Childs.begin() + i);
@@ -217,7 +236,7 @@ bool GGUI::Element::Remove(int index){
 
     //If the mouse if focused on this about to be deleted element, change mouse position into it's parent Position.
     if (Focused_On == tmp){
-        Mouse = tmp->Parent->At<COORDINATES_VALUE>(STYLES::Position)->Value;
+        Mouse = tmp->Parent->Position;
     }
 
     Childs.erase(Childs.begin() + index);
@@ -240,33 +259,33 @@ void GGUI::Element::Remove(){
 }
 
 void GGUI::Element::Set_Dimensions(int width, int height){
-    if (width != At<NUMBER_VALUE>(STYLES::Width)->Value || height != At<NUMBER_VALUE>(STYLES::Height)->Value){    
-        At<NUMBER_VALUE>(STYLES::Width)->Value = width;
-        At<NUMBER_VALUE>(STYLES::Height)->Value = height;
+    if (width != Width || height != Height){    
+        Width = width;
+        Height = height;
         Dirty.Stain_All();
         Update_Frame();
     }
 }
 
 int GGUI::Element::Get_Width(){
-    return At<NUMBER_VALUE>(STYLES::Width)->Value;
+    return Width;
 }
 
 int GGUI::Element::Get_Height(){
-    return At<NUMBER_VALUE>(STYLES::Height)->Value;
+    return Height;
 }
 
 void GGUI::Element::Set_Width(int width){
-    if (width != At<NUMBER_VALUE>(STYLES::Width)->Value){
-        At<NUMBER_VALUE>(STYLES::Width)->Value = width;
+    if (width != Width){
+        Width = width;
         Dirty.Stain_All();
         Update_Frame();
     }
 }
 
 void GGUI::Element::Set_Height(int height){
-    if (height != At<NUMBER_VALUE>(STYLES::Height)->Value){
-        At<NUMBER_VALUE>(STYLES::Height)->Value = height;
+    if (height != Height){
+        Height = height;
         Dirty.Stain_All();
         Update_Frame();
     }
@@ -274,31 +293,34 @@ void GGUI::Element::Set_Height(int height){
 
 
 void GGUI::Element::Set_Position(Coordinates c){
-    At<COORDINATES_VALUE>(STYLES::Position)->Value = c;
-    if (!Parent){
-        Report(
-            "Cannot move element who is orphan."
-        );
-    }
+    Position = c;
     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
 }
 
+void GGUI::Element::Set_Position(Coordinates* c){
+    if (c){
+        Position = *c;
+        Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+        Update_Frame();
+    }
+}
+
 GGUI::Coordinates GGUI::Element::Get_Position(){
-    return At<COORDINATES_VALUE>(STYLES::Position)->Value;
+    return Position;
 }
 
 GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
     Coordinates Result = {0, 0};
     
     Element* current_element = this;
-    Result = current_element->At<COORDINATES_VALUE>(STYLES::Position)->Value;
+    Result = current_element->Position;
     current_element = current_element->Parent;
 
     while (current_element != nullptr){
-        Result.X += current_element->At<COORDINATES_VALUE>(STYLES::Position)->Value.X;
-        Result.Y += current_element->At<COORDINATES_VALUE>(STYLES::Position)->Value.Y;
-        Result.Z += current_element->At<COORDINATES_VALUE>(STYLES::Position)->Value.Z;
+        Result.X += current_element->Position.X;
+        Result.Y += current_element->Position.Y;
+        Result.Z += current_element->Position.Z;
 
         current_element = current_element->Parent;
     }
@@ -310,33 +332,33 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
     GGUI::Element tmp = *child;
     tmp.Style.clear();
 
-    tmp.At<NUMBER_VALUE>(STYLES::Width)->Value = 0;
-    tmp.At<NUMBER_VALUE>(STYLES::Height)->Value = 0;
+    tmp.Width = 0;
+    tmp.Height = 0;
 
     int Border_Size = Has_Border() * 2;
 
     while (true){
-        if (tmp.At<COORDINATES_VALUE>(STYLES::Position)->Value.X + tmp.At<NUMBER_VALUE>(STYLES::Width)->Value < At<NUMBER_VALUE>(STYLES::Width)->Value - Border_Size){
-            tmp.At<NUMBER_VALUE>(STYLES::Width)->Value++;
+        if (tmp.Position.X + tmp.Width < Width - Border_Size){
+            tmp.Width++;
         }
         
-        if (tmp.At<COORDINATES_VALUE>(STYLES::Position)->Value.Y + tmp.At<NUMBER_VALUE>(STYLES::Height)->Value < At<NUMBER_VALUE>(STYLES::Height)->Value - Border_Size){
-            tmp.At<NUMBER_VALUE>(STYLES::Height)->Value++;
+        if (tmp.Position.Y + tmp.Height < Height - Border_Size){
+            tmp.Height++;
         }
-        else if (tmp.At<COORDINATES_VALUE>(STYLES::Position)->Value.X + tmp.At<NUMBER_VALUE>(STYLES::Width)->Value >= At<NUMBER_VALUE>(STYLES::Width)->Value - Border_Size && tmp.At<COORDINATES_VALUE>(STYLES::Position)->Value.X + tmp.At<NUMBER_VALUE>(STYLES::Height)->Value >= At<NUMBER_VALUE>(STYLES::Height)->Value - Border_Size){
+        else if (tmp.Position.X + tmp.Width >= Width - Border_Size && tmp.Position.X + tmp.Height >= Height - Border_Size){
             break;
         }
         
         for (auto c : Childs){
             if (Collides(child, c)){
                 //there are already other childs occupying this area so we can stop here.
-                return {tmp.At<NUMBER_VALUE>(STYLES::Width)->Value, tmp.At<NUMBER_VALUE>(STYLES::Height)->Value};
+                return {tmp.Width, tmp.Height};
             }
         }
 
     }
 
-    return {tmp.At<NUMBER_VALUE>(STYLES::Width)->Value, tmp.At<NUMBER_VALUE>(STYLES::Height)->Value};
+    return {tmp.Width, tmp.Height};
 }
 
 void GGUI::Element::Set_Back_Ground_Color(RGB color){
@@ -393,7 +415,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
     if (Dirty.is(STAIN_TYPE::STRECH)){
         Result.clear();
-        Result.resize(At<NUMBER_VALUE>(STYLES::Width)->Value * At<NUMBER_VALUE>(STYLES::Height)->Value);
+        Result.resize(Width * Height);
         Dirty.Clean(STAIN_TYPE::STRECH);
     }
 
@@ -441,35 +463,35 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 
     Dirty.Clean(STAIN_TYPE::EDGE);
 
-    for (int y = 0; y < At<NUMBER_VALUE>(STYLES::Height)->Value; y++){
-        for (int x = 0; x < At<NUMBER_VALUE>(STYLES::Width)->Value; x++){
+    for (int y = 0; y < Height; y++){
+        for (int x = 0; x < Width; x++){
             //top left corner
             if (y == 0 && x == 0){
-                Result[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //top right corner
-            else if (y == 0 && x == At<NUMBER_VALUE>(STYLES::Width)->Value - 1){
-                Result[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+            else if (y == 0 && x == Width - 1){
+                Result[y * Width + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom left corner
-            else if (y == At<NUMBER_VALUE>(STYLES::Height)->Value - 1 && x == 0){
-                Result[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+            else if (y == Height - 1 && x == 0){
+                Result[y * Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom right corner
-            else if (y == At<NUMBER_VALUE>(STYLES::Height)->Value - 1 && x == At<NUMBER_VALUE>(STYLES::Width)->Value - 1){
-                Result[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+            else if (y == Height - 1 && x == Width - 1){
+                Result[y * Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
             // else if (y == 0 && x < w->Get_Title().size()){
-            //     Result[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = GGUI::UTF(w->Get_Title()[x - 1], w->Get_Text_Color(), COLOR::RESET);
+            //     Result[y * Width + x] = GGUI::UTF(w->Get_Title()[x - 1], w->Get_Text_Color(), COLOR::RESET);
             // }
             //The roof border
-            else if (y == 0 || y == At<NUMBER_VALUE>(STYLES::Height)->Value - 1){
-                Result[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
+            else if (y == 0 || y == Height - 1){
+                Result[y * Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
             }
             //The left border
-            else if (x == 0 || x == At<NUMBER_VALUE>(STYLES::Width)->Value - 1){
-                Result[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
+            else if (x == 0 || x == Width - 1){
+                Result[y * Width + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
             }
         }
     }
@@ -477,21 +499,21 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
     
-    unsigned int Max_Allowed_Height = Parent->At<NUMBER_VALUE>(STYLES::Height)->Value - Parent->Has_Border();    //remove bottom borders from calculation
-    unsigned int Max_Allowed_Width = Parent->At<NUMBER_VALUE>(STYLES::Width)->Value - Parent->Has_Border();     //remove right borders from calculation
+    unsigned int Max_Allowed_Height = Parent->Height - Parent->Has_Border();    //remove bottom borders from calculation
+    unsigned int Max_Allowed_Width = Parent->Width - Parent->Has_Border();     //remove right borders from calculation
 
     unsigned int Min_Allowed_Height = 0 + Parent->Has_Border();                        //add top borders from calculation
     unsigned int Min_Allowed_Width = 0 + Parent->Has_Border();                         //add left borders from calculation
 
-    unsigned int Child_Start_Y = Min_Allowed_Height + Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.Y;
-    unsigned int Child_Start_X = Min_Allowed_Width + Child->At<COORDINATES_VALUE>(STYLES::Position)->Value.X;
+    unsigned int Child_Start_Y = Min_Allowed_Height + Child->Position.Y;
+    unsigned int Child_Start_X = Min_Allowed_Width + Child->Position.X;
 
-    unsigned int Child_End_Y = Min(Child_Start_Y + Child->At<NUMBER_VALUE>(STYLES::Height)->Value, Max_Allowed_Height);
-    unsigned int Child_End_X = Min(Child_Start_X + Child->At<NUMBER_VALUE>(STYLES::Width)->Value, Max_Allowed_Width);
+    unsigned int Child_End_Y = Min(Child_Start_Y + Child->Height, Max_Allowed_Height);
+    unsigned int Child_End_X = Min(Child_Start_X + Child->Width, Max_Allowed_Width);
 
     for (int y = Child_Start_Y; y < Child_End_Y; y++){
         for (int x = Child_Start_X; x < Child_End_X; x++){
-            Parent_Buffer[y * At<NUMBER_VALUE>(STYLES::Width)->Value + x] = Child_Buffer[(y - Child_Start_Y) * Child->At<NUMBER_VALUE>(STYLES::Width)->Value + (x - Child_Start_X)];
+            Parent_Buffer[y * Width + x] = Child_Buffer[(y - Child_Start_Y) * Child->Width + (x - Child_Start_X)];
         }
     }
 }

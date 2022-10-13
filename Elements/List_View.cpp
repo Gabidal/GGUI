@@ -33,7 +33,7 @@ void GGUI::List_View::Add_Child(Element* e){
     unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Has_Border() * 2;
 
 
-    if (Wrap_Overflow){
+    if (At<BOOL_VALUE>(STYLES::Wrap)->Value){
         Report(
             "Overflow wrapping is not supported!"
         );
@@ -41,19 +41,19 @@ void GGUI::List_View::Add_Child(Element* e){
     else{
         e->Set_Parent(this);
 
-        if (Flow_Priority == Grow_Direction::ROW){
-            At<NUMBER_VALUE>(STYLES::Height)->Value = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
+        if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
+            Height = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
             if (Last_Child_X + Child_Needs_Minimum_Width_Of > Get_Width()){
-                At<NUMBER_VALUE>(STYLES::Width)->Value = Min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
+                Width = Min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
             }
 
             e->Set_Position({Last_Child_X, e->Get_Position().Y});
             Last_Child_X += e->Get_Width();
         }
         else{
-            At<NUMBER_VALUE>(STYLES::Width)->Value = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
+            Width = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
             if (Last_Child_X + Child_Needs_Minimum_Height_Of > Get_Height()){
-                At<NUMBER_VALUE>(STYLES::Height)->Value = Min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
+                Height = Min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
             }
 
             e->Set_Position({e->Get_Position().X, Last_Child_Y});
@@ -129,7 +129,7 @@ bool GGUI::List_View::Remove(Element* remove){
     Set_Dimensions(0, 0);
 
     //now for every element past this index position needs to be altered so that this removed element didn't ever exist.
-    if (Flow_Priority == Grow_Direction::ROW){
+    if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
         Last_Child_X = 0;
 
         for (unsigned int i = removable_index + 1; i < Childs.size(); i++){

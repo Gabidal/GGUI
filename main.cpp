@@ -19,13 +19,10 @@ int main(){
         // {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
 
         {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-    }, GGUI::Grow_Direction::ROW, false);
+    });
 
     GGUI::Window* a = new GGUI::Window("Window A", {
         {GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
-        
-        {GGUI::STYLES::Width, new GGUI::NUMBER_VALUE(50)},
-        {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
 
         {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
         {GGUI::STYLES::Text_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
@@ -38,7 +35,7 @@ int main(){
 
         {GGUI::STYLES::Border_Focus_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
         {GGUI::STYLES::Border_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-    });
+    }, 10, 10);
 
     a->On_Click([=](GGUI::Event* e){
         a->Remove();
@@ -65,9 +62,6 @@ int main(){
 
     GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
         {GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
-        
-        {GGUI::STYLES::Width, new GGUI::NUMBER_VALUE(50)},
-        {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
 
         {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
         {GGUI::STYLES::Text_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},

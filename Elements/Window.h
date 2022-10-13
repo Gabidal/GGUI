@@ -16,9 +16,21 @@ namespace GGUI{
 
         Window(std::string title, std::vector<std::string> classes = {});
 
-        Window(std::map<std::string, VALUE*> css) : Element(css){}
+        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr) : Element(css){
+            Set_Width(width);
+            Set_Height(height);
+            Set_Parent(parent);
+            if (parent)
+                Set_Position(position);
+        }
         
-        Window(std::string title, std::map<std::string, VALUE*> css) : Element(css), Title(title){}
+        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr) : Element(css), Title(title){
+            Set_Width(width);
+            Set_Height(height);
+            Set_Parent(parent);
+            if (parent)
+                Set_Position(position);
+        }
 
         void Set_Title(std::string t);
 

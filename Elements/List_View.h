@@ -13,8 +13,6 @@ namespace GGUI{
 
     class List_View : public Element{
     public:
-        Grow_Direction Flow_Priority;
-        bool Wrap_Overflow = false;
 
         //cache
         unsigned int Last_Child_X = 0;
@@ -22,9 +20,14 @@ namespace GGUI{
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
-        List_View(std::map<std::string, VALUE*> css = {}, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false) : Element(css){
-            Flow_Priority = flow_priority;
-            Wrap_Overflow = wrap;
+        List_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0}) : Element(css){
+        
+            Set_Width(width);
+            Set_Height(height);
+            Set_Parent(parent);
+            if (parent)
+                Set_Position(position);
+
         }
 
         void Add_Child(Element* e) override;

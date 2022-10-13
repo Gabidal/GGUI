@@ -320,9 +320,6 @@ namespace GGUI{
     };
 
     namespace STYLES{
-        inline std::string Position                        = "Position";
-        inline std::string Width                           = "Width";
-        inline std::string Height                          = "Height";
         inline std::string Border                          = "Border";
         inline std::string Text_Color                      = "Text_Color";
         inline std::string Back_Ground_Color               = "Back_Ground_Color";
@@ -332,6 +329,8 @@ namespace GGUI{
         inline std::string Back_Ground_Focus_Color         = "Back_Ground_Focus_Color";
         inline std::string Border_Focus_Color              = "Border_Focus_Color";
         inline std::string Border_Focus_Back_Ground_Color  = "Border_Focus_Back_Ground_Color";
+        inline std::string Flow_Priority                   = "Flow_Priority";
+        inline std::string Wrap                            = "Wrap";          
     };
 
     enum class STAIN_TYPE{
@@ -384,6 +383,11 @@ namespace GGUI{
 
     class Element{
     protected:
+        Coordinates Position;
+
+        unsigned int Width = 1;
+        unsigned int Height = 1;
+
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
         bool Show = true;
@@ -404,9 +408,10 @@ namespace GGUI{
 
         Element();
 
-        Element(std::string Class);
+        Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
 
-        Element(std::map<std::string, VALUE*> css);
+        Element(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+
 
         template<typename T>
         T* At(std::string s){
@@ -452,7 +457,12 @@ namespace GGUI{
         }
 
         void Set_Parent(Element* parent){
-            Parent = parent;
+            if (parent){
+                Parent = parent;
+
+                if (!Get_Element(this->Name))
+                    Parent->Add_Child(this);
+            }
         }
 
         bool Has(std::string s);
@@ -497,6 +507,8 @@ namespace GGUI{
         void Set_Height(int height);
 
         void Set_Position(Coordinates c);
+       
+        void Set_Position(Coordinates* c);
 
         Coordinates Get_Position();
 

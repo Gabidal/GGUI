@@ -601,19 +601,14 @@ namespace GGUI{
         // });
 
         GGUI::Window* tmp = new GGUI::Window("ERROR!", {
-            {STYLES::Position, new COORDINATES_VALUE({W_Center, H_Center, INT32_MAX})},
-            {STYLES::Width, new NUMBER_VALUE(w)},
-            {STYLES::Height, new NUMBER_VALUE(h)},
             {STYLES::Border, new BOOL_VALUE(Has_Border)},
             {STYLES::Back_Ground_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
             {STYLES::Text_Color, new RGB_VALUE(GGUI::COLOR::RED)},
             {STYLES::Border_Back_Ground_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
             {STYLES::Border_Colour, new RGB_VALUE(GGUI::COLOR::RED)},
-        });
+        }, w, h, (Element*)&Main, new Coordinates(W_Center, H_Center, INT32_MAX));
 
         tmp->Add_Child(txt);
-
-        Main.Add_Child(tmp);
 
         Remember.push_back(Memory(
             TIME::SECOND * 10,
