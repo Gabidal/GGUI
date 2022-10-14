@@ -8,6 +8,64 @@
 #undef BOOL
 #undef NUMBER
 
+GGUI::List_View::List_View(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+
+    if (width != 0)
+        Set_Width(width);
+    if (height != 0)
+        Set_Height(height);
+
+    if (parent){
+        Set_Parent(parent);
+
+        Set_Position(position);
+    }
+
+}
+
+//These next constructors are mainly for users to more easily create elements.
+GGUI::List_View::List_View(
+    RGB text_color,
+    RGB background_color
+) : Element(){
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+}
+
+GGUI::List_View::List_View(
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+}
+
+GGUI::List_View::List_View(
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color,
+    RGB border_color,
+    RGB border_background_color
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+    Set_Border_Color(border_color);
+    Set_Border_Background_Color(border_background_color);
+    
+    Show_Border(true);
+}
+
+//End of user constructors.
+
 void GGUI::List_View::Add_Child(Element* e){
     unsigned int max_width = 0;
     unsigned int max_height = 0;

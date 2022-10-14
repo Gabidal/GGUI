@@ -7,19 +7,20 @@ int main(){
     
     GGUI::Window* Main = GGUI::Init_Renderer();
 
-    GGUI::List_View* l = new GGUI::List_View({}, GGUI::Grow_Direction::ROW, false); 
+    GGUI::List_View* l = new GGUI::List_View(); 
 
     Main->Add_Child(l);
     
     GGUI::Text_Field* Text = new GGUI::Text_Field(
         "A AA AAA AAAA AAAAA AAAAAA AAAAAAA AAAAAAAA \n"
         "B BB BBB BBBB BBBBB BBBBBB BBBBBBB BBBBBBBB \n"
-        "C CC CCC CCCC CCCCC CCCCCC CCCCCCC CCCCCCCC \n"
+        "C CC CCC CCCC CCCCC CCCCCC CCCCCCC CCCCCCCC \n",
+        GGUI::COLOR::CYAN,
+        GGUI::COLOR::DARK_MAGENTA,
+
+        GGUI::COLOR::WHITE,
+        GGUI::COLOR::LIGHT_BLUE
     );
-    Text->Set_Back_Ground_Color(GGUI::COLOR::DARK_MAGENTA);
-    Text->Set_Border_Back_Ground_Color(GGUI::COLOR::LIGHT_BLUE);
-    Text->Set_Text_Color(GGUI::COLOR::CYAN);
-    Text->Show_Border(true);
 
     Text->On_Click([=](GGUI::Event* e){
         Text->Remove();

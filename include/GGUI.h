@@ -369,17 +369,17 @@ namespace GGUI{
 
         Coordinates Get_Absolute_Position();
 
-        void Set_Back_Ground_Color(RGB color);
+        void Set_Background_Color(RGB color);
 
-        RGB Get_Back_Ground_Color();
+        RGB Get_Background_Color();
         
         void Set_Border_Colour(RGB color);
         
         RGB Get_Border_Colour();
 
-        void Set_Border_Back_Ground_Color(RGB color);
+        void Set_Border_Background_Color(RGB color);
         
-        RGB Get_Border_Back_Ground_Color();
+        RGB Get_Border_Background_Color();
         
         void Set_Text_Color(RGB color);
         

@@ -43,7 +43,7 @@ namespace GGUI{
     extern std::map<int, std::map<std::string, VALUE*>> Classes;
     extern std::map<std::string, int> Class_Names;
 
-    extern Window Main;  
+    extern Window* Main;  
 
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 
@@ -123,6 +123,8 @@ namespace GGUI{
     extern void Event_Handler();
 
     extern int Get_Free_Class_ID(std::string n);
+
+    extern void Add_Class(std::string name, std::map<std::string, VALUE*> Styling);
 
     extern void Init_Classes();
 

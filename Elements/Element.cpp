@@ -34,6 +34,8 @@ GGUI::Element::Element() {
     Add_Class("default");
     Name = std::to_string((unsigned long long)this);
     Parse_Classes();
+
+    Dirty.Stain_All();
 }
 
 GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
@@ -60,6 +62,50 @@ GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, un
 
     Name = std::to_string((unsigned long long)this);
 }
+
+//These next constructors are mainly for users to more easily create elements.
+GGUI::Element::Element(
+    unsigned int width,
+    unsigned int height
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+}
+
+GGUI::Element::Element(
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+}
+
+GGUI::Element::Element(
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color,
+    RGB border_color,
+    RGB border_background_color
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+    Set_Border_Color(border_color);
+    Set_Border_Background_Color(border_background_color);
+
+    Show_Border(true);
+}
+
+//End of user constructors.
 
 GGUI::RGB GGUI::Element::Get_RGB_Style(std::string style_name){
     return At<RGB_VALUE>(style_name)->Value;
@@ -104,7 +150,7 @@ void GGUI::Element::Parse_Classes(){
 
             //Classes only affect globally, but local styles are priority.
             if (Style.find(Current_Style.first) == Style.end()){
-                Style[Current_Style.first] = Current_Style.second;
+                Style[Current_Style.first] = Current_Style.second->Copy();
             }
         }
     }
@@ -389,36 +435,38 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
     return {tmp.Width, tmp.Height};
 }
 
-void GGUI::Element::Set_Back_Ground_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Back_Ground_Color)->Value = color;
-    if (At<RGB_VALUE>(STYLES::Border_Back_Ground_Color)->Value == At<RGB_VALUE>(STYLES::Back_Ground_Color)->Value)
-        At<RGB_VALUE>(STYLES::Border_Back_Ground_Color)->Value = color;
+void GGUI::Element::Set_Background_Color(RGB color){
+    At<RGB_VALUE>(STYLES::Background_Color)->Value = color;
+    if (At<RGB_VALUE>(STYLES::Border_Background_Color)->Value == At<RGB_VALUE>(STYLES::Background_Color)->Value)
+        At<RGB_VALUE>(STYLES::Border_Background_Color)->Value = color;
+        
     Dirty.Dirty(STAIN_TYPE::COLOR);
+    
     Update_Frame();
 }
 
-GGUI::RGB GGUI::Element::Get_Back_Ground_Color(){
-    return At<RGB_VALUE>(STYLES::Back_Ground_Color)->Value;
+GGUI::RGB GGUI::Element::Get_Background_Color(){
+    return At<RGB_VALUE>(STYLES::Background_Color)->Value;
 }
 
-void GGUI::Element::Set_Border_Colour(RGB color){
+void GGUI::Element::Set_Border_Color(RGB color){
     At<RGB_VALUE>(STYLES::Border_Colour)->Value = color;
     Dirty.Dirty(STAIN_TYPE::COLOR);
     Update_Frame();
 }
 
-GGUI::RGB GGUI::Element::Get_Border_Colour(){
+GGUI::RGB GGUI::Element::Get_Border_Color(){
     return At<RGB_VALUE>(STYLES::Border_Colour)->Value;
 }
 
-void GGUI::Element::Set_Border_Back_Ground_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Border_Back_Ground_Color)->Value = color;
+void GGUI::Element::Set_Border_Background_Color(RGB color){
+    At<RGB_VALUE>(STYLES::Border_Background_Color)->Value = color;
     Dirty.Dirty(STAIN_TYPE::COLOR);
     Update_Frame();
 }
 
-GGUI::RGB GGUI::Element::Get_Border_Back_Ground_Color(){
-    return At<RGB_VALUE>(STYLES::Border_Back_Ground_Color)->Value;
+GGUI::RGB GGUI::Element::Get_Border_Background_Color(){
+    return At<RGB_VALUE>(STYLES::Border_Background_Color)->Value;
 }
 
 void GGUI::Element::Set_Text_Color(RGB color){

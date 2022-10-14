@@ -8,75 +8,34 @@ int main(){
     GGUI::Pause_Renderer();
 
     GGUI::Window* Main = GGUI::Init_Renderer();
-    Main->Set_Back_Ground_Color({230, 50, 100});
-    // Main->Set_Title("GGUI");
-    // Main->Show_Border(true);
 
-    GGUI::List_View* l = new GGUI::List_View({
-        //{GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
+    GGUI::List_View* l = new GGUI::List_View(
+        GGUI::COLOR::WHITE,
+        GGUI::COLOR::WHITE
+    );
 
-        // {GGUI::STYLES::Width, new GGUI::NUMBER_VALUE(50)},
-        // {GGUI::STYLES::Height, new GGUI::NUMBER_VALUE(10)},
+    GGUI::Window* a = new GGUI::Window(
+        "Window A", 
+        20,
+        10,
 
-        {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-    });
-
-    GGUI::Window* a = new GGUI::Window("Window A", {
-        {GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
-
-        {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-        {GGUI::STYLES::Text_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-
-        {GGUI::STYLES::Border_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-        {GGUI::STYLES::Border_Colour, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-
-        {GGUI::STYLES::Back_Ground_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
-        {GGUI::STYLES::Text_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-
-        {GGUI::STYLES::Border_Focus_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
-        {GGUI::STYLES::Border_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-    }, 10, 10);
+        GGUI::COLOR::RED,
+        GGUI::COLOR::BLUE
+    );
 
     a->On_Click([=](GGUI::Event* e){
         a->Remove();
     });
 
-    // GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
-    //     {0, 0},
-    //     20, 10,
-    //     true,
-    //     GGUI::COLOR::CYAN,
-    //     GGUI::COLOR::BLACK,
+    GGUI::Text_Field* b = new GGUI::Text_Field(
+        "Text Field B",
 
-    //     GGUI::COLOR::CYAN,
-    //     GGUI::COLOR::BLACK,
+        GGUI::COLOR::GREEN,
+        GGUI::COLOR::BLACK,
 
-    //     GGUI::COLOR::RED,
-    //     GGUI::COLOR::BLACK,
-
-    //     GGUI::COLOR::RED,
-    //     GGUI::COLOR::BLACK,
-    // },
-    // GGUI::TEXT_LOCATION::LEFT
-    // );
-
-    GGUI::Text_Field* b = new GGUI::Text_Field("Text Field B", {
-        {GGUI::STYLES::Border, new GGUI::BOOL_VALUE(true)},
-
-        {GGUI::STYLES::Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-        {GGUI::STYLES::Text_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-
-        {GGUI::STYLES::Border_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
-        {GGUI::STYLES::Border_Colour, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-
-        {GGUI::STYLES::Back_Ground_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::DARK_MAGENTA)},
-        {GGUI::STYLES::Text_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-
-        {GGUI::STYLES::Border_Focus_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
-        {GGUI::STYLES::Border_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-
-        {GGUI::STYLES::Allow_Input_Overflow, new GGUI::BOOL_VALUE(true)},
-    });
+        GGUI::COLOR::CYAN,
+        GGUI::COLOR::DARK_MAGENTA 
+    );
 
     b->Enable_Text_Input();
 

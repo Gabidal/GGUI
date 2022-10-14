@@ -34,7 +34,7 @@ namespace GGUI{
 
     inline std::map<std::string, int> Class_Names;
 
-    Window Main;                                          //Main window
+    Window* Main = nullptr;                                          //Main window
 
     bool Collides(GGUI::Element* a, GGUI::Element* b){
         if (a == b)
@@ -80,7 +80,7 @@ namespace GGUI{
 
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -90,7 +90,7 @@ namespace GGUI{
 
         tmp_c.Y--;
 
-        Element* Upper_Element = Get_Accurate_Element_From(tmp_c, &Main);
+        Element* Upper_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Upper_Element && Upper_Element != (Element*)&Main){
             Mouse = Upper_Element->Get_Position();
@@ -105,7 +105,7 @@ namespace GGUI{
 
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -115,7 +115,7 @@ namespace GGUI{
 
         tmp_c.Y += Current_Element->Get_Height() + 1;
 
-        Element* Lower_Element = Get_Accurate_Element_From(tmp_c, &Main);
+        Element* Lower_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Lower_Element && Lower_Element != (Element*)&Main){
             Mouse = Lower_Element->Get_Position();
@@ -130,7 +130,7 @@ namespace GGUI{
 
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -140,7 +140,7 @@ namespace GGUI{
 
         tmp_c.X--;
 
-        Element* Left_Element = Get_Accurate_Element_From(tmp_c, &Main);
+        Element* Left_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Left_Element && Left_Element != (Element*)&Main){
             Mouse = Left_Element->Get_Position();
@@ -155,7 +155,7 @@ namespace GGUI{
 
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, &Main);
+        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -165,7 +165,7 @@ namespace GGUI{
 
         tmp_c.X += Current_Element->Get_Width() + 1;
 
-        Element* Right_Element = Get_Accurate_Element_From(tmp_c, &Main);
+        Element* Right_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Right_Element && Right_Element != (Element*)&Main){
             Mouse = Right_Element->Get_Position();
@@ -291,7 +291,7 @@ namespace GGUI{
 
                 Update_Max_Width_And_Height();
 
-                Main.Set_Dimensions(Max_Width, Max_Height);
+                Main->Set_Dimensions(Max_Width, Max_Height);
             }
         }
     }
@@ -408,9 +408,9 @@ namespace GGUI{
 
         Pause_Event_Thread = true;
 
-        Abstract_Frame_Buffer = Main.Render();
+        Abstract_Frame_Buffer = Main->Render();
 
-        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Get_Width(), Main.Get_Height());
+        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
 
         //Unlock the event handler.
         Pause_Event_Thread = false;
@@ -460,7 +460,7 @@ namespace GGUI{
     }
 
     void Update_Focused_Element(GGUI::Element* new_candidate){
-        if (Focused_On == new_candidate || new_candidate == &Main)
+        if (Focused_On == new_candidate || new_candidate == Main)
             return;
 
         //put the previus focused candidate into not-focus
@@ -517,19 +517,30 @@ namespace GGUI{
         }
     }
 
+    void Add_Class(std::string name, std::map<std::string, VALUE*> Styling){
+        int Class_ID = Get_Free_Class_ID(name);
+
+        Classes[Class_ID] = Styling;
+    }
+
     void Init_Classes(){
         // Add default class
         std::string DEFAULT_NAME = "default";
         std::map<std::string, VALUE*> DEFAULT = {
             {STYLES::Text_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Back_Ground_Color, new RGB_VALUE(COLOR::BLACK)},
+            {STYLES::Background_Color, new RGB_VALUE(COLOR::BLACK)},
 
             {STYLES::Border_Colour, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Border_Back_Ground_Color, new RGB_VALUE(COLOR::BLACK)},
+            {STYLES::Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
+
+            {STYLES::Focus_Text_Color, new RGB_VALUE(COLOR::WHITE)},
+            {STYLES::Focus_Background_Color, new RGB_VALUE(COLOR::DARK_GRAY)},
+
+            {STYLES::Focus_Border_Color, new RGB_VALUE(COLOR::WHITE)},
+            {STYLES::Focus_Border_Background_Color, new RGB_VALUE(COLOR::DARK_GRAY)},
         };
 
-        int new_ID = Get_Free_Class_ID(DEFAULT_NAME);
-        Classes[new_ID] = DEFAULT;
+        Add_Class(DEFAULT_NAME, DEFAULT);
     }
 
     //Inits GGUI and returns the main window.
@@ -551,13 +562,11 @@ namespace GGUI{
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
 
-        Main.Set_Width(Max_Width);
-        Main.Set_Height(Max_Height);
-        Main.Get_Dirty().Dirty(STAIN_TYPE::STRECH | STAIN_TYPE::COLOR);
+        Main = new Window("", Max_Width, Max_Height);
 
-        Abstract_Frame_Buffer = Main.Render();
+        Abstract_Frame_Buffer = Main->Render();
 
-        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main.Get_Width(), Main.Get_Height());
+        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
 
         std::thread Job_Scheduler([&](){
             int i = 0;
@@ -575,7 +584,7 @@ namespace GGUI{
 
         Pause_Render = Default_Render_State;
 
-        return &Main;
+        return Main;
     }
 
     void Report(std::string Problem){
@@ -602,9 +611,9 @@ namespace GGUI{
 
         GGUI::Window* tmp = new GGUI::Window("ERROR!", {
             {STYLES::Border, new BOOL_VALUE(Has_Border)},
-            {STYLES::Back_Ground_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
+            {STYLES::Background_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
             {STYLES::Text_Color, new RGB_VALUE(GGUI::COLOR::RED)},
-            {STYLES::Border_Back_Ground_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
+            {STYLES::Border_Background_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
             {STYLES::Border_Colour, new RGB_VALUE(GGUI::COLOR::RED)},
         }, w, h, (Element*)&Main, new Coordinates(W_Center, H_Center, INT32_MAX));
 

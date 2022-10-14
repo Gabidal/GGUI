@@ -10,12 +10,13 @@ int main(){
     GGUI::Text_Field* Text = new GGUI::Text_Field(
         "A AA AAA AAAA AAAAA AAAAAA AAAAAAA AAAAAAAA \n"
         "B BB BBB BBBB BBBBB BBBBBB BBBBBBB BBBBBBBB \n"
-        "C CC CCC CCCC CCCCC CCCCCC CCCCCCC CCCCCCCC \n"
+        "C CC CCC CCCC CCCCC CCCCCC CCCCCCC CCCCCCCC \n",
+        GGUI::COLOR::CYAN,
+        GGUI::COLOR::DARK_MAGENTA,
+
+        GGUI::COLOR::WHITE,
+        GGUI::COLOR::LIGHT_BLUE
     );
-    Text->Set_Back_Ground_Color(GGUI::COLOR::DARK_MAGENTA);
-    Text->Set_Border_Back_Ground_Color(GGUI::COLOR::LIGHT_BLUE);
-    Text->Set_Text_Color(GGUI::COLOR::CYAN);
-    Text->Show_Border(true);
     
     Main->Add_Child(Text);
 

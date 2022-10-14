@@ -13,6 +13,86 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes){
     Dirty.Stain_All();
 }
 
+GGUI::Window::Window(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
+    if (width != 0)
+        Set_Width(width);
+    if (height != 0)
+        Set_Height(height);
+
+    if (parent){
+        Set_Parent(parent);
+
+        Set_Position(position);
+    }
+}
+
+GGUI::Window::Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
+    if (width != 0)
+        Set_Width(width);
+    if (height != 0)
+        Set_Height(height);
+
+    if (parent){
+        Set_Parent(parent);
+
+        Set_Position(position);
+    }
+}
+
+
+//These next constructors are mainly for users to more easily create elements.
+GGUI::Window::Window(
+    std::string title, 
+    unsigned int width,
+    unsigned int height
+) : Element(){
+
+    Title = title;
+    Set_Width(width);
+    Set_Height(height);
+
+}
+
+GGUI::Window::Window(
+    std::string title, 
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color
+) : Element(){
+
+    Title = title;
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+}
+
+GGUI::Window::Window(
+    std::string title, 
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color,
+    RGB border_color,
+    RGB border_background_color
+) : Element(){
+
+    Title = title;
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+    Set_Border_Color(border_color);
+    Set_Border_Background_Color(border_background_color);
+    
+    Show_Border(true);
+}
+
+//End of user constructors.
+
 void GGUI::Window::Set_Title(std::string t){
     Title = t;
     Dirty.Dirty(STAIN_TYPE::EDGE);

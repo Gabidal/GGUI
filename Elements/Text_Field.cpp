@@ -3,6 +3,47 @@
 
 #include <algorithm>
 
+GGUI::Text_Field::Text_Field(std::string Text, std::map<std::string, VALUE*> css) : Element(css) {
+    Data = Text;
+    
+    std::pair<int, int> D = Get_Text_Dimensions(Text);
+
+    if (Width == 0 || Width < D.first){
+        Width = D.first;
+    }
+    if (Height == 0 || Height < D.second){
+        Height = D.second;
+    }
+
+    Dirty.Dirty(STAIN_TYPE::TEXT);
+}
+
+//These next constructors are mainly for users to more easily create elements.
+GGUI::Text_Field::Text_Field(
+    std::string Text,
+    RGB text_color,
+    RGB background_color
+) : Text_Field(Text, {}){
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+}
+
+GGUI::Text_Field::Text_Field(
+    std::string Text,
+    RGB text_color,
+    RGB background_color,
+    RGB border_color,
+    RGB border_background_color
+) : Text_Field(Text, {}){
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+    Set_Border_Color(border_color);
+    Set_Border_Background_Color(border_background_color);
+    
+    Show_Border(true);
+}
+
+//End of user constructors.
 
 std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;

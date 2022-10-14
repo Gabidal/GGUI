@@ -22,20 +22,25 @@ namespace GGUI{
 
         Text_Field(){}
 
-        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {}) : Element(css) {
-            Data = Text;
-            
-            std::pair<int, int> D = Get_Text_Dimensions(Text);
+        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {});
 
-            if (Width == 0 || Width < D.first){
-                Width = D.first;
-            }
-            if (Height == 0 || Height < D.second){
-                Height = D.second;
-            }
+        //These next constructors are mainly for users to more easily create elements.
 
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
+        Text_Field(
+            std::string Text,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Text_Field(
+            std::string Text,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        //End of user constructors.
 
         void Set_Data(std::string Data);
 

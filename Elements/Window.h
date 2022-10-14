@@ -16,31 +16,38 @@ namespace GGUI{
 
         Window(std::string title, std::vector<std::string> classes = {});
 
-        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr) : Element(css){
-            if (width != 0)
-                Set_Width(width);
-            if (height != 0)
-                Set_Height(height);
-
-            if (parent){
-                Set_Parent(parent);
-
-                Set_Position(position);
-            }
-        }
+        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
         
-        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr) : Element(css), Title(title){
-            if (width != 0)
-                Set_Width(width);
-            if (height != 0)
-                Set_Height(height);
+        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
 
-            if (parent){
-                Set_Parent(parent);
+        //These next constructors are mainly for users to more easily create elements.
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height
+        );
 
-                Set_Position(position);
-            }
-        }
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        //End of user constructors.
+
+
 
         void Set_Title(std::string t);
 

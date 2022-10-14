@@ -261,6 +261,10 @@ namespace GGUI{
         VALUE_TYPES Type = VALUE_TYPES::UNDEFINED;
 
         VALUE(){}
+
+        virtual VALUE* Copy() {
+            return nullptr;
+        };
     };
 
     class NUMBER_VALUE : public VALUE{
@@ -275,6 +279,11 @@ namespace GGUI{
         NUMBER_VALUE(){
             Type = VALUE_TYPES::NUMBER;
         }
+
+        VALUE* Copy() override {
+            NUMBER_VALUE* copy = new NUMBER_VALUE(Value);
+            return copy;
+        } 
     };
 
     class RGB_VALUE : public VALUE{
@@ -289,6 +298,11 @@ namespace GGUI{
         RGB_VALUE(){
             Type = VALUE_TYPES::RGB;
         }
+
+        VALUE* Copy() override {
+            RGB_VALUE* copy = new RGB_VALUE(Value);
+            return copy;
+        } 
     };
 
     class BOOL_VALUE : public VALUE{
@@ -303,6 +317,11 @@ namespace GGUI{
         BOOL_VALUE(){
             Type = VALUE_TYPES::BOOL;
         }
+
+        VALUE* Copy() override {
+            BOOL_VALUE* copy = new BOOL_VALUE(Value);
+            return copy;
+        } 
     };
 
     class COORDINATES_VALUE : public VALUE{
@@ -317,18 +336,23 @@ namespace GGUI{
         COORDINATES_VALUE(){
             Type = VALUE_TYPES::COORDINATES;
         }
+
+        VALUE* Copy() override {
+            COORDINATES_VALUE* copy = new COORDINATES_VALUE(Value);
+            return copy;
+        } 
     };
 
     namespace STYLES{
         inline std::string Border                          = "Border";
         inline std::string Text_Color                      = "Text_Color";
-        inline std::string Back_Ground_Color               = "Back_Ground_Color";
+        inline std::string Background_Color               = "Background_Color";
         inline std::string Border_Colour                   = "Border_Colour";
-        inline std::string Border_Back_Ground_Color        = "Border_Back_Ground_Color";
-        inline std::string Text_Focus_Color                = "Text_Focus_Color";
-        inline std::string Back_Ground_Focus_Color         = "Back_Ground_Focus_Color";
-        inline std::string Border_Focus_Color              = "Border_Focus_Color";
-        inline std::string Border_Focus_Back_Ground_Color  = "Border_Focus_Back_Ground_Color";
+        inline std::string Border_Background_Color        = "Border_Background_Color";
+        inline std::string Focus_Text_Color                = "Focus_Text_Color";
+        inline std::string Focus_Background_Color         = "Focus_Background_Color";
+        inline std::string Focus_Border_Color              = "Focus_Border_Color";
+        inline std::string Focus_Border_Background_Color  = "Focus_Border_Background_Color";
         inline std::string Flow_Priority                   = "Flow_Priority";
         inline std::string Wrap                            = "Wrap";     
         
@@ -416,6 +440,29 @@ namespace GGUI{
 
         Element(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
 
+        //These next constructors are mainly for users to more easily create elements.
+        Element(
+            unsigned int width,
+            unsigned int height
+        );
+
+        Element(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Element(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        //End of user constructors.
 
         template<typename T>
         T* At(std::string s){
@@ -520,17 +567,17 @@ namespace GGUI{
 
         Coordinates Get_Absolute_Position();
 
-        void Set_Back_Ground_Color(RGB color);
+        void Set_Background_Color(RGB color);
 
-        RGB Get_Back_Ground_Color();
+        RGB Get_Background_Color();
         
-        void Set_Border_Colour(RGB color);
+        void Set_Border_Color(RGB color);
         
-        RGB Get_Border_Colour();
+        RGB Get_Border_Color();
 
-        void Set_Border_Back_Ground_Color(RGB color);
+        void Set_Border_Background_Color(RGB color);
         
-        RGB Get_Border_Back_Ground_Color();
+        RGB Get_Border_Background_Color();
         
         void Set_Text_Color(RGB color);
         
@@ -552,38 +599,38 @@ namespace GGUI{
 
         std::string Compose_All_Text_RGB_Values(){
             if (Focused){
-                return At<RGB_VALUE>(STYLES::Text_Focus_Color)->Value.Get_Over_Head(true) + 
-                At<RGB_VALUE>(STYLES::Text_Focus_Color)->Value.Get_Colour() + 
+                return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
+                At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Back_Ground_Focus_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Back_Ground_Focus_Color)->Value.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
             else{
                 return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
                 At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Back_Ground_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Back_Ground_Color)->Value.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
         }
 
         std::string Compose_All_Border_RGB_Values(){
             if (Focused){
-                return At<RGB_VALUE>(STYLES::Border_Focus_Color)->Value.Get_Over_Head(true) + 
-                At<RGB_VALUE>(STYLES::Border_Focus_Color)->Value.Get_Colour() + 
+                return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
+                At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Border_Focus_Back_Ground_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Border_Focus_Back_Ground_Color)->Value.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
             else{
                 return At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Over_Head(true) + 
                 At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Border_Back_Ground_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Border_Back_Ground_Color)->Value.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
         }
