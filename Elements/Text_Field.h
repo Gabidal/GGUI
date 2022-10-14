@@ -8,27 +8,22 @@
 
 namespace GGUI{
     enum class TEXT_LOCATION{
-        CENTER,
         LEFT,
+        CENTER,
         RIGHT,
     };
 
     class Text_Field : public Element{
     protected:
         std::string Data = "";
-        TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT;
         bool Allow_Text_Input = false;
-        //if text can be inputted even when the text is outof bounds.
-        bool Allow_Input_Overflow = false;
-        bool Allow_Dynamic_Size = false;
         
     public:
 
         Text_Field(){}
 
-        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {}, TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT) : Element(css) {
+        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {}) : Element(css) {
             Data = Text;
-            this->Text_Position = Text_Position;
             
             std::pair<int, int> D = Get_Text_Dimensions(Text);
 

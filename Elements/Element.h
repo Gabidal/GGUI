@@ -330,7 +330,11 @@ namespace GGUI{
         inline std::string Border_Focus_Color              = "Border_Focus_Color";
         inline std::string Border_Focus_Back_Ground_Color  = "Border_Focus_Back_Ground_Color";
         inline std::string Flow_Priority                   = "Flow_Priority";
-        inline std::string Wrap                            = "Wrap";          
+        inline std::string Wrap                            = "Wrap";     
+        
+        inline std::string Text_Position                   = "Text_Position";
+        inline std::string Allow_Input_Overflow            = "Allow_Input_Overflow";
+        inline std::string Allow_Dynamic_Size              = "Allow_Dynamic_Size";     
     };
 
     enum class STAIN_TYPE{
@@ -479,6 +483,8 @@ namespace GGUI{
         std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
 
         virtual void Show_Border(bool b);
+
+        virtual void Show_Border(bool b, bool Previus_state);
 
         bool Has_Border();
 

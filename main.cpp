@@ -74,12 +74,11 @@ int main(){
 
         {GGUI::STYLES::Border_Focus_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
         {GGUI::STYLES::Border_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
-    },
-        GGUI::TEXT_LOCATION::LEFT
-    );
+
+        {GGUI::STYLES::Allow_Input_Overflow, new GGUI::BOOL_VALUE(true)},
+    });
 
     b->Enable_Text_Input();
-    b->Enable_Input_Overflow();
 
     Main->Add_Child(l);
 

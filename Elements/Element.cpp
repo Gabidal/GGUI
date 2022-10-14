@@ -14,13 +14,16 @@ GGUI::Element::Element(std::string Class, unsigned int width, unsigned int heigh
 
     Name = std::to_string((unsigned long long)this);
 
-    Set_Width(width);
-    Set_Height(height);
+    if (width != 0)
+        Set_Width(width);
+    if (height != 0)
+        Set_Height(height);
 
-    Set_Parent(parent);
+    if (parent){
+        Set_Parent(parent);
 
-    if (parent)
         Set_Position(position);
+    }
 
     Add_Class(Class);
 
@@ -36,15 +39,22 @@ GGUI::Element::Element() {
 GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Add_Class("default");
 
+    bool Previus_Border_State = Has_Border();
     Style = css;
 
-    Set_Width(width);
-    Set_Height(height);
+    //Check if the css changed the border state, if so we need to increment or decrement the width & height.
+    Show_Border(Has_Border(), Previus_Border_State);
 
-    Set_Parent(parent);
+    if (width != 0)
+        Set_Width(width);
+    if (height != 0)
+        Set_Height(height);
 
-    if (parent)
+    if (parent){
+        Set_Parent(parent);
+
         Set_Position(position);
+    }
 
     Name = std::to_string((unsigned long long)this);
 
@@ -97,19 +107,7 @@ void GGUI::Element::Parse_Classes(){
     }
 
     if (Remember_To_Affect_Width_And_Height_Because_Of_Border){
-        if (Previus_Border_Value != At<BOOL_VALUE>(STYLES::Border)->Value){
-
-            if (At<BOOL_VALUE>(STYLES::Border)->Value){
-                Width += 2;
-                Height += 2;
-            }
-            else{
-                Width -= 2;
-                Height -= 2;
-            }
-
-            Dirty.Dirty(STAIN_TYPE::DEEP);
-        }
+        Show_Border(At<BOOL_VALUE>(STYLES::Border)->Value, Previus_Border_Value);
     }
 }
 
@@ -138,6 +136,34 @@ bool GGUI::Element::Has(std::string s){
 
 void GGUI::Element::Show_Border(bool b){
     if (b != At<BOOL_VALUE>(STYLES::Border)->Value){
+
+        if (b){
+            Width += 2;
+            Height += 2;
+        }
+        else{
+            Width -= 2;
+            Height -= 2;
+        }
+
+        At<BOOL_VALUE>(STYLES::Border)->Value = b;
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Update_Frame();
+    }
+}
+
+void GGUI::Element::Show_Border(bool b, bool Previus_State){
+    if (b != Previus_State){
+
+        if (b){
+            Width += 2;
+            Height += 2;
+        }
+        else{
+            Width -= 2;
+            Height -= 2;
+        }
+
         At<BOOL_VALUE>(STYLES::Border)->Value = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
