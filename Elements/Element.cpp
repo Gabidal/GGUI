@@ -38,8 +38,10 @@ GGUI::Element::Element() {
 
 GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Add_Class("default");
+    Parse_Classes();
 
     bool Previus_Border_State = Has_Border();
+
     Style = css;
 
     //Check if the css changed the border state, if so we need to increment or decrement the width & height.
@@ -57,8 +59,6 @@ GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, un
     }
 
     Name = std::to_string((unsigned long long)this);
-
-    Parse_Classes();
 }
 
 GGUI::RGB GGUI::Element::Get_RGB_Style(std::string style_name){
@@ -102,7 +102,10 @@ void GGUI::Element::Parse_Classes(){
                 Remember_To_Affect_Width_And_Height_Because_Of_Border = true;
             }
 
-            Style[Current_Style.first] = Current_Style.second;
+            //Classes only affect globally, but local styles are priority.
+            if (Style.find(Current_Style.first) == Style.end()){
+                Style[Current_Style.first] = Current_Style.second;
+            }
         }
     }
 
@@ -317,7 +320,6 @@ void GGUI::Element::Set_Height(int height){
     }
 }
 
-
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
@@ -507,10 +509,6 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
             else if (y == Height - 1 && x == Width - 1){
                 Result[y * Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
-            //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
-            // else if (y == 0 && x < w->Get_Title().size()){
-            //     Result[y * Width + x] = GGUI::UTF(w->Get_Title()[x - 1], w->Get_Text_Color(), COLOR::RESET);
-            // }
             //The roof border
             else if (y == 0 || y == Height - 1){
                 Result[y * Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());

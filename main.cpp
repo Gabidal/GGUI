@@ -69,7 +69,7 @@ int main(){
         {GGUI::STYLES::Border_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::CYAN)},
         {GGUI::STYLES::Border_Colour, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
 
-        {GGUI::STYLES::Back_Ground_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
+        {GGUI::STYLES::Back_Ground_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::DARK_MAGENTA)},
         {GGUI::STYLES::Text_Focus_Color, new GGUI::RGB_VALUE(GGUI::COLOR::BLACK)},
 
         {GGUI::STYLES::Border_Focus_Back_Ground_Color, new GGUI::RGB_VALUE(GGUI::COLOR::RED)},
