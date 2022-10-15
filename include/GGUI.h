@@ -1,9 +1,14 @@
+/*
+    GGUI Lightweight Terminal UI
+    Version 0.1.1
+    HAVE FUN!
+*/
+
 #pragma once
 #ifndef _GGUI_H_
 #define _GGUI_H_
 
 //This header is used with the GGUI.lib.
-
 
 #include <string>
 #include <vector>
@@ -16,6 +21,7 @@
 //https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
     
+    // ELEMENT H
     namespace SYMBOLS{
         inline std::string TOP_LEFT_CORNER = "\e(0\x6c\e(B";
         inline std::string BOTTOM_LEFT_CORNER = "\e(0\x6d\e(B";
@@ -100,7 +106,6 @@ namespace GGUI{
         bool operator==(const RGB& Other){
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue);
         }
-
     };
 
     namespace COLOR{
@@ -251,28 +256,117 @@ namespace GGUI{
         }
     };
 
-    class Style{
+    enum class VALUE_TYPES{
+        UNDEFINED,
+        NUMBER,
+        RGB,
+        BOOL,
+        COORDINATES,
+    };
+
+    class VALUE{
     public:
-        Coordinates Position;
-        unsigned int Width = 0;
-        unsigned int Height = 0;
-        bool Border = false;
+        VALUE_TYPES Type = VALUE_TYPES::UNDEFINED;
 
-        RGB Text_Color = RGB(255, 255, 255);
-        RGB Back_Ground_Color = RGB(0, 0, 0);
+        VALUE(){}
 
-        RGB Border_Colour = RGB(255, 255, 255);
-        RGB Border_Back_Ground_Color = RGB(0, 0, 0);
+        virtual VALUE* Copy() {
+            return nullptr;
+        };
+    };
 
-        RGB Text_Focus_Color = RGB(255, 255, 255);
-        RGB Back_Ground_Focus_Color = RGB(50, 50, 50);
+    class NUMBER_VALUE : public VALUE{
+    public:
+        int Value = 0;
 
-        RGB Border_Focus_Color = RGB(255, 255, 255);
-        RGB Border_Focus_Back_Ground_Color = RGB(50, 50, 50);
+        NUMBER_VALUE(int value){
+            Value = value;
+            Type = VALUE_TYPES::NUMBER;
+        }
+
+        NUMBER_VALUE(){
+            Type = VALUE_TYPES::NUMBER;
+        }
+
+        VALUE* Copy() override {
+            NUMBER_VALUE* copy = new NUMBER_VALUE(Value);
+            return copy;
+        } 
+    };
+
+    class RGB_VALUE : public VALUE{
+    public:
+        RGB Value = RGB();
+
+        RGB_VALUE(RGB value){
+            Value = value;
+            Type = VALUE_TYPES::RGB;
+        }
+
+        RGB_VALUE(){
+            Type = VALUE_TYPES::RGB;
+        }
+
+        VALUE* Copy() override {
+            RGB_VALUE* copy = new RGB_VALUE(Value);
+            return copy;
+        } 
+    };
+
+    class BOOL_VALUE : public VALUE{
+    public:
+        bool Value = false;
+
+        BOOL_VALUE(bool value){
+            Value = value;
+            Type = VALUE_TYPES::BOOL;
+        }
+
+        BOOL_VALUE(){
+            Type = VALUE_TYPES::BOOL;
+        }
+
+        VALUE* Copy() override {
+            BOOL_VALUE* copy = new BOOL_VALUE(Value);
+            return copy;
+        } 
+    };
+
+    class COORDINATES_VALUE : public VALUE{
+    public:
+        Coordinates Value = Coordinates();
+
+        COORDINATES_VALUE(Coordinates value){
+            Value = value;
+            Type = VALUE_TYPES::COORDINATES;
+        }
+
+        COORDINATES_VALUE(){
+            Type = VALUE_TYPES::COORDINATES;
+        }
+
+        VALUE* Copy() override {
+            COORDINATES_VALUE* copy = new COORDINATES_VALUE(Value);
+            return copy;
+        } 
+    };
+
+    namespace STYLES{
+        inline std::string Border                          = "Border";
+        inline std::string Text_Color                      = "Text_Color";
+        inline std::string Background_Color               = "Background_Color";
+        inline std::string Border_Colour                   = "Border_Colour";
+        inline std::string Border_Background_Color        = "Border_Background_Color";
+        inline std::string Focus_Text_Color                = "Focus_Text_Color";
+        inline std::string Focus_Background_Color         = "Focus_Background_Color";
+        inline std::string Focus_Border_Color              = "Focus_Border_Color";
+        inline std::string Focus_Border_Background_Color  = "Focus_Border_Background_Color";
+        inline std::string Flow_Priority                   = "Flow_Priority";
+        inline std::string Wrap                            = "Wrap";     
         
-        //INTERNAL FLAGS
-        class Element* Parent = nullptr;
-        bool Show = true;
+        inline std::string Text_Position                   = "Text_Position";
+        inline std::string Allow_Input_Overflow            = "Allow_Input_Overflow";
+        inline std::string Allow_Dynamic_Size              = "Allow_Dynamic_Size";     
     };
 
     enum class STAIN_TYPE{
@@ -282,6 +376,7 @@ namespace GGUI{
         DEEP = 1 << 2,   //children changes. Deep because the childs are connected via AST.
         STRECH = 1 << 3,  //width and or height changes.
         TEXT = 1 << 4,   //text changes, this is primarily for text_field
+        CLASS = 1 << 5, //This is used to tell the renderer that there are still un_parsed classes.
     };
  
     inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
@@ -298,7 +393,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH);
+        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::TEXT | STAIN_TYPE::CLASS);
 
         bool is(STAIN_TYPE f){
             return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
@@ -317,35 +412,140 @@ namespace GGUI{
         }
 
         void Stain_All(){
-            Dirty((STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH));
+            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::TEXT | STAIN_TYPE::CLASS);
         }
 
     };
 
-    class Element : public Style{
-    public:
+    class Element{
+    protected:
+        Coordinates Position;
+
+        unsigned int Width = 1;
+        unsigned int Height = 1;
+
+        //INTERNAL FLAGS
+        class Element* Parent = nullptr;
+        bool Show = true;
+        
+        std::vector<UTF> Render_Buffer;
+        STAIN Dirty;
+        
+        std::vector<int> Classes;
+
         std::vector<Element*> Childs;
 
         bool Focused = false;
 
-        //Internal
-        std::vector<UTF> Render_Buffer;
-        STAIN Dirty;
+        std::string Name = "";
 
-        Element() {}
+        std::map<std::string, VALUE*> Style;
+    public:
+
+        Element();
+
+        Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+
+        Element(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+
+        //These next constructors are mainly for users to more easily create elements.
+        Element(
+            unsigned int width,
+            unsigned int height
+        );
+
+        Element(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Element(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        //End of user constructors.
+
+        template<typename T>
+        T* At(std::string s){
+            T* v = (T*)Style[s];
+
+            if (v == nullptr){
+                v = new T();
+
+                Style[s] = v;
+            }
+
+            return v;
+        }
+
+        void Parse_Classes();
+
+        STAIN& Get_Dirty(){
+            return Dirty;
+        }
+
+        bool Is_Focused(){
+            return Focused;
+        }
+
+        void Set_Focus(bool f){
+            Focused = f;
+        }
+
+        void Add_Class(std::string class_name);
+
+        RGB Get_RGB_Style(std::string style_name);
+
+        int Get_Number_Style(std::string style_name);
+
+        bool Get_Bool_Style(std::string style_name);
+
+        VALUE* Get_Style(std::string style_name);
+
+        void Set_Style(std::string style_name, VALUE* value);
+
+        Element* Get_Parent(){
+            return Parent;
+        }
+
+        void Set_Parent(Element* parent){
+            if (parent){
+                Parent = parent;
+
+                if (!Get_Element(this->Name))
+                    Parent->Add_Child(this);
+            }
+        }
+
+        bool Has(std::string s);
+
+        bool Has(int s){
+            for (auto i : Classes){
+                if (i == s)
+                    return true;
+            }
+            return false;
+        }
 
         //returns borders in mind.
         std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
 
         virtual void Show_Border(bool b);
 
+        virtual void Show_Border(bool b, bool Previus_state);
+
         bool Has_Border();
 
         void Display(bool f);
 
-        bool Is_Displayed(){
-            return Show;
-        }
+        bool Is_Displayed();
 
         virtual void Add_Child(Element* Child);
 
@@ -363,7 +563,13 @@ namespace GGUI{
 
         int Get_Height();
 
+        void Set_Width(int width);
+
+        void Set_Height(int height);
+
         void Set_Position(Coordinates c);
+       
+        void Set_Position(Coordinates* c);
 
         Coordinates Get_Position();
 
@@ -373,9 +579,9 @@ namespace GGUI{
 
         RGB Get_Background_Color();
         
-        void Set_Border_Colour(RGB color);
+        void Set_Border_Color(RGB color);
         
-        RGB Get_Border_Colour();
+        RGB Get_Border_Color();
 
         void Set_Border_Background_Color(RGB color);
         
@@ -401,38 +607,38 @@ namespace GGUI{
 
         std::string Compose_All_Text_RGB_Values(){
             if (Focused){
-                return Text_Focus_Color.Get_Over_Head(true) + 
-                Text_Focus_Color.Get_Colour() + 
+                return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
+                At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                Back_Ground_Focus_Color.Get_Over_Head(false) + 
-                Back_Ground_Focus_Color.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
             else{
-                return Text_Color.Get_Over_Head(true) + 
-                Text_Color.Get_Colour() + 
+                return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
+                At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                Back_Ground_Color.Get_Over_Head(false) + 
-                Back_Ground_Color.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
         }
 
         std::string Compose_All_Border_RGB_Values(){
             if (Focused){
-                return Border_Focus_Color.Get_Over_Head(true) + 
-                Border_Focus_Color.Get_Colour() + 
+                return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
+                At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                Border_Focus_Back_Ground_Color.Get_Over_Head(false) + 
-                Border_Focus_Back_Ground_Color.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
             else{
-                return Border_Colour.Get_Over_Head(true) + 
-                Border_Colour.Get_Colour() + 
+                return At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Over_Head(true) + 
+                At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Colour() + 
                 Constants::END_COMMAND + 
-                Border_Back_Ground_Color.Get_Over_Head(false) + 
-                Border_Back_Ground_Color.Get_Colour() +
+                At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Over_Head(false) + 
+                At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Colour() +
                 Constants::END_COMMAND;
             }
         }
@@ -440,6 +646,8 @@ namespace GGUI{
         virtual std::string Get_Name(){
             return "Element";
         }
+
+        void Set_Name(std::string name);
 
         bool Has_Internal_Changes();
 
@@ -451,10 +659,32 @@ namespace GGUI{
         //Event handlers
         void On_Click(std::function<void(GGUI::Event* e)> action);
 
-    
+        //This function returns nullptr, if the element could not be found.
+        Element* Get_Element(std::string name);
+
+        //This function returns all child elements that have the same element type.
+        template<typename T>
+        std::vector<T*> Get_Elements(){
+
+            //go throgh the child AST, and check if the element in question is same type as the template T.
+            std::vector<T*> result;
+
+            if (typeid(*this) == typeid(T)){
+                result.push_back((T*)this);
+            }
+
+            for (auto& e : Childs){
+                std::vector<T*> child_result = e->Get_Elements<T>();
+                result.insert(result.end(), child_result.begin(), child_result.end());
+            }
+
+            return result;
+        }
 
 
     };
+
+    // LIST_VIEW H
     
     enum class Grow_Direction{
         ROW,
@@ -463,8 +693,6 @@ namespace GGUI{
 
     class List_View : public Element{
     public:
-        Grow_Direction Flow_Priority;
-        bool Wrap_Overflow = false;
 
         //cache
         unsigned int Last_Child_X = 0;
@@ -472,13 +700,32 @@ namespace GGUI{
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
-        List_View(){}
+        List_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
 
-        List_View(Style f, Grow_Direction flow_priority = Grow_Direction::ROW, bool wrap = false){
-            *((Style*)this) = f;
-            Flow_Priority = flow_priority;
-            Wrap_Overflow = wrap;
-        }
+        //These next constructors are mainly for users to more easily create elements.
+        List_View(
+            RGB text_color,
+            RGB background_color
+        );
+
+        List_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        List_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        //End of user constructors.
+
 
         void Add_Child(Element* e) override;
         
@@ -494,63 +741,43 @@ namespace GGUI{
 
     };
 
+    // TEXT_FIELD H
+
+    
     enum class TEXT_LOCATION{
-        CENTER,
         LEFT,
+        CENTER,
         RIGHT,
     };
 
     class Text_Field : public Element{
+    protected:
         std::string Data = "";
-        TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT;
         bool Allow_Text_Input = false;
-        //if text can be inputted even when the text is outof bounds.
-        bool Allow_Input_Overflow = false;
-        bool Allow_Dynamic_Size = false;
         
     public:
 
         Text_Field(){}
 
-        Text_Field(Style f){
-            *((Style*)this) = f;
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
+        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {});
 
-        Text_Field(std::string Text){
-            Data = Text;
+        //These next constructors are mainly for users to more easily create elements.
 
-            std::pair<int, int> D = Get_Text_Dimensions(Data);
-            Width = D.first;
-            Height = D.second;
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
+        Text_Field(
+            std::string Text,
+            RGB text_color,
+            RGB background_color
+        );
 
-        Text_Field(std::string Text, TEXT_LOCATION Text_Position){
-            Data = Text;
-            this->Text_Position = Text_Position;
-            
-            std::pair<int, int> D = Get_Text_Dimensions(Text);
-            Width = D.first;
-            Height = D.second;
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
-        
-        Text_Field(std::string Text, Style f, TEXT_LOCATION Text_Position = TEXT_LOCATION::LEFT){
-            Data = Text;
-            *((Style*)this) = f;
-            this->Text_Position = Text_Position;
-            
-            std::pair<unsigned int, unsigned int> D = Get_Text_Dimensions(Text);
-            Width = D.first;
-            Height = D.second;
+        Text_Field(
+            std::string Text,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
 
-            if (Border){
-                Width += 2;
-                Height += 2;
-            }
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
+        //End of user constructors.
 
         void Set_Data(std::string Data);
 
@@ -595,12 +822,47 @@ namespace GGUI{
         static std::vector<UTF> Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
     };
 
+    // WINDOW H
+
     class Window : public Element{
         std::string Title = "";  //if this is empty then no title
     public:
         Window(){}
 
-        Window(std::string title, Style f);
+        Window(std::string title, std::vector<std::string> classes = {});
+
+        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        
+        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+
+        //These next constructors are mainly for users to more easily create elements.
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        //End of user constructors.
+
+
 
         void Set_Title(std::string t);
 
@@ -614,13 +876,15 @@ namespace GGUI{
 
         Element* Copy() override;
     };
-    
+
+
+
+    // RENDERER H
+
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
-    extern std::atomic_bool Pause_Event_Thread;
-
-    extern Window Main;                                   //Main window
+    extern std::atomic_bool Pause_Event_Thread;                                 //Main window
 
     extern int Max_Width;
     extern int Max_Height;
@@ -629,6 +893,8 @@ namespace GGUI{
 
     extern std::vector<Action*> Event_Handlers;
     extern std::vector<Input*> Inputs;
+    
+    extern std::map<std::string, Element*> Element_Names;
 
     extern Element* Focused_On;
 
@@ -640,6 +906,10 @@ namespace GGUI{
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 
+    extern std::map<int, std::map<std::string, VALUE*>> Classes;
+    extern std::map<std::string, int> Class_Names;
+
+    extern Window* Main;  
 
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 
@@ -655,15 +925,20 @@ namespace GGUI{
 
     extern bool Find_Right_Element();
 
+    extern unsigned long long Min(unsigned long long a, unsigned long long b);
+
+    extern unsigned long long Max(unsigned long long a, unsigned long long b);
+
 
 #if _WIN32
     #include <windows.h>
-    
+
     #undef RGB
     #undef BOOL
     #undef NUMBER
     #undef min
     #undef max
+
 
     extern void ClearScreen();
 
@@ -712,6 +987,12 @@ namespace GGUI{
     extern void Update_Focused_Element(GGUI::Element* new_candidate);
 
     extern void Event_Handler();
+
+    extern int Get_Free_Class_ID(std::string n);
+
+    extern void Add_Class(std::string name, std::map<std::string, VALUE*> Styling);
+
+    extern void Init_Classes();
 
     //Inits GGUI and returns the main window.
     extern GGUI::Window* Init_Renderer();
