@@ -600,22 +600,17 @@ namespace GGUI{
         unsigned int W_Center = (Max_Width - w) / 2;
         unsigned int H_Center = (Max_Height - h) / 2;
 
-        // GGUI::Window* tmp = new GGUI::Window("ERROR!", {
-        //     {W_Center, H_Center, INT32_MAX}, w, h, Has_Border, 
-        //     GGUI::COLOR::BLACK, 
-        //     GGUI::COLOR::RED, 
+        GGUI::Window* tmp = new GGUI::Window(
+            "ERROR!",
+            w, h,
+            GGUI::COLOR::RED,
+            GGUI::COLOR::BLACK,
+            GGUI::COLOR::RED,
+            GGUI::COLOR::BLACK
+        );
 
-        //     GGUI::COLOR::BLACK, 
-        //     GGUI::COLOR::RED, 
-        // });
-
-        GGUI::Window* tmp = new GGUI::Window("ERROR!", {
-            {STYLES::Border, new BOOL_VALUE(Has_Border)},
-            {STYLES::Background_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
-            {STYLES::Text_Color, new RGB_VALUE(GGUI::COLOR::RED)},
-            {STYLES::Border_Background_Color, new RGB_VALUE(GGUI::COLOR::BLACK)},
-            {STYLES::Border_Colour, new RGB_VALUE(GGUI::COLOR::RED)},
-        }, w, h, (Element*)&Main, new Coordinates(W_Center, H_Center, INT32_MAX));
+        tmp->Set_Parent(Main);
+        tmp->Set_Position({W_Center, H_Center, INT32_MAX});
 
         tmp->Add_Child(txt);
 

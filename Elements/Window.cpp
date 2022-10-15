@@ -51,6 +51,15 @@ GGUI::Window::Window(
     Set_Width(width);
     Set_Height(height);
 
+    //Because the Title will not be displayed until the border is, we will create a invisible border.
+    if (Title.size() > 0){
+
+        Show_Border(true);
+
+        Set_Border_Color(Get_Background_Color());
+        Set_Border_Background_Color(Get_Background_Color());
+    }
+
 }
 
 GGUI::Window::Window(
@@ -67,6 +76,15 @@ GGUI::Window::Window(
 
     Set_Text_Color(text_color);
     Set_Background_Color(background_color);
+
+    //Because the Title will not be displayed until the border is, we will create a invisible border.
+    if (Title.size() > 0){
+
+        Show_Border(true);
+
+        Set_Border_Color(Get_Background_Color());
+        Set_Border_Background_Color(Get_Background_Color());
+    }
 }
 
 GGUI::Window::Window(
@@ -135,7 +153,7 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
             }
             //The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
             else if (y == 0 && x <= ((GGUI::Window*)w)->Get_Title().size()){
-                Result[y * w->Get_Width() + x] = GGUI::UTF(((GGUI::Window*)w)->Get_Title()[x - 1], w->Compose_All_Border_RGB_Values());
+                Result[y * w->Get_Width() + x] = GGUI::UTF(((GGUI::Window*)w)->Get_Title()[x - 1], w->Compose_All_Text_RGB_Values());
             }
             //The roof border
             else if (y == 0 || y == w->Get_Height() - 1){
