@@ -3,6 +3,8 @@
 #include <map>
 #include <string>
 
+#include <cassert>
+
 namespace GGUI{
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
@@ -238,6 +240,8 @@ namespace GGUI{
 
         Max_Width = info.srWindow.Right - info.srWindow.Left - 1;
         Max_Height = info.srWindow.Bottom - info.srWindow.Top - 1;
+
+        assert(("Terminal Size non-existant!", Max_Width > 0 && Max_Height > 0));
     }
 
     void Update_Frame(bool Lock_Event_Thread);

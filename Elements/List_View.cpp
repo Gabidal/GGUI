@@ -64,6 +64,12 @@ GGUI::List_View::List_View(
     Show_Border(true);
 }
 
+GGUI::List_View::List_View(
+    Grow_Direction grow_direction
+){
+    At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
+}
+
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
@@ -101,18 +107,14 @@ void GGUI::List_View::Add_Child(Element* e){
 
         if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
             Height = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
-            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Get_Width()){
-                Width = Min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of);
-            }
+            Width = Min(max_width, Max(Last_Child_X + Child_Needs_Minimum_Width_Of, Get_Width()));
 
             e->Set_Position({Last_Child_X, e->Get_Position().Y});
             Last_Child_X += e->Get_Width();
         }
         else{
             Width = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
-            if (Last_Child_X + Child_Needs_Minimum_Height_Of > Get_Height()){
-                Height = Min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of);
-            }
+            Height = Min(max_width, Max(Last_Child_Y + Child_Needs_Minimum_Height_Of, Get_Height()));
 
             e->Set_Position({e->Get_Position().X, Last_Child_Y});
             Last_Child_Y += e->Get_Height();

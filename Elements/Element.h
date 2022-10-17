@@ -21,6 +21,13 @@ namespace GGUI{
         inline std::string BOTTOM_RIGHT_CORNER = "\e(0\x6a\e(B";
         inline std::string VERTICAL_LINE = "\e(0\x78\e(B";
         inline std::string HORIZONTAL_LINE = "\e(0\x71\e(B";
+
+        inline std::string RADIOBUTTON_OFF = "\e(0\x9e\e(B";
+        inline std::string RADIOBUTTON_ON = "\e(0\x9f\e(B";
+
+        inline std::string EMPTY_CHECK_BOX = "\e(0\x9c\e(B";
+        inline std::string CHECKED_CHECK_BOX = "\e(0\x9d\e(B";
+
     }
 
     namespace Constants{
@@ -409,6 +416,31 @@ namespace GGUI{
 
     };
 
+    enum class Flags{
+        Empty = 0,
+        Border = 1 << 0,
+        Text_Input = 1 << 1,
+        Overflow = 1 << 2,
+        Dynamic = 1 << 3,
+        Horizontal = 1 << 4,
+        Vertical = 1 << 5,
+        Align_Left = 1 << 6,
+        Align_Right = 1 << 7,
+        Align_Center = 1 << 8,
+    };
+    
+    inline Flags operator|(Flags a, Flags b){
+        return static_cast<Flags>(static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    inline bool Is(Flags a, Flags b){
+        return ((int)a & (int)b) == (int)b;
+    }
+
+    inline bool Has(Flags a, Flags b){
+        return ((int)a & (int)b) != 0;
+    }
+
     class Element{
     protected:
         Coordinates Position;
@@ -461,6 +493,10 @@ namespace GGUI{
             RGB border_color,
             RGB border_background_color
         );
+        
+        virtual Element* operator|(Element* other);
+
+        virtual Element* operator|(Flags f);
 
         //End of user constructors.
 
@@ -510,9 +546,6 @@ namespace GGUI{
         void Set_Parent(Element* parent){
             if (parent){
                 Parent = parent;
-
-                if (!Get_Element(this->Name))
-                    Parent->Add_Child(this);
             }
         }
 

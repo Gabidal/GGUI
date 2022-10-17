@@ -12,7 +12,7 @@ namespace GGUI{
 
     class Button : public Text_Field{
     protected:
-        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [=](Button* This){}){
+        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
             On_Click([=](Event* e){
                 // The default, on_click wont do anything.
                 press(this);
@@ -20,23 +20,21 @@ namespace GGUI{
         }
     
         void Default_Button_Text_Align(){
-            Text_Position = TEXT_LOCATION::CENTER;
+            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
         }
 
         Button(bool Blank){}
     public:
 
-        Button(std::function<void (Button* This)> press = [=](Button* This){}){
+        Button(std::function<void (Button* This)> press = [](Button* This){}){
             Defualt_Button_Behaviour(press);
             Default_Button_Text_Align();
         }
 
-        Button(std::string Text, std::function<void (Button* This)> press = [=](Button* This){}){
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Button(press){
             Data = Text;
             Enable_Input_Overflow();
             Dirty.Dirty(STAIN_TYPE::TEXT);
-
-            Button(press);
         }
 
     };

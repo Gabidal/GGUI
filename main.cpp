@@ -37,6 +37,8 @@ int main(){
         GGUI::COLOR::DARK_MAGENTA 
     );
 
+    GGUI::Radio_Button* rb = new GGUI::Radio_Button("Haloo?");
+
     b->Enable_Text_Input();
 
     Main->Add_Child(l);
@@ -47,6 +49,8 @@ int main(){
     l->Add_Child(a);
 
     l->Add_Child(b);
+
+    l->Add_Child(rb);
 
     std::vector<GGUI::Text_Field*> r = Main->Get_Elements<GGUI::Text_Field>();
 

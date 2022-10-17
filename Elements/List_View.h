@@ -44,6 +44,20 @@ namespace GGUI{
             RGB border_background_color
         );
 
+        List_View(
+            Grow_Direction grow_direction
+        );
+
+        List_View(std::vector<Element*> Tree){
+            for (auto i : Tree)
+                Add_Child(i);
+        }
+
+        Element* operator|(Element* other) override{
+            Add_Child(other);
+            return this;
+        }
+
         //End of user constructors.
 
 
@@ -58,6 +72,14 @@ namespace GGUI{
         bool Remove(Element* e) override;
 
         Element* Copy() override;
+
+        void Set_Growth_Direction(Grow_Direction gd){
+            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
+        }
+
+        Grow_Direction Get_Growth_Direction(){
+            return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
+        }
 
     };
 }

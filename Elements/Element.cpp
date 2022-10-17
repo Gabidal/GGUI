@@ -105,6 +105,47 @@ GGUI::Element::Element(
     Show_Border(true);
 }
 
+        
+GGUI::Element* GGUI::Element::operator|(Element* other){
+    Style = other->Style;
+
+    return this;
+}
+
+GGUI::Element* GGUI::Element::operator|(Flags f){
+
+    if (GGUI::Has(f, Flags::Border)){
+        this->Show_Border(true);
+    }
+    if (GGUI::Has(f, Flags::Text_Input)){
+        ((Text_Field*)this)->Enable_Text_Input();
+    }
+    if (GGUI::Has(f, Flags::Overflow)){
+        ((Text_Field*)this)->Enable_Input_Overflow();
+    }
+    if (GGUI::Has(f, Flags::Horizontal)){
+        ((List_View*)this)->Set_Growth_Direction(Grow_Direction::ROW);
+    }
+    else if (GGUI::Has(f, Flags::Vertical)){
+        ((List_View*)this)->Set_Growth_Direction(Grow_Direction::COLUMN);
+    }
+    if (GGUI::Has(f, Flags::Align_Left)){
+        ((Text_Field*)this)->Set_Style(STYLES::Text_Position, new NUMBER_VALUE((int)TEXT_LOCATION::LEFT));
+    }
+    else if (GGUI::Has(f, Flags::Align_Right)){
+        ((Text_Field*)this)->Set_Style(STYLES::Text_Position, new NUMBER_VALUE((int)TEXT_LOCATION::RIGHT));
+    }
+    else if (GGUI::Has(f, Flags::Align_Center)){
+        ((Text_Field*)this)->Set_Style(STYLES::Text_Position, new NUMBER_VALUE((int)TEXT_LOCATION::CENTER));
+    } 
+    if (GGUI::Has(f, Flags::Dynamic)){
+        ((Text_Field*)this)->Enable_Dynamic_Size();
+    }
+
+    return this;
+}
+
+
 //End of user constructors.
 
 GGUI::RGB GGUI::Element::Get_RGB_Style(std::string style_name){

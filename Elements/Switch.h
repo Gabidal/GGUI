@@ -6,29 +6,63 @@
 
 #include "Button.h"
 
-namespace STYLES{
-
-    inline std::string STATE_TRUE       = "state_true";
-    inline std::string STATE_FALSE      = "state_false";
-
-}
-
 namespace GGUI{
-    class Switch : public Button{
+    class Switch : public Element{
     protected:
         bool State = false;
 
+        Button Btn;
+        //COntains the unchecked version of the symbol and the checked version.
+        std::vector<std::string> States;
+
     public:
-        //Calls the button whitout initializing the button features.
-        Switch(std::function<void (Element* This)> press = [=](Element* This){}) : Button(true){
-            //By pipelining the press function from the Switch we can get the current switch state.
-            Defualt_Button_Behaviour(press);
+        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = [](Element* e){}){
+            States = states;
+
+            auto Togler = [=](){
+                this->Toggle();
+
+                event(this);
+            };
+
+            Btn.Set_Data(text);
+
+            On_Click([=](Event* e){
+                Togler();
+            });
+
+            int Symbol_Lenght = 1;
+
+            Width = Symbol_Lenght + Btn.Get_Width();
+            Height = Btn.Get_Height();
 
         }
+
+        std::vector<UTF> Render() override;
 
         void Toggle(){
             State = !State;
         }
+    };
+
+    class Radio_Button : public Switch{
+    public:
+        Radio_Button(std::string text) : Switch(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
+
+        bool Get_State(){
+            return State;
+        }
+
+    };
+
+    class Check_Box : public Switch{
+    public:
+        Check_Box(std::string text) : Switch(text, {SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}){}
+
+        bool Get_State(){
+            return State;
+        }
+
     };
 }
 
