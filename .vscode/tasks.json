@@ -1,36 +1,18 @@
 {
     "tasks": [
         {
-            "type": "cppbuild",
+            "type": "shell",
             "label": "Buildarna",
-            "command": "g++.exe",
+            "command": "meson",
             "args": [
-                "*.cpp",
-                "./Elements/*.cpp",
-                "-o",
-                "Build/GGUI",
-                "-g",
-                //"-Wall",
-                "-fpermissive",
-                "-std=c++17",
+                "compile",
+                "-C",
+                "Build"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": [
-                "$msCompile",
-                {
-                    "fileLocation": "autoDetect",
-                    "pattern": {
-                      "regexp": "^([^\\s].*)\\s*:\\s+(?:fatal\\s+)?(error|warning)\\s+(LNK\\d+)\\s*:\\s*(.*)\\[(.*)\\]$",
-                      "kind": "file",
-                      "severity": 2,
-                      "code": 3,
-                      "message": 4,
-                      "file": 5
-                    }
-                  }
-            ],
+            "problemMatcher": "$gcc",
             "group": "build",
             "detail": "Buildarna"
         }

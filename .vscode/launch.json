@@ -13,6 +13,7 @@
         "externalConsole": true,
         "MIMode": "gdb",
         "miDebuggerPath": "C:/msys64/mingw64/bin/gdb.exe",
+        "preLaunchTask": "Buildarna",
         "setupCommands": [
             {
                 "description": "Enable pretty-printing for gdb",
@@ -25,15 +26,6 @@
                 "ignoreFailures": true
             }
         ]
-      },
-      {
-        "name": "Debuggarna_",
-        "programArgs": "",
-        "type": "by-gdb",
-        "request": "launch",
-        "program": "${workspaceFolder}/Build/GGUI.exe",
-        "cwd": "${workspaceFolder}",
-        //"preLaunchTask": "Buildarna"
       }
     ]
   }
