@@ -11,32 +11,12 @@ namespace GGUI{
     protected:
         bool State = false;
 
-        Button Btn;
+        std::string Text = "";
         //COntains the unchecked version of the symbol and the checked version.
         std::vector<std::string> States;
 
     public:
-        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = [](Element* e){}){
-            States = states;
-
-            auto Togler = [=](){
-                this->Toggle();
-
-                event(this);
-            };
-
-            Btn.Set_Data(text);
-
-            On_Click([=](Event* e){
-                Togler();
-            });
-
-            int Symbol_Lenght = 1;
-
-            Width = Symbol_Lenght + Btn.Get_Width();
-            Height = Btn.Get_Height();
-
-        }
+        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = [](Element* e){});
 
         std::vector<UTF> Render() override;
 
@@ -52,7 +32,6 @@ namespace GGUI{
         bool Get_State(){
             return State;
         }
-
     };
 
     class Check_Box : public Switch{
@@ -62,7 +41,6 @@ namespace GGUI{
         bool Get_State(){
             return State;
         }
-
     };
 }
 

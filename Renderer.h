@@ -97,6 +97,8 @@ namespace GGUI{
 
 #endif
 
+    extern int Get_Unicode_Lenght(char first_char);
+
     extern int Get_Max_Width();
 
     extern int Get_Max_Height();

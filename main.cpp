@@ -8,6 +8,7 @@ int main(){
     GGUI::Pause_Renderer();
 
     GGUI::Window* Main = GGUI::Init_Renderer();
+    Main->Show_Border(true);
 
     GGUI::List_View* l = new GGUI::List_View(
         GGUI::COLOR::WHITE,
@@ -37,7 +38,7 @@ int main(){
         GGUI::COLOR::DARK_MAGENTA 
     );
 
-    GGUI::Radio_Button* rb = new GGUI::Radio_Button("Haloo?");
+    GGUI::Check_Box* rb = new GGUI::Check_Box("Haloo?");
 
     b->Enable_Text_Input();
 

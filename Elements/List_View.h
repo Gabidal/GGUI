@@ -44,11 +44,10 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        List_View(
-            Grow_Direction grow_direction
-        );
+        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW){
+            Parent = parent;
+            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
 
-        List_View(std::vector<Element*> Tree){
             for (auto i : Tree)
                 Add_Child(i);
         }

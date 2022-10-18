@@ -64,15 +64,11 @@ GGUI::List_View::List_View(
     Show_Border(true);
 }
 
-GGUI::List_View::List_View(
-    Grow_Direction grow_direction
-){
-    At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
-}
-
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
+    Pause_Renderer();
+
     unsigned int max_width = 0;
     unsigned int max_height = 0;
 
@@ -125,6 +121,8 @@ void GGUI::List_View::Add_Child(Element* e){
         Childs.push_back(e);
         Update_Parent(this);
     }
+
+    Pause_Render = false;
 }
 
 GGUI::Element* GGUI::List_View::Copy(){

@@ -231,7 +231,16 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
                     break;  //close the x loop and increase the Y loop.
                 }
 
-                Result[Y * self_width + X] = Text[i++];
+                int Character_Lenght = GGUI::Get_Unicode_Lenght(Text[i]);
+
+                if (Character_Lenght == 1){
+                    Result[Y * self_width + X] = Text[i];
+                }
+                else{
+                    Result[Y * self_width + X] = Text.substr(0, Character_Lenght);
+                }
+
+                i += Character_Lenght;
             }
         }
 

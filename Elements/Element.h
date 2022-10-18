@@ -15,19 +15,18 @@ namespace GGUI{
     //https://en.wikipedia.org/wiki/ANSI_escape_code
 
     namespace SYMBOLS{
-        inline std::string TOP_LEFT_CORNER = "\e(0\x6c\e(B";
-        inline std::string BOTTOM_LEFT_CORNER = "\e(0\x6d\e(B";
-        inline std::string TOP_RIGHT_CORNER = "\e(0\x6b\e(B";
-        inline std::string BOTTOM_RIGHT_CORNER = "\e(0\x6a\e(B";
-        inline std::string VERTICAL_LINE = "\e(0\x78\e(B";
-        inline std::string HORIZONTAL_LINE = "\e(0\x71\e(B";
+        inline std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
+        inline std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
+        inline std::string TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
+        inline std::string BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
+        inline std::string VERTICAL_LINE = "│";//"\e(0\x78\e(B";
+        inline std::string HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
 
-        inline std::string RADIOBUTTON_OFF = "\e(0\x9e\e(B";
-        inline std::string RADIOBUTTON_ON = "\e(0\x9f\e(B";
+        inline std::string RADIOBUTTON_OFF = "○";
+        inline std::string RADIOBUTTON_ON = "◉";
 
-        inline std::string EMPTY_CHECK_BOX = "\e(0\x9c\e(B";
-        inline std::string CHECKED_CHECK_BOX = "\e(0\x9d\e(B";
-
+        inline std::string EMPTY_CHECK_BOX = "☐";
+        inline std::string CHECKED_CHECK_BOX = "☒";
     }
 
     namespace Constants{
@@ -394,7 +393,11 @@ namespace GGUI{
     public:
         STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::TEXT | STAIN_TYPE::CLASS);
 
+
         bool is(STAIN_TYPE f){
+            if (f == STAIN_TYPE::CLEAN){
+                return Type <= f;
+            }
             return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
         }
 

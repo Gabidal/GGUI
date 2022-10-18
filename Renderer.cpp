@@ -302,6 +302,8 @@ namespace GGUI{
 
     void Init_Platform_Stuff(){
         SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), -1);
+        
+        SetConsoleOutputCP(65001);
     }
 
     #else
@@ -361,6 +363,28 @@ namespace GGUI{
     }
 
     #endif
+
+    bool Has_Bit_At(char val, int i){
+        return ((val) & (1<<(i)));
+    }
+
+    //Returns 1 if it is not a unocode character.
+    int Get_Unicode_Lenght(char first_char){
+        //0xxxxxxx
+        if (!Has_Bit_At(first_char, 7))
+            return 1;
+        //110xxxxx
+        if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && !Has_Bit_At(first_char, 5))
+            return 2;
+        //1110xxxx
+        if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && Has_Bit_At(first_char, 5) && !Has_Bit_At(first_char, 4))
+            return 3;
+        //11110xxx
+        if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && Has_Bit_At(first_char, 5) && Has_Bit_At(first_char, 4) && !Has_Bit_At(first_char, 3))
+            return 4;
+        
+        return 1;
+    }
 
     int Get_Max_Width(){
         if (Max_Width == 0 && Max_Height == 0){

@@ -49,7 +49,8 @@ int main()
     - Element selection navigation toggle with shift key.
 
 # Developing this project further
-### Use vscode "tasks.json" and "launch.json" files.
+### This project uses 'meson' so use `meson setup Build` to setup the meson environment if you have not yet.
+### Use 'launch.json' and 'tasks.json' to build and debug this project.
 
 # Building this project
 ```bash

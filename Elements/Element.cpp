@@ -552,7 +552,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     //This will add the child windows to the Result buffer
     if (Dirty.is(STAIN_TYPE::DEEP)){
         Dirty.Clean(STAIN_TYPE::DEEP);
-        for (auto& c : this->Get_Childs()){
+        for (auto c : this->Get_Childs()){
                 Nest_Element(this, c, Result, c->Render());
         }
     }
