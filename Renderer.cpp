@@ -115,7 +115,7 @@ namespace GGUI{
 
         Coordinates tmp_c = Current_Element->Get_Position();
 
-        tmp_c.Y += Current_Element->Get_Height() + 1;
+        tmp_c.Y += Current_Element->Get_Height();
 
         Element* Lower_Element = Get_Accurate_Element_From(tmp_c, Main);
 
@@ -165,7 +165,7 @@ namespace GGUI{
 
         Coordinates tmp_c = Current_Element->Get_Position();
 
-        tmp_c.X += Current_Element->Get_Width() + 1;
+        tmp_c.X += Current_Element->Get_Width();
 
         Element* Right_Element = Get_Accurate_Element_From(tmp_c, Main);
 
@@ -238,8 +238,8 @@ namespace GGUI{
 
         GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 
-        Max_Width = info.srWindow.Right - info.srWindow.Left - 1;
-        Max_Height = info.srWindow.Bottom - info.srWindow.Top - 1;
+        Max_Width = info.srWindow.Right - info.srWindow.Left;
+        Max_Height = info.srWindow.Bottom - info.srWindow.Top;
 
         assert(("Terminal Size non-existant!", Max_Width > 0 && Max_Height > 0));
     }

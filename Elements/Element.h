@@ -496,12 +496,12 @@ namespace GGUI{
             RGB border_color,
             RGB border_background_color
         );
-        
-        virtual Element* operator|(Element* other);
-
-        virtual Element* operator|(Flags f);
 
         //End of user constructors.
+
+        // If you want to make a representing element* that isnt the same as the Abstract one.
+        // Then Remember to USE THIS!
+        void Inherit_States_From(Element* abstract);
 
         template<typename T>
         T* At(std::string s){
@@ -528,6 +528,14 @@ namespace GGUI{
 
         void Set_Focus(bool f){
             Focused = f;
+        }
+
+        std::map<std::string, VALUE*> Get_Style();
+
+        void Set_Style(std::map<std::string, VALUE*> css);
+
+        virtual Element* Handle_Or_Operator(Element* other){
+            Set_Style(other->Get_Style());
         }
 
         void Add_Class(std::string class_name);
@@ -576,6 +584,8 @@ namespace GGUI{
         bool Is_Displayed();
 
         virtual void Add_Child(Element* Child);
+
+        virtual void Set_Childs(std::vector<Element*> childs);
 
         bool Children_Changed();
 
@@ -633,43 +643,9 @@ namespace GGUI{
 
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
 
-        std::string Compose_All_Text_RGB_Values(){
-            if (Focused){
-                return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
-                At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
-                Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
-                Constants::END_COMMAND;
-            }
-            else{
-                return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
-                At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
-                Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
-                Constants::END_COMMAND;
-            }
-        }
+        std::string Compose_All_Text_RGB_Values();
 
-        std::string Compose_All_Border_RGB_Values(){
-            if (Focused){
-                return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
-                At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Colour() + 
-                Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Colour() +
-                Constants::END_COMMAND;
-            }
-            else{
-                return At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Over_Head(true) + 
-                At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Colour() + 
-                Constants::END_COMMAND + 
-                At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Over_Head(false) + 
-                At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Colour() +
-                Constants::END_COMMAND;
-            }
-        }
+        std::string Compose_All_Border_RGB_Values();
 
         virtual std::string Get_Name(){
             return "Element";

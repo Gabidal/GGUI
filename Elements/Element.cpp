@@ -105,46 +105,48 @@ GGUI::Element::Element(
     Show_Border(true);
 }
 
-        
-GGUI::Element* GGUI::Element::operator|(Element* other){
-    Style = other->Style;
-
-    return this;
+void GGUI::Element::Inherit_States_From(Element* abstract){
+    Focused = abstract->Focused;
+    Show = abstract->Show;
 }
 
-GGUI::Element* GGUI::Element::operator|(Flags f){
-
-    if (GGUI::Has(f, Flags::Border)){
-        this->Show_Border(true);
+std::string GGUI::Element::Compose_All_Text_RGB_Values(){
+    if (Focused){
+        return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
+        At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
+        Constants::END_COMMAND + 
+        At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(false) + 
+        At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
+        Constants::END_COMMAND;
     }
-    if (GGUI::Has(f, Flags::Text_Input)){
-        ((Text_Field*)this)->Enable_Text_Input();
+    else{
+        return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
+        At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
+        Constants::END_COMMAND + 
+        At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(false) + 
+        At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
+        Constants::END_COMMAND;
     }
-    if (GGUI::Has(f, Flags::Overflow)){
-        ((Text_Field*)this)->Enable_Input_Overflow();
-    }
-    if (GGUI::Has(f, Flags::Horizontal)){
-        ((List_View*)this)->Set_Growth_Direction(Grow_Direction::ROW);
-    }
-    else if (GGUI::Has(f, Flags::Vertical)){
-        ((List_View*)this)->Set_Growth_Direction(Grow_Direction::COLUMN);
-    }
-    if (GGUI::Has(f, Flags::Align_Left)){
-        ((Text_Field*)this)->Set_Style(STYLES::Text_Position, new NUMBER_VALUE((int)TEXT_LOCATION::LEFT));
-    }
-    else if (GGUI::Has(f, Flags::Align_Right)){
-        ((Text_Field*)this)->Set_Style(STYLES::Text_Position, new NUMBER_VALUE((int)TEXT_LOCATION::RIGHT));
-    }
-    else if (GGUI::Has(f, Flags::Align_Center)){
-        ((Text_Field*)this)->Set_Style(STYLES::Text_Position, new NUMBER_VALUE((int)TEXT_LOCATION::CENTER));
-    } 
-    if (GGUI::Has(f, Flags::Dynamic)){
-        ((Text_Field*)this)->Enable_Dynamic_Size();
-    }
-
-    return this;
 }
 
+std::string GGUI::Element::Compose_All_Border_RGB_Values(){
+    if (Focused){
+        return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
+        At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Colour() + 
+        Constants::END_COMMAND + 
+        At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Over_Head(false) + 
+        At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Colour() +
+        Constants::END_COMMAND;
+    }
+    else{
+        return At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Over_Head(true) + 
+        At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Colour() + 
+        Constants::END_COMMAND + 
+        At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Over_Head(false) + 
+        At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Colour() +
+        Constants::END_COMMAND;
+    }
+}
 
 //End of user constructors.
 
@@ -201,6 +203,17 @@ void GGUI::Element::Parse_Classes(){
     }
 }
 
+
+std::map<std::string, GGUI::VALUE*> GGUI::Element::Get_Style(){
+    return Style;
+}
+
+void GGUI::Element::Set_Style(std::map<std::string, VALUE*> css){
+    Style = css;
+
+    Update_Frame();
+}
+
 void GGUI::Element::Add_Class(std::string class_name){
     if(Class_Names.find(class_name) != Class_Names.end()){
         Classes.push_back(Class_Names[class_name]);
@@ -227,13 +240,16 @@ bool GGUI::Element::Has(std::string s){
 void GGUI::Element::Show_Border(bool b){
     if (b != At<BOOL_VALUE>(STYLES::Border)->Value){
 
-        if (b){
-            Width += 2;
-            Height += 2;
-        }
-        else{
-            Width -= 2;
-            Height -= 2;
+        //If the current element is the Main window, then we probably should not try to resize it.
+        if (this != GGUI::Main){
+            if (b){
+                Width += 2;
+                Height += 2;
+            }
+            else{
+                Width -= 2;
+                Height -= 2;
+            }
         }
 
         At<BOOL_VALUE>(STYLES::Border)->Value = b;
@@ -287,6 +303,19 @@ void GGUI::Element::Add_Child(Element* Child){
 
     Childs.push_back(Child);
     Update_Frame();
+}
+
+void GGUI::Element::Set_Childs(std::vector<Element*> childs){
+    bool tmp = Pause_Render;
+    if (Pause_Render)
+        Pause_Renderer();
+
+    for (auto& Child : childs){
+        Add_Child(Child);
+    }
+
+    if (tmp)
+        Resume_Renderer();
 }
 
 std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){

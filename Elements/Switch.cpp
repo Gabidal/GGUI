@@ -5,7 +5,7 @@
 
 namespace GGUI{
 
-    Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event){
+    Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event) : Element(){
         States = states;
 
         auto Togler = [=](){
@@ -35,12 +35,9 @@ namespace GGUI{
             return Render_Buffer;
 
         // States: {O, X} Where: State = 0/1
+        Text_Field* Container = new Text_Field(States[State] + " " + Text);
 
-        List_View* Container = new List_View(this, {
-
-            new Text_Field(States[State] + " " + Text),
-
-        });
+        Container->Inherit_States_From(this);
 
         Render_Buffer = Container->Render();
 

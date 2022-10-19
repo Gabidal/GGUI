@@ -44,7 +44,7 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW){
+        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW) : Element(){
             Parent = parent;
             At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
 
@@ -52,7 +52,7 @@ namespace GGUI{
                 Add_Child(i);
         }
 
-        Element* operator|(Element* other) override{
+        Element* Handle_Or_Operator(Element* other) override{
             Add_Child(other);
             return this;
         }
