@@ -375,6 +375,7 @@ namespace GGUI{
         STRECH = 1 << 3,  //width and or height changes.
         TEXT = 1 << 4,   //text changes, this is primarily for text_field
         CLASS = 1 << 5, //This is used to tell the renderer that there are still un_parsed classes.
+        STATE = 1 << 6, // This is for Switches that based on their state display one symbol differently.
     };
  
     inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
@@ -391,7 +392,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::TEXT | STAIN_TYPE::CLASS);
+        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS);
 
 
         bool is(STAIN_TYPE f){
@@ -405,6 +406,10 @@ namespace GGUI{
             Type = (STAIN_TYPE)((unsigned int)Type & ~(unsigned int)f);
         }
 
+        void Clean(unsigned int f){
+            Type = (STAIN_TYPE)((unsigned int)Type & ~f);
+        }
+
         void Dirty(STAIN_TYPE f){
             Type = (STAIN_TYPE)((unsigned int)Type | (unsigned int)f);
         }
@@ -414,7 +419,7 @@ namespace GGUI{
         }
 
         void Stain_All(){
-            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::TEXT | STAIN_TYPE::CLASS);
+            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS);
         }
 
     };

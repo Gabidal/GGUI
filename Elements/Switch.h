@@ -22,7 +22,13 @@ namespace GGUI{
 
         void Toggle(){
             State = !State;
+
+            Dirty.Dirty(STAIN_TYPE::STATE);
         }
+
+        std::string Get_Data() { return Text; }
+
+        void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
     };
 
     class Radio_Button : public Switch{

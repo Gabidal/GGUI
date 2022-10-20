@@ -642,13 +642,13 @@ namespace GGUI{
 
         tmp->Add_Child(txt);
 
+        Main->Add_Child(tmp);
+
         Remember.push_back(Memory(
             TIME::SECOND * 10,
             [=](GGUI::Event* e){
-                tmp->Remove();
-
                 //delete tmp;
-
+                tmp->Remove();
                 //job succesfully done
                 return true;
             }

@@ -47,6 +47,9 @@ GGUI::Text_Field::Text_Field(
 
 std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
+            
+    if (Dirty.is(STAIN_TYPE::CLEAN))
+        return Result;
 
     if (Dirty.is(STAIN_TYPE::CLASS)){
         Parse_Classes();
@@ -59,6 +62,8 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
         Result.clear();
         Result.resize(Width * Height);
         Dirty.Clean(STAIN_TYPE::STRECH);
+        
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
 
     //make a smaller buffer for the inner text.

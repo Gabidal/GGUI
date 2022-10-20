@@ -38,7 +38,7 @@ int main(){
         GGUI::COLOR::DARK_MAGENTA 
     );
 
-    GGUI::Check_Box* rb = new GGUI::Check_Box("Haloo?");
+    GGUI::Check_Box* rb = new GGUI::Check_Box("Halooo?");
 
     b->Enable_Text_Input();
 

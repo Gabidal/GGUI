@@ -24,24 +24,70 @@ namespace GGUI{
 
         int Symbol_Lenght = 1;
 
+        int Space_Lenght = 1;
+
         std::pair<unsigned int, unsigned int> Text_Dimensions = Text_Field::Get_Text_Dimensions(Text);
 
-        Width = Symbol_Lenght + Text_Dimensions.first;
+        Width = Symbol_Lenght + Space_Lenght + Text_Dimensions.first;
         Height = Text_Dimensions.second;
+
+        Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::STATE);
     }
 
     std::vector<UTF> Switch::Render(){
+        std::vector<GGUI::UTF> Result = Render_Buffer;
+        
         if (Dirty.is(STAIN_TYPE::CLEAN))
-            return Render_Buffer;
+            return Result;
 
-        // States: {O, X} Where: State = 0/1
-        Text_Field* Container = new Text_Field(States[State] + " " + Text);
+        if (Dirty.is(STAIN_TYPE::CLASS)){
+            Parse_Classes();
 
-        Container->Inherit_States_From(this);
+            Dirty.Clean(STAIN_TYPE::CLASS);
+        }
 
-        Render_Buffer = Container->Render();
+        if (Dirty.is(STAIN_TYPE::STRECH)){
+            Result.clear();
+            Result.resize(Width * Height);
+            Dirty.Clean(STAIN_TYPE::STRECH);
+            
+            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+        }
 
-        return Render_Buffer;
+        //Check if the text has been changed.
+        if (Dirty.is(STAIN_TYPE::TEXT)){
+            std::string Display_Text = States[State] + " " + Text;
+
+            Result = Text_Field::Left_Text(this, Display_Text, Parent);
+
+            //Clean text update notice and state change notice.
+            //NOTE: Cleaning STATE flag whitout checking it's existance might lead to unexpecte results.
+            Dirty.Clean(STAIN_TYPE::TEXT | STAIN_TYPE::STATE);
+
+            Dirty.Dirty(STAIN_TYPE::COLOR);
+        }
+
+        if (Dirty.is(STAIN_TYPE::STATE)){
+            int State_Location_X = Has_Border();
+            int State_Location_Y = Has_Border();
+
+            Result[State_Location_Y * Width + State_Location_X] = States[State];
+
+            Dirty.Clean(STAIN_TYPE::STATE);
+            Dirty.Dirty(STAIN_TYPE::COLOR);
+        }
+
+        //Apply the color system to the resized result list
+        if (Dirty.is(STAIN_TYPE::COLOR))
+            Apply_Colors(this, Result);
+
+        //This will add the borders if nessesary and the title of the window.
+        if (Dirty.is(STAIN_TYPE::EDGE))
+            Add_Overhead(this, Result);
+
+        Render_Buffer = Result;
+
+        return Result;
     }
 
 }

@@ -552,6 +552,14 @@ GGUI::RGB GGUI::Element::Get_Text_Color(){
 //Returns nested buffer of AST window's
 std::vector<GGUI::UTF> GGUI::Element::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
+    
+    //if inned children have changed whitout this changing, then this will trigger.
+    if (Children_Changed()){
+        Dirty.Dirty(STAIN_TYPE::DEEP);
+    }
+            
+    if (Dirty.is(STAIN_TYPE::CLEAN))
+        return Result;
 
     if (Dirty.is(STAIN_TYPE::CLASS)){
         Parse_Classes();
@@ -563,6 +571,8 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         Result.clear();
         Result.resize(Width * Height);
         Dirty.Clean(STAIN_TYPE::STRECH);
+
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
 
     //Apply the color system to the resized result list
@@ -572,11 +582,6 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     //This will add the borders if nessesary and the title of the window.
     if (Dirty.is(STAIN_TYPE::EDGE))
         Add_Overhead(this, Result);
-
-    //if inned children have changed whitout this changing, then this will trigger.
-    if (Children_Changed()){
-        Dirty.Dirty(STAIN_TYPE::DEEP);
-    }
 
     //This will add the child windows to the Result buffer
     if (Dirty.is(STAIN_TYPE::DEEP)){
