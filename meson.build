@@ -11,6 +11,7 @@ sources = [
   'Elements/Switch.cpp',
   'Elements/Text_Field.cpp',
   'Elements/Window.cpp',
+  'Elements/Canvas.cpp',
 
   'Renderer.cpp',
 

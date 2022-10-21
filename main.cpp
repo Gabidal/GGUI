@@ -40,6 +40,10 @@ int main(){
 
     GGUI::Check_Box* rb = new GGUI::Check_Box("Halooo?");
 
+    GGUI::Canvas* c = new GGUI::Canvas(10, 10);
+
+    c->Set(5, 5, {123, 221, 132});
+
     b->Enable_Text_Input();
 
     Main->Add_Child(l);
@@ -52,6 +56,8 @@ int main(){
     l->Add_Child(b);
 
     l->Add_Child(rb);
+
+    l->Add_Child(c);
 
     std::vector<GGUI::Text_Field*> r = Main->Get_Elements<GGUI::Text_Field>();
 

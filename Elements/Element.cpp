@@ -609,10 +609,10 @@ void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
 }
 
 void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result){
+    Dirty.Clean(STAIN_TYPE::EDGE);
+    
     if (!w->Has_Border())
         return;
-
-    Dirty.Clean(STAIN_TYPE::EDGE);
 
     for (int y = 0; y < Height; y++){
         for (int x = 0; x < Width; x++){
