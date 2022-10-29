@@ -10,9 +10,7 @@
 #include <map>
 #include <atomic>
 
-#include "Elements/Window.h"
-#include "Elements/Text_Field.h"
-#include "Elements/List_View.h"
+#include "Elements/Element.h"
 
 namespace GGUI{
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
@@ -43,7 +41,7 @@ namespace GGUI{
     extern std::map<int, std::map<std::string, VALUE*>> Classes;
     extern std::map<std::string, int> Class_Names;
 
-    extern Window* Main;  
+    extern Element* Main;  
 
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 
@@ -131,7 +129,7 @@ namespace GGUI{
     extern void Init_Classes();
 
     //Inits GGUI and returns the main window.
-    extern GGUI::Window* Init_Renderer();
+    extern GGUI::Element* Init_Renderer();
 
     extern void Report(std::string Problem);
 

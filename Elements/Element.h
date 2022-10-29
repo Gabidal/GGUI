@@ -14,31 +14,7 @@ namespace GGUI{
     //GGUI uses the ANSI escape code
     //https://en.wikipedia.org/wiki/ANSI_escape_code
 
-    namespace SYMBOLS{
-        inline std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
-        inline std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
-        inline std::string TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
-        inline std::string BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
-        inline std::string VERTICAL_LINE = "│";//"\e(0\x78\e(B";
-        inline std::string HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
-
-        inline std::string RADIOBUTTON_OFF = "○";
-        inline std::string RADIOBUTTON_ON = "◉";
-
-        inline std::string EMPTY_CHECK_BOX = "☐";
-        inline std::string CHECKED_CHECK_BOX = "☒";
-    }
-
     namespace Constants{
-        inline std::string ESC = "\e[";
-        inline std::string SEPERATE = ";";
-        inline std::string Text_Color = "38";
-        inline std::string Back_Ground_Color = "48";
-        inline std::string RESET_Text_Color;
-        inline std::string RESET_Back_Ground_Color;
-        inline std::string USE_RGB = "2";
-        inline std::string END_COMMAND = "m";
-        inline std::string CLEAR_SCREEN = ESC + "2J";
 
         inline unsigned long long NON = 1 << 0;
         inline unsigned long long ENTER = 1 << 1;
@@ -87,19 +63,6 @@ namespace GGUI{
         }
 
         RGB(){}
-
-        std::string Get_Colour(){
-            return std::to_string(Red) + Constants::SEPERATE + std::to_string(Green) + Constants::SEPERATE + std::to_string(Blue);
-        }
-    
-        std::string Get_Over_Head(bool Is_Text_Color = true){
-            if(Is_Text_Color){
-                return Constants::ESC + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
-            }
-            else{
-                return Constants::ESC + Constants::Back_Ground_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
-            }
-        }
     
         bool operator==(const RGB& Other){
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue);
@@ -132,11 +95,6 @@ namespace GGUI{
         static const RGB DARK_GRAY = RGB(64, 64, 64);
     }
 
-    void Constants::Init(){
-        RESET_Text_Color = ESC + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
-        RESET_Back_Ground_Color = ESC + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
-    }
-
     class Coordinates{
     public:
         unsigned int X = 0;  //Horizontal
@@ -158,9 +116,6 @@ namespace GGUI{
 
     class UTF{
     public:
-        std::string Pre_Fix = "";    //color markings and bold info
-        std::string Post_Fix = "";   //color reset and bold resert
-
         bool Is_Unicode = false;
 
         char Ascii = ' ';
@@ -172,28 +127,20 @@ namespace GGUI{
 
         UTF(char data, std::string pre_fix = ""){
             Ascii = data;
-            Pre_Fix = pre_fix;
-
-            if (pre_fix != "")
-                Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
         }
 
         UTF(std::string data, std::string pre_fix = ""){
             Unicode = data;
-            Pre_Fix = pre_fix;
-
-            if (pre_fix != "")
-                Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
             
             Is_Unicode = true;
         }
 
         std::string To_String(){
             if(Is_Unicode){
-                return Pre_Fix + Unicode + Post_Fix;
+                return Unicode;
             }
             else{
-                return Pre_Fix + Ascii + Post_Fix;
+                return std::string(Ascii, 1);
             }
         }
     };
@@ -352,13 +299,13 @@ namespace GGUI{
     namespace STYLES{
         inline std::string Border                          = "Border";
         inline std::string Text_Color                      = "Text_Color";
-        inline std::string Background_Color               = "Background_Color";
+        inline std::string Background_Color                = "Background_Color";
         inline std::string Border_Colour                   = "Border_Colour";
-        inline std::string Border_Background_Color        = "Border_Background_Color";
+        inline std::string Border_Background_Color         = "Border_Background_Color";
         inline std::string Focus_Text_Color                = "Focus_Text_Color";
-        inline std::string Focus_Background_Color         = "Focus_Background_Color";
+        inline std::string Focus_Background_Color          = "Focus_Background_Color";
         inline std::string Focus_Border_Color              = "Focus_Border_Color";
-        inline std::string Focus_Border_Background_Color  = "Focus_Border_Background_Color";
+        inline std::string Focus_Border_Background_Color   = "Focus_Border_Background_Color";
         inline std::string Flow_Priority                   = "Flow_Priority";
         inline std::string Wrap                            = "Wrap";     
         

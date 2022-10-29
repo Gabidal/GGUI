@@ -4,17 +4,13 @@ project(
   default_options : ['warning_level=3', 'cpp_std=c++17']
 )
 
+incdir = include_directories('C:/Users/Quanf/source/repos/VULKAN/Include/')
+
+cpp = meson.get_compiler('cpp')
+
+vulkanlib = cpp.find_library('C:/Users/Quanf/source/repos/VULKAN/lib/vulkan-1')
+
 sources = [
-  'Elements/Button.cpp', 
-  'Elements/Element.cpp',
-  'Elements/List_View.cpp',
-  'Elements/Switch.cpp',
-  'Elements/Text_Field.cpp',
-  'Elements/Window.cpp',
-  'Elements/Canvas.cpp',
-
-  'Renderer.cpp',
-
   'main.cpp',
 
 ]
@@ -22,6 +18,8 @@ sources = [
 executable(
   'GGUI',
   sources,
-  install : true
+  install : true,
+  include_directories : incdir,
+  dependencies : vulkanlib
 )
 

@@ -8,7 +8,6 @@
 #undef min
 #undef max
 
-
 GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Add_Class("default");
 
