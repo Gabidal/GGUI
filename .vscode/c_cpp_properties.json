@@ -4,7 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/Users/Quanf/source/repos/VULKAN/Include/vulkan"
+                "C:/Users/Quanf/source/repos/VULKAN/Include",
             ],
             "defines": [
                 "_DEBUG",
