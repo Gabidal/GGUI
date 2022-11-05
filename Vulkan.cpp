@@ -4,27 +4,34 @@
 
 namespace GGUI{
 
-    inline VkSurfaceKHR Surface;
-    inline VkInstance Instance;
-    inline Graphical_Device* Selected_Device = nullptr;
-    inline VkSurfaceFormatKHR Selected_Surface_Format;
-    inline VkPresentModeKHR Selected_Present_Mode;
-    inline VkRenderPass Render_Pass;
-    inline Swap_Chain* Swapchain = nullptr;
-    inline VkPipeline Pipeline;
-    inline VkPipelineLayout Pipeline_Layout;
-    inline Shader* Vertex_Shader = nullptr;
-    inline Shader* Fragment_Shader = nullptr;
-    inline VkCommandPool Command_Pool;
+    inline VkSurfaceKHR             Surface;
+    inline VkInstance               Instance;
+    inline Graphical_Device         Selected_Device;
+    inline VkSurfaceFormatKHR       Selected_Surface_Format;
+    inline VkPresentModeKHR         Selected_Present_Mode;
+    inline VkRenderPass             Render_Pass;
+    inline Swap_Chain               Swapchain;
+    inline VkPipeline               Pipeline;
+    inline VkPipelineLayout         Pipeline_Layout;
+    inline Shader                   Vertex_Shader;
+    inline Shader                   Fragment_Shader;
+    inline VkCommandPool            Command_Pool;
+    inline VkDebugUtilsMessengerEXT Debug_Messenger;
 
     inline std::vector<Graphical_Device> Graphical_Devices;
     inline std::vector<VkSurfaceFormatKHR> Surface_Formats;
     inline std::vector<VkPresentModeKHR> Present_Modes;
     inline std::vector<VkCommandBuffer> Command_Buffers;
     inline std::vector<Vertex> Vertices;
+    inline const std::vector<const char*> Validation_Layers = {"VK_LAYER_KHRONOS_validation"};
 
     inline unsigned int Default_Width = 1000;
     inline unsigned int Default_Height = 1000;
+
+    inline bool Use_Debug = true;
+
+    
+    #if defined(_WIN32)
 
     Window_Handle::Window_Handle(std::string title, unsigned int width, unsigned int height){
         
@@ -42,6 +49,10 @@ namespace GGUI{
         ShowWindow(Handle, SW_SHOW);
     }
 
+    #else
+
+    #endif
+
     Graphical_Device::Graphical_Device(VkPhysicalDevice device){
         Physical_Device = device;
 
@@ -52,7 +63,7 @@ namespace GGUI{
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, Queue_Families.data());
 
         // Now find the index from the queue
-        for (int i = 0; i < Queue_Families.size(); i++){
+        for (size_t i = 0; i < Queue_Families.size(); i++){
             if (Queue_Families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
                 Queue_Index = i;
                 break;
@@ -75,25 +86,32 @@ namespace GGUI{
         swapchain_info.imageExtent.width = Height;
         swapchain_info.imageFormat = Selected_Surface_Format.format;
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_info.minImageCount = Image_Count;
-        swapchain_info.pQueueFamilyIndices = new unsigned int[Selected_Device->Queue_Index];
+        //swapchain_info.pQueueFamilyIndices = (unsigned int*)&Selected_Device.Queue_Index;
         swapchain_info.presentMode = Selected_Present_Mode;
         swapchain_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        swapchain_info.queueFamilyIndexCount = 1;
+        //swapchain_info.queueFamilyIndexCount = 1;
         swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swapchain_info.surface = Surface;
 
-        if (vkCreateSwapchainKHR(Selected_Device->Device, &swapchain_info, NULL, &Swapchain) != VK_SUCCESS){
+        if (vkCreateSwapchainKHR(Selected_Device.Device, &swapchain_info, nullptr, &Swapchain) != VK_SUCCESS){
             std::cout << "Failed to create swapchain." << std::endl;
         }
 
-        VkImage* swapchain_images = new VkImage[(const unsigned int)Image_Count];
-        if (vkGetSwapchainImagesKHR(Selected_Device->Device, Swapchain, &Image_Count, swapchain_images) != VK_SUCCESS){
+        unsigned int New_Image_Count = 0;
+
+        if (vkGetSwapchainImagesKHR(Selected_Device.Device, Swapchain, &New_Image_Count, nullptr) != VK_SUCCESS){
             std::cout << "Failed to get swapchain images." << std::endl;
         }
 
-        VkImageView* swapchain_image_views = new VkImageView[(const unsigned int)Image_Count];
+        VkImage* swapchain_images = new VkImage[New_Image_Count];
+
+        if (vkGetSwapchainImagesKHR(Selected_Device.Device, Swapchain, &New_Image_Count, swapchain_images) != VK_SUCCESS){
+            std::cout << "Failed to get swapchain images." << std::endl;
+        }
+
+        VkImageView* swapchain_image_views = new VkImageView[Image_Count];
 
         Framebuffers.resize(Image_Count);
 
@@ -111,7 +129,7 @@ namespace GGUI{
             image_view_info.subresourceRange.levelCount = 1;
             image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
-            if (vkCreateImageView(Selected_Device->Device, &image_view_info, NULL, &swapchain_image_views[i]) != VK_SUCCESS){
+            if (vkCreateImageView(Selected_Device.Device, &image_view_info, NULL, &swapchain_image_views[i]) != VK_SUCCESS){
                 std::cout << "Failed to create image view." << std::endl;
             }
 
@@ -123,7 +141,7 @@ namespace GGUI{
             framebuffer_info.width = Width;
             framebuffer_info.height = Height;
 
-            if (vkCreateFramebuffer(Selected_Device->Device, &framebuffer_info, NULL, &Framebuffers[i]) != VK_SUCCESS){
+            if (vkCreateFramebuffer(Selected_Device.Device, &framebuffer_info, NULL, &Framebuffers[i]) != VK_SUCCESS){
                 std::cout << "Failed to create framebuffer." << std::endl;
             }
 
@@ -151,7 +169,7 @@ namespace GGUI{
         shader_info.pCode = (const uint32_t*)buffer.data();
         shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 
-        if (vkCreateShaderModule(Selected_Device->Device, &shader_info, NULL, &Module) != VK_SUCCESS){
+        if (vkCreateShaderModule(Selected_Device.Device, &shader_info, NULL, &Module) != VK_SUCCESS){
             std::cout << "Failed to create shader module." << std::endl;
         }
 
@@ -166,29 +184,29 @@ namespace GGUI{
         buffer_info.usage = type;
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(Selected_Device->Device, &buffer_info, NULL, &Buffer) != VK_SUCCESS){
+        if (vkCreateBuffer(Selected_Device.Device, &buffer_info, NULL, &Buffer) != VK_SUCCESS){
             std::cout << "Failed to create buffer." << std::endl;
         }
 
         VkMemoryRequirements mem_requirements;
-        vkGetBufferMemoryRequirements(Selected_Device->Device, Buffer, &mem_requirements);
+        vkGetBufferMemoryRequirements(Selected_Device.Device, Buffer, &mem_requirements);
 
         VkMemoryAllocateInfo alloc_info = {};
         alloc_info.allocationSize = mem_requirements.size;
         alloc_info.memoryTypeIndex = Find_Memory_Type(mem_requirements.memoryTypeBits, flags);
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 
-        if (vkAllocateMemory(Selected_Device->Device, &alloc_info, NULL, &Memory) != VK_SUCCESS){
+        if (vkAllocateMemory(Selected_Device.Device, &alloc_info, NULL, &Memory) != VK_SUCCESS){
             std::cout << "Failed to allocate memory." << std::endl;
         }
 
-        vkBindBufferMemory(Selected_Device->Device, Buffer, Memory, 0);
+        vkBindBufferMemory(Selected_Device.Device, Buffer, Memory, 0);
     }
 
     int Buffer_Class::Find_Memory_Type(unsigned int typeFilter, VkMemoryPropertyFlags properties){
 
         VkPhysicalDeviceMemoryProperties mem_properties;
-        vkGetPhysicalDeviceMemoryProperties(Selected_Device->Physical_Device, &mem_properties);
+        vkGetPhysicalDeviceMemoryProperties(Selected_Device.Physical_Device, &mem_properties);
 
         for (unsigned int i = 0; i < mem_properties.memoryTypeCount; i++){
             if ((typeFilter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties){
@@ -202,12 +220,12 @@ namespace GGUI{
 
     bool Buffer_Class::Set_Data(void* data, unsigned int size, unsigned int offset){
         void* memory;
-        if (vkMapMemory(Selected_Device->Device, Memory, offset, size, 0, &memory) != VK_SUCCESS){
+        if (vkMapMemory(Selected_Device.Device, Memory, offset, size, 0, &memory) != VK_SUCCESS){
             std::cout << "Failed to map memory." << std::endl;
             return false;
         }
         memcpy(memory, data, size);
-        vkUnmapMemory(Selected_Device->Device, Memory);
+        vkUnmapMemory(Selected_Device.Device, Memory);
 
         return true;
     }
@@ -220,7 +238,6 @@ namespace GGUI{
         info.srcOffset = spurce_offset;
 
         vkCmdCopyBuffer(Command_Buffers[0], Buffer, buffer.Buffer, 1, &info);
-
     }
 
     // Searches for all graphical devices, uses the first by default.
@@ -245,9 +262,11 @@ namespace GGUI{
 
         }
 
+        Selected_Device = Graphical_Devices[0];
+
         VkDeviceQueueCreateInfo queue_info = {};
         queue_info.queueCount = 1;
-        queue_info.queueFamilyIndex = Graphical_Devices[0].Queue_Index;
+        queue_info.queueFamilyIndex = Selected_Device.Queue_Index;
         queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_info.pQueuePriorities = new float{1.0f};
 
@@ -255,32 +274,33 @@ namespace GGUI{
         device_features.pQueueCreateInfos = &queue_info;
         device_features.queueCreateInfoCount = 1;
         device_features.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        device_features.enabledExtensionCount = 1;
+        device_features.ppEnabledExtensionNames = new const char*{"VK_KHR_swapchain"};
+        device_features.enabledLayerCount = 1;
+        device_features.ppEnabledLayerNames = new const char*{"VK_LAYER_KHRONOS_validation"};
 
-        if (vkCreateDevice(Selected_Device->Physical_Device, &device_features, NULL, &Selected_Device->Device) != VK_SUCCESS){
+        if (vkCreateDevice(Selected_Device.Physical_Device, &device_features, NULL, &Selected_Device.Device) != VK_SUCCESS){
             std::cout << "Failed to create device." << std::endl;
         }
-
-        
-
     }
 
     // Gets all the available surface formats.
     void Init_Surface_Formats(){
         unsigned int Surface_Format_Count = 0;
 
-        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device->Physical_Device, Surface, &Surface_Format_Count, 0) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device.Physical_Device, Surface, &Surface_Format_Count, 0) != VK_SUCCESS){
             std::cout << "Failed to get surface formats." << std::endl;
         }
 
         Surface_Formats.resize(Surface_Format_Count);
 
-        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device->Physical_Device, Surface, &Surface_Format_Count, Surface_Formats.data()) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device.Physical_Device, Surface, &Surface_Format_Count, Surface_Formats.data()) != VK_SUCCESS){
             std::cout << "Failed to get surface formats." << std::endl;
         }
 
         // Set default surface format to RGBA 8-bit RGBA.
         for (unsigned int i = 0; i < Surface_Format_Count; i++){
-            if (Surface_Formats[i].format == VK_FORMAT_R8G8B8A8_UNORM){
+            if (Surface_Formats[i].format == VK_FORMAT_B8G8R8A8_SRGB){
                 Selected_Surface_Format = Surface_Formats[i];
                 break;
             }
@@ -291,13 +311,13 @@ namespace GGUI{
     void Init_Present_Modes(){
         unsigned int Present_Mode_Count = 0;
 
-        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device->Physical_Device, Surface, &Present_Mode_Count, 0) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device.Physical_Device, Surface, &Present_Mode_Count, 0) != VK_SUCCESS){
             std::cout << "Failed to get present modes." << std::endl;
         }
 
         Present_Modes.resize(Present_Mode_Count);
 
-        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device->Physical_Device, Surface, &Present_Mode_Count, Present_Modes.data()) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device.Physical_Device, Surface, &Present_Mode_Count, Present_Modes.data()) != VK_SUCCESS){
             std::cout << "Failed to get present modes." << std::endl;
         }
 
@@ -326,6 +346,8 @@ namespace GGUI{
         color_attachment_ref.attachment = 0;
         color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
@@ -338,7 +360,7 @@ namespace GGUI{
         render_pass_info.subpassCount = 1;
         render_pass_info.pSubpasses = &subpass;
 
-        if (vkCreateRenderPass(Selected_Device->Device, &render_pass_info, NULL, &Render_Pass) != VK_SUCCESS){
+        if (vkCreateRenderPass(Selected_Device.Device, &render_pass_info, NULL, &Render_Pass) != VK_SUCCESS){
             std::cout << "Failed to create render pass." << std::endl;
         }
     }
@@ -348,13 +370,13 @@ namespace GGUI{
         VkPipelineShaderStageCreateInfo vert_shader_stage_info = {};
         vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vert_shader_stage_info.module = Vertex_Shader->Module;
+        vert_shader_stage_info.module = Vertex_Shader.Module;
         vert_shader_stage_info.pName = "main";
 
         VkPipelineShaderStageCreateInfo frag_shader_stage_info = {};
         frag_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        frag_shader_stage_info.module = Fragment_Shader->Module;
+        frag_shader_stage_info.module = Fragment_Shader.Module;
         frag_shader_stage_info.pName = "main";
 
         VkPipelineShaderStageCreateInfo shader_stages[] = {vert_shader_stage_info, frag_shader_stage_info};
@@ -420,7 +442,7 @@ namespace GGUI{
         pipeline_layout_info.setLayoutCount = 0;
         pipeline_layout_info.pushConstantRangeCount = 0;
 
-        if (vkCreatePipelineLayout(Selected_Device->Device, &pipeline_layout_info, NULL, &Pipeline_Layout) != VK_SUCCESS){
+        if (vkCreatePipelineLayout(Selected_Device.Device, &pipeline_layout_info, NULL, &Pipeline_Layout) != VK_SUCCESS){
             std::cout << "Failed to create pipeline layout." << std::endl;
         }
 
@@ -442,12 +464,12 @@ namespace GGUI{
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
         pipeline_info.basePipelineIndex = -1;
 
-        if (vkCreateGraphicsPipelines(Selected_Device->Device, VK_NULL_HANDLE, 1, &pipeline_info, NULL, &Pipeline) != VK_SUCCESS){
+        if (vkCreateGraphicsPipelines(Selected_Device.Device, VK_NULL_HANDLE, 1, &pipeline_info, NULL, &Pipeline) != VK_SUCCESS){
             std::cout << "Failed to create graphics pipeline." << std::endl;
         }
 
-        vkDestroyShaderModule(Selected_Device->Device, Vertex_Shader->Module, NULL);
-        vkDestroyShaderModule(Selected_Device->Device, Fragment_Shader->Module, NULL);
+        vkDestroyShaderModule(Selected_Device.Device, Vertex_Shader.Module, NULL);
+        vkDestroyShaderModule(Selected_Device.Device, Fragment_Shader.Module, NULL);
     }
 
     // Creates the Command pool.
@@ -455,10 +477,10 @@ namespace GGUI{
 
         VkCommandPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        pool_info.queueFamilyIndex = Selected_Device->Queue_Index;
+        pool_info.queueFamilyIndex = Selected_Device.Queue_Index;
         pool_info.flags = 0;
 
-        if (vkCreateCommandPool(Selected_Device->Device, &pool_info, NULL, &Command_Pool) != VK_SUCCESS){
+        if (vkCreateCommandPool(Selected_Device.Device, &pool_info, NULL, &Command_Pool) != VK_SUCCESS){
             std::cout << "Failed to create command pool." << std::endl;
         }
     }
@@ -466,9 +488,9 @@ namespace GGUI{
     // Creates the Command List.
     void Init_Command_List(){
 
-        Command_Buffers.resize(Swapchain->Framebuffers.size());
+        Command_Buffers.resize(Swapchain.Framebuffers.size());
 
-        for (int i = 0; i < Command_Buffers.size(); i++){
+        for (size_t i = 0; i < Command_Buffers.size(); i++){
 
             VkCommandBufferAllocateInfo info = {};
             info.commandBufferCount = 1;
@@ -476,16 +498,16 @@ namespace GGUI{
             info.level = (VkCommandBufferLevel)Priority::High;
             info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 
-            vkAllocateCommandBuffers(Selected_Device->Device, &info, &Command_Buffers[i]);
+            vkAllocateCommandBuffers(Selected_Device.Device, &info, &Command_Buffers[i]);
         }
     }
 
     // Creates the vertices.
     void Init_Vertices(){
         Vertices = {
-            {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+            {{ 0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
         };
 
         Buffer_Class source = Buffer_Class((unsigned int)(sizeof(Vertex) * Vertices.size()), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VkBufferUsageFlagBits)(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT));
@@ -507,25 +529,85 @@ namespace GGUI{
         source.Copy_Buffer_To(destination);
     }
 
+    bool Check_Validation_Layer_Support() {
+        uint32_t layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+        return false;
+    }
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL Debug_Callback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData
+    ) {
+
+        std::cout << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+        return VK_FALSE;
+    }
+
+    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        } else {
+            return VK_ERROR_EXTENSION_NOT_PRESENT;
+        }
+    }
+
+    void Init_Debug_Messenger(){
+        if (!Use_Debug) return;
+
+        VkDebugUtilsMessengerCreateInfoEXT create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        create_info.pfnUserCallback = Debug_Callback;
+
+        if (CreateDebugUtilsMessengerEXT(Instance, &create_info, NULL, &Debug_Messenger) != VK_SUCCESS){
+            std::cout << "Failed to set up debug messenger." << std::endl;
+        }
+    }
+
     // Setups the VkSurfaceKHR
     void Init(){
-        Selected_Device = new Graphical_Device();
-
         Window_Handle Handle("", Default_Width, Default_Height);
 
         const char* extension[] = {
             VK_KHR_SURFACE_EXTENSION_NAME
+            ,VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+            //VK_KHR_SWAPCHAIN_EXTENSION_NAME
             #if defined(_WIN32)
             ,VK_KHR_WIN32_SURFACE_EXTENSION_NAME
             #endif
         };
 
+        VkApplicationInfo Application_Info = {};
+        Application_Info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        Application_Info.pApplicationName = "Vulkan";
+        Application_Info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        Application_Info.pEngineName = "No Engine";
+        Application_Info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        Application_Info.apiVersion = VK_API_VERSION_1_0;
+
         VkInstanceCreateInfo Instance_Info = {};
         Instance_Info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         Instance_Info.enabledExtensionCount = sizeof(extension) / sizeof(extension[0]);
         Instance_Info.ppEnabledExtensionNames = extension;
+        Instance_Info.pApplicationInfo = &Application_Info;
+
+        if (Use_Debug){
+            Instance_Info.enabledLayerCount = static_cast<uint32_t>(Validation_Layers.size());
+            Instance_Info.ppEnabledLayerNames = Validation_Layers.data();
+        }
 
         vkCreateInstance(&Instance_Info, 0, &Instance);
+        Init_Debug_Messenger();
 
         // This is the Windows specific code
         #if defined(_WIN32)
@@ -546,13 +628,12 @@ namespace GGUI{
         Init_Graphical_Devices();
         Init_Surface_Formats();
         Init_Present_Modes();
-        Init_Render_Pass();
         
-        Swapchain = new Swap_Chain(Default_Width, Default_Height);
+        Swapchain = Swap_Chain(Default_Width, Default_Height);
 
-        Vertex_Shader = new Shader("Shaders/Vertex_Shader.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        Vertex_Shader = Shader("Shaders/vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 
-        Fragment_Shader = new Shader("Shaders/Fragment_Shader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        Fragment_Shader = Shader("Shaders/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         Init_Pipeline();
         Init_Command_Pool();

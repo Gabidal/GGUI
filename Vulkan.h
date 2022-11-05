@@ -44,8 +44,8 @@ namespace GGUI{
     extern std::vector<VkCommandBuffer> Command_Buffers;
     extern std::vector<Vertex> Vertices;
 
-    extern unsigned int Default_Width = 1000;
-    extern unsigned int Default_Height = 1000;
+    extern unsigned int Default_Width;
+    extern unsigned int Default_Height;
 
     #if defined(_WIN32)
         #include <windows.h>
@@ -77,6 +77,7 @@ namespace GGUI{
 
         Graphical_Device(VkPhysicalDevice phy_device);
 
+        // This is mainly generated just for the global variables to work.
         Graphical_Device(){}
 
     };
@@ -91,6 +92,9 @@ namespace GGUI{
         unsigned int Height;
 
         Swap_Chain(unsigned int width, unsigned int height);
+
+        // This is mainly generated just for the global variables to work.
+        Swap_Chain(){}
     };
 
     class Shader{
@@ -101,6 +105,9 @@ namespace GGUI{
         std::string Entry_Point_Name = "main";
 
         Shader(std::string path, VkShaderStageFlagBits type);
+
+        // This is mainly generated just for the global variables to work.
+        Shader(){}
     };
 
     enum class Priority{
@@ -115,15 +122,21 @@ namespace GGUI{
         float y;
 
         Vector2(float x, float y): x(x), y(y){}
+        
+        // This is mainly generated just for the global variables to work.
+        Vector2(){}
     };
 
     class Vector3{
     public:
-        float x;
-        float y;
-        float z;
+        float x = 0;
+        float y = 0;
+        float z = 0;
 
         Vector3(float x, float y, float z = 0): x(x), y(y), z(z){}
+        
+        // This is mainly generated just for the global variables to work.
+        Vector3(){}
     };
 
     class Vertex{
@@ -131,7 +144,10 @@ namespace GGUI{
         Vector3 Position;
         Vector3 Color;
 
-        Vertex(Vector3 position, Vector3 color);
+        Vertex(Vector3 position, Vector3 color): Position(position), Color(color){}
+        
+        // This is mainly generated just for the global variables to work.
+        Vertex(){}
     };
 
     class Buffer_Class{
