@@ -11,6 +11,9 @@ cpp = meson.get_compiler('cpp')
 vulkanlib = cpp.find_library('C:/Users/Quanf/source/repos/VULKAN/lib/vulkan-1')
 
 sources = [
+
+  'Vulkan.cpp',
+
   'main.cpp',
 
 ]

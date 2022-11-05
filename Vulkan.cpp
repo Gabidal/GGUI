@@ -3,6 +3,29 @@
 #include <fstream>
 
 namespace GGUI{
+
+    inline VkSurfaceKHR Surface;
+    inline VkInstance Instance;
+    inline Graphical_Device* Selected_Device = nullptr;
+    inline VkSurfaceFormatKHR Selected_Surface_Format;
+    inline VkPresentModeKHR Selected_Present_Mode;
+    inline VkRenderPass Render_Pass;
+    inline Swap_Chain* Swapchain = nullptr;
+    inline VkPipeline Pipeline;
+    inline VkPipelineLayout Pipeline_Layout;
+    inline Shader* Vertex_Shader = nullptr;
+    inline Shader* Fragment_Shader = nullptr;
+    inline VkCommandPool Command_Pool;
+
+    inline std::vector<Graphical_Device> Graphical_Devices;
+    inline std::vector<VkSurfaceFormatKHR> Surface_Formats;
+    inline std::vector<VkPresentModeKHR> Present_Modes;
+    inline std::vector<VkCommandBuffer> Command_Buffers;
+    inline std::vector<Vertex> Vertices;
+
+    inline unsigned int Default_Width = 1000;
+    inline unsigned int Default_Height = 1000;
+
     Window_Handle::Window_Handle(std::string title, unsigned int width, unsigned int height){
         
         WNDCLASSA info = {};
@@ -20,13 +43,21 @@ namespace GGUI{
     }
 
     Graphical_Device::Graphical_Device(VkPhysicalDevice device){
-        Device = device;
+        Physical_Device = device;
 
         uint32_t queue_family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, NULL);
 
         Queue_Families.resize(queue_family_count);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, Queue_Families.data());
+
+        // Now find the index from the queue
+        for (int i = 0; i < Queue_Families.size(); i++){
+            if (Queue_Families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
+                Queue_Index = i;
+                break;
+            }
+        }
     }
 
     Swap_Chain::Swap_Chain(unsigned int width, unsigned int height){
@@ -46,23 +77,23 @@ namespace GGUI{
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         swapchain_info.minImageCount = Image_Count;
-        swapchain_info.pQueueFamilyIndices = Selected_Device.Queue_Families.data();
+        swapchain_info.pQueueFamilyIndices = new unsigned int[Selected_Device->Queue_Index];
         swapchain_info.presentMode = Selected_Present_Mode;
         swapchain_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        swapchain_info.queueFamilyIndexCount = Selected_Device.Queue_Families.size();
+        swapchain_info.queueFamilyIndexCount = 1;
         swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swapchain_info.surface = Surface;
 
-        if (vkCreateSwapchainKHR(Selected_Device.Device, &swapchain_info, NULL, &Swapchain) != VK_SUCCESS){
+        if (vkCreateSwapchainKHR(Selected_Device->Device, &swapchain_info, NULL, &Swapchain) != VK_SUCCESS){
             std::cout << "Failed to create swapchain." << std::endl;
         }
 
-        VkImage swapchain_images[(const unsigned int)Image_Count];
-        if (vkGetSwapchainImagesKHR(Selected_Device.Device, Swapchain, &Image_Count, swapchain_images) != VK_SUCCESS){
+        VkImage* swapchain_images = new VkImage[(const unsigned int)Image_Count];
+        if (vkGetSwapchainImagesKHR(Selected_Device->Device, Swapchain, &Image_Count, swapchain_images) != VK_SUCCESS){
             std::cout << "Failed to get swapchain images." << std::endl;
         }
 
-        VkImageView swapchain_image_views[(const unsigned int)Image_Count];
+        VkImageView* swapchain_image_views = new VkImageView[(const unsigned int)Image_Count];
 
         Framebuffers.resize(Image_Count);
 
@@ -80,7 +111,7 @@ namespace GGUI{
             image_view_info.subresourceRange.levelCount = 1;
             image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
-            if (vkCreateImageView(Selected_Device.Device, &image_view_info, NULL, &swapchain_image_views[i]) != VK_SUCCESS){
+            if (vkCreateImageView(Selected_Device->Device, &image_view_info, NULL, &swapchain_image_views[i]) != VK_SUCCESS){
                 std::cout << "Failed to create image view." << std::endl;
             }
 
@@ -92,7 +123,7 @@ namespace GGUI{
             framebuffer_info.width = Width;
             framebuffer_info.height = Height;
 
-            if (vkCreateFramebuffer(Selected_Device.Device, &framebuffer_info, NULL, &Framebuffers[i]) != VK_SUCCESS){
+            if (vkCreateFramebuffer(Selected_Device->Device, &framebuffer_info, NULL, &Framebuffers[i]) != VK_SUCCESS){
                 std::cout << "Failed to create framebuffer." << std::endl;
             }
 
@@ -100,11 +131,11 @@ namespace GGUI{
 
     }
 
-    Shader::Shader(std::string path, Shader_Type type){
+    Shader::Shader(std::string path, VkShaderStageFlagBits type){
         std::ifstream file(path, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()){
-            std::cout << "Failed to open shader file." << std::endl;
+            std::cout << "Failed to open shader file: '" + path + "'" << std::endl;
         }
 
         size_t file_size = (size_t)file.tellg();
@@ -120,14 +151,79 @@ namespace GGUI{
         shader_info.pCode = (const uint32_t*)buffer.data();
         shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 
-        if (vkCreateShaderModule(Selected_Device.Device, &shader_info, NULL, &Module) != VK_SUCCESS){
+        if (vkCreateShaderModule(Selected_Device->Device, &shader_info, NULL, &Module) != VK_SUCCESS){
             std::cout << "Failed to create shader module." << std::endl;
         }
 
         Type = type;
     }
 
-        // Searches for all graphical devices, uses the first by default.
+    Buffer_Class::Buffer_Class(unsigned int size, VkBufferUsageFlagBits type, VkBufferUsageFlagBits flags){
+
+        VkBufferCreateInfo buffer_info = {};
+        buffer_info.size = size;
+        buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_info.usage = type;
+        buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(Selected_Device->Device, &buffer_info, NULL, &Buffer) != VK_SUCCESS){
+            std::cout << "Failed to create buffer." << std::endl;
+        }
+
+        VkMemoryRequirements mem_requirements;
+        vkGetBufferMemoryRequirements(Selected_Device->Device, Buffer, &mem_requirements);
+
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.allocationSize = mem_requirements.size;
+        alloc_info.memoryTypeIndex = Find_Memory_Type(mem_requirements.memoryTypeBits, flags);
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+
+        if (vkAllocateMemory(Selected_Device->Device, &alloc_info, NULL, &Memory) != VK_SUCCESS){
+            std::cout << "Failed to allocate memory." << std::endl;
+        }
+
+        vkBindBufferMemory(Selected_Device->Device, Buffer, Memory, 0);
+    }
+
+    int Buffer_Class::Find_Memory_Type(unsigned int typeFilter, VkMemoryPropertyFlags properties){
+
+        VkPhysicalDeviceMemoryProperties mem_properties;
+        vkGetPhysicalDeviceMemoryProperties(Selected_Device->Physical_Device, &mem_properties);
+
+        for (unsigned int i = 0; i < mem_properties.memoryTypeCount; i++){
+            if ((typeFilter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties){
+                return i;
+            }
+        }
+
+        return -1;
+
+    }
+
+    bool Buffer_Class::Set_Data(void* data, unsigned int size, unsigned int offset){
+        void* memory;
+        if (vkMapMemory(Selected_Device->Device, Memory, offset, size, 0, &memory) != VK_SUCCESS){
+            std::cout << "Failed to map memory." << std::endl;
+            return false;
+        }
+        memcpy(memory, data, size);
+        vkUnmapMemory(Selected_Device->Device, Memory);
+
+        return true;
+    }
+
+    void Buffer_Class::Copy_Buffer_To(Buffer_Class& buffer, VkDeviceSize spurce_offset, VkDeviceSize destination_offset){
+
+        VkBufferCopy info = {};
+        info.dstOffset = destination_offset;
+        info.size = buffer.Size;
+        info.srcOffset = spurce_offset;
+
+        vkCmdCopyBuffer(Command_Buffers[0], Buffer, buffer.Buffer, 1, &info);
+
+    }
+
+    // Searches for all graphical devices, uses the first by default.
     void Init_Graphical_Devices(){
 
         unsigned int Graphical_Device_Count = 0;
@@ -148,19 +244,37 @@ namespace GGUI{
             Graphical_Devices.push_back(Device);
 
         }
+
+        VkDeviceQueueCreateInfo queue_info = {};
+        queue_info.queueCount = 1;
+        queue_info.queueFamilyIndex = Graphical_Devices[0].Queue_Index;
+        queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_info.pQueuePriorities = new float{1.0f};
+
+        VkDeviceCreateInfo device_features = {};
+        device_features.pQueueCreateInfos = &queue_info;
+        device_features.queueCreateInfoCount = 1;
+        device_features.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+        if (vkCreateDevice(Selected_Device->Physical_Device, &device_features, NULL, &Selected_Device->Device) != VK_SUCCESS){
+            std::cout << "Failed to create device." << std::endl;
+        }
+
+        
+
     }
 
     // Gets all the available surface formats.
     void Init_Surface_Formats(){
         unsigned int Surface_Format_Count = 0;
 
-        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device.Device, Surface, &Surface_Format_Count, 0) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device->Physical_Device, Surface, &Surface_Format_Count, 0) != VK_SUCCESS){
             std::cout << "Failed to get surface formats." << std::endl;
         }
 
         Surface_Formats.resize(Surface_Format_Count);
 
-        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device.Device, Surface, &Surface_Format_Count, Surface_Formats.data()) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfaceFormatsKHR(Selected_Device->Physical_Device, Surface, &Surface_Format_Count, Surface_Formats.data()) != VK_SUCCESS){
             std::cout << "Failed to get surface formats." << std::endl;
         }
 
@@ -177,13 +291,13 @@ namespace GGUI{
     void Init_Present_Modes(){
         unsigned int Present_Mode_Count = 0;
 
-        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device.Device, Surface, &Present_Mode_Count, 0) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device->Physical_Device, Surface, &Present_Mode_Count, 0) != VK_SUCCESS){
             std::cout << "Failed to get present modes." << std::endl;
         }
 
         Present_Modes.resize(Present_Mode_Count);
 
-        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device.Device, Surface, &Present_Mode_Count, Present_Modes.data()) != VK_SUCCESS){
+        if (vkGetPhysicalDeviceSurfacePresentModesKHR(Selected_Device->Physical_Device, Surface, &Present_Mode_Count, Present_Modes.data()) != VK_SUCCESS){
             std::cout << "Failed to get present modes." << std::endl;
         }
 
@@ -224,13 +338,179 @@ namespace GGUI{
         render_pass_info.subpassCount = 1;
         render_pass_info.pSubpasses = &subpass;
 
-        if (vkCreateRenderPass(Selected_Device.Device, &render_pass_info, NULL, &Render_Pass) != VK_SUCCESS){
+        if (vkCreateRenderPass(Selected_Device->Device, &render_pass_info, NULL, &Render_Pass) != VK_SUCCESS){
             std::cout << "Failed to create render pass." << std::endl;
         }
     }
 
+    // Creates the graphics pipeline.
+    void Init_Pipeline(){
+        VkPipelineShaderStageCreateInfo vert_shader_stage_info = {};
+        vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vert_shader_stage_info.module = Vertex_Shader->Module;
+        vert_shader_stage_info.pName = "main";
+
+        VkPipelineShaderStageCreateInfo frag_shader_stage_info = {};
+        frag_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        frag_shader_stage_info.module = Fragment_Shader->Module;
+        frag_shader_stage_info.pName = "main";
+
+        VkPipelineShaderStageCreateInfo shader_stages[] = {vert_shader_stage_info, frag_shader_stage_info};
+
+        VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+        vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertex_input_info.vertexBindingDescriptionCount = 0;
+        vertex_input_info.vertexAttributeDescriptionCount = 0;
+
+        VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
+        input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        input_assembly.primitiveRestartEnable = VK_FALSE;
+
+        VkViewport viewport = {};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = (float)Default_Width;
+        viewport.height = (float)Default_Height;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        VkRect2D scissor = {};
+        scissor.offset = {0, 0};
+        scissor.extent = {Default_Width, Default_Height};
+
+        VkPipelineViewportStateCreateInfo viewport_state = {};
+        viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewport_state.viewportCount = 1;
+        viewport_state.pViewports = &viewport;
+        viewport_state.scissorCount = 1;
+        viewport_state.pScissors = &scissor;
+
+        VkPipelineRasterizationStateCreateInfo rasterizer = {};
+        rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rasterizer.depthClampEnable = VK_FALSE;
+        rasterizer.rasterizerDiscardEnable = VK_FALSE;
+        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+        rasterizer.lineWidth = 1.0f;
+
+        VkPipelineMultisampleStateCreateInfo multisampling = {};
+        multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multisampling.sampleShadingEnable = VK_FALSE;
+        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+        VkPipelineColorBlendAttachmentState color_blend_attachment = {};
+        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        color_blend_attachment.blendEnable = VK_FALSE;
+
+        VkPipelineColorBlendStateCreateInfo color_blending = {};
+        color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        color_blending.logicOpEnable = VK_FALSE;
+        color_blending.logicOp = VK_LOGIC_OP_COPY;
+        color_blending.attachmentCount = 1;
+        color_blending.pAttachments = &color_blend_attachment;
+        color_blending.blendConstants[0] = 0.0f;
+        color_blending.blendConstants[1] = 0.0f;
+        color_blending.blendConstants[2] = 0.0f;
+        color_blending.blendConstants[3] = 0.0f;
+
+        VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+        pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipeline_layout_info.setLayoutCount = 0;
+        pipeline_layout_info.pushConstantRangeCount = 0;
+
+        if (vkCreatePipelineLayout(Selected_Device->Device, &pipeline_layout_info, NULL, &Pipeline_Layout) != VK_SUCCESS){
+            std::cout << "Failed to create pipeline layout." << std::endl;
+        }
+
+        VkGraphicsPipelineCreateInfo pipeline_info = {};
+        pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipeline_info.stageCount = 2;
+        pipeline_info.pStages = shader_stages;
+        pipeline_info.pVertexInputState = &vertex_input_info;
+        pipeline_info.pInputAssemblyState = &input_assembly;
+        pipeline_info.pViewportState = &viewport_state;
+        pipeline_info.pRasterizationState = &rasterizer;
+        pipeline_info.pMultisampleState = &multisampling;
+        pipeline_info.pDepthStencilState = NULL;
+        pipeline_info.pColorBlendState = &color_blending;
+        pipeline_info.pDynamicState = NULL;
+        pipeline_info.layout = Pipeline_Layout;
+        pipeline_info.renderPass = Render_Pass;
+        pipeline_info.subpass = 0;
+        pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+        pipeline_info.basePipelineIndex = -1;
+
+        if (vkCreateGraphicsPipelines(Selected_Device->Device, VK_NULL_HANDLE, 1, &pipeline_info, NULL, &Pipeline) != VK_SUCCESS){
+            std::cout << "Failed to create graphics pipeline." << std::endl;
+        }
+
+        vkDestroyShaderModule(Selected_Device->Device, Vertex_Shader->Module, NULL);
+        vkDestroyShaderModule(Selected_Device->Device, Fragment_Shader->Module, NULL);
+    }
+
+    // Creates the Command pool.
+    void Init_Command_Pool(){
+
+        VkCommandPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        pool_info.queueFamilyIndex = Selected_Device->Queue_Index;
+        pool_info.flags = 0;
+
+        if (vkCreateCommandPool(Selected_Device->Device, &pool_info, NULL, &Command_Pool) != VK_SUCCESS){
+            std::cout << "Failed to create command pool." << std::endl;
+        }
+    }
+
+    // Creates the Command List.
+    void Init_Command_List(){
+
+        Command_Buffers.resize(Swapchain->Framebuffers.size());
+
+        for (int i = 0; i < Command_Buffers.size(); i++){
+
+            VkCommandBufferAllocateInfo info = {};
+            info.commandBufferCount = 1;
+            info.commandPool = Command_Pool;
+            info.level = (VkCommandBufferLevel)Priority::High;
+            info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+
+            vkAllocateCommandBuffers(Selected_Device->Device, &info, &Command_Buffers[i]);
+        }
+    }
+
+    // Creates the vertices.
+    void Init_Vertices(){
+        Vertices = {
+            {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+        };
+
+        Buffer_Class source = Buffer_Class((unsigned int)(sizeof(Vertex) * Vertices.size()), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, (VkBufferUsageFlagBits)(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT));
+    
+        if (source.Buffer == VK_NULL_HANDLE){
+            std::cout << "Failed to create source vertex buffer." << std::endl;
+        }
+
+        if (source.Set_Data(Vertices.data(), Vertices.size()) != VK_SUCCESS){
+            std::cout << "Failed to set vertex buffer data." << std::endl;
+        }
+
+        Buffer_Class destination = Buffer_Class((unsigned int)(sizeof(Vertex) * Vertices.size()), (VkBufferUsageFlagBits)(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+        if (destination.Buffer == VK_NULL_HANDLE){
+            std::cout << "Failed to create destination vertex buffer." << std::endl;
+        }
+
+        source.Copy_Buffer_To(destination);
+    }
+
     // Setups the VkSurfaceKHR
     void Init(){
+        Selected_Device = new Graphical_Device();
+
         Window_Handle Handle("", Default_Width, Default_Height);
 
         const char* extension[] = {
@@ -268,12 +548,15 @@ namespace GGUI{
         Init_Present_Modes();
         Init_Render_Pass();
         
-        Swapchain = Swap_Chain(Default_Width, Default_Height);
+        Swapchain = new Swap_Chain(Default_Width, Default_Height);
 
+        Vertex_Shader = new Shader("Shaders/Vertex_Shader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 
+        Fragment_Shader = new Shader("Shaders/Fragment_Shader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-
+        Init_Pipeline();
+        Init_Command_Pool();
+        Init_Command_List();
+        Init_Vertices();
     }
-
-
 }

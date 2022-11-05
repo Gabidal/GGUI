@@ -20,23 +20,32 @@
 namespace GGUI{
 
     class Window_Handle;
-    class Graphics_Device;
+    class Graphical_Device;
     class Swap_Chain;
+    class Vertex;
+    class Shader;
 
-    inline VkSurfaceKHR Surface;
-    inline VkInstance Instance;
-    inline Graphical_Device Selected_Device;
-    inline VkSurfaceFormatKHR Selected_Surface_Format;
-    inline VkPresentModeKHR Selected_Present_Mode;
-    inline VkRenderPass Render_Pass;
-    inline Swap_Chain Swapchain;
+    extern VkSurfaceKHR Surface;
+    extern VkInstance Instance;
+    extern Graphical_Device Selected_Device;
+    extern VkSurfaceFormatKHR Selected_Surface_Format;
+    extern VkPresentModeKHR Selected_Present_Mode;
+    extern VkRenderPass Render_Pass;
+    extern Swap_Chain Swapchain;
+    extern VkPipeline Pipeline;
+    extern VkPipelineLayout Pipeline_Layout;
+    extern Shader Vertex_Shader;
+    extern Shader Fragment_Shader;
+    extern VkCommandPool Command_Pool;
 
-    inline std::vector<Graphical_Device> Graphical_Devices;
-    inline std::vector<VkSurfaceFormatKHR> Surface_Formats;
-    inline std::vector<VkPresentModeKHR> Present_Modes;
+    extern std::vector<Graphical_Device> Graphical_Devices;
+    extern std::vector<VkSurfaceFormatKHR> Surface_Formats;
+    extern std::vector<VkPresentModeKHR> Present_Modes;
+    extern std::vector<VkCommandBuffer> Command_Buffers;
+    extern std::vector<Vertex> Vertices;
 
-    inline unsigned int Default_Width = 1000;
-    inline unsigned int Default_Height = 1000;
+    extern unsigned int Default_Width = 1000;
+    extern unsigned int Default_Height = 1000;
 
     #if defined(_WIN32)
         #include <windows.h>
@@ -61,10 +70,14 @@ namespace GGUI{
     class Graphical_Device{
     public:
 
-        VkPhysicalDevice Device;
+        VkPhysicalDevice Physical_Device;
+        VkDevice Device;
         std::vector<VkQueueFamilyProperties> Queue_Families;
+        int Queue_Index = -1;
 
-        Graphical_Device(VkPhysicalDevice device);
+        Graphical_Device(VkPhysicalDevice phy_device);
+
+        Graphical_Device(){}
 
     };
 
@@ -80,22 +93,61 @@ namespace GGUI{
         Swap_Chain(unsigned int width, unsigned int height);
     };
 
-    enum Shader_Type{
-        Vertex      = 1,
-        Fragment    = 16,
-        Compute     = 32,
-        Geometry    = 8
-    };
-
     class Shader{
     public:
-        VkShaderModule	Module;
-        VkDevice		Device;
-        Shader_Type		Type;
+        VkShaderModule Module;
+        VkShaderStageFlagBits	Type;
 
-        const char		*mEntrypoint;
+        std::string Entry_Point_Name = "main";
 
-        Shader(std::string path, Shader_Type type);
+        Shader(std::string path, VkShaderStageFlagBits type);
+    };
+
+    enum class Priority{
+        High,
+        Medium,
+        Low
+    };
+
+    class Vector2{
+    public:
+        float x;
+        float y;
+
+        Vector2(float x, float y): x(x), y(y){}
+    };
+
+    class Vector3{
+    public:
+        float x;
+        float y;
+        float z;
+
+        Vector3(float x, float y, float z = 0): x(x), y(y), z(z){}
+    };
+
+    class Vertex{
+    public:
+        Vector3 Position;
+        Vector3 Color;
+
+        Vertex(Vector3 position, Vector3 color);
+    };
+
+    class Buffer_Class{
+    public:
+        VkBuffer Buffer;
+        VkDeviceMemory Memory;
+        VkDeviceSize Size;
+
+        Buffer_Class(unsigned int size, VkBufferUsageFlagBits type, VkBufferUsageFlagBits flags);
+
+        int Find_Memory_Type(unsigned int typeFilter, VkMemoryPropertyFlags properties);
+
+        bool Set_Data(void* data, unsigned int size, unsigned int offset = 0);
+
+        void Copy_Buffer_To(Buffer_Class& buffer, VkDeviceSize spurce_offset = 0, VkDeviceSize destination_offset = 0);
+
     };
 
     // Searches for all graphical devices, uses the first by default.
@@ -110,10 +162,20 @@ namespace GGUI{
     // Creates the render pass.
     extern void Init_Render_Pass();
 
+    // creates the pipeline.
+    extern void Init_Pipeline();
+
+    // Creates the Command pool.
+    extern void Init_Command_Pool();
+
+    // Creates the command list.
+    extern void Init_Command_List();
+
+    // Creates the vertices.
+    extern void Init_Vertices();
+
     // Setups the VkSurfaceKHR
     extern void Init();
-
-
 }
 
 #endif
