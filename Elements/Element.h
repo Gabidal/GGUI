@@ -55,11 +55,16 @@ namespace GGUI{
             unsigned char Blue = 0;
             unsigned char B;
         };
+        union{
+            unsigned char Alpha = 0;
+            unsigned char A;
+        };
 
-        RGB(unsigned char r, unsigned char g, unsigned char b){
+        RGB(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
             R = r;
             G = g;
             B = b;
+            A = a;
         }
 
         RGB(){}

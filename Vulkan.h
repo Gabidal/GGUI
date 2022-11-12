@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <atomic>
 
 
 namespace GGUI{
@@ -25,18 +26,24 @@ namespace GGUI{
     class Vertex;
     class Shader;
 
-    extern VkSurfaceKHR Surface;
-    extern VkInstance Instance;
-    extern Graphical_Device Selected_Device;
-    extern VkSurfaceFormatKHR Selected_Surface_Format;
-    extern VkPresentModeKHR Selected_Present_Mode;
-    extern VkRenderPass Render_Pass;
-    extern Swap_Chain Swapchain;
-    extern VkPipeline Pipeline;
-    extern VkPipelineLayout Pipeline_Layout;
-    extern Shader Vertex_Shader;
-    extern Shader Fragment_Shader;
-    extern VkCommandPool Command_Pool;
+    extern VkSurfaceKHR             Surface;
+    extern VkInstance               Instance;
+    extern Graphical_Device         Selected_Device;
+    extern VkSurfaceFormatKHR       Selected_Surface_Format;
+    extern VkPresentModeKHR         Selected_Present_Mode;
+    extern VkRenderPass             Render_Pass;
+    extern Swap_Chain               Swapchain;
+    extern VkPipeline               Pipeline;
+    extern VkPipelineLayout         Pipeline_Layout;
+    extern Shader                   Vertex_Shader;
+    extern Shader                   Fragment_Shader;
+    extern VkCommandPool            Command_Pool;
+    extern VkDebugUtilsMessengerEXT Debug_Messenger;
+    extern VkSemaphore              Image_Available_Semaphore;
+    extern VkSemaphore              Rendering_Finished_Semaphore;
+    extern VkFence                  Frame_Fence;
+
+    extern std::atomic_bool         Pause_Vulkan;
 
     extern std::vector<Graphical_Device> Graphical_Devices;
     extern std::vector<VkSurfaceFormatKHR> Surface_Formats;
@@ -218,7 +225,11 @@ namespace GGUI{
 
     extern void Present(unsigned int* Image_Index);
 
-    extern void Render();
+    extern void Init_Buffer_Image();
+
+    extern void Update_Frame();
+
+    extern void Render_Frame();
 
     // Setups the VkSurfaceKHR
     extern void Init();
