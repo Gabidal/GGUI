@@ -4,6 +4,7 @@
 
 namespace GGUI{
 
+    inline Window_Handle            Handle;
     inline VkSurfaceKHR             Surface;
     inline VkInstance               Instance;
     inline Graphical_Device         Selected_Device;
@@ -17,6 +18,9 @@ namespace GGUI{
     inline Shader                   Fragment_Shader;
     inline VkCommandPool            Command_Pool;
     inline VkDebugUtilsMessengerEXT Debug_Messenger;
+    inline VkSemaphore              Image_Available_Semaphore;
+    inline VkSemaphore              Rendering_Finished_Semaphore;
+    inline VkFence                  Frame_Fence;
 
     inline std::vector<Graphical_Device> Graphical_Devices;
     inline std::vector<VkSurfaceFormatKHR> Surface_Formats;
@@ -49,7 +53,33 @@ namespace GGUI{
         ShowWindow(Handle, SW_SHOW);
     }
 
+    void Window_Handle::Window_Events(){
+        // msg structure
+        MSG msg = {};
+
+        BOOL bRet = 0;
+
+        UpdateWindow(Handle);
+
+        for (int i = 0; (bRet = GetMessage( &msg, NULL, 0, 0 )) != 0 && i < 100; i++){ 
+            if (bRet == -1){
+                // handle the error and possibly exit
+            }
+            else{
+                TranslateMessage(&msg); 
+                DispatchMessage(&msg); 
+            } 
+        } 
+
+    }
+
     #else
+
+    Window_Handle::Window_Handle(std::string title, unsigned int width, unsigned int height){
+    }
+
+    void Window_Handle::Window_Events(){
+    }
 
     #endif
 
@@ -69,6 +99,14 @@ namespace GGUI{
                 break;
             }
         }
+
+        Get_Physical_Device_Capabilities();
+    }
+
+    void Graphical_Device::Get_Physical_Device_Capabilities(){
+
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Physical_Device, Surface, &Surface_Capabilities);
+
     }
 
     Swap_Chain::Swap_Chain(unsigned int width, unsigned int height){
@@ -82,8 +120,7 @@ namespace GGUI{
         swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         swapchain_info.imageArrayLayers = 1;
         swapchain_info.imageColorSpace = Selected_Surface_Format.colorSpace;
-        swapchain_info.imageExtent.height = Width;
-        swapchain_info.imageExtent.width = Height;
+        swapchain_info.imageExtent = Selected_Device.Surface_Capabilities.maxImageExtent;
         swapchain_info.imageFormat = Selected_Surface_Format.format;
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -111,7 +148,7 @@ namespace GGUI{
             std::cout << "Failed to get swapchain images." << std::endl;
         }
 
-        VkImageView* swapchain_image_views = new VkImageView[Image_Count];
+        swapchain_image_views.resize(Image_Count);
 
         Framebuffers.resize(Image_Count);
 
@@ -133,17 +170,18 @@ namespace GGUI{
                 std::cout << "Failed to create image view." << std::endl;
             }
 
-            VkFramebufferCreateInfo framebuffer_info = {};
-            framebuffer_info.attachmentCount = 1;
-            framebuffer_info.layers = 1;
-            framebuffer_info.pAttachments = &swapchain_image_views[i];
-            framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebuffer_info.width = Width;
-            framebuffer_info.height = Height;
+            // VkFramebufferCreateInfo framebuffer_info = {};
+            // framebuffer_info.attachmentCount = 1;
+            // framebuffer_info.layers = 1;
+            // framebuffer_info.pAttachments = &swapchain_image_views[i];
+            // framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            // framebuffer_info.width = Selected_Device.Surface_Capabilities.maxImageExtent.width;
+            // framebuffer_info.height = Selected_Device.Surface_Capabilities.maxImageExtent.height;
+            
 
-            if (vkCreateFramebuffer(Selected_Device.Device, &framebuffer_info, NULL, &Framebuffers[i]) != VK_SUCCESS){
-                std::cout << "Failed to create framebuffer." << std::endl;
-            }
+            // if (vkCreateFramebuffer(Selected_Device.Device, &framebuffer_info, NULL, &Framebuffers[i]) != VK_SUCCESS){
+            //     std::cout << "Failed to create framebuffer." << std::endl;
+            // }
 
         }
 
@@ -282,6 +320,11 @@ namespace GGUI{
         if (vkCreateDevice(Selected_Device.Physical_Device, &device_features, NULL, &Selected_Device.Device) != VK_SUCCESS){
             std::cout << "Failed to create device." << std::endl;
         }
+
+        vkGetDeviceQueue(Selected_Device.Device, Selected_Device.Queue_Index, 0, &Selected_Device.Graphics_Queue);
+
+
+
     }
 
     // Gets all the available surface formats.
@@ -353,12 +396,23 @@ namespace GGUI{
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &color_attachment_ref;
 
+        // subpass depedency
+        VkSubpassDependency dependency = {};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
         VkRenderPassCreateInfo render_pass_info = {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         render_pass_info.attachmentCount = 1;
         render_pass_info.pAttachments = &color_attachment;
         render_pass_info.subpassCount = 1;
         render_pass_info.pSubpasses = &subpass;
+        render_pass_info.pDependencies = &dependency;
+        render_pass_info.dependencyCount = 1;
 
         if (vkCreateRenderPass(Selected_Device.Device, &render_pass_info, NULL, &Render_Pass) != VK_SUCCESS){
             std::cout << "Failed to create render pass." << std::endl;
@@ -394,14 +448,14 @@ namespace GGUI{
         VkViewport viewport = {};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = (float)Default_Width;
-        viewport.height = (float)Default_Height;
+        viewport.width = (float)Selected_Device.Surface_Capabilities.maxImageExtent.width;
+        viewport.height = (float)Selected_Device.Surface_Capabilities.maxImageExtent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor = {};
         scissor.offset = {0, 0};
-        scissor.extent = {Default_Width, Default_Height};
+        scissor.extent = Selected_Device.Surface_Capabilities.maxImageExtent;
 
         VkPipelineViewportStateCreateInfo viewport_state = {};
         viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -416,6 +470,8 @@ namespace GGUI{
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
+        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
         VkPipelineMultisampleStateCreateInfo multisampling = {};
         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -446,6 +502,8 @@ namespace GGUI{
             std::cout << "Failed to create pipeline layout." << std::endl;
         }
 
+        Init_Render_Pass();
+
         VkGraphicsPipelineCreateInfo pipeline_info = {};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipeline_info.stageCount = 2;
@@ -472,13 +530,37 @@ namespace GGUI{
         vkDestroyShaderModule(Selected_Device.Device, Fragment_Shader.Module, NULL);
     }
 
+    // Creates the frame buffer.
+    void Init_Framebuffers(){
+
+        for (size_t i = 0; i < Swapchain.swapchain_image_views.size(); i++){
+            VkImageView attachments[] = {
+                Swapchain.swapchain_image_views[i]
+            };
+
+            VkFramebufferCreateInfo framebuffer_info = {};
+            framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebuffer_info.renderPass = Render_Pass;
+            framebuffer_info.attachmentCount = 1;
+            framebuffer_info.pAttachments = attachments;
+            framebuffer_info.width = Selected_Device.Surface_Capabilities.maxImageExtent.width;
+            framebuffer_info.height = Selected_Device.Surface_Capabilities.maxImageExtent.height;
+            framebuffer_info.layers = 1;
+
+            if (vkCreateFramebuffer(Selected_Device.Device, &framebuffer_info, NULL, &Swapchain.Framebuffers[i]) != VK_SUCCESS){
+                std::cout << "Failed to create framebuffer." << std::endl;
+            }
+        }
+
+    }
+
     // Creates the Command pool.
     void Init_Command_Pool(){
 
         VkCommandPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.queueFamilyIndex = Selected_Device.Queue_Index;
-        pool_info.flags = 0;
+        pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         if (vkCreateCommandPool(Selected_Device.Device, &pool_info, NULL, &Command_Pool) != VK_SUCCESS){
             std::cout << "Failed to create command pool." << std::endl;
@@ -495,7 +577,7 @@ namespace GGUI{
             VkCommandBufferAllocateInfo info = {};
             info.commandBufferCount = 1;
             info.commandPool = Command_Pool;
-            info.level = (VkCommandBufferLevel)Priority::High;
+            info.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 
             vkAllocateCommandBuffers(Selected_Device.Device, &info, &Command_Buffers[i]);
@@ -527,6 +609,170 @@ namespace GGUI{
         }
 
         source.Copy_Buffer_To(destination);
+    }
+
+    void Populate_Command_Buffer(){
+
+        for (size_t i = 0; i < Command_Buffers.size(); i++){
+
+            VkCommandBufferBeginInfo begin_info = {};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+            vkBeginCommandBuffer(Command_Buffers[i], &begin_info);
+
+            VkRenderPassBeginInfo render_pass_info = {};
+            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            render_pass_info.renderPass = Render_Pass;
+            render_pass_info.framebuffer = Swapchain.Framebuffers[i];
+            render_pass_info.renderArea.offset = {0, 0};
+
+            render_pass_info.renderArea.extent = Selected_Device.Surface_Capabilities.maxImageExtent;
+
+            VkClearValue clear_color = {0.0f, 0.0f, 0.0f, 1.0f};
+            render_pass_info.clearValueCount = 1;
+
+            render_pass_info.pClearValues = &clear_color;
+
+            vkCmdBeginRenderPass(Command_Buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+            vkCmdBindPipeline(Command_Buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline);
+
+            // create the viewport
+            VkViewport viewport = {};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = (float)Selected_Device.Surface_Capabilities.maxImageExtent.width;
+            viewport.height = (float)Selected_Device.Surface_Capabilities.maxImageExtent.height;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            // create the scissor
+            VkRect2D scissor = {};
+            scissor.offset = {0, 0};
+            scissor.extent = Selected_Device.Surface_Capabilities.maxImageExtent;
+
+            vkCmdSetViewport(Command_Buffers[i], 0, 1, &viewport);
+
+            vkCmdSetScissor(Command_Buffers[i], 0, 1, &scissor);
+
+            vkCmdDraw(Command_Buffers[i], 6, 1, 0, 0);
+
+            vkCmdEndRenderPass(Command_Buffers[i]);
+
+            if (vkEndCommandBuffer(Command_Buffers[i]) != VK_SUCCESS){
+                std::cout << "Failed to end command buffer." << std::endl;
+            }
+
+        }
+
+    }
+
+    void Sync(){
+
+        // vaits for fence
+        vkWaitForFences(Selected_Device.Device, 1, &Frame_Fence, VK_TRUE, UINT64_MAX);
+    
+        // resets the fence
+        vkResetFences(Selected_Device.Device, 1, &Frame_Fence);
+        
+    }
+
+    void Init_Sync_Objects(){
+
+        VkSemaphoreCreateInfo semaphore_info = {};
+        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo fence_info = {};
+        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        if (vkCreateSemaphore(Selected_Device.Device, &semaphore_info, NULL, &Image_Available_Semaphore) != VK_SUCCESS ||
+            vkCreateSemaphore(Selected_Device.Device, &semaphore_info, NULL, &Rendering_Finished_Semaphore) != VK_SUCCESS ||
+            vkCreateFence(Selected_Device.Device, &fence_info, NULL, &Frame_Fence) != VK_SUCCESS){
+            std::cout << "Failed to create sync objects." << std::endl;
+        }
+
+    }
+
+    void Send_Command_Buffer(){
+
+        VkSubmitInfo submit_info = {};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &Command_Buffers[0];
+
+        VkSemaphore wait_semaphores[] = {Image_Available_Semaphore};
+        VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = wait_semaphores;
+        submit_info.pWaitDstStageMask = wait_stages;
+
+        VkSemaphore signal_semaphores[] = {Rendering_Finished_Semaphore};
+
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = signal_semaphores;
+
+        if (vkQueueSubmit(Selected_Device.Graphics_Queue, 1, &submit_info, Frame_Fence) != VK_SUCCESS){
+            std::cout << "Failed to submit command buffer." << std::endl;
+        }
+
+    }
+
+    int Acquire_Next_Image(){
+
+        unsigned int Result = 0;
+        vkAcquireNextImageKHR(Selected_Device.Device, Swapchain.Swapchain, UINT64_MAX, Image_Available_Semaphore, VK_NULL_HANDLE, &Result);
+
+        return Result;
+
+    }
+
+    void Present(unsigned int* Image_Index){
+
+        VkPresentInfoKHR present_info = {};
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+        present_info.waitSemaphoreCount = 1;
+        present_info.pWaitSemaphores = &Rendering_Finished_Semaphore;
+
+        VkSwapchainKHR swapchains[] = {Swapchain.Swapchain};
+
+        present_info.swapchainCount = 1;
+        present_info.pSwapchains = swapchains;
+
+        present_info.pImageIndices = Image_Index;
+
+        vkQueuePresentKHR(Selected_Device.Graphics_Queue, &present_info);
+
+
+    }
+
+    // the main loop
+    void Render(){
+
+        while (true){
+            Handle.Window_Events();
+
+            Sync();
+
+            unsigned int Image_Index = Acquire_Next_Image();
+
+            // reset command buffer
+            vkResetCommandBuffer(Command_Buffers[Image_Index], 0);
+
+            // populate the command buffer
+            Populate_Command_Buffer();
+
+            // send the command buffer
+            Send_Command_Buffer();
+
+            Present(&Image_Index);
+
+        }
+
     }
 
     bool Check_Validation_Layer_Support() {
@@ -576,7 +822,7 @@ namespace GGUI{
 
     // Setups the VkSurfaceKHR
     void Init(){
-        Window_Handle Handle("", Default_Width, Default_Height);
+        Handle = Window_Handle("", Default_Width, Default_Height);
 
         const char* extension[] = {
             VK_KHR_SURFACE_EXTENSION_NAME
@@ -636,8 +882,17 @@ namespace GGUI{
         Fragment_Shader = Shader("Shaders/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         Init_Pipeline();
+
+        Init_Framebuffers();
+
         Init_Command_Pool();
         Init_Command_List();
-        Init_Vertices();
+
+        Init_Sync_Objects();
+
+        Render();
+
+        return;
+        //Init_Vertices();
     }
 }

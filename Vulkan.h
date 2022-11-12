@@ -62,9 +62,13 @@ namespace GGUI{
             HWND Handle;
         };
 
+        #endif
+
+        Window_Handle(){}
+        
         Window_Handle(std::string title, unsigned int width, unsigned int height);
 
-        #endif
+        void Window_Events();
     };
 
     class Graphical_Device{
@@ -74,8 +78,13 @@ namespace GGUI{
         VkDevice Device;
         std::vector<VkQueueFamilyProperties> Queue_Families;
         int Queue_Index = -1;
+        VkSurfaceCapabilitiesKHR Surface_Capabilities;
+        VkQueue Present_Queue;
+        VkQueue Graphics_Queue;
 
         Graphical_Device(VkPhysicalDevice phy_device);
+
+        void Get_Physical_Device_Capabilities();
 
         // This is mainly generated just for the global variables to work.
         Graphical_Device(){}
@@ -87,6 +96,8 @@ namespace GGUI{
         VkSwapchainKHR Swapchain;
 
         std::vector<VkFramebuffer> Framebuffers;
+
+        std::vector<VkImageView> swapchain_image_views;
 
         unsigned int Width;
         unsigned int Height;
@@ -181,6 +192,9 @@ namespace GGUI{
     // creates the pipeline.
     extern void Init_Pipeline();
 
+    // create frame buffer.
+    extern void Init_Framebuffers();
+
     // Creates the Command pool.
     extern void Init_Command_Pool();
 
@@ -189,6 +203,22 @@ namespace GGUI{
 
     // Creates the vertices.
     extern void Init_Vertices();
+
+    // crreates sync objects.
+    extern void Init_Sync_Objects();
+
+    // Populates the command buffer with instructions.
+    extern void Populate_Command_Buffer();
+
+    // Sends the populated command buffer to gpu.
+    extern void Send_Command_Buffer();
+
+    // aquires the next image
+    extern int Acquire_Next_Image();
+
+    extern void Present(unsigned int* Image_Index);
+
+    extern void Render();
 
     // Setups the VkSurfaceKHR
     extern void Init();
