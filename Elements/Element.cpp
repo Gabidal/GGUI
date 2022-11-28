@@ -281,8 +281,11 @@ bool GGUI::Element::Has_Border(){
 }
 
 void GGUI::Element::Add_Child(Element* Child){
-    if (Child->Position.X + Child->Width >= Width || 
-    Child->Position.Y + Child->Height >= Height){
+    // Dont need to check both sides of the bordering, because the element only grows towards. to the bottom right corner
+    if (
+        Child->Position.X + Child->Width > (Width - Has_Border()) || 
+        Child->Position.Y + Child->Height > (Height - Has_Border())
+    ){
         if (Child->Resize_To(this) == false){
 
             GGUI::Report(
@@ -424,7 +427,10 @@ void GGUI::Element::Set_Width(int width){
     if (width != Width){
         Width = width;
         Dirty.Stain_All();
-        Update_Frame();
+        if (Parent)
+            Update_Parent(this);
+        else
+            Update_Frame();
     }
 }
 
@@ -432,20 +438,25 @@ void GGUI::Element::Set_Height(int height){
     if (height != Height){
         Height = height;
         Dirty.Stain_All();
-        Update_Frame();
+        if (Parent)
+            Update_Parent(this);
+        else
+            Update_Frame();
     }
 }
 
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
-    Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+    if (Parent)
+        Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
 }
 
 void GGUI::Element::Set_Position(Coordinates* c){
     if (c){
         Position = *c;
-        Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+        if (Parent)
+            Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
         Update_Frame();
     }
 }
@@ -552,7 +563,7 @@ GGUI::RGB GGUI::Element::Get_Text_Color(){
 //Returns nested buffer of AST window's
 std::vector<GGUI::UTF> GGUI::Element::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
-    
+
     //if inned children have changed whitout this changing, then this will trigger.
     if (Children_Changed()){
         Dirty.Dirty(STAIN_TYPE::DEEP);
@@ -587,7 +598,9 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     if (Dirty.is(STAIN_TYPE::DEEP)){
         Dirty.Clean(STAIN_TYPE::DEEP);
         for (auto c : this->Get_Childs()){
-                Nest_Element(this, c, Result, c->Render());
+            if (!c->Is_Displayed())
+                continue;
+            Nest_Element(this, c, Result, c->Render());
         }
     }
 

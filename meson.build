@@ -16,7 +16,6 @@ sources = [
   'Renderer.cpp',
 
   'main.cpp',
-
 ]
 
 executable(

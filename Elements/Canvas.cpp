@@ -4,11 +4,13 @@
 
 namespace GGUI{
 
-    Canvas::Canvas(unsigned int w, unsigned int h) : Element(){
+    Canvas::Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
         Buffer.resize(w * h);
 
         Width = w;
         Height = h;
+
+        Set_Position(position);
 
         //We dont need any other than the color.
         Dirty.Clean(STAIN_TYPE::DEEP);

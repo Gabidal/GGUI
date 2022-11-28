@@ -9,18 +9,30 @@
 #undef NUMBER
 
 GGUI::List_View::List_View(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+    GGUI::Pause_Renderer([=](){
+        if (width != 0)
+            Set_Width(width);
+        if (height != 0)
+            Set_Height(height);
 
-    if (width != 0)
-        Set_Width(width);
-    if (height != 0)
-        Set_Height(height);
+        if (parent){
+            Set_Parent(parent);
 
-    if (parent){
+            Set_Position(position);
+        }
+    });
+}
+
+GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
+    GGUI::Pause_Renderer([=](){
         Set_Parent(parent);
+        At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
 
-        Set_Position(position);
-    }
-
+        for (auto i : Tree)
+            Add_Child(i);
+            
+        Parent->Add_Child(this);
+    });
 }
 
 //These next constructors are mainly for users to more easily create elements.
@@ -67,8 +79,6 @@ GGUI::List_View::List_View(
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
-    Pause_Renderer();
-
     unsigned int max_width = 0;
     unsigned int max_height = 0;
 
@@ -121,8 +131,6 @@ void GGUI::List_View::Add_Child(Element* e){
         Childs.push_back(e);
         Update_Parent(this);
     }
-
-    Pause_Render = false;
 }
 
 GGUI::Element* GGUI::List_View::Copy(){

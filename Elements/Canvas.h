@@ -11,7 +11,7 @@ namespace GGUI{
     protected:
         std::vector<RGB> Buffer;
     public:
-        Canvas(unsigned int w, unsigned int h);
+        Canvas(unsigned int w, unsigned int h, Coordinates position);
         
         // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
         void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);

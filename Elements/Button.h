@@ -26,15 +26,13 @@ namespace GGUI{
         Button(bool Blank){}
     public:
 
-        Button(std::function<void (Button* This)> press = [](Button* This){}){
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
             Defualt_Button_Behaviour(press);
             Default_Button_Text_Align();
-        }
-
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Button(press){
-            Data = Text;
             Enable_Input_Overflow();
             Dirty.Dirty(STAIN_TYPE::TEXT);
+            Show_Border(true);
+            Set_Name(Text);
         }
 
     };

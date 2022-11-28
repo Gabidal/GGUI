@@ -4,6 +4,9 @@
 #include "Element.h"
 
 #include <vector>
+#include <iostream>
+
+using namespace std;
 
 namespace GGUI{
     enum class Grow_Direction{
@@ -44,13 +47,7 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW) : Element(){
-            Parent = parent;
-            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
-
-            for (auto i : Tree)
-                Add_Child(i);
-        }
+        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
 
         Element* Handle_Or_Operator(Element* other) override{
             Add_Child(other);

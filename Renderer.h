@@ -63,17 +63,6 @@ namespace GGUI{
 
     extern unsigned long long Max(unsigned long long a, unsigned long long b);
 
-
-#if _WIN32
-    #include <windows.h>
-
-    #undef RGB
-    #undef BOOL
-    #undef NUMBER
-    #undef min
-    #undef max
-
-
     extern void ClearScreen();
 
     extern void Render_Frame();
@@ -86,18 +75,7 @@ namespace GGUI{
 
     extern void Init_Platform_Stuff();
 
-#else
-    extern void ClearScreen();
-
-    extern void Render_Frame();
-
-    extern void Update_Max_Width_And_Height();
-    //Is called on every cycle.
-    extern void Query_Inputs();
-
-#endif
-
-    extern int Get_Unicode_Lenght(char first_char);
+    extern int Get_Unicode_Length(char first_char);
 
     extern int Get_Max_Width();
 
@@ -136,6 +114,9 @@ namespace GGUI{
     extern void Report(std::string Problem);
 
     extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
+
+    extern void Pause_Renderer(std::function<void()> f);
+
 }
 
 #endif

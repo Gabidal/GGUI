@@ -45,6 +45,13 @@ namespace GGUI{
             RGB border_background_color
         );
 
+        Window(
+            std::string title,
+            unsigned int width,
+            unsigned int height,
+            std::vector<Element*> Tree 
+        );
+
         //End of user constructors.
 
 

@@ -2,41 +2,46 @@
 #include "../Renderer.h"
 
 GGUI::Window::Window(std::string title, std::vector<std::string> classes){
+    Pause_Renderer([=](){
+        for (auto& c : classes){
+            Add_Class(c);
+        }
 
-    for (auto& c : classes){
-        Add_Class(c);
-    }
+        Parse_Classes();
 
-    Parse_Classes();
-
-    Title = title;
-    Dirty.Stain_All();
+        Title = title;
+        Dirty.Stain_All();
+    });
 }
 
 GGUI::Window::Window(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
-    if (width != 0)
-        Set_Width(width);
-    if (height != 0)
-        Set_Height(height);
+    Pause_Renderer([=](){
+        if (width != 0)
+            Set_Width(width);
+        if (height != 0)
+            Set_Height(height);
 
-    if (parent){
-        Set_Parent(parent);
+        if (parent){
+            Set_Parent(parent);
 
-        Set_Position(position);
-    }
+            Set_Position(position);
+        }
+    });
 }
 
 GGUI::Window::Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
-    if (width != 0)
-        Set_Width(width);
-    if (height != 0)
-        Set_Height(height);
+    Pause_Renderer([=](){
+        if (width != 0)
+            Set_Width(width);
+        if (height != 0)
+            Set_Height(height);
 
-    if (parent){
-        Set_Parent(parent);
+        if (parent){
+            Set_Parent(parent);
 
-        Set_Position(position);
-    }
+            Set_Position(position);
+        }
+    });
 }
 
 
@@ -46,20 +51,20 @@ GGUI::Window::Window(
     unsigned int width,
     unsigned int height
 ) : Element(){
+    Pause_Renderer([=](){
+        Title = title;
+        Set_Width(width);
+        Set_Height(height);
 
-    Title = title;
-    Set_Width(width);
-    Set_Height(height);
+        //Because the Title will not be displayed until the border is, we will create a invisible border.
+        if (Title.size() > 0){
 
-    //Because the Title will not be displayed until the border is, we will create a invisible border.
-    if (Title.size() > 0){
+            Show_Border(true);
 
-        Show_Border(true);
-
-        Set_Border_Color(Get_Background_Color());
-        Set_Border_Background_Color(Get_Background_Color());
-    }
-
+            Set_Border_Color(Get_Background_Color());
+            Set_Border_Background_Color(Get_Background_Color());
+        }
+    });
 }
 
 GGUI::Window::Window(
@@ -69,22 +74,23 @@ GGUI::Window::Window(
     RGB text_color,
     RGB background_color
 ) : Element(){
+    Pause_Renderer([=](){
+        Title = title;
+        Set_Width(width);
+        Set_Height(height);
 
-    Title = title;
-    Set_Width(width);
-    Set_Height(height);
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
+        //Because the Title will not be displayed until the border is, we will create a invisible border.
+        if (Title.size() > 0){
 
-    //Because the Title will not be displayed until the border is, we will create a invisible border.
-    if (Title.size() > 0){
+            Show_Border(true);
 
-        Show_Border(true);
-
-        Set_Border_Color(Get_Background_Color());
-        Set_Border_Background_Color(Get_Background_Color());
-    }
+            Set_Border_Color(Get_Background_Color());
+            Set_Border_Background_Color(Get_Background_Color());
+        }
+    });
 }
 
 GGUI::Window::Window(
@@ -96,17 +102,44 @@ GGUI::Window::Window(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
+    Pause_Renderer([=](){
+        Title = title;
+        Set_Width(width);
+        Set_Height(height);
 
-    Title = title;
-    Set_Width(width);
-    Set_Height(height);
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        Set_Border_Color(border_color);
+        Set_Border_Background_Color(border_background_color);
+        
+        Show_Border(true);
+    });
+}
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
-    Set_Border_Color(border_color);
-    Set_Border_Background_Color(border_background_color);
-    
-    Show_Border(true);
+
+GGUI::Window::Window(
+    std::string title,
+    unsigned int width,
+    unsigned int height,
+    std::vector<Element*> Tree 
+) : Element(){
+    Pause_Renderer([=](){
+        Title = title;
+        Set_Width(width);
+        Set_Height(height);
+
+        //Because the Title will not be displayed until the border is, we will create a invisible border.
+        if (Title.size() > 0){
+
+            Show_Border(true);
+
+            Set_Border_Color(Get_Background_Color());
+            Set_Border_Background_Color(Get_Background_Color());
+        }
+
+        for (auto i : Tree)
+            Add_Child(i);
+    });
 }
 
 //End of user constructors.

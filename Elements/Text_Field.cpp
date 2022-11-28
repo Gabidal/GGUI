@@ -170,19 +170,24 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
     int self_width = self->Get_Width();
     int self_height = self->Get_Height();
 
+    int Has_Border = self->Has_Border();
+
     int Width_Center = self_width / 2;
 
     Result.resize(self_height * self_width);
 
     int i = 0;
-    for (int Y = 0; Y < self_height; Y++){
+    for (int Y = Has_Border; Y < self_height - Has_Border; Y++){
 
-        int This_Text_Row_Length = (Text.size() - (Y * self_width));
+        int Row_Index = Y - Has_Border;
+
+        // Calculate on what row we are on.
+        int This_Text_Row_Length = (Text.size() - (Row_Index * self_width));
 
         //check if this row of text reaches tot he two ends of this wrapped width.
         if (This_Text_Row_Length > 0){
             //This means that the text has enough size to take all space on this row.
-            for (int X = 0; X < self_width; X++){
+            for (int X = Has_Border; X < self_width - Has_Border; X++){
                 if (i < Text.size()){
                     Result[Y * self_width + X] = Text[i++];
                 }
@@ -192,7 +197,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
             //This means we have to center the text here
             int Starting_X = Width_Center - This_Text_Row_Length / 2;
 
-            for (int X = 0; X < This_Text_Row_Length; X++){       
+            for (int X = Has_Border; X < This_Text_Row_Length - Has_Border; X++){       
                 if (i < Text.size()){
                     Result[Y * self_width + X + Starting_X] = Text[i++];
                 }
@@ -236,7 +241,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
                     break;  //close the x loop and increase the Y loop.
                 }
 
-                int Character_Lenght = GGUI::Get_Unicode_Lenght(Text[i]);
+                int Character_Lenght = GGUI::Get_Unicode_Length(Text[i]);
 
                 if (Character_Lenght == 1){
                     Result[Y * self_width + X] = Text[i];
@@ -355,6 +360,8 @@ GGUI::Element* GGUI::Text_Field::Copy(){
 }
 
 void GGUI::Text_Field::Input(std::function<void(char)> Then){
+    Allow_Text_Input = true;    
+
     Action* a = new Action(
         Constants::KEY_PRESS | Constants::ENTER,
         [=](GGUI::Event* e){
@@ -374,12 +381,30 @@ void GGUI::Text_Field::Input(std::function<void(char)> Then){
         this
     );
     GGUI::Event_Handlers.push_back(a);
+
+    Action* back_space = new Action(
+        Constants::BACKSPACE,
+        [=](GGUI::Event* e){
+            if (Focused && Allow_Text_Input){
+                
+                if (Data.size() > 0){
+                    Data.pop_back();
+                    Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
+                    Update_Frame();
+
+                }
+
+                return true;
+            }
+            //action failed.
+            return false;
+        },
+        this
+    );
+    GGUI::Event_Handlers.push_back(back_space);
 }
 
 void GGUI::Text_Field::Enable_Text_Input(){
-
-    Allow_Text_Input = true;
-
     //Check if an event handler of this caliber was launched already on previus text input enabling.
     for (auto& e : GGUI::Event_Handlers){
         if (e->Host == this && e->Criteria == Constants::KEY_PRESS){
@@ -402,7 +427,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
                 Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
                 Update_Frame();
             }
-            else if (At<BOOL_VALUE>(STYLES::Allow_Input_Overflow)->Value){
+            else if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
 
                 //check what to grow.
                 if (Dimensions.first > Width - (Has_Border() * 2)){
@@ -428,29 +453,6 @@ void GGUI::Text_Field::Enable_Text_Input(){
             Update_Frame();
         }
     });
-
-    Action* back_space = new Action(
-        Constants::BACKSPACE,
-        [=](GGUI::Event* e){
-            if (Focused && Allow_Text_Input){
-                
-                if (Data.size() > 0){
-                    Data.pop_back();
-                    Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
-                    Update_Frame();
-
-                }
-
-                return true;
-            }
-            //action failed.
-            return false;
-        },
-        this
-    );
-    GGUI::Event_Handlers.push_back(back_space);
-
-
 }
 
 void GGUI::Text_Field::Disable_Text_Input(){

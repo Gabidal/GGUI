@@ -69,6 +69,10 @@ namespace GGUI{
 
         void Disable_Text_Input();
 
+        bool Is_Input_Allowed(){
+            return Allow_Text_Input;
+        }
+
         //Non visual updates dont need to update frame
         void Enable_Input_Overflow();
 

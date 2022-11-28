@@ -29,7 +29,7 @@ namespace GGUI{
 
     inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
 
-    inline int Inputs_Per_Second = 20;
+    inline int Inputs_Per_Second = INT16_MAX;
     inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
 
     inline std::map<int, std::map<std::string, VALUE*>> Classes;
@@ -248,12 +248,15 @@ namespace GGUI{
     //Is called on every cycle.
 
     void Query_Inputs(){
-        INPUT_RECORD Input[Inputs_Per_Query];
+        std::vector<INPUT_RECORD> Input;
 
         int Buffer_Size = 0;
 
         if (GetNumberOfConsoleInputEvents(GetStdHandle(STD_INPUT_HANDLE), (LPDWORD)&Buffer_Size) && Buffer_Size > 0){
-            ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, Inputs_Per_Query, (LPDWORD)&Buffer_Size);
+
+            Input.resize(Buffer_Size);
+
+            ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input.data(), Buffer_Size, (LPDWORD)&Buffer_Size);
         }
 
         for (int i = 0; i < Buffer_Size; i++){
@@ -369,7 +372,7 @@ namespace GGUI{
     }
 
     //Returns 1 if it is not a unocode character.
-    int Get_Unicode_Lenght(char first_char){
+    int Get_Unicode_Length(char first_char){
         //0xxxxxxx
         if (!Has_Bit_At(first_char, 7))
             return 1;
@@ -685,5 +688,18 @@ namespace GGUI{
                 }
             }
         }
+    }
+
+    void Pause_Renderer(std::function<void()> f){
+
+        bool Original_Value = Pause_Render;
+
+        Pause_Renderer();
+
+        f();
+
+        if (!Original_Value)
+            Resume_Renderer();
+            
     }
 }
