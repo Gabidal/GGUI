@@ -11,6 +11,10 @@
 namespace GGUI{
     class Window : public Element{
         std::string Title = "";  //if this is empty then no title
+
+        RGB Before_Hiding_Border_Color = COLOR::WHITE;
+        RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
+        bool Has_Hidden_Borders = false;
     public:
         Window(){}
 
@@ -59,14 +63,17 @@ namespace GGUI{
         void Set_Title(std::string t);
 
         std::string Get_Title();
-
-        std::vector<UTF> Render() override;
         
         void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
 
         std::string Get_Name() override;
 
         Element* Copy() override;
+
+        void Show_Border(bool state) override;
+
+        void Show_Border(bool state, bool previus_state) override;
+
     };
 }
 

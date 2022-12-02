@@ -239,19 +239,6 @@ bool GGUI::Element::Has(std::string s){
 
 void GGUI::Element::Show_Border(bool b){
     if (b != At<BOOL_VALUE>(STYLES::Border)->Value){
-
-        //If the current element is the Main window, then we probably should not try to resize it.
-        if (this != GGUI::Main){
-            if (b){
-                Width += 2;
-                Height += 2;
-            }
-            else{
-                Width -= 2;
-                Height -= 2;
-            }
-        }
-
         At<BOOL_VALUE>(STYLES::Border)->Value = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
@@ -260,16 +247,6 @@ void GGUI::Element::Show_Border(bool b){
 
 void GGUI::Element::Show_Border(bool b, bool Previus_State){
     if (b != Previus_State){
-
-        if (b){
-            Width += 2;
-            Height += 2;
-        }
-        else{
-            Width -= 2;
-            Height -= 2;
-        }
-
         At<BOOL_VALUE>(STYLES::Border)->Value = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
@@ -282,9 +259,13 @@ bool GGUI::Element::Has_Border(){
 
 void GGUI::Element::Add_Child(Element* Child){
     // Dont need to check both sides of the bordering, because the element only grows towards. to the bottom right corner
+
+    bool This_Has_Border = Has_Border();
+    bool Child_Has_Border = Child->Has_Border();
+
     if (
-        Child->Position.X + Child->Width > (Width - Has_Border()) || 
-        Child->Position.Y + Child->Height > (Height - Has_Border())
+        Child->Position.X + Child->Width > (Width - (This_Has_Border - Child_Has_Border) * This_Has_Border) || 
+        Child->Position.Y + Child->Height > (Height - (This_Has_Border - Child_Has_Border) * This_Has_Border)
     ){
         if (Child->Resize_To(this) == false){
 
@@ -490,7 +471,7 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
     tmp.Width = 0;
     tmp.Height = 0;
 
-    int Border_Size = Has_Border() * 2;
+    int Border_Size = (Has_Border() * 2) - (child->Has_Border() * 2);
 
     while (true){
         if (tmp.Position.X + tmp.Width < Width - Border_Size){
@@ -590,17 +571,39 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     if (Dirty.is(STAIN_TYPE::COLOR))
         Apply_Colors(this, Result);
 
-    //This will add the borders if nessesary and the title of the window.
-    if (Dirty.is(STAIN_TYPE::EDGE))
-        Add_Overhead(this, Result);
-
     //This will add the child windows to the Result buffer
     if (Dirty.is(STAIN_TYPE::DEEP)){
         Dirty.Clean(STAIN_TYPE::DEEP);
         for (auto c : this->Get_Childs()){
             if (!c->Is_Displayed())
                 continue;
+
+            if (c->Has_Border() && Has_Border())
+                Dirty.Dirty(STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+
             Nest_Element(this, c, Result, c->Render());
+        }
+    }
+
+    //This will add the borders if nessesary and the title of the window.
+    if (Dirty.is(STAIN_TYPE::EDGE))
+        Add_Overhead(this, Result);
+
+    // This will calculate the connecting borders.
+    if (Dirty.is(STAIN_TYPE::DEEP)){
+        Dirty.Clean(STAIN_TYPE::DEEP);
+        for (auto A : this->Get_Childs()){
+            for (auto B : this->Get_Childs()){
+                if (A == B)
+                    continue;
+
+                if (!A->Is_Displayed() || !A->Has_Border() || !B->Is_Displayed() || !B->Has_Border())
+                    continue;
+
+                Post_Process_Borders(A, B, Result);
+            }
+
+            Post_Process_Borders(this, A, Result);
         }
     }
 
@@ -659,11 +662,11 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
     
-    unsigned int Max_Allowed_Height = Parent->Height - Parent->Has_Border();    //remove bottom borders from calculation
-    unsigned int Max_Allowed_Width = Parent->Width - Parent->Has_Border();     //remove right borders from calculation
+    unsigned int Max_Allowed_Height = Parent->Height - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();             //remove bottom borders from calculation
+    unsigned int Max_Allowed_Width = Parent->Width - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();              //remove right borders from calculation
 
-    unsigned int Min_Allowed_Height = 0 + Parent->Has_Border();                        //add top borders from calculation
-    unsigned int Min_Allowed_Width = 0 + Parent->Has_Border();                         //add left borders from calculation
+    unsigned int Min_Allowed_Height = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                        //add top borders from calculation
+    unsigned int Min_Allowed_Width = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                         //add left borders from calculation
 
     unsigned int Child_Start_Y = Min_Allowed_Height + Child->Position.Y;
     unsigned int Child_Start_X = Min_Allowed_Width + Child->Position.X;
@@ -677,6 +680,114 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
         }
     }
 }
+
+inline bool Allow(GGUI::Coordinates index, GGUI::Element* parent){
+    // checks if the index is out of bounds
+    if (index.X < 0 || index.Y < 0 || index.X >= parent->Get_Width() || index.Y >= parent->Get_Height())
+        return false;
+
+    return true;
+}
+
+inline GGUI::UTF& From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::Element* Parent){
+    return Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
+}
+
+void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer){
+
+    // We only need to calculate the childs points in which they intersect with the parent borders.
+    // At these intersecting points of border we will construct a bit mask that portraits the connections the middle point has.
+    // With the calculated bit mask we can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
+
+    // First calculate if the childs borders even touch the parents borders.
+    // If not, there is no need to calculate anything.
+
+    // First calculate if the child is outside the parent.
+    if (B->Position.X + B->Width < A->Position.X || B->Position.X > A->Position.X + A->Width || B->Position.Y + B->Height < A->Position.Y || B->Position.Y > A->Position.Y + A->Height)
+        return;
+
+    // Now calculate if the child is inside the parent.
+    if (B->Position.X > A->Position.X && B->Position.X + B->Width < A->Position.X + A->Width && B->Position.Y > A->Position.Y && B->Position.Y + B->Height < A->Position.Y + A->Height)
+        return;
+
+
+    // Now that we are here it means the both boxes interlace eachother.
+    // We will calculate the hitting points by drawing segments from corner to corner and then comparing one segments x to other segments y, and so forth.
+
+    // two nested loops rotating the x and y usages.
+    // store the line x,y into a array for the nested loops to access.
+    std::vector<unsigned int> Vertical_Line_X_Coordinates = {
+        
+        B->Position.X,
+        A->Position.X,
+        B->Position.X + B->Width - 1,
+        A->Position.X + A->Width - 1,
+
+                
+        A->Position.X,
+        B->Position.X,
+        A->Position.X + A->Width - 1,
+        B->Position.X + B->Width - 1
+
+    };
+
+    std::vector<unsigned int> Horizontal_Line_Y_Cordinates = {
+        
+        A->Position.Y,
+        B->Position.Y + B->Height - 1,
+        A->Position.Y,
+        B->Position.Y + B->Height - 1,
+
+        B->Position.Y,
+        A->Position.Y + A->Height - 1,
+        B->Position.Y,
+        A->Position.Y + A->Height - 1,
+
+    };
+
+    int Participants_Count = 2;
+    int Box_Axes_Count = 2;
+
+    std::vector<Coordinates> Crossing_Indicies;
+
+    // Go through singular box
+    for (int Box_Index = 0; Box_Index < Horizontal_Line_Y_Cordinates.size(); Box_Index++){
+        // Now just pair the indicies from the two lists.
+        Crossing_Indicies.push_back(
+            // First pair
+            Coordinates(
+                Vertical_Line_X_Coordinates[Box_Index],
+                Horizontal_Line_Y_Cordinates[Box_Index]
+            )
+        );
+    }
+
+    // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
+    for (auto c : Crossing_Indicies){
+
+        Coordinates Above = { c.X, c.Y - 1 };
+        Coordinates Below = { c.X, c.Y + 1 };
+        Coordinates Left = { c.X - 1, c.Y };
+        Coordinates Right = { c.X + 1, c.Y };
+
+        unsigned int Current_Masks = 0;
+
+        if (Allow(Above, this) && From(Above, Parent_Buffer, this).Unicode == SYMBOLS::VERTICAL_LINE)
+            Current_Masks |= SYMBOLS::CONNECTS_UP;
+
+        if (Allow(Below, this) && From(Below, Parent_Buffer, this).Unicode == SYMBOLS::VERTICAL_LINE)
+            Current_Masks |= SYMBOLS::CONNECTS_DOWN;
+
+        if (Allow(Left, this) && From(Left, Parent_Buffer, this).Unicode == SYMBOLS::HORIZONTAL_LINE)
+            Current_Masks |= SYMBOLS::CONNECTS_LEFT;
+
+        if (Allow(Right, this) && From(Right, Parent_Buffer, this).Unicode == SYMBOLS::HORIZONTAL_LINE)
+            Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
+
+        From(c, Parent_Buffer, this).Unicode = SYMBOLS::Border_Identifiers[Current_Masks];
+    }
+}
+
 //End of utility functions.
 
 void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){

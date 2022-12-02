@@ -93,14 +93,11 @@ void GGUI::List_View::Add_Child(Element* e){
         max_height = Max_Height;
     }
 
-    
+    unsigned int Max_Inner_Space_Height = Get_Height() - (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
+    unsigned int Max_Inner_Space_Width = Get_Width() - (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
 
-
-    unsigned int Max_Inner_Space_Height = Get_Height() - Has_Border() * 2;
-    unsigned int Max_Inner_Space_Width = Get_Width() - Has_Border() * 2;
-
-    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Has_Border() * 2;
-    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Has_Border() * 2;
+    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
+    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
 
 
     if (At<BOOL_VALUE>(STYLES::Wrap)->Value){

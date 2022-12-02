@@ -21,12 +21,42 @@ namespace GGUI{
         inline std::string BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
         inline std::string VERTICAL_LINE = "│";//"\e(0\x78\e(B";
         inline std::string HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
+        inline std::string VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
+        inline std::string VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
+        inline std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        inline std::string HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
+        inline std::string CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
+
+        inline unsigned int CONNECTS_UP = 1 << 0;
+        inline unsigned int CONNECTS_DOWN = 1 << 1;
+        inline unsigned int CONNECTS_LEFT = 1 << 2;
+        inline unsigned int CONNECTS_RIGHT = 1 << 3;
 
         inline std::string RADIOBUTTON_OFF = "○";
         inline std::string RADIOBUTTON_ON = "◉";
 
         inline std::string EMPTY_CHECK_BOX = "☐";
         inline std::string CHECKED_CHECK_BOX = "☒";
+
+        inline std::map<unsigned int, std::string> Border_Identifiers = {
+
+            {CONNECTS_DOWN | CONNECTS_RIGHT, TOP_LEFT_CORNER},
+            {CONNECTS_DOWN | CONNECTS_LEFT, TOP_RIGHT_CORNER},
+            {CONNECTS_UP | CONNECTS_RIGHT, BOTTOM_LEFT_CORNER},
+            {CONNECTS_UP | CONNECTS_LEFT, BOTTOM_RIGHT_CORNER},
+
+            {CONNECTS_DOWN | CONNECTS_UP, VERTICAL_LINE},
+
+            {CONNECTS_LEFT | CONNECTS_RIGHT, HORIZONTAL_LINE},
+
+            {CONNECTS_DOWN | CONNECTS_UP | CONNECTS_RIGHT, VERTICAL_RIGHT_CONNECTOR},
+            {CONNECTS_DOWN | CONNECTS_UP | CONNECTS_LEFT, VERTICAL_LEFT_CONNECTOR},
+
+            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_DOWN, HORIZONTAL_BOTTOM_CONNECTOR},
+            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_UP, HORIZONTAL_TOP_CONNECTOR},
+
+        };
+
     }
 
     namespace Constants{
@@ -647,6 +677,8 @@ namespace GGUI{
         }
 
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
+
+        void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 
         std::string Compose_All_Text_RGB_Values();
 

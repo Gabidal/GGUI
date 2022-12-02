@@ -20,7 +20,7 @@
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
-//GGUI uses the ANSI escape code
+    //GGUI uses the ANSI escape code
     //https://en.wikipedia.org/wiki/ANSI_escape_code
 
     namespace SYMBOLS{
@@ -702,7 +702,77 @@ namespace GGUI{
 
     };
 
-        enum class TEXT_LOCATION{
+    enum class Grow_Direction{
+        ROW,
+        COLUMN
+    };
+
+    class List_View : public Element{
+    public:
+
+        //cache
+        unsigned int Last_Child_X = 0;
+        unsigned int Last_Child_Y = 0;
+
+        std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
+
+        List_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
+
+        //These next constructors are mainly for users to more easily create elements.
+        List_View(
+            RGB text_color,
+            RGB background_color
+        );
+
+        List_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        List_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        Element* Handle_Or_Operator(Element* other) override{
+            Add_Child(other);
+            return this;
+        }
+
+        //End of user constructors.
+
+
+        void Add_Child(Element* e) override;
+        
+        //std::vector<UTF> Render() override;
+
+        std::string Get_Name() override;
+
+        void Update_Parent(Element* deleted) override;
+
+        bool Remove(Element* e) override;
+
+        Element* Copy() override;
+
+        void Set_Growth_Direction(Grow_Direction gd){
+            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
+        }
+
+        Grow_Direction Get_Growth_Direction(){
+            return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
+        }
+
+    };
+
+    enum class TEXT_LOCATION{
         LEFT,
         CENTER,
         RIGHT,
@@ -764,6 +834,10 @@ namespace GGUI{
 
         void Disable_Text_Input();
 
+        bool Is_Input_Allowed(){
+            return Allow_Text_Input;
+        }
+
         //Non visual updates dont need to update frame
         void Enable_Input_Overflow();
 
@@ -780,79 +854,34 @@ namespace GGUI{
         static std::vector<UTF> Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
     };
 
-    class Button : public Text_Field{
-    protected:
-        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
-            On_Click([=](Event* e){
-                // The default, on_click wont do anything.
-                press(this);
-            });
-        }
-    
-        void Default_Button_Text_Align(){
-            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
-        }
-
-        Button(bool Blank){}
+    class Window : public Element{
+        std::string Title = "";  //if this is empty then no title
     public:
+        Window(){}
 
-        Button(std::function<void (Button* This)> press = [](Button* This){}){
-            Defualt_Button_Behaviour(press);
-            Default_Button_Text_Align();
-        }
+        Window(std::string title, std::vector<std::string> classes = {});
 
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Button(press){
-            Data = Text;
-            Enable_Input_Overflow();
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-        }
-
-    };
-
-    class Canvas : public Element{
-    protected:
-        std::vector<RGB> Buffer;
-    public:
-        Canvas(unsigned int w, unsigned int h);
+        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
         
-        // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
-        void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
-        
-        void Flush();
-
-        std::vector<UTF> Render() override;
-    };
-
-    enum class Grow_Direction{
-        ROW,
-        COLUMN
-    };
-
-    class List_View : public Element{
-    public:
-
-        //cache
-        unsigned int Last_Child_X = 0;
-        unsigned int Last_Child_Y = 0;
-
-        std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
-
-        List_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
+        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
 
         //These next constructors are mainly for users to more easily create elements.
-        List_View(
-            RGB text_color,
-            RGB background_color
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height
         );
 
-        List_View(
+        Window(
+            std::string title, 
             unsigned int width,
             unsigned int height,
             RGB text_color,
             RGB background_color
         );
 
-        List_View(
+        Window(
+            std::string title, 
             unsigned int width,
             unsigned int height,
             RGB text_color,
@@ -861,42 +890,28 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW) : Element(){
-            Parent = parent;
-            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
-
-            for (auto i : Tree)
-                Add_Child(i);
-        }
-
-        Element* Handle_Or_Operator(Element* other) override{
-            Add_Child(other);
-            return this;
-        }
+        Window(
+            std::string title,
+            unsigned int width,
+            unsigned int height,
+            std::vector<Element*> Tree 
+        );
 
         //End of user constructors.
 
 
-        void Add_Child(Element* e) override;
+
+        void Set_Title(std::string t);
+
+        std::string Get_Title();
+
+        std::vector<UTF> Render() override;
         
-        //std::vector<UTF> Render() override;
+        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
 
         std::string Get_Name() override;
 
-        void Update_Parent(Element* deleted) override;
-
-        bool Remove(Element* e) override;
-
         Element* Copy() override;
-
-        void Set_Growth_Direction(Grow_Direction gd){
-            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
-        }
-
-        Grow_Direction Get_Growth_Direction(){
-            return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
-        }
-
     };
 
     class Switch : public Element{
@@ -941,57 +956,45 @@ namespace GGUI{
         }
     };
 
-    class Window : public Element{
-        std::string Title = "";  //if this is empty then no title
+    class Canvas : public Element{
+    protected:
+        std::vector<RGB> Buffer;
     public:
-        Window(){}
-
-        Window(std::string title, std::vector<std::string> classes = {});
-
-        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        Canvas(unsigned int w, unsigned int h, Coordinates position);
         
-        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
-
-        //These next constructors are mainly for users to more easily create elements.
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
-
-        //End of user constructors.
-
-
-
-        void Set_Title(std::string t);
-
-        std::string Get_Title();
+        // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
+        void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
+        
+        void Flush();
 
         std::vector<UTF> Render() override;
-        
-        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
+    };
 
-        std::string Get_Name() override;
+    class Button : public Text_Field{
+    protected:
+        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
+            On_Click([=](Event* e){
+                // The default, on_click wont do anything.
+                press(this);
+            });
+        }
+    
+        void Default_Button_Text_Align(){
+            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
+        }
 
-        Element* Copy() override;
+        Button(bool Blank){}
+    public:
+
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
+            Defualt_Button_Behaviour(press);
+            Default_Button_Text_Align();
+            Enable_Input_Overflow();
+            Dirty.Dirty(STAIN_TYPE::TEXT);
+            Show_Border(true);
+            Set_Name(Text);
+        }
+
     };
 
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
@@ -1094,6 +1097,7 @@ namespace GGUI{
 
     extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 
+    extern void Pause_Renderer(std::function<void()> f);
 }
 
 #endif

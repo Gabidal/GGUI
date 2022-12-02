@@ -61,6 +61,8 @@ GGUI::Window::Window(
 
             Show_Border(true);
 
+            Has_Hidden_Borders = true;
+
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
         }
@@ -86,6 +88,8 @@ GGUI::Window::Window(
         if (Title.size() > 0){
 
             Show_Border(true);
+
+            Has_Hidden_Borders = true;
 
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
@@ -133,6 +137,8 @@ GGUI::Window::Window(
 
             Show_Border(true);
 
+            Has_Hidden_Borders = true;
+
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
         }
@@ -151,13 +157,6 @@ void GGUI::Window::Set_Title(std::string t){
 
 std::string GGUI::Window::Get_Title(){
     return Title;
-}
-
-//Returns nested buffer of AST window's
-std::vector<GGUI::UTF> GGUI::Window::Render(){
-    std::vector<GGUI::UTF> Result = Element::Render();
-
-    return Result;
 }
 
 void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result){
@@ -228,5 +227,36 @@ GGUI::Element* GGUI::Window::Copy(){
     return new_element;
 }
 
+void GGUI::Window::Show_Border(bool b){
+    
+    // This means that the window has setted a title whitout the borders, so we need to reinstate them.
+    if (Has_Hidden_Borders){
+        Set_Border_Color(Before_Hiding_Border_Color);
+        Set_Border_Background_Color(Before_Hiding_Border_Background_Color);
+    }
+
+    if (b != At<BOOL_VALUE>(STYLES::Border)->Value){
+        At<BOOL_VALUE>(STYLES::Border)->Value = b;
+
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Update_Frame();
+    }
+}
+
+void GGUI::Window::Show_Border(bool b, bool Previus_State){
+    
+    // This means that the window has setted a title whitout the borders, so we need to reinstate them.
+    if (Has_Hidden_Borders){
+        Set_Border_Color(Before_Hiding_Border_Color);
+        Set_Border_Background_Color(Before_Hiding_Border_Background_Color);
+    }
+
+    if (b != Previus_State){
+        At<BOOL_VALUE>(STYLES::Border)->Value = b;
+
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Update_Frame();
+    }
+}
 
 
