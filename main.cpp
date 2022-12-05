@@ -69,6 +69,12 @@ void Menu(GGUI::Window* Main){
     menu->Set_Height(Main->Get_Height());
 }
 
+void Adventure_Mode(GGUI::Window* Parent){
+
+
+
+}
+
 void Campaing(GGUI::Window* Main){
 
     GGUI::Window* Campaing = new GGUI::Window();
@@ -93,10 +99,10 @@ void Campaing(GGUI::Window* Main){
     // The user input field is on the bottom left corner.
     User_Input = new GGUI::Text_Field();
     User_Input->Set_Width(Screen_Division_Width);
-    User_Input->Set_Height(2);
+    User_Input->Set_Height(1);
     User_Input->Set_Name(TEXT_INPUT_NAME);
     User_Input->Show_Border(true);
-    User_Input->Set_Position({0, Screen_Division_Height * 2 - User_Input->Get_Height()});
+    User_Input->Set_Position({0, Screen_Division_Height * 2 - User_Input->Get_Height() + 1});
     User_Input->Enable_Input_Overflow();
 
     User_Input->Input(
@@ -114,12 +120,21 @@ void Campaing(GGUI::Window* Main){
 
     Output = new GGUI::Text_Field();
     Output->Set_Width(Screen_Division_Width);
-    Output->Set_Height(Screen_Division_Height - User_Input->Get_Height());
-    Output->Set_Position({0, User_Input->Get_Position().Y - Output->Get_Height()});
+    Output->Set_Height(Screen_Division_Height * 2 - User_Input->Get_Height());
+    Output->Set_Position({0, 0});
     Output->Show_Border(true);
     Output->Enable_Input_Overflow();
 
+    GGUI::Window* Action_Bar = new GGUI::Window();
+    Action_Bar->Set_Width(Screen_Division_Width);
+    Action_Bar->Set_Height(Screen_Division_Height + 2);
+    Action_Bar->Set_Position({Screen_Division_Width, Screen_Division_Height - 1});
+    Action_Bar->Show_Border(true);
+
+    Adventure_Mode(Action_Bar);
+
     Campaing->Add_Child(Map_Canvas);
+    Campaing->Add_Child(Action_Bar);
     Campaing->Add_Child(User_Input);
     Campaing->Add_Child(Output);
 
@@ -135,9 +150,15 @@ int main(int Argument_Count, char** Arguments){
 
     GGUI::Pause_Renderer([=](){
 
-        // GGUI::Window* a = new GGUI::Window("B", 10, 10);
+        // GGUI::Window* a = new GGUI::Window("A", 10, 10);
         // a->Show_Border(true);
+        // a->Set_Position({0, 5});
         // Main->Add_Child(a);
+
+        // GGUI::Window* b = new GGUI::Window("B", 10, 10);
+        // b->Show_Border(true);
+        // b->Set_Position({9, 0});
+        // Main->Add_Child(b);
 
         Menu(Main);
         Campaing(Main);

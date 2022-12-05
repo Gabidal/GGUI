@@ -59,9 +59,9 @@ namespace GGUI{
 
     extern bool Find_Right_Element();
 
-    extern unsigned long long Min(unsigned long long a, unsigned long long b);
+    extern signed long long Min(signed long long a, signed long long b);
 
-    extern unsigned long long Max(unsigned long long a, unsigned long long b);
+    extern signed long long Max(signed long long a, signed long long b);
 
     extern void ClearScreen();
 

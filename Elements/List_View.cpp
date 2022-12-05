@@ -93,11 +93,14 @@ void GGUI::List_View::Add_Child(Element* e){
         max_height = Max_Height;
     }
 
-    unsigned int Max_Inner_Space_Height = Get_Height() - (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
-    unsigned int Max_Inner_Space_Width = Get_Width() - (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
 
-    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
-    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
+    unsigned Offset = (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
+
+    unsigned int Max_Inner_Space_Height = Get_Height() - Offset;
+    unsigned int Max_Inner_Space_Width = Get_Width() - Offset;
+
+    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Offset;
+    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset;
 
 
     if (At<BOOL_VALUE>(STYLES::Wrap)->Value){
@@ -108,19 +111,31 @@ void GGUI::List_View::Add_Child(Element* e){
     else{
         e->Set_Parent(this);
 
+        // Add reverse support for the list to grow from the end -> start.
+        // Add sticky support for two child elements with borders to loan the same border space.
         if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
-            Height = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
-            Width = Min(max_width, Max(Last_Child_X + Child_Needs_Minimum_Width_Of, Get_Width()));
 
-            e->Set_Position({Last_Child_X, e->Get_Position().Y});
-            Last_Child_X += e->Get_Width();
+            // Affect minimum width needed, when current child has borders as well as the previus one.
+            signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
+
+            Height = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
+            Width = Min(max_width, Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of, Get_Width()));
+
+            e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
+            Last_Child->Set_Position({Last_Child->Get_Position().X + e->Get_Width(), Last_Child->Get_Position().Y});
+            Last_Child->Show_Border(e->Has_Border());
         }
         else{
-            Width = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
-            Height = Min(max_width, Max(Last_Child_Y + Child_Needs_Minimum_Height_Of, Get_Height()));
+            
+            // Affect minimum height needed, when current child has borders as well as the previus one.
+            signed int Height_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
-            e->Set_Position({e->Get_Position().X, Last_Child_Y});
-            Last_Child_Y += e->Get_Height();
+            Width = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
+            Height = Min(max_height, Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of, Get_Height()));
+
+            e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
+            Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + e->Get_Height()});
+            Last_Child->Show_Border(e->Has_Border());
         }
 
         Dirty.Dirty(STAIN_TYPE::DEEP);
@@ -193,7 +208,7 @@ bool GGUI::List_View::Remove(Element* remove){
 
     //now for every element past this index position needs to be altered so that this removed element didn't ever exist.
     if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
-        Last_Child_X = 0;
+        Last_Child->Set_Position({0, Last_Child->Get_Position().Y});
 
         for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
             Childs[i]->Set_Position({Childs[i]->Get_Position().X - remove->Get_Width(), Childs[i]->Get_Position().Y});
@@ -207,15 +222,15 @@ bool GGUI::List_View::Remove(Element* remove){
             unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Has_Border() * 2;
 
             Set_Height(Get_Height() + Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height));
-            if (Last_Child_X + Child_Needs_Minimum_Width_Of > Get_Width()){
-                Set_Width(Get_Width() + Min(max_width, Last_Child_X + Child_Needs_Minimum_Width_Of));
+            if (Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of > Get_Width()){
+                Set_Width(Get_Width() + Min(max_width, Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of));
             }
 
-            Last_Child_X += c->Get_Width();
+            Last_Child->Set_Position({Last_Child->Get_Position().X + c->Get_Width(), Last_Child->Get_Position().Y});
         }
     }
     else{        
-        Last_Child_Y = 0;
+        Last_Child->Set_Position({Last_Child->Get_Position().X, 0});
 
         for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
             Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - remove->Get_Height()});
@@ -229,11 +244,11 @@ bool GGUI::List_View::Remove(Element* remove){
             unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Has_Border() * 2;
 
             Set_Width(Get_Width() + Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_height));
-            if (Last_Child_Y + Child_Needs_Minimum_Height_Of > Get_Height()){
-                Set_Height(Get_Height() + Min(max_width, Last_Child_Y + Child_Needs_Minimum_Height_Of));
+            if (Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of > Get_Height()){
+                Set_Height(Get_Height() + Min(max_width, Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of));
             }
 
-            Last_Child_Y += c->Get_Height();
+            Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + c->Get_Height()});
         }
     }
 

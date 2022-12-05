@@ -16,6 +16,7 @@ namespace GGUI{
     class Text_Field : public Element{
     protected:
         std::string Data = "";
+        std::string Previus_Data = "";
         bool Allow_Text_Input = false;
         
     public:
@@ -84,9 +85,9 @@ namespace GGUI{
         void Disable_Dynamic_Size();
 
 
-        static std::vector<UTF> Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
-        static std::vector<UTF> Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
-        static std::vector<UTF> Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper);
+        static void Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+        static void Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+        static void Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
     };
 }
 

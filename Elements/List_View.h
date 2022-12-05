@@ -18,8 +18,7 @@ namespace GGUI{
     public:
 
         //cache
-        unsigned int Last_Child_X = 0;
-        unsigned int Last_Child_Y = 0;
+        Element* Last_Child = new Element(0, 0, {0, 0});
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
@@ -55,7 +54,6 @@ namespace GGUI{
         }
 
         //End of user constructors.
-
 
         void Add_Child(Element* e) override;
         

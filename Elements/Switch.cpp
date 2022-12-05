@@ -58,7 +58,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::TEXT)){
             std::string Display_Text = States[State] + " " + Text;
 
-            Result = Text_Field::Left_Text(this, Display_Text, Parent);
+            Text_Field::Left_Text(this, Display_Text, Parent, Result);
 
             //Clean text update notice and state change notice.
             //NOTE: Cleaning STATE flag whitout checking it's existance might lead to unexpecte results.

@@ -57,6 +57,10 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
         Dirty.Clean(STAIN_TYPE::CLASS);
     }
 
+    if (Data.size() != Previus_Data.size()){
+        Dirty.Dirty(STAIN_TYPE::STRECH);
+        Previus_Data = Data;
+    }
 
     if (Dirty.is(STAIN_TYPE::STRECH)){
         Result.clear();
@@ -66,28 +70,23 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
 
-    //make a smaller buffer for the inner text.
-    std::vector<GGUI::UTF> Text_Buffer;
-
     if (Dirty.is(STAIN_TYPE::TEXT)){
         Dirty.Clean(STAIN_TYPE::TEXT);
+
         switch ((TEXT_LOCATION)At<NUMBER_VALUE>(STYLES::Text_Position)->Value)
         {
         case TEXT_LOCATION::CENTER:
-            Text_Buffer = Center_Text(this, Data, Parent);
+            Center_Text(this, Data, Parent, Result);
             break;
         case TEXT_LOCATION::LEFT:
-            Text_Buffer = Left_Text(this, Data, Parent);
+            Left_Text(this, Data, Parent, Result);
             break;
         case TEXT_LOCATION::RIGHT:
-            Text_Buffer = Right_Text(this, Data, Parent);
+            Right_Text(this, Data, Parent, Result);
             break;
-        
         default:
             break;
         }
-
-        Result = Text_Buffer;
     }
 
     if (Dirty.is(STAIN_TYPE::COLOR))
@@ -164,9 +163,7 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
 }
 
 //The Text buffer needs to contain already left centered text.
-std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
-    std::vector<GGUI::UTF> Result; 
-
+void GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Result){
     int self_width = self->Get_Width();
     int self_height = self->Get_Height();
 
@@ -174,7 +171,8 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
 
     int Width_Center = self_width / 2;
 
-    Result.resize(self_height * self_width);
+    if (Result.size() == 0)
+        Result.resize(self_height * self_width);
 
     int i = 0;
     for (int Y = Has_Border; Y < self_height - Has_Border; Y++){
@@ -204,19 +202,16 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Center_Text(GGUI::Element* self, std::s
             }
         }
     }
-
-    return Result;
 }
 
-std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
-    std::vector<GGUI::UTF> Result; 
-    
+void GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Result){
     int self_width = self->Get_Width();
     int self_height = self->Get_Height();
 
     bool Has_border = self->Has_Border();
 
-    Result.resize(self_height * self_width);
+    if (Result.size() == 0)
+        Result.resize(self_height * self_width);
 
     std::vector<int> New_Line_Indicies;
 
@@ -259,19 +254,16 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Left_Text(GGUI::Element* self, std::str
             New_Line_Indicies.pop_back();
         }
     }
-    
-    return Result;
 }
 
-std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper){
-    std::vector<GGUI::UTF> Result; 
-    
+void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Result){
     int self_width = self->Get_Width();
     int self_height = self->Get_Height();
 
     bool Has_border = self->Has_Border();
 
-    Result.resize(self_height * self_width);
+    if (Result.size() == 0)
+        Result.resize(self_height * self_width);
 
     std::vector<int> New_Line_Indicies;
 
@@ -307,8 +299,6 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Right_Text(GGUI::Element* self, std::st
             New_Line_Indicies.pop_back();
         }
     }
-    
-    return Result;
 }
 
 void GGUI::Text_Field::Set_Data(std::string Data){

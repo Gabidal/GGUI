@@ -176,14 +176,13 @@ namespace GGUI{
         return true;
     }
 
-    unsigned long long Min(unsigned long long a, unsigned long long b){
+    signed long long Min(signed long long a, signed long long b){
         return a < b ? a : b;
     }
 
-    unsigned long long Max(unsigned long long a, unsigned long long b){
+    signed long long Max(signed long long a, signed long long b){
         return a > b ? a : b;
     }
-
 
     #if _WIN32
     #include <windows.h>
@@ -564,11 +563,11 @@ namespace GGUI{
             {STYLES::Border_Colour, new RGB_VALUE(COLOR::WHITE)},
             {STYLES::Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
 
-            {STYLES::Focus_Text_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Focus_Background_Color, new RGB_VALUE(COLOR::DARK_GRAY)},
+            {STYLES::Focus_Text_Color, new RGB_VALUE(COLOR::BLACK)},
+            {STYLES::Focus_Background_Color, new RGB_VALUE(COLOR::WHITE)},
 
             {STYLES::Focus_Border_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Focus_Border_Background_Color, new RGB_VALUE(COLOR::DARK_GRAY)},
+            {STYLES::Focus_Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
         };
 
         Add_Class(DEFAULT_NAME, DEFAULT);

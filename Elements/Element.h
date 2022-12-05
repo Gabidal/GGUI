@@ -284,12 +284,28 @@ namespace GGUI{
         }
     };
 
+    class Margin{
+    public:
+        unsigned int Top = 0;
+        unsigned int Bottom = 0;
+        unsigned int Left = 0;
+        unsigned int Right = 0;
+
+        Margin(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0){
+            Top = top;
+            Bottom = bottom;
+            Left = left;
+            Right = right;
+        }
+    };
+
     enum class VALUE_TYPES{
         UNDEFINED,
         NUMBER,
         RGB,
         BOOL,
         COORDINATES,
+        MARGIN,
     };
 
     class VALUE{
@@ -379,6 +395,25 @@ namespace GGUI{
         } 
     };
 
+    class MARGIN_VALUE : public VALUE{
+    public:
+        Margin Value = Margin();
+
+        MARGIN_VALUE(){
+            Type = VALUE_TYPES::MARGIN;
+        }
+
+        MARGIN_VALUE(Margin value){
+            Value = value;
+            Type = VALUE_TYPES::MARGIN;
+        }
+
+        VALUE* Copy() override {
+            MARGIN_VALUE* copy = new MARGIN_VALUE(Value);
+            return copy;
+        } 
+    };
+
     namespace STYLES{
         inline std::string Border                          = "Border";
         inline std::string Text_Color                      = "Text_Color";
@@ -395,6 +430,7 @@ namespace GGUI{
         inline std::string Text_Position                   = "Text_Position";
         inline std::string Allow_Input_Overflow            = "Allow_Input_Overflow";
         inline std::string Allow_Dynamic_Size              = "Allow_Dynamic_Size";     
+        inline std::string Margin                          = "Margin";
     };
 
     enum class STAIN_TYPE{
@@ -509,6 +545,12 @@ namespace GGUI{
         Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
 
         Element(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+
+        Element(
+            unsigned int width,
+            unsigned int height,
+            Coordinates position
+        );
 
         //These next constructors are mainly for users to more easily create elements.
         Element(
@@ -647,6 +689,10 @@ namespace GGUI{
         Coordinates Get_Position();
 
         Coordinates Get_Absolute_Position();
+
+        void Set_Margin(Margin margin);
+
+        Margin Get_Margin();
 
         void Set_Background_Color(RGB color);
 

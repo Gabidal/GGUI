@@ -63,6 +63,17 @@ GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, un
     Name = std::to_string((unsigned long long)this);
 }
 
+GGUI::Element::Element(
+    unsigned int width,
+    unsigned int height,
+    Coordinates position
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Position(position);
+}
+
 //These next constructors are mainly for users to more easily create elements.
 GGUI::Element::Element(
     unsigned int width,
@@ -464,6 +475,15 @@ GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
     return Result;
 }
 
+
+void GGUI::Element::Set_Margin(Margin margin){
+    At<MARGIN_VALUE>(STYLES::Margin)->Value = margin;
+}
+
+GGUI::Margin GGUI::Element::Get_Margin(){
+    return At<MARGIN_VALUE>(STYLES::Margin)->Value;
+}
+
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
     GGUI::Element tmp = *child;
     tmp.Style.clear();
@@ -571,27 +591,34 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     if (Dirty.is(STAIN_TYPE::COLOR))
         Apply_Colors(this, Result);
 
+    bool Connect_Borders_With_Parent = Has_Border();
+    bool Connect_Borders_With_Other_Childs = false;
+    unsigned int Childs_With_Borders = 0;
+
     //This will add the child windows to the Result buffer
     if (Dirty.is(STAIN_TYPE::DEEP)){
         Dirty.Clean(STAIN_TYPE::DEEP);
+
         for (auto c : this->Get_Childs()){
             if (!c->Is_Displayed())
                 continue;
 
-            if (c->Has_Border() && Has_Border())
-                Dirty.Dirty(STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+            if (c->Has_Border())
+                Childs_With_Borders++;
 
             Nest_Element(this, c, Result, c->Render());
         }
     }
+
+    if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
+        Dirty.Dirty(STAIN_TYPE::EDGE);
 
     //This will add the borders if nessesary and the title of the window.
     if (Dirty.is(STAIN_TYPE::EDGE))
         Add_Overhead(this, Result);
 
     // This will calculate the connecting borders.
-    if (Dirty.is(STAIN_TYPE::DEEP)){
-        Dirty.Clean(STAIN_TYPE::DEEP);
+    if (Childs_With_Borders > 0){
         for (auto A : this->Get_Childs()){
             for (auto B : this->Get_Childs()){
                 if (A == B)
@@ -689,8 +716,8 @@ inline bool Allow(GGUI::Coordinates index, GGUI::Element* parent){
     return true;
 }
 
-inline GGUI::UTF& From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::Element* Parent){
-    return Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
+inline GGUI::UTF* From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::Element* Parent){
+    return &Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
 }
 
 void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer){
@@ -724,10 +751,10 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         A->Position.X + A->Width - 1,
 
                 
-        A->Position.X,
-        B->Position.X,
-        A->Position.X + A->Width - 1,
-        B->Position.X + B->Width - 1
+        // A->Position.X,
+        // B->Position.X,
+        // A->Position.X + A->Width - 1,
+        // B->Position.X + B->Width - 1
 
     };
 
@@ -738,10 +765,10 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         A->Position.Y,
         B->Position.Y + B->Height - 1,
 
-        B->Position.Y,
-        A->Position.Y + A->Height - 1,
-        B->Position.Y,
-        A->Position.Y + A->Height - 1,
+        // B->Position.Y,
+        // A->Position.Y + A->Height - 1,
+        // B->Position.Y,
+        // A->Position.Y + A->Height - 1,
 
     };
 
@@ -765,26 +792,29 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
 
-        Coordinates Above = { c.X, c.Y - 1 };
+        Coordinates Above = { c.X, Max((signed)c.Y - 1, 0) };
         Coordinates Below = { c.X, c.Y + 1 };
-        Coordinates Left = { c.X - 1, c.Y };
+        Coordinates Left = { Max((signed)c.X - 1, 0), c.Y };
         Coordinates Right = { c.X + 1, c.Y };
 
         unsigned int Current_Masks = 0;
 
-        if (Allow(Above, this) && From(Above, Parent_Buffer, this).Unicode == SYMBOLS::VERTICAL_LINE)
+        if (Allow(Above, this) && From(Above, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_UP;
 
-        if (Allow(Below, this) && From(Below, Parent_Buffer, this).Unicode == SYMBOLS::VERTICAL_LINE)
+        if (Allow(Below, this) && From(Below, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_DOWN;
 
-        if (Allow(Left, this) && From(Left, Parent_Buffer, this).Unicode == SYMBOLS::HORIZONTAL_LINE)
+        if (Allow(Left, this) && From(Left, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_LEFT;
 
-        if (Allow(Right, this) && From(Right, Parent_Buffer, this).Unicode == SYMBOLS::HORIZONTAL_LINE)
+        if (Allow(Right, this) && From(Right, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
 
-        From(c, Parent_Buffer, this).Unicode = SYMBOLS::Border_Identifiers[Current_Masks];
+        if (SYMBOLS::Border_Identifiers.find(Current_Masks) == SYMBOLS::Border_Identifiers.end())
+            continue;
+
+        From(c, Parent_Buffer, this)->Unicode = SYMBOLS::Border_Identifiers[Current_Masks];
     }
 }
 
