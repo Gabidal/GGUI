@@ -297,6 +297,9 @@ void GGUI::Element::Add_Child(Element* Child){
     Element_Names.insert({Child->Name, Child});
 
     Childs.push_back(Child);
+
+    Re_Order_Childs();
+
     Update_Frame();
 }
 
@@ -348,14 +351,22 @@ void GGUI::Element::Update_Parent(Element* New_Element){
     }
 }
 
+void GGUI::Element::Check(State s){
+    if (State_Handlers.find(s) != State_Handlers.end()){
+        State_Handlers[s]();
+    }
+}
+
 void GGUI::Element::Display(bool f){
     // Check if the to be displayed is true and the element wasnt already displayed.
     if (f != Show){
         if (f){
+            Check(State::RENDERED);
             Dirty.Stain_All();
             Show = true;
         }
         else{
+            Check(State::HIDDEN);
             Dirty.Stain_All();
             Show = false;
         }
@@ -888,5 +899,24 @@ GGUI::Element* GGUI::Element::Get_Element(std::string name){
     }
 
     return Result;
+}
+
+// Rre orders the childs by the z position, where the biggest z, goes last.
+void GGUI::Element::Re_Order_Childs(){
+    std::sort(Childs.begin(), Childs.end(), [](Element* a, Element* b){
+        return a->Get_Position().Z > b->Get_Position().Z;
+    });
+}
+
+void GGUI::Element::Focus(){
+
+    GGUI::Mouse = this->Position;
+    GGUI::Update_Focused_Element(this);
+
+}
+
+
+void GGUI::Element::On_State(State s, std::function<void()> job){
+    State_Handlers[s] = job;
 }
 

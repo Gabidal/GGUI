@@ -515,6 +515,13 @@ namespace GGUI{
         return ((int)a & (int)b) != 0;
     }
 
+    enum class State{
+
+        RENDERED,
+        HIDDEN
+
+    };
+
     class Element{
     protected:
         Coordinates Position;
@@ -538,6 +545,8 @@ namespace GGUI{
         std::string Name = "";
 
         std::map<std::string, VALUE*> Style;
+
+        std::map<State, std::function<void()>> State_Handlers;
     public:
 
         Element();
@@ -606,6 +615,8 @@ namespace GGUI{
         void Set_Focus(bool f){
             Focused = f;
         }
+
+        void Check(State s);
 
         std::map<std::string, VALUE*> Get_Style();
 
@@ -768,6 +779,11 @@ namespace GGUI{
             return result;
         }
 
+        void Re_Order_Childs();
+
+        void Focus();
+
+        void On_State(State s, std::function<void()> job);
 
     };
 }

@@ -8,7 +8,7 @@
         "program": "${workspaceFolder}/Build/GGUI.exe",
         "args": [],
         "stopAtEntry": false,
-        "cwd": "${fileDirname}",
+        "cwd": "${workspaceFolder}",
         "environment": [],
         "externalConsole": true,
         "MIMode": "gdb",

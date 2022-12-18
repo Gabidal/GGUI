@@ -141,6 +141,9 @@ void GGUI::List_View::Add_Child(Element* e){
         Dirty.Dirty(STAIN_TYPE::DEEP);
         Element_Names.insert({e->Get_Name(), e});
         Childs.push_back(e);
+
+        Re_Order_Childs();
+
         Update_Parent(this);
     }
 }

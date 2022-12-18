@@ -25,6 +25,7 @@ namespace GGUI{
 
     Coordinates Mouse;
     //move 1 by 1, or element by element.
+    bool Mouse_Movement_Enabled = false;
     bool Mouse_Movement_Method = false;
 
     inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
@@ -262,20 +263,16 @@ namespace GGUI{
             if (Input[i].EventType == KEY_EVENT){
                 if (Input[i].Event.KeyEvent.bKeyDown){
                     if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
-                        if (!Find_Upper_Element())
-                            GGUI::Mouse.Y--;
+                        Inputs.push_back(new GGUI::Input(0, Constants::UP));
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
-                        if (!Find_Lower_Element())
-                            GGUI::Mouse.Y++;
+                        Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
-                        if (!Find_Left_Element())
-                            GGUI::Mouse.X--;
+                        Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
-                        if (!Find_Right_Element())
-                            GGUI::Mouse.X++;
+                        Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
                         Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
@@ -507,6 +504,7 @@ namespace GGUI{
         Update_Frame();
     }
 
+    // Events
     void Event_Handler(){
         if (Focused_On && !Collides(Focused_On, GGUI::Mouse)){
             Un_Focus_Element();
@@ -515,14 +513,24 @@ namespace GGUI{
 
         Query_Inputs();
         for (auto& e : Event_Handlers){
-            if (!e->Host->Is_Displayed())
-                continue;
+            // Hosted branches
+            if (e->Host){
+                if (!e->Host->Is_Displayed())
+                    continue;
 
-            //update the focused
-            if (Collides(e->Host, GGUI::Mouse)){
-                Update_Focused_Element(e->Host);
+                //update the focused
+                if (Collides(e->Host, GGUI::Mouse)){
+                    Update_Focused_Element(e->Host);
+                }
+
             }
-            
+            // Unhosted branches
+            else{
+
+                // some code...
+
+            }
+                
             for (int i = 0; i < Inputs.size(); i++){
                 if (Is(e->Criteria, Inputs[i]->Criteria)){
                     //check if this job could be runned succesfully.
@@ -532,6 +540,7 @@ namespace GGUI{
                     }
                 }
             }
+
         }
         Inputs.clear();
     }
@@ -573,6 +582,83 @@ namespace GGUI{
         Add_Class(DEFAULT_NAME, DEFAULT);
     }
 
+    void Enable_Mouse_Movement(){
+        Mouse_Movement_Enabled = true;
+    }
+
+    void Disable_Mouse_Movement(){
+        Mouse_Movement_Enabled = false;
+    }
+
+    void Init_Mouse_Movement_Handlers(){
+
+        Action* up = new Action(
+            Constants::UP,
+            [=](GGUI::Event* e){
+                //action failed.
+                if (!Mouse_Movement_Enabled)
+                    return false;
+                    
+                if (!Find_Upper_Element())
+                    GGUI::Mouse.Y--;
+
+                return true;
+            },
+            nullptr
+        );
+
+        Action* down = new Action(
+            Constants::DOWN,
+            [=](GGUI::Event* e){
+                //action failed.
+                if (!Mouse_Movement_Enabled)
+                    return false;
+
+                if (!Find_Lower_Element())
+                    GGUI::Mouse.Y++;
+
+                return true;
+            },
+            nullptr
+        );
+
+        Action* left = new Action(
+            Constants::LEFT,
+            [=](GGUI::Event* e){
+                //action failed.
+                if (!Mouse_Movement_Enabled)
+                    return false;
+
+                if (!Find_Left_Element())
+                    GGUI::Mouse.X--;
+
+                return true;
+            },
+            nullptr
+        );
+
+        Action* right = new Action(
+            Constants::RIGHT,
+            [=](GGUI::Event* e){
+                //action failed.
+                if (!Mouse_Movement_Enabled)
+                    return false;
+
+                if (!Find_Right_Element())
+                    GGUI::Mouse.X++;
+
+                return true;
+            },
+            nullptr
+        );
+
+        GGUI::Event_Handlers.push_back(up);
+        GGUI::Event_Handlers.push_back(down);
+        GGUI::Event_Handlers.push_back(left);
+        GGUI::Event_Handlers.push_back(right);
+
+    }
+
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_Renderer(){
         //Save the state before the init
@@ -587,6 +673,7 @@ namespace GGUI{
         GGUI::Constants::Init();
         Init_Platform_Stuff();
         Init_Classes();
+        Init_Mouse_Movement_Handlers();
 
 
         //now we need to allocate the buffer string by the width and height of the terminal
@@ -690,7 +777,6 @@ namespace GGUI{
     }
 
     void Pause_Renderer(std::function<void()> f){
-
         bool Original_Value = Pause_Render;
 
         Pause_Renderer();
@@ -698,7 +784,23 @@ namespace GGUI{
         f();
 
         if (!Original_Value)
-            Resume_Renderer();
-            
+            Resume_Renderer(); 
     }
+
+    // Use this to use GGUI.
+    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0){
+        bool Previud_Event_Value = Pause_Event_Thread;
+        Pause_Event_Thread = true;
+
+        Pause_Renderer([=](){
+
+            Init_Renderer();
+
+            DOM();
+        });
+
+        Pause_Event_Thread = Previud_Event_Value;
+        _sleep(Sleep_For);
+    }
+
 }

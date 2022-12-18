@@ -117,6 +117,12 @@ namespace GGUI{
 
     extern void Pause_Renderer(std::function<void()> f);
 
+    // Use this to access GGUI.
+    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For);
+
+    extern void Enable_Mouse_Movement();
+
+    extern void Disable_Mouse_Movement();
 }
 
 #endif

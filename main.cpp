@@ -40,13 +40,15 @@ void Switch(string From, string To, GGUI::Element* parent){
 
 }
 
-void Menu(GGUI::Window* Main){
+void Menu(){
     GGUI::Button* Campaing_Button = new GGUI::Button(
         CAMPAING_NAME,
         [](GGUI::Button* This){
+            GGUI::Disable_Mouse_Movement();
+            User_Input->Focus();
             Switch(MENU_NAME, CAMPAING_NAME, This->Get_Parent());
         }
-    ); 
+    );
 
     GGUI::Button* Exit_Button = new GGUI::Button(
         "Exit",
@@ -56,7 +58,7 @@ void Menu(GGUI::Window* Main){
     );
 
     GGUI::List_View* menu = new GGUI::List_View(
-        Main,
+        GGUI::Main,
         {
             Campaing_Button,
             Exit_Button
@@ -65,8 +67,8 @@ void Menu(GGUI::Window* Main){
     );
 
     menu->Set_Name(MENU_NAME);
-    menu->Set_Width(Main->Get_Width());
-    menu->Set_Height(Main->Get_Height());
+    menu->Set_Width(GGUI::Main->Get_Width());
+    menu->Set_Height(GGUI::Main->Get_Height());
 }
 
 void Adventure_Mode(GGUI::Window* Parent){
@@ -75,16 +77,16 @@ void Adventure_Mode(GGUI::Window* Parent){
 
 }
 
-void Campaing(GGUI::Window* Main){
+void Campaing(){
 
     GGUI::Window* Campaing = new GGUI::Window();
 
-    Campaing->Set_Width(Main->Get_Width());
-    Campaing->Set_Height(Main->Get_Height());
+    Campaing->Set_Width(GGUI::Main->Get_Width());
+    Campaing->Set_Height(GGUI::Main->Get_Height());
 
     // Make sizes for the map to be 1/4 of the screen space.
-    unsigned int Screen_Division_Width = Main->Get_Width() / 2;
-    unsigned int Screen_Division_Height = Main->Get_Height() / 2; 
+    unsigned int Screen_Division_Width = GGUI::Main->Get_Width() / 2;
+    unsigned int Screen_Division_Height = GGUI::Main->Get_Height() / 2; 
 
     // Set the map canvas to the top right corner.
     Map_Canvas = new GGUI::Canvas(
@@ -116,7 +118,7 @@ void Campaing(GGUI::Window* Main){
                 User_Input->Set_Data(User_Input->Get_Data() + input);
             }
         }
-    );
+    ); 
 
     Output = new GGUI::Text_Field();
     Output->Set_Width(Screen_Division_Width);
@@ -141,29 +143,18 @@ void Campaing(GGUI::Window* Main){
     Campaing->Set_Name(CAMPAING_NAME);
     Campaing->Display(false);
 
-    Main->Add_Child(Campaing);
+    GGUI::Main->Add_Child(Campaing);
 }
 
 int main(int Argument_Count, char** Arguments){
-    GGUI::Window* Main = GGUI::Init_Renderer();
-    //Main->Show_Border(true);
+    GGUI::GGUI([=](){
 
-    GGUI::Pause_Renderer([=](){
+        // Setup enables
+        GGUI::Enable_Mouse_Movement();
 
-        // GGUI::Window* a = new GGUI::Window("A", 10, 10);
-        // a->Show_Border(true);
-        // a->Set_Position({0, 5});
-        // Main->Add_Child(a);
+        Menu();
+        Campaing();
 
-        // GGUI::Window* b = new GGUI::Window("B", 10, 10);
-        // b->Show_Border(true);
-        // b->Set_Position({9, 0});
-        // Main->Add_Child(b);
-
-        Menu(Main);
-        Campaing(Main);
-    });
-
-    _sleep(INT32_MAX);
+    }, INT32_MAX);
     return 0;
 }

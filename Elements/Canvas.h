@@ -21,6 +21,32 @@ namespace GGUI{
         std::vector<UTF> Render() override;
     };
 
+    class Sprite{
+    public:
+        RGB Background_Color;
+        RGB Foreground_Color;
+        UTF Texture;
+
+        Sprite(UTF t = UTF(""), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
+
+        UTF Render();
+    };
+
+    class Terminal_Canvas : public Element{
+    protected:
+        std::vector<Sprite> Buffer;
+    public:
+        Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
+        
+        void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
+
+        void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
+        
+        void Flush();
+        
+        std::vector<UTF> Render() override;
+    };
+
 }
 
 #endif
