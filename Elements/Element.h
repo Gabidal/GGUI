@@ -27,6 +27,9 @@ namespace GGUI{
         inline std::string HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
         inline std::string CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
 
+        inline std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x71\e(B";
+        inline std::string FULL_BLOCK = "█";//"\e(0\xdb\e(B";
+
         inline unsigned int CONNECTS_UP = 1 << 0;
         inline unsigned int CONNECTS_DOWN = 1 << 1;
         inline unsigned int CONNECTS_LEFT = 1 << 2;
@@ -738,6 +741,9 @@ namespace GGUI{
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 
         std::string Compose_All_Text_RGB_Values();
+
+        std::string Compose_Text_RGB_Values();
+        std::string Compose_Background_RGB_Values(bool Get_As_Foreground = false);
 
         std::string Compose_All_Border_RGB_Values();
 

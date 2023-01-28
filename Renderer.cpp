@@ -788,7 +788,7 @@ namespace GGUI{
     }
 
     // Use this to use GGUI.
-    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0){
+    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
         bool Previud_Event_Value = Pause_Event_Thread;
         Pause_Event_Thread = true;
 

@@ -9,6 +9,7 @@
 #include "Elements/Button.h"
 #include "Elements/Switch.h"
 #include "Elements/Canvas.h"
+#include "Elements/Progress_Bar.h"
 
 
 #endif

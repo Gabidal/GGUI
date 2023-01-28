@@ -12,6 +12,7 @@ sources = [
   'Elements/Text_Field.cpp',
   'Elements/Window.cpp',
   'Elements/Canvas.cpp',
+  'Elements/Progress_Bar.cpp',
 
   'Renderer.cpp',
 

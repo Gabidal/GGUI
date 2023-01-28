@@ -140,6 +140,33 @@ std::string GGUI::Element::Compose_All_Text_RGB_Values(){
     }
 }
 
+
+std::string GGUI::Element::Compose_Text_RGB_Values(){
+    if (Focused){
+        return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
+        At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
+        Constants::END_COMMAND;
+    }
+    else{
+        return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
+        At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
+        Constants::END_COMMAND;
+    }
+}
+
+std::string GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
+    if (Focused){
+        return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
+        At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
+        Constants::END_COMMAND;
+    }
+    else{
+        return At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
+        At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
+        Constants::END_COMMAND;
+    }
+}
+
 std::string GGUI::Element::Compose_All_Border_RGB_Values(){
     if (Focused){
         return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
