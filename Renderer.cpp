@@ -191,6 +191,7 @@ namespace GGUI{
 
     void ClearScreen()
     {
+        return;
         HANDLE                     hStdOut;
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         DWORD                      count;
@@ -230,6 +231,8 @@ namespace GGUI{
         ClearScreen();
 
         unsigned long long tmp = 0;
+        
+        SetConsoleCursorPosition( GetStdHandle(STD_OUTPUT_HANDLE), { 0, 0 } );
         WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
     }
 
