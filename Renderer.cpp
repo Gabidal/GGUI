@@ -188,55 +188,19 @@ namespace GGUI{
     #if _WIN32
     #include <windows.h>
 
-
-    void ClearScreen()
-    {
-        HANDLE                     hStdOut;
-        CONSOLE_SCREEN_BUFFER_INFO csbi;
-        DWORD                      count;
-        DWORD                      cellCount;
-        COORD                      homeCoords = { 0, 0 };
-
-        hStdOut = GetStdHandle( STD_OUTPUT_HANDLE );
-        if (hStdOut == INVALID_HANDLE_VALUE) return;
-
-        /* Get the number of cells in the current buffer */
-        if (!GetConsoleScreenBufferInfo( hStdOut, &csbi )) return;
-        cellCount = csbi.dwSize.X *csbi.dwSize.Y;
-
-        /* Fill the entire buffer with spaces */
-        if (!FillConsoleOutputCharacter(
-            hStdOut,
-            (TCHAR) ' ',
-            cellCount,
-            homeCoords,
-            &count
-            )) return;
-
-        /* Fill the entire buffer with the current colors and attributes */
-        if (!FillConsoleOutputAttribute(
-            hStdOut,
-            csbi.wAttributes,
-            cellCount,
-            homeCoords,
-            &count
-            )) return;
-
-        /* Move the cursor home */
-        SetConsoleCursorPosition( hStdOut, homeCoords );
-    }
+    GGUI::HANDLE GLOBAL_STD_HANDLE;
 
     void Render_Frame(){
-        ClearScreen();
 
         unsigned long long tmp = 0;
-        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
+        SetConsoleCursorPosition(GLOBAL_STD_HANDLE, {0, 0});
+        WriteFile(GLOBAL_STD_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
     }
 
     void Update_Max_Width_And_Height(){
         CONSOLE_SCREEN_BUFFER_INFO info;
 
-        GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+        GetConsoleScreenBufferInfo(GLOBAL_STD_HANDLE, &info);
 
         Max_Width = info.srWindow.Right - info.srWindow.Left;
         Max_Height = info.srWindow.Bottom - info.srWindow.Top;
@@ -300,8 +264,8 @@ namespace GGUI{
     }
 
     void Init_Platform_Stuff(){
-        SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), -1);
-        
+        GLOBAL_STD_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleMode(GLOBAL_STD_HANDLE, -1);
         SetConsoleOutputCP(65001);
     }
 
@@ -315,13 +279,13 @@ namespace GGUI{
         ClearScreen();
 
         unsigned long long tmp = 0;
-        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
+        WriteFile(GLOBAL_STD_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
     }
 
     void Update_Max_Width_And_Height(){
         CONSOLE_SCREEN_BUFFER_INFO info;
 
-        GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+        GetConsoleScreenBufferInfo(GLOBAL_STD_HANDLE, &info);
 
         Max_Width = info.srWindow.Right - info.srWindow.Left;
         Max_Height = info.srWindow.Bottom - info.srWindow.Top;
@@ -669,9 +633,9 @@ namespace GGUI{
         Pause_Render = true;
         Pause_Event_Thread = true;
 
+        Init_Platform_Stuff();
         Update_Max_Width_And_Height();
         GGUI::Constants::Init();
-        Init_Platform_Stuff();
         Init_Classes();
         Init_Mouse_Movement_Handlers();
 
