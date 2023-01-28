@@ -36,6 +36,10 @@ int main(int Argument_Count, char** Arguments){
         );
         bar->Show_Border(true);
         GGUI::Main->Add_Child(bar);
+        GGUI::Main->Add_Child(new GGUI::Progress_Bar(*bar));
+
+        bar->Set_Position({0, 3});
+        bar->Set_Height(bar->Get_Height() + 5);
     });
 
     Main();
