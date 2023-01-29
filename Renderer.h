@@ -45,6 +45,8 @@ namespace GGUI{
 
     extern Window* Main;  
 
+    void SLEEP(unsigned int seconds);
+
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 
     extern bool Collides(GGUI::Element* a, GGUI::Coordinates b);
@@ -119,6 +121,8 @@ namespace GGUI{
 
     // Use this to access GGUI.
     extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
+
+    extern void Exit();
 
     extern void Enable_Mouse_Movement();
 

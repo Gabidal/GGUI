@@ -88,6 +88,16 @@ namespace GGUI{
         //key_Press includes [a-z, A-Z] & [0-9]
         inline unsigned long long KEY_PRESS = 1 << 11;
 
+        // for mouse handling
+        inline unsigned long long MOUSE_LEFT_PRESS = 1 << 12;
+        inline unsigned long long MOUSE_LEFT_RELEASE = 1 << 13;
+        inline unsigned long long MOUSE_MIDDLE_PRESS = 1 << 14;
+        inline unsigned long long MOUSE_MIDDLE_RELEASE = 1 << 15;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = 1 << 16;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = 1 << 17;
+        inline unsigned long long MOUSE_RIGHT_PRESS = 1 << 18;
+        inline unsigned long long MOUSE_RIGHT_RELEASE = 1 << 19;
+
         inline void Init();
     }
 

@@ -18,7 +18,7 @@ void Main(){
     while (bar->Get_Progress() <= 1.01){
         bar->Set_Progress(bar->Get_Progress() + 0.01);
 
-        _sleep(16);
+        GGUI::SLEEP(16);
     }
 
 }
@@ -44,5 +44,6 @@ int main(int Argument_Count, char** Arguments){
 
     Main();
 
+    GGUI::SLEEP(INT64_MAX);
     return 0;
 }

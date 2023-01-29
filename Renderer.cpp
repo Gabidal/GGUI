@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <iostream>
 
 #include <cassert>
 
@@ -188,13 +189,16 @@ namespace GGUI{
     #if _WIN32
     #include <windows.h>
 
+    void SLEEP(unsigned int mm){
+        _sleep(mm);
+    }
+
     GGUI::HANDLE GLOBAL_STD_HANDLE;
 
     void Render_Frame(){
-
         unsigned long long tmp = 0;
         SetConsoleCursorPosition(GLOBAL_STD_HANDLE, {0, 0});
-        WriteFile(GLOBAL_STD_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
+        WriteFile(GLOBAL_STD_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
     }
 
     void Update_Max_Width_And_Height(){
@@ -260,69 +264,187 @@ namespace GGUI{
 
                 Main->Set_Dimensions(Max_Width, Max_Height);
             }
+            else if (Input[i].EventType == MOUSE_EVENT){
+                if (Input[i].Event.MouseEvent.dwEventFlags == MOUSE_MOVED){
+                    // Get mouse coordinates
+                    COORD mousePos = Input[i].Event.MouseEvent.dwMousePosition;
+                    // Handle cursor movement
+                    Report("3");
+                }
+                // Handle mouse clicks
+                if (Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) {
+                    Report("1");
+                }
+                if (Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) {
+                    Report("2");
+                }
+            }
         }
     }
 
     void Init_Platform_Stuff(){
         GLOBAL_STD_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleMode(GLOBAL_STD_HANDLE, -1);
+        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT);
+
+        std::cout << "\033[?1003h";
+        std::cout.flush();
+
         SetConsoleOutputCP(65001);
     }
 
-    #else
-    void ClearScreen()
-    {
-        std::cout << GGUI::Constants::CLEAR_SCREEN;
+    void Exit(){
+
     }
 
-    void Render_Frame(){
-        ClearScreen();
+    #else
+    #include <unistd.h>
+    #include <termios.h>
+    #include <sys/ioctl.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <signal.h>
 
-        unsigned long long tmp = 0;
-        WriteFile(GLOBAL_STD_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), (LPDWORD)&tmp, NULL);
+    int Previus_Flags = 0;
+    struct termios Previus_Raw;
+    void Exit(int signum){
+        if (signum == SIGINT){
+            printf("\e[?1003l\e[?25h");
+
+            fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previus_Raw);
+
+            exit(0);
+        }
+    }
+
+    void SLEEP(unsigned int mm){
+        // use nanosleep
+        struct timespec req = {0};
+        time_t sec = (int)(mm / 1000);
+        mm = mm - (sec * 1000);
+        req.tv_sec = sec;
+        req.tv_nsec = mm * 1000000L;
+        while(nanosleep(&req, &req) == -1)
+            continue;
+    }
+
+    void Render_Frame() {
+        // Move cursor to top-left corner
+        printf("\033[H");
+        // Write the frame buffer to the console
+        fwrite(Frame_Buffer.data(), 1, Frame_Buffer.size(), stdout);
+        // Flush the output to ensure it's written immediately
+        fflush(stdout);
     }
 
     void Update_Max_Width_And_Height(){
-        CONSOLE_SCREEN_BUFFER_INFO info;
+        struct winsize w;
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
-        GetConsoleScreenBufferInfo(GLOBAL_STD_HANDLE, &info);
-
-        Max_Width = info.srWindow.Right - info.srWindow.Left;
-        Max_Height = info.srWindow.Bottom - info.srWindow.Top;
+        Max_Width = w.ws_col;
+        Max_Height = w.ws_row - 1;
     }
 
     //Is called on every cycle.
     void Query_Inputs(){
-        const int Inputs_Per_Second = 20;
-        const int Inputs_Per_Query = Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS);
+        return;
 
-        INPUT_RECORD Input[Inputs_Per_Query];
-
-        int Buffer_Size = 0;
-
-        ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, Inputs_Per_Query, (LPDWORD)&Buffer_Size);
-
-        for (int i = 0; i < Buffer_Size; i++){
-            if (Input[i].EventType == KEY_EVENT){
-                if (Input[i].Event.KeyEvent.bKeyDown){
-                    if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
-                        GGUI::Mouse.Y--;
+        // For keyboard input handling.
+        char buffer[256];
+        int bytes_read = read(STDIN_FILENO, buffer, sizeof(buffer));
+        
+        for (int i = 0; i < bytes_read; i++) {
+            char c = buffer[i];
+            if (c == '\x1B') { // handle arrow keys
+                i++;
+                if (i < bytes_read && buffer[i] == '[') {
+                    i++;
+                    if (i < bytes_read && buffer[i] == 'A') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::UP));
                     }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
-                        GGUI::Mouse.Y++;
+                    else if (i < bytes_read && buffer[i] == 'B') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
                     }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
-                        GGUI::Mouse.X--;
+                    else if (i < bytes_read && buffer[i] == 'C') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
                     }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
-                        GGUI::Mouse.X++;
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
-                        Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
+                    else if (i < bytes_read && buffer[i] == 'D') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
                     }
                 }
             }
+            else if (c == '\033') {
+                i++;
+                if (i < bytes_read && buffer[i] == '['){
+                    i++;
+                    if (i + 3 < bytes_read && buffer[i] == 'M') {
+                        int button = buffer[i + 1] & 3;
+                        int release = (buffer[i + 1] >> 2) & 3;
+
+                        int x = buffer[i + 2] - 32;
+                        int y = buffer[i + 3] - 32;
+
+
+                        if (button == 0) {
+
+                            if (release == 3) Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESS));
+                            else Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_RELEASE));
+
+                        } else if (button == 1) {
+
+                            if (release == 3) Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESS));
+                            else Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_RELEASE));
+
+                        } else if (button == 2) {
+
+                            if (release == 3) Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESS));
+                            else Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_RELEASE));
+
+                        } else if (button == 3) {
+                            // handle scroll up event
+                            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_SCROLL_UP));
+
+                        } else if (button == 4) {
+                            // handle scroll down event
+                            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_SCROLL_DOWN));
+
+                        }
+                    }
+                }
+            }
+            else if (c == '\r') { // handle enter key
+                Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
+            }
+            else if (c == '\b') { // handle backspace key
+                Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
+            }
+            else if (c == ' ') { // handle shift key
+                Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                Mouse_Movement_Method = !Mouse_Movement_Method;
+            }
+            else { // handle any other key presses
+                Inputs.push_back(new GGUI::Input(c, Constants::KEY_PRESS));
+            }
         }
+    
+    }
+
+    void Init_Platform_Stuff(){
+        std::cout << "\e[?1003h\e[?25l" << std::flush;
+        Previus_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+        int flags = -1; //fcntl(STDIN_FILENO, F_GETFL, 0); // get current flags for stdin
+        fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
+
+        signal(SIGINT, Exit);
+
+        struct termios raw;
+        tcgetattr(STDIN_FILENO, &raw);
+
+        Previus_Raw = raw;
+
+        raw.c_lflag &= ~(ECHO | ICANON);
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
     }
 
     #endif
@@ -764,7 +886,7 @@ namespace GGUI{
         });
 
         Pause_Event_Thread = Previud_Event_Value;
-        _sleep(Sleep_For);
+        SLEEP(Sleep_For);
     }
 
 }
