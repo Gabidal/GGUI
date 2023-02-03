@@ -26,13 +26,27 @@ namespace GGUI{
 
     Coordinates Mouse;
     //move 1 by 1, or element by element.
-    bool Mouse_Movement_Enabled = false;
-    bool Mouse_Movement_Method = false;
+    bool Mouse_Movement_Enabled = true;
+    bool Mouse_Left_State = false;
+    bool Mouse_Middle_State = false;
+    bool Mouse_Right_State = false;
 
+    bool Previous_Mouse_Left_State = false;
+    bool Previous_Mouse_Middle_State = false;
+    bool Previous_Mouse_Right_State = false;
+
+    std::chrono::system_clock::time_point Mouse_Left_Pressed_Down_At;
+    std::chrono::system_clock::time_point Mouse_Middle_Pressed_Down_At;
+    std::chrono::system_clock::time_point Mouse_Right_Pressed_Down_At; 
+
+    // Time stuff
     inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
-
     inline int Inputs_Per_Second = INT16_MAX;
     inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
+
+    std::chrono::system_clock::time_point Previous_Time;
+    std::chrono::system_clock::time_point Current_Time;
+    unsigned long long Delta_Time;
 
     inline std::map<int, std::map<std::string, VALUE*>> Classes;
 
@@ -78,9 +92,7 @@ namespace GGUI{
         return Parent;
     }
 
-    bool Find_Upper_Element(){
-        if (!Mouse_Movement_Method)
-            return false;
+    Coordinates Find_Upper_Element(){
 
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
@@ -97,16 +109,13 @@ namespace GGUI{
         Element* Upper_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Upper_Element && Upper_Element != (Element*)&Main){
-            Mouse = Upper_Element->Get_Position();
+            return Upper_Element->Get_Position();
         }
 
-        return true;
+        return Current_Element->Get_Position();
     }
 
-    bool Find_Lower_Element(){
-        if (!Mouse_Movement_Method)
-            return false;
-
+    Coordinates Find_Lower_Element(){
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -122,16 +131,13 @@ namespace GGUI{
         Element* Lower_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Lower_Element && Lower_Element != (Element*)&Main){
-            Mouse = Lower_Element->Get_Position();
+            return Lower_Element->Get_Position();
         }
 
-        return true;
+        return Current_Element->Get_Position();
     }
 
-    bool Find_Left_Element(){
-        if (!Mouse_Movement_Method)
-            return false;
-
+    Coordinates Find_Left_Element(){
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -147,16 +153,13 @@ namespace GGUI{
         Element* Left_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Left_Element && Left_Element != (Element*)&Main){
-            Mouse = Left_Element->Get_Position();
+            return Left_Element->Get_Position();
         }
 
-        return true;
+        return Current_Element->Get_Position();
     }
 
-    bool Find_Right_Element(){
-        if (!Mouse_Movement_Method)
-            return false;
-
+    Coordinates Find_Right_Element(){
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -172,10 +175,10 @@ namespace GGUI{
         Element* Right_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Right_Element && Right_Element != (Element*)&Main){
-            Mouse = Right_Element->Get_Position();
+            return Right_Element->Get_Position();
         }
 
-        return true;
+        return Current_Element->Get_Position();
     }
 
     signed long long Min(signed long long a, signed long long b){
@@ -244,11 +247,13 @@ namespace GGUI{
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
                         Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
+
+                        if (!Mouse_Movement_Enabled){
+                            Inputs.push_back(new GGUI::Input('\0', Constants::MOUSE_LEFT_CLICKED));
+                        }
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                        //shift if the actuator for the mouse movement swithcer
-                        Mouse_Movement_Method = !Mouse_Movement_Method;
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
                         Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
@@ -264,22 +269,40 @@ namespace GGUI{
 
                 Main->Set_Dimensions(Max_Width, Max_Height);
             }
-            else if (Input[i].EventType == MOUSE_EVENT){
+            else if (Input[i].EventType == MOUSE_EVENT && Mouse_Movement_Enabled){
                 if (Input[i].Event.MouseEvent.dwEventFlags == MOUSE_MOVED){
                     // Get mouse coordinates
                     COORD mousePos = Input[i].Event.MouseEvent.dwMousePosition;
                     // Handle cursor movement
-                    Report("3");
+                    Mouse.X = mousePos.X;
+                    Mouse.Y = mousePos.Y;
                 }
                 // Handle mouse clicks
-                if (Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) {
-                    Report("1");
+                // TODO: Windows doesn't give release events.
+                if (Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED != 0) {
+                    Previous_Mouse_Left_State = Mouse_Left_State;
+                    Mouse_Left_State = true;
+                    Mouse_Left_Pressed_Down_At = std::chrono::high_resolution_clock::now();
                 }
-                if (Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) {
-                    Report("2");
+                if (Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED == 0) {
+                    Previous_Mouse_Left_State = Mouse_Left_State;
+                    Mouse_Left_State = false;
+                }
+
+                if (Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED != 0) {
+                    Previous_Mouse_Right_State = Mouse_Right_State;
+                    Mouse_Right_State = true;
+                    Mouse_Right_Pressed_Down_At = std::chrono::high_resolution_clock::now();
+                }
+                if (Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED == 0) {
+                    Previous_Mouse_Right_State = Mouse_Right_State;
+                    Mouse_Right_State = false;
                 }
             }
         }
+
+        
+        MOUSE_API();
     }
 
     void Init_Platform_Stuff(){
@@ -421,7 +444,6 @@ namespace GGUI{
             }
             else if (c == ' ') { // handle shift key
                 Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                Mouse_Movement_Method = !Mouse_Movement_Method;
             }
             else { // handle any other key presses
                 Inputs.push_back(new GGUI::Input(c, Constants::KEY_PRESS));
@@ -448,6 +470,37 @@ namespace GGUI{
     }
 
     #endif
+
+    void MOUSE_API(){
+        
+        auto Mouse_Left_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Mouse_Left_Pressed_Down_At).count();
+
+        if (Mouse_Left_State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
+        }
+        else if (!Mouse_Left_State && Previous_Mouse_Left_State != Mouse_Left_State){
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
+        }
+
+        auto Mouse_Right_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Mouse_Right_Pressed_Down_At).count();
+
+        if (Mouse_Right_State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
+        }
+        else if (!Mouse_Right_State && Previous_Mouse_Right_State != Mouse_Right_State){
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
+        }
+
+        auto Mouse_Middle_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Mouse_Middle_Pressed_Down_At).count();
+
+        if (Mouse_Middle_State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
+        }
+        else if (!Mouse_Middle_State && Previous_Mouse_Middle_State != Mouse_Middle_State){
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
+        }
+        
+    }
 
     bool Has_Bit_At(char val, int i){
         return ((val) & (1<<(i)));
@@ -608,7 +661,6 @@ namespace GGUI{
                 if (Collides(e->Host, GGUI::Mouse)){
                     Update_Focused_Element(e->Host);
                 }
-
             }
             // Unhosted branches
             else{
@@ -668,88 +720,14 @@ namespace GGUI{
         Add_Class(DEFAULT_NAME, DEFAULT);
     }
 
-    void Enable_Mouse_Movement(){
-        Mouse_Movement_Enabled = true;
-    }
-
-    void Disable_Mouse_Movement(){
-        Mouse_Movement_Enabled = false;
-    }
-
-    void Init_Mouse_Movement_Handlers(){
-
-        Action* up = new Action(
-            Constants::UP,
-            [=](GGUI::Event* e){
-                //action failed.
-                if (!Mouse_Movement_Enabled)
-                    return false;
-                    
-                if (!Find_Upper_Element())
-                    GGUI::Mouse.Y--;
-
-                return true;
-            },
-            nullptr
-        );
-
-        Action* down = new Action(
-            Constants::DOWN,
-            [=](GGUI::Event* e){
-                //action failed.
-                if (!Mouse_Movement_Enabled)
-                    return false;
-
-                if (!Find_Lower_Element())
-                    GGUI::Mouse.Y++;
-
-                return true;
-            },
-            nullptr
-        );
-
-        Action* left = new Action(
-            Constants::LEFT,
-            [=](GGUI::Event* e){
-                //action failed.
-                if (!Mouse_Movement_Enabled)
-                    return false;
-
-                if (!Find_Left_Element())
-                    GGUI::Mouse.X--;
-
-                return true;
-            },
-            nullptr
-        );
-
-        Action* right = new Action(
-            Constants::RIGHT,
-            [=](GGUI::Event* e){
-                //action failed.
-                if (!Mouse_Movement_Enabled)
-                    return false;
-
-                if (!Find_Right_Element())
-                    GGUI::Mouse.X++;
-
-                return true;
-            },
-            nullptr
-        );
-
-        GGUI::Event_Handlers.push_back(up);
-        GGUI::Event_Handlers.push_back(down);
-        GGUI::Event_Handlers.push_back(left);
-        GGUI::Event_Handlers.push_back(right);
-
-    }
-
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_Renderer(){
         //Save the state before the init
         bool Default_Render_State = Pause_Render;
         bool Default_Event_State = Pause_Event_Thread;
+
+        Current_Time = std::chrono::high_resolution_clock::now();
+        Previous_Time = Current_Time;
 
         //pause the renderer
         Pause_Render = true;
@@ -759,7 +737,6 @@ namespace GGUI{
         Update_Max_Width_And_Height();
         GGUI::Constants::Init();
         Init_Classes();
-        Init_Mouse_Movement_Handlers();
 
 
         //now we need to allocate the buffer string by the width and height of the terminal
@@ -777,8 +754,15 @@ namespace GGUI{
                 if (Pause_Event_Thread.load())
                     continue;
 
+                Current_Time = std::chrono::high_resolution_clock::now();
+
+                // Calculate the delta time.
+                Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+
                 Recall_Memories();
                 Event_Handler();
+
+                Previous_Time = Current_Time;
                 std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
             }
         });
@@ -887,6 +871,14 @@ namespace GGUI{
 
         Pause_Event_Thread = Previud_Event_Value;
         SLEEP(Sleep_For);
+    }
+
+    void Disable_Mouse_Movement(){
+        Mouse_Movement_Enabled = false;
+    }
+
+    void Enable_Mouse_Movement(){
+        Mouse_Movement_Enabled = true;
     }
 
 }

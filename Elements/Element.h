@@ -88,15 +88,18 @@ namespace GGUI{
         //key_Press includes [a-z, A-Z] & [0-9]
         inline unsigned long long KEY_PRESS = 1 << 11;
 
-        // for mouse handling
-        inline unsigned long long MOUSE_LEFT_PRESS = 1 << 12;
-        inline unsigned long long MOUSE_LEFT_RELEASE = 1 << 13;
-        inline unsigned long long MOUSE_MIDDLE_PRESS = 1 << 14;
-        inline unsigned long long MOUSE_MIDDLE_RELEASE = 1 << 15;
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = 1 << 16;
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = 1 << 17;
-        inline unsigned long long MOUSE_RIGHT_PRESS = 1 << 18;
-        inline unsigned long long MOUSE_RIGHT_RELEASE = 1 << 19;
+        // EASY MOUSE API
+        inline unsigned long long MOUSE_LEFT_CLICKED = 1 << 12;
+        inline unsigned long long MOUSE_MIDDLE_CLICKED = 1 << 13;
+        inline unsigned long long MOUSE_RIGHT_CLICKED = 1 << 14;
+
+        // NOTE: These will be spammed until it is not pressed anymore!
+        inline unsigned long long MOUSE_LEFT_PRESSED = 1 << 15;
+        inline unsigned long long MOUSE_MIDDLE_PRESSED = 1 << 16;
+        inline unsigned long long MOUSE_RIGHT_PRESSED = 1 << 17;
+
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = 1 << 18;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = 1 << 19;
 
         inline void Init();
     }
@@ -146,6 +149,27 @@ namespace GGUI{
     
         bool operator==(const RGB& Other){
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue);
+        }
+    };
+
+    class RGBA : public RGB{
+    public:
+        union{
+            unsigned char Alpha = 0;
+            unsigned char A;
+        };
+
+        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
+            R = r;
+            G = g;
+            B = b;
+            A = a;
+        }
+
+        RGBA(){}
+    
+        bool operator==(const RGBA& Other){
+            return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue) && (Alpha == Other.Alpha);
         }
     };
 
@@ -208,6 +232,9 @@ namespace GGUI{
 
         char Ascii = ' ';
         std::string Unicode = " ";
+
+        RGBA Foreground = {0, 0, 0}; 
+        RGBA Background = {0, 0, 0};
 
         UTF(){}
 
@@ -532,6 +559,12 @@ namespace GGUI{
 
         RENDERED,
         HIDDEN
+
+    };
+
+    namespace SETTINGS{
+        // How fast for a detection of hold down situation.
+        inline unsigned long long Mouse_Press_Down_Cooldown = 365;
 
     };
 

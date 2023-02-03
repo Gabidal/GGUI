@@ -93,6 +93,10 @@
         "csignal": "cpp",
         "set": "cpp",
         "span": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "coroutine": "cpp",
+        "queue": "cpp",
+        "ranges": "cpp",
+        "stack": "cpp"
     }
 }

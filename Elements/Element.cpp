@@ -860,7 +860,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
 void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){
     Action* a = new Action(
-        Constants::ENTER,
+        Constants::MOUSE_LEFT_CLICKED,
         [=](GGUI::Event* e){
             if (Collides(this, Mouse)){
                 action(e);

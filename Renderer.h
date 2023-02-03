@@ -33,8 +33,7 @@ namespace GGUI{
     extern Element* Focused_On;
 
     extern Coordinates Mouse;    
-    //move 1 by 1, or element by element.
-    extern bool Mouse_Movement_Method;
+    extern bool Mouse_Movement_Enabled;
 
     extern time_t UPDATE_SPEED_MIILISECONDS;
     extern int Inputs_Per_Second;
@@ -53,13 +52,13 @@ namespace GGUI{
 
     extern Element* Get_Accurate_Element_From(Coordinates c, Element* Parent);
 
-    extern bool Find_Upper_Element();
+    extern Coordinates Find_Upper_Element();
 
-    extern bool Find_Lower_Element();
+    extern Coordinates Find_Lower_Element();
 
-    extern bool Find_Left_Element();
+    extern Coordinates Find_Left_Element();
 
-    extern bool Find_Right_Element();
+    extern Coordinates Find_Right_Element();
 
     extern signed long long Min(signed long long a, signed long long b);
 
@@ -74,6 +73,8 @@ namespace GGUI{
     void Update_Frame();
     //Is called on every cycle.
     extern void Query_Inputs();
+
+    extern void MOUSE_API();
 
     extern void Init_Platform_Stuff();
 
@@ -124,9 +125,10 @@ namespace GGUI{
 
     extern void Exit();
 
+    extern void Disable_Mouse_Movement();
+
     extern void Enable_Mouse_Movement();
 
-    extern void Disable_Mouse_Movement();
 }
 
 #endif
