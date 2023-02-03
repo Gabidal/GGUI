@@ -8,6 +8,21 @@
 #undef min
 #undef max
 
+std::string GGUI::UTF::To_String(){
+    std::string Result = (
+        Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND + 
+        Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND
+    );
+
+    if(Is_Unicode){
+        Result += Unicode;
+    }
+    else{
+        Result += Ascii;
+    }
+
+    return Result + Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
+}
 
 GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Add_Class("default");
@@ -121,68 +136,79 @@ void GGUI::Element::Inherit_States_From(Element* abstract){
     Show = abstract->Show;
 }
 
-std::string GGUI::Element::Compose_All_Text_RGB_Values(){
+std::pair<GGUI::RGB, GGUI::RGB>  GGUI::Element::Compose_All_Text_RGB_Values(){
     if (Focused){
-        return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
-        At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
-        Constants::END_COMMAND + 
-        At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(false) + 
-        At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
-        Constants::END_COMMAND;
+        return {At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value, At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value};
     }
     else{
-        return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
-        At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
-        Constants::END_COMMAND + 
-        At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(false) + 
-        At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
-        Constants::END_COMMAND;
+        return {At<RGB_VALUE>(STYLES::Text_Color)->Value, At<RGB_VALUE>(STYLES::Background_Color)->Value};
     }
 }
 
+GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
+    // if (Focused){
+    //     return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
+    //     At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
+    //     Constants::END_COMMAND;
+    // }
+    // else{
+    //     return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
+    //     At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
+    //     Constants::END_COMMAND;
+    // }
 
-std::string GGUI::Element::Compose_Text_RGB_Values(){
     if (Focused){
-        return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
-        At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
-        Constants::END_COMMAND;
+        return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value;
     }
     else{
-        return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
-        At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
-        Constants::END_COMMAND;
+        return At<RGB_VALUE>(STYLES::Text_Color)->Value;
     }
+
 }
 
-std::string GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
+GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
+    // if (Focused){
+    //     return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
+    //     At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
+    //     Constants::END_COMMAND;
+    // }
+    // else{
+    //     return At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
+    //     At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
+    //     Constants::END_COMMAND;
+    // }
     if (Focused){
-        return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
-        At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
-        Constants::END_COMMAND;
+        return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value;
     }
     else{
-        return At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
-        At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
-        Constants::END_COMMAND;
+        return At<RGB_VALUE>(STYLES::Background_Color)->Value;
     }
+
 }
 
-std::string GGUI::Element::Compose_All_Border_RGB_Values(){
+std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
+    // if (Focused){
+    //     return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
+    //     At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Colour() + 
+    //     Constants::END_COMMAND + 
+    //     At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Over_Head(false) + 
+    //     At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Colour() +
+    //     Constants::END_COMMAND;
+    // }
+    // else{
+    //     return At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Over_Head(true) + 
+    //     At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Colour() + 
+    //     Constants::END_COMMAND + 
+    //     At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Over_Head(false) + 
+    //     At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Colour() +
+    //     Constants::END_COMMAND;
+    // }
+
     if (Focused){
-        return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
-        At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Colour() + 
-        Constants::END_COMMAND + 
-        At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Over_Head(false) + 
-        At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Colour() +
-        Constants::END_COMMAND;
+        return {At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value, At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value};
     }
     else{
-        return At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Over_Head(true) + 
-        At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Colour() + 
-        Constants::END_COMMAND + 
-        At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Over_Head(false) + 
-        At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Colour() +
-        Constants::END_COMMAND;
+        return {At<RGB_VALUE>(STYLES::Border_Colour)->Value, At<RGB_VALUE>(STYLES::Border_Background_Color)->Value};
     }
 }
 
@@ -682,10 +708,7 @@ void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
     Dirty.Clean(STAIN_TYPE::COLOR);
 
     for (auto& utf : Result){
-        utf.Pre_Fix = w->Compose_All_Text_RGB_Values();
-        
-        if (utf.Pre_Fix != "")
-            utf.Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
+        utf.Set_Color(w->Compose_All_Text_RGB_Values());
     }
 }
 

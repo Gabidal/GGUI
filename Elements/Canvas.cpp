@@ -67,11 +67,7 @@ namespace GGUI{
                 for (unsigned int x = Start_X; x < End_X; x++){
                     UTF Current_Pixel;
 
-                    Current_Pixel.Pre_Fix = Buffer[x + y * Width].Get_Over_Head(false) + 
-                                            Buffer[x + y * Width].Get_Colour() + 
-                                            Constants::END_COMMAND;
-
-                    Current_Pixel.Post_Fix = Constants::RESET_Back_Ground_Color;
+                    Current_Pixel.Set_Background(Buffer[x + y * Width]);
 
                     Result[x + y * Width] = Current_Pixel;
                 }
@@ -180,12 +176,8 @@ namespace GGUI{
 
         UTF Result = Texture;
 
-        Result.Pre_Fix = Background_Color.Get_Over_Head(false) + 
-                         Background_Color.Get_Colour() + 
-                         Constants::END_COMMAND;
-
-        Result.Post_Fix = Constants::RESET_Back_Ground_Color;
-
+        Result.Set_Background(Background_Color);
+        
         return Result;
     }
 

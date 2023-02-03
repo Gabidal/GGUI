@@ -140,7 +140,7 @@ void Campaing(){
     Campaing->Add_Child(Output);
 
     Campaing->Set_Name(CAMPAING_NAME);
-    Campaing->Display(false);
+    //Campaing->Display(false);
 
     GGUI::Main->Add_Child(Campaing);
 }
@@ -148,7 +148,7 @@ void Campaing(){
 int main(int Argument_Count, char** Arguments){
     GGUI::GGUI([=](){
 
-        Menu();
+        //Menu();
         Campaing();
 
     }, INT32_MAX);

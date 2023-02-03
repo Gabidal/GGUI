@@ -78,18 +78,14 @@ namespace GGUI{
                 int Index = x + y * Width;
 
                 // Clear the default Apply_Color system
-                Result[Index].Pre_Fix = "";
-                Result[Index].Post_Fix = "";
+                Result[Index].Set_Color({});
 
                 if (x >= floor(FILL)){
-                    Result[Index].Pre_Fix = Compose_Background_RGB_Values(true);
+                    Result[Index].Set_Background(Compose_Background_RGB_Values(true));
                 }
                 else{
-                    Result[Index].Pre_Fix = Compose_Text_RGB_Values();
+                    Result[Index].Set_Foreground(Compose_Text_RGB_Values());
                 }
- 
-                if (Result[Index].Pre_Fix != "")
-                    Result[Index].Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
             }
         }
 

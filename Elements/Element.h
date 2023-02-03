@@ -167,6 +167,12 @@ namespace GGUI{
         }
 
         RGBA(){}
+
+        RGBA(RGB primal){
+            R = primal.R;
+            G = primal.G;
+            B = primal.B;
+        }
     
         bool operator==(const RGBA& Other){
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue) && (Alpha == Other.Alpha);
@@ -225,9 +231,6 @@ namespace GGUI{
 
     class UTF{
     public:
-        std::string Pre_Fix = "";    //color markings and bold info
-        std::string Post_Fix = "";   //color reset and bold resert
-
         bool Is_Unicode = false;
 
         char Ascii = ' ';
@@ -240,32 +243,52 @@ namespace GGUI{
 
         ~UTF(){}
 
-        UTF(char data, std::string pre_fix = ""){
+        UTF(char data, std::pair<RGB, RGB> color = {{}, {}}){
             Ascii = data;
-            Pre_Fix = pre_fix;
-
-            if (pre_fix != "")
-                Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
+            Foreground = {color.first};
+            Background = {color.second};
         }
 
-        UTF(std::string data, std::string pre_fix = ""){
+        UTF(std::string data, std::pair<RGB, RGB> color = {{}, {}}){
             Unicode = data;
-            Pre_Fix = pre_fix;
-
-            if (pre_fix != "")
-                Post_Fix = Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
-            
+            Foreground = {color.first};
+            Background = {color.second};
             Is_Unicode = true;
         }
 
-        std::string To_String(){
-            if(Is_Unicode){
-                return Pre_Fix + Unicode + Post_Fix;
-            }
-            else{
-                return Pre_Fix + Ascii + Post_Fix;
-            }
+        void Set_Foreground(RGB color){
+            Foreground = {color};
         }
+
+        void Set_Background(RGB color){
+            Background = {color};
+        }
+
+        void Set_Color(std::pair<RGB, RGB> primals){
+            Foreground = {primals.first};
+            Background = {primals.second};
+        }
+
+        void Set_Text(std::string data){
+            Unicode = data;
+            Is_Unicode = true;
+        }
+
+        void Set_Text(char data){
+            Ascii = data;
+            Is_Unicode = false;
+        }
+
+        std::string To_String();
+
+        void operator=(char text){
+            Set_Text(text);
+        }
+
+        void operator=(std::string text){
+            Set_Text(text);
+        }
+
     };
 
     class Event{
@@ -783,12 +806,12 @@ namespace GGUI{
 
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 
-        std::string Compose_All_Text_RGB_Values();
+        std::pair<RGB, RGB>  Compose_All_Text_RGB_Values();
 
-        std::string Compose_Text_RGB_Values();
-        std::string Compose_Background_RGB_Values(bool Get_As_Foreground = false);
+        RGB  Compose_Text_RGB_Values();
+        RGB  Compose_Background_RGB_Values(bool Get_As_Foreground = false);
 
-        std::string Compose_All_Border_RGB_Values();
+        std::pair<RGB, RGB>  Compose_All_Border_RGB_Values();
 
         virtual std::string Get_Name(){
             return "Element";
