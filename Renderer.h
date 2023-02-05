@@ -128,7 +128,6 @@ namespace GGUI{
     extern void Disable_Mouse_Movement();
 
     extern void Enable_Mouse_Movement();
-
 }
 
 #endif

@@ -98,5 +98,8 @@
         "queue": "cpp",
         "ranges": "cpp",
         "stack": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "Multiplatform"
+    ]
 }

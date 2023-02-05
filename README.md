@@ -53,10 +53,11 @@ int main()
 ### Use 'launch.json' and 'tasks.json' to build and debug this project.
 
 # Building this project
+### NOTE: You have been advice to use the Release section and not git clone from the master branch, where it may be unstable!
 ```bash
 cd include
 g++ ./Build_Script.cpp -O3
-./a
+./a.exe
 ```
 
 # Add GGUI to your project

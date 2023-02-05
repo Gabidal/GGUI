@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <cmath>
 
 #undef min
 #undef max
@@ -232,6 +233,58 @@ GGUI::VALUE* GGUI::Element::Get_Style(std::string style_name){
 
 void GGUI::Element::Set_Style(std::string style_name, VALUE* value){
     *At<VALUE>(style_name) = *value;
+
+    Dirty.Dirty(STAIN_TYPE::CLASS);
+    Update_Frame();
+}
+
+// Takes 0.0f to 1.0f
+void GGUI::Element::Set_Opacity(float Opacity){
+    // Normalize the float of 0.0 - 1.0 to 0 - 100 int value
+    Opacity *= 100;
+    At<NUMBER_VALUE>(STYLES::Opacity)->Value = (int)Opacity;
+
+    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Update_Frame();
+}
+
+void GGUI::Element::Set_Opacity(unsigned char Opacity){
+    // Normalize the unsigned char of 0 - 255 to 0  - 100
+    float tmp = (float)Opacity / (float)UCHAR_MAX;
+    At<NUMBER_VALUE>(STYLES::Opacity)->Value = (int)(tmp * 100);
+
+    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Update_Frame();
+}
+
+// returns int as 0 - 100
+int GGUI::Element::Get_Opacity(){
+    return At<NUMBER_VALUE>(STYLES::Opacity)->Value;
+}
+
+
+unsigned int GGUI::Element::Get_Processed_Width(){
+    if (Post_Process_Width != 0){
+        return Post_Process_Width;
+    }
+    return Width;
+}
+unsigned int GGUI::Element::Get_Processed_Height(){
+    if (Post_Process_Height != 0){
+        return Post_Process_Height;
+    }
+    return Height;
+}
+
+void GGUI::Element::Show_Shadow(Coordinates Direction, RGB Shadow_Color, float Opacity){
+    SHADOW_VALUE* properties = At<SHADOW_VALUE>(STYLES::Shadow);
+
+    properties->Color = Shadow_Color;
+    properties->Direction = Direction;
+    properties->Opacity = Opacity;
+
+    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Update_Frame();
 }
 
 void GGUI::Element::Parse_Classes(){
@@ -669,8 +722,10 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
             if (c->Has_Border())
                 Childs_With_Borders++;
-
-            Nest_Element(this, c, Result, c->Render());
+            
+            c->Render();
+    
+            Nest_Element(this, c, Result, c->Postprocess());
         }
     }
 
@@ -748,6 +803,31 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
     }
 }
 
+void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
+    if (Source.Background.Get_Alpha() == UCHAR_MAX){
+        Dest = Source;
+        return;
+    }
+    
+    if (Source.Background.Get_Alpha() == 0){
+        // Dont need to do anything.
+        return;
+    }
+
+    // Mask the below UTF by this UTFs background color.
+    Dest.Background += Source.Background;
+    Dest.Foreground += Source.Background;
+
+    if (Source.Has_Non_Default_Text()){
+        Dest.Set_Text(Source);
+
+        // Set the text color right.
+        if (Dest.Has_Non_Default_Text()){
+            Dest.Foreground += Source.Foreground; 
+        }
+    }
+}
+
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
     
     unsigned int Max_Allowed_Height = Parent->Height - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();             //remove bottom borders from calculation
@@ -759,12 +839,12 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     unsigned int Child_Start_Y = Min_Allowed_Height + Child->Position.Y;
     unsigned int Child_Start_X = Min_Allowed_Width + Child->Position.X;
 
-    unsigned int Child_End_Y = Min(Child_Start_Y + Child->Height, Max_Allowed_Height);
-    unsigned int Child_End_X = Min(Child_Start_X + Child->Width, Max_Allowed_Width);
+    unsigned int Child_End_Y = Min(Child_Start_Y + Child->Get_Processed_Height(), Max_Allowed_Height);
+    unsigned int Child_End_X = Min(Child_Start_X + Child->Get_Processed_Width(), Max_Allowed_Width);
 
     for (int y = Child_Start_Y; y < Child_End_Y; y++){
         for (int x = Child_Start_X; x < Child_End_X; x++){
-            Parent_Buffer[y * Width + x] = Child_Buffer[(y - Child_Start_Y) * Child->Width + (x - Child_Start_X)];
+            Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[(y - Child_Start_Y) * Child->Get_Processed_Width() + (x - Child_Start_X)]);
         }
     }
 }
@@ -804,12 +884,12 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
     // two nested loops rotating the x and y usages.
     // store the line x,y into a array for the nested loops to access.
-    std::vector<unsigned int> Vertical_Line_X_Coordinates = {
+    std::vector<int> Vertical_Line_X_Coordinates = {
         
         B->Position.X,
         A->Position.X,
-        B->Position.X + B->Width - 1,
-        A->Position.X + A->Width - 1,
+        B->Position.X + (int)B->Width - 1,
+        A->Position.X + (int)A->Width - 1,
 
                 
         // A->Position.X,
@@ -819,12 +899,12 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
     };
 
-    std::vector<unsigned int> Horizontal_Line_Y_Cordinates = {
+    std::vector<int> Horizontal_Line_Y_Cordinates = {
         
         A->Position.Y,
-        B->Position.Y + B->Height - 1,
+        B->Position.Y + (int)B->Height - 1,
         A->Position.Y,
-        B->Position.Y + B->Height - 1,
+        B->Position.Y + (int)B->Height - 1,
 
         // B->Position.Y,
         // A->Position.Y + A->Height - 1,
@@ -965,8 +1045,102 @@ void GGUI::Element::Focus(){
 
 }
 
-
 void GGUI::Element::On_State(State s, std::function<void()> job){
     State_Handlers[s] = job;
 }
 
+bool Is_Signed(int x){
+    return x < 0;
+}
+
+std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Current_Buffer){
+    if (Style.find(STYLES::Shadow) == Style.end())
+        return Current_Buffer;
+
+    SHADOW_VALUE& properties = *At<SHADOW_VALUE>(STYLES::Shadow);
+
+    // First calculate the new buffer size.
+    // This is going to be the new two squares overlapping minus buffer.
+
+    unsigned int New_Width = Width + abs(properties.Direction.X);
+    unsigned int New_Height = Height + abs(properties.Direction.Y);
+
+    unsigned int Original_Start_X = max(0, -properties.Direction.X);
+    unsigned int Original_Start_Y = max(0, -properties.Direction.Y);
+
+    unsigned int Original_End_X = min(New_Width, New_Width - properties.Direction.X);
+    unsigned int Original_End_Y = min(New_Height, New_Height - properties.Direction.Y);
+
+    unsigned int Original_Center_X = Width / 2 + Original_Start_X;
+    unsigned int Original_Center_Y = Height / 2 + Original_Start_Y;
+
+    // Edge gives Original_Start_X if the direction is towards the 0, 0. And gives Original_End_X if the direction is towards the other side.
+    // unsigned int Edge_X = (Original_Start_X + 1) + !Is_Signed(properties.Direction.X) * (Original_End_X - Original_Start_X - 5);
+    // unsigned int Edge_Y = (Original_Start_Y + 1) + !Is_Signed(properties.Direction.Y) * (Original_End_Y - Original_Start_Y - 5);
+
+    std::vector<UTF> Result(New_Width * New_Height);
+
+    for (int Raw_Y = 0; Raw_Y < New_Height; Raw_Y++){
+        for (int Raw_X = 0; Raw_X < New_Width; Raw_X++){
+
+            int Original_X = Raw_X - Original_Start_X;
+            int Original_Y = Raw_Y - Original_Start_Y;
+
+            if (Raw_Y >= Original_Start_Y && Raw_Y < Original_End_Y && Raw_X >= Original_Start_X && Raw_X < Original_End_X){
+                // We dont want to change the area on the original buffer. 
+                Result[Raw_Y * New_Width + Raw_X] = Current_Buffer[Original_Y * Width + Original_X];
+            }
+            else{
+                // Now we are outside the original buffer.
+                // Here we will need to calculate the distance from the origin and the change in opacity.
+                float Distance_From_Origin = sqrt(pow((int)Original_Center_X - Raw_X, 2) + pow((int)Original_Center_Y - Raw_Y, 2));
+
+                // Now we need to calculate the opacity.
+                float Opacity = min(properties.Opacity, properties.Opacity / (Distance_From_Origin / 10));
+
+                UTF shadow;
+                shadow.Background = properties.Color;
+                shadow.Background.Set_Alpha(Opacity);
+
+                Result[Raw_Y * New_Width + Raw_X] = shadow;
+            }
+        }
+    }
+
+    Post_Process_Width = New_Width;
+    Post_Process_Height = New_Height;
+
+    return Result;
+}
+
+std::vector<GGUI::UTF> GGUI::Element::Process_Opacity(std::vector<GGUI::UTF> Current_Buffer){
+    if (Style.find(STYLES::Opacity) == Style.end())
+        return Current_Buffer;
+
+    NUMBER_VALUE properties = *At<NUMBER_VALUE>(STYLES::Opacity);
+
+    float As_Float = (float)properties.Value / 100.0f;
+
+    for (unsigned int Y = 0; Y < Get_Processed_Height(); Y++){
+        for (unsigned int X = 0; X < Get_Processed_Width(); X++){
+            UTF& tmp = Current_Buffer[Y * Get_Processed_Width() + X];
+
+            tmp.Background.Set_Alpha(tmp.Background.Get_Float_Alpha() * As_Float);
+            tmp.Foreground.Set_Alpha(tmp.Foreground.Get_Float_Alpha() * As_Float);
+        }
+    }
+
+    return Current_Buffer;
+}
+
+std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
+    vector<UTF> Result = Render_Buffer;
+
+    Result = Process_Shadow(Result);
+    //...
+
+    // One of the last postprocessing for total control of when not to display.
+    Result = Process_Opacity(Result);
+
+    return Result;
+}

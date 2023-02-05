@@ -153,17 +153,30 @@ namespace GGUI{
     };
 
     class RGBA : public RGB{
-    public:
+    private:
+        float Fast_Alpha = 1;
+
         union{
-            unsigned char Alpha = 0;
+            unsigned char Alpha = UCHAR_MAX;
             unsigned char A;
         };
+    public:
+
+        void Set_Alpha(unsigned char a){
+            Alpha = a;
+            Fast_Alpha = (float)Alpha / UCHAR_MAX;
+        }
+
+        void Set_Alpha(float a){
+            Fast_Alpha = a;
+            Alpha = (unsigned char)(a * UCHAR_MAX);
+        }
 
         RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
             R = r;
             G = g;
             B = b;
-            A = a;
+            Set_Alpha(a);
         }
 
         RGBA(){}
@@ -173,10 +186,42 @@ namespace GGUI{
             G = primal.G;
             B = primal.B;
         }
+
+        float &Get_Float_Alpha(){
+            return Fast_Alpha;
+        }
+
+        unsigned char &Get_Alpha(){
+            return Alpha;
+        }
     
         bool operator==(const RGBA& Other){
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue) && (Alpha == Other.Alpha);
         }
+
+        RGBA operator*(const RGBA& Other){
+            return RGBA(Red * ((float)Other.Red * Other.Fast_Alpha), Green * ((float)Other.Green * Other.Fast_Alpha), Blue * ((float)Other.Blue * Other.Fast_Alpha), Fast_Alpha);
+        }
+
+        RGBA operator+(const RGBA& Other){
+            return RGBA(Red + ((float)Other.Red * Other.Fast_Alpha), Green + ((float)Other.Green * Other.Fast_Alpha), Blue + ((float)Other.Blue * Other.Fast_Alpha), Fast_Alpha);
+        }
+
+        RGBA operator*=(const RGBA& Other){
+            Red *= ((float)Other.Red * (float)Other.Fast_Alpha);
+            Green *= ((float)Other.Green * (float)Other.Fast_Alpha);
+            Blue *= ((float)Other.Blue * (float)Other.Fast_Alpha);
+            return *this;
+        }
+
+        RGBA operator+=(const RGBA& Other){
+            Red += ((float)Other.Red * (float)Other.Fast_Alpha);
+            Green += ((float)Other.Green * (float)Other.Fast_Alpha);
+            Blue += ((float)Other.Blue * (float)Other.Fast_Alpha);
+            return *this;
+        }
+
+
     };
 
     namespace COLOR{
@@ -212,11 +257,11 @@ namespace GGUI{
 
     class Coordinates{
     public:
-        unsigned int X = 0;  //Horizontal
-        unsigned int Y = 0;  //Vertical
-        unsigned int Z = 0;  //priority (the higher the more likely it will be at top).
+        int X = 0;  //Horizontal
+        int Y = 0;  //Vertical
+        int Z = 0;  //priority (the higher the more likely it will be at top).
 
-        Coordinates(unsigned int x = 0, unsigned int y = 0, unsigned int z = 0){
+        Coordinates(int x = 0, int y = 0, int z = 0){
             X = x;
             Y = y;
             Z = z;
@@ -279,6 +324,12 @@ namespace GGUI{
             Is_Unicode = false;
         }
 
+        void Set_Text(UTF other){
+            Ascii = other.Ascii;
+            Unicode = other.Unicode;
+            Is_Unicode = other.Is_Unicode;
+        }
+
         std::string To_String();
 
         void operator=(char text){
@@ -287,6 +338,10 @@ namespace GGUI{
 
         void operator=(std::string text){
             Set_Text(text);
+        }
+
+        bool Has_Non_Default_Text(){
+            return (Ascii != ' ') || (Unicode != " ");
         }
 
     };
@@ -477,6 +532,15 @@ namespace GGUI{
         } 
     };
 
+    class SHADOW_VALUE : public VALUE{
+    public:
+        Coordinates Direction = {};
+        RGB Color = {};
+        float Opacity = 0;
+
+        SHADOW_VALUE(){}
+    };
+
     namespace STYLES{
         inline std::string Border                          = "Border";
         inline std::string Text_Color                      = "Text_Color";
@@ -494,6 +558,9 @@ namespace GGUI{
         inline std::string Allow_Input_Overflow            = "Allow_Input_Overflow";
         inline std::string Allow_Dynamic_Size              = "Allow_Dynamic_Size";     
         inline std::string Margin                          = "Margin";
+
+        inline std::string Shadow                          = "Shadow";  // 0 - 100
+        inline std::string Opacity                         = "Opacity"; // 0 - 100
     };
 
     enum class STAIN_TYPE{
@@ -597,6 +664,9 @@ namespace GGUI{
 
         unsigned int Width = 1;
         unsigned int Height = 1;
+
+        unsigned int Post_Process_Width = 0;
+        unsigned int Post_Process_Height = 0;
 
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
@@ -707,6 +777,20 @@ namespace GGUI{
 
         void Set_Style(std::string style_name, VALUE* value);
 
+        // Takes 0.0f to 1.0f
+        void Set_Opacity(float Opacity);
+
+        // RGBA - Alpha channel. 0 - 255
+        void Set_Opacity(unsigned char Opacity);
+
+        // return int as 0 - 100
+        int Get_Opacity(); 
+
+        unsigned int Get_Processed_Width();
+        unsigned int Get_Processed_Height();
+
+        void Show_Shadow(Coordinates Direction, RGB Shadow_Color = COLOR::BLACK, float Opacity = 0.2);
+
         Element* Get_Parent(){
             return Parent;
         }
@@ -802,6 +886,8 @@ namespace GGUI{
             return false;
         }
 
+        void Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source);
+
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
 
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
@@ -856,6 +942,12 @@ namespace GGUI{
         void Focus();
 
         void On_State(State s, std::function<void()> job);
+
+        std::vector<GGUI::UTF> Process_Shadow(std::vector<GGUI::UTF> Current_Buffer);
+
+        std::vector<GGUI::UTF> Process_Opacity(std::vector<GGUI::UTF> Current_Buffer);
+
+        virtual std::vector<GGUI::UTF> Postprocess();
 
     };
 }
