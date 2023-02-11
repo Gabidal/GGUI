@@ -276,11 +276,11 @@ unsigned int GGUI::Element::Get_Processed_Height(){
     return Height;
 }
 
-void GGUI::Element::Show_Shadow(Coordinates Direction, RGB Shadow_Color, float Opacity){
+void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opacity, float Length){
     SHADOW_VALUE* properties = At<SHADOW_VALUE>(STYLES::Shadow);
 
     properties->Color = Shadow_Color;
-    properties->Direction = Direction;
+    properties->Direction = {Direction.X, Direction.Y, Length};
     properties->Opacity = Opacity;
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
@@ -1053,62 +1053,171 @@ bool Is_Signed(int x){
     return x < 0;
 }
 
+int Get_Sign(int x){
+    return Is_Signed(x) ? -1 : 1;
+}
+
+// Constructs two squares one 2 steps larger on width and height, and given the differented indicies.
+std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, GGUI::Coordinates center, GGUI::Vector2 Offset){
+
+    std::vector<GGUI::Coordinates> Result;
+
+    // First construct the first square.
+    int Bigger_Square_Start_X = center.X - (Width / 2) - 1;
+    int Bigger_Square_Start_Y = center.Y - (Height / 2) - 1;
+
+    int Bigger_Square_End_X = center.X + (Width / 2) + 1;
+    int Bigger_Square_End_Y = center.Y + (Height / 2) + 1;
+
+    int Smaller_Square_Start_X = center.X - (Width / 2) + Offset.X;
+    int Smaller_Square_Start_Y = center.Y - (Height / 2) + Offset.Y;
+
+    int Smaller_Square_End_X = center.X + (Width / 2) - Offset.X;
+    int Smaller_Square_End_Y = center.Y + (Height / 2) - Offset.Y;
+
+    for (int y = Bigger_Square_Start_Y; y <= Bigger_Square_End_Y; y++){
+        for (int x = Bigger_Square_Start_X; x <= Bigger_Square_End_X; x++){
+
+            // Check if the current coordinates are outside the smaller square.
+            if (x >= Smaller_Square_Start_X && x <= Smaller_Square_End_X && y >= Smaller_Square_Start_Y && y <= Smaller_Square_End_Y)
+                Result.push_back({ x, y });
+        }
+    }
+
+    return Result;
+
+}
+
 std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Current_Buffer){
     if (Style.find(STYLES::Shadow) == Style.end())
         return Current_Buffer;
 
     SHADOW_VALUE& properties = *At<SHADOW_VALUE>(STYLES::Shadow);
 
+
     // First calculate the new buffer size.
     // This is going to be the new two squares overlapping minus buffer.
 
-    unsigned int New_Width = Width + abs(properties.Direction.X);
-    unsigned int New_Height = Height + abs(properties.Direction.Y);
+    // Calculate the zero origon when the equation is: -properties.Direction.Z * X + properties.Opacity = 0
+    // -a * x + o = 0
+    // x = o / a
 
-    unsigned int Original_Start_X = max(0, -properties.Direction.X);
-    unsigned int Original_Start_Y = max(0, -properties.Direction.Y);
+    int Shadow_Length = properties.Opacity / properties.Direction.Z;
 
-    unsigned int Original_End_X = min(New_Width, New_Width - properties.Direction.X);
-    unsigned int Original_End_Y = min(New_Height, New_Height - properties.Direction.Y);
+    unsigned int Shadow_Box_Width = Width + (Shadow_Length * 2);
+    unsigned int Shadow_Box_Height = Height + (Shadow_Length * 2);
+    
+    std::vector<GGUI::UTF> Shadow_Box;
+    Shadow_Box.resize(Shadow_Box_Width * Shadow_Box_Height);
 
-    unsigned int Original_Center_X = Width / 2 + Original_Start_X;
-    unsigned int Original_Center_Y = Height / 2 + Original_Start_Y;
+    int Shadow_Box_Center_X = Shadow_Box_Width / 2;
+    int Shadow_Box_Center_Y = Shadow_Box_Height / 2;
 
-    // Edge gives Original_Start_X if the direction is towards the 0, 0. And gives Original_End_X if the direction is towards the other side.
-    // unsigned int Edge_X = (Original_Start_X + 1) + !Is_Signed(properties.Direction.X) * (Original_End_X - Original_Start_X - 5);
-    // unsigned int Edge_Y = (Original_Start_Y + 1) + !Is_Signed(properties.Direction.Y) * (Original_End_Y - Original_Start_Y - 5);
+    unsigned char Last_Alpha = properties.Opacity * UCHAR_MAX;
+    float previus_opacity = properties.Opacity;
+    int Current_Shadow_Width = Width;
+    int Current_Shadow_Height = Height;
 
-    std::vector<UTF> Result(New_Width * New_Height);
+    while (Last_Alpha > 10){
+        vector<Coordinates> Shadow_Indicies = Get_Surrounding_Indicies(
+            Current_Shadow_Width++,
+            Current_Shadow_Height++,
+            { 
+                Shadow_Box_Center_X,
+                Shadow_Box_Center_Y
+            },
+            properties.Direction
+        );
 
-    for (int Raw_Y = 0; Raw_Y < New_Height; Raw_Y++){
-        for (int Raw_X = 0; Raw_X < New_Width; Raw_X++){
+        UTF shadow_pixel;
+        shadow_pixel.Background = properties.Color;
+        shadow_pixel.Background.Set_Alpha(Last_Alpha);
 
-            int Original_X = Raw_X - Original_Start_X;
-            int Original_Y = Raw_Y - Original_Start_Y;
+        for (auto& index : Shadow_Indicies){
+            Shadow_Box[index.Y * Shadow_Box_Width + index.X] = shadow_pixel;
+        }
 
-            if (Raw_Y >= Original_Start_Y && Raw_Y < Original_End_Y && Raw_X >= Original_Start_X && Raw_X < Original_End_X){
-                // We dont want to change the area on the original buffer. 
-                Result[Raw_Y * New_Width + Raw_X] = Current_Buffer[Original_Y * Width + Original_X];
+        previus_opacity *= min(0.9f, (float)properties.Direction.Z);
+        Last_Alpha = previus_opacity * UCHAR_MAX;
+    }
+
+    // Now offset the shadow box buffer by the direction.
+    int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.X);
+    int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Y);
+
+    int Offset_Box_Center_X = Offset_Box_Width / 2;
+    int Offset_Box_Center_Y = Offset_Box_Height / 2;
+
+    int Shadow_Offset_X = (abs(properties.Direction.X) + Shadow_Length) * Get_Sign(properties.Direction.X);
+    int Shadow_Offset_Y = (abs(properties.Direction.Y) + Shadow_Length) * Get_Sign(properties.Direction.Y);
+
+    std::vector<GGUI::UTF> Result;
+    Result.resize(Offset_Box_Width * Offset_Box_Height);
+
+    Coordinates Original_Box_Start = {
+        max(0, -Shadow_Offset_X),
+        max(0, -Shadow_Offset_Y)
+    };
+
+    Coordinates Original_Box_End = {
+        Shadow_Box_Width - Shadow_Offset_X,
+        Shadow_Box_Height - Shadow_Offset_Y
+    };
+
+    Coordinates Original_Center = {
+        (Original_Box_Start.X + Original_Box_End.X) / 2,
+        (Original_Box_Start.Y + Original_Box_End.Y) / 2
+    };
+
+    Coordinates Shadow_Box_Start = {
+        max(0, Shadow_Offset_X),
+        max(0, Shadow_Offset_Y)
+    };
+
+    Coordinates Shadow_Box_End = {
+        Shadow_Box_Width + Shadow_Offset_X,
+        Shadow_Box_Height + Shadow_Offset_Y
+    };
+
+    Coordinates Shadow_Center = {
+        (Shadow_Box_Start.X + Shadow_Box_End.X) / 2,
+        (Shadow_Box_Start.Y + Shadow_Box_End.Y) / 2
+    };
+
+    for (int Raw_X = 0; Raw_X < Offset_Box_Width; Raw_X++){
+        for (int Raw_Y = 0; Raw_Y < Offset_Box_Height; Raw_Y++){
+
+            Coordinates Current_Coordinates = {
+                max(0, Raw_X - Offset_Box_Center_X),
+                max(0, Raw_Y - Offset_Box_Center_Y)
+            };
+
+            Coordinates Original_Coordinates = {
+                max(0, Current_Coordinates.X - Original_Center.X),
+                max(0, Current_Coordinates.Y - Original_Center.Y)
+            };
+
+            bool Is_Inside_Original_Area = Original_Coordinates.X >= Original_Box_Start.X &&
+                Original_Coordinates.X <= Original_Box_End.X &&
+                Original_Coordinates.Y >= Original_Box_Start.Y &&
+                Original_Coordinates.Y <= Original_Box_End.Y;
+
+            bool Is_Inside_Shadow_Box = Current_Coordinates.X >= Shadow_Box_Start.X &&
+                Current_Coordinates.X <= Shadow_Box_End.X &&
+                Current_Coordinates.Y >= Shadow_Box_Start.Y &&
+                Current_Coordinates.Y <= Shadow_Box_End.Y;
+
+            if (Is_Inside_Original_Area){
+                Result[Raw_Y * Offset_Box_Width + Raw_X] = Current_Buffer[(Original_Coordinates.Y + Original_Center.Y) * Width + (Original_Coordinates.X + Original_Center.X)];
             }
-            else{
-                // Now we are outside the original buffer.
-                // Here we will need to calculate the distance from the origin and the change in opacity.
-                float Distance_From_Origin = sqrt(pow((int)Original_Center_X - Raw_X, 2) + pow((int)Original_Center_Y - Raw_Y, 2));
-
-                // Now we need to calculate the opacity.
-                float Opacity = min(properties.Opacity, properties.Opacity / (Distance_From_Origin / 10));
-
-                UTF shadow;
-                shadow.Background = properties.Color;
-                shadow.Background.Set_Alpha(Opacity);
-
-                Result[Raw_Y * New_Width + Raw_X] = shadow;
+            else if (Is_Inside_Shadow_Box){
+                Result[Raw_Y * Offset_Box_Width + Raw_X] = Shadow_Box[Current_Coordinates.Y * Shadow_Box_Width + Current_Coordinates.X];
             }
         }
     }
 
-    Post_Process_Width = New_Width;
-    Post_Process_Height = New_Height;
+    Post_Process_Width = Offset_Box_Width;
+    Post_Process_Height = Offset_Box_Height;
 
     return Result;
 }

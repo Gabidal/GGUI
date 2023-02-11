@@ -255,6 +255,32 @@ namespace GGUI{
         RESET_Back_Ground_Color = ESC + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
     }
 
+    class Vector2{
+    public:
+        float X = 0;
+        float Y = 0;
+
+        Vector2(float x, float y){
+            X = x;
+            Y = y;
+        }
+
+        Vector2(){}
+    };
+
+    class Vector3 : public Vector2{
+    public:
+        float Z = 0;
+
+        Vector3(float x, float y, float z){
+            Z = z;
+            X = x;
+            Y = y;
+        }
+
+        Vector3(){}
+    };
+
     class Coordinates{
     public:
         int X = 0;  //Horizontal
@@ -534,9 +560,9 @@ namespace GGUI{
 
     class SHADOW_VALUE : public VALUE{
     public:
-        Coordinates Direction = {};
+        Vector3 Direction = {0, 0, 0.5};
         RGB Color = {};
-        float Opacity = 0;
+        float Opacity = 1;
 
         SHADOW_VALUE(){}
     };
@@ -789,7 +815,7 @@ namespace GGUI{
         unsigned int Get_Processed_Width();
         unsigned int Get_Processed_Height();
 
-        void Show_Shadow(Coordinates Direction, RGB Shadow_Color = COLOR::BLACK, float Opacity = 0.2);
+        void Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         Element* Get_Parent(){
             return Parent;
