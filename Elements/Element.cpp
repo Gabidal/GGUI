@@ -1058,28 +1058,30 @@ int Get_Sign(int x){
 }
 
 // Constructs two squares one 2 steps larger on width and height, and given the differented indicies.
-std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, GGUI::Coordinates center, GGUI::Vector2 Offset){
+std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, GGUI::Coordinates start_offset, GGUI::Vector2 Offset){
 
     std::vector<GGUI::Coordinates> Result;
 
     // First construct the first square.
-    int Bigger_Square_Start_X = center.X - (Width / 2) - 1;
-    int Bigger_Square_Start_Y = center.Y - (Height / 2) - 1;
+    int Bigger_Square_Start_X = start_offset.X - 1;
+    int Bigger_Square_Start_Y = start_offset.Y - 1;
 
-    int Bigger_Square_End_X = center.X + (Width / 2) + 1;
-    int Bigger_Square_End_Y = center.Y + (Height / 2) + 1;
+    int Bigger_Square_End_X = start_offset.X + Width + 1;
+    int Bigger_Square_End_Y = start_offset.Y + Height + 1;
 
-    int Smaller_Square_Start_X = center.X - (Width / 2) + Offset.X;
-    int Smaller_Square_Start_Y = center.Y - (Height / 2) + Offset.Y;
+    int Smaller_Square_Start_X = start_offset.X + (Offset.X * min(0, (int)Offset.X));
+    int Smaller_Square_Start_Y = start_offset.Y + (Offset.Y * min(0, (int)Offset.Y));
 
-    int Smaller_Square_End_X = center.X + (Width / 2) - Offset.X;
-    int Smaller_Square_End_Y = center.Y + (Height / 2) - Offset.Y;
+    int Smaller_Square_End_X = start_offset.X + Width - (Offset.X * max(0, (int)Offset.X));
+    int Smaller_Square_End_Y = start_offset.Y + Height - (Offset.Y * max(0, (int)Offset.Y));
 
-    for (int y = Bigger_Square_Start_Y; y <= Bigger_Square_End_Y; y++){
-        for (int x = Bigger_Square_Start_X; x <= Bigger_Square_End_X; x++){
+    for (int y = Bigger_Square_Start_Y; y < Bigger_Square_End_Y; y++){
+        for (int x = Bigger_Square_Start_X; x < Bigger_Square_End_X; x++){
+
+            bool Is_Inside_Smaller_Square = x >= Smaller_Square_Start_X && x < Smaller_Square_End_X && y >= Smaller_Square_Start_Y && y < Smaller_Square_End_Y;
 
             // Check if the current coordinates are outside the smaller square.
-            if (x >= Smaller_Square_Start_X && x <= Smaller_Square_End_X && y >= Smaller_Square_Start_Y && y <= Smaller_Square_End_Y)
+            if (!Is_Inside_Smaller_Square)
                 Result.push_back({ x, y });
         }
     }
@@ -1115,16 +1117,19 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
 
     unsigned char Last_Alpha = properties.Opacity * UCHAR_MAX;
     float previus_opacity = properties.Opacity;
+    int Current_Box_Start_X = Shadow_Length;
+    int Current_Box_Start_Y = Shadow_Length;
+
     int Current_Shadow_Width = Width;
     int Current_Shadow_Height = Height;
 
-    while (Last_Alpha > 10){
+    for (int i = 0; i < Shadow_Length; i++){
         vector<Coordinates> Shadow_Indicies = Get_Surrounding_Indicies(
-            Current_Shadow_Width++,
-            Current_Shadow_Height++,
+            Current_Shadow_Width,
+            Current_Shadow_Height,
             { 
-                Shadow_Box_Center_X,
-                Shadow_Box_Center_Y
+                Current_Box_Start_X--,
+                Current_Box_Start_Y--
             },
             properties.Direction
         );
@@ -1145,73 +1150,52 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
     int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.X);
     int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Y);
 
-    int Offset_Box_Center_X = Offset_Box_Width / 2;
-    int Offset_Box_Center_Y = Offset_Box_Height / 2;
-
-    int Shadow_Offset_X = (abs(properties.Direction.X) + Shadow_Length) * Get_Sign(properties.Direction.X);
-    int Shadow_Offset_Y = (abs(properties.Direction.Y) + Shadow_Length) * Get_Sign(properties.Direction.Y);
-
     std::vector<GGUI::UTF> Result;
     Result.resize(Offset_Box_Width * Offset_Box_Height);
 
+    Coordinates Shadow_Box_Start = {
+        max(0, (int)properties.Direction.X),
+        max(0, (int)properties.Direction.Y)
+    };
+
     Coordinates Original_Box_Start = {
-        max(0, -Shadow_Offset_X),
-        max(0, -Shadow_Offset_Y)
+        Shadow_Box_Start.X - properties.Direction.X + Shadow_Length,
+        Shadow_Box_Start.Y - properties.Direction.Y + Shadow_Length
     };
 
     Coordinates Original_Box_End = {
-        Shadow_Box_Width - Shadow_Offset_X,
-        Shadow_Box_Height - Shadow_Offset_Y
-    };
-
-    Coordinates Original_Center = {
-        (Original_Box_Start.X + Original_Box_End.X) / 2,
-        (Original_Box_Start.Y + Original_Box_End.Y) / 2
-    };
-
-    Coordinates Shadow_Box_Start = {
-        max(0, Shadow_Offset_X),
-        max(0, Shadow_Offset_Y)
+        Original_Box_Start.X + Width,
+        Original_Box_Start.Y + Height
     };
 
     Coordinates Shadow_Box_End = {
-        Shadow_Box_Width + Shadow_Offset_X,
-        Shadow_Box_Height + Shadow_Offset_Y
+        Shadow_Box_Start.X + Shadow_Box_Width,
+        Shadow_Box_Start.Y + Shadow_Box_Height
     };
 
-    Coordinates Shadow_Center = {
-        (Shadow_Box_Start.X + Shadow_Box_End.X) / 2,
-        (Shadow_Box_Start.Y + Shadow_Box_End.Y) / 2
-    };
+    unsigned int Original_Buffer_Index = 0;
+    unsigned int Shadow_Buffer_Index = 0;
+    unsigned int Final_Index = 0;
 
-    for (int Raw_X = 0; Raw_X < Offset_Box_Width; Raw_X++){
-        for (int Raw_Y = 0; Raw_Y < Offset_Box_Height; Raw_Y++){
+    for (int Raw_Y = 0; Raw_Y < Offset_Box_Height; Raw_Y++){
+        for (int Raw_X = 0; Raw_X < Offset_Box_Width; Raw_X++){
 
-            Coordinates Current_Coordinates = {
-                max(0, Raw_X - Offset_Box_Center_X),
-                max(0, Raw_Y - Offset_Box_Center_Y)
-            };
+            bool Is_Inside_Original_Area = Raw_X >= Original_Box_Start.X &&
+                Raw_X < Original_Box_End.X &&
+                Raw_Y >= Original_Box_Start.Y &&
+                Raw_Y < Original_Box_End.Y;
 
-            Coordinates Original_Coordinates = {
-                max(0, Current_Coordinates.X - Original_Center.X),
-                max(0, Current_Coordinates.Y - Original_Center.Y)
-            };
 
-            bool Is_Inside_Original_Area = Original_Coordinates.X >= Original_Box_Start.X &&
-                Original_Coordinates.X <= Original_Box_End.X &&
-                Original_Coordinates.Y >= Original_Box_Start.Y &&
-                Original_Coordinates.Y <= Original_Box_End.Y;
-
-            bool Is_Inside_Shadow_Box = Current_Coordinates.X >= Shadow_Box_Start.X &&
-                Current_Coordinates.X <= Shadow_Box_End.X &&
-                Current_Coordinates.Y >= Shadow_Box_Start.Y &&
-                Current_Coordinates.Y <= Shadow_Box_End.Y;
+            bool Is_Inside_Shadow_Box = Raw_X >= Shadow_Box_Start.X &&
+                Raw_X < Shadow_Box_End.X &&
+                Raw_Y >= Shadow_Box_Start.Y &&
+                Raw_Y < Shadow_Box_End.Y;
 
             if (Is_Inside_Original_Area){
-                Result[Raw_Y * Offset_Box_Width + Raw_X] = Current_Buffer[(Original_Coordinates.Y + Original_Center.Y) * Width + (Original_Coordinates.X + Original_Center.X)];
+                Result[Final_Index++] = Current_Buffer[Original_Buffer_Index++];
             }
-            else if (Is_Inside_Shadow_Box){
-                Result[Raw_Y * Offset_Box_Width + Raw_X] = Shadow_Box[Current_Coordinates.Y * Shadow_Box_Width + Current_Coordinates.X];
+            else if (Is_Inside_Shadow_Box) {
+                Result[Final_Index++] = Shadow_Box[Shadow_Buffer_Index++];
             }
         }
     }
