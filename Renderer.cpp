@@ -61,8 +61,8 @@ namespace GGUI{
     }
 
     bool Collides(GGUI::Element* a, GGUI::Coordinates b){
-        int A_X = a->Get_Position().X;
-        int A_Y = a->Get_Position().Y;
+        int A_X = a->Get_Absolute_Position().X;
+        int A_Y = a->Get_Absolute_Position().Y;
 
         int B_X = b.X;
         int B_Y = b.Y;
@@ -228,30 +228,41 @@ namespace GGUI{
                 if (Input[i].Event.KeyEvent.bKeyDown){
                     if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
                         Inputs.push_back(new GGUI::Input(0, Constants::UP));
+                        KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
                         Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
+                        KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
                         Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
+                        KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
                         Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
+                        KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
                         Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
+                        KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                        KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
                         Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
+                        KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
                         Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
+                        KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
+                        Handle_Escape();
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
                         Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
+                        KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
+                        Handle_Tabulator();
                     }
                     else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0){
                         Inputs.push_back(new GGUI::Input(Input[i].Event.KeyEvent.uChar.AsciiChar, Constants::KEY_PRESS));
@@ -492,8 +503,111 @@ namespace GGUI{
         }
         else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
+        }   
+    }
+
+    void Handle_Escape(){
+        Element* Current = Main;
+
+        for (auto e : Event_Handlers){
+            if (!Collides(e->Host, Mouse))
+                continue;
+
+            Current = e->Host;
+            break;
         }
-        
+
+        if (!Current)
+            return;
+
+        if (!Current->Get_Parent())
+            return;
+
+        Mouse = Current->Get_Parent()->Get_Absolute_Position();
+        Mouse.X += Current->Get_Parent()->Has_Border();
+        Mouse.Y += Current->Get_Parent()->Has_Border();
+    }
+
+    void Handle_Tabulator(){
+        bool Shift_Is_Pressed = KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
+
+        Element* Current = nullptr;
+
+        for (auto e : Event_Handlers){
+            if (!Collides(e->Host, Mouse))
+                continue;
+
+            Current = e->Host;
+            break;
+        }
+
+        if (!Current)
+            return;
+
+        if (Current->Get_Childs().size() > 0){
+            int Start_index = 0;
+            int End_Index = Current->Get_Childs().size() - 1;
+
+            if (Shift_Is_Pressed){
+                Start_index = Current->Get_Childs().size() - 1;
+                End_Index = 0;
+            }
+
+            // Find the last child.
+            for (int i = Current->Get_Childs().size() - 1; i >= 0;){
+                if (!Current->Get_Childs()[i]->Is_Displayed())
+                    goto CONTINUE;
+
+                // try to find if this child has a event handler.
+                for (auto e : Event_Handlers){
+                    if (e->Host != Current->Get_Childs()[i])
+                        continue;
+
+                    Mouse = Current->Get_Childs()[i]->Get_Absolute_Position();
+                    Mouse.X += Current->Get_Childs()[i]->Has_Border();
+                    Mouse.Y += Current->Get_Childs()[i]->Has_Border();
+                }
+
+                CONTINUE:;
+                if (Shift_Is_Pressed)
+                    i--;
+                else
+                    i++;
+            }
+        }
+        else{
+            if (!Current->Get_Parent())
+                return;
+
+            // Find this current elements index in the parents child list.
+            int Index = -1;
+
+            for (int i = 0; i < Current->Get_Parent()->Get_Childs().size(); i++){
+                if (Current->Get_Parent()->Get_Childs()[i] == Current){
+                    Index = i;
+                    break;
+                }
+            }
+
+            if (Index == -1)
+                Report("Child " + Current->Get_Name() + " could not be found from it's parent!");
+
+            if (Shift_Is_Pressed){
+                Index--;
+                if (Index < 0)
+                    Index = Current->Get_Parent()->Get_Childs().size() - 1;
+            }
+            else{
+                Index++;
+                if (Index >= Current->Get_Parent()->Get_Childs().size())
+                    Index = 0;
+            }
+
+            Element* new_Current = Current->Get_Parent()->Get_Childs()[Index];
+            Mouse = new_Current->Get_Absolute_Position();
+            Mouse.X += new_Current->Has_Border();
+            Mouse.Y += new_Current->Has_Border();
+        }
     }
 
     bool Has_Bit_At(char val, int i){

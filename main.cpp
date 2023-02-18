@@ -69,6 +69,8 @@ void Menu(){
     menu->Set_Name(MENU_NAME);
     menu->Set_Width(GGUI::Main->Get_Width());
     menu->Set_Height(GGUI::Main->Get_Height());
+    menu->Show_Border(true);
+    menu->Set_Position({5, 5});
 }
 
 void Adventure_Mode(GGUI::Window* Parent){

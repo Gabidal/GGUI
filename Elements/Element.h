@@ -115,6 +115,11 @@ namespace GGUI{
     public:
         bool State = false;
         std::chrono::system_clock::time_point Capture_Time;
+
+        BUTTON_STATE(bool state = false){
+            Capture_Time = std::chrono::system_clock::now();
+            State = state;
+        }
     };
 
     namespace BUTTON_STATES{
@@ -152,6 +157,11 @@ namespace GGUI{
         inline std::string DELETE = "DELETE";
         inline std::string END = "END";
         inline std::string PAGE_DOWN = "PAGE_DOWN";
+
+        inline std::string UP = "UP";
+        inline std::string DOWN = "DOWN";
+        inline std::string LEFT = "LEFT";
+        inline std::string RIGHT = "RIGHT";
 
         inline std::string MOUSE_LEFT = "MOUSE_LEFT";
         inline std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";

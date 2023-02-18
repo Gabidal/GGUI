@@ -126,6 +126,10 @@ namespace GGUI{
     extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
 
     extern void Exit();
+
+    extern void Handle_Tabulator();
+
+    extern void Handle_Escape();
 }
 
 #endif
