@@ -23,21 +23,14 @@ namespace GGUI{
     std::map<std::string, Element*> Element_Names;
 
     Element* Focused_On = nullptr;
+    Element* Hovered_On = nullptr;
 
     Coordinates Mouse;
     //move 1 by 1, or element by element.
     bool Mouse_Movement_Enabled = true;
-    bool Mouse_Left_State = false;
-    bool Mouse_Middle_State = false;
-    bool Mouse_Right_State = false;
 
-    bool Previous_Mouse_Left_State = false;
-    bool Previous_Mouse_Middle_State = false;
-    bool Previous_Mouse_Right_State = false;
-
-    std::chrono::system_clock::time_point Mouse_Left_Pressed_Down_At;
-    std::chrono::system_clock::time_point Mouse_Middle_Pressed_Down_At;
-    std::chrono::system_clock::time_point Mouse_Right_Pressed_Down_At; 
+    std::map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+    std::map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
 
     // Time stuff
     inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
@@ -247,16 +240,18 @@ namespace GGUI{
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
                         Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
-
-                        if (!Mouse_Movement_Enabled){
-                            Inputs.push_back(new GGUI::Input('\0', Constants::MOUSE_LEFT_CLICKED));
-                        }
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                     }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
                         Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
+                        Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
+                    }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
+                        Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
                     }
                     else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0){
                         Inputs.push_back(new GGUI::Input(Input[i].Event.KeyEvent.uChar.AsciiChar, Constants::KEY_PRESS));
@@ -279,24 +274,24 @@ namespace GGUI{
                 }
                 // Handle mouse clicks
                 // TODO: Windows doesn't give release events.
-                if (Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED != 0) {
-                    Previous_Mouse_Left_State = Mouse_Left_State;
-                    Mouse_Left_State = true;
-                    Mouse_Left_Pressed_Down_At = std::chrono::high_resolution_clock::now();
+                if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
+                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;
+                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
-                if (Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED == 0) {
-                    Previous_Mouse_Left_State = Mouse_Left_State;
-                    Mouse_Left_State = false;
+                if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
+                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
                 }
 
-                if (Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED != 0) {
-                    Previous_Mouse_Right_State = Mouse_Right_State;
-                    Mouse_Right_State = true;
-                    Mouse_Right_Pressed_Down_At = std::chrono::high_resolution_clock::now();
+                if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
+                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = true;
+                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
-                if (Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED == 0) {
-                    Previous_Mouse_Right_State = Mouse_Right_State;
-                    Mouse_Right_State = false;
+                if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
+                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
                 }
             }
         }
@@ -472,31 +467,30 @@ namespace GGUI{
     #endif
 
     void MOUSE_API(){
-        
-        auto Mouse_Left_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Mouse_Left_Pressed_Down_At).count();
+        auto Mouse_Left_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time).count();
 
-        if (Mouse_Left_State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= (long long)SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
         }
-        else if (!Mouse_Left_State && Previous_Mouse_Left_State != Mouse_Left_State){
+        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
         }
 
-        auto Mouse_Right_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Mouse_Right_Pressed_Down_At).count();
+        auto Mouse_Right_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time).count();
 
-        if (Mouse_Right_State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
         }
-        else if (!Mouse_Right_State && Previous_Mouse_Right_State != Mouse_Right_State){
+        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
         }
 
-        auto Mouse_Middle_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Mouse_Middle_Pressed_Down_At).count();
+        auto Mouse_Middle_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time).count();
 
-        if (Mouse_Middle_State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
         }
-        else if (!Mouse_Middle_State && Previous_Mouse_Middle_State != Mouse_Middle_State){
+        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
         }
         
@@ -619,10 +613,24 @@ namespace GGUI{
         return (f & Flag) == Flag;
     }
 
+    bool Has(unsigned long long f, unsigned long long flag){
+        return (f & flag) != 0;
+    }
+
     void Un_Focus_Element(){
+        if (!Focused_On)
+            return;
         Focused_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         Focused_On->Set_Focus(false);
         Focused_On = nullptr;
+    }
+
+    void Un_Hover_Element(){
+        if (!Hovered_On)
+            return;
+        Hovered_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        Hovered_On->Set_Hover_State(false);
+        Hovered_On = nullptr;
     }
 
     void Update_Focused_Element(GGUI::Element* new_candidate){
@@ -643,33 +651,41 @@ namespace GGUI{
         Update_Frame();
     }
 
+    void Update_Hovered_Element(GGUI::Element* new_candidate){
+        if (Hovered_On == new_candidate || new_candidate == Main)
+            return;
+
+        //put the previus focused candidate into not-focus
+        if (Hovered_On){
+            Un_Hover_Element();
+        }
+
+        //switch the candidate
+        Hovered_On = new_candidate;
+        
+        //set the new candidate to focused.
+        Hovered_On->Set_Hover_State(true);
+        Hovered_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        Update_Frame();
+    }
+
+
     // Events
     void Event_Handler(){
-        if (Focused_On && !Collides(Focused_On, GGUI::Mouse)){
-            Un_Focus_Element();
+        if (Hovered_On && !Collides(Hovered_On, GGUI::Mouse)){
+            Un_Hover_Element();
             Update_Frame();
         }
 
         Query_Inputs();
         for (auto& e : Event_Handlers){
-            // Hosted branches
-            if (e->Host){
-                if (!e->Host->Is_Displayed())
-                    continue;
 
-                //update the focused
-                if (Collides(e->Host, GGUI::Mouse)){
-                    Update_Focused_Element(e->Host);
-                }
-            }
-            // Unhosted branches
-            else{
+            bool Has_Select_Event = false;
 
-                // some code...
-
-            }
-                
             for (int i = 0; i < Inputs.size(); i++){
+                if (Has(Inputs[i]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
+                    Has_Select_Event = true;
+
                 if (Is(e->Criteria, Inputs[i]->Criteria)){
                     //check if this job could be runned succesfully.
                     if (e->Job(Inputs[i])){
@@ -679,6 +695,28 @@ namespace GGUI{
                 }
             }
 
+            // Hosted branches
+            if (e->Host){
+                if (!e->Host->Is_Displayed())
+                    continue;
+
+                //update the focused
+                if (Collides(e->Host, GGUI::Mouse)){
+                    if (Has_Select_Event){
+                        Update_Focused_Element(e->Host);
+                        Un_Hover_Element();
+                    }
+                    else{
+                        Update_Hovered_Element(e->Host);
+                    }
+                }
+            }
+            // Unhosted branches
+            else{
+
+                // some code...
+
+            }   
         }
         Inputs.clear();
     }
@@ -709,6 +747,14 @@ namespace GGUI{
 
             {STYLES::Border_Colour, new RGB_VALUE(COLOR::WHITE)},
             {STYLES::Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
+
+
+            {STYLES::Hover_Text_Color, new RGB_VALUE(COLOR::WHITE)},
+            {STYLES::Hover_Background_Color, new RGB_VALUE(COLOR::DARK_GRAY)},
+
+            {STYLES::Hover_Border_Color, new RGB_VALUE(COLOR::WHITE)},
+            {STYLES::Hover_Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
+
 
             {STYLES::Focus_Text_Color, new RGB_VALUE(COLOR::BLACK)},
             {STYLES::Focus_Background_Color, new RGB_VALUE(COLOR::WHITE)},
@@ -872,13 +918,4 @@ namespace GGUI{
         Pause_Event_Thread = Previud_Event_Value;
         SLEEP(Sleep_For);
     }
-
-    void Disable_Mouse_Movement(){
-        Mouse_Movement_Enabled = false;
-    }
-
-    void Enable_Mouse_Movement(){
-        Mouse_Movement_Enabled = true;
-    }
-
 }

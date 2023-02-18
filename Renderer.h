@@ -35,6 +35,8 @@ namespace GGUI{
     extern Coordinates Mouse;    
     extern bool Mouse_Movement_Enabled;
 
+    extern std::map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+
     extern time_t UPDATE_SPEED_MIILISECONDS;
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
@@ -124,10 +126,6 @@ namespace GGUI{
     extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
 
     extern void Exit();
-
-    extern void Disable_Mouse_Movement();
-
-    extern void Enable_Mouse_Movement();
 }
 
 #endif

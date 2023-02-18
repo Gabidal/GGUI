@@ -29,6 +29,8 @@ int main(int Argument_Count, char** Arguments){
         B->Set_Position({20, 30});
         C->Set_Position({0, 0});
 
+        GGUI::Main->Set_Background_Color(GGUI::COLOR::WHITE);
+
     });
 
     //B->Set_Background_Color(GGUI::COLOR::DARK_BLUE);
@@ -36,14 +38,14 @@ int main(int Argument_Count, char** Arguments){
     A->Set_Opacity(0.8f);
     C->Set_Opacity(0.8f);
 
-    B->Show_Shadow({1, 1}, GGUI::COLOR::WHITE);
+    B->Show_Shadow({0, 0}, GGUI::COLOR::BLUE, 1, 0.2f);
 
-    while (true){
+    // while (true){
 
-        B->Set_Position({B->Get_Position().X, B->Get_Position().Y - 1});
+    //     B->Set_Position({B->Get_Position().X, B->Get_Position().Y - 1});
 
-        GGUI::SLEEP(500);
-    }
+    //     GGUI::SLEEP(500);
+    // }
 
     GGUI::SLEEP(INT32_MAX);
     return 0;

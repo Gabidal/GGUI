@@ -141,6 +141,9 @@ std::pair<GGUI::RGB, GGUI::RGB>  GGUI::Element::Compose_All_Text_RGB_Values(){
     if (Focused){
         return {At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value, At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value};
     }
+    else if (Hovered){
+        return {At<RGB_VALUE>(STYLES::Hover_Text_Color)->Value, At<RGB_VALUE>(STYLES::Hover_Background_Color)->Value};
+    }
     else{
         return {At<RGB_VALUE>(STYLES::Text_Color)->Value, At<RGB_VALUE>(STYLES::Background_Color)->Value};
     }
@@ -161,6 +164,9 @@ GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
     if (Focused){
         return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value;
     }
+    else if (Hovered){
+        return At<RGB_VALUE>(STYLES::Hover_Text_Color)->Value;
+    }
     else{
         return At<RGB_VALUE>(STYLES::Text_Color)->Value;
     }
@@ -180,6 +186,9 @@ GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
     // }
     if (Focused){
         return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value;
+    }
+    else if (Hovered){
+        return At<RGB_VALUE>(STYLES::Hover_Background_Color)->Value;
     }
     else{
         return At<RGB_VALUE>(STYLES::Background_Color)->Value;
@@ -207,6 +216,9 @@ std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
 
     if (Focused){
         return {At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value, At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value};
+    }
+    else if (Hovered){
+        return {At<RGB_VALUE>(STYLES::Hover_Border_Color)->Value, At<RGB_VALUE>(STYLES::Hover_Border_Background_Color)->Value};
     }
     else{
         return {At<RGB_VALUE>(STYLES::Border_Colour)->Value, At<RGB_VALUE>(STYLES::Border_Background_Color)->Value};
@@ -320,6 +332,16 @@ void GGUI::Element::Parse_Classes(){
     }
 }
 
+
+void GGUI::Element::Set_Focus(bool f){
+    Focused = f;
+    Update_Frame();
+}
+
+void GGUI::Element::Set_Hover_State(bool h){
+    Hovered = h;
+    Update_Frame();
+}
 
 std::map<std::string, GGUI::VALUE*> GGUI::Element::Get_Style(){
     return Style;
@@ -849,7 +871,7 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     }
 }
 
-inline bool Allow(GGUI::Coordinates index, GGUI::Element* parent){
+inline bool Is_In_Bounds(GGUI::Coordinates index, GGUI::Element* parent){
     // checks if the index is out of bounds
     if (index.X < 0 || index.Y < 0 || index.X >= parent->Get_Width() || index.Y >= parent->Get_Height())
         return false;
@@ -940,16 +962,16 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
         unsigned int Current_Masks = 0;
 
-        if (Allow(Above, this) && From(Above, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
+        if (Is_In_Bounds(Above, this) && From(Above, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_UP;
 
-        if (Allow(Below, this) && From(Below, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
+        if (Is_In_Bounds(Below, this) && From(Below, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_DOWN;
 
-        if (Allow(Left, this) && From(Left, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
+        if (Is_In_Bounds(Left, this) && From(Left, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_LEFT;
 
-        if (Allow(Right, this) && From(Right, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
+        if (Is_In_Bounds(Right, this) && From(Right, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
 
         if (SYMBOLS::Border_Identifiers.find(Current_Masks) == SYMBOLS::Border_Identifiers.end())

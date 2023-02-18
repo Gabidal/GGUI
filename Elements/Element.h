@@ -111,6 +111,53 @@ namespace GGUI{
         inline constexpr static  unsigned int HOUR = MINUTE * 60;
     }
 
+    class BUTTON_STATE{
+    public:
+        bool State = false;
+        std::chrono::system_clock::time_point Capture_Time;
+    };
+
+    namespace BUTTON_STATES{
+        inline std::string ESC = "ECS";
+        inline std::string F1 = "F1";
+        inline std::string F2 = "F2";
+        inline std::string F3 = "F3";
+        inline std::string F4 = "F4";
+        inline std::string F5 = "F5";
+        inline std::string F6 = "F6";
+        inline std::string F7 = "F7";
+        inline std::string F8 = "F8";
+        inline std::string F9 = "F9";
+        inline std::string F10 = "F10";
+        inline std::string F11 = "F11";
+        inline std::string F12 = "F12";
+        inline std::string PRTSC = "PRTSC";
+        inline std::string SCROLL_LOCK = "SCROLL_LOCK";
+        inline std::string PAUSE = "PAUSE";
+        inline std::string SECTION = "SECTION";
+        inline std::string BACKSPACE = "BACKSPACE";
+        inline std::string TAB = "TAB";
+        inline std::string ENTER = "ENTER";
+        inline std::string CAPS = "CAPS";
+        inline std::string SHIFT = "SHIFT";
+        inline std::string CTRL = "CTRL";
+        inline std::string SUPER = "SUPER";
+        inline std::string ALT = "ALT";
+        inline std::string SPACE = "SPACE";
+        inline std::string ALTGR = "ALTGR";
+        inline std::string FN = "FN";
+        inline std::string INS = "INS";
+        inline std::string HOME = "HOME";
+        inline std::string PAGE_UP = "PAGE_UP";
+        inline std::string DELETE = "DELETE";
+        inline std::string END = "END";
+        inline std::string PAGE_DOWN = "PAGE_DOWN";
+
+        inline std::string MOUSE_LEFT = "MOUSE_LEFT";
+        inline std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
+        inline std::string MOUSE_RIGHT = "MOUSE_RIGHT";
+    };
+
     class RGB{
     public:
         union{
@@ -573,10 +620,17 @@ namespace GGUI{
         inline std::string Background_Color               = "Background_Color";
         inline std::string Border_Colour                   = "Border_Colour";
         inline std::string Border_Background_Color        = "Border_Background_Color";
+
+        inline std::string Hover_Border_Color               = "Hover_Border_Color";
+        inline std::string Hover_Text_Color                 = "Hover_Text_Color";
+        inline std::string Hover_Background_Color          = "Hover_Background_Color";
+        inline std::string Hover_Border_Background_Color   = "Hover_Border_Background_Color";
+
+        inline std::string Focus_Border_Color              = "Focus_Border_Color";
         inline std::string Focus_Text_Color                = "Focus_Text_Color";
         inline std::string Focus_Background_Color         = "Focus_Background_Color";
-        inline std::string Focus_Border_Color              = "Focus_Border_Color";
         inline std::string Focus_Border_Background_Color  = "Focus_Border_Background_Color";
+
         inline std::string Flow_Priority                   = "Flow_Priority";
         inline std::string Wrap                            = "Wrap";     
         
@@ -706,6 +760,7 @@ namespace GGUI{
         std::vector<Element*> Childs;
 
         bool Focused = false;
+        bool Hovered = false;
 
         std::string Name = "";
 
@@ -777,9 +832,13 @@ namespace GGUI{
             return Focused;
         }
 
-        void Set_Focus(bool f){
-            Focused = f;
+        void Set_Focus(bool f);
+
+        bool Is_Hovered(){
+            return Hovered;
         }
+
+        void Set_Hover_State(bool h);
 
         void Check(State s);
 
