@@ -34,26 +34,36 @@ int main()
     - Foreground colours
     - Border's and border colors
     - On focus Background & Foreground colors
-    - Nesting
+    - On Hover Background & Foreground colors
+    - Element Nesting
     - Event handling e.g On_Click()
+    - Alpha channel transparency support. 
 - **Window features**
     - Title
 - **Text_Field features**
     - Inner Text
     - Text alignment (center, left, right)
+    - Text input
 - **List_View features**
     - Flow direction
-
+- **Canvas features**
+    - Pixel per Pixel rendering
+- **Progress_Bar**
+    - Epic progress bars
+- **Switch**
+    - Radio Buttons
+    - Checkboxes
+- **Button**
+    - Button stuff.
 - **Mouse movement features**
-    - Free move with arrow keys.
-    - Element selection navigation toggle with shift key.
+    - Integrated mouse support (only windows atm)
+    - Tabulator navigation
 
 # Developing this project further
-### This project uses 'meson' so use `meson setup Build` to setup the meson environment if you have not yet.
-### Use 'launch.json' and 'tasks.json' to build and debug this project.
+### This project uses 'meson' so use `meson setup Build` to setup the meson environment if you have not yet done so.
+### Use 'launch.json' and 'tasks.json' to build and debug this project if your in VSCode.
 
 # Building this project
-### NOTE: You have been advice to use the Release section and not git clone from the master branch, where it may be unstable!
 ```bash
 cd include
 g++ ./Build_Script.cpp -O3

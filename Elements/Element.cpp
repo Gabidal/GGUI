@@ -1257,5 +1257,6 @@ std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
     // One of the last postprocessing for total control of when not to display.
     Result = Process_Opacity(Result);
 
+    //Render_Buffer = Result;
     return Result;
 }

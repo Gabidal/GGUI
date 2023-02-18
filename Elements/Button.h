@@ -22,8 +22,6 @@ namespace GGUI{
         void Default_Button_Text_Align(){
             At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
         }
-
-        Button(bool Blank){}
     public:
 
         Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
