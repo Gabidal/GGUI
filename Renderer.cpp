@@ -45,7 +45,8 @@ namespace GGUI{
 
     inline std::map<std::string, int> Class_Names;
 
-    Window* Main = nullptr;                                          //Main window
+    Window* Main = nullptr;     
+    unordered_map<int, Element*> Outboxed_Elements;
 
     bool Collides(GGUI::Element* a, GGUI::Element* b){
         if (a == b)
@@ -322,6 +323,34 @@ namespace GGUI{
         SetConsoleOutputCP(65001);
     }
 
+    // Returns the actual length of the terminal and all of its new lines made init.
+    Coordinates Get_Terminal_Content_Size(){
+        vector<char> Buffer;
+
+        // first get the size of the file
+        LARGE_INTEGER File_Size;
+        GetFileSizeEx(GLOBAL_STD_HANDLE, &File_Size);
+
+        Buffer.resize(File_Size.QuadPart);
+
+        // open the GLOBAL_STD_HANDLE as an file, and then count the newlines, and deduce the width from the newlines squared by the length of the file.
+        ReadFile(GLOBAL_STD_HANDLE, Buffer.data(), Buffer.size(), NULL, NULL);
+
+        unsigned int New_Line_Count = 0;
+
+        for (unsigned int i = 0; i < Buffer.size(); i++){
+            if (Buffer[i] == '\n'){
+                New_Line_Count++;
+            }
+        }
+
+        // a   = w * h
+        // a/h = w
+        unsigned int Width = Buffer.size() / New_Line_Count;
+
+        return Coordinates(Width, New_Line_Count);
+    }
+
     void Exit(){
 
     }
@@ -373,6 +402,10 @@ namespace GGUI{
 
         Max_Width = w.ws_col;
         Max_Height = w.ws_row - 1;
+    }
+
+    Coordinates Get_Terminal_Content_Size(){
+        return {1, 1};
     }
 
     //Is called on every cycle.
@@ -682,9 +715,15 @@ namespace GGUI{
 
         Pause_Event_Thread = true;
 
-        Abstract_Frame_Buffer = Main->Render();
+        if (Main){
+            Abstract_Frame_Buffer = Main->Render();
 
-        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
+            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
+        }
+        else{
+            // Use OUTBOX rendering method.
+            Render_Outbox();
+        }
 
         //Unlock the event handler.
         Pause_Event_Thread = false;
@@ -782,7 +821,6 @@ namespace GGUI{
         Hovered_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         Update_Frame();
     }
-
 
     // Events
     void Event_Handler(){
@@ -1015,6 +1053,34 @@ namespace GGUI{
 
         if (!Original_Value)
             Resume_Renderer(); 
+    }
+
+    void Render_Outbox(){
+        // Use Max_Width and Height to determine the "render distance" in which the newlines are searched through.
+        Coordinates Current_Terminal_Content_Size = Get_Terminal_Content_Size();
+
+        int Current_Terminal_Start_Y = Current_Terminal_Content_Size.Y - Max_Height;
+        int Current_Terminal_Start_X = Current_Terminal_Content_Size.X - Max_Width;
+
+        int Current_Terminal_End_Y = Current_Terminal_Content_Size.Y;
+        int Current_Terminal_End_X = Current_Terminal_Content_Size.X;
+
+
+        for (int REL_Y = 0; REL_Y < Max_Height; REL_Y++){
+            int ABS_Y = REL_Y + Current_Terminal_Start_Y;
+
+            if (Outboxed_Elements.find(ABS_Y) == Outboxed_Elements.end())
+                continue;
+
+            for (int REL_X = 0; REL_X < Max_Width; REL_X++){
+                int ABS_X = REL_X + Current_Terminal_Start_X;
+
+                
+                
+            }
+
+        }
+
     }
 
     // Use this to use GGUI.

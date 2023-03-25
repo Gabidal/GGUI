@@ -651,6 +651,8 @@ namespace GGUI{
 
         inline std::string Shadow                          = "Shadow";  // 0 - 100
         inline std::string Opacity                         = "Opacity"; // 0 - 100
+
+        inline std::string Anchor                          = "Anchor";  // gives the line number in which the element is anchored.
     };
 
     enum class STAIN_TYPE{
@@ -883,6 +885,14 @@ namespace GGUI{
 
         bool Is_Transparent();
 
+        bool Is_Anchored();
+
+        int Get_Anchor_Location();
+
+        void Set_Anchor_At_Current_Location();
+
+        void Remove_Anchor();
+
         unsigned int Get_Processed_Width();
         unsigned int Get_Processed_Height();
 
@@ -892,11 +902,7 @@ namespace GGUI{
             return Parent;
         }
 
-        void Set_Parent(Element* parent){
-            if (parent){
-                Parent = parent;
-            }
-        }
+        void Set_Parent(Element* parent);
 
         bool Has(std::string s);
 

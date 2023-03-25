@@ -52,6 +52,15 @@ GGUI::Element::Element() {
     Parse_Classes();
 
     Dirty.Stain_All();
+
+    // If this is true, then the user probably:
+    // A.) Doesn't know what the fuck he is doing.
+    // B.) He is trying to use the OUTBOX feature.
+    if (GGUI::Main == nullptr){
+        // Lets go with B.
+        Set_Anchor_At_Current_Location();
+        Outboxed_Elements.at(Get_Anchor_Location()) = this;
+    }
 }
 
 GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
@@ -283,6 +292,30 @@ bool GGUI::Element::Is_Transparent(){
     return Get_Opacity() < FULL_OPACITY;
 }
 
+bool GGUI::Element::Is_Anchored(){
+    if (Style.find(STYLES::Anchor) == Style.end())
+        return false;
+
+    return true;
+}
+
+int GGUI::Element::Get_Anchor_Location(){
+    return At<NUMBER_VALUE>(STYLES::Anchor)->Value;
+}
+
+void GGUI::Element::Set_Anchor_At_Current_Location(){
+    Coordinates Current_Position = GGUI::Get_Terminal_Content_Size();
+
+    At<NUMBER_VALUE>(STYLES::Anchor)->Value = Current_Position.Y;
+}
+
+void GGUI::Element::Remove_Anchor(){
+    Style.erase(STYLES::Anchor);
+
+    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Update_Frame();
+}
+
 unsigned int GGUI::Element::Get_Processed_Width(){
     if (Post_Process_Width != 0){
         return Post_Process_Width;
@@ -305,6 +338,16 @@ void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opaci
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
+}
+
+void GGUI::Element::Set_Parent(Element* parent){
+    if (parent){
+        Parent = parent;
+
+        // if the element is a Anchored element, we want it to change into a relative.
+        Outboxed_Elements.erase(Get_Anchor_Location());
+        Remove_Anchor();
+    }
 }
 
 void GGUI::Element::Parse_Classes(){

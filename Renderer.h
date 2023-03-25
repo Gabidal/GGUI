@@ -45,6 +45,7 @@ namespace GGUI{
     extern std::map<std::string, int> Class_Names;
 
     extern Window* Main;  
+    extern unordered_map<int, Element*> Outboxed_Elements;
 
     void SLEEP(unsigned int seconds);
 
@@ -71,6 +72,8 @@ namespace GGUI{
     extern void Render_Frame();
 
     extern void Update_Max_Width_And_Height();
+    
+    extern Coordinates Get_Terminal_Content_Size();
 
     void Update_Frame();
     //Is called on every cycle.
@@ -130,6 +133,8 @@ namespace GGUI{
     extern void Handle_Tabulator();
 
     extern void Handle_Escape();
+
+    extern void Render_Outbox();
 }
 
 #endif
