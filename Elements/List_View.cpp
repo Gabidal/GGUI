@@ -94,13 +94,14 @@ void GGUI::List_View::Add_Child(Element* e){
     }
 
 
-    unsigned Offset = (Has_Border() * 2 - e->Has_Border() * 2) * Has_Border();
+    // (This->left_border_size - child->left_border_size) * on_of_switch
+    unsigned Offset = (Has_Border() - e->Has_Border()) * Has_Border();
 
-    unsigned int Max_Inner_Space_Height = Get_Height() - Offset;
-    unsigned int Max_Inner_Space_Width = Get_Width() - Offset;
+    unsigned int Max_Inner_Space_Height = Get_Height() - Offset * 2;
+    unsigned int Max_Inner_Space_Width = Get_Width() - Offset * 2;
 
-    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Offset;
-    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset;
+    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Offset * 2;
+    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset * 2;
 
 
     if (At<BOOL_VALUE>(STYLES::Wrap)->Value){
@@ -119,10 +120,11 @@ void GGUI::List_View::Add_Child(Element* e){
             signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
             Height = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
-            Width = Min(max_width, Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of, Get_Width()));
+            Width = Min(max_width, Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width()));
 
             e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
-            Last_Child->Set_Position({Last_Child->Get_Position().X + e->Get_Width(), Last_Child->Get_Position().Y});
+
+            Last_Child->Set_Position({Last_Child->Get_Position().X + e->Get_Width() - Width_Modifier, Last_Child->Get_Position().Y});
             Last_Child->Show_Border(e->Has_Border());
         }
         else{
@@ -131,10 +133,11 @@ void GGUI::List_View::Add_Child(Element* e){
             signed int Height_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
             Width = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
-            Height = Min(max_height, Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of, Get_Height()));
+            Height = Min(max_height, Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height()));
 
             e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
-            Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + e->Get_Height()});
+
+            Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + e->Get_Height() - Height_Modifier});
             Last_Child->Show_Border(e->Has_Border());
         }
 
