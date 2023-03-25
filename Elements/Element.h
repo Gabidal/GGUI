@@ -881,6 +881,8 @@ namespace GGUI{
         // return int as 0 - 100
         int Get_Opacity(); 
 
+        bool Is_Transparent();
+
         unsigned int Get_Processed_Width();
         unsigned int Get_Processed_Height();
 

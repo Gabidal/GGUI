@@ -274,6 +274,14 @@ int GGUI::Element::Get_Opacity(){
     return At<NUMBER_VALUE>(STYLES::Opacity)->Value;
 }
 
+bool GGUI::Element::Is_Transparent(){
+    if (Style.find(STYLES::Opacity) == Style.end())
+        return false;
+    
+    int FULL_OPACITY = 100;
+
+    return Get_Opacity() < FULL_OPACITY;
+}
 
 unsigned int GGUI::Element::Get_Processed_Width(){
     if (Post_Process_Width != 0){
@@ -737,6 +745,26 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     //This will add the child windows to the Result buffer
     if (Dirty.is(STAIN_TYPE::DEEP)){
         Dirty.Clean(STAIN_TYPE::DEEP);
+
+        if (Render_Buffer.size() != 0){
+            // clean all the instances where the childs have lesser opacity than one.
+            for (auto c : this->Get_Childs()){
+                if (!c->Is_Displayed())
+                    continue;
+
+                // Check if the child in question has opacity less than one.
+                if (c->Is_Transparent()){
+                    //now that we know that this element is transparent we need to clear the area that this element resided in this parent element.
+                    for (int y = c->Position.Y; y < c->Position.Y + c->Height; y++){
+                        for (int x = c->Position.X; x < c->Position.X + c->Width; x++){
+                            Result[x + y * Width].Background = Get_Background_Color();
+                            Result[x + y * Width].Foreground = Get_Text_Color();
+                        }
+                    }
+                }
+            }
+        }
+
 
         for (auto c : this->Get_Childs()){
             if (!c->Is_Displayed())
