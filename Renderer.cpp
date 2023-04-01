@@ -192,6 +192,8 @@ namespace GGUI{
 
     GGUI::HANDLE GLOBAL_STD_HANDLE;
 
+    CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info();
+
     void Render_Frame(){
         unsigned long long tmp = 0;
         SetConsoleCursorPosition(GLOBAL_STD_HANDLE, {0, 0});
@@ -199,9 +201,7 @@ namespace GGUI{
     }
 
     void Update_Max_Width_And_Height(){
-        CONSOLE_SCREEN_BUFFER_INFO info;
-
-        GetConsoleScreenBufferInfo(GLOBAL_STD_HANDLE, &info);
+        CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
 
         Max_Width = info.srWindow.Right - info.srWindow.Left;
         Max_Height = info.srWindow.Bottom - info.srWindow.Top;
@@ -323,18 +323,51 @@ namespace GGUI{
         SetConsoleOutputCP(65001);
     }
 
-    // Returns the actual length of the terminal and all of its new lines made init.
-    Coordinates Get_Terminal_Content_Size(){
-        vector<char> Buffer;
+    CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info(){
+        if (GLOBAL_STD_HANDLE == 0){
+            GLOBAL_STD_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+        }
+
+        CONSOLE_SCREEN_BUFFER_INFO Result;
 
         // first get the size of the file
-        LARGE_INTEGER File_Size;
-        GetFileSizeEx(GLOBAL_STD_HANDLE, &File_Size);
+        if (!GetConsoleScreenBufferInfo(GLOBAL_STD_HANDLE, &Result)){
 
-        Buffer.resize(File_Size.QuadPart);
+            int Last_Error = GetLastError();
 
-        // open the GLOBAL_STD_HANDLE as an file, and then count the newlines, and deduce the width from the newlines squared by the length of the file.
-        ReadFile(GLOBAL_STD_HANDLE, Buffer.data(), Buffer.size(), NULL, NULL);
+            Report("Failed to get console info: " + std::to_string(Last_Error));
+        }
+
+        return Result;
+    }
+
+    vector<char> Read_Console(){
+        vector<char> Buffer;
+        vector<CHAR_INFO> Fake_Buffer;
+
+        CONSOLE_SCREEN_BUFFER_INFO Info = Get_Console_Info();
+
+        Buffer.resize(Info.dwSize.X * Info.dwSize.Y);
+        Fake_Buffer.resize(Info.dwSize.X * Info.dwSize.Y);
+
+        // The area to read:
+        SMALL_RECT rect {0,0, Info.dwSize.X-1, Info.dwSize.Y} ; // the console screen (buffer) region to read from (120x4)
+        ReadConsoleOutput( GLOBAL_STD_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size colsxrows*/, {0,0} /*buffer top,left*/, &rect );
+
+        // now transform all the data from CHAR_INFO to char
+        for (unsigned int i = 0; i < Fake_Buffer.size(); i++){
+            Buffer[i] = Fake_Buffer[i].Char.AsciiChar;
+        }
+
+        return Buffer;
+    }
+
+    // Returns the actual length of the terminal and all of its new lines made init.
+    Coordinates Get_Terminal_Content_Size(){
+        vector<char> Buffer = Read_Console();
+
+        // The buffer gotten from the function above will only return a square containing the console rendered content.
+        
 
         unsigned int New_Line_Count = 0;
 
@@ -343,6 +376,8 @@ namespace GGUI{
                 New_Line_Count++;
             }
         }
+
+        printf(Buffer.data());
 
         // a   = w * h
         // a/h = w
@@ -940,6 +975,8 @@ namespace GGUI{
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
 
+        // Set the Main to be anything but nullptr, since its won constructor will try anchor it otherwise.
+        Main = (Window*)0xFFFF;
         Main = new Window("", Max_Width, Max_Height);
 
         Abstract_Frame_Buffer = Main->Render();
@@ -975,41 +1012,47 @@ namespace GGUI{
     void Report(std::string Problem){
         Pause_Renderer();
 
-        GGUI::Text_Field* txt = new GGUI::Text_Field(Problem);
+        if (Main){
+            GGUI::Text_Field* txt = new GGUI::Text_Field(Problem);
 
-        bool Has_Border = true;
+            bool Has_Border = true;
 
-        unsigned int w = txt->Get_Width() + Has_Border * 2;
-        unsigned int h = txt->Get_Height() + Has_Border * 2;
+            unsigned int w = txt->Get_Width() + Has_Border * 2;
+            unsigned int h = txt->Get_Height() + Has_Border * 2;
 
-        unsigned int W_Center = (Max_Width - w) / 2;
-        unsigned int H_Center = (Max_Height - h) / 2;
+            unsigned int W_Center = (Max_Width - w) / 2;
+            unsigned int H_Center = (Max_Height - h) / 2;
 
-        GGUI::Window* tmp = new GGUI::Window(
-            "ERROR!",
-            w, h,
-            GGUI::COLOR::RED,
-            GGUI::COLOR::BLACK,
-            GGUI::COLOR::RED,
-            GGUI::COLOR::BLACK
-        );
+            GGUI::Window* tmp = new GGUI::Window(
+                "ERROR!",
+                w, h,
+                GGUI::COLOR::RED,
+                GGUI::COLOR::BLACK,
+                GGUI::COLOR::RED,
+                GGUI::COLOR::BLACK
+            );
 
-        tmp->Set_Parent(Main);
-        tmp->Set_Position({W_Center, H_Center, INT32_MAX});
+            tmp->Set_Parent(Main);
+            tmp->Set_Position({W_Center, H_Center, INT32_MAX});
 
-        tmp->Add_Child(txt);
+            tmp->Add_Child(txt);
 
-        Main->Add_Child(tmp);
+            Main->Add_Child(tmp);
 
-        Remember.push_back(Memory(
-            TIME::SECOND * 10,
-            [=](GGUI::Event* e){
-                //delete tmp;
-                tmp->Remove();
-                //job succesfully done
-                return true;
-            }
-        ));
+            Remember.push_back(Memory(
+                TIME::SECOND * 10,
+                [=](GGUI::Event* e){
+                    //delete tmp;
+                    tmp->Remove();
+                    //job succesfully done
+                    return true;
+                }
+            ));
+        }
+        else{
+            // This is for the non GGUI space errors.
+            std::cout << Problem << std::endl;
+        }
 
         Resume_Renderer();
     }
