@@ -940,6 +940,7 @@ namespace GGUI{
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
 
+        Main = (Window*)1;
         Main = new Window("", Max_Width, Max_Height);
 
         Abstract_Frame_Buffer = Main->Render();
