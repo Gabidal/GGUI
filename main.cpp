@@ -1,51 +1,48 @@
-#include "ggui.h"
+#include "GGUI.h"
 
-#include <vector>
+using namespace GGUI;
 
-using namespace std;
-
-int main(int Argument_Count, char** Arguments){
-    GGUI::Window* A;
-    GGUI::Window* B;
-    GGUI::Window* C;
-
+int main() 
+{
     GGUI::GGUI([&](){
 
-        A = new GGUI::Window("AAA", 50, 20, GGUI::COLOR::RED, GGUI::COLOR::BLUE, GGUI::COLOR::GREEN, GGUI::COLOR::RED);
-        B = new GGUI::Window("BBB", 50, 20, GGUI::COLOR::GREEN, GGUI::COLOR::RED, GGUI::COLOR::BLUE, GGUI::COLOR::GREEN);
-        C = new GGUI::Window("CCC", 50, 20, GGUI::COLOR::BLUE, GGUI::COLOR::GREEN, GGUI::COLOR::RED, GGUI::COLOR::BLUE);
+        List_View* bar = new List_View(
+            GGUI::Main,
+            {
+                new Button("File"),
+                new Button("Edit"),
+                new Button("View"),
+                new Button("Help")
+            }
+        );
 
+        bar->Show_Border(true);
 
-        A->Show_Border(true);
-        B->Show_Border(true);
+        // for (auto i : bar->Get_Childs()){
+        //     i->Show_Border(false);
+        // }
 
-        //B->Set_Opacity(0.5f);
+        Window* A = new Window("A", 20, 10, COLOR::MAGENTA, COLOR::RED);
+        Window* B = new Window("B", 20, 10, COLOR::YELLOW, COLOR::GREEN);
+        Window* C = new Window("C", 20, 10, COLOR::CYAN, COLOR::BLUE);
+
+        A->Set_Opacity(0.5f);
+        B->Set_Opacity(0.5f);
+        C->Set_Opacity(0.5f);
 
         GGUI::Main->Add_Child(A);
-        GGUI::Main->Add_Child(C);
         GGUI::Main->Add_Child(B);
+        GGUI::Main->Add_Child(C);
 
-        A->Set_Position({35, 0});
-        B->Set_Position({20, 30});
-        C->Set_Position({0, 0});
-
-        GGUI::Main->Set_Background_Color(GGUI::COLOR::WHITE);
-
+        A->Set_Position({10, 10});
+        B->Set_Position({30, 10});
+        C->Set_Position({20, 15});
     });
-
-    //B->Set_Background_Color(GGUI::COLOR::DARK_BLUE);
-    B->Set_Opacity(0.8f);
-    A->Set_Opacity(0.8f);
-    C->Set_Opacity(0.8f);
-
-    B->Show_Shadow({0, 0}, GGUI::COLOR::BLUE, 1, 0.2f);
-
-    // while (true){
-
-    //     B->Set_Position({B->Get_Position().X, B->Get_Position().Y - 1});
-
-    //     GGUI::SLEEP(500);
-    // }
+    
+    GGUI::Main->Set_Title("Your App UI");
+    GGUI::Main->Set_Background_Color(COLOR::WHITE);
+    GGUI::Main->Set_Text_Color(COLOR::BLACK);
+    GGUI::Main->Show_Border(true);    
 
     GGUI::SLEEP(INT32_MAX);
     return 0;

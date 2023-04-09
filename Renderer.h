@@ -72,7 +72,7 @@ namespace GGUI{
     extern void Render_Frame();
 
     extern void Update_Max_Width_And_Height();
-    
+
     extern Coordinates Get_Terminal_Content_Size();
 
     void Update_Frame();
