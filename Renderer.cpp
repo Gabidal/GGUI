@@ -421,7 +421,7 @@ namespace GGUI{
         while(nanosleep(&req, &req) == -1)
             continue;
     }
-
+ 
     void Render_Frame() {
         // Move cursor to top-left corner
         printf("\033[H");
@@ -445,27 +445,143 @@ namespace GGUI{
 
     //Is called on every cycle.
     void Query_Inputs(){
-        return;
-
         // For keyboard input handling.
         char buffer[256];
         int bytes_read = read(STDIN_FILENO, buffer, sizeof(buffer));
-        
+
+        if (Main){
+            Update_Max_Width_And_Height();
+
+            if (Max_Height != Main->Get_Width() || Max_Width != Main->Get_Height()){
+                Main->Set_Dimensions(Max_Width, Max_Height);
+            }
+        }
+
         for (int i = 0; i < bytes_read; i++) {
             char c = buffer[i];
             if (c == '\x1B') { // handle arrow keys
                 i++;
                 if (i < bytes_read && buffer[i] == '[') {
                     i++;
-                    if (i < bytes_read && buffer[i] == 'A') {
+
+                    // VT SEQUENCES
+                    // HOME
+                    if (i < bytes_read && buffer[i] == 1 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::HOME));
+                    }
+                    // INSERT
+                    else if (i < bytes_read && buffer[i] == 2 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::INSERT));
+                    }
+                    // DELETE
+                    else if (i < bytes_read && buffer[i] == 3 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::DELETE));
+                    }
+                    // END
+                    else if (i < bytes_read && buffer[i] == 4 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::END));
+                    }
+                    // PAGE UP
+                    else if (i < bytes_read && buffer[i] == 5 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::PAGE_UP));
+                    }
+                    // PAGE DOWN
+                    else if (i < bytes_read && buffer[i] == 6 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::PAGE_DOWN));
+                    }
+                    // HOME
+                    else if (i < bytes_read && buffer[i] == 7 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::HOME));
+                    }
+                    // END
+                    else if (i < bytes_read && buffer[i] == 8 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::END));
+                    }
+                    // NONE
+                    // else if (i < bytes_read && buffer[i] == 9 && buffer[i+1] == '~') {
+                    //     Inputs.push_back(new GGUI::Input(0, Constants::NONE));
+                    // }
+                    // F0
+                    else if (i < bytes_read && buffer[i] == 10 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F0));
+                    }
+                    // F1
+                    else if (i < bytes_read && buffer[i] == 11 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F1));
+                    }
+                    // F2
+                    else if (i < bytes_read && buffer[i] == 12 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F2));
+                    }
+                    // F3
+                    else if (i < bytes_read && buffer[i] == 13 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F3));
+                    }
+                    // F4
+                    else if (i < bytes_read && buffer[i] == 14 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F4));
+                    }
+                    // F5
+                    else if (i < bytes_read && buffer[i] == 15 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F5));
+                    }
+                    // F6
+                    else if (i < bytes_read && buffer[i] == 17 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F6));
+                    }
+                    // F7
+                    else if (i < bytes_read && buffer[i] == 18 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F7));
+                    }
+                    // F8
+                    else if (i < bytes_read && buffer[i] == 19 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F8));
+                    }
+                    // F9
+                    else if (i < bytes_read && buffer[i] == 20 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F9));
+                    }
+                    // F10
+                    else if (i < bytes_read && buffer[i] == 21 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F10));
+                    }
+                    // F11
+                    else if (i < bytes_read && buffer[i] == 23 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F11));
+                    }
+                    // F12
+                    else if (i < bytes_read && buffer[i] == 24 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F12));
+                    }
+                    // F13
+                    else if (i < bytes_read && buffer[i] == 25 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F13));
+                    }
+                    // F14
+                    else if (i < bytes_read && buffer[i] == 26 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F14));
+                    }
+                    // F15
+                    else if (i < bytes_read && buffer[i] == 28 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F15));
+                    }
+                    // F16
+                    else if (i < bytes_read && buffer[i] == 29 && buffer[i+1] == '~') {
+                        Inputs.push_back(new GGUI::Input(0, Constants::F16));
+                    }
+                    // UP
+                    else if (i < bytes_read && buffer[i] == 'A') {
                         Inputs.push_back(new GGUI::Input(0, Constants::UP));
                     }
+                    // DOWN
                     else if (i < bytes_read && buffer[i] == 'B') {
                         Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
                     }
+                    // RIGHT
                     else if (i < bytes_read && buffer[i] == 'C') {
                         Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
                     }
+                    // LEFT
                     else if (i < bytes_read && buffer[i] == 'D') {
                         Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
                     }
@@ -482,30 +598,51 @@ namespace GGUI{
                         int x = buffer[i + 2] - 32;
                         int y = buffer[i + 3] - 32;
 
+                        if (button == 0) {  // LEFT CLICK
 
-                        if (button == 0) {
+                            if (release == 3){ // PRESSED DOWN
+                                PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
+                            }
+                            else{ // RELEASED
+                                PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
+                            }
+                        } 
+                        else if (button == 1) { // RIGHT CLICK
+                            
+                            if (release == 3){ // PRESSED DOWN
+                                PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = true;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
+                            }
+                            else{ // RELEASED
+                                PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
+                            }
+                        } 
+                        else if (button == 2) { // MIDDLE CLICK
 
-                            if (release == 3) Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESS));
-                            else Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_RELEASE));
+                            if (release == 3){ // PRESSED DOWN
+                                PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = true;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
+                            }
+                            else{ // RELEASED
+                                PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = false;
+                            }
+                        }
+                        else if (button == 3) { // SCROLL UP
 
-                        } else if (button == 1) {
-
-                            if (release == 3) Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESS));
-                            else Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_RELEASE));
-
-                        } else if (button == 2) {
-
-                            if (release == 3) Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESS));
-                            else Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_RELEASE));
-
-                        } else if (button == 3) {
                             // handle scroll up event
                             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_SCROLL_UP));
+                        } 
+                        else if (button == 4) { // SCROLL DOWN
 
-                        } else if (button == 4) {
                             // handle scroll down event
                             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_SCROLL_DOWN));
-
                         }
                     }
                 }
@@ -513,15 +650,20 @@ namespace GGUI{
             else if (c == '\r') { // handle enter key
                 Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
             }
+            else if (c == ' ') { // handle shift key
+                Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+            }
             else if (c == '\b') { // handle backspace key
                 Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
             }
-            else if (c == ' ') { // handle shift key
-                Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+            else if (c == '\e'){ // handle escape key
+                Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
             }
             else { // handle any other key presses
                 Inputs.push_back(new GGUI::Input(c, Constants::KEY_PRESS));
             }
+            // window size event
+
         }
     
     }
@@ -955,6 +1097,13 @@ namespace GGUI{
 
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_Renderer(){
+        Update_Max_Width_And_Height();
+        
+        if (Max_Height == 0 || Max_Width == 0){
+            Report("Width/Height is zero!");
+            return nullptr;
+        }
+
         //Save the state before the init
         bool Default_Render_State = Pause_Render;
         bool Default_Event_State = Pause_Event_Thread;
@@ -967,7 +1116,7 @@ namespace GGUI{
         Pause_Event_Thread = true;
 
         Init_Platform_Stuff();
-        Update_Max_Width_And_Height();
+
         GGUI::Constants::Init();
         Init_Classes();
 
@@ -996,7 +1145,7 @@ namespace GGUI{
 
                 Recall_Memories();
                 Event_Handler();
-
+ 
                 Previous_Time = Current_Time;
                 std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
             }
@@ -1051,7 +1200,9 @@ namespace GGUI{
         }
         else{
             // This is for the non GGUI space errors.
-            std::cout << Problem << std::endl;
+            UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
+
+            std::cout << _error__tmp_.To_String() + Problem << std::endl;
         }
 
         Resume_Renderer();

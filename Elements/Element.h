@@ -7,6 +7,7 @@
 #include <functional>
 #include <chrono>
 #include <atomic>
+#include <limits>
 
 #include <iostream>
 
@@ -84,22 +85,46 @@ namespace GGUI{
         inline unsigned long long RIGHT = 1 << 8;
         inline unsigned long long SPACE = 1 << 9;
         inline unsigned long long SHIFT = 1 << 10;
+        inline unsigned long long HOME = 1 << 11;
+        inline unsigned long long INSERT = 1 << 12;
+        inline unsigned long long DELETE = 1 << 13;
+        inline unsigned long long END = 1 << 14;
+        inline unsigned long long PAGE_UP = 1 << 15;
+        inline unsigned long long PAGE_DOWN = 1 << 16;
+        inline unsigned long long F0 = 1 << 17;
+        inline unsigned long long F1 = 1 << 18;
+        inline unsigned long long F2 = 1 << 19;
+        inline unsigned long long F3 = 1 << 20;
+        inline unsigned long long F4 = 1 << 21;
+        inline unsigned long long F5 = 1 << 22;
+        inline unsigned long long F6 = 1 << 23;
+        inline unsigned long long F7 = 1 << 24;
+        inline unsigned long long F8 = 1 << 25;
+        inline unsigned long long F9 = 1 << 26;
+        inline unsigned long long F10 = 1 << 27;
+        inline unsigned long long F11 = 1 << 28;
+        inline unsigned long long F12 = 1 << 29;
+        inline unsigned long long F13 = 1 << 30;
+        inline unsigned long long F14 = 1 << 31;
+        inline unsigned long long F15 = 1 << 32;
+        inline unsigned long long F16 = 1 << 33;
+
 
         //key_Press includes [a-z, A-Z] & [0-9]
-        inline unsigned long long KEY_PRESS = 1 << 11;
+        inline unsigned long long KEY_PRESS = 1 << 34;
 
         // EASY MOUSE API
-        inline unsigned long long MOUSE_LEFT_CLICKED = 1 << 12;
-        inline unsigned long long MOUSE_MIDDLE_CLICKED = 1 << 13;
-        inline unsigned long long MOUSE_RIGHT_CLICKED = 1 << 14;
+        inline unsigned long long MOUSE_LEFT_CLICKED = 1 << 35;
+        inline unsigned long long MOUSE_MIDDLE_CLICKED = 1 << 36;
+        inline unsigned long long MOUSE_RIGHT_CLICKED = 1 << 37;
 
         // NOTE: These will be spammed until it is not pressed anymore!
-        inline unsigned long long MOUSE_LEFT_PRESSED = 1 << 15;
-        inline unsigned long long MOUSE_MIDDLE_PRESSED = 1 << 16;
-        inline unsigned long long MOUSE_RIGHT_PRESSED = 1 << 17;
+        inline unsigned long long MOUSE_LEFT_PRESSED = 1 << 38;
+        inline unsigned long long MOUSE_MIDDLE_PRESSED = 1 << 39;
+        inline unsigned long long MOUSE_RIGHT_PRESSED = 1 << 40;
 
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = 1 << 18;
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = 1 << 19;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = 1 << 41;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = 1 << 42;
 
         inline void Init();
     }
@@ -191,11 +216,11 @@ namespace GGUI{
 
         RGB(){}
 
-        std::string Get_Colour(){
+        std::string Get_Colour() const{
             return std::to_string(Red) + Constants::SEPERATE + std::to_string(Green) + Constants::SEPERATE + std::to_string(Blue);
         }
     
-        std::string Get_Over_Head(bool Is_Text_Color = true){
+        std::string Get_Over_Head(bool Is_Text_Color = true) const{
             if(Is_Text_Color){
                 return Constants::ESC + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
             }
@@ -204,7 +229,7 @@ namespace GGUI{
             }
         }
     
-        bool operator==(const RGB& Other){
+        bool operator==(const RGB& Other) const{
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue);
         }
     };
@@ -214,19 +239,19 @@ namespace GGUI{
         float Fast_Alpha = 1;
 
         union{
-            unsigned char Alpha = UCHAR_MAX;
+            unsigned char Alpha = std::numeric_limits<unsigned char>::max();
             unsigned char A;
         };
     public:
 
         void Set_Alpha(unsigned char a){
             Alpha = a;
-            Fast_Alpha = (float)Alpha / UCHAR_MAX;
+            Fast_Alpha = (float)Alpha / std::numeric_limits<unsigned char>::max();
         }
 
         void Set_Alpha(float a){
             Fast_Alpha = a;
-            Alpha = (unsigned char)(a * UCHAR_MAX);
+            Alpha = (unsigned char)(a * std::numeric_limits<unsigned char>::max());
         }
 
         RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
@@ -976,6 +1001,8 @@ namespace GGUI{
         void Set_Text_Color(RGB color);
         
         RGB Get_Text_Color();
+
+        static std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
 
         virtual std::vector<UTF> Render();
 

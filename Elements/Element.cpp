@@ -271,7 +271,7 @@ void GGUI::Element::Set_Opacity(float Opacity){
 
 void GGUI::Element::Set_Opacity(unsigned char Opacity){
     // Normalize the unsigned char of 0 - 255 to 0  - 100
-    float tmp = (float)Opacity / (float)UCHAR_MAX;
+    float tmp = (float)Opacity / (float)std::numeric_limits<unsigned char>::max();;
     At<NUMBER_VALUE>(STYLES::Opacity)->Value = (int)(tmp * 100);
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
@@ -798,8 +798,16 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
                 // Check if the child in question has opacity less than one.
                 if (c->Is_Transparent()){
                     //now that we know that this element is transparent we need to clear the area that this element resided in this parent element.
-                    for (int y = c->Position.Y; y < c->Position.Y + c->Height; y++){
-                        for (int x = c->Position.X; x < c->Position.X + c->Width; x++){
+                    std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(this, c);
+
+                    unsigned int Start_Y = Limits.first.first;
+                    unsigned int Start_X = Limits.first.second;
+
+                    unsigned int End_Y = Limits.second.first;
+                    unsigned int End_X = Limits.second.second;
+
+                    for (int y = Start_Y; y < End_Y; y++){
+                        for (int x = Start_X; x < End_X; x++){
                             Result[x + y * Width].Background = Get_Background_Color();
                             Result[x + y * Width].Foreground = Get_Text_Color();
                         }
@@ -897,7 +905,7 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 }
 
 void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
-    if (Source.Background.Get_Alpha() == UCHAR_MAX){
+    if (Source.Background.Get_Alpha() == std::numeric_limits<unsigned char>::max()){
         Dest = Source;
         return;
     }
@@ -921,8 +929,7 @@ void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
     }
 }
 
-void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
-    
+std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> GGUI::Element::Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child){
     unsigned int Max_Allowed_Height = Parent->Height - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();             //remove bottom borders from calculation
     unsigned int Max_Allowed_Width = Parent->Width - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();              //remove right borders from calculation
 
@@ -935,9 +942,21 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     unsigned int Child_End_Y = Min(Child_Start_Y + Child->Get_Processed_Height(), Max_Allowed_Height);
     unsigned int Child_End_X = Min(Child_Start_X + Child->Get_Processed_Width(), Max_Allowed_Width);
 
-    for (int y = Child_Start_Y; y < Child_End_Y; y++){
-        for (int x = Child_Start_X; x < Child_End_X; x++){
-            Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[(y - Child_Start_Y) * Child->Get_Processed_Width() + (x - Child_Start_X)]);
+    return { {Child_Start_Y, Child_Start_X}, {Child_End_Y, Child_End_X} };
+}
+
+void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
+    std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(Parent, Child);
+
+    unsigned int Start_Y =  Limits.first.first;
+    unsigned int Start_X =  Limits.first.second;
+
+    unsigned int End_Y = Limits.second.first;
+    unsigned int End_X = Limits.second.second;
+
+    for (int y = Start_Y; y < End_Y; y++){
+        for (int x = Start_X; x < End_X; x++){
+            Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[(y - Start_Y) * Child->Get_Processed_Width() + (x - Start_X)]);
         }
     }
 }
@@ -1208,7 +1227,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
     int Shadow_Box_Center_X = Shadow_Box_Width / 2;
     int Shadow_Box_Center_Y = Shadow_Box_Height / 2;
 
-    unsigned char Last_Alpha = properties.Opacity * UCHAR_MAX;
+    unsigned char Last_Alpha = properties.Opacity * std::numeric_limits<unsigned char>::max();;
     float previus_opacity = properties.Opacity;
     int Current_Box_Start_X = Shadow_Length;
     int Current_Box_Start_Y = Shadow_Length;
@@ -1236,7 +1255,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
         }
 
         previus_opacity *= min(0.9f, (float)properties.Direction.Z);
-        Last_Alpha = previus_opacity * UCHAR_MAX;
+        Last_Alpha = previus_opacity * std::numeric_limits<unsigned char>::max();;
     }
 
     // Now offset the shadow box buffer by the direction.
