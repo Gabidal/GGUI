@@ -64,7 +64,7 @@ namespace GGUI{
     }
 
     namespace Constants{
-        inline std::string ESC = "\e[";
+        inline std::string ESC_CODE = "\e[";
         inline std::string SEPERATE = ";";
         inline std::string Text_Color = "38";
         inline std::string Back_Ground_Color = "48";
@@ -72,7 +72,7 @@ namespace GGUI{
         inline std::string RESET_Back_Ground_Color;
         inline std::string USE_RGB = "2";
         inline std::string END_COMMAND = "m";
-        inline std::string CLEAR_SCREEN = ESC + "2J";
+        inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
 
         inline unsigned long long NON = 1 << 0;
         inline unsigned long long ENTER = 1 << 1;
@@ -85,29 +85,34 @@ namespace GGUI{
         inline unsigned long long RIGHT = 1 << 8;
         inline unsigned long long SPACE = 1 << 9;
         inline unsigned long long SHIFT = 1 << 10;
-        inline unsigned long long HOME = 1 << 11;
-        inline unsigned long long INSERT = 1 << 12;
-        inline unsigned long long DELETE = 1 << 13;
-        inline unsigned long long END = 1 << 14;
-        inline unsigned long long PAGE_UP = 1 << 15;
-        inline unsigned long long PAGE_DOWN = 1 << 16;
-        inline unsigned long long F0 = 1 << 17;
-        inline unsigned long long F1 = 1 << 18;
-        inline unsigned long long F2 = 1 << 19;
-        inline unsigned long long F3 = 1 << 20;
-        inline unsigned long long F4 = 1 << 21;
-        inline unsigned long long F5 = 1 << 22;
-        inline unsigned long long F6 = 1 << 23;
-        inline unsigned long long F7 = 1 << 24;
-        inline unsigned long long F8 = 1 << 25;
-        inline unsigned long long F9 = 1 << 26;
-        inline unsigned long long F10 = 1 << 27;
-        inline unsigned long long F11 = 1 << 28;
-        inline unsigned long long F12 = 1 << 29;
-        inline unsigned long long F13 = 1 << 30;
-        inline unsigned long long F14 = 1 << 31;
-        inline unsigned long long F15 = 1 << 32;
-        inline unsigned long long F16 = 1 << 33;
+        inline unsigned long long ALT = 1 << 11;
+        inline unsigned long long CTRL = 1 << 12;
+        inline unsigned long long SUPER = 1 << 13;
+        inline unsigned long long HOME = 1 << 14;
+        inline unsigned long long INSERT = 1 << 15;
+        inline unsigned long long DELETE = 1 << 16;
+        inline unsigned long long END = 1 << 17;
+        inline unsigned long long PAGE_UP = 1 << 18;
+        inline unsigned long long PAGE_DOWN = 1 << 19;
+        inline unsigned long long F0 = 1 << 20;
+        inline unsigned long long F1 = 1 << 21;
+        inline unsigned long long F2 = 1 << 22;
+        inline unsigned long long F3 = 1 << 23;
+        inline unsigned long long F4 = 1 << 24;
+        inline unsigned long long F5 = 1 << 25;
+        inline unsigned long long F6 = 1 << 26;
+        inline unsigned long long F7 = 1 << 27;
+        inline unsigned long long F8 = 1 << 28;
+        inline unsigned long long F9 = 1 << 29;
+        inline unsigned long long F10 = 1 << 30;
+        inline unsigned long long F11 = 1 << 31;
+        inline unsigned long long F12 = 1 << 32;
+        inline unsigned long long F13 = 1 << 33;
+        inline unsigned long long F14 = 1 << 34;
+        inline unsigned long long F15 = 1 << 35;
+        inline unsigned long long F16 = 1 << 36;
+
+        inline unsigned long long SHIFT_TAB = 1 << 37;
 
 
         //key_Press includes [a-z, A-Z] & [0-9]
@@ -167,6 +172,7 @@ namespace GGUI{
         inline std::string SECTION = "SECTION";
         inline std::string BACKSPACE = "BACKSPACE";
         inline std::string TAB = "TAB";
+        inline std::string SHIFT_TAB = "SHIFT_TAB";
         inline std::string ENTER = "ENTER";
         inline std::string CAPS = "CAPS";
         inline std::string SHIFT = "SHIFT";
@@ -180,6 +186,7 @@ namespace GGUI{
         inline std::string HOME = "HOME";
         inline std::string PAGE_UP = "PAGE_UP";
         inline std::string DELETE = "DELETE";
+        inline std::string INSERT = "INSERT";
         inline std::string END = "END";
         inline std::string PAGE_DOWN = "PAGE_DOWN";
 
@@ -222,10 +229,10 @@ namespace GGUI{
     
         std::string Get_Over_Head(bool Is_Text_Color = true) const{
             if(Is_Text_Color){
-                return Constants::ESC + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC_CODE + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
             }
             else{
-                return Constants::ESC + Constants::Back_Ground_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC_CODE + Constants::Back_Ground_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
             }
         }
     
@@ -333,8 +340,8 @@ namespace GGUI{
     }
 
     void Constants::Init(){
-        RESET_Text_Color = ESC + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
-        RESET_Back_Ground_Color = ESC + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
+        RESET_Text_Color = ESC_CODE + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
+        RESET_Back_Ground_Color = ESC_CODE + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
     }
 
     class Vector2{
