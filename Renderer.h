@@ -131,6 +131,7 @@ namespace GGUI{
     extern void Exit();
 
     extern void Handle_Tabulator();
+    extern void Handle_Shift_Tabulator();
 
     extern void Handle_Escape();
 

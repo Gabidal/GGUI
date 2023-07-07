@@ -759,7 +759,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     if (Children_Changed()){
         Dirty.Dirty(STAIN_TYPE::DEEP);
     }
-            
+
     if (Dirty.is(STAIN_TYPE::CLEAN))
         return Result;
 

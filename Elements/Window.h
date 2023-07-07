@@ -58,8 +58,6 @@ namespace GGUI{
 
         //End of user constructors.
 
-
-
         void Set_Title(std::string t);
 
         std::string Get_Title();
