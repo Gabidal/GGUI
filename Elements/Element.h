@@ -243,6 +243,7 @@ namespace GGUI{
 
     class RGBA : public RGB{
     private:
+    // Ranging from 0. - 1.
         float Fast_Alpha = 1;
 
         union{
@@ -289,24 +290,61 @@ namespace GGUI{
         }
 
         RGBA operator*(const RGBA& Other){
-            return RGBA(Red * ((float)Other.Red * Other.Fast_Alpha), Green * ((float)Other.Green * Other.Fast_Alpha), Blue * ((float)Other.Blue * Other.Fast_Alpha), Fast_Alpha);
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            
+            return RGBA(
+                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha), 
+                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha), 
+                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha),
+                Fast_Alpha
+            );
         }
 
         RGBA operator+(const RGBA& Other){
-            return RGBA(Red + ((float)Other.Red * Other.Fast_Alpha), Green + ((float)Other.Green * Other.Fast_Alpha), Blue + ((float)Other.Blue * Other.Fast_Alpha), Fast_Alpha);
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+
+            return RGBA(
+                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha), 
+                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha), 
+                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha),
+                Fast_Alpha
+            );
         }
 
         RGBA operator*=(const RGBA& Other){
-            Red *= ((float)Other.Red * (float)Other.Fast_Alpha);
-            Green *= ((float)Other.Green * (float)Other.Fast_Alpha);
-            Blue *= ((float)Other.Blue * (float)Other.Fast_Alpha);
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+
+            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha);
+
             return *this;
         }
 
         RGBA operator+=(const RGBA& Other){
-            Red += ((float)Other.Red * (float)Other.Fast_Alpha);
-            Green += ((float)Other.Green * (float)Other.Fast_Alpha);
-            Blue += ((float)Other.Blue * (float)Other.Fast_Alpha);
+
+            // Calculate the divider which is by default 2, but gets smaller the less the Fast_Alpha is.
+            // Fast_Alpha ranges from 0 to 1.
+
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+
+            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha);
+
+            // float Divider = 1 + Other.Fast_Alpha;
+
+            // Red = ((float)Red + ((float)Other.Red * (float)Other.Fast_Alpha)) / Divider;
+            // Green = ((float)Green + ((float)Other.Green * (float)Other.Fast_Alpha)) / Divider;
+            // Blue = ((float)Blue + ((float)Other.Blue * (float)Other.Fast_Alpha)) / Divider;
+
+            // Red += ((float)Other.Red * (float)Other.Fast_Alpha);
+            // Green += ((float)Other.Green * (float)Other.Fast_Alpha);
+            // Blue += ((float)Other.Blue * (float)Other.Fast_Alpha);
             return *this;
         }
 

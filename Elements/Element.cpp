@@ -905,19 +905,17 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 }
 
 void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
+    // If the Source element has full opacity, the destination gets fully rewritten over.
     if (Source.Background.Get_Alpha() == std::numeric_limits<unsigned char>::max()){
         Dest = Source;
         return;
     }
     
-    if (Source.Background.Get_Alpha() == 0){
-        // Dont need to do anything.
-        return;
-    }
+    if (Source.Background.Get_Alpha() == 0) return;         // Dont need to do anything.
 
-    // Mask the below UTF by this UTFs background color.
+    // Color the Destination UTF by the Source UTF background color.
     Dest.Background += Source.Background;
-    Dest.Foreground += Source.Background;
+    Dest.Foreground += Dest.Background;
 
     if (Source.Has_Non_Default_Text()){
         Dest.Set_Text(Source);

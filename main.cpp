@@ -4,7 +4,11 @@ using namespace GGUI;
 
 int main() 
 {
-    GGUI::GGUI([&](){
+    GGUI::GGUI([&](){    
+        GGUI::Main->Set_Title("Your App UI");
+        GGUI::Main->Set_Background_Color(COLOR::WHITE);
+        GGUI::Main->Set_Text_Color(COLOR::BLACK);
+        GGUI::Main->Show_Border(true);
 
         List_View* bar = new List_View(
             GGUI::Main,
@@ -22,9 +26,9 @@ int main()
         //     i->Show_Border(false);
         // }
 
-        Window* A = new Window("A", 20, 10, COLOR::MAGENTA, COLOR::RED);
-        Window* B = new Window("B", 20, 10, COLOR::YELLOW, COLOR::GREEN);
-        Window* C = new Window("C", 20, 10, COLOR::CYAN, COLOR::BLUE);
+        Window* A = new Window("A", 20, 10, COLOR::CYAN, COLOR::RED);
+        Window* B = new Window("B", 20, 10, COLOR::MAGENTA, COLOR::GREEN);
+        Window* C = new Window("C", 20, 10, COLOR::YELLOW, COLOR::BLUE);
 
         A->Set_Opacity(0.5f);
         B->Set_Opacity(0.5f);
@@ -37,12 +41,7 @@ int main()
         A->Set_Position({10, 10});
         B->Set_Position({30, 10});
         C->Set_Position({20, 15});
-    });
-    
-    GGUI::Main->Set_Title("Your App UI");
-    GGUI::Main->Set_Background_Color(COLOR::WHITE);
-    GGUI::Main->Set_Text_Color(COLOR::BLACK);
-    GGUI::Main->Show_Border(true);    
+    });    
 
     GGUI::SLEEP(INT32_MAX);
     return 0;
