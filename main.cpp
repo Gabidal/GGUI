@@ -6,7 +6,7 @@ int main()
 {
     GGUI::GGUI([&](){    
         GGUI::Main->Set_Title("Your App UI");
-        GGUI::Main->Set_Background_Color(COLOR::WHITE);
+        GGUI::Main->Set_Background_Color(COLOR::BLACK);
         GGUI::Main->Set_Text_Color(COLOR::BLACK);
         GGUI::Main->Show_Border(true);
 
@@ -26,9 +26,9 @@ int main()
         //     i->Show_Border(false);
         // }
 
-        Window* A = new Window("A", 20, 10, COLOR::CYAN, COLOR::RED);
-        Window* B = new Window("B", 20, 10, COLOR::MAGENTA, COLOR::GREEN);
-        Window* C = new Window("C", 20, 10, COLOR::YELLOW, COLOR::BLUE);
+        Window* A = new Window("A", 20, 10, COLOR::RED, COLOR::CYAN);
+        Window* B = new Window("B", 20, 10, COLOR::GREEN, COLOR::MAGENTA);
+        Window* C = new Window("C", 20, 10, COLOR::BLUE, COLOR::YELLOW);
 
         A->Set_Opacity(0.5f);
         B->Set_Opacity(0.5f);
@@ -42,6 +42,19 @@ int main()
         B->Set_Position({30, 10});
         C->Set_Position({20, 15});
     });    
+    
+    // GGUI::RGB Increaser = GGUI::RGB(1, 1, 1);
+    // while (true){
+    //     vector<Window*> Result = GGUI::Main->Get_Elements<Window>();
+
+    //     for (auto& w : Result){
+
+    //         if (w->Get_Opacity() > 100.0f)
+    //             w->Set_Opacity(0.0f);
+    //         else
+    //             w->Set_Opacity((w->Get_Opacity() / 100.0f) + 0.011f);
+    //     }
+    // }
 
     GGUI::SLEEP(INT32_MAX);
     return 0;

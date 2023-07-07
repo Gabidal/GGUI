@@ -74,62 +74,62 @@ namespace GGUI{
         inline std::string END_COMMAND = "m";
         inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
 
-        inline unsigned long long NON = 1 << 0;
-        inline unsigned long long ENTER = 1 << 1;
-        inline unsigned long long ESCAPE = 1 << 2;
-        inline unsigned long long BACKSPACE = 1 << 3;
-        inline unsigned long long TAB = 1 << 4;
-        inline unsigned long long UP = 1 << 5;
-        inline unsigned long long DOWN = 1 << 6;
-        inline unsigned long long LEFT = 1 << 7;
-        inline unsigned long long RIGHT = 1 << 8;
-        inline unsigned long long SPACE = 1 << 9;
-        inline unsigned long long SHIFT = 1 << 10;
-        inline unsigned long long ALT = 1 << 11;
-        inline unsigned long long CTRL = 1 << 12;
-        inline unsigned long long SUPER = 1 << 13;
-        inline unsigned long long HOME = 1 << 14;
-        inline unsigned long long INSERT = 1 << 15;
-        inline unsigned long long DELETE = 1 << 16;
-        inline unsigned long long END = 1 << 17;
-        inline unsigned long long PAGE_UP = 1 << 18;
-        inline unsigned long long PAGE_DOWN = 1 << 19;
-        inline unsigned long long F0 = 1 << 20;
-        inline unsigned long long F1 = 1 << 21;
-        inline unsigned long long F2 = 1 << 22;
-        inline unsigned long long F3 = 1 << 23;
-        inline unsigned long long F4 = 1 << 24;
-        inline unsigned long long F5 = 1 << 25;
-        inline unsigned long long F6 = 1 << 26;
-        inline unsigned long long F7 = 1 << 27;
-        inline unsigned long long F8 = 1 << 28;
-        inline unsigned long long F9 = 1 << 29;
-        inline unsigned long long F10 = 1 << 30;
-        inline unsigned long long F11 = 1 << 31;
-        inline unsigned long long F12 = 1 << 32;
-        inline unsigned long long F13 = 1 << 33;
-        inline unsigned long long F14 = 1 << 34;
-        inline unsigned long long F15 = 1 << 35;
-        inline unsigned long long F16 = 1 << 36;
+        inline unsigned long long NON = (unsigned long long)1 << 0;
+        inline unsigned long long ENTER = (unsigned long long)1 << 1;
+        inline unsigned long long ESCAPE = (unsigned long long)1 << 2;
+        inline unsigned long long BACKSPACE = (unsigned long long)1 << 3;
+        inline unsigned long long TAB = (unsigned long long)1 << 4;
+        inline unsigned long long UP = (unsigned long long)1 << 5;
+        inline unsigned long long DOWN = (unsigned long long)1 << 6;
+        inline unsigned long long LEFT = (unsigned long long)1 << 7;
+        inline unsigned long long RIGHT = (unsigned long long)1 << 8;
+        inline unsigned long long SPACE = (unsigned long long)1 << 9;
+        inline unsigned long long SHIFT = (unsigned long long)1 << 10;
+        inline unsigned long long ALT = (unsigned long long)1 << 11;
+        inline unsigned long long CTRL = (unsigned long long)1 << 12;
+        inline unsigned long long SUPER = (unsigned long long)1 << 13;
+        inline unsigned long long HOME = (unsigned long long)1 << 14;
+        inline unsigned long long INSERT = (unsigned long long)1 << 15;
+        inline unsigned long long DELETE = (unsigned long long)1 << 16;
+        inline unsigned long long END = (unsigned long long)1 << 17;
+        inline unsigned long long PAGE_UP = (unsigned long long)1 << 18;
+        inline unsigned long long PAGE_DOWN = (unsigned long long)1 << 19;
+        inline unsigned long long F0 = (unsigned long long)1 << 20;
+        inline unsigned long long F1 = (unsigned long long)1 << 21;
+        inline unsigned long long F2 = (unsigned long long)1 << 22;
+        inline unsigned long long F3 = (unsigned long long)1 << 23;
+        inline unsigned long long F4 = (unsigned long long)1 << 24;
+        inline unsigned long long F5 = (unsigned long long)1 << 25;
+        inline unsigned long long F6 = (unsigned long long)1 << 26;
+        inline unsigned long long F7 = (unsigned long long)1 << 27;
+        inline unsigned long long F8 = (unsigned long long)1 << 28;
+        inline unsigned long long F9 = (unsigned long long)1 << 29;
+        inline unsigned long long F10 = (unsigned long long)1 << 30;
+        inline unsigned long long F11 = (unsigned long long)1 << 31;
+        inline unsigned long long F12 = (unsigned long long)1 << 32;
+        inline unsigned long long F13 = (unsigned long long)1 << 33;
+        inline unsigned long long F14 = (unsigned long long)1 << 34;
+        inline unsigned long long F15 = (unsigned long long)1 << 35;
+        inline unsigned long long F16 = (unsigned long long)1 << 36;
 
-        inline unsigned long long SHIFT_TAB = 1 << 37;
+        inline unsigned long long SHIFT_TAB = (unsigned long long)1 << 37;
 
 
         //key_Press includes [a-z, A-Z] & [0-9]
-        inline unsigned long long KEY_PRESS = 1 << 34;
+        inline unsigned long long KEY_PRESS = (unsigned long long)1 << 38;
 
         // EASY MOUSE API
-        inline unsigned long long MOUSE_LEFT_CLICKED = 1 << 35;
-        inline unsigned long long MOUSE_MIDDLE_CLICKED = 1 << 36;
-        inline unsigned long long MOUSE_RIGHT_CLICKED = 1 << 37;
+        inline unsigned long long MOUSE_LEFT_CLICKED = (unsigned long long)1 << 39;
+        inline unsigned long long MOUSE_MIDDLE_CLICKED = (unsigned long long)1 << 40;
+        inline unsigned long long MOUSE_RIGHT_CLICKED = (unsigned long long)1 << 41;
 
         // NOTE: These will be spammed until it is not pressed anymore!
-        inline unsigned long long MOUSE_LEFT_PRESSED = 1 << 38;
-        inline unsigned long long MOUSE_MIDDLE_PRESSED = 1 << 39;
-        inline unsigned long long MOUSE_RIGHT_PRESSED = 1 << 40;
+        inline unsigned long long MOUSE_LEFT_PRESSED = (unsigned long long)1 << 42;
+        inline unsigned long long MOUSE_MIDDLE_PRESSED = (unsigned long long)1 << 43;
+        inline unsigned long long MOUSE_RIGHT_PRESSED = (unsigned long long)1 << 44;
 
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = 1 << 41;
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = 1 << 42;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = (unsigned long long)1 << 45;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = (unsigned long long)1 << 46;
 
         inline void Init();
     }
@@ -141,6 +141,7 @@ namespace GGUI{
         inline constexpr static  unsigned int HOUR = MINUTE * 60;
     }
 
+    // Inits with 'NOW()' when created
     class BUTTON_STATE{
     public:
         bool State = false;
@@ -239,6 +240,11 @@ namespace GGUI{
         bool operator==(const RGB& Other) const{
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue);
         }
+    
+        RGB operator+(const RGB& Other) const{
+            return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
+        }
+    
     };
 
     class RGBA : public RGB{
@@ -511,6 +517,7 @@ namespace GGUI{
         unsigned int Y = 0;
         int Scale = 1;
 
+        // The input information like the character written.
         Input(char d, unsigned long long t){
             Data = d;
             Criteria = t;

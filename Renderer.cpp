@@ -288,12 +288,13 @@ namespace GGUI{
                 }
                 // Handle mouse clicks
                 // TODO: Windows doesn't give release events.
+                // Yes it does you fucking moron!
                 if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
                     PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
-                if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
+                else if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
                     PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
                 }
@@ -303,7 +304,7 @@ namespace GGUI{
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = true;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
-                if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
+                else if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
                     PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
                 }
@@ -749,7 +750,7 @@ namespace GGUI{
     #endif
 
     void MOUSE_API(){
-        auto Mouse_Left_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time).count();
+        auto Mouse_Left_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
 
         if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= (long long)SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
@@ -758,7 +759,7 @@ namespace GGUI{
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
         }
 
-        auto Mouse_Right_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time).count();
+        auto Mouse_Right_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
 
         if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
@@ -767,7 +768,7 @@ namespace GGUI{
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
         }
 
-        auto Mouse_Middle_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time).count();
+        auto Mouse_Middle_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
 
         if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
