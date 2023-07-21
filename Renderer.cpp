@@ -3,10 +3,13 @@
 #include <map>
 #include <string>
 #include <iostream>
-
 #include <cassert>
+#include <stacktrace>
 
 namespace GGUI{
+
+    extern "C" void* PDATA;
+
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
@@ -175,6 +178,34 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
+    Element* Find_Closest_Absolute_Element(Coordinates start, vector<Element*> Candidates){
+        // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
+        // If they are, check if they collide with any element.
+        // cast "rays" to each four directions, and return the lenghts of each collision between the center of the rectangles and the start point.
+        // return the smallest one.
+        if (Candidates.size() == 0){
+            Report_Stack("Missing Candidates!");
+        }
+
+        Element* Best_Candidate = nullptr;
+        float Shortest_Distance = std::numeric_limits<float>::max();
+
+        for (auto& candidate : Candidates){
+            if (!candidate) 
+                continue;   // Incase of event handlers with their stupid empty hosters.
+            // Calculate the distance between the candidate position and the start position
+            Coordinates CC = candidate->Get_Absolute_Position();
+            float Distance = std::sqrt(std::pow(CC.X - start.X, 2) + std::pow(CC.Y - start.Y, 2));
+
+            if (Distance < Shortest_Distance){
+                Shortest_Distance = Distance;
+                Best_Candidate = candidate;
+            }
+        }
+
+        return Best_Candidate;
+    }
+
     signed long long Min(signed long long a, signed long long b){
         return a < b ? a : b;
     }
@@ -308,7 +339,6 @@ namespace GGUI{
             }
         }
 
-        
         MOUSE_API();
     }
 
@@ -599,14 +629,24 @@ namespace GGUI{
     void Handle_Tabulator(){
         bool Shift_Is_Pressed = KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
 
-        Element* Current = nullptr;
+        // Get the current element from the selected element 
+        Element* Current = Focused_On;
 
-        for (auto e : Event_Handlers){
-            if (!Collides(e->Host, Mouse))
-                continue;
+        if (!Current)
+            Current = Hovered_On;
 
-            Current = e->Host;
-            break;
+        // Check if there is no focused element yet
+        if (!Current){
+            // If there is no element selected per se (perse). find the closest element to the (0;0) (Top Left)
+
+            vector<Element*> handler_elements;
+            handler_elements.resize(Event_Handlers.size());
+
+            for (int i = 0; i < Event_Handlers.size(); i++){
+                handler_elements[i] = Event_Handlers[i]->Host;
+            }
+
+            Current = Find_Closest_Absolute_Element({0, 0}, handler_elements);
         }
 
         if (!Current)
@@ -1055,6 +1095,17 @@ namespace GGUI{
         }
 
         Resume_Renderer();
+    }
+
+    void Report_Stack(std::string Problem){
+        // Print the stack information and the function names can be got from .PDATA section
+        unsigned long long Stack_Pointer = (unsigned long long)__builtin_return_address(0);
+
+        // STacktracing doesnt work atm :(
+        //auto& stack = std::stacktrace::current();
+
+
+        Report(Problem);
     }
 
     void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){

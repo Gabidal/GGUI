@@ -97,7 +97,8 @@
         "coroutine": "cpp",
         "queue": "cpp",
         "ranges": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "stacktrace": "cpp"
     },
     "cSpell.words": [
         "Multiplatform"
