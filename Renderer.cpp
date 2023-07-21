@@ -251,6 +251,10 @@ namespace GGUI{
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                         KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
                     }
+                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
+                        Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
+                        KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
+                    }
                     else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
                         Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
                         KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
@@ -1013,6 +1017,10 @@ namespace GGUI{
         return (f & flag) != 0;
     }
 
+    bool Contains(unsigned long long big, unsigned long long smoll){
+        return (smoll & big) == smoll;
+    }
+
     void Un_Focus_Element(){
         if (!Focused_On)
             return;
@@ -1081,7 +1089,7 @@ namespace GGUI{
                 if (Has(Inputs[i]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
                     Has_Select_Event = true;
 
-                if (Is(e->Criteria, Inputs[i]->Criteria)){
+                if (e->Criteria == Inputs[i]->Criteria){
                     //check if this job could be runned succesfully.
                     if (e->Job(Inputs[i])){
                         //dont let anyone else react to this event.
@@ -1111,7 +1119,47 @@ namespace GGUI{
 
                 // some code...
 
-            }   
+            }
+
+            // TODO: Do better you dum!
+            // GO through the inputs and check if they contain all the flags required
+            unsigned long long Remaining_Flags = e->Criteria;
+            vector<GGUI::Input *> Accepted_Inputs;
+
+            // if an input has flags that meet the criteria, then remove the criteria from the remaining flags and continue until the remaining flags are equal to zero.
+            for (auto& i : Inputs){
+
+                if (Contains(Remaining_Flags, i->Criteria)){
+                    Remaining_Flags ^= i->Criteria;
+                    Accepted_Inputs.push_back(i);
+                }
+
+                if (Remaining_Flags == 0)
+                    break;
+            }
+
+            if (Remaining_Flags == 0){
+                // Now we need to find the information to send to the event handler.
+                Input* Best_Candidate = Accepted_Inputs[0];
+
+                for (auto i : Accepted_Inputs){
+                    if (i->Data > Best_Candidate->Data){
+                        Best_Candidate = i;
+                    }
+                }
+
+                //check if this job could be runned succesfully.
+                if (e->Job(Best_Candidate)){
+                    // Now remove the candidates from the input
+                    for (int i = 0; i < Inputs.size(); i++){
+                        if (Inputs[i] == Best_Candidate){
+                            Inputs.erase(Inputs.begin() + i);
+                            i--;
+                        }
+                    }
+                }
+            }
+
         }
         Inputs.clear();
     }

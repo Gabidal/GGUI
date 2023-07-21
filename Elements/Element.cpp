@@ -1089,6 +1089,24 @@ void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){
     GGUI::Event_Handlers.push_back(a);
 }
 
+void GGUI::Element::On(unsigned long long criteria, std::function<void(GGUI::Event* e)> action, bool GLOBAL){
+    Action* a = new Action(
+        criteria,
+        [=](GGUI::Event* e){
+            if (Collides(this, Mouse) || GLOBAL){
+                action(e);
+
+                //action succesfully executed.
+                return true;
+            }
+            //action failed.
+            return false;
+        },
+        this
+    );
+    GGUI::Event_Handlers.push_back(a);
+}
+
 GGUI::Element* GGUI::Element::Copy(){
     Element* new_element = new Element();
 

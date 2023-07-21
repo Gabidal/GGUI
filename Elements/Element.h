@@ -86,7 +86,7 @@ namespace GGUI{
         inline unsigned long long SPACE = (unsigned long long)1 << 9;
         inline unsigned long long SHIFT = (unsigned long long)1 << 10;
         inline unsigned long long ALT = (unsigned long long)1 << 11;
-        inline unsigned long long CTRL = (unsigned long long)1 << 12;
+        inline unsigned long long CONTROL = (unsigned long long)1 << 12;
         inline unsigned long long SUPER = (unsigned long long)1 << 13;
         inline unsigned long long HOME = (unsigned long long)1 << 14;
         inline unsigned long long INSERT = (unsigned long long)1 << 15;
@@ -177,7 +177,7 @@ namespace GGUI{
         inline std::string ENTER = "ENTER";
         inline std::string CAPS = "CAPS";
         inline std::string SHIFT = "SHIFT";
-        inline std::string CTRL = "CTRL";
+        inline std::string CONTROL = "CTRL";
         inline std::string SUPER = "SUPER";
         inline std::string ALT = "ALT";
         inline std::string SPACE = "SPACE";
@@ -1096,6 +1096,7 @@ namespace GGUI{
 
         //Event handlers
         void On_Click(std::function<void(GGUI::Event* e)> action);
+        void On(unsigned long long criteria, std::function<void(GGUI::Event* e)> action, bool GLOBAL = false);
 
         //This function returns nullptr, if the element could not be found.
         Element* Get_Element(std::string name);

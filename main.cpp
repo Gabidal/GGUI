@@ -6,7 +6,7 @@ int main()
 {
     GGUI::GGUI([&](){    
         GGUI::Main->Set_Title("Your App UI");
-        GGUI::Main->Set_Background_Color(COLOR::BLACK);
+        GGUI::Main->Set_Background_Color(COLOR::WHITE);
         GGUI::Main->Set_Text_Color(COLOR::BLACK);
         GGUI::Main->Show_Border(true);
 
@@ -41,8 +41,30 @@ int main()
         A->Set_Position({10, 10});
         B->Set_Position({30, 10});
         C->Set_Position({20, 15});
+
+        GGUI::Window* inspect = new GGUI::Window(
+            "Inspect",
+            Main->Get_Width() / 3,
+            Main->Get_Height()
+        );
+
+        inspect->Show_Border(true);
+        inspect->Set_Position({
+            Main->Get_Width() - (Main->Get_Width() / 3),
+            0,
+            INT32_MAX,
+        });
+
+        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
+            GGUI::Input* input = (GGUI::Input*)e;
+
+            if (input->Data != 'i' && input->Data != 'I')
+                return;
+
+            inspect->Display(!inspect->Is_Displayed());
+        }, true);
     });    
-    
+
     // GGUI::RGB Increaser = GGUI::RGB(1, 1, 1);
     // while (true){
     //     vector<Window*> Result = GGUI::Main->Get_Elements<Window>();
