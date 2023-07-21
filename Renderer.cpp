@@ -8,6 +8,9 @@
 #include <math.h>
 
 namespace GGUI{
+
+    extern "C" void* PDATA;
+
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
@@ -377,7 +380,6 @@ namespace GGUI{
             }
         }
 
-        
         MOUSE_API();
     }
 
@@ -1684,6 +1686,17 @@ namespace GGUI{
         }
 
         Resume_Renderer();
+    }
+
+    void Report_Stack(std::string Problem){
+        // Print the stack information and the function names can be got from .PDATA section
+        unsigned long long Stack_Pointer = (unsigned long long)__builtin_return_address(0);
+
+        // STacktracing doesnt work atm :(
+        //auto& stack = std::stacktrace::current();
+
+
+        Report(Problem);
     }
 
     void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){

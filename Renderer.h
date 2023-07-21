@@ -128,6 +128,8 @@ namespace GGUI{
 
     extern void Report(std::string Problem);
 
+    extern void Report_Stack(std::string Problem);
+
     extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 
     extern void Pause_Renderer(std::function<void()> f);
