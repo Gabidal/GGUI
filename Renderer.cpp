@@ -3,8 +3,8 @@
 #include <map>
 #include <string>
 #include <iostream>
-
 #include <cassert>
+#include <math.h>
 
 namespace GGUI{
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
@@ -175,6 +175,34 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
+    Element* Find_Closest_Absolute_Element(Coordinates start, vector<Element*> Candidates){
+        // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
+        // If they are, check if they collide with any element.
+        // cast "rays" to each four directions, and return the lenghts of each collision between the center of the rectangles and the start point.
+        // return the smallest one.
+        if (Candidates.size() == 0){
+            Report("Missing Candidates!");
+        }
+
+        Element* Best_Candidate = nullptr;
+        float Shortest_Distance = std::numeric_limits<float>::max();
+
+        for (auto& candidate : Candidates){
+            if (!candidate) 
+                continue;   // Incase of event handlers with their stupid empty hosters.
+            // Calculate the distance between the candidate position and the start position
+            Coordinates CC = candidate->Get_Absolute_Position();
+            float Distance = std::sqrt(std::pow(CC.X - start.X, 2) + std::pow(CC.Y - start.Y, 2));
+
+            if (Distance < Shortest_Distance){
+                Shortest_Distance = Distance;
+                Best_Candidate = candidate;
+            }
+        }
+
+        return Best_Candidate;
+    }
+
     signed long long Min(signed long long a, signed long long b){
         return a < b ? a : b;
     }
@@ -217,6 +245,12 @@ namespace GGUI{
 
         int Buffer_Size = 0;
 
+        // Clean the keyboard states.
+        PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
+        // for (auto& [key, value] : KEYBOARD_STATES){
+        //     KEYBOARD_STATES[key] = BUTTON_STATE(false);
+        // }
+
         if (GetNumberOfConsoleInputEvents(GetStdHandle(STD_INPUT_HANDLE), (LPDWORD)&Buffer_Size) && Buffer_Size > 0){
 
             Input.resize(Buffer_Size);
@@ -226,53 +260,55 @@ namespace GGUI{
 
         for (int i = 0; i < Buffer_Size; i++){
             if (Input[i].EventType == KEY_EVENT){
-                if (Input[i].Event.KeyEvent.bKeyDown){
-                    if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
-                        Inputs.push_back(new GGUI::Input(0, Constants::UP));
-                        KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
-                        Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
-                        KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
-                        Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
-                        KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
-                        Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
-                        KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
-                        Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
-                        KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
-                        Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                        KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
-                        Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                        KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
-                        Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
-                        KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
-                        Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
-                        KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
-                        Handle_Escape();
-                    }
-                    else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
-                        Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
-                        KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
-                        Handle_Tabulator();
-                    }
-                    else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0){
-                        Inputs.push_back(new GGUI::Input(Input[i].Event.KeyEvent.uChar.AsciiChar, Constants::KEY_PRESS));
-                    }
+
+                bool Pressed = Input[i].Event.KeyEvent.bKeyDown;
+
+                if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
+                    Inputs.push_back(new GGUI::Input(0, Constants::UP));
+                    KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(Pressed);
                 }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
+                    Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
+                    KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(Pressed);
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
+                    Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
+                    KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(Pressed);
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
+                    Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
+                    KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(Pressed);
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
+                    Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
+                    KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(Pressed);
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
+                    Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                    KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(Pressed);
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
+                    Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
+                    KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(Pressed);
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
+                    Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
+                    KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(Pressed);
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
+                    Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
+                    KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(Pressed);
+                    Handle_Escape();
+                }
+                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
+                    Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
+                    KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(Pressed);
+                    Handle_Tabulator();
+                }
+                else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0){
+                    Inputs.push_back(new GGUI::Input(Input[i].Event.KeyEvent.uChar.AsciiChar, Constants::KEY_PRESS));
+                }
+            
             }
             else if (Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
 
@@ -294,22 +330,22 @@ namespace GGUI{
                 // TODO: Windows doesn't give release events.
                 // Yes it does you fucking moron!
                 if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
-                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
                 else if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
-                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
                 }
 
                 if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
-                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = true;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
                 else if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
-                    PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
                 }
             }
@@ -783,42 +819,47 @@ namespace GGUI{
     }
 
     void Handle_Escape(){
-        Element* Current = Main;
-
-        for (auto e : Event_Handlers){
-            if (!Collides(e->Host, Mouse))
-                continue;
-
-            Current = e->Host;
-            break;
-        }
-
-        if (!Current)
+        if (!KEYBOARD_STATES[BUTTON_STATES::ESC].State)
             return;
-
-        if (!Current->Get_Parent())
-            return;
-
-        Mouse = Current->Get_Parent()->Get_Absolute_Position();
-        Mouse.X += Current->Get_Parent()->Has_Border();
-        Mouse.Y += Current->Get_Parent()->Has_Border();
-    }
-
-    void Handle_Shift_Tabulator(){
-
-    }
-
-    void Handle_Tabulator(){
-        bool Shift_Is_Pressed = KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
 
         Element* Current = nullptr;
 
-        for (auto e : Event_Handlers){
-            if (!Collides(e->Host, Mouse))
-                continue;
+        if (Focused_On){
+            Hovered_On = Focused_On;
+            Un_Focus_Element();
+        }
+        else if (Hovered_On){
+            if (Hovered_On->Get_Parent())
+                Update_Hovered_Element(Hovered_On->Get_Parent());
+            else
+                Un_Hover_Element();
+        }
+    }
 
-            Current = e->Host;
-            break;
+    void Handle_Tabulator(){
+        if (!KEYBOARD_STATES[BUTTON_STATES::TAB].State)
+            return;
+
+        bool Shift_Is_Pressed = KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
+
+        // Get the current element from the selected element 
+        Element* Current = Focused_On;
+
+        if (!Current)
+            Current = Hovered_On;
+
+        // Check if there is no focused element yet
+        if (!Current){
+            // If there is no element selected per se (perse). find the closest element to the (0;0) (Top Left)
+
+            vector<Element*> handler_elements;
+            handler_elements.resize(Event_Handlers.size());
+
+            for (int i = 0; i < Event_Handlers.size(); i++){
+                handler_elements[i] = Event_Handlers[i]->Host;
+            }
+
+            Current = Find_Closest_Absolute_Element({0, 0}, handler_elements);
         }
 
         if (!Current)
@@ -887,6 +928,9 @@ namespace GGUI{
             Mouse = new_Current->Get_Absolute_Position();
             Mouse.X += new_Current->Has_Border();
             Mouse.Y += new_Current->Has_Border();
+
+            if (Focused_On)
+                Update_Focused_Element(new_Current);
         }
     }
 

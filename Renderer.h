@@ -106,7 +106,11 @@ namespace GGUI{
 
     extern void Un_Focus_Element();
 
+    extern void Un_Hover_Element();
+
     extern void Update_Focused_Element(GGUI::Element* new_candidate);
+
+    extern void Update_Hovered_Element(GGUI::Element* new_candidate);
 
     extern void Event_Handler();
 
@@ -130,8 +134,8 @@ namespace GGUI{
 
     extern void Exit();
 
+    // Also handles shift tabs!
     extern void Handle_Tabulator();
-    extern void Handle_Shift_Tabulator();
 
     extern void Handle_Escape();
 
