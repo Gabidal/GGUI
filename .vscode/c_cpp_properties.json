@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:/VulkanSDK/1.3.250.1/Include/vulkan/**"
             ],
             "defines": [
                 "_DEBUG",
@@ -19,7 +20,7 @@
         },
         {
             "name": "Linux",
-            "includePath": ["${workspaceFolder}/**"],
+            "includePath": ["${workspaceFolder}/**", "vulkan/**"],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",

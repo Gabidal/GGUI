@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include <cassert>
+#include "Vulkan_API.h"
 
 namespace GGUI{
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
@@ -762,7 +763,9 @@ namespace GGUI{
 
         //Unlock the event handler.
         Pause_Event_Thread = false;
-        Render_Frame();
+        //Render_Frame();
+
+        VULKAN::Update_Frame();
     }
 
     void Pause_Renderer(){

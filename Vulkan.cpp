@@ -1,6 +1,7 @@
 #include <Elements/Element.h>
+#include "Renderer.h"
 
-#include "Vulkan.h"
+#include "Vulkan_API.h"
 
 #include <fstream>
 #include <thread>
@@ -785,7 +786,7 @@ namespace GGUI{
             image_info.extent.depth = 1;
             image_info.mipLevels = 1;
             image_info.arrayLayers = 1;
-            image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+            image_info.format = VK_FORMAT_R8G8B8_SRGB;
             image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
             image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -927,7 +928,7 @@ namespace GGUI{
             view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             view_info.image = Frame_Image;
             view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            view_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+            view_info.format = VK_FORMAT_R8G8B8_SRGB;
             view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             view_info.subresourceRange.baseMipLevel = 0;
             view_info.subresourceRange.levelCount = 1;
@@ -983,11 +984,10 @@ namespace GGUI{
 
         }
 
-
         void Flush_Buffer_To_Image(){
             transitionImageLayout(
                 Frame_Image, 
-                VK_FORMAT_R8G8B8A8_SRGB, 
+                VK_FORMAT_R8G8B8_SRGB, 
                 VK_IMAGE_LAYOUT_UNDEFINED, 
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             );
@@ -1004,7 +1004,7 @@ namespace GGUI{
 
             transitionImageLayout(
                 Frame_Image, 
-                VK_FORMAT_R8G8B8A8_SRGB, 
+                VK_FORMAT_R8G8B8_SRGB, 
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             );
@@ -1012,8 +1012,12 @@ namespace GGUI{
 
         // Where we construct the texture from the Renderer.h output.
         void Update_Frame(){
+            for (int i = 0; i < GGUI::Abstract_Frame_Buffer.size(); i++){
+                Buffer[i] = GGUI::Abstract_Frame_Buffer[i].Background;
+            }
 
-            
+            // Send the image to the frag shader.
+            Flush_Buffer_To_Image();
 
             Render_Frame();
         }
