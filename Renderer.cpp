@@ -1165,6 +1165,9 @@ namespace GGUI{
 
             }
 
+            if (Inputs.size() <= 1)
+                continue;
+
             // TODO: Do better you dum!
             // GO through the inputs and check if they contain all the flags required
             unsigned long long Remaining_Flags = e->Criteria;
@@ -1174,7 +1177,7 @@ namespace GGUI{
             for (auto& i : Inputs){
 
                 if (Contains(Remaining_Flags, i->Criteria)){
-                    Remaining_Flags ^= i->Criteria;
+                    Remaining_Flags &= ~i->Criteria;
                     Accepted_Inputs.push_back(i);
                 }
 

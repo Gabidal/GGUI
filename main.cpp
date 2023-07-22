@@ -58,8 +58,8 @@ int main()
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;
 
-            if (input->Data != 'i' && input->Data != 'I')
-                return;
+            // if (input->Data != 'i' && input->Data != 'I')
+            //     return;
 
             inspect->Display(!inspect->Is_Displayed());
         }, true);
