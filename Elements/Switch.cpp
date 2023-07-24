@@ -20,6 +20,8 @@ namespace GGUI{
             Togler();
 
             Update_Frame();
+
+            return true;
         });
 
         int Symbol_Lenght = 1;

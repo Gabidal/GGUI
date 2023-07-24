@@ -815,6 +815,7 @@ namespace GGUI{
     }
 
     enum class State{
+        UNKNOWN,
 
         RENDERED,
         HIDDEN
@@ -824,7 +825,7 @@ namespace GGUI{
     namespace SETTINGS{
         // How fast for a detection of hold down situation.
         inline unsigned long long Mouse_Press_Down_Cooldown = 365;
-
+        inline unsigned long long Input_Clear_Time = 16;
     };
 
     class Element{
@@ -840,6 +841,8 @@ namespace GGUI{
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
         bool Show = true;
+        State Current_State = State::RENDERED;
+        State Previous_State = State::UNKNOWN;
         
         std::vector<UTF> Render_Buffer;
         STAIN Dirty;
@@ -1095,8 +1098,9 @@ namespace GGUI{
         void Remove();
 
         //Event handlers
-        void On_Click(std::function<void(GGUI::Event* e)> action);
-        void On(unsigned long long criteria, std::function<void(GGUI::Event* e)> action, bool GLOBAL = false);
+        void On_Click(std::function<bool(GGUI::Event* e)> action);
+
+        void On(unsigned long long criteria, std::function<bool(GGUI::Event* e)> action, bool GLOBAL = false);
 
         //This function returns nullptr, if the element could not be found.
         Element* Get_Element(std::string name);

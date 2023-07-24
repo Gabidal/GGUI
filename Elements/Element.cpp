@@ -539,19 +539,23 @@ void GGUI::Element::Check(State s){
 void GGUI::Element::Display(bool f){
     // Check if the to be displayed is true and the element wasnt already displayed.
     if (f != Show){
+        Previous_State = Current_State;
+
         if (f){
             Check(State::RENDERED);
             Dirty.Stain_All();
             Show = true;
+            Current_State = State::RENDERED;
         }
         else{
             Check(State::HIDDEN);
             Dirty.Stain_All();
             Show = false;
-        }
-    }
+            Current_State = State::HIDDEN;
+        }   
 
-    Update_Frame();
+        Update_Frame();
+    }
 }
 
 bool GGUI::Element::Is_Displayed(){
@@ -792,25 +796,22 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         if (Render_Buffer.size() != 0){
             // clean all the instances where the childs have lesser opacity than one.
             for (auto c : this->Get_Childs()){
-                if (!c->Is_Displayed())
+                if (c->Previous_State != State::RENDERED && c->Current_State == State::HIDDEN && !c->Is_Transparent())
                     continue;
 
-                // Check if the child in question has opacity less than one.
-                if (c->Is_Transparent()){
-                    //now that we know that this element is transparent we need to clear the area that this element resided in this parent element.
-                    std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(this, c);
+                //now that we know that this element is transparent we need to clear the area that this element resided in this parent element.
+                std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(this, c);
 
-                    unsigned int Start_Y = Limits.first.first;
-                    unsigned int Start_X = Limits.first.second;
+                unsigned int Start_Y = Limits.first.first;
+                unsigned int Start_X = Limits.first.second;
 
-                    unsigned int End_Y = Limits.second.first;
-                    unsigned int End_X = Limits.second.second;
+                unsigned int End_Y = Limits.second.first;
+                unsigned int End_X = Limits.second.second;
 
-                    for (int y = Start_Y; y < End_Y; y++){
-                        for (int x = Start_X; x < End_X; x++){
-                            Result[x + y * Width].Background = Get_Background_Color();
-                            Result[x + y * Width].Foreground = Get_Text_Color();
-                        }
+                for (int y = Start_Y; y < End_Y; y++){
+                    for (int x = Start_X; x < End_X; x++){
+                        Result[x + y * Width].Background = Get_Background_Color();
+                        Result[x + y * Width].Foreground = Get_Text_Color();
                     }
                 }
             }
@@ -1071,7 +1072,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
 //End of utility functions.
 
-void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){
+void GGUI::Element::On_Click(std::function<bool(GGUI::Event* e)> action){
     Action* a = new Action(
         Constants::MOUSE_LEFT_CLICKED,
         [=](GGUI::Event* e){
@@ -1089,15 +1090,13 @@ void GGUI::Element::On_Click(std::function<void(GGUI::Event* e)> action){
     GGUI::Event_Handlers.push_back(a);
 }
 
-void GGUI::Element::On(unsigned long long criteria, std::function<void(GGUI::Event* e)> action, bool GLOBAL){
+void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Event* e)> action, bool GLOBAL){
     Action* a = new Action(
         criteria,
         [=](GGUI::Event* e){
             if (Collides(this, Mouse) || GLOBAL){
-                action(e);
-
                 //action succesfully executed.
-                return true;
+                return action(e);
             }
             //action failed.
             return false;

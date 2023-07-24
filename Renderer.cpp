@@ -19,6 +19,7 @@ namespace GGUI{
 
     std::vector<Action*> Event_Handlers;
     std::vector<Input*> Inputs;
+    std::chrono::system_clock::time_point Last_Input_Clear_Time;
 
     std::map<std::string, Element*> Element_Names;
 
@@ -240,6 +241,20 @@ namespace GGUI{
     void Update_Frame(bool Lock_Event_Thread);
     //Is called on every cycle.
 
+    char Reverse_Engineer_Keybind(char keybind_value){
+        // The current known keybinding table:
+        /*
+            CTRL+SHIFT+I => TAB
+
+        */
+
+        if (KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && KEYBOARD_STATES[BUTTON_STATES::SHIFT].State){
+            if (keybind_value == VK_TAB){
+                return 'i';
+            }
+        }
+    }
+
     void Query_Inputs(){
         std::vector<INPUT_RECORD> Input;
 
@@ -306,9 +321,10 @@ namespace GGUI{
                     Handle_Tabulator();
                 }
                 else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0){
-                    Inputs.push_back(new GGUI::Input(Input[i].Event.KeyEvent.uChar.AsciiChar, Constants::KEY_PRESS));
+                    char Result = Reverse_Engineer_Keybind(Input[i].Event.KeyEvent.uChar.AsciiChar);
+
+                    Inputs.push_back(new GGUI::Input(Result, Constants::KEY_PRESS));
                 }
-            
             }
             else if (Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
 
@@ -358,7 +374,7 @@ namespace GGUI{
     void Init_Platform_Stuff(){
         GLOBAL_STD_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleMode(GLOBAL_STD_HANDLE, -1);
-        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT);
+        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
 
         std::cout << "\033[?1003h";
         std::cout.flush();
@@ -1031,6 +1047,18 @@ namespace GGUI{
         Update_Frame();
     }
 
+    void Clear_Inputs(){
+        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+        unsigned long long Delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - Last_Input_Clear_Time).count();
+
+        if (Delta > SETTINGS::Input_Clear_Time){
+            Inputs.clear();
+            
+            Last_Input_Clear_Time = now;
+        }
+    }
+
     void Recall_Memories(){
         std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
@@ -1208,7 +1236,8 @@ namespace GGUI{
             }
 
         }
-        Inputs.clear();
+        Clear_Inputs();
+        //Inputs.clear();
     }
 
     int Get_Free_Class_ID(std::string n){

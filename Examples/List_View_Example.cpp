@@ -24,6 +24,8 @@ int main(){
 
     Text->On_Click([=](GGUI::Event* e){
         Text->Remove();
+
+        return true;
     });
     
     l->Add_Child(Text);

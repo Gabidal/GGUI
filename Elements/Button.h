@@ -16,6 +16,8 @@ namespace GGUI{
             On_Click([=](Event* e){
                 // The default, on_click wont do anything.
                 press(this);
+
+                return true;
             });
         }
     
