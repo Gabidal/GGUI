@@ -741,6 +741,7 @@ namespace GGUI{
         TEXT = 1 << 4,   //text changes, this is primarily for text_field
         CLASS = 1 << 5, //This is used to tell the renderer that there are still un_parsed classes.
         STATE = 1 << 6, // This is for Switches that based on their state display one symbol differently.
+        MOVE = 1 << 7, // This is for elements that are moved.
     };
  
     inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
@@ -757,7 +758,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS);
+        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
 
 
         bool is(STAIN_TYPE f){
@@ -784,7 +785,7 @@ namespace GGUI{
         }
 
         void Stain_All(){
-            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS);
+            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
         }
 
     };
@@ -841,10 +842,9 @@ namespace GGUI{
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
         bool Show = true;
-        State Current_State = State::RENDERED;
-        State Previous_State = State::UNKNOWN;
         
         std::vector<UTF> Render_Buffer;
+        std::vector<UTF> Passthrough_Buffer;
         STAIN Dirty;
         
         std::vector<int> Classes;

@@ -876,6 +876,14 @@ namespace GGUI{
             }
 
             Current = Find_Closest_Absolute_Element({0, 0}, handler_elements);
+
+            // This is done here because if there was no previously selected, then we want the tab to select the first and not the second to first.
+            Update_Hovered_Element(Current);            
+            Mouse = Current->Get_Absolute_Position();
+            Mouse.X += Current->Has_Border();
+            Mouse.Y += Current->Has_Border();
+
+            return;
         }
 
         if (!Current)

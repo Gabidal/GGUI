@@ -383,7 +383,6 @@ void GGUI::Element::Parse_Classes(){
     }
 }
 
-
 void GGUI::Element::Set_Focus(bool f){
     Focused = f;
     Update_Frame();
@@ -539,19 +538,14 @@ void GGUI::Element::Check(State s){
 void GGUI::Element::Display(bool f){
     // Check if the to be displayed is true and the element wasnt already displayed.
     if (f != Show){
-        Previous_State = Current_State;
+        Dirty.Dirty(STAIN_TYPE::STATE);
+        Show = f;
 
         if (f){
             Check(State::RENDERED);
-            Dirty.Stain_All();
-            Show = true;
-            Current_State = State::RENDERED;
         }
         else{
             Check(State::HIDDEN);
-            Dirty.Stain_All();
-            Show = false;
-            Current_State = State::HIDDEN;
         }   
 
         Update_Frame();
@@ -633,16 +627,22 @@ void GGUI::Element::Set_Height(int height){
 
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
-    if (Parent)
-        Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+    // if (Parent)
+    //     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+
+    this->Dirty.Dirty(STAIN_TYPE::MOVE);
+
     Update_Frame();
 }
 
 void GGUI::Element::Set_Position(Coordinates* c){
     if (c){
         Position = *c;
-        if (Parent)
-            Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+        // if (Parent)
+        //     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+
+        this->Dirty.Dirty(STAIN_TYPE::MOVE);
+
         Update_Frame();
     }
 }
@@ -668,7 +668,6 @@ GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
 
     return Result;
 }
-
 
 void GGUI::Element::Set_Margin(Margin margin){
     At<MARGIN_VALUE>(STYLES::Margin)->Value = margin;
@@ -755,6 +754,8 @@ GGUI::RGB GGUI::Element::Get_Text_Color(){
     return At<RGB_VALUE>(STYLES::Text_Color)->Value;
 }
 
+
+
 //Returns nested buffer of AST window's
 std::vector<GGUI::UTF> GGUI::Element::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
@@ -796,8 +797,10 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         if (Render_Buffer.size() != 0){
             // clean all the instances where the childs have lesser opacity than one.
             for (auto c : this->Get_Childs()){
-                if (c->Previous_State != State::RENDERED && c->Current_State == State::HIDDEN && !c->Is_Transparent())
+                if ((!c->Dirty.is(STAIN_TYPE::STATE) && !c->Is_Transparent()) || (c->Passthrough_Buffer.size() == 0))
                     continue;
+
+                c->Dirty.Clean(STAIN_TYPE::STATE);
 
                 //now that we know that this element is transparent we need to clear the area that this element resided in this parent element.
                 std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(this, c);
@@ -810,8 +813,10 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
                 for (int y = Start_Y; y < End_Y; y++){
                     for (int x = Start_X; x < End_X; x++){
-                        Result[x + y * Width].Background = Get_Background_Color();
-                        Result[x + y * Width].Foreground = Get_Text_Color();
+                        unsigned int Child_X = x - Start_X;
+                        unsigned int Child_Y = y - Start_Y;
+
+                        Result[x + y * Width] = c->Passthrough_Buffer[Child_X + Child_Y * c->Width];
                     }
                 }
             }
@@ -827,6 +832,16 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
             
             c->Render();
     
+            // Copy all nested tuff before this element.
+            if (c->Dirty.is(STAIN_TYPE::MOVE)){
+                c->Dirty.Clean(STAIN_TYPE::MOVE);
+
+                if (c->Passthrough_Buffer.size() == 0){
+                    c->Passthrough_Buffer.resize(c->Get_Processed_Width() * c->Get_Processed_Height());
+                }
+
+                Nest_Element(this, c, c->Passthrough_Buffer, Result);
+            }
             Nest_Element(this, c, Result, c->Postprocess());
         }
     }
@@ -834,7 +849,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
         Dirty.Dirty(STAIN_TYPE::EDGE);
 
-    //This will add the borders if nessesary and the title of the window.
+    //This will add the borders if necessary and the title of the window.
     if (Dirty.is(STAIN_TYPE::EDGE))
         Add_Overhead(this, Result);
 
@@ -859,6 +874,8 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
     return Result;
 }
+
+
 
 //These are just utility functions for internal purposes, dont need to sed Dirty.
 void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
