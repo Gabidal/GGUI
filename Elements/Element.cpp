@@ -734,8 +734,8 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
 
     //if inned children have changed whitout this changing, then this will trigger.
-    if (Children_Changed()){
-        Dirty.Dirty(STAIN_TYPE::DEEP);
+    if (Children_Changed() || Has_Transparent_Children()){
+        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRECH);
     }
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
@@ -766,33 +766,6 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     //This will add the child windows to the Result buffer
     if (Dirty.is(STAIN_TYPE::DEEP)){
         Dirty.Clean(STAIN_TYPE::DEEP);
-
-        if (Render_Buffer.size() != 0){
-            // clean all the instances where the childs have lesser opacity than one.
-            for (auto c : this->Get_Childs()){
-                if (!c->Dirty.is(STAIN_TYPE::STATE) && !c->Is_Transparent())
-                    continue;
-
-                c->Dirty.Clean(STAIN_TYPE::STATE);
-
-                //now that we know that this element is transparent we need to clear the area that this element resided in this parent element.
-                std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(this, c);
-
-                unsigned int Start_Y = Limits.first.first;
-                unsigned int Start_X = Limits.first.second;
-
-                unsigned int End_Y = Limits.second.first;
-                unsigned int End_X = Limits.second.second;
-
-                for (int y = Start_Y; y < End_Y; y++){
-                    for (int x = Start_X; x < End_X; x++){
-                        Result[x + y * Width].Background = Get_Background_Color();
-                        Result[x + y * Width].Foreground = Get_Text_Color();
-                    }
-                }
-            }
-        }
-
 
         for (auto c : this->Get_Childs()){
             if (!c->Is_Displayed())
@@ -1109,11 +1082,27 @@ GGUI::Element* GGUI::Element::Copy(){
 }
 
 bool GGUI::Element::Children_Changed(){
-    if (Dirty.Type != STAIN_TYPE::CLEAN)
+    if (Dirty.Type != STAIN_TYPE::CLEAN){
+        // Clean the state changed elements already here.
+        if (Dirty.is(STAIN_TYPE::STATE))
+            Dirty.Clean(STAIN_TYPE::STATE);
         return true;
+    }
 
     for (auto& e : Childs){
         if (e->Children_Changed())
+            return true;
+    }
+
+    return false;
+}
+
+bool GGUI::Element::Has_Transparent_Children(){
+    if (Is_Transparent() && Childs.size() > 0)
+        return true;
+    
+    for (auto& e : Childs){
+        if (e->Has_Transparent_Children())
             return true;
     }
 

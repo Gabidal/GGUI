@@ -1059,6 +1059,8 @@ namespace GGUI{
         virtual void Set_Childs(std::vector<Element*> childs);
 
         bool Children_Changed();
+        
+        bool Has_Transparent_Children();
 
         std::vector<Element*>& Get_Childs();
 
