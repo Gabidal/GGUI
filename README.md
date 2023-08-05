@@ -6,7 +6,7 @@
 
 ## Hello World example
 ```C++
-#include "GGUI.h"
+#include "ggui.h"
 
 using namespace GGUI;
 

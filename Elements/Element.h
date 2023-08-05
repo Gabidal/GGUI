@@ -354,7 +354,6 @@ namespace GGUI{
             return *this;
         }
 
-
     };
 
     namespace COLOR{
@@ -702,34 +701,34 @@ namespace GGUI{
     };
 
     namespace STYLES{
-        inline std::string Border                          = "Border";
-        inline std::string Text_Color                      = "Text_Color";
-        inline std::string Background_Color               = "Background_Color";
-        inline std::string Border_Colour                   = "Border_Colour";
-        inline std::string Border_Background_Color        = "Border_Background_Color";
+        inline std::string Border                           = "Border";
+        inline std::string Text_Color                       = "Text_Color";
+        inline std::string Background_Color                 = "Background_Color";
+        inline std::string Border_Colour                    = "Border_Colour";
+        inline std::string Border_Background_Color          = "Border_Background_Color";
 
         inline std::string Hover_Border_Color               = "Hover_Border_Color";
         inline std::string Hover_Text_Color                 = "Hover_Text_Color";
-        inline std::string Hover_Background_Color          = "Hover_Background_Color";
-        inline std::string Hover_Border_Background_Color   = "Hover_Border_Background_Color";
+        inline std::string Hover_Background_Color           = "Hover_Background_Color";
+        inline std::string Hover_Border_Background_Color    = "Hover_Border_Background_Color";
 
-        inline std::string Focus_Border_Color              = "Focus_Border_Color";
-        inline std::string Focus_Text_Color                = "Focus_Text_Color";
-        inline std::string Focus_Background_Color         = "Focus_Background_Color";
-        inline std::string Focus_Border_Background_Color  = "Focus_Border_Background_Color";
+        inline std::string Focus_Border_Color               = "Focus_Border_Color";
+        inline std::string Focus_Text_Color                 = "Focus_Text_Color";
+        inline std::string Focus_Background_Color           = "Focus_Background_Color";
+        inline std::string Focus_Border_Background_Color    = "Focus_Border_Background_Color";
 
-        inline std::string Flow_Priority                   = "Flow_Priority";
-        inline std::string Wrap                            = "Wrap";     
+        inline std::string Flow_Priority                    = "Flow_Priority";
+        inline std::string Wrap                             = "Wrap";     
         
-        inline std::string Text_Position                   = "Text_Position";
-        inline std::string Allow_Input_Overflow            = "Allow_Input_Overflow";
-        inline std::string Allow_Dynamic_Size              = "Allow_Dynamic_Size";     
-        inline std::string Margin                          = "Margin";
+        inline std::string Text_Position                    = "Text_Position";
+        inline std::string Allow_Input_Overflow             = "Allow_Input_Overflow";
+        inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size";     
+        inline std::string Margin                           = "Margin";
 
-        inline std::string Shadow                          = "Shadow";  // 0 - 100
-        inline std::string Opacity                         = "Opacity"; // 0 - 100
+        inline std::string Shadow                           = "Shadow";  // 0 - 100
+        inline std::string Opacity                          = "Opacity"; // 0 - 100
 
-        inline std::string Anchor                          = "Anchor";  // gives the line number in which the element is anchored.
+        inline std::string Anchor                           = "Anchor";  // gives the line number in which the element is anchored.
     };
 
     enum class STAIN_TYPE{
@@ -844,7 +843,6 @@ namespace GGUI{
         bool Show = true;
         
         std::vector<UTF> Render_Buffer;
-        std::vector<UTF> Passthrough_Buffer;
         STAIN Dirty;
         
         std::vector<int> Classes;

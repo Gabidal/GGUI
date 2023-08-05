@@ -232,7 +232,7 @@ namespace GGUI{
     void Update_Max_Width_And_Height(){
         CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
 
-        Max_Width = info.srWindow.Right - info.srWindow.Left;
+        Max_Width = info.srWindow.Right - info.srWindow.Left + 1;
         Max_Height = info.srWindow.Bottom - info.srWindow.Top;
 
         assert(("Terminal Size non-existant!", Max_Width > 0 && Max_Height > 0));

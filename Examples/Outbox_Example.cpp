@@ -1,4 +1,4 @@
-#include "GGUI.h"
+#include "ggui.h"
 #include <iostream>
 
 using namespace GGUI;

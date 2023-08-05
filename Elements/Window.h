@@ -45,6 +45,15 @@ namespace GGUI{
             unsigned int height,
             RGB text_color,
             RGB background_color,
+            RGB border_color
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
             RGB border_color,
             RGB border_background_color
         );

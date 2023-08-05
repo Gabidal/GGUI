@@ -58,7 +58,6 @@ GGUI::Window::Window(
 
         //Because the Title will not be displayed until the border is, we will create a invisible border.
         if (Title.size() > 0){
-
             Show_Border(true);
 
             Has_Hidden_Borders = true;
@@ -94,6 +93,28 @@ GGUI::Window::Window(
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
         }
+    });
+}
+
+GGUI::Window::Window(
+    std::string title, 
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color,
+    RGB border_color
+) : Element(){
+    Pause_Renderer([=](){
+        Title = title;
+        Set_Width(width);
+        Set_Height(height);
+
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        Set_Border_Color(border_color);
+        Set_Border_Background_Color(background_color);
+        
+        Show_Border(true);
     });
 }
 

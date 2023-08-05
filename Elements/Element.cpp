@@ -183,16 +183,6 @@ GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
 }
 
 GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
-    // if (Focused){
-    //     return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
-    //     At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value.Get_Colour() +
-    //     Constants::END_COMMAND;
-    // }
-    // else{
-    //     return At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Over_Head(Get_As_Foreground) + 
-    //     At<RGB_VALUE>(STYLES::Background_Color)->Value.Get_Colour() +
-    //     Constants::END_COMMAND;
-    // }
     if (Focused){
         return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value;
     }
@@ -206,23 +196,6 @@ GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
 }
 
 std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
-    // if (Focused){
-    //     return At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Over_Head(true) + 
-    //     At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value.Get_Colour() + 
-    //     Constants::END_COMMAND + 
-    //     At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Over_Head(false) + 
-    //     At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value.Get_Colour() +
-    //     Constants::END_COMMAND;
-    // }
-    // else{
-    //     return At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Over_Head(true) + 
-    //     At<RGB_VALUE>(STYLES::Border_Colour)->Value.Get_Colour() + 
-    //     Constants::END_COMMAND + 
-    //     At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Over_Head(false) + 
-    //     At<RGB_VALUE>(STYLES::Border_Background_Color)->Value.Get_Colour() +
-    //     Constants::END_COMMAND;
-    // }
-
     if (Focused){
         return {At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value, At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value};
     }
@@ -797,7 +770,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         if (Render_Buffer.size() != 0){
             // clean all the instances where the childs have lesser opacity than one.
             for (auto c : this->Get_Childs()){
-                if ((!c->Dirty.is(STAIN_TYPE::STATE) && !c->Is_Transparent()) || (c->Passthrough_Buffer.size() == 0))
+                if (!c->Dirty.is(STAIN_TYPE::STATE) && !c->Is_Transparent())
                     continue;
 
                 c->Dirty.Clean(STAIN_TYPE::STATE);
@@ -813,10 +786,8 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
                 for (int y = Start_Y; y < End_Y; y++){
                     for (int x = Start_X; x < End_X; x++){
-                        unsigned int Child_X = x - Start_X;
-                        unsigned int Child_Y = y - Start_Y;
-
-                        Result[x + y * Width] = c->Passthrough_Buffer[Child_X + Child_Y * c->Width];
+                        Result[x + y * Width].Background = Get_Background_Color();
+                        Result[x + y * Width].Foreground = Get_Text_Color();
                     }
                 }
             }
@@ -831,17 +802,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
                 Childs_With_Borders++;
             
             c->Render();
-    
-            // Copy all nested tuff before this element.
-            if (c->Dirty.is(STAIN_TYPE::MOVE)){
-                c->Dirty.Clean(STAIN_TYPE::MOVE);
 
-                if (c->Passthrough_Buffer.size() == 0){
-                    c->Passthrough_Buffer.resize(c->Get_Processed_Width() * c->Get_Processed_Height());
-                }
-
-                Nest_Element(this, c, c->Passthrough_Buffer, Result);
-            }
             Nest_Element(this, c, Result, c->Postprocess());
         }
     }
@@ -933,8 +894,8 @@ void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
 
     // Color the Destination UTF by the Source UTF background color.
     Dest.Background += Source.Background;
-    Dest.Foreground += Dest.Background;
 
+    // Check if source has text
     if (Source.Has_Non_Default_Text()){
         Dest.Set_Text(Source);
 
