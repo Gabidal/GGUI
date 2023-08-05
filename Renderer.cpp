@@ -805,6 +805,33 @@ namespace GGUI{
 
     #endif
 
+    // Since the query inputs wont populate the same inputs on every cycle we need to go through the key states and create new inputs for them :)
+    void Populate_Inputs_For_Held_Down_Keys(){
+        for (auto Key : KEYBOARD_STATES){
+
+            // Check if the key is activated
+            if (Key.second.State){
+
+                if (BUTTON_STATES::MOUSE_LEFT == Key.first || BUTTON_STATES::MOUSE_RIGHT == Key.first || BUTTON_STATES::MOUSE_MIDDLE == Key.first)
+                    continue;
+
+                //Go through the already existing inputs and make sure that it doesn't already exist
+                unsigned long long Constant_Key = BUTTON_STATES_TO_CONSTANTS_BRIDGE.at(Key.first);
+
+                bool Found = false;
+                for (auto input : Inputs){
+                    if (input->Criteria == Constant_Key){
+                        Found = true;
+                        break;
+                    }
+                }
+
+                if (!Found)
+                    Inputs.push_back(new Input((char)0, Constant_Key));
+            }
+        }
+    }
+
     void MOUSE_API(){
         auto Mouse_Left_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
 
@@ -1161,6 +1188,7 @@ namespace GGUI{
         }
 
         Query_Inputs();
+        Populate_Inputs_For_Held_Down_Keys();
         for (auto& e : Event_Handlers){
 
             bool Has_Select_Event = false;
@@ -1244,8 +1272,8 @@ namespace GGUI{
             }
 
         }
-        Clear_Inputs();
-        //Inputs.clear();
+        //Clear_Inputs();
+        Inputs.clear();
     }
 
     int Get_Free_Class_ID(std::string n){

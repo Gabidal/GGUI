@@ -63,6 +63,25 @@ namespace GGUI{
 
     }
 
+    namespace TIME{
+        inline constexpr static  unsigned int MILLISECOND = 1; 
+        inline constexpr static  unsigned int SECOND = MILLISECOND * 1000;
+        inline constexpr static  unsigned int MINUTE = SECOND * 60;
+        inline constexpr static  unsigned int HOUR = MINUTE * 60;
+    }
+
+    // Inits with 'NOW()' when created
+    class BUTTON_STATE{
+    public:
+        bool State = false;
+        std::chrono::system_clock::time_point Capture_Time;
+
+        BUTTON_STATE(bool state = false){
+            Capture_Time = std::chrono::system_clock::now();
+            State = state;
+        }
+    };
+
     namespace Constants{
         inline std::string ESC_CODE = "\e[";
         inline std::string SEPERATE = ";";
@@ -133,26 +152,7 @@ namespace GGUI{
 
         inline void Init();
     }
-
-    namespace TIME{
-        inline constexpr static  unsigned int MILLISECOND = 1; 
-        inline constexpr static  unsigned int SECOND = MILLISECOND * 1000;
-        inline constexpr static  unsigned int MINUTE = SECOND * 60;
-        inline constexpr static  unsigned int HOUR = MINUTE * 60;
-    }
-
-    // Inits with 'NOW()' when created
-    class BUTTON_STATE{
-    public:
-        bool State = false;
-        std::chrono::system_clock::time_point Capture_Time;
-
-        BUTTON_STATE(bool state = false){
-            Capture_Time = std::chrono::system_clock::now();
-            State = state;
-        }
-    };
-
+    
     namespace BUTTON_STATES{
         inline std::string ESC = "ECS";
         inline std::string F1 = "F1";
@@ -199,6 +199,55 @@ namespace GGUI{
         inline std::string MOUSE_LEFT = "MOUSE_LEFT";
         inline std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
         inline std::string MOUSE_RIGHT = "MOUSE_RIGHT";
+    };
+
+    inline std::map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
+
+        {BUTTON_STATES::ESC, Constants::ESCAPE},
+        {BUTTON_STATES::F1, Constants::F1},
+        {BUTTON_STATES::F2, Constants::F2},
+        {BUTTON_STATES::F3, Constants::F3},
+        {BUTTON_STATES::F4, Constants::F4},
+        {BUTTON_STATES::F5, Constants::F5},
+        {BUTTON_STATES::F6, Constants::F6},
+        {BUTTON_STATES::F7, Constants::F7},
+        {BUTTON_STATES::F8, Constants::F8},
+        {BUTTON_STATES::F9, Constants::F9},
+        {BUTTON_STATES::F10, Constants::F10},
+        {BUTTON_STATES::F11, Constants::F11},
+        {BUTTON_STATES::F12, Constants::F12},
+        //{BUTTON_STATES::PRTSC, Constants::PRINT_SCREEN},
+        //{BUTTON_STATES::SCROLL_LOCK, Constants::SCROLL_LOCK},
+        //{BUTTON_STATES::PAUSE, Constants::PAUSE},
+        //{BUTTON_STATES::SECTION, Constants::SECTION},
+        {BUTTON_STATES::BACKSPACE, Constants::BACKSPACE},
+        {BUTTON_STATES::TAB, Constants::TAB},
+        {BUTTON_STATES::SHIFT_TAB, Constants::SHIFT_TAB},
+        {BUTTON_STATES::ENTER, Constants::ENTER},
+        //{BUTTON_STATES::CAPS, Constants::CAPS},
+        {BUTTON_STATES::SHIFT, Constants::SHIFT},
+        {BUTTON_STATES::CONTROL, Constants::CONTROL},
+        {BUTTON_STATES::SUPER, Constants::SUPER},
+        {BUTTON_STATES::ALT, Constants::ALT},
+        {BUTTON_STATES::SPACE, Constants::SPACE},
+        //{BUTTON_STATES::ALTGR, Constants::ALTGR},
+        //{BUTTON_STATES::FN, Constants::FN},
+        {BUTTON_STATES::INS, Constants::INSERT},
+        {BUTTON_STATES::HOME, Constants::HOME},
+        {BUTTON_STATES::PAGE_UP, Constants::PAGE_UP},
+        {BUTTON_STATES::DELETE, Constants::DELETE},
+        {BUTTON_STATES::INSERT, Constants::INSERT},
+        {BUTTON_STATES::END, Constants::END},
+        {BUTTON_STATES::PAGE_DOWN, Constants::PAGE_DOWN},
+
+        {BUTTON_STATES::UP, Constants::UP},
+        {BUTTON_STATES::DOWN, Constants::DOWN},
+        {BUTTON_STATES::LEFT, Constants::LEFT},
+        {BUTTON_STATES::RIGHT, Constants::RIGHT},
+
+        {BUTTON_STATES::MOUSE_LEFT, Constants::MOUSE_LEFT_CLICKED},
+        {BUTTON_STATES::MOUSE_MIDDLE, Constants::MOUSE_MIDDLE_CLICKED},
+        {BUTTON_STATES::MOUSE_RIGHT, Constants::MOUSE_RIGHT_CLICKED}
     };
 
     class RGB{
