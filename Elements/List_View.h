@@ -75,6 +75,17 @@ namespace GGUI{
             return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
         }
 
+        template<typename  T>
+        T* Get(int index){
+            if (index > Childs.size() - 1)
+                return nullptr;
+
+            if (index < 0)
+                index = Childs.size() + index - 1;
+
+            return (T*)this->Childs[index];
+        }
+
     };
 }
 

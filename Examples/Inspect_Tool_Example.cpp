@@ -26,9 +26,9 @@ int main()
         //     i->Show_Border(false);
         // }
 
-        Window* A = new Window("A", 20, 10, COLOR::RED, COLOR::CYAN);
-        Window* B = new Window("B", 20, 10, COLOR::GREEN, COLOR::MAGENTA);
-        Window* C = new Window("C", 20, 10, COLOR::BLUE, COLOR::YELLOW);
+        Window* A = new Window("A", 20, 10, COLOR::RED, COLOR::CYAN, COLOR::RED);
+        Window* B = new Window("B", 20, 10, COLOR::GREEN, COLOR::MAGENTA, COLOR::GREEN);
+        Window* C = new Window("C", 20, 10, COLOR::BLUE, COLOR::YELLOW, COLOR::BLUE);
 
         A->Set_Opacity(0.5f);
         B->Set_Opacity(0.5f);
@@ -69,19 +69,6 @@ int main()
             return true;
         }, true);
     });    
-
-    // GGUI::RGB Increaser = GGUI::RGB(1, 1, 1);
-    // while (true){
-    //     vector<Window*> Result = GGUI::Main->Get_Elements<Window>();
-
-    //     for (auto& w : Result){
-
-    //         if (w->Get_Opacity() > 100.0f)
-    //             w->Set_Opacity(0.0f);
-    //         else
-    //             w->Set_Opacity((w->Get_Opacity() / 100.0f) + 0.011f);
-    //     }
-    // }
 
     GGUI::SLEEP(INT32_MAX);
     return 0;

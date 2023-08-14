@@ -10,6 +10,7 @@
 #include "Elements/Switch.h"
 #include "Elements/Canvas.h"
 #include "Elements/Progress_Bar.h"
+#include "Elements/HTML.h"
 
 
 #endif

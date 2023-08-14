@@ -36,7 +36,7 @@ int main()
     - On focus Background & Foreground colors
     - On Hover Background & Foreground colors
     - Element Nesting
-    - Event handling e.g On_Click()
+    - Event handling e.g On_Click(), (for more comprehensive function use: 'On()')
     - Alpha channel transparency support. 
 - **Window features**
     - Title
@@ -57,7 +57,8 @@ int main()
     - Button stuff.
 - **Mouse movement features**
     - Integrated mouse support (only windows atm)
-    - Tabulator navigation
+    - Tabulator navigation, switch between elements with tabulator and shift+tabulator
+
 
 # Developing this project further
 ### This project uses 'meson' so use `meson setup Build` to setup the meson environment if you have not yet done so.

@@ -14,6 +14,9 @@ sources = [
   'Elements/Canvas.cpp',
   'Elements/Progress_Bar.cpp',
 
+  'Elements/File_Streamer.cpp',
+  'Elements/HTML.cpp',
+
   'Renderer.cpp',
 
   'main.cpp',

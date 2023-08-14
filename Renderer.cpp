@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "Elements/File_Streamer.h"
 
 #include <map>
 #include <string>
@@ -446,7 +447,9 @@ namespace GGUI{
     }
 
     void Exit(){
-
+        for (auto File_Handle : File_Streamer_Handles){
+            File_Handle.second->~FILE_STREAM();
+        }
     }
 
     #else
@@ -1321,6 +1324,12 @@ namespace GGUI{
         Add_Class(DEFAULT_NAME, DEFAULT);
     }
 
+    void Go_Through_File_Streams(){
+        for (auto& File_Handle : File_Streamer_Handles){
+            File_Handle.second->Changed();
+        }
+    }
+
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_Renderer(){
         Update_Max_Width_And_Height();
@@ -1371,6 +1380,7 @@ namespace GGUI{
 
                 Recall_Memories();
                 Event_Handler();
+                Go_Through_File_Streams();
  
                 Previous_Time = Current_Time;
                 std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
@@ -1384,42 +1394,148 @@ namespace GGUI{
         return Main;
     }
 
+    // NOTE: This is only a temporary function to be replaced when Date_Element is made.
+    std::string Now(){
+        //This function takes the current time and returns a string of the time.
+        // Format: DD.MM.YYYY: SS.MM.HH
+        std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+        std::string Result = std::ctime(&now);
+
+        return Result.substr(0, Result.size() - 1);
+    }
+
     void Report(std::string Problem){
         Pause_Renderer();
 
+        const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
+        const std::string HISTORY = "_HISTORY_";
+
+        // Error logger structure:
+        /*
+            <Window name="_ERROR_LOGGER_">
+                <List name="_HISTORY_" type=vertical>
+                    <List type="horizontal">
+                        <TextField>Time</TextField>
+                        <TextField>Problem a</TextField>
+                        <TextField>[repetitions if any]</TextField>
+                    </List>
+                    ...
+                </List>
+            </Window>
+        */
+
         if (Main){
-            GGUI::Text_Field* txt = new GGUI::Text_Field(Problem);
+            bool Create_New_Line = true;
 
-            bool Has_Border = true;
+            // First check if there already is a report log.
+            Window* Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
 
-            unsigned int w = txt->Get_Width() + Has_Border * 2;
-            unsigned int h = txt->Get_Height() + Has_Border * 2;
+            if (Error_Logger){
+                // Get the list
+                List_View* History = (List_View*)Error_Logger->Get_Element(HISTORY);
 
-            unsigned int W_Center = (Max_Width - w) / 2;
-            unsigned int H_Center = (Max_Height - h) / 2;
+                if (!History){
+                    // This should never happen!
+                }
 
-            GGUI::Window* tmp = new GGUI::Window(
-                "ERROR!",
-                w, h,
-                GGUI::COLOR::RED,
-                GGUI::COLOR::BLACK,
-                GGUI::COLOR::RED,
-                GGUI::COLOR::BLACK
-            );
+                std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Childs(); 
 
-            tmp->Set_Parent(Main);
-            tmp->Set_Position({W_Center, H_Center, INT32_MAX});
+                Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
+                Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
+                Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
 
-            tmp->Add_Child(txt);
+                //check if the previous problem was same problem
+                if (Previous_Problem->Get_Data() == Problem){
+                    // increase the repetition count by one
+                    if (!Previous_Repetitions){
+                        Previous_Repetitions = new Text_Field("2");
+                        Rows.back()->Add_Child(Previous_Repetitions);
+                    }
+                    else{
+                        // translate the string to int
+                        int Repetition = std::stoi(Previous_Repetitions->Get_Data()) + 1;
+                        Previous_Repetitions->Set_Data(std::to_string(Repetition));
+                    }
 
-            Main->Add_Child(tmp);
+                    // We dont need to create a new line.
+                    Create_New_Line = false;
+                }
+            }
+            else{
+                // create the error logger
+                Error_Logger = new Window(
+                    "Errors",
+                    Main->Get_Width() / 4,
+                    Main->Get_Height() / 2,
+                    GGUI::COLOR::RED,
+                    GGUI::COLOR::BLACK,
+                    GGUI::COLOR::RED,
+                    GGUI::COLOR::BLACK
+                );
+                Error_Logger->Set_Name(ERROR_LOGGER);
+                Error_Logger->Set_Position({
+                    (Max_Width - Error_Logger->Get_Width()) / 2,
+                    (Max_Height - Error_Logger->Get_Height()) / 2,
+                    INT32_MAX
+                });
+                Error_Logger->Show_Border(true);
+
+                // Now create the history lister
+                List_View* History = new List_View(
+                    Error_Logger->Get_Width() - 1,
+                    Error_Logger->Get_Height() - 1,
+                    GGUI::COLOR::RED,
+                    GGUI::COLOR::BLACK
+                );
+                History->Set_Growth_Direction(Grow_Direction::COLUMN);
+                History->Set_Name(HISTORY);
+
+                Error_Logger->Add_Child(History);
+                Main->Add_Child(Error_Logger);
+            }
+
+            if (Create_New_Line){
+                // re-find the error_logger.
+                Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
+                List_View* History = (List_View*)Error_Logger->Get_Element(HISTORY);
+
+                List_View* Row = new List_View(
+                    History->Get_Width(),
+                    1,
+                    GGUI::COLOR::RED,
+                    GGUI::COLOR::BLACK
+                );
+                Row->Set_Growth_Direction(Grow_Direction::ROW);
+
+                // TODO: replace the text_field into Date_Element !
+                Text_Field* Date = new Text_Field(Now() + " ");
+                Text_Field* Problem_Text = new Text_Field(Problem);
+
+                Row->Add_Child(Date);
+                Row->Add_Child(Problem_Text);
+
+                if (Row->Get_Width() > Error_Logger->Get_Width()){
+                    Error_Logger->Set_Width(Row->Get_Width());
+
+                    Error_Logger->Set_Position({
+                        (Max_Width - Error_Logger->Get_Width()) / 2,
+                        (Max_Height - Error_Logger->Get_Height()) / 2,
+                        INT32_MAX
+                    });
+                }
+
+                History->Add_Child(Row);
+            }
+
+            Error_Logger->Display(true);
 
             Remember.push_back(Memory(
                 TIME::SECOND * 10,
                 [=](GGUI::Event* e){
                     //delete tmp;
-                    tmp->Remove();
-                    //job succesfully done
+                    Error_Logger->Display(false);
+                    //job successfully done
                     return true;
                 }
             ));

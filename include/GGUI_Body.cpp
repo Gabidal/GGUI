@@ -7,3 +7,4 @@
 #include "../Elements/Button.cpp"
 #include "../Elements/Canvas.cpp"
 #include "../Elements/Switch.cpp"
+#include "../Elements/Progress_Bar.h"

@@ -45,7 +45,7 @@ namespace GGUI{
     extern std::map<std::string, int> Class_Names;
 
     extern Window* Main;  
-    extern unordered_map<int, Element*> Outboxed_Elements;
+    extern std::unordered_map<int, Element*> Outboxed_Elements;
 
     void SLEEP(unsigned int seconds);
 

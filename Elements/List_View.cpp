@@ -267,4 +267,3 @@ bool GGUI::List_View::Remove(Element* remove){
     return true;
 }
 
-
