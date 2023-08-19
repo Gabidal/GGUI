@@ -1441,25 +1441,27 @@ namespace GGUI{
 
                 std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Childs(); 
 
-                Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
-                Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
-                Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
+                if (Rows.size() > 0){
+                    Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
+                    Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
+                    Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
 
-                //check if the previous problem was same problem
-                if (Previous_Problem->Get_Data() == Problem){
-                    // increase the repetition count by one
-                    if (!Previous_Repetitions){
-                        Previous_Repetitions = new Text_Field("2");
-                        Rows.back()->Add_Child(Previous_Repetitions);
-                    }
-                    else{
-                        // translate the string to int
-                        int Repetition = std::stoi(Previous_Repetitions->Get_Data()) + 1;
-                        Previous_Repetitions->Set_Data(std::to_string(Repetition));
-                    }
+                    //check if the previous problem was same problem
+                    if (Previous_Problem->Get_Data() == Problem){
+                        // increase the repetition count by one
+                        if (!Previous_Repetitions){
+                            Previous_Repetitions = new Text_Field("2");
+                            Rows.back()->Add_Child(Previous_Repetitions);
+                        }
+                        else{
+                            // translate the string to int
+                            int Repetition = std::stoi(Previous_Repetitions->Get_Data()) + 1;
+                            Previous_Repetitions->Set_Data(std::to_string(Repetition));
+                        }
 
-                    // We dont need to create a new line.
-                    Create_New_Line = false;
+                        // We dont need to create a new line.
+                        Create_New_Line = false;
+                    }
                 }
             }
             else{

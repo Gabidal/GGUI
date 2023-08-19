@@ -1,7 +1,7 @@
 #include "Window.h"
 #include "../Renderer.h"
 
-GGUI::Window::Window(std::string title, std::vector<std::string> classes){
+GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Element(){
     Pause_Renderer([=](){
         for (auto& c : classes){
             Add_Class(c);
@@ -10,7 +10,7 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes){
         Parse_Classes();
 
         Title = title;
-        Dirty.Stain_All();
+        Fully_Stain();
     });
 }
 

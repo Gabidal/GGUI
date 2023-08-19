@@ -15,7 +15,7 @@ GGUI::Text_Field::Text_Field(std::string Text, std::map<std::string, VALUE*> css
         Height = D.second;
     }
 
-    Dirty.Dirty(STAIN_TYPE::TEXT);
+    Fully_Stain();
 }
 
 //These next constructors are mainly for users to more easily create elements.
@@ -44,6 +44,13 @@ GGUI::Text_Field::Text_Field(
 }
 
 //End of user constructors.
+
+void GGUI::Text_Field::Fully_Stain(){
+    // Call the base stainer.
+    Element::Fully_Stain();
+
+    this->Dirty.Dirty(STAIN_TYPE::TEXT);
+}
 
 std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;

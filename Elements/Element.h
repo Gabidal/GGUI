@@ -771,7 +771,7 @@ namespace GGUI{
         
         inline std::string Text_Position                    = "Text_Position";
         inline std::string Allow_Input_Overflow             = "Allow_Input_Overflow";
-        inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size";     
+        inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size"; // boolean, Tries to emulate the size of the parent like in 'Flexbox: Display;' 
         inline std::string Margin                           = "Margin";
 
         inline std::string Shadow                           = "Shadow";  // 0 - 100
@@ -806,7 +806,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
+        STAIN_TYPE Type = STAIN_TYPE::CLEAN; //(STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
 
 
         bool is(STAIN_TYPE f){
@@ -832,9 +832,9 @@ namespace GGUI{
             Type = (STAIN_TYPE)((unsigned int)Type | f);
         }
 
-        void Stain_All(){
-            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
-        }
+        // void Stain_All(){
+        //     Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
+        // }
 
     };
 
@@ -943,6 +943,8 @@ namespace GGUI{
         );
 
         //End of user constructors.
+
+        virtual void Fully_Stain();
 
         // If you want to make a representing element* that isnt the same as the Abstract one.
         // Then Remember to USE THIS!

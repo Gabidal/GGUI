@@ -16,7 +16,7 @@ namespace GGUI{
         RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
         bool Has_Hidden_Borders = false;
     public:
-        Window(){}
+        Window() : Element() {}
 
         Window(std::string title, std::vector<std::string> classes = {});
 

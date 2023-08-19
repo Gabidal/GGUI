@@ -89,8 +89,14 @@ void GGUI::List_View::Add_Child(Element* e){
         max_height = Max_Dimensions.second;
     }
     else{
-        max_width = Max_Width;
-        max_height = Max_Height;
+        if ((Element*)this == (Element*)GGUI::Main){
+            max_width = Max_Width;
+            max_height = Max_Height;
+        }
+        else{
+            max_width = GGUI::Main->Get_Width() - GGUI::Main->Has_Border() * 2;
+            max_height = GGUI::Main->Get_Height() - GGUI::Main->Has_Border() * 2;
+        }
     }
 
 
@@ -181,7 +187,7 @@ std::string GGUI::List_View::Get_Name(){
 
 void GGUI::List_View::Update_Parent(Element* New_Element){
     if (!New_Element->Is_Displayed()){
-        Dirty.Stain_All();
+        Fully_Stain();
     }
 
     if (Parent)

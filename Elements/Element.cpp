@@ -51,7 +51,7 @@ GGUI::Element::Element() {
     Name = std::to_string((unsigned long long)this);
     Parse_Classes();
 
-    Dirty.Stain_All();
+    Fully_Stain();
 
     // If this is true, then the user probably:
     // A.) Doesn't know what the fuck he is doing.
@@ -139,6 +139,12 @@ GGUI::Element::Element(
     Set_Border_Background_Color(border_background_color);
 
     Show_Border(true);
+}
+
+void GGUI::Element::Fully_Stain(){
+
+    this->Dirty.Dirty(STAIN_TYPE::CLASS | STAIN_TYPE::STRECH | STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
+
 }
 
 void GGUI::Element::Inherit_States_From(Element* abstract){
@@ -425,14 +431,24 @@ void GGUI::Element::Add_Child(Element* Child){
     bool This_Has_Border = Has_Border();
     bool Child_Has_Border = Child->Has_Border();
 
+    int Border_Offsetter = (This_Has_Border - Child_Has_Border) * This_Has_Border * 2;
+
     if (
-        Child->Position.X + Child->Width > (Width - (This_Has_Border - Child_Has_Border) * This_Has_Border) || 
-        Child->Position.Y + Child->Height > (Height - (This_Has_Border - Child_Has_Border) * This_Has_Border)
+        Child->Position.X + Child->Width > (Width - Border_Offsetter) || 
+        Child->Position.Y + Child->Height > (Height - Border_Offsetter)
     ){
-        if (Child->Resize_To(this) == false){
+        if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+            // Add the border offsetter to the width and the height to count for the border collision and evade it. 
+            unsigned int New_Width = std::max(Child->Position.X + Child->Width + Border_Offsetter, Width);
+            unsigned int New_Height = std::max(Child->Position.Y + Child->Height + Border_Offsetter, Height);
+
+            //TODO: Maybe check the parent of this element to check?
+            Set_Dimensions(New_Width, New_Height);
+        }
+        else if (Child->Resize_To(this) == false){
 
             GGUI::Report(
-                "Window exeeded bounds\n "
+                "Window exeeded static bounds\n "
                 "Starts at: {" + std::to_string(Child->Position.X) + ", " + std::to_string(Child->Position.Y) + "}\n "
                 "Ends at: {" + std::to_string(Child->Position.X + Child->Width) + ", " + std::to_string(Child->Position.Y + Child->Height) + "}\n "
                 "Max is at: {" + std::to_string(Width) + ", " + std::to_string(Height) + "}\n "
@@ -490,14 +506,14 @@ bool GGUI::Element::Remove(Element* handle){
 void GGUI::Element::Update_Parent(Element* New_Element){
     //normally elements dont do anything
     if (!New_Element->Is_Displayed()){
-        Dirty.Stain_All();
+        Fully_Stain();
     }
 
     if (Parent){
         Parent->Update_Parent(New_Element);
     }
     else{
-        Dirty.Stain_All();
+        Fully_Stain();
         Update_Frame(); //the most top (Main) will not flush all the updates to render.
     }
 }
@@ -563,7 +579,7 @@ void GGUI::Element::Set_Dimensions(int width, int height){
     if (width != Width || height != Height){    
         Width = width;
         Height = height;
-        Dirty.Stain_All();
+        Fully_Stain();
         Update_Frame();
     }
 }
@@ -579,7 +595,7 @@ int GGUI::Element::Get_Height(){
 void GGUI::Element::Set_Width(int width){
     if (width != Width){
         Width = width;
-        Dirty.Stain_All();
+        Fully_Stain();
         if (Parent)
             Update_Parent(this);
         else
@@ -590,7 +606,7 @@ void GGUI::Element::Set_Width(int width){
 void GGUI::Element::Set_Height(int height){
     if (height != Height){
         Height = height;
-        Dirty.Stain_All();
+        Fully_Stain();
         if (Parent)
             Update_Parent(this);
         else
@@ -667,12 +683,12 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
         if (tmp.Position.Y + tmp.Height < Height - Border_Size){
             tmp.Height++;
         }
-        else if (tmp.Position.X + tmp.Width >= Width - Border_Size && tmp.Position.X + tmp.Height >= Height - Border_Size){
+        else if (tmp.Position.X + tmp.Width >= Width - Border_Size && tmp.Position.Y + tmp.Height >= Height - Border_Size){
             break;
         }
         
         for (auto c : Childs){
-            if (Collides(child, c)){
+            if (child != c && Collides(&tmp, c)){
                 //there are already other childs occupying this area so we can stop here.
                 return {tmp.Width, tmp.Height};
             }
@@ -736,6 +752,22 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     //if inned children have changed whitout this changing, then this will trigger.
     if (Children_Changed() || Has_Transparent_Children()){
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRECH);
+    }
+
+    if (Dirty.is(STAIN_TYPE::DEEP) && At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+        for (auto& c : Childs){
+            int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
+
+            // Add the border offsetter to the width and the height to count for the border collision and evade it. 
+            unsigned int New_Width = std::max(c->Position.X + c->Width + Border_Offsetter, Width);
+            unsigned int New_Height = std::max(c->Position.Y + c->Height + Border_Offsetter, Height);
+
+            //TODO: Maybe check the parent of this element to check?
+            Height = New_Height;
+            Width = New_Width;
+
+            Dirty.Dirty(STAIN_TYPE::STRECH);
+        }
     }
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
@@ -1082,7 +1114,8 @@ GGUI::Element* GGUI::Element::Copy(){
 }
 
 bool GGUI::Element::Children_Changed(){
-    if (Dirty.Type != STAIN_TYPE::CLEAN){
+    // Either report the element to be changed if and only if the element has Stains and is shows, if the element is not displayed all following conclusions can be skipped.
+    if (Dirty.Type != STAIN_TYPE::CLEAN && Show){
         // Clean the state changed elements already here.
         if (Dirty.is(STAIN_TYPE::STATE))
             Dirty.Clean(STAIN_TYPE::STATE);

@@ -43,6 +43,8 @@ namespace GGUI{
 
         //End of user constructors.
 
+        void Fully_Stain() override;
+
         void Set_Data(std::string Data);
 
         std::string Get_Data();
