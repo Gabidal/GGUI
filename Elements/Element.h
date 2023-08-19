@@ -1105,6 +1105,8 @@ namespace GGUI{
         RGB Get_Border_Background_Color();
         
         void Set_Text_Color(RGB color);
+
+        void Allow_Dynamic_Size(bool True);
         
         RGB Get_Text_Color();
 

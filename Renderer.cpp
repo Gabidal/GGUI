@@ -1452,6 +1452,18 @@ namespace GGUI{
                         if (!Previous_Repetitions){
                             Previous_Repetitions = new Text_Field("2");
                             Rows.back()->Add_Child(Previous_Repetitions);
+
+                            if (Rows.back()->Get_Width() > History->Get_Width()){
+                                History->Set_Width(Rows.back()->Get_Width());
+
+                                Error_Logger->Set_Width(History->Get_Width() + 1);
+
+                                Error_Logger->Set_Position({
+                                    (Max_Width - Error_Logger->Get_Width()) / 2,
+                                    (Max_Height - Error_Logger->Get_Height()) / 2,
+                                    INT32_MAX
+                                });
+                            }
                         }
                         else{
                             // translate the string to int
@@ -1482,6 +1494,7 @@ namespace GGUI{
                     INT32_MAX
                 });
                 Error_Logger->Show_Border(true);
+                Error_Logger->Allow_Dynamic_Size(true);
 
                 // Now create the history lister
                 List_View* History = new List_View(
@@ -1492,6 +1505,7 @@ namespace GGUI{
                 );
                 History->Set_Growth_Direction(Grow_Direction::COLUMN);
                 History->Set_Name(HISTORY);
+                History->Allow_Dynamic_Size(true);
 
                 Error_Logger->Add_Child(History);
                 Main->Add_Child(Error_Logger);

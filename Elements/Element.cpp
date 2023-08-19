@@ -431,19 +431,20 @@ void GGUI::Element::Add_Child(Element* Child){
     bool This_Has_Border = Has_Border();
     bool Child_Has_Border = Child->Has_Border();
 
-    int Border_Offsetter = (This_Has_Border - Child_Has_Border) * This_Has_Border * 2;
+    int Border_Offsetter = (This_Has_Border - Child_Has_Border) * This_Has_Border;
 
     if (
         Child->Position.X + Child->Width > (Width - Border_Offsetter) || 
         Child->Position.Y + Child->Height > (Height - Border_Offsetter)
     ){
         if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
-            // Add the border offsetter to the width and the height to count for the border collision and evade it. 
+            //Add the border offsetter to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = std::max(Child->Position.X + Child->Width + Border_Offsetter, Width);
             unsigned int New_Height = std::max(Child->Position.Y + Child->Height + Border_Offsetter, Height);
 
             //TODO: Maybe check the parent of this element to check?
-            Set_Dimensions(New_Width, New_Height);
+            Height = New_Height;
+            Width = New_Width;
         }
         else if (Child->Resize_To(this) == false){
 
@@ -739,6 +740,11 @@ void GGUI::Element::Set_Text_Color(RGB color){
     Update_Frame();
 }
 
+void GGUI::Element::Allow_Dynamic_Size(bool True){
+    At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value = True; 
+    // No need to update the frame, since this is used only on content change which has the update frame.
+}
+
 GGUI::RGB GGUI::Element::Get_Text_Color(){
     return At<RGB_VALUE>(STYLES::Text_Color)->Value;
 }
@@ -756,7 +762,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
     if (Dirty.is(STAIN_TYPE::DEEP) && At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
         for (auto& c : Childs){
-            int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
+            int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border();
 
             // Add the border offsetter to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = std::max(c->Position.X + c->Width + Border_Offsetter, Width);
