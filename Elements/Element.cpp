@@ -580,7 +580,8 @@ void GGUI::Element::Set_Dimensions(int width, int height){
     if (width != Width || height != Height){    
         Width = width;
         Height = height;
-        Fully_Stain();
+        //Fully_Stain();
+        Dirty.Dirty(STAIN_TYPE::STRECH);
         Update_Frame();
     }
 }

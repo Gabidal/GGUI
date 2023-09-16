@@ -195,8 +195,8 @@ void GGUI::List_View::Update_Parent(Element* New_Element){
 }
 
 bool GGUI::List_View::Remove(Element* remove){
-
     GGUI::Pause_Render = true;
+
     unsigned int removable_index = 0;
     
     unsigned int max_width = 0;
@@ -209,67 +209,64 @@ bool GGUI::List_View::Remove(Element* remove){
         max_height = Max_Dimensions.second;
     }
     else{
-        max_width = Max_Width;
-        max_height = Max_Height;
+        if ((Element*)this == (Element*)GGUI::Main){
+            max_width = Max_Width;
+            max_height = Max_Height;
+        }
+        else{
+            max_width = GGUI::Main->Get_Width() - GGUI::Main->Has_Border() * 2;
+            max_height = GGUI::Main->Get_Height() - GGUI::Main->Has_Border() * 2;
+        }
     }
 
     //first find the removable elements index.
     for (;removable_index < Childs.size() && Childs[removable_index] != remove; removable_index++);
-
+    
+    // Recalculate the new dimensions for this element.
     Set_Dimensions(0, 0);
 
     //now for every element past this index position needs to be altered so that this removed element didn't ever exist.
     if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
-        Last_Child->Set_Position({0, Last_Child->Get_Position().Y});
-
+        // relocate the childs now that the removable child has been removed.
         for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
             Childs[i]->Set_Position({Childs[i]->Get_Position().X - remove->Get_Width(), Childs[i]->Get_Position().Y});
         }
 
+        // recalculate the new width for this list, and only update the height if the current child exceeds the height of this element.
         for (auto c : Childs){
-            if (c == remove)
-                continue;
-            
-            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Has_Border() * 2;
-            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Has_Border() * 2;
+            unsigned Offset = (Has_Border() - c->Has_Border()) * Has_Border();
 
-            Set_Height(Get_Height() + Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height));
-            if (Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of > Get_Width()){
-                Set_Width(Get_Width() + Min(max_width, Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of));
-            }
+            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Offset * 2;
+            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Offset * 2;
 
-            Last_Child->Set_Position({Last_Child->Get_Position().X + c->Get_Width(), Last_Child->Get_Position().Y});
+            Width = Min(max_width, Width + Child_Needs_Minimum_Width_Of);
+            Height = Min(max_height, Max(Child_Needs_Minimum_Height_Of, Height));
         }
     }
     else{        
-        Last_Child->Set_Position({Last_Child->Get_Position().X, 0});
-
+        // relocate the childs now that the removable child has been removed.
         for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
-            Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - remove->Get_Height()});
+            Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - Childs[i]->Get_Height()});
         }
 
+        // recalculate the new height for this list, and only update the width if the current child exceeds the width of this element.
         for (auto c : Childs){
-            if (c == remove)
-                continue;
+            unsigned Offset = (Has_Border() - c->Has_Border()) * Has_Border();
 
-            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Has_Border() * 2;
-            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Has_Border() * 2;
+            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Offset * 2;
+            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Offset * 2;
 
-            Set_Width(Get_Width() + Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_height));
-            if (Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of > Get_Height()){
-                Set_Height(Get_Height() + Min(max_width, Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of));
-            }
-
-            Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + c->Get_Height()});
+            Width = Min(max_width, Max(Child_Needs_Minimum_Width_Of, Width));
+            Height = Min(max_height, Height + Child_Needs_Minimum_Height_Of);
         }
     }
 
+    Fully_Stain();
     remove->Display(false);
     
-    GGUI::Pause_Render = false;
-
     Element::Remove(remove);
 
+    GGUI::Pause_Render = false;
     return true;
 }
 

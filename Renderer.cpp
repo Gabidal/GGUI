@@ -1542,6 +1542,13 @@ namespace GGUI{
                 }
 
                 History->Add_Child(Row);
+
+                // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
+                if (History->Get_Absolute_Position().Y + History->Get_Height() > Main->Get_Height()){
+                    // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
+                    Element* First_Child = History->Get_Childs()[0];
+                    History->Remove(First_Child);
+                }
             }
 
             Error_Logger->Display(true);
