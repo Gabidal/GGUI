@@ -875,6 +875,7 @@ namespace GGUI{
         // How fast for a detection of hold down situation.
         inline unsigned long long Mouse_Press_Down_Cooldown = 365;
         inline unsigned long long Input_Clear_Time = 16;
+        inline bool Word_Wrapping = true;
     };
 
     class Element{

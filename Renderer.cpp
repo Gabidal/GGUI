@@ -234,7 +234,7 @@ namespace GGUI{
         CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
 
         Max_Width = info.srWindow.Right - info.srWindow.Left + 1;
-        Max_Height = info.srWindow.Bottom - info.srWindow.Top;
+        Max_Height = info.srWindow.Bottom - info.srWindow.Top + 1;  // this doesn't take into consideration of politics
 
         assert(("Terminal Size non-existant!", Max_Width > 0 && Max_Height > 0));
     }
@@ -377,7 +377,8 @@ namespace GGUI{
         SetConsoleMode(GLOBAL_STD_HANDLE, -1);
         SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
 
-        std::cout << "\033[?1003h";
+        // std::cout << "\033[?1003h";
+        std::cout << "\e[?1003h\e[?25l";
         std::cout.flush();
 
         SetConsoleOutputCP(65001);
@@ -1048,7 +1049,10 @@ namespace GGUI{
                 Result += Text[y * Width + x].To_String();
             }
 
-            Result += "\n";
+            // the system doesn't have word wrapping enabled then, use newlines as replacement.
+            if (!SETTINGS::Word_Wrapping){
+                Result += "\n";   // the system is word wrapped.
+            }
         }
 
         return Result;
