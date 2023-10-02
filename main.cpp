@@ -30,9 +30,9 @@ int main()
         Window* B = new Window("B", 20, 10, COLOR::GREEN, COLOR::MAGENTA, COLOR::GREEN);
         Window* C = new Window("C", 20, 10, COLOR::BLUE, COLOR::YELLOW, COLOR::BLUE);
 
-        // A->Set_Opacity(0.5f);
-        // B->Set_Opacity(0.5f);
-        // C->Set_Opacity(0.5f);
+        A->Set_Opacity(0.5f);
+        B->Set_Opacity(0.5f);
+        C->Set_Opacity(0.5f);
 
         GGUI::Main->Add_Child(A);
         GGUI::Main->Add_Child(B);
@@ -70,6 +70,8 @@ int main()
         }, true);
     });    
 
-    GGUI::SLEEP(INT32_MAX);
+    GGUI::SLEEP(1);
+
+    GGUI::Exit();
     return 0;
 }

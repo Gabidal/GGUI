@@ -466,13 +466,21 @@ namespace GGUI{
     struct termios Previus_Raw;
     void Exit(int signum){
         if (signum == SIGINT){
-            printf("\e[?1003l\e[?25h");
+            std::cout << Constants::EnableFeature(Constants::MOUSE_CURSOR);
+            std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
+            std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
+            std::cout << std::flush;
 
             fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
             tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previus_Raw);
 
             exit(0);
         }
+    }
+
+    void Exit(){
+        // Call the signum exit
+        Exit(SIGINT);
     }
 
     void SLEEP(unsigned int mm){
@@ -486,13 +494,34 @@ namespace GGUI{
             continue;
     }
  
+    // Declare a mutex for stdout
+    //pthread_mutex_t stdout_mutex = PTHREAD_MUTEX_INITIALIZER;
+
     void Render_Frame() {
+        // Store the previous flags
+        Previus_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+        
+        // remove the non-clock flag from the current flags
+        int flags = Previus_Flags & ~O_NONBLOCK;
+        
+        // apply the new flags
+        fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
+
         // Move cursor to top-left corner
-        printf("\033[H");
-        // Write the frame buffer to the console
-        fwrite(Frame_Buffer.data(), 1, Frame_Buffer.size(), stdout);
+        printf((Constants::CLEAR_SCROLLBACK + Constants::SET_CURSOR_TO_START).c_str());
+
         // Flush the output to ensure it's written immediately
         fflush(stdout);
+
+        int printed = 0;
+        printed = write(1, Frame_Buffer.data(), Frame_Buffer.size());
+
+        // Add the non_lock flag back if the previous flags had it
+        if (Previus_Flags & O_NONBLOCK)
+            flags = Previus_Flags | O_NONBLOCK;
+ 
+        // apply the new flags
+        fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
     }
 
     void Update_Max_Width_And_Height(){
@@ -585,8 +614,8 @@ namespace GGUI{
                                 KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
                             }
                             else if (Buffer[Semi_Colon_Index + 1] == MODIFIERS::CTRL){
-                                Inputs.push_back(new GGUI::Input(' ', Constants::CTRL));
-                                KEYBOARD_STATES[BUTTON_STATES::CTRL] = BUTTON_STATE(true);
+                                Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
+                                KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
                             }
                             else if (Buffer[Semi_Colon_Index + 1] == MODIFIERS::META){
                                 Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
@@ -724,8 +753,8 @@ namespace GGUI{
                             i++;
                         }
                         else if (Buffer[i] == MODIFIERS::CTRL){
-                            Inputs.push_back(new GGUI::Input(' ', Constants::CTRL));
-                            KEYBOARD_STATES[BUTTON_STATES::CTRL] = BUTTON_STATE(true);
+                            Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
+                            KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
 
                             i++;
                         }
@@ -766,7 +795,7 @@ namespace GGUI{
                     if (Buffer[i] == 'Z'){ // SHIFT + TAB
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT_TAB));
                         KEYBOARD_STATES[BUTTON_STATES::SHIFT_TAB] = BUTTON_STATE(true);
-                        Handle_Shift_Tabulator();
+                        //Handle_Shift_Tabulator();
                     }
                 }
             }
@@ -791,12 +820,17 @@ namespace GGUI{
     }
 
     void Init_Platform_Stuff(){
-        std::cout << "\e[?1003h\e[?25l" << std::flush;
+        std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
+        std::cout << Constants::DisableFeature(Constants::MOUSE_CURSOR);
+        std::cout << Constants::EnableFeature(Constants::SCREEN_CAPTURE);   // for on exit to restore
+        std::cout << std::flush;
+        // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
+
         Previus_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
         int flags = O_NONBLOCK | O_RDONLY | O_CLOEXEC;
         fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
 
-        signal(SIGINT, Exit);
+        signal(SIGINT, Exit); 
 
         struct termios raw;
         tcgetattr(STDIN_FILENO, &raw);

@@ -92,6 +92,21 @@ namespace GGUI{
         inline std::string USE_RGB = "2";
         inline std::string END_COMMAND = "m";
         inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
+        inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
+        inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
+
+        inline std::string EnableFeature(std::string command) { return ESC_CODE + "?" + command + "h"; }
+        inline std::string DisableFeature(std::string command) { return ESC_CODE + "?" + command + "l"; }
+ 
+        // Enable settings for ANSI
+        inline std::string REPORT_MOUSE_HIGHLIGHTS = ESC_CODE + "1000";
+        inline std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = ESC_CODE + "1002";
+        inline std::string REPORT_MOUSE_ALL_EVENTS = ESC_CODE + "1003";
+
+        inline std::string MOUSE_CURSOR = "25";
+        inline std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
+        inline std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
+        // End of enable settings for ANSI
 
         inline unsigned long long NON = (unsigned long long)1 << 0;
         inline unsigned long long ENTER = (unsigned long long)1 << 1;
