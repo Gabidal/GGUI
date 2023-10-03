@@ -23,9 +23,12 @@ sources = [
   'main.cpp',
 ]
 
+cpp_args = ['-fpermissive']
+
 executable(
   'GGUI',
   sources,
-  install : true
+  install : true,
+  cpp_args: cpp_args
 )
 

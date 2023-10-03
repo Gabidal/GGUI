@@ -146,7 +146,8 @@ namespace GGUI{
         inline unsigned long long F15 = (unsigned long long)1 << 35;
         inline unsigned long long F16 = (unsigned long long)1 << 36;
 
-        inline unsigned long long SHIFT_TAB = (unsigned long long)1 << 37;
+        // Should not fucking exist bro!
+        //inline unsigned long long SHIFT_TAB = (unsigned long long)1 << 37;
 
 
         //key_Press includes [a-z, A-Z] & [0-9]
@@ -188,7 +189,6 @@ namespace GGUI{
         inline std::string SECTION = "SECTION";
         inline std::string BACKSPACE = "BACKSPACE";
         inline std::string TAB = "TAB";
-        inline std::string SHIFT_TAB = "SHIFT_TAB";
         inline std::string ENTER = "ENTER";
         inline std::string CAPS = "CAPS";
         inline std::string SHIFT = "SHIFT";
@@ -237,7 +237,6 @@ namespace GGUI{
         //{BUTTON_STATES::SECTION, Constants::SECTION},
         {BUTTON_STATES::BACKSPACE, Constants::BACKSPACE},
         {BUTTON_STATES::TAB, Constants::TAB},
-        {BUTTON_STATES::SHIFT_TAB, Constants::SHIFT_TAB},
         {BUTTON_STATES::ENTER, Constants::ENTER},
         //{BUTTON_STATES::CAPS, Constants::CAPS},
         {BUTTON_STATES::SHIFT, Constants::SHIFT},

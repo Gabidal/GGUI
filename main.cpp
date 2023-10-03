@@ -70,7 +70,7 @@ int main()
         }, true);
     });    
 
-    GGUI::SLEEP(1);
+    GGUI::SLEEP(INT32_MAX);
 
     GGUI::Exit();
     return 0;
