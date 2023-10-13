@@ -94,6 +94,7 @@ namespace GGUI{
         inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
         inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
         inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
+        inline std::string RESET_CONSOLE = ESC_CODE + "c";
 
         inline std::string EnableFeature(std::string command) { return ESC_CODE + "?" + command + "h"; }
         inline std::string DisableFeature(std::string command) { return ESC_CODE + "?" + command + "l"; }

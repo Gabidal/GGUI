@@ -568,6 +568,8 @@ namespace GGUI{
         if (Main)
             Main->Set_Dimensions(Max_Width, Max_Height);
 
+        // All of the if-else statemets could just make into a map, where each key of combination repremts the value of the keyboard state, but you know what?
+        // haha code go brrrr
         for (int i = 0; i < Bytes_Read; i++) {
 
             // Check for the starting escape code: <ecs>
@@ -605,26 +607,26 @@ namespace GGUI{
                         if (Has_Modifiers){
                             if (Buffer[Semi_Colon_Index + 1] == MODIFIERS::SHIFT){
                                 Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                                KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State);
+                                KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
                             }
                             else if (Buffer[Semi_Colon_Index + 1] == MODIFIERS::ALT){
                                 Inputs.push_back(new GGUI::Input(' ', Constants::ALT));
-                                KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::ALT].State);
+                                KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
                             }
                             else if (Buffer[Semi_Colon_Index + 1] == MODIFIERS::CTRL){
                                 Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                                KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::CONTROL].State);
+                                KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
                             }
                             else if (Buffer[Semi_Colon_Index + 1] == MODIFIERS::META){
                                 Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
-                                KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::SUPER].State);
+                                KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(true);
                             }
                         }
 
                         // INSERT code: <esc>[2~
                         if (Buffer[i] == '2'){
                             Inputs.push_back(new GGUI::Input(' ', Constants::INSERT));
-                            KEYBOARD_STATES[BUTTON_STATES::INSERT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::INSERT].State);
+                            KEYBOARD_STATES[BUTTON_STATES::INSERT] = BUTTON_STATE(true);
 
                             i++;
                         }
@@ -740,52 +742,76 @@ namespace GGUI{
                     else{
                         if (Buffer[i] == MODIFIERS::SHIFT){
                             Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State);
+                            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
 
                             i++;
                         }
                         else if (Buffer[i] == MODIFIERS::ALT){
                             Inputs.push_back(new GGUI::Input(' ', Constants::ALT));
-                            KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::ALT].State);
+                            KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
 
                             i++;
                         }
                         else if (Buffer[i] == MODIFIERS::CTRL){
                             Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                            KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::CONTROL].State);
+                            KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
 
                             i++;
                         }
                         else if (Buffer[i] == MODIFIERS::META){
                             Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
-                            KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::SUPER].State);
+                            KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(true);
 
                             i++;
                         }
                         
                         if (Buffer[i] == 'A'){ // UP
                             Inputs.push_back(new GGUI::Input(' ', Constants::UP));
-                            KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::UP].State);
+                            KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
                         }
                         else if (Buffer[i] == 'B'){ // DOWN
                             Inputs.push_back(new GGUI::Input(' ', Constants::DOWN));
-                            KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::DOWN].State);
+                            KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
                         }
                         else if (Buffer[i] == 'C'){ // RIGHT
                             Inputs.push_back(new GGUI::Input(' ', Constants::RIGHT));
-                            KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::RIGHT].State);
+                            KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
                         }
                         else if (Buffer[i] == 'D'){ // LEFT
                             Inputs.push_back(new GGUI::Input(' ', Constants::LEFT));
-                            KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::LEFT].State);
+                            KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
                         }
                         else if (Buffer[i] == 'F'){ // END
                             Inputs.push_back(new GGUI::Input(' ', Constants::END));
-                            KEYBOARD_STATES[BUTTON_STATES::END] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::END].State);
+                            KEYBOARD_STATES[BUTTON_STATES::END] = BUTTON_STATE(true);
                         }
                         else if (Buffer[i] == 'H'){ // HOME
                             Inputs.push_back(new GGUI::Input(' ', Constants::HOME));
-                            KEYBOARD_STATES[BUTTON_STATES::HOME] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::HOME].State);
+                            KEYBOARD_STATES[BUTTON_STATES::HOME] = BUTTON_STATE(true);
+                        }
+                    
+                        if (Buffer[i] == 'M'){  // Decode Mouse handling
+                            // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
+                            char Bit_Mask = Buffer[i+1]; 
+                            char X = Buffer[i+2];
+                            char Y = Buffer[i+3];
+
+                            Mouse.X = X;
+                            Mouse.Y = Y;
+
+                            // Bit_Mask & ~32 removes the 32'th bit, (Bit_Mask &= ~32, 0) removes the bit from the Bit_Mask variable and returns the number 0 for the OR.
+                            KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(Bit_Mask & ~32 | (Bit_Mask &= ~32, 0));
+
+                            if (Bit_Mask == 0){
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = BUTTON_STATE(true);
+                            }
+                            else if (Bit_Mask == 1){
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = BUTTON_STATE(true);
+                            }
+                            else if (Bit_Mask == 2){
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
+                            }
+
                         }
                     }
                 
@@ -794,23 +820,23 @@ namespace GGUI{
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                         Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
                         
-                        KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State);
-                        KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::TAB].State);
+                        KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+                        KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
                     }
                 }
             }
             else if (Buffer[i] == '\r'){    // ENTER
                 Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
-                KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::ENTER].State);
+                KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
             }
             else if (Buffer[i] == 0x9){   // TABULATOR
                 Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
-                KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::TAB].State);
+                KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
                 Handle_Tabulator();
             }
             else if (Buffer[i] == 0x7f){  // backspace
                 Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
-                KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::BACKSPACE].State);
+                KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
             }
             else{
                 Inputs.push_back(new GGUI::Input(Buffer[i], Constants::KEY_PRESS));
@@ -823,6 +849,7 @@ namespace GGUI{
         std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
         std::cout << Constants::DisableFeature(Constants::MOUSE_CURSOR);
         std::cout << Constants::EnableFeature(Constants::SCREEN_CAPTURE);   // for on exit to restore
+        //std::cout << Constants::RESET_CONSOLE;
         std::cout << std::flush;
         // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
 
