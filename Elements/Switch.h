@@ -29,6 +29,8 @@ namespace GGUI{
         std::string Get_Data() { return Text; }
 
         void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
+
+        Element_Type Get_Type() override { return Element_Type::SWITCH; }
     };
 
     class Radio_Button : public Switch{
@@ -38,6 +40,8 @@ namespace GGUI{
         bool Get_State(){
             return State;
         }
+
+        Element_Type Get_Type() override { return Element_Type::RADIO_BUTTON; }
     };
 
     class Check_Box : public Switch{
@@ -47,6 +51,8 @@ namespace GGUI{
         bool Get_State(){
             return State;
         }
+
+        Element_Type Get_Type() override { return Element_Type::CHECK_BOX; }
     };
 }
 

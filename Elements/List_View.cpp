@@ -125,8 +125,18 @@ void GGUI::List_View::Add_Child(Element* e){
             // Affect minimum width needed, when current child has borders as well as the previus one.
             signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
-            Height = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
-            Width = Min(max_width, Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width()));
+            unsigned long long Proposed_Height = Max(Child_Needs_Minimum_Height_Of, Get_Height());
+            unsigned long long Proposed_Width = Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width());
+
+            // CHeck if the parent has the capability to allow to stretch in the direction if this list elements.
+            if (Proposed_Height > max_height && Parent->Get_Type() == Element_Type::LIST_VIEW){
+
+
+
+            }
+
+            Height = Min(max_height, Proposed_Height);
+            Width = Min(max_width, Proposed_Width);
 
             e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
 
@@ -138,8 +148,11 @@ void GGUI::List_View::Add_Child(Element* e){
             // Affect minimum height needed, when current child has borders as well as the previus one.
             signed int Height_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
-            Width = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
-            Height = Min(max_height, Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height()));
+            unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, Get_Width());
+            unsigned long long Proposed_Height = Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height());
+
+            Width = Min(max_width, Proposed_Width);
+            Height = Min(max_height, Proposed_Height);
 
             e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
 

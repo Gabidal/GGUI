@@ -26,6 +26,8 @@ namespace GGUI{
         Progress_Bar(RGB Fill_Color, RGB Empty_Color);
         Progress_Bar(RGB Fill_COlor, RGB Empty_Color, unsigned int Width, unsigned int Height = 1);
 
+        Element_Type Get_Type() override { return Element_Type::PROGRESS_BAR; }
+
     };
 
 }

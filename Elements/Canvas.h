@@ -19,6 +19,8 @@ namespace GGUI{
         void Flush();
 
         std::vector<UTF> Render() override;
+
+        Element_Type Get_Type() override { return Element_Type::CANVAS; }
     };
 
     class Sprite{
@@ -30,6 +32,8 @@ namespace GGUI{
         Sprite(UTF t = UTF(""), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
 
         UTF Render();
+
+        Element_Type Get_Type() { return Element_Type::SPRITE; }
     };
 
     class Terminal_Canvas : public Element{
@@ -45,6 +49,8 @@ namespace GGUI{
         void Flush();
         
         std::vector<UTF> Render() override;
+
+        Element_Type Get_Type() override { return Element_Type::TERMINAL_CANVAS; }
     };
 
 }
