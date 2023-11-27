@@ -1501,6 +1501,8 @@ namespace GGUI{
     void Report(std::string Problem){
         Pause_Renderer();
 
+        Problem += " ";
+
         const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
         const std::string HISTORY = "_HISTORY_";
 
@@ -1543,29 +1545,13 @@ namespace GGUI{
                     if (Previous_Problem->Get_Data() == Problem){
                         // increase the repetition count by one
                         if (!Previous_Repetitions){
-                            Previous_Repetitions = new Text_Field(" 2");
+                            Previous_Repetitions = new Text_Field("2");
                             Rows.back()->Add_Child(Previous_Repetitions);
                         }
                         else{
                             // translate the string to int
-                            int Repetition = std::stoi(Previous_Repetitions->Get_Data().substr(1)) + 1;
-                            Previous_Repetitions->Set_Data(" " + std::to_string(Repetition));
-
-                            // update the row width.
-                            
-                        }
-
-                        // Because of the History having borders we cant just use > operator, we need to use the >= operator!!!
-                        if (Rows.back()->Get_Width() >= History->Get_Width()){
-                            History->Set_Width(Rows.back()->Get_Width());
-
-                            Error_Logger->Set_Width(History->Get_Width() + 2);
-
-                            Error_Logger->Set_Position({
-                                (Max_Width - Error_Logger->Get_Width()) / 2,
-                                (Max_Height - Error_Logger->Get_Height()) / 2,
-                                INT32_MAX
-                            });
+                            int Repetition = std::stoi(Previous_Repetitions->Get_Data()) + 1;
+                            Previous_Repetitions->Set_Data(std::to_string(Repetition));
                         }
 
                         // We dont need to create a new line.
@@ -1602,7 +1588,6 @@ namespace GGUI{
                 );
                 History->Set_Growth_Direction(Grow_Direction::COLUMN);
                 History->Set_Name(HISTORY);
-                History->Allow_Dynamic_Size(true);
 
                 Error_Logger->Add_Child(History);
                 Main->Add_Child(Error_Logger);
@@ -1629,16 +1614,6 @@ namespace GGUI{
                 Row->Add_Child(Date);
                 Row->Add_Child(Problem_Text);
 
-                if (Row->Get_Width() > Error_Logger->Get_Width()){
-                    Error_Logger->Set_Width(Row->Get_Width());
-
-                    Error_Logger->Set_Position({
-                        (Max_Width - Error_Logger->Get_Width()) / 2,
-                        (Max_Height - Error_Logger->Get_Height()) / 2,
-                        INT32_MAX
-                    });
-                }
-
                 History->Add_Child(Row);
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
@@ -1652,7 +1627,7 @@ namespace GGUI{
             Error_Logger->Display(true);
 
             Remember.push_back(Memory(
-                TIME::SECOND * 10,
+                TIME::SECOND * 30,
                 [=](GGUI::Event* e){
                     //delete tmp;
                     Error_Logger->Display(false);

@@ -1128,8 +1128,11 @@ namespace GGUI{
 
         static std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
 
+        void Compute_Dynamic_Size();
+
         virtual std::vector<UTF> Render();
 
+        // Used to update the parent when the child cannot update on itself, for an example on removal of an element.
         virtual void Update_Parent(Element* New_Element);
 
         virtual void Add_Overhead(Element* w, std::vector<UTF>& Result);

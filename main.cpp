@@ -13,7 +13,7 @@ int main()
         //GGUI::HTML* Test = new GGUI::HTML("Examples/simple.html");
     });   
 
-    for (int i = 0; i < 10; i++){
+    for (int i = 0; i < 1000000; i++){
         Report("aaa");
     } 
 

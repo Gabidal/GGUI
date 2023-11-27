@@ -21,6 +21,8 @@ GGUI::List_View::List_View(std::map<std::string, VALUE*> css, unsigned int width
             Set_Position(position);
         }
     });
+
+    Allow_Dynamic_Size(true);
 }
 
 GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
@@ -33,6 +35,8 @@ GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, Grow_Dir
             
         Parent->Add_Child(this);
     });
+    
+    Allow_Dynamic_Size(true);
 }
 
 //These next constructors are mainly for users to more easily create elements.
@@ -42,6 +46,8 @@ GGUI::List_View::List_View(
 ) : Element(){
     Set_Text_Color(text_color);
     Set_Background_Color(background_color);
+    
+    Allow_Dynamic_Size(true);
 }
 
 GGUI::List_View::List_View(
@@ -55,6 +61,8 @@ GGUI::List_View::List_View(
 
     Set_Text_Color(text_color);
     Set_Background_Color(background_color);
+    
+    Allow_Dynamic_Size(true);
 }
 
 GGUI::List_View::List_View(
@@ -74,6 +82,8 @@ GGUI::List_View::List_View(
     Set_Border_Background_Color(border_background_color);
     
     Show_Border(true);
+    
+    Allow_Dynamic_Size(true);
 }
 
 //End of user constructors.
@@ -174,9 +184,8 @@ void GGUI::List_View::Add_Child(Element* e){
         Element_Names.insert({e->Get_Name(), e});
         Childs.push_back(e);
 
-        Re_Order_Childs();
-
-        Update_Parent(this);
+        // No need to re-order childs in list view, since they already have hit-boxes and cannot collide.
+        Update_Frame();
     }
 }
 
@@ -206,15 +215,6 @@ GGUI::Element* GGUI::List_View::Copy(){
 
 std::string GGUI::List_View::Get_Name(){
     return "List_View";
-}
-
-void GGUI::List_View::Update_Parent(Element* New_Element){
-    if (!New_Element->Is_Displayed()){
-        Fully_Stain();
-    }
-
-    if (Parent)
-        Parent->Update_Parent(New_Element);
 }
 
 bool GGUI::List_View::Remove(Element* remove){

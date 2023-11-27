@@ -313,10 +313,16 @@ void GGUI::Text_Field::Set_Data(std::string Data){
 
     pair<unsigned int, unsigned int> dim = Get_Text_Dimensions(Data);
 
-    this->Width = dim.first;
-    this->Height = dim.second;
+    GGUI::STAIN_TYPE flags = STAIN_TYPE::TEXT;
 
-    Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::STRECH);
+    if (dim.first > Width || dim.second > Height){
+        flags = (GGUI::STAIN_TYPE)(flags | STAIN_TYPE::STRECH);
+
+        Width = dim.first;
+        Height = dim.second;
+    }
+
+    Dirty.Dirty(flags);
     Update_Frame();
 }
 

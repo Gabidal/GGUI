@@ -466,6 +466,7 @@ void GGUI::Element::Add_Child(Element* Child){
 
     Childs.push_back(Child);
 
+    // Make sure that elements with higher Z, are rendered later, making them visible as on top.
     Re_Order_Childs();
 
     Update_Frame();
@@ -510,12 +511,11 @@ void GGUI::Element::Update_Parent(Element* New_Element){
         Fully_Stain();
     }
 
+    // When the child is unable to flag changes on parent Render(), like on removal-
+    // Then ask the parent to discard the previous buffer and render from scratch.    
     if (Parent){
-        Parent->Update_Parent(New_Element);
-    }
-    else{
         Fully_Stain();
-        Update_Frame(); //the most top (Main) will not flush all the updates to render.
+        Update_Frame(); 
     }
 }
 
@@ -598,10 +598,10 @@ void GGUI::Element::Set_Width(int width){
     if (width != Width){
         Width = width;
         Fully_Stain();
-        if (Parent)
-            Update_Parent(this);
-        else
-            Update_Frame();
+        // if (Parent)
+        //     Update_Parent(this);
+        // else
+        Update_Frame();
     }
 }
 
@@ -609,10 +609,10 @@ void GGUI::Element::Set_Height(int height){
     if (height != Height){
         Height = height;
         Fully_Stain();
-        if (Parent)
-            Update_Parent(this);
-        else
-            Update_Frame();
+        // if (Parent)
+        //     Update_Parent(this);
+        // else
+        Update_Frame();
     }
 }
 
@@ -750,7 +750,34 @@ GGUI::RGB GGUI::Element::Get_Text_Color(){
     return At<RGB_VALUE>(STYLES::Text_Color)->Value;
 }
 
+void GGUI::Element::Compute_Dynamic_Size(){
+    // Go through all elements displayed.
+    if (!Is_Displayed())
+        return;
 
+    if (Children_Changed()){
+        for (auto& c : Childs){
+            
+            // Check the child first if it has to stretch before this can even know if it needs to stretch.
+            c->Compute_Dynamic_Size();
+
+            int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
+
+            // Add the border offsetter to the width and the height to count for the border collision and evade it. 
+            unsigned int New_Width = std::max(c->Position.X + c->Width + Border_Offsetter, Width);
+            unsigned int New_Height = std::max(c->Position.Y + c->Height + Border_Offsetter, Height);
+
+            // but only update those who actually allow dynamic sizing.
+            if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+                Height = New_Height;
+                Width = New_Width;
+                Dirty.Dirty(STAIN_TYPE::STRECH);
+            }
+        }
+    }
+
+    return;
+}
 
 //Returns nested buffer of AST window's
 std::vector<GGUI::UTF> GGUI::Element::Render(){
@@ -761,21 +788,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRECH);
     }
 
-    if (Dirty.is(STAIN_TYPE::DEEP) && At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
-        for (auto& c : Childs){
-            int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border();
-
-            // Add the border offsetter to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = std::max(c->Position.X + c->Width + Border_Offsetter, Width);
-            unsigned int New_Height = std::max(c->Position.Y + c->Height + Border_Offsetter, Height);
-
-            //TODO: Maybe check the parent of this element to check?
-            Height = New_Height;
-            Width = New_Width;
-
-            Dirty.Dirty(STAIN_TYPE::STRECH);
-        }
-    }
+    Compute_Dynamic_Size();
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
         return Result;
