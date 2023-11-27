@@ -125,8 +125,20 @@ void GGUI::List_View::Add_Child(Element* e){
             // Affect minimum width needed, when current child has borders as well as the previus one.
             signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
-            Height = Min(Max(Child_Needs_Minimum_Height_Of, Get_Height()), max_height);
-            Width = Min(max_width, Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width()));
+            unsigned long long Proposed_Height = Max(Child_Needs_Minimum_Height_Of, Get_Height());
+            unsigned long long Proposed_Width = Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width());
+
+            // Check if the parent has the capability to allow to stretch in the direction if this list elements.
+            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+                Height = Min(max_height, Proposed_Height);
+                Width = Min(max_width, Proposed_Width);
+            }
+            else{
+                Width = Proposed_Width;
+                Height = Proposed_Height;
+
+                Dirty.Dirty(STAIN_TYPE::STRECH);
+            }
 
             e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
 
@@ -134,12 +146,23 @@ void GGUI::List_View::Add_Child(Element* e){
             Last_Child->Show_Border(e->Has_Border());
         }
         else{
-            
             // Affect minimum height needed, when current child has borders as well as the previus one.
             signed int Height_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
-            Width = Min(Max(Child_Needs_Minimum_Width_Of, Get_Width()), max_width);
-            Height = Min(max_height, Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height()));
+            unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, Get_Width());
+            unsigned long long Proposed_Height = Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height());
+
+            // Check if the parent has the capability to allow to stretch in the direction if this list elements.
+            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+                Width = Min(max_width, Proposed_Width);
+                Height = Min(max_height, Proposed_Height);
+            }
+            else{
+                Width = Proposed_Width;
+                Height = Proposed_Height;
+                
+                Dirty.Dirty(STAIN_TYPE::STRECH);
+            }
 
             e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
 

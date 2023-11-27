@@ -34,7 +34,6 @@ namespace GGUI{
             Show_Border(true);
             Set_Name(Text);
         }
-
     };
 }
 

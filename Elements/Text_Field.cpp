@@ -310,7 +310,13 @@ void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::E
 
 void GGUI::Text_Field::Set_Data(std::string Data){
     this->Data = Data;
-    Dirty.Dirty(STAIN_TYPE::TEXT);
+
+    pair<unsigned int, unsigned int> dim = Get_Text_Dimensions(Data);
+
+    this->Width = dim.first;
+    this->Height = dim.second;
+
+    Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::STRECH);
     Update_Frame();
 }
 
