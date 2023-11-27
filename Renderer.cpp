@@ -1193,6 +1193,19 @@ namespace GGUI{
     void Recall_Memories(){
         std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
+        // Prolong prolongable memories.
+        for (int i = 0; i < Remember.size(); i++){
+            for (int j = 1; j < Remember.size(); j++){
+                if (Remember[i].Prolong_Memory && Remember[j].Prolong_Memory)
+                    if (Remember[i].Job.target<bool(*)(GGUI::Event* e)>() == Remember[j].Job.target<bool(*)(GGUI::Event* e)>()){
+                        Remember[i].Start_Time = Remember[j].Start_Time;
+
+                        Remember.erase(Remember.begin() + j--);
+                        break;
+                    }
+            }
+        }
+
         for (int i = 0; i < Remember.size(); i++){
             //first calculate the time difference between the start if the task and the end task
             size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Remember[i].Start_Time).count();
@@ -1627,13 +1640,14 @@ namespace GGUI{
             Error_Logger->Display(true);
 
             Remember.push_back(Memory(
-                TIME::SECOND * 30,
+                TIME::SECOND * 10,
                 [=](GGUI::Event* e){
                     //delete tmp;
                     Error_Logger->Display(false);
                     //job successfully done
                     return true;
-                }
+                },
+                true
             ));
         }
         else{

@@ -618,10 +618,15 @@ namespace GGUI{
         std::chrono::high_resolution_clock::time_point Start_Time;
         size_t End_Time = 0;
 
-        Memory(size_t end, std::function<bool(GGUI::Event* e)>job){
+        // By default all memories automatically will not prolong each other similar memories.
+        bool Prolong_Memory = false;
+
+        // When the job starts, job, prolong previous similar job by this time.
+        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, bool prolong = false){
             Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
+            Prolong_Memory = prolong;
         }
     };
 
