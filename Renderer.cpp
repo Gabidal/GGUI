@@ -1543,25 +1543,29 @@ namespace GGUI{
                     if (Previous_Problem->Get_Data() == Problem){
                         // increase the repetition count by one
                         if (!Previous_Repetitions){
-                            Previous_Repetitions = new Text_Field("2");
+                            Previous_Repetitions = new Text_Field(" 2");
                             Rows.back()->Add_Child(Previous_Repetitions);
-
-                            if (Rows.back()->Get_Width() > History->Get_Width()){
-                                History->Set_Width(Rows.back()->Get_Width());
-
-                                Error_Logger->Set_Width(History->Get_Width() + 1);
-
-                                Error_Logger->Set_Position({
-                                    (Max_Width - Error_Logger->Get_Width()) / 2,
-                                    (Max_Height - Error_Logger->Get_Height()) / 2,
-                                    INT32_MAX
-                                });
-                            }
                         }
                         else{
                             // translate the string to int
-                            int Repetition = std::stoi(Previous_Repetitions->Get_Data()) + 1;
-                            Previous_Repetitions->Set_Data(std::to_string(Repetition));
+                            int Repetition = std::stoi(Previous_Repetitions->Get_Data().substr(1)) + 1;
+                            Previous_Repetitions->Set_Data(" " + std::to_string(Repetition));
+
+                            // update the row width.
+                            
+                        }
+
+                        // Because of the History having borders we cant just use > operator, we need to use the >= operator!!!
+                        if (Rows.back()->Get_Width() >= History->Get_Width()){
+                            History->Set_Width(Rows.back()->Get_Width());
+
+                            Error_Logger->Set_Width(History->Get_Width() + 2);
+
+                            Error_Logger->Set_Position({
+                                (Max_Width - Error_Logger->Get_Width()) / 2,
+                                (Max_Height - Error_Logger->Get_Height()) / 2,
+                                INT32_MAX
+                            });
                         }
 
                         // We dont need to create a new line.
@@ -1615,6 +1619,7 @@ namespace GGUI{
                     GGUI::COLOR::RED,
                     GGUI::COLOR::BLACK
                 );
+                Row->Set_Parent(History);
                 Row->Set_Growth_Direction(Grow_Direction::ROW);
 
                 // TODO: replace the text_field into Date_Element !

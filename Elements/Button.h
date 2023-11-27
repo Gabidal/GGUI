@@ -34,8 +34,6 @@ namespace GGUI{
             Show_Border(true);
             Set_Name(Text);
         }
-
-        Element_Type Get_Type() override { return Element_Type::BUTTON; }
     };
 }
 

@@ -11,8 +11,6 @@ namespace GGUI{
         FILE_STREAM* Handle = nullptr;
     public:
         HTML(std::string File_Name);
-
-        Element_Type Get_Type() override { return Element_Type::HTML; }
     };
 
     enum class HTML_GROUP_TYPES{

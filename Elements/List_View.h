@@ -55,8 +55,6 @@ namespace GGUI{
 
         //End of user constructors.
 
-        Element_Type Get_Type() override { return Element_Type::LIST_VIEW; }
-
         void Add_Child(Element* e) override;
         
         //std::vector<UTF> Render() override;

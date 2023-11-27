@@ -893,23 +893,6 @@ namespace GGUI{
         inline bool Word_Wrapping = true;
     };
 
-    // If you change this, make sure to re-compile all the *.obj files!!!
-    enum class Element_Type{
-        BUTTON,
-        CANVAS,
-            SPRITE,
-            TERMINAL_CANVAS,
-        ELEMENT,
-        HTML,
-        LIST_VIEW,
-        PROGRESS_BAR,
-        SWITCH,
-            RADIO_BUTTON,
-            CHECK_BOX,
-        TEXT_FIELD,
-        WINDOW
-    };
-
     class Element{
     protected:
         Coordinates Position;
@@ -976,9 +959,6 @@ namespace GGUI{
         );
 
         //End of user constructors.
-
-        // This function is important for all classes which would like to inherit Element class to implement!!!
-        virtual Element_Type Get_Type(){ return Element_Type::ELEMENT; }
 
         virtual void Fully_Stain();
 
