@@ -8,6 +8,9 @@
 
 namespace GGUI{
     class Switch : public Element{
+    private:
+        // DONT GIVE TO USER !!!
+        Switch(){}
     protected:
         bool State = false;
 
@@ -29,6 +32,13 @@ namespace GGUI{
         std::string Get_Data() { return Text; }
 
         void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
+        
+        Element* Safe_Move() override {
+            Switch* new_Switch = new Switch();
+            *new_Switch = *(Switch*)this;
+
+            return new_Switch;
+        }
     };
 
     class Radio_Button : public Switch{
@@ -38,6 +48,9 @@ namespace GGUI{
         bool Get_State(){
             return State;
         }
+        
+        // The Swtich overrides it for us.
+        //Element* Safe_Move() override;
     };
 
     class Check_Box : public Switch{
@@ -47,6 +60,9 @@ namespace GGUI{
         bool Get_State(){
             return State;
         }
+        
+        // The Swtich overrides it for us.
+        //Element* Safe_Move() override;
     };
 }
 

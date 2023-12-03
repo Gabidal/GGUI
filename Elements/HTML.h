@@ -8,9 +8,19 @@ namespace GGUI{
 
     class HTML : public Element{
     private:
+        // DONT GIVE TO USER !!!
+        HTML(){}
+    private:
         FILE_STREAM* Handle = nullptr;
     public:
         HTML(std::string File_Name);
+
+        Element* Safe_Move() override {
+            HTML* new_HTML = new HTML();
+            *new_HTML = *(HTML*)this;
+
+            return new_HTML;
+        }
     };
 
     enum class HTML_GROUP_TYPES{

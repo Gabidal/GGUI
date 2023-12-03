@@ -53,6 +53,8 @@ namespace GGUI{
 
     extern bool Collides(GGUI::Element* a, GGUI::Coordinates b);
 
+    extern bool Collides(GGUI::Element* a, GGUI::Coordinates c, unsigned int Width, unsigned int Height);
+
     extern Element* Get_Accurate_Element_From(Coordinates c, Element* Parent);
 
     extern Coordinates Find_Upper_Element();

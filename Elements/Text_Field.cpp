@@ -341,31 +341,7 @@ GGUI::TEXT_LOCATION GGUI::Text_Field::Get_Text_Position(){
 }
 
 std::string GGUI::Text_Field::Get_Name(){
-    return "Text_Field";
-}
-
-GGUI::Element* GGUI::Text_Field::Copy(){
-    Text_Field* new_element = new Text_Field();
-
-    *new_element = *this;
-
-    //now also update the event handlers.
-    for (auto& e : GGUI::Event_Handlers){
-
-        if (e->Host == this){
-            //copy the event and make a new one
-            Action* new_action = new Action(*e);
-
-            //update the host
-            new_action->Host = new_element;
-
-            //add the new action to the event handlers list
-            GGUI::Event_Handlers.push_back(new_action);
-        }
-
-    }
-
-    return new_element;
+    return "Text_Field<" + Name + ">";
 }
 
 void GGUI::Text_Field::Input(std::function<void(char)> Then){

@@ -14,7 +14,8 @@ int main()
     });   
 
     for (int i = 0; i < 1000000; i++){
-        Report("aaa");
+        for (int j = 0; j < i; j++)
+            Report("aaa" + to_string(i));
     } 
 
     GGUI::SLEEP(INT32_MAX);

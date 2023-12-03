@@ -141,6 +141,45 @@ GGUI::Element::Element(
     Show_Border(true);
 }
 
+GGUI::Element::~Element(){
+    // Ptr related members:
+    // - Parent
+    // - Childs
+    // - Style
+    // - Event Handlers
+
+    // Make sure this element is not listed in the parent element.
+    // And if it does, then remove it from the parent element.
+    for (int i = 0; Parent && i < Parent->Childs.size(); i++)
+        if (Parent->Childs[i] == this){
+            Parent->Childs.erase(Parent->Childs.begin() + i);
+
+            Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
+
+            break;  // There should be no possibility, that there are appended two or more of this exact same element, they should be copied!!!
+        }
+
+    // Fire all the childs.
+    for (auto i : Childs)
+        if (i->Parent == this) 
+            delete i;
+
+    // Delete all the styles.
+    for (auto i : Style)
+        delete i.second;
+
+    //now also update the event handlers.
+    for (int i = 0; i < Event_Handlers.size(); i++)
+        if (Event_Handlers[i]->Host == this){
+            
+            //delete the event
+            delete Event_Handlers[i];
+
+            //remove the event from the list
+            Event_Handlers.erase(Event_Handlers.begin() + i);
+        }
+}   
+
 void GGUI::Element::Fully_Stain(){
 
     this->Dirty.Dirty(STAIN_TYPE::CLASS | STAIN_TYPE::STRECH | STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
@@ -497,8 +536,10 @@ bool GGUI::Element::Remove(Element* handle){
                 Mouse = Childs[i]->Parent->Position;
             }
 
-            Childs.erase(Childs.begin() + i);
-            Update_Parent(handle);
+            delete handle;
+
+            Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::COLOR);
+
             return true;
         }
     }
@@ -557,8 +598,10 @@ bool GGUI::Element::Remove(int index){
         Mouse = tmp->Parent->Position;
     }
 
-    Childs.erase(Childs.begin() + index);
-    Update_Parent(tmp);
+    delete tmp;
+    
+    Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::COLOR);
+    
     return true;
 }
 
@@ -668,37 +711,102 @@ GGUI::Margin GGUI::Element::Get_Margin(){
     return At<MARGIN_VALUE>(STYLES::Margin)->Value;
 }
 
-std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
-    GGUI::Element tmp = *child;
-    tmp.Style.clear();
+GGUI::Element* GGUI::Element::Copy(){
+    //compile time check       
+    //static_assert(std::is_same<T&, decltype(*this)>::value, "T must be the same as the type of the object");
+    Element* new_element = Safe_Move();
 
-    tmp.Width = 0;
-    tmp.Height = 0;
+    // Ptr related members:
+    // - Parent
+    // - Childs
+    // - Style
+    // - Event Handlers
+
+    // reset the parent info.
+    new_element->Parent = nullptr;
+
+    // copy the childs over.
+    for (int i = 0; i < this->Get_Childs().size(); i++){
+        new_element->Childs[i] = this->Get_Childs()[i]->Copy();
+    }
+
+    // copy the styles over.
+    for (auto& s : this->Style){
+        new_element->Style[s.first] = s.second->Copy();
+    }
+
+    //now also update the event handlers.
+    for (auto& e : Event_Handlers){
+
+        if (e->Host == this){
+            //copy the event and make a new one
+            Action* new_action = new Action(*e);
+
+            //update the host
+            new_action->Host = new_element;
+
+            //add the new action to the event handlers list
+            Event_Handlers.push_back(new_action);
+        }
+    }
+
+    return (Element*)new_element;
+}
+
+std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
+    Coordinates tmp_Position = child->Get_Position();
+
+    unsigned int tmp_Width = 0;
+    unsigned int tmp_Height = 0;
 
     int Border_Size = (Has_Border() * 2) - (child->Has_Border() * 2);
 
     while (true){
-        if (tmp.Position.X + tmp.Width < Width - Border_Size){
-            tmp.Width++;
+        if (tmp_Position.X + tmp_Width < Width - Border_Size){
+            tmp_Width++;
         }
         
-        if (tmp.Position.Y + tmp.Height < Height - Border_Size){
-            tmp.Height++;
+        if (tmp_Position.Y + tmp_Height < Height - Border_Size){
+            tmp_Height++;
         }
-        else if (tmp.Position.X + tmp.Width >= Width - Border_Size && tmp.Position.Y + tmp.Height >= Height - Border_Size){
+        else if (tmp_Position.X + tmp_Width >= Width - Border_Size && tmp_Position.Y + tmp_Height >= Height - Border_Size){
             break;
         }
         
         for (auto c : Childs){
-            if (child != c && Collides(&tmp, c)){
+            if (child != c && Collides(c, tmp_Position, tmp_Width, tmp_Height)){
                 //there are already other childs occupying this area so we can stop here.
-                return {tmp.Width, tmp.Height};
+                return {tmp_Width, tmp_Height};
             }
         }
 
     }
 
-    return {tmp.Width, tmp.Height};
+    return {tmp_Width, tmp_Height};
+}
+
+std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
+    unsigned int max_width = 0;
+    unsigned int max_height = 0;
+
+    if (Parent){
+        std::pair<unsigned int, unsigned int> Max_Dimensions = Parent->Get_Fitting_Dimensions(this);
+
+        max_width = Max_Dimensions.first;
+        max_height = Max_Dimensions.second;
+    }
+    else{
+        if ((Element*)this == (Element*)GGUI::Main){
+            max_width = Max_Width;
+            max_height = Max_Height;
+        }
+        else{
+            max_width = GGUI::Main->Get_Width() - GGUI::Main->Has_Border() * 2;
+            max_height = GGUI::Main->Get_Height() - GGUI::Main->Has_Border() * 2;
+        }
+    }
+
+    return {max_width, max_height};
 }
 
 void GGUI::Element::Set_Background_Color(RGB color){
@@ -756,19 +864,21 @@ void GGUI::Element::Compute_Dynamic_Size(){
         return;
 
     if (Children_Changed()){
-        for (auto& c : Childs){
-            
+        for (auto c : Childs){
+            if (!c->Is_Displayed())
+                continue;
+
             // Check the child first if it has to stretch before this can even know if it needs to stretch.
             c->Compute_Dynamic_Size();
 
             int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
 
             // Add the border offsetter to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = std::max(c->Position.X + c->Width + Border_Offsetter, Width);
-            unsigned int New_Height = std::max(c->Position.Y + c->Height + Border_Offsetter, Height);
+            unsigned int New_Width = (unsigned int)std::max(c->Position.X + (signed int)c->Width + Border_Offsetter, (signed int)Width);
+            unsigned int New_Height = (unsigned int)std::max(c->Position.Y + (signed int)c->Height + Border_Offsetter, (signed int)Height);
 
             // but only update those who actually allow dynamic sizing.
-            if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+            if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && (New_Width != Width || New_Height != Height)){
                 Height = New_Height;
                 Width = New_Width;
                 Dirty.Dirty(STAIN_TYPE::STRECH);
@@ -1107,30 +1217,6 @@ void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Eve
         this
     );
     GGUI::Event_Handlers.push_back(a);
-}
-
-GGUI::Element* GGUI::Element::Copy(){
-    Element* new_element = new Element();
-
-    *new_element = *this;
-
-    //now also update the event handlers.
-    for (auto& e : GGUI::Event_Handlers){
-
-        if (e->Host == this){
-            //copy the event and make a new one
-            Action* new_action = new Action(*e);
-
-            //update the host
-            new_action->Host = new_element;
-
-            //add the new action to the event handlers list
-            GGUI::Event_Handlers.push_back(new_action);
-        }
-
-    }
-
-    return new_element;
 }
 
 bool GGUI::Element::Children_Changed(){

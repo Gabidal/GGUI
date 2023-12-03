@@ -72,6 +72,15 @@ namespace GGUI{
         return (A_X < B_X + 1 && A_X + a->Get_Width() > B_X && A_Y < B_Y + 1 && A_Y + a->Get_Height() > B_Y);
     }
 
+    bool Collides(GGUI::Element* a, GGUI::Coordinates c, unsigned int Width, unsigned int Height){
+        int A_X = a->Get_Absolute_Position().X;
+        int A_Y = a->Get_Absolute_Position().Y;
+
+        int B_X = c.X;
+        int B_Y = c.Y;
+        return (A_X < B_X + Width && A_X + a->Get_Width() > B_X && A_Y < B_Y + Height && A_Y + a->Get_Height() > B_Y);
+    }
+
     Element* Get_Accurate_Element_From(Coordinates c, Element* Parent){
         
         //first check if the c is in bounds of Parent.
@@ -1630,17 +1639,19 @@ namespace GGUI{
                 History->Add_Child(Row);
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
-                if (History->Get_Absolute_Position().Y + History->Get_Height() > Main->Get_Height()){
+                if (History->Get_Absolute_Position().Y + History->Get_Height() >= Main->Get_Height() - Main->Has_Border() * 2){
                     // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
                     Element* First_Child = History->Get_Childs()[0];
                     History->Remove(First_Child);
+
+                    // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
                 }
             }
 
             Error_Logger->Display(true);
 
             Remember.push_back(Memory(
-                TIME::SECOND * 10,
+                TIME::SECOND * 30,
                 [=](GGUI::Event* e){
                     //delete tmp;
                     Error_Logger->Display(false);

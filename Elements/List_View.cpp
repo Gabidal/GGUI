@@ -89,26 +89,10 @@ GGUI::List_View::List_View(
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
-    unsigned int max_width = 0;
-    unsigned int max_height = 0;
+    pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
 
-    if (Parent){
-        std::pair<unsigned int, unsigned int> Max_Dimensions = Parent->Get_Fitting_Dimensions(this);
-
-        max_width = Max_Dimensions.first;
-        max_height = Max_Dimensions.second;
-    }
-    else{
-        if ((Element*)this == (Element*)GGUI::Main){
-            max_width = Max_Width;
-            max_height = Max_Height;
-        }
-        else{
-            max_width = GGUI::Main->Get_Width() - GGUI::Main->Has_Border() * 2;
-            max_height = GGUI::Main->Get_Height() - GGUI::Main->Has_Border() * 2;
-        }
-    }
-
+    unsigned int max_width = limits.first;
+    unsigned int max_height = limits.second;
 
     // (This->left_border_size - child->left_border_size) * on_of_switch
     unsigned Offset = (Has_Border() - e->Has_Border()) * Has_Border();
@@ -153,7 +137,6 @@ void GGUI::List_View::Add_Child(Element* e){
             e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
 
             Last_Child->Set_Position({Last_Child->Get_Position().X + e->Get_Width() - Width_Modifier, Last_Child->Get_Position().Y});
-            Last_Child->Show_Border(e->Has_Border());
         }
         else{
             // Affect minimum height needed, when current child has borders as well as the previus one.
@@ -177,9 +160,9 @@ void GGUI::List_View::Add_Child(Element* e){
             e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
 
             Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + e->Get_Height() - Height_Modifier});
-            Last_Child->Show_Border(e->Has_Border());
         }
 
+        Last_Child->Show_Border(e->Has_Border());
         Dirty.Dirty(STAIN_TYPE::DEEP);
         Element_Names.insert({e->Get_Name(), e});
         Childs.push_back(e);
@@ -189,107 +172,100 @@ void GGUI::List_View::Add_Child(Element* e){
     }
 }
 
-GGUI::Element* GGUI::List_View::Copy(){
-    List_View* new_element = new List_View();
-
-    *new_element = *this;
-
-    //now also update the event handlers.
-    for (auto& e : GGUI::Event_Handlers){
-
-        if (e->Host == this){
-            //copy the event and make a new one
-            Action* new_action = new Action(*e);
-
-            //update the host
-            new_action->Host = new_element;
-
-            //add the new action to the event handlers list
-            GGUI::Event_Handlers.push_back(new_action);
-        }
-
-    }
-
-    return new_element;
-}
-
 std::string GGUI::List_View::Get_Name(){
-    return "List_View";
+    return "List_View<" + Name + ">";
 }
 
 bool GGUI::List_View::Remove(Element* remove){
-    GGUI::Pause_Render = true;
+    GGUI::Pause_Renderer();
+    unsigned int Index = 0;
 
-    unsigned int removable_index = 0;
+    //first find the removable element index.
+    for (;Index < Childs.size() && Childs[Index] != remove; Index++);
     
-    unsigned int max_width = 0;
-    unsigned int max_height = 0;
-
-    if (Parent){
-        std::pair<unsigned int, unsigned int> Max_Dimensions = Parent->Get_Fitting_Dimensions(this);
-
-        max_width = Max_Dimensions.first;
-        max_height = Max_Dimensions.second;
-    }
-    else{
-        if ((Element*)this == (Element*)GGUI::Main){
-            max_width = Max_Width;
-            max_height = Max_Height;
-        }
-        else{
-            max_width = GGUI::Main->Get_Width() - GGUI::Main->Has_Border() * 2;
-            max_height = GGUI::Main->Get_Height() - GGUI::Main->Has_Border() * 2;
-        }
+    // Check if there was no element by that ptr value.
+    if (Index == Childs.size()){
+        Report("Internal: no element with ptr value: " + remove->Get_Name() + " was found in the list view: " + Get_Name());
+        
+        // Since this removal action failed report to starter, that this failed sadge.
+        return false;
     }
 
-    //first find the removable elements index.
-    for (;removable_index < Childs.size() && Childs[removable_index] != remove; removable_index++);
-    
-    // Recalculate the new dimensions for this element.
-    Set_Dimensions(0, 0);
+    // So basically this algorithm just calculates the gap which is born, when this element is removed from the middle of the list, and our task is to collapse the gap.
 
-    //now for every element past this index position needs to be altered so that this removed element didn't ever exist.
+    // First fetch some data:
+    std::pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
+
+    unsigned int Inner_Width = limits.first;
+    unsigned int Inner_Height = limits.second;
+
+    // represents as well as the vertical list as well the horizontal list.
+    // where this checks if this element was the root cause for the elements height or width to be stretched when this was added.
+    // so for an vertical list this checks if it changed the width, or for an horizontal list the height. 
+    bool Is_Stretcher = remove->Get_Width() == Inner_Width || remove->Get_Height() == Inner_Height;
+
+    // now sadly we need to branch the code into the vertical and horizontal calculations.
     if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
-        // relocate the childs now that the removable child has been removed.
-        for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
-            Childs[i]->Set_Position({Childs[i]->Get_Position().X - remove->Get_Width(), Childs[i]->Get_Position().Y});
+        // represents the horizontal list
+        unsigned int Gap = remove->Get_Width();
+
+        unsigned int New_Stretched_Height = 0;
+
+        // all elements after the index, need to be removed from their x position the gap value.
+        for (unsigned int i = Index + 1; i < Childs.size(); i++){
+            // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
+            Childs[i]->Set_Position({Childs[i]->Get_Position().X - Gap, Childs[i]->Get_Position().Y});
+
+            // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
+            // although there is a slight probability that some of the previous elements were exact same size.
+            if (Is_Stretcher && Childs[i]->Get_Height() > New_Stretched_Height)
+                New_Stretched_Height = Childs[i]->Get_Height();
         }
 
-        // recalculate the new width for this list, and only update the height if the current child exceeds the height of this element.
-        for (auto c : Childs){
-            unsigned Offset = (Has_Border() - c->Has_Border()) * Has_Border();
+        if (Is_Stretcher)
+            Inner_Height = New_Stretched_Height;
 
-            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Offset * 2;
-            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Offset * 2;
+        Inner_Width -= Gap;
 
-            Width = Min(max_width, Width + Child_Needs_Minimum_Width_Of);
-            Height = Min(max_height, Max(Child_Needs_Minimum_Height_Of, Height));
+        Set_Dimensions(Inner_Width, Inner_Height);
+    }   
+    else{
+        // represents the vertical list
+        unsigned int Gap = remove->Get_Height();
+
+        unsigned int New_Stretched_Width = 0;
+
+        // all elements after the index, need to be removed from their y position the gap value.
+        for (unsigned int i = Index + 1; i < Childs.size(); i++){
+            // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
+            Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - Gap});
+
+            // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
+            // although there is a slight probability that some of the previous elements were exact same size.
+            if (Is_Stretcher && Childs[i]->Get_Width() > New_Stretched_Width)
+                New_Stretched_Width = Childs[i]->Get_Width();
         }
+
+        if (Is_Stretcher)
+            Inner_Width = New_Stretched_Width;
+
+        Inner_Height -= Gap;
+
+        Set_Dimensions(Inner_Width, Inner_Height);
     }
-    else{        
-        // relocate the childs now that the removable child has been removed.
-        for (unsigned int i = removable_index + 1; i < Childs.size(); i++){
-            Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - Childs[i]->Get_Height()});
-        }
 
-        // recalculate the new height for this list, and only update the width if the current child exceeds the width of this element.
-        for (auto c : Childs){
-            unsigned Offset = (Has_Border() - c->Has_Border()) * Has_Border();
+    delete remove;
 
-            unsigned int Child_Needs_Minimum_Height_Of = c->Get_Height() + Offset * 2;
-            unsigned int Child_Needs_Minimum_Width_Of = c->Get_Width() + Offset * 2;
+    // NOTE: Last_Child is NOT an ptr to the latest child added !!!
+    if (Childs.size() > 0){
+        Element* tmp = Childs[Childs.size() - 1];
 
-            Width = Min(max_width, Max(Child_Needs_Minimum_Width_Of, Width));
-            Height = Min(max_height, Height + Child_Needs_Minimum_Height_Of);
-        }
+        Last_Child->Set_Position({Last_Child->Get_Position().X - tmp->Get_Width(), Last_Child->Get_Position().Y - tmp->Get_Height()});
+
+        Last_Child->Show_Border(tmp->Has_Border());
     }
 
-    Fully_Stain();
-    remove->Display(false);
-    
-    Element::Remove(remove);
-
-    GGUI::Pause_Render = false;
+    GGUI::Resume_Renderer();
     return true;
 }
 

@@ -75,12 +75,16 @@ namespace GGUI{
 
         std::string Get_Name() override;
 
-        Element* Copy() override;
-
         void Show_Border(bool state) override;
 
         void Show_Border(bool state, bool previus_state) override;
 
+        Element* Safe_Move() override {
+            Window* new_Window = new Window();
+            *new_Window = *(Window*)this;
+
+            return new_Window;
+        }
     };
 }
 

@@ -63,8 +63,6 @@ namespace GGUI{
 
         std::string Get_Name() override;
 
-        Element* Copy() override;
-
         //async function, 
         void Input(std::function<void(char)> Then);
 
@@ -86,10 +84,16 @@ namespace GGUI{
 
         void Disable_Dynamic_Size();
 
-
         static void Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
         static void Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
         static void Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+
+        Element* Safe_Move() override {
+            Text_Field* new_Text_Field = new Text_Field();
+            *new_Text_Field = *(Text_Field*)this;
+
+            return new_Text_Field;
+        }
     };
 }
 

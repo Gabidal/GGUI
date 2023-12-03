@@ -221,31 +221,7 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
 }
 
 std::string GGUI::Window::Get_Name(){
-    return "Window";
-}
-
-GGUI::Element* GGUI::Window::Copy(){
-    Window* new_element = new Window();
-
-    *new_element = *this;
-
-    //now also update the event handlers.
-    for (auto& e : GGUI::Event_Handlers){
-
-        if (e->Host == this){
-            //copy the event and make a new one
-            Action* new_action = new Action(*e);
-
-            //update the host
-            new_action->Host = new_element;
-
-            //add the new action to the event handlers list
-            GGUI::Event_Handlers.push_back(new_action);
-        }
-
-    }
-
-    return new_element;
+    return "Window<" + Name + ">";
 }
 
 void GGUI::Window::Show_Border(bool b){

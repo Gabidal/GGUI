@@ -654,7 +654,8 @@ namespace GGUI{
         MARGIN,
     };
 
-    class VALUE{
+    class 
+    VALUE{
     public:
         VALUE_TYPES Type = VALUE_TYPES::UNDEFINED;
 
@@ -897,6 +898,9 @@ namespace GGUI{
         inline unsigned long long Input_Clear_Time = 16;
         inline bool Word_Wrapping = true;
     };
+  
+    // For templates.
+    extern std::vector<Action*> Event_Handlers;
 
     class Element{
     protected:
@@ -963,26 +967,29 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        //End of user constructors.
+        //Start of destructors.
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+        ~Element();
+
+        //
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+                
+        virtual Element* Safe_Move(){
+            Element* new_element = new Element();
+            *new_element = *(Element*)this;
+
+            return new_element;
+        }
+
+        // USe this when you want to duplicate the same element with its properties safely.
+        Element* Copy();
 
         virtual void Fully_Stain();
 
         // If you want to make a representing element* that isnt the same as the Abstract one.
         // Then Remember to USE THIS!
         void Inherit_States_From(Element* abstract);
-
-        template<typename T>
-        T* At(std::string s){
-            T* v = (T*)Style[s];
-
-            if (v == nullptr){
-                v = new T();
-
-                Style[s] = v;
-            }
-
-            return v;
-        }
 
         void Parse_Classes();
 
@@ -1064,8 +1071,12 @@ namespace GGUI{
             return false;
         }
 
-        //returns borders in mind.
+        //returns the area which a new element could be fitted in.
         std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
+
+        // returns the maximum area of width and height which an element could be fit in.
+        // basically same as the Get_Fitting_Dimensions(), but with some extra safe checks, so use this.
+        std::pair<unsigned int, unsigned int> Get_Limit_Dimensions();
 
         virtual void Show_Border(bool b);
 
@@ -1162,14 +1173,12 @@ namespace GGUI{
         std::pair<RGB, RGB>  Compose_All_Border_RGB_Values();
 
         virtual std::string Get_Name(){
-            return "Element";
+            return "Element<" + Name + ">";
         }
 
         void Set_Name(std::string name);
 
         bool Has_Internal_Changes();
-
-        virtual Element* Copy();
 
         //Makes suicide.
         void Remove();
@@ -1181,6 +1190,9 @@ namespace GGUI{
 
         //This function returns nullptr, if the element could not be found.
         Element* Get_Element(std::string name);
+
+        // TEMPLATES
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
         //This function returns all child elements that have the same element type.
         template<typename T>
@@ -1200,6 +1212,21 @@ namespace GGUI{
 
             return result;
         }
+
+        template<typename T>
+        T* At(std::string s){
+            T* v = (T*)Style[s];
+
+            if (v == nullptr){
+                v = new T();
+
+                Style[s] = v;
+            }
+
+            return v;
+        }
+
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
         void Re_Order_Childs();
 

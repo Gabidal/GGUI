@@ -17,7 +17,7 @@ namespace GGUI{
     class List_View : public Element{
     public:
 
-        //cache
+        //We can always assume that the list starts from the upper left corner, right?
         Element* Last_Child = new Element(0, 0, {0, 0});
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
@@ -63,8 +63,6 @@ namespace GGUI{
 
         bool Remove(Element* e) override;
 
-        Element* Copy() override;
-
         void Set_Growth_Direction(Grow_Direction gd){
             At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
         }
@@ -84,6 +82,12 @@ namespace GGUI{
             return (T*)this->Childs[index];
         }
 
+        Element* Safe_Move() override {
+            List_View* new_List_View = new List_View();
+            *new_List_View = *(List_View*)this;
+
+            return new_List_View;
+        }
     };
 }
 

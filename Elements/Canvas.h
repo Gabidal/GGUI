@@ -8,6 +8,9 @@
 namespace GGUI{
 
     class Canvas : public Element{
+    private:
+        // DONT GIVE THIS TO USER!
+        Canvas(){}
     protected:
         std::vector<RGB> Buffer;
     public:
@@ -19,6 +22,13 @@ namespace GGUI{
         void Flush();
 
         std::vector<UTF> Render() override;
+
+        Element* Safe_Move() override {
+            Canvas* new_Canvas = new Canvas();
+            *new_Canvas = *(Canvas*)this;
+
+            return new_Canvas;
+        }
     };
 
     class Sprite{
@@ -33,6 +43,9 @@ namespace GGUI{
     };
 
     class Terminal_Canvas : public Element{
+    private:
+        // DONT GIVE THIS TO USER!!!
+        Terminal_Canvas(){}
     protected:
         std::vector<Sprite> Buffer;
     public:
@@ -45,6 +58,13 @@ namespace GGUI{
         void Flush();
         
         std::vector<UTF> Render() override;
+        
+        Element* Safe_Move() override {
+            Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
+            *new_Terminal_Canvas = *(Terminal_Canvas*)this;
+
+            return new_Terminal_Canvas;
+        }
     };
 
 }

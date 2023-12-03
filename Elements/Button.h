@@ -24,6 +24,9 @@ namespace GGUI{
         void Default_Button_Text_Align(){
             At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
         }
+
+        // DONT USE AS USER!!
+        Button(){}
     public:
 
         Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
@@ -33,6 +36,13 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::TEXT);
             Show_Border(true);
             Set_Name(Text);
+        }
+
+        Element* Safe_Move() override {
+            Button* new_Button = new Button();
+            *new_Button = *(Button*)this;
+
+            return new_Button;
         }
     };
 }
