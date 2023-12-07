@@ -154,15 +154,16 @@ GGUI::Element::~Element(){
         if (Parent->Childs[i] == this){
             Parent->Childs.erase(Parent->Childs.begin() + i);
 
+            // This may not be enough for the parent to know where to resample the buffer where this child used to be.
             Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
 
             break;  // There should be no possibility, that there are appended two or more of this exact same element, they should be copied!!!
         }
 
     // Fire all the childs.
-    for (auto i : Childs)
-        if (i->Parent == this) 
-            delete i;
+    for (int i = Childs.size() -1; i >= 0; i--)
+        if (Childs[i]->Parent == this) 
+            delete Childs[i];
 
     // Delete all the styles.
     for (auto i : Style)
