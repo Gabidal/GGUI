@@ -263,6 +263,9 @@ namespace GGUI{
                 return 'i';
             }
         }
+
+        // return the normal value, if there is no key-binds detected.
+        return keybind_value;
     }
 
     void Query_Inputs(){
@@ -515,7 +518,8 @@ namespace GGUI{
         fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
 
         // Move cursor to top-left corner
-        printf((Constants::CLEAR_SCROLLBACK + Constants::SET_CURSOR_TO_START).c_str());
+        // Previously used: Constants::CLEAR_SCROLLBACK + As a prefix to clear the history, when it was accumulating, but lately tests point this to be useless.
+        printf((Constants::SET_CURSOR_TO_START).c_str());
 
         // Flush the output to ensure it's written immediately
         fflush(stdout);
@@ -994,7 +998,7 @@ namespace GGUI{
             Current = Hovered_On;
 
         // Check if there is no focused element yet
-        if (!Current){
+        if (!Current && Event_Handlers.size() > 0){
             // If there is no element selected per se (perse). find the closest element to the (0;0) (Top Left)
 
             vector<Element*> handler_elements;

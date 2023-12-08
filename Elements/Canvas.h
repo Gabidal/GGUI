@@ -29,6 +29,10 @@ namespace GGUI{
 
             return new_Canvas;
         }
+
+        std::string Get_Name() override{
+            return "Canvas<" + Name + ">";
+        }
     };
 
     class Sprite{
@@ -64,6 +68,10 @@ namespace GGUI{
             *new_Terminal_Canvas = *(Terminal_Canvas*)this;
 
             return new_Terminal_Canvas;
+        }
+
+        std::string Get_Name() override{
+            return "Terminal_Canvas<" + Name + ">";
         }
     };
 

@@ -117,8 +117,8 @@ namespace GGUI{
 
 
     void Progress_Bar::Set_Progress(float New_Progress){
-        if (New_Progress > 1.01){
-            Report("Percentage overflow!");
+        if (New_Progress > 1.00){
+            Report(Get_Name() + " got a percentage overflow!");
         }
 
         Progress = New_Progress;

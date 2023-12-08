@@ -653,17 +653,12 @@ void GGUI::Element::Set_Height(int height){
     if (height != Height){
         Height = height;
         Fully_Stain();
-        // if (Parent)
-        //     Update_Parent(this);
-        // else
         Update_Frame();
     }
 }
 
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
-    // if (Parent)
-    //     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
 
     this->Dirty.Dirty(STAIN_TYPE::MOVE);
 
@@ -717,6 +712,9 @@ GGUI::Element* GGUI::Element::Copy(){
     //static_assert(std::is_same<T&, decltype(*this)>::value, "T must be the same as the type of the object");
     Element* new_element = Safe_Move();
 
+    // Make sure the name is also renewed to represent the memory.
+    new_element->Set_Name(std::to_string((unsigned long long)new_element));
+
     // Ptr related members:
     // - Parent
     // - Childs
@@ -732,7 +730,7 @@ GGUI::Element* GGUI::Element::Copy(){
     }
 
     // copy the styles over.
-    for (auto& s : this->Style){
+    for (auto s : this->Style){
         new_element->Style[s.first] = s.second->Copy();
     }
 
@@ -1268,7 +1266,7 @@ GGUI::Element* GGUI::Element::Get_Element(std::string name){
 // Rre orders the childs by the z position, where the biggest z, goes last.
 void GGUI::Element::Re_Order_Childs(){
     std::sort(Childs.begin(), Childs.end(), [](Element* a, Element* b){
-        return a->Get_Position().Z > b->Get_Position().Z;
+        return a->Get_Position().Z <= b->Get_Position().Z;
     });
 }
 

@@ -1205,7 +1205,7 @@ namespace GGUI{
                 result.push_back((T*)this);
             }
 
-            for (auto& e : Childs){
+            for (auto e : Childs){
                 std::vector<T*> child_result = e->Get_Elements<T>();
                 result.insert(result.end(), child_result.begin(), child_result.end());
             }

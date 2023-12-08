@@ -39,6 +39,10 @@ namespace GGUI{
 
             return new_Switch;
         }
+
+        std::string Get_Name() override{
+            return "Switch<" + Name + ">";
+        }
     };
 
     class Radio_Button : public Switch{
@@ -51,6 +55,10 @@ namespace GGUI{
         
         // The Swtich overrides it for us.
         //Element* Safe_Move() override;
+        
+        std::string Get_Name() override{
+            return "Radio_Button<" + Name + ">";
+        }
     };
 
     class Check_Box : public Switch{
@@ -63,6 +71,10 @@ namespace GGUI{
         
         // The Swtich overrides it for us.
         //Element* Safe_Move() override;
+
+        std::string Get_Name() override{
+            return "Check_Box<" + Name + ">";
+        }
     };
 }
 

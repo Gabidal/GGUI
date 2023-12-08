@@ -12,31 +12,27 @@ using namespace std;
 */
 
 void Main(){
+    for (auto i : GGUI::Main->Get_Elements<GGUI::Progress_Bar>()){
+        while (i->Get_Progress() < 1.0){
+            i->Set_Progress(i->Get_Progress() + 0.01);
 
-    GGUI::Progress_Bar* bar = GGUI::Main->Get_Elements<GGUI::Progress_Bar>()[0];
-
-    while (bar->Get_Progress() <= 1.01){
-        bar->Set_Progress(bar->Get_Progress() + 0.01);
-
-        GGUI::SLEEP(16);
+            GGUI::SLEEP(16);
+        }
     }
-
 }
 
 int main(int Argument_Count, char** Arguments){
     GGUI::GGUI([=](){
-
-        // Setup enables
-        GGUI::Enable_Mouse_Movement();
 
         GGUI::Progress_Bar* bar = new GGUI::Progress_Bar(
             GGUI::COLOR::CYAN,
             GGUI::COLOR::DARK_BLUE,
             GGUI::Main->Get_Width() - 2
         );
+        
         bar->Show_Border(true);
         GGUI::Main->Add_Child(bar);
-        GGUI::Main->Add_Child(new GGUI::Progress_Bar(*bar));
+        GGUI::Main->Add_Child(bar->Copy());
 
         bar->Set_Position({0, 3});
         bar->Set_Height(bar->Get_Height() + 5);

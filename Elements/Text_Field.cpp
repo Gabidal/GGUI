@@ -347,8 +347,8 @@ std::string GGUI::Text_Field::Get_Name(){
 void GGUI::Text_Field::Input(std::function<void(char)> Then){
     Allow_Text_Input = true;    
 
-    Action* a = new Action(
-        Constants::KEY_PRESS | Constants::ENTER,
+    Action* addr = new Action(
+        Constants::KEY_PRESS,
         [=](GGUI::Event* e){
             if (Focused && Allow_Text_Input){
                 //We know the event was gifted as Input*
@@ -365,7 +365,27 @@ void GGUI::Text_Field::Input(std::function<void(char)> Then){
         },
         this
     );
-    GGUI::Event_Handlers.push_back(a);
+    GGUI::Event_Handlers.push_back(addr);
+
+    Action* enter = new Action(
+        Constants::ENTER,
+        [=](GGUI::Event* e){
+            if (Focused && Allow_Text_Input){
+                //We know the event was gifted as Input*
+                GGUI::Input* input = (GGUI::Input*)e;
+
+                //First 
+                Then(input->Data);
+                Update_Frame();
+
+                return true;
+            }
+            //action failed.
+            return false;
+        },
+        this
+    );
+    GGUI::Event_Handlers.push_back(enter);
 
     Action* back_space = new Action(
         Constants::BACKSPACE,

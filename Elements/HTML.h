@@ -21,6 +21,10 @@ namespace GGUI{
 
             return new_HTML;
         }
+
+        std::string Get_Name() override{
+            return "HTML<" + Name + ">";
+        }
     };
 
     enum class HTML_GROUP_TYPES{

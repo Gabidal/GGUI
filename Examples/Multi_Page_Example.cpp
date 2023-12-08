@@ -44,7 +44,7 @@ void Menu(){
     GGUI::Button* Campaing_Button = new GGUI::Button(
         CAMPAING_NAME,
         [](GGUI::Button* This){
-            GGUI::Disable_Mouse_Movement();
+            GGUI::Mouse_Movement_Enabled = false;;
             User_Input->Focus();
             Switch(MENU_NAME, CAMPAING_NAME, This->Get_Parent());
         }
@@ -78,7 +78,6 @@ void Adventure_Mode(GGUI::Window* Parent){
 }
 
 void Campaing(){
-
     GGUI::Window* Campaing = new GGUI::Window();
 
     Campaing->Set_Width(GGUI::Main->Get_Width());
@@ -100,7 +99,7 @@ void Campaing(){
 
     // The user input field is on the bottom left corner.
     User_Input = new GGUI::Text_Field();
-    User_Input->Set_Width(Screen_Division_Width);
+    User_Input->Set_Width(Screen_Division_Width-1);
     User_Input->Set_Height(1);
     User_Input->Set_Name(TEXT_INPUT_NAME);
     User_Input->Show_Border(true);
@@ -148,13 +147,8 @@ void Campaing(){
 
 int main(int Argument_Count, char** Arguments){
     GGUI::GGUI([=](){
-
-        // Setup enables
-        GGUI::Enable_Mouse_Movement();
-
         Menu();
         Campaing();
-
     }, INT32_MAX);
     return 0;
 }
