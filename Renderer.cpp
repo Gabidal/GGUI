@@ -275,9 +275,6 @@ namespace GGUI{
 
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
-        // for (auto& [key, value] : KEYBOARD_STATES){
-        //     KEYBOARD_STATES[key] = BUTTON_STATE(false);
-        // }
 
         if (GetNumberOfConsoleInputEvents(GetStdHandle(STD_INPUT_HANDLE), (LPDWORD)&Buffer_Size) && Buffer_Size > 0){
 
@@ -333,7 +330,7 @@ namespace GGUI{
                     KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(Pressed);
                     Handle_Tabulator();
                 }
-                else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0){
+                else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
                     char Result = Reverse_Engineer_Keybind(Input[i].Event.KeyEvent.uChar.AsciiChar);
 
                     Inputs.push_back(new GGUI::Input(Result, Constants::KEY_PRESS));
