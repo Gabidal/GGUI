@@ -141,12 +141,18 @@ GGUI::Element::Element(
     Show_Border(true);
 }
 
+GGUI::Element::Element(const Element& copyable){
+    Report("Don't use copy constructor use " + copyable.Get_Name() + "->Copy() instead!!!");
+}
+
 GGUI::Element::~Element(){
     // Ptr related members:
     // - Parent
     // - Childs
     // - Style
     // - Event Handlers
+    // - Focused_On Clearance
+    // - Hovered_On Clearance
 
     // Make sure this element is not listed in the parent element.
     // And if it does, then remove it from the parent element.
@@ -179,6 +185,14 @@ GGUI::Element::~Element(){
             //remove the event from the list
             Event_Handlers.erase(Event_Handlers.begin() + i);
         }
+
+    // Now make sure that if the Focused_On element points to this element, then set it to nullptr
+    if (Is_Focused())
+        GGUI::Focused_On = nullptr;
+
+    // Now make sure that if the Hovered_On element points to this element, then set it to nullptr
+    if (Is_Hovered())
+        GGUI::Hovered_On = nullptr;
 }   
 
 void GGUI::Element::Fully_Stain(){
@@ -354,6 +368,25 @@ void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opaci
     properties->Color = Shadow_Color;
     properties->Direction = {Direction.X, Direction.Y, Length};
     properties->Opacity = Opacity;
+
+    Position.X -= Length * Opacity;
+    Position.Y -= Length * Opacity;
+
+    Position += Direction * -1;
+
+    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Update_Frame();
+}
+
+void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
+    SHADOW_VALUE* properties = At<SHADOW_VALUE>(STYLES::Shadow);
+
+    properties->Color = Shadow_Color;
+    properties->Direction = {0, 0, Length};
+    properties->Opacity = Opacity;
+
+    Position.X -= Length * Opacity;
+    Position.Y -= Length * Opacity;
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
@@ -720,6 +753,8 @@ GGUI::Element* GGUI::Element::Copy(){
     // - Childs
     // - Style
     // - Event Handlers
+    // - Focused_On Clearance
+    // - Hovered_On Clearance
 
     // reset the parent info.
     new_element->Parent = nullptr;
@@ -748,6 +783,12 @@ GGUI::Element* GGUI::Element::Copy(){
             Event_Handlers.push_back(new_action);
         }
     }
+
+    // Clear the Focused on bool
+    Focused = false;
+
+    // Clear the Hovered on bool
+    Hovered = false;
 
     return (Element*)new_element;
 }
@@ -1184,12 +1225,16 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
 //End of utility functions.
 
+// Gives you an Action wrapper on the Event wrapper
 void GGUI::Element::On_Click(std::function<bool(GGUI::Event* e)> action){
     Action* a = new Action(
         Constants::MOUSE_LEFT_CLICKED,
         [=](GGUI::Event* e){
             if (Collides(this, Mouse)){
-                action(e);
+                // Construct an Action from the Event obj
+                GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this);
+
+                action(wrapper);
 
                 //action succesfully executed.
                 return true;
@@ -1332,11 +1377,11 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
     // First calculate the new buffer size.
     // This is going to be the new two squares overlapping minus buffer.
 
-    // Calculate the zero origon when the equation is: -properties.Direction.Z * X + properties.Opacity = 0
+    // Calculate the zero origin when the equation is: -properties.Direction.Z * X + properties.Opacity = 0
     // -a * x + o = 0
     // x = o / a
 
-    int Shadow_Length = properties.Opacity / properties.Direction.Z;
+    int Shadow_Length = properties.Direction.Z * properties.Opacity;
 
     unsigned int Shadow_Box_Width = Width + (Shadow_Length * 2);
     unsigned int Shadow_Box_Height = Height + (Shadow_Length * 2);
@@ -1347,7 +1392,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
     int Shadow_Box_Center_X = Shadow_Box_Width / 2;
     int Shadow_Box_Center_Y = Shadow_Box_Height / 2;
 
-    unsigned char Last_Alpha = properties.Opacity * std::numeric_limits<unsigned char>::max();;
+    unsigned char Current_Alpha = properties.Opacity * std::numeric_limits<unsigned char>::max();;
     float previus_opacity = properties.Opacity;
     int Current_Box_Start_X = Shadow_Length;
     int Current_Box_Start_Y = Shadow_Length;
@@ -1366,16 +1411,19 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
             properties.Direction
         );
 
+        Current_Shadow_Width += 2;
+        Current_Shadow_Height += 2;
+
         UTF shadow_pixel;
         shadow_pixel.Background = properties.Color;
-        shadow_pixel.Background.Set_Alpha(Last_Alpha);
+        shadow_pixel.Background.Set_Alpha(Current_Alpha);
 
         for (auto& index : Shadow_Indicies){
             Shadow_Box[index.Y * Shadow_Box_Width + index.X] = shadow_pixel;
         }
 
         previus_opacity *= min(0.9f, (float)properties.Direction.Z);
-        Last_Alpha = previus_opacity * std::numeric_limits<unsigned char>::max();;
+        Current_Alpha = previus_opacity * std::numeric_limits<unsigned char>::max();;
     }
 
     // Now offset the shadow box buffer by the direction.
@@ -1405,6 +1453,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
         Shadow_Box_Start.Y + Shadow_Box_Height
     };
 
+    // Start mixing the shadow box and the original box buffers.
     unsigned int Original_Buffer_Index = 0;
     unsigned int Shadow_Buffer_Index = 0;
     unsigned int Final_Index = 0;
@@ -1427,7 +1476,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
                 Result[Final_Index++] = Current_Buffer[Original_Buffer_Index++];
             }
             else if (Is_Inside_Shadow_Box) {
-                Result[Final_Index++] = Shadow_Box[Shadow_Buffer_Index++];
+                Result[Final_Index++] = Shadow_Box[Original_Buffer_Index + Shadow_Buffer_Index++];
             }
         }
     }

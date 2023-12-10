@@ -45,7 +45,7 @@ namespace GGUI{
             return new_Button;
         }
 
-        std::string Get_Name() override{
+        std::string Get_Name() const override{
             return "Button<" + Name + ">";
         }
     };

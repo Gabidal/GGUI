@@ -23,7 +23,7 @@ int main(){
     );
 
     Text->On_Click([=](GGUI::Event* e){
-        Text->Remove();
+        ((GGUI::Action*)e)->Host->Remove();
 
         return true;
     });
@@ -33,7 +33,7 @@ int main(){
     //In this case the On_Click event remembers the Original Text element memory address and not the new copyed one!
     l->Add_Child(new GGUI::Text_Field(*Text));
     //This in turn will copy the event handlers and update their Host.
-    l->Add_Child(Text->Copy<GGUI::List_View>());
+    l->Add_Child(Text->Copy());
 
     //You can also press SHIFT to togle element HOP mode to hop easily between elements.
 

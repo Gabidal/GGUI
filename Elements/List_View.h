@@ -59,7 +59,7 @@ namespace GGUI{
         
         //std::vector<UTF> Render() override;
 
-        std::string Get_Name() override;
+        std::string Get_Name() const override;
 
         bool Remove(Element* e) override;
 

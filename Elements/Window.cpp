@@ -220,7 +220,7 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
     }
 }
 
-std::string GGUI::Window::Get_Name(){
+std::string GGUI::Window::Get_Name() const{
     return "Window<" + Name + ">";
 }
 

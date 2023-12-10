@@ -30,7 +30,7 @@ namespace GGUI{
             return new_Canvas;
         }
 
-        std::string Get_Name() override{
+        std::string Get_Name() const override{
             return "Canvas<" + Name + ">";
         }
     };
@@ -70,7 +70,7 @@ namespace GGUI{
             return new_Terminal_Canvas;
         }
 
-        std::string Get_Name() override{
+        std::string Get_Name() const override{
             return "Terminal_Canvas<" + Name + ">";
         }
     };

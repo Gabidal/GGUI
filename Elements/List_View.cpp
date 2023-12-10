@@ -172,7 +172,7 @@ void GGUI::List_View::Add_Child(Element* e){
     }
 }
 
-std::string GGUI::List_View::Get_Name(){
+std::string GGUI::List_View::Get_Name() const{
     return "List_View<" + Name + ">";
 }
 

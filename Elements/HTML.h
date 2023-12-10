@@ -22,7 +22,7 @@ namespace GGUI{
             return new_HTML;
         }
 
-        std::string Get_Name() override{
+        std::string Get_Name() const override{
             return "HTML<" + Name + ">";
         }
     };

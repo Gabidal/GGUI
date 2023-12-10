@@ -463,6 +463,18 @@ namespace GGUI{
         }
 
         Vector2(){}
+
+        Vector2 operator+(float num){
+            return Vector2(X + num, Y + num);
+        }
+
+        Vector2 operator-(float num){
+            return Vector2(X - num, Y - num);
+        }
+
+        Vector2 operator*(float num){
+            return Vector2(X * num, Y * num);
+        }
     };
 
     class Vector3 : public Vector2{
@@ -494,6 +506,11 @@ namespace GGUI{
             X += other->X;
             Y += other->Y;
             Z += other->Z;
+        }
+
+        void operator+=(Vector2 other){
+            X += other.X;
+            Y += other.Y;
         }
     };
 
@@ -968,6 +985,9 @@ namespace GGUI{
             RGB border_background_color
         );
 
+        // Disable Copy constructor
+        Element(const Element&);
+
         //Start of destructors.
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
@@ -1054,7 +1074,10 @@ namespace GGUI{
         unsigned int Get_Processed_Width();
         unsigned int Get_Processed_Height();
 
+        // Direction: Unsupported atm!!!
         void Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
+
+        void Show_Shadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         Element* Get_Parent(){
             return Parent;
@@ -1173,7 +1196,7 @@ namespace GGUI{
 
         std::pair<RGB, RGB>  Compose_All_Border_RGB_Values();
 
-        virtual std::string Get_Name(){
+        virtual std::string Get_Name() const {
             return "Element<" + Name + ">";
         }
 

@@ -31,6 +31,7 @@ namespace GGUI{
     extern std::map<std::string, Element*> Element_Names;
 
     extern Element* Focused_On;
+    extern Element* Hovered_On;
 
     extern Coordinates Mouse;    
     extern bool Mouse_Movement_Enabled;

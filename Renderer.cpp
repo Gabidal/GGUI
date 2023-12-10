@@ -1639,6 +1639,13 @@ namespace GGUI{
 
                 History->Add_Child(Row);
 
+                // Calculate the new x position for the Error_Logger
+                Error_Logger->Set_Position({
+                    (Max_Width - History->Get_Width()) / 2,
+                    (Max_Height - History->Get_Height()) / 2,
+                    INT32_MAX
+                });
+
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                 if (History->Get_Absolute_Position().Y + History->Get_Height() >= Main->Get_Height() - Main->Has_Border() * 2){
                     // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.

@@ -34,7 +34,7 @@ namespace GGUI{
             return new_Progress_Bar;
         }
 
-        std::string Get_Name() override{
+        std::string Get_Name() const override{
             return "Progress_Bar<" + Name + ">";
         }
     };

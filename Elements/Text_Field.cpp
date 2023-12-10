@@ -340,7 +340,7 @@ GGUI::TEXT_LOCATION GGUI::Text_Field::Get_Text_Position(){
     return (TEXT_LOCATION)At<NUMBER_VALUE>(STYLES::Text_Position)->Value;
 }
 
-std::string GGUI::Text_Field::Get_Name(){
+std::string GGUI::Text_Field::Get_Name() const {
     return "Text_Field<" + Name + ">";
 }
 

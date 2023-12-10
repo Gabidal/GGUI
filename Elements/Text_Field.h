@@ -61,7 +61,7 @@ namespace GGUI{
         
         bool Resize_To(Element* parent) override;
 
-        std::string Get_Name() override;
+        std::string Get_Name() const override;
 
         //async function, 
         void Input(std::function<void(char)> Then);
