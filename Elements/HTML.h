@@ -37,12 +37,26 @@ namespace GGUI{
         SPACING,    // newline, ' ', '\t'
     };
 
+    enum class PARSE_BY{
+        NONE                    = 0,
+        TOKEN_WRAPPER           = 1 << 0,
+        DYNAMIC_WRAPPER         = 1 << 1, 
+    };
+
+    extern PARSE_BY operator|(PARSE_BY first, PARSE_BY second);
+
+    extern PARSE_BY operator&(PARSE_BY first, PARSE_BY second);
+
+    extern void operator|=(PARSE_BY& first, PARSE_BY second);
+
     class HTML_Token{
     public:
         HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
         std::string Data = "";
         std::vector<HTML_Token*> Childs;    // also contains attributes!
         FILE_POSITION Position;
+
+        PARSE_BY Parsed_By = PARSE_BY::NONE;
 
         HTML_Token(HTML_GROUP_TYPES Type, std::string Data){
             this->Type = Type;
@@ -53,6 +67,15 @@ namespace GGUI{
             this->Type = Type;
             this->Data.push_back(Data);
             this->Position = position;
+        }
+
+        // Checks if the Parsed_By contains specific bit mask.
+        bool Is(PARSE_BY f){
+            return (Parsed_By & f) == f;
+        }
+
+        bool Has(PARSE_BY f){
+            return (f & Parsed_By) > PARSE_BY::NONE;
         }
 
         HTML_Token() = default;
@@ -83,11 +106,14 @@ namespace GGUI{
 
     extern void Parse_All_Wrappers(int& i, std::vector<HTML_Token*>& Input);
 
+    extern void Parse_Dynamic_Wrappers(int& i, std::vector<HTML_Token*>& Input, std::string word);
+
     extern void Parse_Wrapper(std::string start_pattern, std::string end_pattern, int& i, std::vector<HTML_Token*>& Input);
 
     extern const std::vector<HTML_Group> Groups;
 
     extern std::vector<HTML_Token*> Lex_HTML(std::string Raw_Buffer);
+
 }
 
 #endif

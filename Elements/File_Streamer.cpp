@@ -45,11 +45,9 @@ namespace GGUI{
 
         unsigned long long New_Hash = 0;
 
-        for (auto& c : New_Buffer){
-            New_Hash ^= c;
+        for (int i = 0; New_Buffer[i]!='\0'; i++){
+            New_Hash = New_Buffer[i] + (New_Hash << 6) + (New_Hash << 16) - New_Hash;
         }
-
-        New_Hash /= New_Buffer.size();
 
         if (New_Hash != Previous_Hash){
             Previous_Hash = New_Hash;
