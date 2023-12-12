@@ -13,6 +13,8 @@ namespace GGUI{
         first = first | second; 
     }
 
+    std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators;
+
     HTML::HTML(std::string File_Name){
         Handle = new FILE_STREAM(File_Name, [&](){
             this->Set_Childs(Parse_HTML(Handle->Fast_Read()));
@@ -24,6 +26,7 @@ namespace GGUI{
         for (int i = 0; i < Input.size(); i++){
             Parse_Embedded_Bytes(i, Input);
             Parse_All_Wrappers(i, Input);
+            Parse_Operator_Set(i, Input);
         }
 
         // now start combining dynamic wrappers like: <html>, </html>
@@ -41,7 +44,9 @@ namespace GGUI{
 
         Parse(Lexed_Tokens);
 
-        int a = 0;
+        std::vector<HTML_Node*> Parsed_Tokens = Parse_Lexed_Tokens(Lexed_Tokens);
+
+        return Parse_Translators(Parsed_Tokens);
     }
 
     std::vector<HTML_Token*>& Parse_HTML(std::vector<HTML_Token*>& Input){
@@ -264,4 +269,108 @@ namespace GGUI{
 
         return Result;
     }
+
+    std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input){
+        std::vector<Element*> Result;
+
+        for (int i = 0; i < Input.size(); i++){
+
+            HTML_Node* Current = Input[i];
+
+            // Try to find the translator fitting for this token.
+            if (HTML_Translators.find(Current->Tag_Name) == HTML_Translators.end())
+                continue;
+
+            Element* New_Child = HTML_Translators[Current->Tag_Name](Current);
+
+            if (New_Child){
+                Result.push_back(New_Child);
+             
+                // If theprocess was succesfully runned, then remove this token, since it has been processes fully.
+                Input.erase(Input.begin() + i);
+            }
+        }
+
+        return Result;
+    }
+
+    std::vector<HTML_Node*> Parse_Lexed_Tokens(std::vector<HTML_Token*> Input){
+        std::vector<HTML_Node*> Result;
+
+        for (int i = 0; i < Input.size(); i++){
+
+            HTML_Node* tmp = Factory(Input[i]);
+
+            if (tmp)
+                Result.push_back(tmp);
+
+        }
+
+        return Result;
+    }
+
+    HTML_Node* Factory(HTML_Token* Input){
+        HTML_Node* Result = new HTML_Node();
+
+        Result->Tag_Name = Input->Data;
+
+        // Check if the child is just a text
+        if (Input->Type == HTML_GROUP_TYPES::TEXT && Input->Childs.size() == 0){
+            Result->Type = HTML_GROUP_TYPES::TEXT;
+        }
+
+        // try to search for attributes.
+        for (auto token : Input->Childs){
+
+            if (token->Type == HTML_GROUP_TYPES::ATTRIBUTE){
+                // assuming all set operators are simple and not complex, where one side could contains other operators.
+                Result->Attributes[token->Childs[0]->Data] = token->Childs[1]->Data;//.insert(token->Childs[0]->Data, token->Childs[1]->Data);
+            }
+            else{
+                HTML_Node* tmp = Factory(token);
+
+                if (tmp){
+                    tmp->parent = Result;
+                    Result->Childs.push_back(tmp);
+                }
+            }
+        }
+
+        Result->Position = Input->Position;
+
+        Result->RAW = Input;
+
+        return Result;
+    }
+
+    void Parse_Operator_Set(int& i, std::vector<HTML_Token*>& Input){
+        // left index, this, right index
+        // check that there is "space" around this index.
+        if (i == 0 || i+1 >= Input.size() || Input[i]->Is(PARSE_BY::OPERATOR_SET))
+            return;
+
+        // We could use the operator type, but atm just use = support.
+        if (Input[i]->Data != "=" && Input[i]->Childs.size() == 0)
+            return;
+
+        // add left
+        Input[i]->Childs.push_back(Input[i-1]);
+        
+        // add right
+        Input[i]->Childs.push_back(Input[i+1]);
+    
+        Input[i]->Parsed_By |= PARSE_BY::OPERATOR_SET;
+
+        Input[i]->Type = HTML_GROUP_TYPES::ATTRIBUTE;
+
+        // remove first right side.
+        Input.erase(Input.begin() + i +1);
+
+        // now remove the left side.
+        Input.erase(Input.begin() + i -1);
+
+        // also update the I, since this pointer was now moved to the left by 1.
+        i--;
+    }
+
 }
