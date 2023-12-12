@@ -13,4 +13,6 @@ namespace GGUI{
 
     }
 
+    GGUI_Add_Translator("button", Translate_Button);
+
 }

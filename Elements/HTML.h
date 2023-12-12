@@ -135,6 +135,9 @@ namespace GGUI{
 
     extern std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators;
 
+    // For ease of use for adding translators for user custom HTML TAG parsers.
+    #define GGUI_Add_Translator(id, handler) auto _ = [](){ return HTML_Translators[id] = handler;}();
+
     extern std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input);
 
     extern HTML_Node* Factory(HTML_Token* Input);

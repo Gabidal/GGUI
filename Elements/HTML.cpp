@@ -13,7 +13,7 @@ namespace GGUI{
         first = first | second; 
     }
 
-    std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators;
+    std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators = {};
 
     HTML::HTML(std::string File_Name){
         Handle = new FILE_STREAM(File_Name, [&](){
