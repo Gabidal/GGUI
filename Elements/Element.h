@@ -672,8 +672,7 @@ namespace GGUI{
         MARGIN,
     };
 
-    class 
-    VALUE{
+    class VALUE{
     public:
         VALUE_TYPES Type = VALUE_TYPES::UNDEFINED;
 
@@ -682,6 +681,11 @@ namespace GGUI{
         virtual VALUE* Copy() {
             return nullptr;
         };
+
+        // Default VALUE wont do any parsing.
+        static VALUE* Parse(std::string val){
+            return nullptr;
+        }  
     };
 
     class NUMBER_VALUE : public VALUE{
@@ -701,6 +705,8 @@ namespace GGUI{
             NUMBER_VALUE* copy = new NUMBER_VALUE(Value);
             return copy;
         } 
+
+        static VALUE* Parse(std::string val);
     };
 
     class RGB_VALUE : public VALUE{

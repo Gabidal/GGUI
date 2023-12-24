@@ -64,6 +64,10 @@ namespace GGUI{
         }
 
         FILE_POSITION() = default;
+
+        std::string To_String(){
+            return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
+        }
     };
 }
 

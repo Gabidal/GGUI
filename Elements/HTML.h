@@ -30,7 +30,6 @@ namespace GGUI{
     enum class HTML_GROUP_TYPES{
         UNKNOWN,
         TEXT,
-        KEYWORD,    // div, le, ul, etc...
         NUMBER,
         OPERATOR,   // =, 
         WRAPPER,    // <>, [], {}, (), "", ''
@@ -42,7 +41,8 @@ namespace GGUI{
         NONE                    = 0,
         TOKEN_WRAPPER           = 1 << 0,
         DYNAMIC_WRAPPER         = 1 << 1, 
-        OPERATOR_SET            = 1 << 2,
+        OPERATOR_PARSER         = 1 << 2,
+        NUMBER_POSTFIX_PARSER   = 1 << 3,
     };
 
     extern PARSE_BY operator|(PARSE_BY first, PARSE_BY second);
@@ -102,8 +102,6 @@ namespace GGUI{
     public:
         std::string Tag_Name = "";  // DIV, HREF, etc...
         
-        std::unordered_map<std::string, std::string> Attributes;    // contains ID, Name, Class, Color, BG_Color, etc...
-
         std::vector<HTML_Node*> Childs;
         HTML_Node* parent = nullptr;
 
@@ -111,11 +109,17 @@ namespace GGUI{
 
         HTML_Token* RAW = nullptr;
         HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
+
+        // Postfixes are in child[0] for numbers.
+        // Decimals are also number typed.
+        // Operators left is Child[0] and Right at Child[1].
+        // Attributes cannot be computed, before some contextual data on AST level is constructed, since the postfix operands depend on these kind of information from parent.
+        std::unordered_map<std::string, GGUI::HTML_Token*> Attributes;    // contains ID, Name, Class, Color, BG_Color, etc...
     };
 
     extern void Parse(std::vector<HTML_Token*>& Input);
 
-    extern std::vector<Element*> Parse_HTML(std::string Raw_Buffer);
+    extern std::vector<Element*> Parse_HTML(std::string Raw_Buffer, Element* parent);
 
     extern std::vector<HTML_Token*>& Parse_HTML(std::vector<HTML_Token*>& Input);
 
@@ -135,14 +139,32 @@ namespace GGUI{
 
     extern std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators;
 
+    extern std::unordered_map<std::string, double> POSTFIX_COEFFICIENT;
+
+    extern std::unordered_map<std::string, void*> RELATIVE_COEFFICIENT;
+
     // For ease of use for adding translators for user custom HTML TAG parsers.
-    #define GGUI_Add_Translator(id, handler) auto _ = [](){ return HTML_Translators[id] = handler;}();
+    #define GGUI_Add_Translator(id, handler) auto _ = [](){ return GGUI::HTML_Translators[id] = handler;}();
 
     extern std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input);
 
     extern HTML_Node* Factory(HTML_Token* Input);
 
-    extern void Parse_Operator_Set(int& i, std::vector<HTML_Token*>& Input);
+    extern void Parse_Numeric_Postfix(int& i, std::vector<HTML_Token*>& Input);
+
+    extern void Parse_Decimal(int& i, std::vector<HTML_Token*>& Input);
+
+    extern void Parse_Operator(int& i, std::vector<HTML_Token*>& Input, char operator_type);
+
+    extern void Report(std::string problem, FILE_POSITION location);
+
+    extern HTML_Node* Element_To_Node(Element* e);
+
+    extern double Compute_Val(HTML_Token* val, HTML_Node* parent);
+
+    extern double Compute_Operator(HTML_Token* op, HTML_Node* parent);
+
+    extern double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent);
 
 }
 

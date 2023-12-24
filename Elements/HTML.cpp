@@ -1,4 +1,5 @@
 #include "HTML.h"
+#include "../Renderer.h"
 
 namespace GGUI{
     PARSE_BY operator|(PARSE_BY first, PARSE_BY second){
@@ -15,9 +16,37 @@ namespace GGUI{
 
     std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators = {};
 
+    std::unordered_map<std::string, double> POSTFIX_COEFFICIENT = {
+        {"px", 1},
+        {"%", 0.01},
+        {"vw", 0.01},
+        {"vh", 0.01},
+        {"em", 1},
+        {"rem", 1},
+        {"in", 1},
+        {"cm", 1},
+        {"mm", 1},
+        {"pt", 1 / 72},
+        {"pc", 1 / 6},
+        {"vmin", 0.01},
+        {"vmax", 0.01},
+    };
+
+    std::unordered_map<std::string, void*> RELATIVE_COEFFICIENT = {
+        {"em", nullptr},
+        {"ex", nullptr},
+        {"ch", nullptr},
+        {"rem", nullptr},
+        {"vw", nullptr},
+        {"vh", nullptr},
+        {"vmin", nullptr},
+        {"vmax", nullptr},
+        {"%", nullptr}
+    };
+
     HTML::HTML(std::string File_Name){
         Handle = new FILE_STREAM(File_Name, [&](){
-            this->Set_Childs(Parse_HTML(Handle->Fast_Read()));
+            this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
         });
     }
 
@@ -26,8 +55,27 @@ namespace GGUI{
         for (int i = 0; i < Input.size(); i++){
             Parse_Embedded_Bytes(i, Input);
             Parse_All_Wrappers(i, Input);
-            Parse_Operator_Set(i, Input);
         }
+
+        // Capture decimals
+        for (int i = 0; i < Input.size(); i++)
+            Parse_Operator(i, Input, '.');
+
+        for (int i = 0; i < Input.size(); i++)
+            Parse_Numeric_Postfix(i, Input);
+
+        // Reverse PEMDAS order:
+        for (int i = 0; i < Input.size(); i++)
+            Parse_Operator(i, Input, '+');
+        for (int i = 0; i < Input.size(); i++)
+            Parse_Operator(i, Input, '-');
+        for (int i = 0; i < Input.size(); i++)
+            Parse_Operator(i, Input, '*');
+        for (int i = 0; i < Input.size(); i++)
+            Parse_Operator(i, Input, '/');
+
+        for (int i = 0; i < Input.size(); i++)
+            Parse_Operator(i, Input, '=');
 
         // now start combining dynamic wrappers like: <html>, </html>
         for (int i = 0; i < Input.size(); i++){
@@ -39,12 +87,17 @@ namespace GGUI{
         }
     }
 
-    std::vector<Element*> Parse_HTML(std::string Raw_Buffer){
+    std::vector<Element*> Parse_HTML(std::string Raw_Buffer, Element* parent){
         std::vector<HTML_Token*> Lexed_Tokens = Lex_HTML(Raw_Buffer);
 
         Parse(Lexed_Tokens);
 
         std::vector<HTML_Node*> Parsed_Tokens = Parse_Lexed_Tokens(Lexed_Tokens);
+
+        // also set the parent element to the out most layer nodes.
+        for (auto node : Parsed_Tokens)
+            if (!node->parent)
+                node->parent = Element_To_Node(parent);
 
         return Parse_Translators(Parsed_Tokens);
     }
@@ -112,6 +165,18 @@ namespace GGUI{
                 Cut.insert(Cut.begin(), Input.begin() + i + 1, Input.begin() + End_Index);
 
                 New_Wrapper->Childs = Parse_HTML(Cut);
+
+                // now also add the Attributes which are defined in the Starting Dynamic Wrapper
+                for (auto attr : Input[i]->Childs){
+                    if (attr->Data != "=")  // Only support SET operators as attributes.
+                        continue;
+
+                    if (attr->Childs.size() != 2)
+                        continue;           // The operator must be completely parsed.
+
+                    attr->Type = HTML_GROUP_TYPES::ATTRIBUTE;   // This is for the later system to recognise this as an attribute and set it to the HTML_NODE.
+                    New_Wrapper->Childs.push_back(attr);
+                }
 
                 // Now delete the tokens we just cut
                 Input.erase(Input.begin() + i + 1, Input.begin() + End_Index + 1);
@@ -273,6 +338,8 @@ namespace GGUI{
     std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input){
         std::vector<Element*> Result;
 
+        GGUI::Pause_Renderer();
+
         for (int i = 0; i < Input.size(); i++){
 
             HTML_Node* Current = Input[i];
@@ -286,10 +353,12 @@ namespace GGUI{
             if (New_Child){
                 Result.push_back(New_Child);
              
-                // If theprocess was succesfully runned, then remove this token, since it has been processes fully.
+                // If the process was successfully run, then remove this token, since it has been processes fully.
                 Input.erase(Input.begin() + i);
             }
         }
+
+        GGUI::Resume_Renderer();
 
         return Result;
     }
@@ -322,9 +391,13 @@ namespace GGUI{
         // try to search for attributes.
         for (auto token : Input->Childs){
 
+            // Here we assimilate the attributes
             if (token->Type == HTML_GROUP_TYPES::ATTRIBUTE){
                 // assuming all set operators are simple and not complex, where one side could contains other operators.
-                Result->Attributes[token->Childs[0]->Data] = token->Childs[1]->Data;//.insert(token->Childs[0]->Data, token->Childs[1]->Data);
+
+                // Complex arithmetics which are set to the value (width=1vw/2px) need to be parsed before assigning it to the attr list, 
+                //since the name does not contain either the postfixes or complex AST cumulated values! 
+                Result->Attributes[token->Childs[0]->Data] = token->Childs[1];
             }
             else{
                 HTML_Node* tmp = Factory(token);
@@ -343,14 +416,66 @@ namespace GGUI{
         return Result;
     }
 
-    void Parse_Operator_Set(int& i, std::vector<HTML_Token*>& Input){
+    void Parse_Numeric_Postfix(int& i, std::vector<HTML_Token*>& Input){
+        // Because numbers and letters do not combine in Lexing phase we can assume that all special numbers would have an tailing token which would describe the postfix.
+        if (Input[i]->Type != HTML_GROUP_TYPES::NUMBER || Input[i]->Is(PARSE_BY::NUMBER_POSTFIX_PARSER))
+            return;
+
+        // check for the postfix
+        // basically all the prefixes are text besides the %, which is an operator.
+        if (i + 1 < Input.size() && (Input[i+1]->Type == HTML_GROUP_TYPES::TEXT || Input[i+1]->Data == "%")){
+            Input[i]->Childs.push_back(Input[i+1]);
+
+            Input[i]->Parsed_By |= PARSE_BY::NUMBER_POSTFIX_PARSER;
+
+            Input.erase(Input.begin() + i + 1);
+        }
+
+        return;
+    }
+
+    void Parse_Decimal(int& i, std::vector<HTML_Token*>& Input){
+
+        // Decimals are '.' operators which have captured an number on their left and right side.
+        if (!Input[i]->Is(PARSE_BY::OPERATOR_PARSER) || Input[i]->Data != ".")
+            return;
+
+        if (Input[i]->Childs.size() != 2)
+            return;
+
+        if (Input[i]->Childs[0]->Type != HTML_GROUP_TYPES::NUMBER || Input[i]->Childs[1]->Type != HTML_GROUP_TYPES::NUMBER)
+            return;
+
+        std::string STR_VALUE = Input[i]->Childs[0]->Data + "." + Input[i]->Childs[1]->Data;
+
+        // try to check if the decimal is valid
+        try{
+            // now put the left side number as the main decimal value and the right side as the fraction.
+            double Decimal_Value = std::stod(STR_VALUE);
+        }
+        catch(...){
+            Report("Invalid decimal number: " + STR_VALUE, Input[i]->Position);
+            return;
+        }
+
+        HTML_Token* Decimal = new HTML_Token(HTML_GROUP_TYPES::NUMBER, STR_VALUE);
+        Decimal->Position = Input[i]->Position;
+
+        // de-allocate the previous
+        delete Input[i];
+
+        // replace the current token with the decimal.
+        Input[i] = Decimal;
+    }
+
+    void Parse_Operator(int& i, std::vector<HTML_Token*>& Input, char operator_type){
         // left index, this, right index
         // check that there is "space" around this index.
-        if (i == 0 || i+1 >= Input.size() || Input[i]->Is(PARSE_BY::OPERATOR_SET))
+        if (i == 0 || i+1 >= Input.size() || Input[i]->Is(PARSE_BY::OPERATOR_PARSER))
             return;
 
         // We could use the operator type, but atm just use = support.
-        if (Input[i]->Data != "=" && Input[i]->Childs.size() == 0)
+        if (Input[i]->Data[0] != operator_type && Input[i]->Childs.size() == 0)
             return;
 
         // add left
@@ -359,7 +484,7 @@ namespace GGUI{
         // add right
         Input[i]->Childs.push_back(Input[i+1]);
     
-        Input[i]->Parsed_By |= PARSE_BY::OPERATOR_SET;
+        Input[i]->Parsed_By |= PARSE_BY::OPERATOR_PARSER;
 
         Input[i]->Type = HTML_GROUP_TYPES::ATTRIBUTE;
 
@@ -373,4 +498,79 @@ namespace GGUI{
         i--;
     }
 
+    void Report(std::string problem, FILE_POSITION location){
+        GGUI::Report(location.To_String() + ": " + problem);
+    }
+
+    HTML_Node* Element_To_Node(Element* e){
+        HTML_Node* Result = new HTML_Node();
+
+        Result->Tag_Name = "div";
+        Result->Type = HTML_GROUP_TYPES::WRAPPER;
+
+        // now add the attributes
+        Result->Attributes["width"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, to_string(e->Get_Width()));
+        Result->Attributes["height"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, to_string(e->Get_Height()));
+
+        return Result;
+    }
+
+    // Called by translators.
+    double Compute_Val(HTML_Token* val, HTML_Node* parent){
+        double Result = 0;
+
+        if (val->Type == HTML_GROUP_TYPES::OPERATOR)
+            Result = Compute_Operator(val, parent);
+
+        // check the postfix
+        else if (val->Is(PARSE_BY::NUMBER_POSTFIX_PARSER))
+            Result *= Compute_Post_Fix_As_Coefficient(val->Childs[0]->Data, parent);
+
+        return Result;
+    }
+
+    double Compute_Operator(HTML_Token* op, HTML_Node* parent){
+        double Result = 0;
+
+        double Left = Compute_Val(op->Childs[0], parent);
+        double Right = Compute_Val(op->Childs[1], parent);
+
+        if (op->Data == "+")
+            Result = Left + Right;
+        else if (op->Data == "-")
+            Result = Left - Right;
+        else if (op->Data == "*")
+            Result = Left * Right;
+        else if (op->Data == "/")
+            Result = Left / Right;
+        else if (op->Data == "=")
+            Result = Left = Right;
+        else
+            Report("Unknown operator: " + op->Data, op->Position);
+
+        return Result;
+    }
+
+    double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent){
+        double Result = POSTFIX_COEFFICIENT[postfix];
+            
+        // now check if the post fix is an Relative type.
+        if (RELATIVE_COEFFICIENT.find(postfix) == RELATIVE_COEFFICIENT.end())
+            return Result;  // if the postfix is not a relative type, then just return the base coefficient.
+
+        if (postfix == "vw")
+            Result *= std::stod(parent->Attributes["width"]->Data);
+        else if (postfix == "vh")
+            Result *= std::stod(parent->Attributes["height"]->Data);
+        else if (postfix == "%")
+            Result *= 1;    // TODO: make an PIPELINE for the system to also give the current attribute its computing value for.
+        else if (postfix == "vmin")
+            Result *= max(1.0, min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
+        else if (postfix == "vmax")
+            Result *= max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
+        else
+            Report("Unknown relative type: " + postfix, parent->Position);
+
+        return Result;
+    }
 }
