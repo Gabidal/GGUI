@@ -11,6 +11,8 @@ int main()
         GGUI::Main->Show_Border(true);
 
         GGUI::HTML* Test = new GGUI::HTML("Examples/simple.html");
+
+        Main->Add_Child(Test);
     });   
 
     GGUI::SLEEP(INT32_MAX);

@@ -26,33 +26,6 @@ std::string GGUI::UTF::To_String(){
     return Result + Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
 }
 
-// Internally calculates with floats and then exports with integer resolution.
-GGUI::VALUE* GGUI::NUMBER_VALUE::Parse(std::string val){
-    GGUI::VALUE* Result = new GGUI::NUMBER_VALUE();
-
-    // Example val: "50% * 0.3px + 0.1vw"
-    // Parsed val: {Name: "*", Childs: {{Name: "50", Childs: "%"}, {Name: "0.3", Childs: "px"}}, ... 
-
-    // Viewsport Units:
-    // vh: Viewport Height 1vh = 1% of the viewport height
-    // vw: Viewport Width 1vw = 1% of the viewport width
-    // vmin: Viewport Minimum 1vmin = 1% of the viewport minimum dimension
-    // vmax: Viewport Maximum 1vmax = 1% of the viewport maximum dimension
-    
-    // Number Units:
-    // px: Pixels
-    // cm: Centimeters
-    // mm: Millimeters
-
-    // %: Percentage of the parent element
-    std::vector<HTML_Token*> Lexed_Tokens = GGUI::Lex_HTML(val);
-
-    GGUI::Parse(Lexed_Tokens);
-
-    for (auto )
-
-}
-
 GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Add_Class("default");
 
@@ -1549,9 +1522,6 @@ std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
 }
 
 GGUI::Element* Translate_Element(GGUI::HTML_Node* input){
-    if (input->Tag_Name != "element" && input->Tag_Name != "div")
-        return nullptr;
-
     GGUI::Element* Result = new GGUI::Element();
 
     // Parse the following information given by the HTML_NODE:
@@ -1562,36 +1532,15 @@ GGUI::Element* Translate_Element(GGUI::HTML_Node* input){
     // - Type (no need to do anything)
     // - Attribute parsing: Styles, Width, Height, BG_Color, Front_Color, Border, Border color, etc.. (All CSS attributes)
 
-    // Parse the childs
-    for (auto c : input->Childs){
+    std::string Name = "";
 
-        // Check if there is an translator for this tag type
-        if (GGUI::HTML_Translators.find(c->Tag_Name) == GGUI::HTML_Translators.end())
-            continue;
+    GGUI::Translate_Childs_To_Element(Result, input, &Name);
 
-        // Positions arent parental governed anymore, so no need to give parent ptr.
-        GGUI::Element* tmp = GGUI::HTML_Translators[c->Tag_Name](c);
+    GGUI::Translate_Attributes_To_Element(Result, input);
 
-        if (tmp){
-            // - Parent Linking
-            Result->Add_Child(tmp);
-        }
-    }
-
-    // Parse the position into name
-    Result->Set_Name(Result->Get_Name() + "_" + input->Position.To_String());
-
-    // Parse the styles
-    for (auto attr : input->Attributes){
-
-        if (attr.first == "width")
-            Result->Set_Width(GGUI::Compute_Val(attr.second, input->parent));
-        else if (attr.first == "height")
-            Result->Set_Height(GGUI::Compute_Val(attr.second, input->parent));
-
-    }
-
+    return Result;
 }
 
 GGUI_Add_Translator("element", Translate_Element);
 GGUI_Add_Translator("div", Translate_Element);
+GGUI_Add_Translator("li", Translate_Element);

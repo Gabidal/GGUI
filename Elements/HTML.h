@@ -45,6 +45,14 @@ namespace GGUI{
         NUMBER_POSTFIX_PARSER   = 1 << 3,
     };
 
+    enum class HTML_POSITION_TYPE{
+        STATIC,     // Default positioning, like in GGUI.
+        RELATIVE,   // Relative to parent.
+        ABSOLUTE,   // Relative to screen.
+        FIXED,      // Relative to screen, but does not move with scrolling.
+        STICKY,     // Relative to screen until crosses given threshold.
+    };
+
     extern PARSE_BY operator|(PARSE_BY first, PARSE_BY second);
 
     extern PARSE_BY operator&(PARSE_BY first, PARSE_BY second);
@@ -143,8 +151,14 @@ namespace GGUI{
 
     extern std::unordered_map<std::string, void*> RELATIVE_COEFFICIENT;
 
+    // helper functions
+    #define CONCAT_IMPL(x, y) x##y
+    #define CONCAT(x, y) CONCAT_IMPL(x, y)
+
     // For ease of use for adding translators for user custom HTML TAG parsers.
-    #define GGUI_Add_Translator(id, handler) auto _ = [](){ return GGUI::HTML_Translators[id] = handler;}();
+    #define GGUI_Add_Translator(id, handler) \
+        auto CONCAT(_, __LINE__) = [](){ return GGUI::HTML_Translators[id] = handler;}();
+
 
     extern std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input);
 
@@ -160,11 +174,15 @@ namespace GGUI{
 
     extern HTML_Node* Element_To_Node(Element* e);
 
-    extern double Compute_Val(HTML_Token* val, HTML_Node* parent);
+    extern double Compute_Val(HTML_Token* val, HTML_Node* parent, std::string attr_name);
 
-    extern double Compute_Operator(HTML_Token* op, HTML_Node* parent);
+    extern double Compute_Operator(HTML_Token* op, HTML_Node* parent, std::string attr_name);
 
-    extern double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent);
+    extern double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent, std::string attr_name);
+
+    extern void Translate_Attributes_To_Element(Element* e, HTML_Node* input);
+
+    extern void Translate_Childs_To_Element(Element* e, HTML_Node* input, std::string* Set_Text_To);
 
 }
 

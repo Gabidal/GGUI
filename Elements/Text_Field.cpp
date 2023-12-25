@@ -1,5 +1,6 @@
 #include "Text_Field.h"
 #include "../Renderer.h"
+#include "HTML.h"
 
 #include <algorithm>
 
@@ -484,3 +485,36 @@ void GGUI::Text_Field::Disable_Dynamic_Size(){
 
     At<BOOL_VALUE>(STYLES::Allow_Input_Overflow)->Value = false;
 }
+
+GGUI::Element* Translate_Text_Fields(GGUI::HTML_Node* input){
+    GGUI::Text_Field* Result = new GGUI::Text_Field();
+
+    // Parse the following information given by the HTML_NODE:
+    // - Childs Recursive Nesting
+    // |-> Parent Linking
+    // - Position written inheriting
+    // - RAW ptr set to get link to origin  (no need to do anything)
+    // - Type (no need to do anything)
+    // - Attribute parsing: Styles, Width, Height, BG_Color, Front_Color, Border, Border color, etc.. (All CSS attributes)
+
+    std::string Text = "";
+
+    GGUI::Translate_Childs_To_Element(Result, input, &Text);
+    
+    // Since the translate childs to element put the name as the raw text inside it, we need to redirect it to the Data member.
+    Result->Set_Data(Text);
+
+    // now reset the name to be same as the 
+    Result->Set_Name(std::to_string((unsigned long long)Result));
+
+    GGUI::Translate_Attributes_To_Element(Result, input);
+
+    return Result;
+}
+
+GGUI_Add_Translator("dt", Translate_Text_Fields);
+GGUI_Add_Translator("dd", Translate_Text_Fields);
+GGUI_Add_Translator("label", Translate_Text_Fields);
+GGUI_Add_Translator("textarea", Translate_Text_Fields);
+GGUI_Add_Translator("title", Translate_Text_Fields);
+

@@ -705,8 +705,6 @@ namespace GGUI{
             NUMBER_VALUE* copy = new NUMBER_VALUE(Value);
             return copy;
         } 
-
-        static VALUE* Parse(std::string val);
     };
 
     class RGB_VALUE : public VALUE{

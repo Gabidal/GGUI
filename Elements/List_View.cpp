@@ -1,5 +1,6 @@
 #include "List_View.h"
 #include "../Renderer.h"
+#include "HTML.h"
 
 //undefine these before algorithm.h is included
 
@@ -269,3 +270,27 @@ bool GGUI::List_View::Remove(Element* remove){
     return true;
 }
 
+GGUI::Element* Translate_List(GGUI::HTML_Node* input){
+    GGUI::List_View* Result = new GGUI::List_View();
+
+    // Parse the following information given by the HTML_NODE:
+    // - Childs Recursive Nesting
+    // |-> Parent Linking
+    // - Position written inheriting
+    // - RAW ptr set to get link to origin  (no need to do anything)
+    // - Type (no need to do anything)
+    // - Attribute parsing: Styles, Width, Height, BG_Color, Front_Color, Border, Border color, etc.. (All CSS attributes)
+
+    std::string Name = "";
+
+    GGUI::Translate_Childs_To_Element(Result, input, &Name);
+
+    GGUI::Translate_Attributes_To_Element(Result, input);
+
+    return Result;
+}
+
+GGUI_Add_Translator("ul", Translate_List);
+GGUI_Add_Translator("ol", Translate_List);
+GGUI_Add_Translator("dl", Translate_List);
+GGUI_Add_Translator("select", Translate_List);

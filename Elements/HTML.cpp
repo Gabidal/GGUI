@@ -2,6 +2,9 @@
 #include "../Renderer.h"
 
 namespace GGUI{
+
+    auto _ = [](std::string id, std::function<GGUI::Element* (HTML_Node*)> handler){ return GGUI::HTML_Translators[id] = handler;};
+
     PARSE_BY operator|(PARSE_BY first, PARSE_BY second){
         return (PARSE_BY)((unsigned long long)first | (unsigned long long)second);
     }
@@ -177,6 +180,9 @@ namespace GGUI{
                     attr->Type = HTML_GROUP_TYPES::ATTRIBUTE;   // This is for the later system to recognise this as an attribute and set it to the HTML_NODE.
                     New_Wrapper->Childs.push_back(attr);
                 }
+
+                // <"title" <- in Input[i]childs[0] > content </title (end_index here)>
+                New_Wrapper->Data = Input[i]->Childs[0]->Data; // Name the wrapper with the name.
 
                 // Now delete the tokens we just cut
                 Input.erase(Input.begin() + i + 1, Input.begin() + End_Index + 1);
@@ -516,24 +522,24 @@ namespace GGUI{
     }
 
     // Called by translators.
-    double Compute_Val(HTML_Token* val, HTML_Node* parent){
+    double Compute_Val(HTML_Token* val, HTML_Node* parent, std::string attr_name){
         double Result = 0;
 
         if (val->Type == HTML_GROUP_TYPES::OPERATOR)
-            Result = Compute_Operator(val, parent);
+            Result = Compute_Operator(val, parent, attr_name);
 
         // check the postfix
         else if (val->Is(PARSE_BY::NUMBER_POSTFIX_PARSER))
-            Result *= Compute_Post_Fix_As_Coefficient(val->Childs[0]->Data, parent);
+            Result *= Compute_Post_Fix_As_Coefficient(val->Childs[0]->Data, parent, attr_name);
 
         return Result;
     }
 
-    double Compute_Operator(HTML_Token* op, HTML_Node* parent){
+    double Compute_Operator(HTML_Token* op, HTML_Node* parent, std::string attr_name){
         double Result = 0;
 
-        double Left = Compute_Val(op->Childs[0], parent);
-        double Right = Compute_Val(op->Childs[1], parent);
+        double Left = Compute_Val(op->Childs[0], parent, attr_name);
+        double Right = Compute_Val(op->Childs[1], parent, attr_name);
 
         if (op->Data == "+")
             Result = Left + Right;
@@ -551,7 +557,7 @@ namespace GGUI{
         return Result;
     }
 
-    double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent){
+    double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent, std::string attr_name){
         double Result = POSTFIX_COEFFICIENT[postfix];
             
         // now check if the post fix is an Relative type.
@@ -563,7 +569,7 @@ namespace GGUI{
         else if (postfix == "vh")
             Result *= std::stod(parent->Attributes["height"]->Data);
         else if (postfix == "%")
-            Result *= 1;    // TODO: make an PIPELINE for the system to also give the current attribute its computing value for.
+            Result *= std::stod(parent->Attributes[attr_name]->Data);
         else if (postfix == "vmin")
             Result *= max(1.0, min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
         else if (postfix == "vmax")
@@ -573,4 +579,70 @@ namespace GGUI{
 
         return Result;
     }
+
+    void Translate_Attributes_To_Element(Element* e, HTML_Node* input){
+
+        GGUI::HTML_POSITION_TYPE Current_Position_Type = GGUI::HTML_POSITION_TYPE::STATIC;
+        bool USE_FLEX = false;
+
+        for (auto attr : input->Attributes){
+
+            if (attr.first == "width")
+                e->Set_Width(GGUI::Compute_Val(attr.second, input->parent, attr.first));
+            else if (attr.first == "height")
+                e->Set_Height(GGUI::Compute_Val(attr.second, input->parent, attr.first));
+            else if (attr.first.compare(0, 5, "flex-") == 0){
+                if (!USE_FLEX){
+                    GGUI::Report("Cannot use Flex properties whitout enabling flexbox first!", input->Position);
+                    continue;
+                }
+
+                if (attr.first == "flex-direction"){
+                    if (attr.second->Data == "column")
+                        e->At<GGUI::NUMBER_VALUE>(GGUI::STYLES::Flow_Priority)->Value = (int)GGUI::Grow_Direction::COLUMN;
+                    else if (attr.second->Data == "row")
+                        e->At<GGUI::NUMBER_VALUE>(GGUI::STYLES::Flow_Priority)->Value = (int)GGUI::Grow_Direction::ROW;
+                }
+            }
+        }
+    }
+
+    void Translate_Childs_To_Element(Element* e, HTML_Node* input, std::string* Set_Text_To){
+        std::string Result = "";
+
+        std::vector<std::string> Raw_Text;
+
+        // Recursively go through the childs given in the element AST.
+        for (auto c : input->Childs){
+
+            if (c->Type == HTML_GROUP_TYPES::TEXT)
+                Raw_Text.push_back(c->Tag_Name);
+
+            if (c->Tag_Name == "br")
+                Raw_Text.push_back("\n");
+
+            // Check if there is an translator for this tag type
+            if (GGUI::HTML_Translators.find(c->Tag_Name) == GGUI::HTML_Translators.end())
+                continue;
+
+            // Positions arent parental governed anymore, so no need to give parent ptr.
+            GGUI::Element* tmp = GGUI::HTML_Translators[c->Tag_Name](c);
+
+            if (tmp){
+                // - Parent Linking
+                e->Add_Child(tmp);
+            }
+        }
+
+        for (auto t : Raw_Text){
+            Result += t;
+
+            // check if this t is same as the last iterator, if it is not, then add a space
+            if (t != Raw_Text[Raw_Text.size() - 1])
+                Result += " ";
+        }
+
+        *Set_Text_To = Result;
+    }
+
 }
