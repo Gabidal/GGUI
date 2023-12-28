@@ -16,7 +16,6 @@ namespace GGUI{
 
     class List_View : public Element{
     public:
-
         //We can always assume that the list starts from the upper left corner, right?
         Element* Last_Child = new Element(0, 0, {0, 0});
 
@@ -88,6 +87,37 @@ namespace GGUI{
 
             return new_List_View;
         }
+
+    };
+
+    class Scroll_View : public Element{
+    protected:
+        unsigned int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
+
+        List_View* Container = nullptr;
+    public:
+
+        // Constructors:
+        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+        Scroll_View(Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        Scroll_View(List_View& container);
+
+        Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        // Re-pipeline functions:
+        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+        void Add_Child(Element* e) override;
+
+        void Allow_Scrolling(bool allow);
+    
+        bool Is_Scrolling_Enabled(){
+            return At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
+        }
+
+        void Scroll_Up();
+
+        void Scroll_Down();
     };
 }
 

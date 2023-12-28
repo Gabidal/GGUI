@@ -821,6 +821,8 @@ namespace GGUI{
         inline std::string Opacity                          = "Opacity"; // 0 - 100
 
         inline std::string Anchor                           = "Anchor";  // gives the line number in which the element is anchored.
+
+        inline std::string Allow_Scrolling                  = "Allow_Scrolling";
     };
 
     enum class STAIN_TYPE{

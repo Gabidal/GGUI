@@ -270,6 +270,115 @@ bool GGUI::List_View::Remove(Element* remove){
     return true;
 }
 
+GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
+    // Make the system into a Dynamic allowing parent.
+    Allow_Dynamic_Size(true);
+
+    Container = new List_View();
+    Container->Set_Growth_Direction(grow_direction);
+    Container->Set_Parent(this);
+}
+
+GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
+    // Make the system into a Dynamic allowing parent.
+    Allow_Dynamic_Size(true);
+
+    Container = &container;
+    Container->Set_Parent(this);
+}
+
+GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction) : Element(){
+    // Make the system into a Dynamic allowing parent.
+    Allow_Dynamic_Size(true);
+
+    GGUI::Pause_Renderer([&](){
+        Container = new List_View();
+        Container->Set_Parent(this);
+        Container->Set_Growth_Direction(grow_direction);
+
+        for (auto i : Childs)
+            Container->Add_Child(i);
+    });
+}
+
+void GGUI::Scroll_View::Add_Child(Element* e) {
+    Container->Add_Child(e);
+}
+
+void GGUI::Scroll_View::Allow_Scrolling(bool allow){
+    bool previous = At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
+    if (allow != previous){
+        At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value = allow;
+
+        // no need to dirty or update frame, this feature is a non-passive change so it needs the user to do something after the enable.
+    }
+
+    bool Scroll_Up_Event_Exists = false;
+    bool Scroll_Down_Event_Exists = false;
+
+    // if this Scroll_View does not have a scrolling event then make one.
+    for (int i = 0; i < GGUI::Event_Handlers.size(); i++){
+
+        if (GGUI::Event_Handlers[i]->Host != this)
+            continue;
+        
+        if (GGUI::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_UP)
+            Scroll_Up_Event_Exists = true;
+        else if (GGUI::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_DOWN)
+            Scroll_Down_Event_Exists = true;
+    }
+
+    if (!Scroll_Up_Event_Exists){
+        this->On(Constants::MOUSE_MIDDLE_SCROLL_UP, [&](GGUI::Event* e){
+            this->Scroll_Up();
+
+            return true;
+        });
+    }
+
+    if (!Scroll_Down_Event_Exists){
+        this->On(Constants::MOUSE_MIDDLE_SCROLL_DOWN, [&](GGUI::Event* e){
+            this->Scroll_Down();
+
+            return true;
+        });
+    }
+}
+
+void GGUI::Scroll_View::Scroll_Up(){
+    if (Scroll_Index <= 0)
+        return;
+
+    Scroll_Index--;
+
+    // Now also re-set the container position dependent of the growth direction.
+    if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
+        Container->Set_Position({Container->Get_Position().X - 1});
+    else
+        Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y - 1});
+
+    Dirty.Dirty(STAIN_TYPE::DEEP);
+        
+    Update_Frame();
+}
+
+void GGUI::Scroll_View::Scroll_Down(){
+    if (Scroll_Index >= Childs.size() - 1)
+        return;
+
+    Scroll_Index++;
+
+    // Now also re-set the container position dependent of the growth direction.
+    if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
+        Container->Set_Position({Container->Get_Position().X + 1});
+    else
+        Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y + 1});
+
+    Dirty.Dirty(STAIN_TYPE::DEEP);
+        
+    Update_Frame();
+}
+
 GGUI::Element* Translate_List(GGUI::HTML_Node* input){
     GGUI::List_View* Result = new GGUI::List_View();
 
