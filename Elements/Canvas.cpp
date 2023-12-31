@@ -124,7 +124,6 @@ namespace GGUI{
     }
 
     std::vector<UTF> Terminal_Canvas::Render(){
-
         std::vector<GGUI::UTF> Result = Render_Buffer;
                 
         if (Dirty.is(STAIN_TYPE::CLEAN))
@@ -173,10 +172,10 @@ namespace GGUI{
     }
 
     UTF Sprite::Render(){
-
         UTF Result = Texture;
 
         Result.Set_Background(Background_Color);
+        Result.Set_Foreground(Foreground_Color);
         
         return Result;
     }

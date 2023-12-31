@@ -3,8 +3,6 @@
 
 namespace GGUI{
 
-    auto _ = [](std::string id, std::function<GGUI::Element* (HTML_Node*)> handler){ return GGUI::HTML_Translators[id] = handler;};
-
     PARSE_BY operator|(PARSE_BY first, PARSE_BY second){
         return (PARSE_BY)((unsigned long long)first | (unsigned long long)second);
     }
@@ -17,7 +15,7 @@ namespace GGUI{
         first = first | second; 
     }
 
-    std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators = {};
+    std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>>* HTML_Translators = {};
 
     std::unordered_map<std::string, double> POSTFIX_COEFFICIENT = {
         {"px", 1},
@@ -351,10 +349,10 @@ namespace GGUI{
             HTML_Node* Current = Input[i];
 
             // Try to find the translator fitting for this token.
-            if (HTML_Translators.find(Current->Tag_Name) == HTML_Translators.end())
+            if (HTML_Translators->find(Current->Tag_Name) == HTML_Translators->end())
                 continue;
 
-            Element* New_Child = HTML_Translators[Current->Tag_Name](Current);
+            Element* New_Child = HTML_Translators->at(Current->Tag_Name)(Current);
 
             if (New_Child){
                 Result.push_back(New_Child);
@@ -622,11 +620,11 @@ namespace GGUI{
                 Raw_Text.push_back("\n");
 
             // Check if there is an translator for this tag type
-            if (GGUI::HTML_Translators.find(c->Tag_Name) == GGUI::HTML_Translators.end())
+            if (GGUI::HTML_Translators->find(c->Tag_Name) == GGUI::HTML_Translators->end())
                 continue;
 
             // Positions arent parental governed anymore, so no need to give parent ptr.
-            GGUI::Element* tmp = GGUI::HTML_Translators[c->Tag_Name](c);
+            GGUI::Element* tmp = GGUI::HTML_Translators->at(c->Tag_Name)(c);
 
             if (tmp){
                 // - Parent Linking

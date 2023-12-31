@@ -145,7 +145,7 @@ namespace GGUI{
 
     extern std::vector<HTML_Node*> Parse_Lexed_Tokens(std::vector<HTML_Token*> Input);
 
-    extern std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>> HTML_Translators;
+    extern std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>>* HTML_Translators;
 
     extern std::unordered_map<std::string, double> POSTFIX_COEFFICIENT;
 
@@ -157,7 +157,12 @@ namespace GGUI{
 
     // For ease of use for adding translators for user custom HTML TAG parsers.
     #define GGUI_Add_Translator(id, handler) \
-        auto CONCAT(_, __LINE__) = [](){ return GGUI::HTML_Translators[id] = handler;}();
+        auto CONCAT(_, __LINE__) = [](){ \
+            if (GGUI::HTML_Translators == nullptr){ \
+                GGUI::HTML_Translators = new std::unordered_map<std::string, std::function<GGUI::Element* (GGUI::HTML_Node*)>>(); \
+            } \
+            return GGUI::HTML_Translators->insert({id, handler}); \
+        }();
 
 
     extern std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input);

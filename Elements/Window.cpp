@@ -173,6 +173,16 @@ GGUI::Window::Window(
 
 void GGUI::Window::Set_Title(std::string t){
     Title = t;
+
+    if (!Has_Border() && t.size() > 0){
+        Show_Border(true);
+        
+        Has_Hidden_Borders = true;
+        
+        Set_Border_Color(Get_Background_Color());
+        Set_Border_Background_Color(Get_Background_Color());
+    }
+
     Dirty.Dirty(STAIN_TYPE::EDGE);
 }
 
