@@ -614,12 +614,12 @@ void GGUI::Element::Display(bool f){
             Check(State::HIDDEN);
         }   
 
-        if (f == false && Parent){
-            // This means that the element has been displayed before, and hiding it, would remove it from being computed in the Childs forloop.
-            // This itail will leave all It's childs hanging in the DOM.
-            // So we would need to tell the parent that it needs to redraw the entire DOM its in.
-            Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
-        }
+        // if (f == false && Parent){
+        //     // This means that the element has been displayed before, and hiding it, would remove it from being computed in the Childs forloop.
+        //     // This itail will leave all It's childs hanging in the DOM.
+        //     // So we would need to tell the parent that it needs to redraw the entire DOM its in.
+        //     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
+        // }
 
         Update_Frame();
     }

@@ -27,6 +27,8 @@ GGUI::List_View::List_View(std::map<std::string, VALUE*> css, unsigned int width
 }
 
 GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
+    Allow_Dynamic_Size(true);
+
     GGUI::Pause_Renderer([=](){
         Set_Parent(parent);
         At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
@@ -36,8 +38,6 @@ GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, Grow_Dir
             
         Parent->Add_Child(this);
     });
-    
-    Allow_Dynamic_Size(true);
 }
 
 //These next constructors are mainly for users to more easily create elements.

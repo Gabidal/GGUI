@@ -460,6 +460,13 @@ namespace GGUI{
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
         }
+
+        std::cout << Constants::EnableFeature(Constants::MOUSE_CURSOR);
+        std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
+        std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
+        std::cout << std::flush;
+
+        exit(0);
     }
 
     #else
