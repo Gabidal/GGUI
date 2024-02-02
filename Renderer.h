@@ -148,6 +148,7 @@ namespace GGUI{
 
     extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
 
+    extern void Init_Inspect_Tool();
 }
 
 #endif

@@ -55,6 +55,9 @@ namespace GGUI{
 
     Window* Main = nullptr;     
     unordered_map<int, Element*> Outboxed_Elements;
+    
+    const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
+    const std::string HISTORY = "_HISTORY_";
 
     bool Collides(GGUI::Element* a, GGUI::Element* b){
         if (a == b)
@@ -1251,11 +1254,13 @@ namespace GGUI{
             //if the time difference is greater than the time limit, then delete the memory
             if (Time_Difference > Remember[i].End_Time){
                 //Pause_Renderer();
-                Remember[i].Job((Event*)&Remember[i]);
+                bool Success = Remember[i].Job((Event*)&Remember[i]);
 
-                Remember.erase(Remember.begin() + i);
+                if (Success){
+                    Remember.erase(Remember.begin() + i);
 
-                i--;
+                    i--;
+                }
                 
                 //Resume_Renderer();
             }
@@ -1535,6 +1540,8 @@ namespace GGUI{
 
         Pause_Render = Default_Render_State;
 
+        Init_Inspect_Tool();
+
         return Main;
     }
 
@@ -1553,9 +1560,6 @@ namespace GGUI{
         Pause_Renderer();
 
         Problem += " ";
-
-        const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
-        const std::string HISTORY = "_HISTORY_";
 
         // Error logger structure:
         /*
@@ -1825,6 +1829,91 @@ namespace GGUI{
                 Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_START);
             }
         }
+    }
+
+    void Init_Inspect_Tool(){
+        GGUI::Window* inspect = new GGUI::Window(
+            "Inspect",
+            Main->Get_Width() / 3,
+            Main->Get_Height()
+        );
+
+        inspect->Show_Border(true);
+        inspect->Set_Position({
+            Main->Get_Width() - (Main->Get_Width() / 3),
+            0,
+            INT32_MAX - 1,
+        });
+
+        Scroll_View* Scrollable_Inspect_Tool = new Scroll_View(GGUI::Grow_Direction::COLUMN);
+        Scrollable_Inspect_Tool->Set_Dimensions(inspect->Get_Width(), inspect->Get_Height());
+        Scrollable_Inspect_Tool->Show_Border(true);
+
+        // Add the error logger kidnapper:
+        Window* Error_Logger_Kidnapper = new Window(
+            "LOG",
+            inspect->Get_Width(),
+            inspect->Get_Height() / 2,
+            GGUI::COLOR::RED,
+            GGUI::COLOR::BLACK,
+            GGUI::COLOR::RED,
+            GGUI::COLOR::BLACK
+        );
+
+        Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
+        Error_Logger_Kidnapper->Show_Border(true);
+
+        // Put the error logger on the bottom of the inspect tool
+        Error_Logger_Kidnapper->Set_Position({
+            0,
+            inspect->Get_Height() / 2,
+            INT32_MAX
+        });
+
+        // Add a count for how many UTF are being streamed.
+        Text_Field* Stats = new Text_Field(
+            "Decode: " + to_string(Abstract_Frame_Buffer.size()) + " | " + 
+            "Encode: " + to_string(Frame_Buffer.size()) + " | " +
+            "Entities: " + to_string(Main->Get_Elements<Element>().size())
+        );
+
+        Stats->Set_Name("STATS");
+
+        Scrollable_Inspect_Tool->Add_Child(Stats);
+        Scrollable_Inspect_Tool->Add_Child(Error_Logger_Kidnapper);
+
+        inspect->Add_Child(Scrollable_Inspect_Tool);
+
+        inspect->Display(false);
+        Main->Add_Child(inspect);
+
+        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
+            GGUI::Input* input = (GGUI::Input*)e;
+
+            if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
+                return false;
+
+            inspect->Display(!inspect->Is_Displayed());
+
+            return true;
+        }, true);
+
+        Remember.push_back(Memory(
+            TIME::MILLISECOND * 16 * 10,
+            [=](GGUI::Event* e){
+                // Update the stats
+                Stats->Set_Data(
+                    "Decode: " + to_string(Abstract_Frame_Buffer.size()) + " | " + 
+                    "Encode: " + to_string(Frame_Buffer.size()) + " | " +
+                    "Entities: " + to_string(Main->Get_Elements<Element>().size())
+                );
+
+                // dont delete memory.
+                return false;
+            },
+            true
+        ));
+
     }
 
 }
