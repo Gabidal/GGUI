@@ -11,6 +11,9 @@ namespace GGUI{
 
     extern "C" void* PDATA;
 
+
+    extern "C" void* PDATA;
+
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
