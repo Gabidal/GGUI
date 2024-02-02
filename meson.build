@@ -23,7 +23,7 @@ sources = [
   'main.cpp',
 ]
 
-cpp_args = ['-fpermissive']
+cpp_args = ['-fpermissive', '-Wno-narrowing']
 
 executable(
   'GGUI',
