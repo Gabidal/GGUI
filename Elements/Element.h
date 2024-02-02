@@ -75,10 +75,10 @@ namespace GGUI{
     class BUTTON_STATE{
     public:
         bool State = false;
-        std::chrono::system_clock::time_point Capture_Time;
+        std::chrono::high_resolution_clock::time_point Capture_Time;
 
         BUTTON_STATE(bool state = false){
-            Capture_Time = std::chrono::system_clock::now();
+            Capture_Time = std::chrono::high_resolution_clock::now();
             State = state;
         }
     };

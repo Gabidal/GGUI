@@ -42,8 +42,8 @@ namespace GGUI{
     inline int Inputs_Per_Second = INT16_MAX;
     inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
 
-    std::chrono::system_clock::time_point Previous_Time;
-    std::chrono::system_clock::time_point Current_Time;
+    std::chrono::high_resolution_clock::time_point Previous_Time;
+    std::chrono::high_resolution_clock::time_point Current_Time;
     unsigned long long Delta_Time;
 
     inline std::map<int, std::map<std::string, VALUE*>> Classes;
