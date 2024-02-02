@@ -1154,7 +1154,7 @@ namespace GGUI{
 
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
-                Result += Text[y * Width + x].To_String();
+                Result += Text[y * Width + x].To_Encoded_String();
             }
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
@@ -1174,6 +1174,9 @@ namespace GGUI{
 
         if (Main){
             Abstract_Frame_Buffer = Main->Render();
+
+            // ENCODE for optimize
+            Encode_Buffer(Abstract_Frame_Buffer);
 
             Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
         }
@@ -1783,4 +1786,29 @@ namespace GGUI{
         Pause_Event_Thread = Previud_Event_Value;
         SLEEP(Sleep_For);
     }
+
+    void Encode_Buffer(std::vector<GGUI::UTF>& Buffer){
+
+        // There are three different encoded types: Start, Middle and End.
+
+        Buffer[0].Set_Flag(UTF_FLAG::ENCODE_START);
+        Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_END);
+
+        for (int Index = 1; Index < Buffer.size() - 1; Index++){
+
+            bool Same_Colours_As_Previous = Buffer[Index].Background == Buffer[Index - 1].Background && Buffer[Index].Foreground == Buffer[Index - 1].Foreground;
+            bool Same_Colours_As_Next = Buffer[Index].Background == Buffer[Index + 1].Background && Buffer[Index].Foreground == Buffer[Index + 1].Foreground;
+
+            // if the current colours are same as the previous but not the next then the current is a end of a encode strip.
+            if (!Same_Colours_As_Next){
+                Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_END);
+            }
+
+            // if the current colours are not the same as the previous but the same as the next then the current is a start of a encode strip.
+            if (!Same_Colours_As_Previous){
+                Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_START);
+            }
+        }
+    }
+
 }

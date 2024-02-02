@@ -145,6 +145,9 @@ namespace GGUI{
     extern void Handle_Escape();
 
     extern void Render_Outbox();
+
+    extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
+
 }
 
 #endif

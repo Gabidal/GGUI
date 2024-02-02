@@ -16,7 +16,7 @@ std::string GGUI::UTF::To_String(){
         Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND
     );
 
-    if(Is_Unicode){
+    if(Is(UTF_FLAG::IS_UNICODE)){
         Result += Unicode;
     }
     else{
@@ -24,6 +24,28 @@ std::string GGUI::UTF::To_String(){
     }
 
     return Result + Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
+}
+
+std::string GGUI::UTF::To_Encoded_String(){
+    std::string Result = "";
+    
+    if (Is(UTF_FLAG::ENCODE_START))
+        Result = (
+            Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND + 
+            Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND
+        );
+
+    if(Is(UTF_FLAG::IS_UNICODE)){
+        Result += Unicode;
+    }
+    else{
+        Result += Ascii;
+    }
+
+    if (Is(UTF_FLAG::ENCODE_END))
+        return Result + Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
+    else
+        return Result;
 }
 
 GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){

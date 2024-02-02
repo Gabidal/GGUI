@@ -514,9 +514,16 @@ namespace GGUI{
         }
     };
 
+    namespace UTF_FLAG{
+        inline unsigned char IS_ASCII          = 1 << 0;
+        inline unsigned char IS_UNICODE        = 1 << 1;
+        inline unsigned char ENCODE_START      = 1 << 2;
+        inline unsigned char ENCODE_END        = 1 << 3;
+    };
+
     class UTF{
     public:
-        bool Is_Unicode = false;
+        unsigned char FLAGS = UTF_FLAG::IS_ASCII;
 
         char Ascii = ' ';
         std::string Unicode = " ";
@@ -532,13 +539,23 @@ namespace GGUI{
             Ascii = data;
             Foreground = {color.first};
             Background = {color.second};
+            FLAGS = UTF_FLAG::IS_ASCII;
         }
 
         UTF(std::string data, std::pair<RGB, RGB> color = {{}, {}}){
             Unicode = data;
             Foreground = {color.first};
             Background = {color.second};
-            Is_Unicode = true;
+            FLAGS = UTF_FLAG::IS_UNICODE;
+        }
+
+        bool Is(unsigned char utf_flag){
+            // Check if the bit mask contains the bits
+            return (FLAGS & utf_flag) > 0;
+        }
+
+        void Set_Flag(unsigned char utf_flag){
+            FLAGS |= utf_flag;
         }
 
         void Set_Foreground(RGB color){
@@ -556,21 +573,22 @@ namespace GGUI{
 
         void Set_Text(std::string data){
             Unicode = data;
-            Is_Unicode = true;
+            FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
         void Set_Text(char data){
             Ascii = data;
-            Is_Unicode = false;
+            FLAGS = UTF_FLAG::IS_ASCII;
         }
 
         void Set_Text(UTF other){
             Ascii = other.Ascii;
             Unicode = other.Unicode;
-            Is_Unicode = other.Is_Unicode;
+            FLAGS = other.FLAGS;
         }
 
         std::string To_String();
+        std::string To_Encoded_String();    // For UTF Strip Encoding.
 
         void operator=(char text){
             Set_Text(text);
@@ -1269,7 +1287,6 @@ namespace GGUI{
         std::vector<GGUI::UTF> Process_Opacity(std::vector<GGUI::UTF> Current_Buffer);
 
         virtual std::vector<GGUI::UTF> Postprocess();
-
     };
 }
 
