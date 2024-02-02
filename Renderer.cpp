@@ -867,6 +867,13 @@ namespace GGUI{
     
     }
 
+    void signal_handler(int code){
+        Inputs.push_back(new Input(' ', Constants::CONTROL));
+        Inputs.push_back(new Input('c', Constants::KEY_PRESS));
+
+        KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::CONTROL].State);
+    }
+
     void Init_Platform_Stuff(){
         std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
         std::cout << Constants::DisableFeature(Constants::MOUSE_CURSOR);
@@ -888,6 +895,11 @@ namespace GGUI{
         SIGTERM
         */
 
+        struct sigaction* wrapper = new struct sigaction();
+        wrapper->sa_handler = Exit;
+        sigemptyset(&wrapper->sa_mask);
+        wrapper->sa_flags = 0;
+
         for (
             auto i : {
                 SIGILL,
@@ -896,18 +908,19 @@ namespace GGUI{
                 SIGSEGV,
                 SIGTERM
             }){
-            sigaction(i, &(struct sigaction){Exit}, NULL);
+            sigaction(i, wrapper, NULL);
         }
 
         // Add for ctrl+C
-        sigaction(SIGINT, &(struct sigaction){
-            [](int code){
-                Inputs.push_back(new Input(' ', Constants::CONTROL));
-                Inputs.push_back(new Input('c', Constants::KEY_PRESS));
+        struct sigaction* wrapper_ctrc = new struct sigaction();
+        wrapper_ctrc->sa_handler = signal_handler;
+        sigemptyset(&wrapper_ctrc->sa_mask);
+        wrapper_ctrc->sa_flags = 0;
 
-                KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::CONTROL].State);
-            }
-        }, NULL);
+        if (sigaction(SIGINT, wrapper_ctrc, NULL) == -1) {
+            perror("sigaction");
+            exit(1);
+        }
 
         struct termios raw;
         tcgetattr(STDIN_FILENO, &raw);
