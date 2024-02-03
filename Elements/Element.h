@@ -649,20 +649,33 @@ namespace GGUI{
         }
     };
 
+    namespace MEMORY_FLAGS{
+        inline unsigned char PROLONG_MEMORY     = 1 << 0;
+        inline unsigned char RETRIGGER          = 1 << 1;
+    };
+
     class Memory : public Action{
     public:
         std::chrono::high_resolution_clock::time_point Start_Time;
         size_t End_Time = 0;
 
         // By default all memories automatically will not prolong each other similar memories.
-        bool Prolong_Memory = false;
+        unsigned char Flags = 0x0;
 
         // When the job starts, job, prolong previous similar job by this time.
-        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, bool prolong = false){
+        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, unsigned char flags = 0x0){
             Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
-            Prolong_Memory = prolong;
+            Flags = flags;
+        }
+
+        bool Is(unsigned char f){
+            return (Flags & f) > 0;
+        }
+
+        void Set(unsigned char f){
+            Flags |= f;
         }
     };
 
