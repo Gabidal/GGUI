@@ -512,6 +512,10 @@ namespace GGUI{
             X += other.X;
             Y += other.Y;
         }
+    
+        Coordinates operator+(Coordinates& other){
+            return Coordinates(X + other.X, Y + other.Y, Z + other.Z);
+        }
     };
 
     namespace UTF_FLAG{
@@ -662,12 +666,15 @@ namespace GGUI{
         // By default all memories automatically will not prolong each other similar memories.
         unsigned char Flags = 0x0;
 
+        std::string ID; 
+
         // When the job starts, job, prolong previous similar job by this time.
-        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, unsigned char flags = 0x0){
+        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, unsigned char flags = 0x0, std::string id = ""){
             Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
             Flags = flags;
+            ID = id;
         }
 
         bool Is(unsigned char f){
@@ -1268,6 +1275,22 @@ namespace GGUI{
 
             for (auto e : Childs){
                 std::vector<T*> child_result = e->Get_Elements<T>();
+                result.insert(result.end(), child_result.begin(), child_result.end());
+            }
+
+            return result;
+        }
+
+        std::vector<Element*> Get_All_Nested_Elements(bool Show_Hidden = false){
+            std::vector<Element*> result;
+
+            if (!Show)
+                return {};
+            
+            result.push_back(this);
+
+            for (auto e : Childs){
+                std::vector<Element*> child_result = e->Get_All_Nested_Elements();
                 result.insert(result.end(), child_result.begin(), child_result.end());
             }
 

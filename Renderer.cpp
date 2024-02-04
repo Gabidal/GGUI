@@ -1254,18 +1254,24 @@ namespace GGUI{
             //if the time difference is greater than the time limit, then delete the memory
             if (Time_Difference > Remember[i].End_Time){
                 //Pause_Renderer();
-                bool Success = Remember[i].Job((Event*)&Remember[i]);
 
-                if (Remember[i].Is(MEMORY_FLAGS::RETRIGGER)){
+                try{
+                    bool Success = Remember[i].Job((Event*)&Remember[i]);
 
-                    // May need to change this into more accurate version of time capturing.
-                    Remember[i].Start_Time = Current_Time;
+                    if (Remember[i].Is(MEMORY_FLAGS::RETRIGGER)){
 
+                        // May need to change this into more accurate version of time capturing.
+                        Remember[i].Start_Time = Current_Time;
+
+                    }
+                    else if (Success){
+                        Remember.erase(Remember.begin() + i);
+
+                        i--;
+                    }
                 }
-                else if (Success){
-                    Remember.erase(Remember.begin() + i);
-
-                    i--;
+                catch (std::exception e){
+                    Report("In memory: '" + Remember[i].ID + "' Problem: " + std::string(e.what()));
                 }
                 
                 //Resume_Renderer();
@@ -1596,7 +1602,7 @@ namespace GGUI{
                 // This happens, when Error logger is kidnapped!
                 if (!History){
                     // Now create the history lister
-                    List_View* History = new List_View(
+                    History = new List_View(
                         Error_Logger->Get_Width() - 1,
                         Error_Logger->Get_Height() - 1,
                         GGUI::COLOR::RED,
@@ -1717,7 +1723,8 @@ namespace GGUI{
                     //job successfully done
                     return true;
                 },
-                true
+                MEMORY_FLAGS::PROLONG_MEMORY,
+                "Report Logger Clearer"
             ));
         }
         else{
@@ -1734,7 +1741,7 @@ namespace GGUI{
         // Print the stack information and the function names can be got from .PDATA section
         unsigned long long Stack_Pointer = (unsigned long long)__builtin_return_address(0);
 
-        // STacktracing doesnt work atm :(
+        // Stacktracing doesnt work atm :(
         //auto& stack = std::stacktrace::current();
 
 
@@ -1858,7 +1865,7 @@ namespace GGUI{
         Stats->Set_Data(
             "Encode: " + to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + to_string(Main->Get_Elements<Element>().size())
+            "Elements: " + to_string(Main->Get_All_Nested_Elements().size())
         );
 
         // return success.
@@ -1888,7 +1895,7 @@ namespace GGUI{
         Text_Field* Stats = new Text_Field(
             "Encode: " + to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + to_string(Main->Get_Elements<Element>().size())
+            "Elements: " + to_string(Main->Get_All_Nested_Elements().size())
         );
 
         Stats->Set_Name("STATS");
@@ -1907,7 +1914,7 @@ namespace GGUI{
             GGUI::COLOR::BLACK
         );
 
-        Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
+        Error_Logger_Kidnapper->Set_Name("ERROR_LOGGER ");
         Error_Logger_Kidnapper->Allow_Dynamic_Size(true);
 
         Error_Logger_Kidnapper->Set_Position({0, Stats->Get_Height()});
@@ -1930,7 +1937,8 @@ namespace GGUI{
             GGUI::Memory(
                 TIME::SECOND,
                 Update_Stats,
-                MEMORY_FLAGS::RETRIGGER
+                MEMORY_FLAGS::RETRIGGER,
+                "Update Stats"
             )
         );
     }

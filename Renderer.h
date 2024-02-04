@@ -48,7 +48,7 @@ namespace GGUI{
     extern Window* Main;  
     extern std::unordered_map<int, Element*> Outboxed_Elements;
 
-    void SLEEP(unsigned int seconds);
+    void SLEEP(unsigned int milliseconds);
 
     extern bool Collides(GGUI::Element* a, GGUI::Element* b);
 
