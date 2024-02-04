@@ -1697,11 +1697,12 @@ namespace GGUI{
                 History->Add_Child(Row);
 
                 // Calculate the new x position for the Error_Logger
-                Error_Logger->Set_Position({
-                    (Max_Width - History->Get_Width()) / 2,
-                    (Max_Height - History->Get_Height()) / 2,
-                    INT32_MAX
-                });
+                if (Error_Logger->Get_Parent() == Main)
+                    Error_Logger->Set_Position({
+                        (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
+                        (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
+                        INT32_MAX
+                    });
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                 if (History->Get_Absolute_Position().Y + History->Get_Height() >= Main->Get_Height() - Main->Has_Border() * 2){
@@ -1873,23 +1874,23 @@ namespace GGUI{
     }
 
     void Init_Inspect_Tool(){
-        GGUI::Window* inspect = new GGUI::Window(
+        GGUI::Window* Inspect = new GGUI::Window(
             "Inspect",
             Main->Get_Width() / 3,
             Main->Get_Height()
         );
 
-        inspect->Show_Border(false);
-        inspect->Set_Position({
+        Inspect->Show_Border(false);
+        Inspect->Set_Position({
             Main->Get_Width() - (Main->Get_Width() / 3),
             0,
             INT32_MAX - 1,
         });
-        inspect->Set_Background_Color(Main->Get_Background_Color());
-        inspect->Set_Text_Color(Main->Get_Text_Color());
-        inspect->Set_Opacity(0.2f);
+        Inspect->Set_Background_Color(Main->Get_Background_Color());
+        Inspect->Set_Text_Color(Main->Get_Text_Color());
+        Inspect->Set_Opacity(0.2f);
 
-        Main->Add_Child(inspect);
+        Main->Add_Child(Inspect);
         
         // Add a count for how many UTF are being streamed.
         Text_Field* Stats = new Text_Field(
@@ -1901,26 +1902,26 @@ namespace GGUI{
         Stats->Set_Name("STATS");
 
         Stats->Set_Position({0, 0});
-        inspect->Add_Child(Stats);
+        Inspect->Add_Child(Stats);
 
         // Add the error logger kidnapper:
         Window* Error_Logger_Kidnapper = new Window(
             "LOG: ",
-            inspect->Get_Width(),
-            inspect->Get_Height() / 2,
+            Inspect->Get_Width(),
+            Inspect->Get_Height() / 2,
             GGUI::COLOR::RED,
             GGUI::COLOR::BLACK,
             GGUI::COLOR::RED,
             GGUI::COLOR::BLACK
         );
 
-        Error_Logger_Kidnapper->Set_Name("ERROR_LOGGER ");
+        Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
         Error_Logger_Kidnapper->Allow_Dynamic_Size(true);
 
         Error_Logger_Kidnapper->Set_Position({0, Stats->Get_Height()});
-        inspect->Add_Child(Error_Logger_Kidnapper);
+        Inspect->Add_Child(Error_Logger_Kidnapper);
 
-        inspect->Display(false);
+        Inspect->Display(false);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;
@@ -1928,7 +1929,7 @@ namespace GGUI{
             if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
                 return false;
 
-            inspect->Display(!inspect->Is_Displayed());
+            Inspect->Display(!Inspect->Is_Displayed());
 
             return true;
         }, true);
