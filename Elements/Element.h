@@ -1162,9 +1162,9 @@ namespace GGUI{
 
         bool Children_Changed();
         
-        bool Has_Transparent_Children();
+        bool Has_Transparent_Children();    
 
-        std::vector<Element*>& Get_Childs();
+        virtual std::vector<Element*>& Get_Childs();
 
         virtual bool Remove(Element* handle);
 
@@ -1323,6 +1323,9 @@ namespace GGUI{
         std::vector<GGUI::UTF> Process_Opacity(std::vector<GGUI::UTF> Current_Buffer);
 
         virtual std::vector<GGUI::UTF> Postprocess();
+
+        // Uses the post_processed widths and height values
+        bool Child_Is_Shown(Element* other);
     };
 }
 

@@ -87,6 +87,120 @@ GGUI::List_View::List_View(
     Allow_Dynamic_Size(true);
 }
 
+// Scroll_View constructors: -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
+    // Make the system into a Dynamic allowing parent.
+    //Allow_Dynamic_Size(true);
+
+    List_View* Container = new List_View();
+    Container->Set_Growth_Direction(grow_direction);
+    
+    Element::Add_Child(Container);
+}
+
+GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
+    // Make the system into a Dynamic allowing parent.
+    //Allow_Dynamic_Size(true);
+
+    Element::Add_Child(&container);
+}
+
+GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction) : Element(){
+    // Make the system into a Dynamic allowing parent.
+    //Allow_Dynamic_Size(true);
+
+    List_View* Container = new List_View(this, Childs, grow_direction);
+
+    Element::Add_Child(Container);
+}
+
+GGUI::Scroll_View::Scroll_View(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+    GGUI::Pause_Renderer([=](){
+        if (width != 0)
+            Set_Width(width);
+        if (height != 0)
+            Set_Height(height);
+
+        if (parent){
+            Set_Parent(parent);
+
+            Set_Position(position);
+        }
+    });
+
+    List_View* Container = new List_View(css, width, height, this, position);
+
+    Element::Add_Child(Container);
+}
+
+GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
+    //Allow_Dynamic_Size(true);
+
+    List_View* Container = new List_View(this, Tree, grow_direction);
+
+    Element::Add_Child(Container);
+}
+
+//These next constructors are mainly for users to more easily create elements.
+GGUI::Scroll_View::Scroll_View(
+    RGB text_color,
+    RGB background_color
+) : Element(){
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+    
+    //Allow_Dynamic_Size(true);
+
+    List_View* Container = new List_View(text_color, background_color);
+    
+    Element::Add_Child(Container);
+}
+
+GGUI::Scroll_View::Scroll_View(
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+    
+    //Allow_Dynamic_Size(true);
+    
+    List_View* Container = new List_View(width, height, text_color, background_color);
+    
+    Element::Add_Child(Container);
+}
+
+GGUI::Scroll_View::Scroll_View(
+    unsigned int width,
+    unsigned int height,
+    RGB text_color,
+    RGB background_color,
+    RGB border_color,
+    RGB border_background_color
+) : Element(){
+    Set_Width(width);
+    Set_Height(height);
+
+    Set_Text_Color(text_color);
+    Set_Background_Color(background_color);
+    Set_Border_Color(border_color);
+    Set_Border_Background_Color(border_background_color);
+    
+    Show_Border(true);
+    
+    //Allow_Dynamic_Size(true);
+
+    List_View* Container = new List_View(width, height, text_color, background_color, border_color, border_background_color);
+    
+    Element::Add_Child(Container);
+}
+
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
@@ -270,39 +384,12 @@ bool GGUI::List_View::Remove(Element* remove){
     return true;
 }
 
-GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
-    // Make the system into a Dynamic allowing parent.
-    Allow_Dynamic_Size(true);
-
-    Container = new List_View();
-    Container->Set_Growth_Direction(grow_direction);
-    Container->Set_Parent(this);
-}
-
-GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
-    // Make the system into a Dynamic allowing parent.
-    Allow_Dynamic_Size(true);
-
-    Container = &container;
-    Container->Set_Parent(this);
-}
-
-GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction) : Element(){
-    // Make the system into a Dynamic allowing parent.
-    Allow_Dynamic_Size(true);
-
-    GGUI::Pause_Renderer([&](){
-        Container = new List_View();
-        Container->Set_Parent(this);
-        Container->Set_Growth_Direction(grow_direction);
-
-        for (auto i : Childs)
-            Container->Add_Child(i);
-    });
-}
-
 void GGUI::Scroll_View::Add_Child(Element* e) {
-    Container->Add_Child(e);
+    Pause_Renderer([=](){
+        Childs[0]->Add_Child(e);
+        
+        Dirty.Dirty(STAIN_TYPE::DEEP);
+    });
 }
 
 void GGUI::Scroll_View::Allow_Scrolling(bool allow){
@@ -351,6 +438,8 @@ void GGUI::Scroll_View::Scroll_Up(){
 
     Scroll_Index--;
 
+    List_View* Container = (List_View*)Childs[0];
+
     // Now also re-set the container position dependent of the growth direction.
     if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
         Container->Set_Position({Container->Get_Position().X - 1});
@@ -363,10 +452,12 @@ void GGUI::Scroll_View::Scroll_Up(){
 }
 
 void GGUI::Scroll_View::Scroll_Down(){
-    if (Scroll_Index >= Childs.size() - 1)
+    if (Scroll_Index >= Get_Childs().size() - 1)
         return;
 
     Scroll_Index++;
+
+    List_View* Container = (List_View*)Childs[0];
 
     // Now also re-set the container position dependent of the growth direction.
     if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
@@ -403,3 +494,15 @@ GGUI_Add_Translator("ul", Translate_List);
 GGUI_Add_Translator("ol", Translate_List);
 GGUI_Add_Translator("dl", Translate_List);
 GGUI_Add_Translator("select", Translate_List);
+
+std::string GGUI::Scroll_View::Get_Name() const{
+    return "Scroll_View<" + Name + ">";
+}
+
+bool GGUI::Scroll_View::Remove(Element* remove){
+    return Childs[0]->Remove(remove);
+}
+
+std::vector<GGUI::Element*>& GGUI::Scroll_View::Get_Childs(){
+    return Childs[0]->Get_Childs();
+}

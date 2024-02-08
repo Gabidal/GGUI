@@ -1597,12 +1597,12 @@ namespace GGUI{
 
             if (Error_Logger){
                 // Get the list
-                List_View* History = (List_View*)Error_Logger->Get_Element(HISTORY);
+                Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
                 // This happens, when Error logger is kidnapped!
                 if (!History){
                     // Now create the history lister
-                    History = new List_View(
+                    History = new Scroll_View(
                         Error_Logger->Get_Width() - 1,
                         Error_Logger->Get_Height() - 1,
                         GGUI::COLOR::RED,
@@ -1660,7 +1660,7 @@ namespace GGUI{
                 Error_Logger->Allow_Dynamic_Size(true);
 
                 // Now create the history lister
-                List_View* History = new List_View(
+                Scroll_View* History = new Scroll_View(
                     Error_Logger->Get_Width() - 1,
                     Error_Logger->Get_Height() - 1,
                     GGUI::COLOR::RED,
@@ -1676,7 +1676,7 @@ namespace GGUI{
             if (Create_New_Line){
                 // re-find the error_logger.
                 Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
-                List_View* History = (List_View*)Error_Logger->Get_Element(HISTORY);
+                Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
                 List_View* Row = new List_View(
                     History->Get_Width(),
@@ -1705,12 +1705,14 @@ namespace GGUI{
                     });
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
-                if (History->Get_Absolute_Position().Y + History->Get_Height() >= Main->Get_Height() - Main->Has_Border() * 2){
+                if (History->Get_Container()->Get_Height() >= History->Get_Parent()->Get_Height() - History->Get_Parent()->Has_Border() * 2){
                     // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
-                    Element* First_Child = History->Get_Childs()[0];
-                    History->Remove(First_Child);
+                    // Element* First_Child = History->Get_Childs()[0];
+                    // History->Remove(First_Child);
 
                     // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
+                    History->Scroll_Down();
+                
                 }
             }
 

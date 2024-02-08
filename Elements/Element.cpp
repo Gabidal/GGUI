@@ -1003,6 +1003,10 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
             if (!c->Is_Displayed())
                 continue;
 
+            // check if the child is within the renderable borders.
+            if (!Child_Is_Shown(c))
+                continue;
+
             if (c->Has_Border())
                 Childs_With_Borders++;
             
@@ -1548,6 +1552,22 @@ std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
 
     //Render_Buffer = Result;
     return Result;
+}
+
+bool GGUI::Element::Child_Is_Shown(Element* other){
+
+    bool Border_Modifier = (Has_Border() - other->Has_Border()) * Has_Border();
+
+    int Minimum_X = other->Position.X + other->Get_Processed_Width();
+    int Minimum_Y = other->Position.Y + other->Get_Processed_Height();
+
+    int Maximum_X = other->Position.X - (other->Width - other->Get_Processed_Width());
+    int Maximum_Y = other->Position.Y - (other->Height - other->Get_Processed_Height());
+
+    bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < Width - Border_Modifier;
+    bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < Height - Border_Modifier;
+
+    return X_Is_Inside && Y_Is_Inside;
 }
 
 GGUI::Element* Translate_Element(GGUI::HTML_Node* input){
