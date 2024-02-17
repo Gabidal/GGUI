@@ -1115,34 +1115,41 @@ void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
     }
 }
 
-std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> GGUI::Element::Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child){
+std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> GGUI::Element::Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child){
     unsigned int Max_Allowed_Height = Parent->Height - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();             //remove bottom borders from calculation
     unsigned int Max_Allowed_Width = Parent->Width - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();              //remove right borders from calculation
 
     unsigned int Min_Allowed_Height = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                        //add top borders from calculation
     unsigned int Min_Allowed_Width = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                         //add left borders from calculation
 
-    unsigned int Child_Start_Y = Min_Allowed_Height + Child->Position.Y;
-    unsigned int Child_Start_X = Min_Allowed_Width + Child->Position.X;
+    unsigned int Child_Start_Y = Min_Allowed_Height + min(Child->Position.Y, 0);   // If the child is negatively positioned, then put it to zero and minimize the parent height.
+    unsigned int Child_Start_X = Min_Allowed_Width + min(Child->Position.X, 0);    
 
     unsigned int Child_End_Y = Min(Child_Start_Y + Child->Get_Processed_Height(), Max_Allowed_Height);
     unsigned int Child_End_X = Min(Child_Start_X + Child->Get_Processed_Width(), Max_Allowed_Width);
 
-    return { {Child_Start_Y, Child_Start_X}, {Child_End_Y, Child_End_X} };
+    return {{abs(max(Child->Position.X, 0)), abs(max(Child->Position.Y, 0))}, {{Child_Start_Y, Child_Start_X}, {Child_End_Y, Child_End_X}} };
 }
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
-    std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(Parent, Child);
+    std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Limits = Get_Fitting_Area(Parent, Child);
 
-    unsigned int Start_Y =  Limits.first.first;
-    unsigned int Start_X =  Limits.first.second;
+    unsigned int Negative_Offset_X = Limits.first.first;
+    unsigned int Negative_Offset_Y = Limits.first.second;
 
-    unsigned int End_Y = Limits.second.first;
-    unsigned int End_X = Limits.second.second;
+    // Where the child starts to write in the parent buffer.
+    unsigned int Start_Y =  Limits.second.first.first;
+    unsigned int Start_X =  Limits.second.first.second;
+
+    // Where the child ends it buffer rendering.
+    unsigned int End_Y = Limits.second.second.first;
+    unsigned int End_X = Limits.second.second.second;
 
     for (int y = Start_Y; y < End_Y; y++){
         for (int x = Start_X; x < End_X; x++){
-            Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[(y - Start_Y) * Child->Get_Processed_Width() + (x - Start_X)]);
+            unsigned int Child_Buffer_Y = (y - Start_Y + Negative_Offset_Y) * Child->Get_Processed_Width();
+            unsigned int Child_Buffer_X = (x - Start_X + Negative_Offset_X); 
+            Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X]);
         }
     }
 }
@@ -1558,14 +1565,16 @@ bool GGUI::Element::Child_Is_Shown(Element* other){
 
     bool Border_Modifier = (Has_Border() - other->Has_Border()) * Has_Border();
 
+    // Check if the child element is atleast above the {0, 0} 
     int Minimum_X = other->Position.X + other->Get_Processed_Width();
     int Minimum_Y = other->Position.Y + other->Get_Processed_Height();
 
+    // Check even if the child position is way beyond the parent width and height, if only the shadow for an example is still shown.
     int Maximum_X = other->Position.X - (other->Width - other->Get_Processed_Width());
     int Maximum_Y = other->Position.Y - (other->Height - other->Get_Processed_Height());
 
-    bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < Width - Border_Modifier;
-    bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < Height - Border_Modifier;
+    bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < (signed)Width - Border_Modifier;
+    bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < (signed)Height - Border_Modifier;
 
     return X_Is_Inside && Y_Is_Inside;
 }

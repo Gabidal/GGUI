@@ -1610,11 +1610,12 @@ namespace GGUI{
                     );
                     History->Set_Growth_Direction(Grow_Direction::COLUMN);
                     History->Set_Name(HISTORY);
+                    History->Allow_Dynamic_Size(true);
 
                     Error_Logger->Add_Child(History);
                 }
 
-                std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Childs(); 
+                std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
 
                 if (Rows.size() > 0){
                     Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
@@ -1668,6 +1669,7 @@ namespace GGUI{
                 );
                 History->Set_Growth_Direction(Grow_Direction::COLUMN);
                 History->Set_Name(HISTORY);
+                History->Allow_Dynamic_Size(true);
 
                 Error_Logger->Add_Child(History);
                 Main->Add_Child(Error_Logger);
@@ -1705,7 +1707,8 @@ namespace GGUI{
                     });
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
-                if (History->Get_Container()->Get_Height() >= History->Get_Parent()->Get_Height() - History->Get_Parent()->Has_Border() * 2){
+                // We can assume that the singular error is at least one tall.
+                if (History->Get_Container()->Get_Childs().size() >= Error_Logger->Get_Parent()->Get_Height() - Error_Logger->Get_Position().Y){
                     // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
                     // Element* First_Child = History->Get_Childs()[0];
                     // History->Remove(First_Child);
@@ -1716,19 +1719,22 @@ namespace GGUI{
                 }
             }
 
-            Error_Logger->Display(true);
+            if (Error_Logger->Get_Parent() == Main){
+                Error_Logger->Display(true);
 
-            Remember.push_back(Memory(
-                TIME::SECOND * 30,
-                [=](GGUI::Event* e){
-                    //delete tmp;
-                    Error_Logger->Display(false);
-                    //job successfully done
-                    return true;
-                },
-                MEMORY_FLAGS::PROLONG_MEMORY,
-                "Report Logger Clearer"
-            ));
+                Remember.push_back(Memory(
+                    TIME::SECOND * 30,
+                    [=](GGUI::Event* e){
+                        //delete tmp;
+                        Error_Logger->Display(false);
+                        //job successfully done
+                        return true;
+                    },
+                    MEMORY_FLAGS::PROLONG_MEMORY,
+                    "Report Logger Clearer"
+                ));
+            }
+
         }
         else{
             // This is for the non GGUI space errors.
@@ -1923,7 +1929,7 @@ namespace GGUI{
         Error_Logger_Kidnapper->Set_Position({0, Stats->Get_Height()});
         Inspect->Add_Child(Error_Logger_Kidnapper);
 
-        Inspect->Display(false);
+        Inspect->Display(true);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;

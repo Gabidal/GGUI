@@ -56,8 +56,6 @@ namespace GGUI{
 
         void Add_Child(Element* e) override;
         
-        //std::vector<UTF> Render() override;
-
         std::string Get_Name() const override;
 
         bool Remove(Element* e) override;
@@ -144,10 +142,10 @@ namespace GGUI{
         void Scroll_Down();
 
         bool Remove(Element* e) override;
-
-        std::vector<Element*>& Get_Childs() override;
         
-        //std::vector<UTF> Render() override;
+        std::vector<UTF> Render() override{
+            return Element::Render();
+        }
 
         std::string Get_Name() const override;
 

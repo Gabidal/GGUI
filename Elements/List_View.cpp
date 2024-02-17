@@ -385,11 +385,8 @@ bool GGUI::List_View::Remove(Element* remove){
 }
 
 void GGUI::Scroll_View::Add_Child(Element* e) {
-    Pause_Renderer([=](){
-        Childs[0]->Add_Child(e);
-        
-        Dirty.Dirty(STAIN_TYPE::DEEP);
-    });
+    Dirty.Dirty(STAIN_TYPE::DEEP);
+    Childs[0]->Add_Child(e);
 }
 
 void GGUI::Scroll_View::Allow_Scrolling(bool allow){
@@ -436,26 +433,9 @@ void GGUI::Scroll_View::Scroll_Up(){
     if (Scroll_Index <= 0)
         return;
 
+    Pause_Renderer();
+
     Scroll_Index--;
-
-    List_View* Container = (List_View*)Childs[0];
-
-    // Now also re-set the container position dependent of the growth direction.
-    if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
-        Container->Set_Position({Container->Get_Position().X - 1});
-    else
-        Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y - 1});
-
-    Dirty.Dirty(STAIN_TYPE::DEEP);
-        
-    Update_Frame();
-}
-
-void GGUI::Scroll_View::Scroll_Down(){
-    if (Scroll_Index >= Get_Childs().size() - 1)
-        return;
-
-    Scroll_Index++;
 
     List_View* Container = (List_View*)Childs[0];
 
@@ -467,7 +447,28 @@ void GGUI::Scroll_View::Scroll_Down(){
 
     Dirty.Dirty(STAIN_TYPE::DEEP);
         
-    Update_Frame();
+    Resume_Renderer();
+}
+
+void GGUI::Scroll_View::Scroll_Down(){
+    if (Scroll_Index > Childs[0]->Get_Childs().size())
+        return;
+
+    Pause_Renderer();
+
+    Scroll_Index++;
+
+    List_View* Container = (List_View*)Childs[0];
+
+    // Now also re-set the container position dependent of the growth direction.
+    if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
+        Container->Set_Position({Container->Get_Position().X - 1});
+    else
+        Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y - 1});
+
+    Dirty.Dirty(STAIN_TYPE::DEEP);
+        
+    Resume_Renderer();
 }
 
 GGUI::Element* Translate_List(GGUI::HTML_Node* input){
@@ -501,8 +502,4 @@ std::string GGUI::Scroll_View::Get_Name() const{
 
 bool GGUI::Scroll_View::Remove(Element* remove){
     return Childs[0]->Remove(remove);
-}
-
-std::vector<GGUI::Element*>& GGUI::Scroll_View::Get_Childs(){
-    return Childs[0]->Get_Childs();
 }
