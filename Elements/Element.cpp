@@ -824,35 +824,40 @@ GGUI::Element* GGUI::Element::Copy(){
 }
 
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
-    Coordinates tmp_Position = child->Get_Position();
+    Coordinates Current_Position = child->Get_Position();
 
-    unsigned int tmp_Width = 0;
-    unsigned int tmp_Height = 0;
+    unsigned int Result_Width = 0;
+    unsigned int Result_Height = 0;
 
-    int Border_Size = (Has_Border() * 2) - (child->Has_Border() * 2);
+    int Border_Offset = (Has_Border() - child->Has_Border()) * Has_Border() * 2;
+
+    // if there are only zero child or one and it is same as this child then give max.
+    if (Childs.size() == 0 || Childs.back() == child){
+        return {Width - Border_Offset, Height - Border_Offset};
+    }
 
     while (true){
-        if (tmp_Position.X + tmp_Width < Width - Border_Size){
-            tmp_Width++;
+        if (Current_Position.X + Result_Width < Width - Border_Offset){
+            Result_Width++;
         }
         
-        if (tmp_Position.Y + tmp_Height < Height - Border_Size){
-            tmp_Height++;
+        if (Current_Position.Y + Result_Height < Height - Border_Offset){
+            Result_Height++;
         }
-        else if (tmp_Position.X + tmp_Width >= Width - Border_Size && tmp_Position.Y + tmp_Height >= Height - Border_Size){
+        else if (Current_Position.X + Result_Width >= Width - Border_Offset && Current_Position.Y + Result_Height >= Height - Border_Offset){
             break;
         }
         
         for (auto c : Childs){
-            if (child != c && Collides(c, tmp_Position, tmp_Width, tmp_Height)){
+            if (child != c && Collides(c, Current_Position, Result_Width, Result_Height)){
                 //there are already other childs occupying this area so we can stop here.
-                return {tmp_Width, tmp_Height};
+                return {Result_Width, Result_Height};
             }
         }
 
     }
 
-    return {tmp_Width, tmp_Height};
+    return {Result_Width, Result_Height};
 }
 
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
@@ -921,6 +926,11 @@ void GGUI::Element::Set_Text_Color(RGB color){
 
 void GGUI::Element::Allow_Dynamic_Size(bool True){
     At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value = True; 
+    // No need to update the frame, since this is used only on content change which has the update frame.
+}
+
+void GGUI::Element::Allow_Overflow(bool True){
+    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = True; 
     // No need to update the frame, since this is used only on content change which has the update frame.
 }
 
@@ -1122,13 +1132,13 @@ std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned in
     unsigned int Min_Allowed_Height = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                        //add top borders from calculation
     unsigned int Min_Allowed_Width = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                         //add left borders from calculation
 
-    unsigned int Child_Start_Y = Min_Allowed_Height + min(Child->Position.Y, 0);   // If the child is negatively positioned, then put it to zero and minimize the parent height.
-    unsigned int Child_Start_X = Min_Allowed_Width + min(Child->Position.X, 0);    
+    unsigned int Child_Start_Y = Min_Allowed_Height + max(Child->Position.Y, 0);   // If the child is negatively positioned, then put it to zero and minimize the parent height.
+    unsigned int Child_Start_X = Min_Allowed_Width + max(Child->Position.X, 0);    
 
     unsigned int Child_End_Y = Min(Child_Start_Y + Child->Get_Processed_Height(), Max_Allowed_Height);
     unsigned int Child_End_X = Min(Child_Start_X + Child->Get_Processed_Width(), Max_Allowed_Width);
 
-    return {{abs(max(Child->Position.X, 0)), abs(max(Child->Position.Y, 0))}, {{Child_Start_Y, Child_Start_X}, {Child_End_Y, Child_End_X}} };
+    return {{abs(min(Child->Position.X, 0)), abs(min(Child->Position.Y, 0))}, {{Child_Start_Y, Child_Start_X}, {Child_End_Y, Child_End_X}} };
 }
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
@@ -1144,6 +1154,10 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     // Where the child ends it buffer rendering.
     unsigned int End_Y = Limits.second.second.first;
     unsigned int End_X = Limits.second.second.second;
+
+    // if the Negative offset is large enough it would need to make the end index smaller, since the child ends sooner.
+    End_X = max(0, (int)End_X - (int)Negative_Offset_X);
+    End_Y = max(0, (int)End_Y - (int)Negative_Offset_Y);
 
     for (int y = Start_Y; y < End_Y; y++){
         for (int x = Start_X; x < End_X; x++){

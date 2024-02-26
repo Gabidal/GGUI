@@ -1258,6 +1258,7 @@ namespace GGUI{
                 try{
                     bool Success = Remember[i].Job((Event*)&Remember[i]);
 
+                    // If job is a re-trigger it will ignore whether the job was successful or not.
                     if (Remember[i].Is(MEMORY_FLAGS::RETRIGGER)){
 
                         // May need to change this into more accurate version of time capturing.
@@ -1578,7 +1579,7 @@ namespace GGUI{
         // Error logger structure:
         /*
             <Window name="_ERROR_LOGGER_">
-                <List name="_HISTORY_" type=vertical>
+                <List name="_HISTORY_" type=vertical scrollable=true>
                     <List type="horizontal">
                         <TextField>Time</TextField>
                         <TextField>Problem a</TextField>
@@ -1658,7 +1659,7 @@ namespace GGUI{
                     INT32_MAX
                 });
                 Error_Logger->Show_Border(true);
-                Error_Logger->Allow_Dynamic_Size(true);
+                Error_Logger->Allow_Overflow(true);
 
                 // Now create the history lister
                 Scroll_View* History = new Scroll_View(
@@ -1708,7 +1709,7 @@ namespace GGUI{
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                 // We can assume that the singular error is at least one tall.
-                if (History->Get_Container()->Get_Childs().size() >= Error_Logger->Get_Parent()->Get_Height() - Error_Logger->Get_Position().Y){
+                if (min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
                     // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
                     // Element* First_Child = History->Get_Childs()[0];
                     // History->Remove(First_Child);
@@ -1867,6 +1868,12 @@ namespace GGUI{
     }
 
     bool Update_Stats(GGUI::Event* e){
+        // Check if Inspect tool is displayed
+        Element* Inspect_Tool = Main->Get_Element("Inspect");
+
+        if (!Inspect_Tool || !Inspect_Tool->Is_Displayed())
+            return false;
+
         // find stats
         Text_Field* Stats = (Text_Field*)Main->Get_Element("STATS");
 
@@ -1897,6 +1904,7 @@ namespace GGUI{
         Inspect->Set_Background_Color(Main->Get_Background_Color());
         Inspect->Set_Text_Color(Main->Get_Text_Color());
         Inspect->Set_Opacity(0.2f);
+        Inspect->Set_Name("Inspect");
 
         Main->Add_Child(Inspect);
         
@@ -1924,12 +1932,12 @@ namespace GGUI{
         );
 
         Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
-        Error_Logger_Kidnapper->Allow_Dynamic_Size(true);
 
         Error_Logger_Kidnapper->Set_Position({0, Stats->Get_Height()});
+        Error_Logger_Kidnapper->Allow_Overflow(true);
         Inspect->Add_Child(Error_Logger_Kidnapper);
 
-        Inspect->Display(true);
+        Inspect->Display(false);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;

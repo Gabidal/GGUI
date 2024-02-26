@@ -428,7 +428,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
         if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
 
             std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
-            if (At<BOOL_VALUE>(STYLES::Allow_Input_Overflow)->Value){
+            if (At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
                 Data.push_back(input);
                 Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
                 Update_Frame();
@@ -468,22 +468,22 @@ void GGUI::Text_Field::Disable_Text_Input(){
 
 void GGUI::Text_Field::Enable_Input_Overflow(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Input_Overflow)->Value = true;
+    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = true;
 }
 
 void GGUI::Text_Field::Disable_Input_Overflow(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Input_Overflow)->Value = false;
+    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = false;
 }
 
 void GGUI::Text_Field::Enable_Dynamic_Size(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Input_Overflow)->Value = true;
+    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = true;
 }
 
 void GGUI::Text_Field::Disable_Dynamic_Size(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Input_Overflow)->Value = false;
+    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = false;
 }
 
 GGUI::Element* Translate_Text_Fields(GGUI::HTML_Node* input){

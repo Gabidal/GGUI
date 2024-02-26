@@ -95,6 +95,7 @@ GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
 
     List_View* Container = new List_View();
     Container->Set_Growth_Direction(grow_direction);
+    Allow_Overflow(true);
     
     Element::Add_Child(Container);
 }
@@ -103,6 +104,7 @@ GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
     // Make the system into a Dynamic allowing parent.
     //Allow_Dynamic_Size(true);
 
+    Allow_Overflow(true);
     Element::Add_Child(&container);
 }
 
@@ -112,6 +114,7 @@ GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow
 
     List_View* Container = new List_View(this, Childs, grow_direction);
 
+    Allow_Overflow(true);
     Element::Add_Child(Container);
 }
 
@@ -131,6 +134,7 @@ GGUI::Scroll_View::Scroll_View(std::map<std::string, VALUE*> css, unsigned int w
 
     List_View* Container = new List_View(css, width, height, this, position);
 
+    Allow_Overflow(true);
     Element::Add_Child(Container);
 }
 
@@ -139,6 +143,7 @@ GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, Grow
 
     List_View* Container = new List_View(this, Tree, grow_direction);
 
+    Allow_Overflow(true);
     Element::Add_Child(Container);
 }
 
@@ -154,6 +159,7 @@ GGUI::Scroll_View::Scroll_View(
 
     List_View* Container = new List_View(text_color, background_color);
     
+    Allow_Overflow(true);
     Element::Add_Child(Container);
 }
 
@@ -173,6 +179,7 @@ GGUI::Scroll_View::Scroll_View(
     
     List_View* Container = new List_View(width, height, text_color, background_color);
     
+    Allow_Overflow(true);
     Element::Add_Child(Container);
 }
 
@@ -198,6 +205,7 @@ GGUI::Scroll_View::Scroll_View(
 
     List_View* Container = new List_View(width, height, text_color, background_color, border_color, border_background_color);
     
+    Allow_Overflow(true);
     Element::Add_Child(Container);
 }
 
@@ -252,6 +260,9 @@ void GGUI::List_View::Add_Child(Element* e){
             e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
 
             Last_Child->Set_Position({Last_Child->Get_Position().X + e->Get_Width() - Width_Modifier, Last_Child->Get_Position().Y});
+
+            // Is for external users to be easily access last added data.
+            Last_Child->Set_Dimensions(e->Get_Width(), e->Get_Height());
         }
         else{
             // Affect minimum height needed, when current child has borders as well as the previus one.
@@ -275,6 +286,9 @@ void GGUI::List_View::Add_Child(Element* e){
             e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
 
             Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + e->Get_Height() - Height_Modifier});
+            
+            // Is for external users to be easily access last added data.
+            Last_Child->Set_Dimensions(e->Get_Width(), e->Get_Height());
         }
 
         Last_Child->Show_Border(e->Has_Border());
@@ -386,7 +400,7 @@ bool GGUI::List_View::Remove(Element* remove){
 
 void GGUI::Scroll_View::Add_Child(Element* e) {
     Dirty.Dirty(STAIN_TYPE::DEEP);
-    Childs[0]->Add_Child(e);
+    Get_Container()->Add_Child(e);
 }
 
 void GGUI::Scroll_View::Allow_Scrolling(bool allow){
@@ -437,7 +451,7 @@ void GGUI::Scroll_View::Scroll_Up(){
 
     Scroll_Index--;
 
-    List_View* Container = (List_View*)Childs[0];
+    List_View* Container = Get_Container();
 
     // Now also re-set the container position dependent of the growth direction.
     if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
@@ -451,14 +465,25 @@ void GGUI::Scroll_View::Scroll_Up(){
 }
 
 void GGUI::Scroll_View::Scroll_Down(){
-    if (Scroll_Index > Childs[0]->Get_Childs().size())
-        return;
+    // check if the scroll is too far.
+    // We can assume that the container height/width always is at the same position as the last child, so that is the max scrollable amount.
+    // We also want to still be able to show the last child, so get the heigh of the current child height.
+    unsigned Offset = (Has_Border() - Get_Container()->Last_Child->Has_Border()) * Has_Border();
+
+    if (Get_Container()->Get_Growth_Direction() == Grow_Direction::ROW){
+        if (Scroll_Index > Get_Container()->Get_Width() - Get_Container()->Last_Child->Get_Width() - Offset)
+            return;
+    }
+    else{
+        if (Scroll_Index > Get_Container()->Get_Height() - Get_Container()->Last_Child->Get_Height() - Offset)
+            return;
+    }
 
     Pause_Renderer();
 
     Scroll_Index++;
 
-    List_View* Container = (List_View*)Childs[0];
+    List_View* Container = Get_Container();
 
     // Now also re-set the container position dependent of the growth direction.
     if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
@@ -501,5 +526,5 @@ std::string GGUI::Scroll_View::Get_Name() const{
 }
 
 bool GGUI::Scroll_View::Remove(Element* remove){
-    return Childs[0]->Remove(remove);
+    return Get_Container()->Remove(remove);
 }

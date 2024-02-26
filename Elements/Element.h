@@ -851,7 +851,7 @@ namespace GGUI{
         inline std::string Wrap                             = "Wrap";     
         
         inline std::string Text_Position                    = "Text_Position";
-        inline std::string Allow_Input_Overflow             = "Allow_Input_Overflow";
+        inline std::string Allow_Overflow                   = "Allow_Overflow"; // This is for when child can dynamically go over parent borders, but parent size is static
         inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size"; // boolean, Tries to emulate the size of the parent like in 'Flexbox: Display;' 
         inline std::string Margin                           = "Margin";
 
@@ -1207,6 +1207,9 @@ namespace GGUI{
         void Set_Text_Color(RGB color);
 
         void Allow_Dynamic_Size(bool True);
+
+        // Allows by default hidden overflow, so that child elements can exceed the parent element dimension limits, whiteout resizing parent.  
+        void Allow_Overflow(bool True);
         
         RGB Get_Text_Color();
 
