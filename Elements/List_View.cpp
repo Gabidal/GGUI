@@ -91,7 +91,6 @@ GGUI::List_View::List_View(
 
 GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
-    //Allow_Dynamic_Size(true);
 
     List_View* Container = new List_View();
     Container->Set_Growth_Direction(grow_direction);
@@ -102,7 +101,6 @@ GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
 
 GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
     // Make the system into a Dynamic allowing parent.
-    //Allow_Dynamic_Size(true);
 
     Allow_Overflow(true);
     Element::Add_Child(&container);
@@ -110,7 +108,6 @@ GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
 
 GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
-    //Allow_Dynamic_Size(true);
 
     List_View* Container = new List_View(this, Childs, grow_direction);
 
@@ -139,7 +136,6 @@ GGUI::Scroll_View::Scroll_View(std::map<std::string, VALUE*> css, unsigned int w
 }
 
 GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
-    //Allow_Dynamic_Size(true);
 
     List_View* Container = new List_View(this, Tree, grow_direction);
 
@@ -155,7 +151,6 @@ GGUI::Scroll_View::Scroll_View(
     Set_Text_Color(text_color);
     Set_Background_Color(background_color);
     
-    //Allow_Dynamic_Size(true);
 
     List_View* Container = new List_View(text_color, background_color);
     
@@ -175,7 +170,6 @@ GGUI::Scroll_View::Scroll_View(
     Set_Text_Color(text_color);
     Set_Background_Color(background_color);
     
-    //Allow_Dynamic_Size(true);
     
     List_View* Container = new List_View(width, height, text_color, background_color);
     
@@ -201,7 +195,6 @@ GGUI::Scroll_View::Scroll_View(
     
     Show_Border(true);
     
-    //Allow_Dynamic_Size(true);
 
     List_View* Container = new List_View(width, height, text_color, background_color, border_color, border_background_color);
     
@@ -212,6 +205,8 @@ GGUI::Scroll_View::Scroll_View(
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
+    Pause_Renderer();
+
     pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
 
     unsigned int max_width = limits.first;
@@ -246,7 +241,7 @@ void GGUI::List_View::Add_Child(Element* e){
             unsigned long long Proposed_Width = Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width());
 
             // Check if the parent has the capability to allow to stretch in the direction if this list elements.
-            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
                 Height = Min(max_height, Proposed_Height);
                 Width = Min(max_width, Proposed_Width);
             }
@@ -272,7 +267,7 @@ void GGUI::List_View::Add_Child(Element* e){
             unsigned long long Proposed_Height = Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height());
 
             // Check if the parent has the capability to allow to stretch in the direction if this list elements.
-            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
                 Width = Min(max_width, Proposed_Width);
                 Height = Min(max_height, Proposed_Height);
             }
@@ -297,7 +292,7 @@ void GGUI::List_View::Add_Child(Element* e){
         Childs.push_back(e);
 
         // No need to re-order childs in list view, since they already have hit-boxes and cannot collide.
-        Update_Frame();
+        Resume_Renderer();
     }
 }
 

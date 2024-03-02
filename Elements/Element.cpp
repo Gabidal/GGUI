@@ -53,6 +53,8 @@ GGUI::Element::Element(std::string Class, unsigned int width, unsigned int heigh
 
     Name = std::to_string((unsigned long long)this);
 
+    Fully_Stain();
+
     if (width != 0)
         Set_Width(width);
     if (height != 0)
@@ -93,6 +95,8 @@ GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, un
     bool Previus_Border_State = Has_Border();
 
     Style = css;
+
+    Fully_Stain();
 
     //Check if the css changed the border state, if so we need to increment or decrement the width & height.
     Show_Border(Has_Border(), Previus_Border_State);
@@ -1126,19 +1130,28 @@ void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
 }
 
 std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> GGUI::Element::Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child){
-    unsigned int Max_Allowed_Height = Parent->Height - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();             //remove bottom borders from calculation
-    unsigned int Max_Allowed_Width = Parent->Width - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();              //remove right borders from calculation
+    bool Border_Offset = (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();
+    
+    unsigned int Max_Allowed_Height = Parent->Height - Border_Offset;               //remove bottom borders from calculation
+    unsigned int Max_Allowed_Width = Parent->Width - Border_Offset;                 //remove right borders from calculation
 
-    unsigned int Min_Allowed_Height = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                        //add top borders from calculation
-    unsigned int Min_Allowed_Width = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                         //add left borders from calculation
+    unsigned int Min_Allowed_Height = 0 + Border_Offset;                            //add top borders from calculation
+    unsigned int Min_Allowed_Width = 0 + Border_Offset;                             //add left borders from calculation
 
-    unsigned int Child_Start_Y = Min_Allowed_Height + max(Child->Position.Y, 0);   // If the child is negatively positioned, then put it to zero and minimize the parent height.
+    unsigned int Child_Start_Y = Min_Allowed_Height + max(Child->Position.Y, 0);    // If the child is negatively positioned, then put it to zero and minimize the parent height.
     unsigned int Child_Start_X = Min_Allowed_Width + max(Child->Position.X, 0);    
 
-    unsigned int Child_End_Y = Min(Child_Start_Y + Child->Get_Processed_Height(), Max_Allowed_Height);
-    unsigned int Child_End_X = Min(Child_Start_X + Child->Get_Processed_Width(), Max_Allowed_Width);
+    unsigned int Negative_Offset_X = abs(min(Child->Position.X, 0));
+    unsigned int Negative_Offset_Y = abs(min(Child->Position.Y, 0));
 
-    return {{abs(min(Child->Position.X, 0)), abs(min(Child->Position.Y, 0))}, {{Child_Start_Y, Child_Start_X}, {Child_End_Y, Child_End_X}} };
+    unsigned int Child_End_X = max(0, (int)(Child_Start_X + Child->Get_Processed_Width()) - (int)Negative_Offset_X);
+    unsigned int Child_End_Y = max(0, (int)(Child_Start_Y + Child->Get_Processed_Height()) - (int)Negative_Offset_Y);
+
+    Child_End_X = Min(Max_Allowed_Width, Child_End_X);
+    Child_End_Y = Min(Max_Allowed_Height, Child_End_Y);
+
+    // {Negative offset},                             {Child Starting offset},        {Child Ending offset}
+    return {{Negative_Offset_X, Negative_Offset_Y}, {{Child_Start_X, Child_Start_Y}, {Child_End_X, Child_End_Y}} };
 }
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
@@ -1148,16 +1161,12 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     unsigned int Negative_Offset_Y = Limits.first.second;
 
     // Where the child starts to write in the parent buffer.
-    unsigned int Start_Y =  Limits.second.first.first;
-    unsigned int Start_X =  Limits.second.first.second;
+    unsigned int Start_X =  Limits.second.first.first;
+    unsigned int Start_Y =  Limits.second.first.second;
 
     // Where the child ends it buffer rendering.
-    unsigned int End_Y = Limits.second.second.first;
-    unsigned int End_X = Limits.second.second.second;
-
-    // if the Negative offset is large enough it would need to make the end index smaller, since the child ends sooner.
-    End_X = max(0, (int)End_X - (int)Negative_Offset_X);
-    End_Y = max(0, (int)End_Y - (int)Negative_Offset_Y);
+    unsigned int End_X = Limits.second.second.first;
+    unsigned int End_Y = Limits.second.second.second;
 
     for (int y = Start_Y; y < End_Y; y++){
         for (int x = Start_X; x < End_X; x++){

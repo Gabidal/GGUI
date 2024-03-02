@@ -151,13 +151,20 @@ namespace GGUI{
 
     extern std::unordered_map<std::string, void*> RELATIVE_COEFFICIENT;
 
+    // Hash function for __FILE__
+    // the CXX20+ Cannot for some reason use constexpr at compile time, probably because of PREPROCESSOR being computed before CONSTEXPR. 
+    constexpr unsigned int hash(const char* str, int h = 0)
+    {
+        return !str[h] ? 5381 : (hash(str, h+1) * 33) ^ str[h];
+    }
+
     // helper functions
     #define CONCAT_IMPL(x, y) x##y
     #define CONCAT(x, y) CONCAT_IMPL(x, y)
 
     // For ease of use for adding translators for user custom HTML TAG parsers.
     #define GGUI_Add_Translator(id, handler) \
-        auto CONCAT(_, __LINE__) = [](){ \
+        auto CONCAT(CONCAT(_, __LINE__), __COUNTER__) = [](){ \
             if (GGUI::HTML_Translators == nullptr){ \
                 GGUI::HTML_Translators = new std::unordered_map<std::string, std::function<GGUI::Element* (GGUI::HTML_Node*)>>(); \
             } \

@@ -6,12 +6,12 @@ project(
 )
 
 sources = [
-  'Elements/Button.cpp', 
   'Elements/Element.cpp',
-  'Elements/List_View.cpp',
-  'Elements/Switch.cpp',
-  'Elements/Text_Field.cpp',
   'Elements/Window.cpp',
+  'Elements/List_View.cpp',
+  'Elements/Text_Field.cpp',
+  'Elements/Button.cpp', 
+  'Elements/Switch.cpp',
   'Elements/Canvas.cpp',
   'Elements/Progress_Bar.cpp',
 

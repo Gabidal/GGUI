@@ -1611,7 +1611,6 @@ namespace GGUI{
                     );
                     History->Set_Growth_Direction(Grow_Direction::COLUMN);
                     History->Set_Name(HISTORY);
-                    History->Allow_Dynamic_Size(true);
 
                     Error_Logger->Add_Child(History);
                 }
@@ -1670,7 +1669,6 @@ namespace GGUI{
                 );
                 History->Set_Growth_Direction(Grow_Direction::COLUMN);
                 History->Set_Name(HISTORY);
-                History->Allow_Dynamic_Size(true);
 
                 Error_Logger->Add_Child(History);
                 Main->Add_Child(Error_Logger);
