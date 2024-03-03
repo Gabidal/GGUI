@@ -61,7 +61,7 @@ int main(int Argument_Count, char** Arguments){
         GGUI::Report(to_string(A->Get_Position().X));
         GGUI::SLEEP(16);
     }
-    
+
     GGUI::SLEEP(INT32_MAX);
     return 0;
 }

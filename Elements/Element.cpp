@@ -573,16 +573,11 @@ void GGUI::Element::Add_Child(Element* Child){
 }
 
 void GGUI::Element::Set_Childs(std::vector<Element*> childs){
-    bool tmp = Pause_Render;
-    if (Pause_Render)
-        Pause_Renderer();
-
-    for (auto& Child : childs){
-        Add_Child(Child);
-    }
-
-    if (tmp)
-        Resume_Renderer();
+    Pause_Renderer([=](){
+        for (auto& Child : childs){
+            Add_Child(Child);
+        }
+    });
 }
 
 std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){

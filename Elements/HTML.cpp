@@ -342,27 +342,25 @@ namespace GGUI{
     std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input){
         std::vector<Element*> Result;
 
-        GGUI::Pause_Renderer();
+        GGUI::Pause_Renderer([=](){
+            for (int i = 0; i < Input.size(); i++){
 
-        for (int i = 0; i < Input.size(); i++){
+                HTML_Node* Current = Input[i];
 
-            HTML_Node* Current = Input[i];
+                // Try to find the translator fitting for this token.
+                if (HTML_Translators->find(Current->Tag_Name) == HTML_Translators->end())
+                    continue;
 
-            // Try to find the translator fitting for this token.
-            if (HTML_Translators->find(Current->Tag_Name) == HTML_Translators->end())
-                continue;
+                Element* New_Child = HTML_Translators->at(Current->Tag_Name)(Current);
 
-            Element* New_Child = HTML_Translators->at(Current->Tag_Name)(Current);
-
-            if (New_Child){
-                Result.push_back(New_Child);
-             
-                // If the process was successfully run, then remove this token, since it has been processes fully.
-                Input.erase(Input.begin() + i);
+                if (New_Child){
+                    Result.push_back(New_Child);
+                
+                    // If the process was successfully run, then remove this token, since it has been processes fully.
+                    Input.erase(Input.begin() + i);
+                }
             }
-        }
-
-        GGUI::Resume_Renderer();
+        });
 
         return Result;
     }

@@ -205,95 +205,93 @@ GGUI::Scroll_View::Scroll_View(
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
-    Pause_Renderer();
+    Pause_Renderer([=](){
 
-    pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
+        pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
 
-    unsigned int max_width = limits.first;
-    unsigned int max_height = limits.second;
+        unsigned int max_width = limits.first;
+        unsigned int max_height = limits.second;
 
-    // (This->left_border_size - child->left_border_size) * on_of_switch
-    unsigned Offset = (Has_Border() - e->Has_Border()) * Has_Border();
+        // (This->left_border_size - child->left_border_size) * on_of_switch
+        unsigned Offset = (Has_Border() - e->Has_Border()) * Has_Border();
 
-    unsigned int Max_Inner_Space_Height = Get_Height() - Offset * 2;
-    unsigned int Max_Inner_Space_Width = Get_Width() - Offset * 2;
+        unsigned int Max_Inner_Space_Height = Get_Height() - Offset * 2;
+        unsigned int Max_Inner_Space_Width = Get_Width() - Offset * 2;
 
-    unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Offset * 2;
-    unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset * 2;
+        unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Offset * 2;
+        unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset * 2;
 
 
-    if (At<BOOL_VALUE>(STYLES::Wrap)->Value){
-        Report(
-            "Overflow wrapping is not supported!"
-        );
-    }
-    else{
-        e->Set_Parent(this);
-
-        // Add reverse support for the list to grow from the end -> start.
-        // Add sticky support for two child elements with borders to loan the same border space.
-        if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
-
-            // Affect minimum width needed, when current child has borders as well as the previus one.
-            signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
-
-            unsigned long long Proposed_Height = Max(Child_Needs_Minimum_Height_Of, Get_Height());
-            unsigned long long Proposed_Width = Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width());
-
-            // Check if the parent has the capability to allow to stretch in the direction if this list elements.
-            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
-                Height = Min(max_height, Proposed_Height);
-                Width = Min(max_width, Proposed_Width);
-            }
-            else{
-                Width = Proposed_Width;
-                Height = Proposed_Height;
-
-                Dirty.Dirty(STAIN_TYPE::STRECH);
-            }
-
-            e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
-
-            Last_Child->Set_Position({Last_Child->Get_Position().X + e->Get_Width() - Width_Modifier, Last_Child->Get_Position().Y});
-
-            // Is for external users to be easily access last added data.
-            Last_Child->Set_Dimensions(e->Get_Width(), e->Get_Height());
+        if (At<BOOL_VALUE>(STYLES::Wrap)->Value){
+            Report(
+                "Overflow wrapping is not supported!"
+            );
         }
         else{
-            // Affect minimum height needed, when current child has borders as well as the previus one.
-            signed int Height_Modifier = e->Has_Border() & Last_Child->Has_Border();
+            e->Set_Parent(this);
 
-            unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, Get_Width());
-            unsigned long long Proposed_Height = Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height());
+            // Add reverse support for the list to grow from the end -> start.
+            // Add sticky support for two child elements with borders to loan the same border space.
+            if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
 
-            // Check if the parent has the capability to allow to stretch in the direction if this list elements.
-            if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
-                Width = Min(max_width, Proposed_Width);
-                Height = Min(max_height, Proposed_Height);
+                // Affect minimum width needed, when current child has borders as well as the previus one.
+                signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
+
+                unsigned long long Proposed_Height = Max(Child_Needs_Minimum_Height_Of, Get_Height());
+                unsigned long long Proposed_Width = Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width());
+
+                // Check if the parent has the capability to allow to stretch in the direction if this list elements.
+                if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
+                    Height = Min(max_height, Proposed_Height);
+                    Width = Min(max_width, Proposed_Width);
+                }
+                else{
+                    Width = Proposed_Width;
+                    Height = Proposed_Height;
+
+                    Dirty.Dirty(STAIN_TYPE::STRECH);
+                }
+
+                e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
+
+                Last_Child->Set_Position({Last_Child->Get_Position().X + e->Get_Width() - Width_Modifier, Last_Child->Get_Position().Y});
+
+                // Is for external users to be easily access last added data.
+                Last_Child->Set_Dimensions(e->Get_Width(), e->Get_Height());
             }
             else{
-                Width = Proposed_Width;
-                Height = Proposed_Height;
+                // Affect minimum height needed, when current child has borders as well as the previus one.
+                signed int Height_Modifier = e->Has_Border() & Last_Child->Has_Border();
+
+                unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, Get_Width());
+                unsigned long long Proposed_Height = Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height());
+
+                // Check if the parent has the capability to allow to stretch in the direction if this list elements.
+                if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
+                    Width = Min(max_width, Proposed_Width);
+                    Height = Min(max_height, Proposed_Height);
+                }
+                else{
+                    Width = Proposed_Width;
+                    Height = Proposed_Height;
+                    
+                    Dirty.Dirty(STAIN_TYPE::STRECH);
+                }
+
+                e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
+
+                Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + e->Get_Height() - Height_Modifier});
                 
-                Dirty.Dirty(STAIN_TYPE::STRECH);
+                // Is for external users to be easily access last added data.
+                Last_Child->Set_Dimensions(e->Get_Width(), e->Get_Height());
             }
 
-            e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});
-
-            Last_Child->Set_Position({Last_Child->Get_Position().X, Last_Child->Get_Position().Y + e->Get_Height() - Height_Modifier});
-            
-            // Is for external users to be easily access last added data.
-            Last_Child->Set_Dimensions(e->Get_Width(), e->Get_Height());
+            Last_Child->Show_Border(e->Has_Border());
+            Dirty.Dirty(STAIN_TYPE::DEEP);
+            Element_Names.insert({e->Get_Name(), e});
+            Childs.push_back(e);
         }
-
-        Last_Child->Show_Border(e->Has_Border());
-        Dirty.Dirty(STAIN_TYPE::DEEP);
-        Element_Names.insert({e->Get_Name(), e});
-        Childs.push_back(e);
-
-        // No need to re-order childs in list view, since they already have hit-boxes and cannot collide.
-        Resume_Renderer();
-    }
+    });
 }
 
 std::string GGUI::List_View::Get_Name() const{
@@ -301,95 +299,96 @@ std::string GGUI::List_View::Get_Name() const{
 }
 
 bool GGUI::List_View::Remove(Element* remove){
-    GGUI::Pause_Renderer();
-    unsigned int Index = 0;
+    GGUI::Pause_Renderer([=](){
+        unsigned int Index = 0;
 
-    //first find the removable element index.
-    for (;Index < Childs.size() && Childs[Index] != remove; Index++);
-    
-    // Check if there was no element by that ptr value.
-    if (Index == Childs.size()){
-        Report("Internal: no element with ptr value: " + remove->Get_Name() + " was found in the list view: " + Get_Name());
+        //first find the removable element index.
+        for (;Index < Childs.size() && Childs[Index] != remove; Index++);
         
-        // Since this removal action failed report to starter, that this failed sadge.
-        return false;
-    }
-
-    // So basically this algorithm just calculates the gap which is born, when this element is removed from the middle of the list, and our task is to collapse the gap.
-
-    // First fetch some data:
-    std::pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
-
-    unsigned int Inner_Width = limits.first;
-    unsigned int Inner_Height = limits.second;
-
-    // represents as well as the vertical list as well the horizontal list.
-    // where this checks if this element was the root cause for the elements height or width to be stretched when this was added.
-    // so for an vertical list this checks if it changed the width, or for an horizontal list the height. 
-    bool Is_Stretcher = remove->Get_Width() == Inner_Width || remove->Get_Height() == Inner_Height;
-
-    // now sadly we need to branch the code into the vertical and horizontal calculations.
-    if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
-        // represents the horizontal list
-        unsigned int Gap = remove->Get_Width();
-
-        unsigned int New_Stretched_Height = 0;
-
-        // all elements after the index, need to be removed from their x position the gap value.
-        for (unsigned int i = Index + 1; i < Childs.size(); i++){
-            // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-            Childs[i]->Set_Position({Childs[i]->Get_Position().X - Gap, Childs[i]->Get_Position().Y});
-
-            // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
-            // although there is a slight probability that some of the previous elements were exact same size.
-            if (Is_Stretcher && Childs[i]->Get_Height() > New_Stretched_Height)
-                New_Stretched_Height = Childs[i]->Get_Height();
+        // Check if there was no element by that ptr value.
+        if (Index == Childs.size()){
+            Report("Internal: no element with ptr value: " + remove->Get_Name() + " was found in the list view: " + Get_Name());
+            
+            // Since this removal action failed report to starter, that this failed sadge.
+            return false;
         }
 
-        if (Is_Stretcher)
-            Inner_Height = New_Stretched_Height;
+        // So basically this algorithm just calculates the gap which is born, when this element is removed from the middle of the list, and our task is to collapse the gap.
 
-        Inner_Width -= Gap;
+        // First fetch some data:
+        std::pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
 
-        Set_Dimensions(Inner_Width, Inner_Height);
-    }   
-    else{
-        // represents the vertical list
-        unsigned int Gap = remove->Get_Height();
+        unsigned int Inner_Width = limits.first;
+        unsigned int Inner_Height = limits.second;
 
-        unsigned int New_Stretched_Width = 0;
+        // represents as well as the vertical list as well the horizontal list.
+        // where this checks if this element was the root cause for the elements height or width to be stretched when this was added.
+        // so for an vertical list this checks if it changed the width, or for an horizontal list the height. 
+        bool Is_Stretcher = remove->Get_Width() == Inner_Width || remove->Get_Height() == Inner_Height;
 
-        // all elements after the index, need to be removed from their y position the gap value.
-        for (unsigned int i = Index + 1; i < Childs.size(); i++){
-            // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-            Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - Gap});
+        // now sadly we need to branch the code into the vertical and horizontal calculations.
+        if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
+            // represents the horizontal list
+            unsigned int Gap = remove->Get_Width();
 
-            // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
-            // although there is a slight probability that some of the previous elements were exact same size.
-            if (Is_Stretcher && Childs[i]->Get_Width() > New_Stretched_Width)
-                New_Stretched_Width = Childs[i]->Get_Width();
+            unsigned int New_Stretched_Height = 0;
+
+            // all elements after the index, need to be removed from their x position the gap value.
+            for (unsigned int i = Index + 1; i < Childs.size(); i++){
+                // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
+                Childs[i]->Set_Position({Childs[i]->Get_Position().X - Gap, Childs[i]->Get_Position().Y});
+
+                // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
+                // although there is a slight probability that some of the previous elements were exact same size.
+                if (Is_Stretcher && Childs[i]->Get_Height() > New_Stretched_Height)
+                    New_Stretched_Height = Childs[i]->Get_Height();
+            }
+
+            if (Is_Stretcher)
+                Inner_Height = New_Stretched_Height;
+
+            Inner_Width -= Gap;
+
+            Set_Dimensions(Inner_Width, Inner_Height);
+        }   
+        else{
+            // represents the vertical list
+            unsigned int Gap = remove->Get_Height();
+
+            unsigned int New_Stretched_Width = 0;
+
+            // all elements after the index, need to be removed from their y position the gap value.
+            for (unsigned int i = Index + 1; i < Childs.size(); i++){
+                // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
+                Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - Gap});
+
+                // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
+                // although there is a slight probability that some of the previous elements were exact same size.
+                if (Is_Stretcher && Childs[i]->Get_Width() > New_Stretched_Width)
+                    New_Stretched_Width = Childs[i]->Get_Width();
+            }
+
+            if (Is_Stretcher)
+                Inner_Width = New_Stretched_Width;
+
+            Inner_Height -= Gap;
+
+            Set_Dimensions(Inner_Width, Inner_Height);
         }
 
-        if (Is_Stretcher)
-            Inner_Width = New_Stretched_Width;
+        delete remove;
 
-        Inner_Height -= Gap;
+        // NOTE: Last_Child is NOT an ptr to the latest child added !!!
+        if (Childs.size() > 0){
+            Element* tmp = Childs[Childs.size() - 1];
 
-        Set_Dimensions(Inner_Width, Inner_Height);
-    }
+            Last_Child->Set_Position({Last_Child->Get_Position().X - tmp->Get_Width(), Last_Child->Get_Position().Y - tmp->Get_Height()});
 
-    delete remove;
+            Last_Child->Show_Border(tmp->Has_Border());
+        }
 
-    // NOTE: Last_Child is NOT an ptr to the latest child added !!!
-    if (Childs.size() > 0){
-        Element* tmp = Childs[Childs.size() - 1];
+    });
 
-        Last_Child->Set_Position({Last_Child->Get_Position().X - tmp->Get_Width(), Last_Child->Get_Position().Y - tmp->Get_Height()});
-
-        Last_Child->Show_Border(tmp->Has_Border());
-    }
-
-    GGUI::Resume_Renderer();
     return true;
 }
 
@@ -442,21 +441,19 @@ void GGUI::Scroll_View::Scroll_Up(){
     if (Scroll_Index <= 0)
         return;
 
-    Pause_Renderer();
+    Pause_Renderer([=](){
+        Scroll_Index--;
 
-    Scroll_Index--;
+        List_View* Container = Get_Container();
 
-    List_View* Container = Get_Container();
+        // Now also re-set the container position dependent of the growth direction.
+        if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
+            Container->Set_Position({Container->Get_Position().X + 1});
+        else
+            Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y + 1});
 
-    // Now also re-set the container position dependent of the growth direction.
-    if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
-        Container->Set_Position({Container->Get_Position().X + 1});
-    else
-        Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y + 1});
-
-    Dirty.Dirty(STAIN_TYPE::DEEP);
-        
-    Resume_Renderer();
+        Dirty.Dirty(STAIN_TYPE::DEEP);
+    });
 }
 
 void GGUI::Scroll_View::Scroll_Down(){
@@ -474,21 +471,19 @@ void GGUI::Scroll_View::Scroll_Down(){
             return;
     }
 
-    Pause_Renderer();
+    Pause_Renderer([=](){
+        Scroll_Index++;
 
-    Scroll_Index++;
+        List_View* Container = Get_Container();
 
-    List_View* Container = Get_Container();
+        // Now also re-set the container position dependent of the growth direction.
+        if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
+            Container->Set_Position({Container->Get_Position().X - 1});
+        else
+            Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y - 1});
 
-    // Now also re-set the container position dependent of the growth direction.
-    if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
-        Container->Set_Position({Container->Get_Position().X - 1});
-    else
-        Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y - 1});
-
-    Dirty.Dirty(STAIN_TYPE::DEEP);
-        
-    Resume_Renderer();
+        Dirty.Dirty(STAIN_TYPE::DEEP);
+    });
 }
 
 GGUI::Element* Translate_List(GGUI::HTML_Node* input){
