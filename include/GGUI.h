@@ -965,7 +965,7 @@ namespace GGUI{
         inline std::string Wrap                             = "Wrap";     
         
         inline std::string Text_Position                    = "Text_Position";
-        inline std::string Allow_Input_Overflow             = "Allow_Input_Overflow";
+        inline std::string Allow_Overflow             = "Allow_Input_Overflow";
         inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size"; // boolean, Tries to emulate the size of the parent like in 'Flexbox: Display;' 
         inline std::string Margin                           = "Margin";
 

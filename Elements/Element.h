@@ -512,6 +512,10 @@ namespace GGUI{
             X += other.X;
             Y += other.Y;
         }
+    
+        Coordinates operator+(Coordinates& other){
+            return Coordinates(X + other.X, Y + other.Y, Z + other.Z);
+        }
     };
 
     namespace UTF_FLAG{
@@ -649,20 +653,36 @@ namespace GGUI{
         }
     };
 
+    namespace MEMORY_FLAGS{
+        inline unsigned char PROLONG_MEMORY     = 1 << 0;
+        inline unsigned char RETRIGGER          = 1 << 1;
+    };
+
     class Memory : public Action{
     public:
         std::chrono::high_resolution_clock::time_point Start_Time;
         size_t End_Time = 0;
 
         // By default all memories automatically will not prolong each other similar memories.
-        bool Prolong_Memory = false;
+        unsigned char Flags = 0x0;
+
+        std::string ID; 
 
         // When the job starts, job, prolong previous similar job by this time.
-        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, bool prolong = false){
+        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, unsigned char flags = 0x0, std::string id = ""){
             Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
-            Prolong_Memory = prolong;
+            Flags = flags;
+            ID = id;
+        }
+
+        bool Is(unsigned char f){
+            return (Flags & f) > 0;
+        }
+
+        void Set(unsigned char f){
+            Flags |= f;
         }
     };
 
@@ -831,7 +851,7 @@ namespace GGUI{
         inline std::string Wrap                             = "Wrap";     
         
         inline std::string Text_Position                    = "Text_Position";
-        inline std::string Allow_Input_Overflow             = "Allow_Input_Overflow";
+        inline std::string Allow_Overflow                   = "Allow_Overflow"; // This is for when child can dynamically go over parent borders, but parent size is static
         inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size"; // boolean, Tries to emulate the size of the parent like in 'Flexbox: Display;' 
         inline std::string Margin                           = "Margin";
 
@@ -1142,9 +1162,9 @@ namespace GGUI{
 
         bool Children_Changed();
         
-        bool Has_Transparent_Children();
+        bool Has_Transparent_Children();    
 
-        std::vector<Element*>& Get_Childs();
+        virtual std::vector<Element*>& Get_Childs();
 
         virtual bool Remove(Element* handle);
 
@@ -1187,10 +1207,13 @@ namespace GGUI{
         void Set_Text_Color(RGB color);
 
         void Allow_Dynamic_Size(bool True);
+
+        // Allows by default hidden overflow, so that child elements can exceed the parent element dimension limits, whiteout resizing parent.  
+        void Allow_Overflow(bool True);
         
         RGB Get_Text_Color();
 
-        static std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
+        static std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
 
         void Compute_Dynamic_Size();
 
@@ -1261,6 +1284,22 @@ namespace GGUI{
             return result;
         }
 
+        std::vector<Element*> Get_All_Nested_Elements(bool Show_Hidden = false){
+            std::vector<Element*> result;
+
+            if (!Show)
+                return {};
+            
+            result.push_back(this);
+
+            for (auto e : Childs){
+                std::vector<Element*> child_result = e->Get_All_Nested_Elements();
+                result.insert(result.end(), child_result.begin(), child_result.end());
+            }
+
+            return result;
+        }
+
         template<typename T>
         T* At(std::string s){
             T* v = (T*)Style[s];
@@ -1287,6 +1326,9 @@ namespace GGUI{
         std::vector<GGUI::UTF> Process_Opacity(std::vector<GGUI::UTF> Current_Buffer);
 
         virtual std::vector<GGUI::UTF> Postprocess();
+
+        // Uses the post_processed widths and height values
+        bool Child_Is_Shown(Element* other);
     };
 }
 

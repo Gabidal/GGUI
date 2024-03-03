@@ -55,6 +55,9 @@ namespace GGUI{
 
     Window* Main = nullptr;     
     unordered_map<int, Element*> Outboxed_Elements;
+    
+    const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
+    const std::string HISTORY = "_HISTORY_";
 
     bool Collides(GGUI::Element* a, GGUI::Element* b){
         if (a == b)
@@ -1234,7 +1237,7 @@ namespace GGUI{
         // Prolong prolongable memories.
         for (int i = 0; i < Remember.size(); i++){
             for (int j = 1; j < Remember.size(); j++){
-                if (Remember[i].Prolong_Memory && Remember[j].Prolong_Memory)
+                if (Remember[i].Is(MEMORY_FLAGS::PROLONG_MEMORY) && Remember[j].Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
                     if (Remember[i].Job.target<bool(*)(GGUI::Event* e)>() == Remember[j].Job.target<bool(*)(GGUI::Event* e)>()){
                         Remember[i].Start_Time = Remember[j].Start_Time;
 
@@ -1251,11 +1254,26 @@ namespace GGUI{
             //if the time difference is greater than the time limit, then delete the memory
             if (Time_Difference > Remember[i].End_Time){
                 //Pause_Renderer();
-                Remember[i].Job((Event*)&Remember[i]);
 
-                Remember.erase(Remember.begin() + i);
+                try{
+                    bool Success = Remember[i].Job((Event*)&Remember[i]);
 
-                i--;
+                    // If job is a re-trigger it will ignore whether the job was successful or not.
+                    if (Remember[i].Is(MEMORY_FLAGS::RETRIGGER)){
+
+                        // May need to change this into more accurate version of time capturing.
+                        Remember[i].Start_Time = Current_Time;
+
+                    }
+                    else if (Success){
+                        Remember.erase(Remember.begin() + i);
+
+                        i--;
+                    }
+                }
+                catch (std::exception e){
+                    Report("In memory: '" + Remember[i].ID + "' Problem: " + std::string(e.what()));
+                }
                 
                 //Resume_Renderer();
             }
@@ -1509,6 +1527,8 @@ namespace GGUI{
 
         Abstract_Frame_Buffer = Main->Render();
 
+        Encode_Buffer(Abstract_Frame_Buffer);
+
         Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
 
         std::thread Job_Scheduler([&](){
@@ -1533,6 +1553,8 @@ namespace GGUI{
 
         Job_Scheduler.detach();
 
+        Init_Inspect_Tool();
+
         Pause_Render = Default_Render_State;
 
         return Main;
@@ -1554,13 +1576,10 @@ namespace GGUI{
 
         Problem += " ";
 
-        const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
-        const std::string HISTORY = "_HISTORY_";
-
         // Error logger structure:
         /*
             <Window name="_ERROR_LOGGER_">
-                <List name="_HISTORY_" type=vertical>
+                <List name="_HISTORY_" type=vertical scrollable=true>
                     <List type="horizontal">
                         <TextField>Time</TextField>
                         <TextField>Problem a</TextField>
@@ -1579,13 +1598,24 @@ namespace GGUI{
 
             if (Error_Logger){
                 // Get the list
-                List_View* History = (List_View*)Error_Logger->Get_Element(HISTORY);
+                Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
+                // This happens, when Error logger is kidnapped!
                 if (!History){
-                    // This should never happen!
+                    // Now create the history lister
+                    History = new Scroll_View(
+                        Error_Logger->Get_Width() - 1,
+                        Error_Logger->Get_Height() - 1,
+                        GGUI::COLOR::RED,
+                        GGUI::COLOR::BLACK
+                    );
+                    History->Set_Growth_Direction(Grow_Direction::COLUMN);
+                    History->Set_Name(HISTORY);
+
+                    Error_Logger->Add_Child(History);
                 }
 
-                std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Childs(); 
+                std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
 
                 if (Rows.size() > 0){
                     Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
@@ -1613,7 +1643,7 @@ namespace GGUI{
             else{
                 // create the error logger
                 Error_Logger = new Window(
-                    "Errors",
+                    "LOG",
                     Main->Get_Width() / 4,
                     Main->Get_Height() / 2,
                     GGUI::COLOR::RED,
@@ -1628,10 +1658,10 @@ namespace GGUI{
                     INT32_MAX
                 });
                 Error_Logger->Show_Border(true);
-                Error_Logger->Allow_Dynamic_Size(true);
+                Error_Logger->Allow_Overflow(true);
 
                 // Now create the history lister
-                List_View* History = new List_View(
+                Scroll_View* History = new Scroll_View(
                     Error_Logger->Get_Width() - 1,
                     Error_Logger->Get_Height() - 1,
                     GGUI::COLOR::RED,
@@ -1647,7 +1677,7 @@ namespace GGUI{
             if (Create_New_Line){
                 // re-find the error_logger.
                 Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
-                List_View* History = (List_View*)Error_Logger->Get_Element(HISTORY);
+                Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
                 List_View* Row = new List_View(
                     History->Get_Width(),
@@ -1668,34 +1698,42 @@ namespace GGUI{
                 History->Add_Child(Row);
 
                 // Calculate the new x position for the Error_Logger
-                Error_Logger->Set_Position({
-                    (Max_Width - History->Get_Width()) / 2,
-                    (Max_Height - History->Get_Height()) / 2,
-                    INT32_MAX
-                });
+                if (Error_Logger->Get_Parent() == Main)
+                    Error_Logger->Set_Position({
+                        (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
+                        (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
+                        INT32_MAX
+                    });
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
-                if (History->Get_Absolute_Position().Y + History->Get_Height() >= Main->Get_Height() - Main->Has_Border() * 2){
+                // We can assume that the singular error is at least one tall.
+                if (min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
                     // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
-                    Element* First_Child = History->Get_Childs()[0];
-                    History->Remove(First_Child);
+                    // Element* First_Child = History->Get_Childs()[0];
+                    // History->Remove(First_Child);
 
                     // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
+                    History->Scroll_Down();
+                
                 }
             }
 
-            Error_Logger->Display(true);
+            if (Error_Logger->Get_Parent() == Main){
+                Error_Logger->Display(true);
 
-            Remember.push_back(Memory(
-                TIME::SECOND * 30,
-                [=](GGUI::Event* e){
-                    //delete tmp;
-                    Error_Logger->Display(false);
-                    //job successfully done
-                    return true;
-                },
-                true
-            ));
+                Remember.push_back(Memory(
+                    TIME::SECOND * 30,
+                    [=](GGUI::Event* e){
+                        //delete tmp;
+                        Error_Logger->Display(false);
+                        //job successfully done
+                        return true;
+                    },
+                    MEMORY_FLAGS::PROLONG_MEMORY,
+                    "Report Logger Clearer"
+                ));
+            }
+
         }
         else{
             // This is for the non GGUI space errors.
@@ -1711,7 +1749,7 @@ namespace GGUI{
         // Print the stack information and the function names can be got from .PDATA section
         unsigned long long Stack_Pointer = (unsigned long long)__builtin_return_address(0);
 
-        // STacktracing doesnt work atm :(
+        // Stacktracing doesnt work atm :(
         //auto& stack = std::stacktrace::current();
 
 
@@ -1825,6 +1863,99 @@ namespace GGUI{
                 Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_START);
             }
         }
+    }
+
+    bool Update_Stats(GGUI::Event* e){
+        // Check if Inspect tool is displayed
+        Element* Inspect_Tool = Main->Get_Element("Inspect");
+
+        if (!Inspect_Tool || !Inspect_Tool->Is_Displayed())
+            return false;
+
+        // find stats
+        Text_Field* Stats = (Text_Field*)Main->Get_Element("STATS");
+
+        // Update the stats
+        Stats->Set_Data(
+            "Encode: " + to_string(Abstract_Frame_Buffer.size()) + "\n" + 
+            "Decode: " + to_string(Frame_Buffer.size()) + "\n" +
+            "Elements: " + to_string(Main->Get_All_Nested_Elements().size())
+        );
+
+        // return success.
+        return true;
+    }
+
+    void Init_Inspect_Tool(){
+        GGUI::Window* Inspect = new GGUI::Window(
+            "Inspect",
+            Main->Get_Width() / 3,
+            Main->Get_Height()
+        );
+
+        Inspect->Show_Border(false);
+        Inspect->Set_Position({
+            Main->Get_Width() - (Main->Get_Width() / 3),
+            0,
+            INT32_MAX - 1,
+        });
+        Inspect->Set_Background_Color(Main->Get_Background_Color());
+        Inspect->Set_Text_Color(Main->Get_Text_Color());
+        Inspect->Set_Opacity(0.2f);
+        Inspect->Set_Name("Inspect");
+
+        Main->Add_Child(Inspect);
+        
+        // Add a count for how many UTF are being streamed.
+        Text_Field* Stats = new Text_Field(
+            "Encode: " + to_string(Abstract_Frame_Buffer.size()) + "\n" + 
+            "Decode: " + to_string(Frame_Buffer.size()) + "\n" +
+            "Elements: " + to_string(Main->Get_All_Nested_Elements().size())
+        );
+
+        Stats->Set_Name("STATS");
+
+        Stats->Set_Position({0, 0});
+        Inspect->Add_Child(Stats);
+
+        // Add the error logger kidnapper:
+        Window* Error_Logger_Kidnapper = new Window(
+            "LOG: ",
+            Inspect->Get_Width(),
+            Inspect->Get_Height() / 2,
+            GGUI::COLOR::RED,
+            GGUI::COLOR::BLACK,
+            GGUI::COLOR::RED,
+            GGUI::COLOR::BLACK
+        );
+
+        Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
+
+        Error_Logger_Kidnapper->Set_Position({0, Stats->Get_Height()});
+        Error_Logger_Kidnapper->Allow_Overflow(true);
+        Inspect->Add_Child(Error_Logger_Kidnapper);
+
+        Inspect->Display(false);
+
+        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
+            GGUI::Input* input = (GGUI::Input*)e;
+
+            if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
+                return false;
+
+            Inspect->Display(!Inspect->Is_Displayed());
+
+            return true;
+        }, true);
+        
+        Remember.push_back(
+            GGUI::Memory(
+                TIME::SECOND,
+                Update_Stats,
+                MEMORY_FLAGS::RETRIGGER,
+                "Update Stats"
+            )
+        );
     }
 
 }

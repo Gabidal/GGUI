@@ -56,8 +56,6 @@ namespace GGUI{
 
         void Add_Child(Element* e) override;
         
-        //std::vector<UTF> Render() override;
-
         std::string Get_Name() const override;
 
         bool Remove(Element* e) override;
@@ -93,8 +91,6 @@ namespace GGUI{
     class Scroll_View : public Element{
     protected:
         unsigned int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
-
-        List_View* Container = nullptr;
     public:
 
         // Constructors:
@@ -104,6 +100,32 @@ namespace GGUI{
         Scroll_View(List_View& container);
 
         Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        Scroll_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
+
+        //These next constructors are mainly for users to more easily create elements.
+        Scroll_View(
+            RGB text_color,
+            RGB background_color
+        );
+
+        Scroll_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Scroll_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
 
         // Re-pipeline functions:
         // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -118,6 +140,32 @@ namespace GGUI{
         void Scroll_Up();
 
         void Scroll_Down();
+
+        bool Remove(Element* e) override;
+        
+        std::vector<UTF> Render() override{
+            return Element::Render();
+        }
+
+        std::string Get_Name() const override;
+
+        void Set_Growth_Direction(Grow_Direction gd){
+            Childs[0]->At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
+        }
+
+        Grow_Direction Get_Growth_Direction(){
+            return (Grow_Direction)Childs[0]->At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
+        }
+
+        template<typename  T>
+        T* Get(int index){
+            return ((List_View*)Childs[0])->Get<T>(index);
+        }
+
+        List_View* Get_Container(){
+            return (List_View*)Childs[0];
+        }
+    
     };
 }
 

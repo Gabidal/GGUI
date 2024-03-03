@@ -53,6 +53,8 @@ GGUI::Element::Element(std::string Class, unsigned int width, unsigned int heigh
 
     Name = std::to_string((unsigned long long)this);
 
+    Fully_Stain();
+
     if (width != 0)
         Set_Width(width);
     if (height != 0)
@@ -93,6 +95,8 @@ GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, un
     bool Previus_Border_State = Has_Border();
 
     Style = css;
+
+    Fully_Stain();
 
     //Check if the css changed the border state, if so we need to increment or decrement the width & height.
     Show_Border(Has_Border(), Previus_Border_State);
@@ -569,16 +573,11 @@ void GGUI::Element::Add_Child(Element* Child){
 }
 
 void GGUI::Element::Set_Childs(std::vector<Element*> childs){
-    bool tmp = Pause_Render;
-    if (Pause_Render)
-        Pause_Renderer();
-
-    for (auto& Child : childs){
-        Add_Child(Child);
-    }
-
-    if (tmp)
-        Resume_Renderer();
+    Pause_Renderer([=](){
+        for (auto& Child : childs){
+            Add_Child(Child);
+        }
+    });
 }
 
 std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){
@@ -824,35 +823,40 @@ GGUI::Element* GGUI::Element::Copy(){
 }
 
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
-    Coordinates tmp_Position = child->Get_Position();
+    Coordinates Current_Position = child->Get_Position();
 
-    unsigned int tmp_Width = 0;
-    unsigned int tmp_Height = 0;
+    unsigned int Result_Width = 0;
+    unsigned int Result_Height = 0;
 
-    int Border_Size = (Has_Border() * 2) - (child->Has_Border() * 2);
+    int Border_Offset = (Has_Border() - child->Has_Border()) * Has_Border() * 2;
+
+    // if there are only zero child or one and it is same as this child then give max.
+    if (Childs.size() == 0 || Childs.back() == child){
+        return {Width - Border_Offset, Height - Border_Offset};
+    }
 
     while (true){
-        if (tmp_Position.X + tmp_Width < Width - Border_Size){
-            tmp_Width++;
+        if (Current_Position.X + Result_Width < Width - Border_Offset){
+            Result_Width++;
         }
         
-        if (tmp_Position.Y + tmp_Height < Height - Border_Size){
-            tmp_Height++;
+        if (Current_Position.Y + Result_Height < Height - Border_Offset){
+            Result_Height++;
         }
-        else if (tmp_Position.X + tmp_Width >= Width - Border_Size && tmp_Position.Y + tmp_Height >= Height - Border_Size){
+        else if (Current_Position.X + Result_Width >= Width - Border_Offset && Current_Position.Y + Result_Height >= Height - Border_Offset){
             break;
         }
         
         for (auto c : Childs){
-            if (child != c && Collides(c, tmp_Position, tmp_Width, tmp_Height)){
+            if (child != c && Collides(c, Current_Position, Result_Width, Result_Height)){
                 //there are already other childs occupying this area so we can stop here.
-                return {tmp_Width, tmp_Height};
+                return {Result_Width, Result_Height};
             }
         }
 
     }
 
-    return {tmp_Width, tmp_Height};
+    return {Result_Width, Result_Height};
 }
 
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
@@ -921,6 +925,11 @@ void GGUI::Element::Set_Text_Color(RGB color){
 
 void GGUI::Element::Allow_Dynamic_Size(bool True){
     At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value = True; 
+    // No need to update the frame, since this is used only on content change which has the update frame.
+}
+
+void GGUI::Element::Allow_Overflow(bool True){
+    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = True; 
     // No need to update the frame, since this is used only on content change which has the update frame.
 }
 
@@ -1001,6 +1010,10 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
         for (auto c : this->Get_Childs()){
             if (!c->Is_Displayed())
+                continue;
+
+            // check if the child is within the renderable borders.
+            if (!Child_Is_Shown(c))
                 continue;
 
             if (c->Has_Border())
@@ -1111,34 +1124,50 @@ void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
     }
 }
 
-std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> GGUI::Element::Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child){
-    unsigned int Max_Allowed_Height = Parent->Height - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();             //remove bottom borders from calculation
-    unsigned int Max_Allowed_Width = Parent->Width - (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();              //remove right borders from calculation
+std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> GGUI::Element::Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child){
+    bool Border_Offset = (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();
+    
+    unsigned int Max_Allowed_Height = Parent->Height - Border_Offset;               //remove bottom borders from calculation
+    unsigned int Max_Allowed_Width = Parent->Width - Border_Offset;                 //remove right borders from calculation
 
-    unsigned int Min_Allowed_Height = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                        //add top borders from calculation
-    unsigned int Min_Allowed_Width = 0 + (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();                         //add left borders from calculation
+    unsigned int Min_Allowed_Height = 0 + Border_Offset;                            //add top borders from calculation
+    unsigned int Min_Allowed_Width = 0 + Border_Offset;                             //add left borders from calculation
 
-    unsigned int Child_Start_Y = Min_Allowed_Height + Child->Position.Y;
-    unsigned int Child_Start_X = Min_Allowed_Width + Child->Position.X;
+    unsigned int Child_Start_Y = Min_Allowed_Height + max(Child->Position.Y, 0);    // If the child is negatively positioned, then put it to zero and minimize the parent height.
+    unsigned int Child_Start_X = Min_Allowed_Width + max(Child->Position.X, 0);    
 
-    unsigned int Child_End_Y = Min(Child_Start_Y + Child->Get_Processed_Height(), Max_Allowed_Height);
-    unsigned int Child_End_X = Min(Child_Start_X + Child->Get_Processed_Width(), Max_Allowed_Width);
+    unsigned int Negative_Offset_X = abs(min(Child->Position.X, 0));
+    unsigned int Negative_Offset_Y = abs(min(Child->Position.Y, 0));
 
-    return { {Child_Start_Y, Child_Start_X}, {Child_End_Y, Child_End_X} };
+    unsigned int Child_End_X = max(0, (int)(Child_Start_X + Child->Get_Processed_Width()) - (int)Negative_Offset_X);
+    unsigned int Child_End_Y = max(0, (int)(Child_Start_Y + Child->Get_Processed_Height()) - (int)Negative_Offset_Y);
+
+    Child_End_X = Min(Max_Allowed_Width, Child_End_X);
+    Child_End_Y = Min(Max_Allowed_Height, Child_End_Y);
+
+    // {Negative offset},                             {Child Starting offset},        {Child Ending offset}
+    return {{Negative_Offset_X, Negative_Offset_Y}, {{Child_Start_X, Child_Start_Y}, {Child_End_X, Child_End_Y}} };
 }
 
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
-    std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Limits = Get_Fitting_Area(Parent, Child);
+    std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Limits = Get_Fitting_Area(Parent, Child);
 
-    unsigned int Start_Y =  Limits.first.first;
-    unsigned int Start_X =  Limits.first.second;
+    unsigned int Negative_Offset_X = Limits.first.first;
+    unsigned int Negative_Offset_Y = Limits.first.second;
 
-    unsigned int End_Y = Limits.second.first;
-    unsigned int End_X = Limits.second.second;
+    // Where the child starts to write in the parent buffer.
+    unsigned int Start_X =  Limits.second.first.first;
+    unsigned int Start_Y =  Limits.second.first.second;
+
+    // Where the child ends it buffer rendering.
+    unsigned int End_X = Limits.second.second.first;
+    unsigned int End_Y = Limits.second.second.second;
 
     for (int y = Start_Y; y < End_Y; y++){
         for (int x = Start_X; x < End_X; x++){
-            Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[(y - Start_Y) * Child->Get_Processed_Width() + (x - Start_X)]);
+            unsigned int Child_Buffer_Y = (y - Start_Y + Negative_Offset_Y) * Child->Get_Processed_Width();
+            unsigned int Child_Buffer_X = (x - Start_X + Negative_Offset_X); 
+            Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X]);
         }
     }
 }
@@ -1548,6 +1577,24 @@ std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
 
     //Render_Buffer = Result;
     return Result;
+}
+
+bool GGUI::Element::Child_Is_Shown(Element* other){
+
+    bool Border_Modifier = (Has_Border() - other->Has_Border()) * Has_Border();
+
+    // Check if the child element is atleast above the {0, 0} 
+    int Minimum_X = other->Position.X + other->Get_Processed_Width();
+    int Minimum_Y = other->Position.Y + other->Get_Processed_Height();
+
+    // Check even if the child position is way beyond the parent width and height, if only the shadow for an example is still shown.
+    int Maximum_X = other->Position.X - (other->Width - other->Get_Processed_Width());
+    int Maximum_Y = other->Position.Y - (other->Height - other->Get_Processed_Height());
+
+    bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < (signed)Width - Border_Modifier;
+    bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < (signed)Height - Border_Modifier;
+
+    return X_Is_Inside && Y_Is_Inside;
 }
 
 GGUI::Element* Translate_Element(GGUI::HTML_Node* input){
