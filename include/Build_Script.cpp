@@ -16,14 +16,24 @@ public:
     Header_File(string Data){
         this->Data = Data;
     }
+
+    Header_File() = default;
 };
 
 // returns all the file names in the dir.
 vector<string> get_all_files(const string& directory) {
     vector<string> files;
     for (const auto & entry : std::filesystem::directory_iterator(directory)) {
+
+        // Make sure that only header filers are selected:
+        if(entry.path().extension() != ".h") continue;
+
         files.push_back(entry.path().filename().string());
     }
+
+    // Also remember to add the Renderer.h
+    files.push_back("Renderer.h");
+
     return files;
 }
 
@@ -44,6 +54,9 @@ void Compile_Headers(){
     for(const auto& file : get_all_files(Header_Source_Folder)){
         // read the file
         string File_Path = Header_Source_Folder + file;
+
+        // Special case for Renderer.h since it is not located aat the same place as the elements.
+        if (file == "Renderer.h") File_Path = "./Renderer.h";
 
         ifstream File(File_Path);
         
@@ -89,7 +102,7 @@ void Compile_Headers(){
 
     // Sort the vector by the count, where the less count is closer to zero index.
     sort(headers.begin(), headers.end(), [](const pair<string, Header_File>& a, const pair<string, Header_File>& b){
-        return a.second.Use_Count < b.second.Use_Count;
+        return a.second.Use_Count > b.second.Use_Count;
     });
 
     // Now write the output file with the data in the sorted order.
@@ -100,6 +113,9 @@ void Compile_Headers(){
             Output << Header.second.Data;
         }
     } 
+
+    // close all the files
+    Output.close();
 }
 
 int main(){

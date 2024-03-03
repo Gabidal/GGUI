@@ -1,137 +1,3 @@
-#ifndef _BUTTON_H_
-#define _BUTTON_H_
-
-#include <vector>
-#include <string>
-
-#include <functional>
-
-#include "Text_Field.h"
-
-namespace GGUI{
-
-    class Button : public Text_Field{
-    protected:
-        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
-            On_Click([=](Event* e){
-                // The default, on_click wont do anything.
-                press(this);
-
-                return true;
-            });
-        }
-    
-        void Default_Button_Text_Align(){
-            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
-        }
-
-        // DONT USE AS USER!!
-        Button(){}
-    public:
-
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
-            Defualt_Button_Behaviour(press);
-            Default_Button_Text_Align();
-            Enable_Input_Overflow();
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-            Show_Border(true);
-            Set_Name(Text);
-        }
-
-        Element* Safe_Move() override {
-            Button* new_Button = new Button();
-            *new_Button = *(Button*)this;
-
-            return new_Button;
-        }
-
-        std::string Get_Name() const override{
-            return "Button<" + Name + ">";
-        }
-    };
-}
-
-#endif
-#ifndef _CANVAS_H_
-#define _CANVAS_H_
-
-#include "Element.h"
-
-#include <vector>
-
-namespace GGUI{
-
-    class Canvas : public Element{
-    private:
-        // DONT GIVE THIS TO USER!
-        Canvas(){}
-    protected:
-        std::vector<RGB> Buffer;
-    public:
-        Canvas(unsigned int w, unsigned int h, Coordinates position);
-        
-        // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
-        void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
-        
-        void Flush();
-
-        std::vector<UTF> Render() override;
-
-        Element* Safe_Move() override {
-            Canvas* new_Canvas = new Canvas();
-            *new_Canvas = *(Canvas*)this;
-
-            return new_Canvas;
-        }
-
-        std::string Get_Name() const override{
-            return "Canvas<" + Name + ">";
-        }
-    };
-
-    class Sprite{
-    public:
-        RGB Background_Color;
-        RGB Foreground_Color;
-        UTF Texture;
-
-        Sprite(UTF t = UTF(" "), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
-
-        UTF Render();
-    };
-
-    class Terminal_Canvas : public Element{
-    private:
-        // DONT GIVE THIS TO USER!!!
-        Terminal_Canvas(){}
-    protected:
-        std::vector<Sprite> Buffer;
-    public:
-        Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
-        
-        void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
-
-        void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
-        
-        void Flush();
-        
-        std::vector<UTF> Render() override;
-        
-        Element* Safe_Move() override {
-            Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
-            *new_Terminal_Canvas = *(Terminal_Canvas*)this;
-
-            return new_Terminal_Canvas;
-        }
-
-        std::string Get_Name() const override{
-            return "Terminal_Canvas<" + Name + ">";
-        }
-    };
-
-}
-
-#endif
 #ifndef _ELEMENT_H_
 #define _ELEMENT_H_
 
@@ -150,31 +16,31 @@ namespace GGUI{
     //https://en.wikipedia.org/wiki/ANSI_escape_code
 
     namespace SYMBOLS{
-        inline std::string TOP_LEFT_CORNER = "???";//"\e(0\x6c\e(B";
-        inline std::string BOTTOM_LEFT_CORNER = "???";//"\e(0\x6d\e(B";
-        inline std::string TOP_RIGHT_CORNER = "???";//"\e(0\x6b\e(B";
-        inline std::string BOTTOM_RIGHT_CORNER = "???";//"\e(0\x6a\e(B";
-        inline std::string VERTICAL_LINE = "???";//"\e(0\x78\e(B";
-        inline std::string HORIZONTAL_LINE = "???";//"\e(0\x71\e(B";
-        inline std::string VERTICAL_RIGHT_CONNECTOR = "???";//"\e(0\x74\e(B";
-        inline std::string VERTICAL_LEFT_CONNECTOR = "???";//"\e(0\x75\e(B";
-        inline std::string HORIZONTAL_BOTTOM_CONNECTOR = "???";//"\e(0\x76\e(B";
-        inline std::string HORIZONTAL_TOP_CONNECTOR = "???";//"\e(0\x77\e(B";
-        inline std::string CROSS_CONNECTOR = "???";//"\e(0\x6e\e(B";
+        inline std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
+        inline std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
+        inline std::string TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
+        inline std::string BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
+        inline std::string VERTICAL_LINE = "│";//"\e(0\x78\e(B";
+        inline std::string HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
+        inline std::string VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
+        inline std::string VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
+        inline std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        inline std::string HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
+        inline std::string CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
 
-        inline std::string CENTERED_HORIZONTAL_LINE = "???";//"\e(0\x71\e(B";
-        inline std::string FULL_BLOCK = "???";//"\e(0\xdb\e(B";
+        inline std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x71\e(B";
+        inline std::string FULL_BLOCK = "█";//"\e(0\xdb\e(B";
 
         inline unsigned int CONNECTS_UP = 1 << 0;
         inline unsigned int CONNECTS_DOWN = 1 << 1;
         inline unsigned int CONNECTS_LEFT = 1 << 2;
         inline unsigned int CONNECTS_RIGHT = 1 << 3;
 
-        inline std::string RADIOBUTTON_OFF = "???";
-        inline std::string RADIOBUTTON_ON = "???";
+        inline std::string RADIOBUTTON_OFF = "○";
+        inline std::string RADIOBUTTON_ON = "◉";
 
-        inline std::string EMPTY_CHECK_BOX = "???";
-        inline std::string CHECKED_CHECK_BOX = "???";
+        inline std::string EMPTY_CHECK_BOX = "☐";
+        inline std::string CHECKED_CHECK_BOX = "☒";
 
         inline std::map<unsigned int, std::string> Border_Identifiers = {
 
@@ -646,6 +512,10 @@ namespace GGUI{
             X += other.X;
             Y += other.Y;
         }
+    
+        Coordinates operator+(Coordinates& other){
+            return Coordinates(X + other.X, Y + other.Y, Z + other.Z);
+        }
     };
 
     namespace UTF_FLAG{
@@ -783,20 +653,36 @@ namespace GGUI{
         }
     };
 
+    namespace MEMORY_FLAGS{
+        inline unsigned char PROLONG_MEMORY     = 1 << 0;
+        inline unsigned char RETRIGGER          = 1 << 1;
+    };
+
     class Memory : public Action{
     public:
         std::chrono::high_resolution_clock::time_point Start_Time;
         size_t End_Time = 0;
 
         // By default all memories automatically will not prolong each other similar memories.
-        bool Prolong_Memory = false;
+        unsigned char Flags = 0x0;
+
+        std::string ID; 
 
         // When the job starts, job, prolong previous similar job by this time.
-        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, bool prolong = false){
+        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, unsigned char flags = 0x0, std::string id = ""){
             Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
-            Prolong_Memory = prolong;
+            Flags = flags;
+            ID = id;
+        }
+
+        bool Is(unsigned char f){
+            return (Flags & f) > 0;
+        }
+
+        void Set(unsigned char f){
+            Flags |= f;
         }
     };
 
@@ -965,7 +851,7 @@ namespace GGUI{
         inline std::string Wrap                             = "Wrap";     
         
         inline std::string Text_Position                    = "Text_Position";
-        inline std::string Allow_Overflow             = "Allow_Input_Overflow";
+        inline std::string Allow_Overflow                   = "Allow_Overflow"; // This is for when child can dynamically go over parent borders, but parent size is static
         inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size"; // boolean, Tries to emulate the size of the parent like in 'Flexbox: Display;' 
         inline std::string Margin                           = "Margin";
 
@@ -1276,9 +1162,9 @@ namespace GGUI{
 
         bool Children_Changed();
         
-        bool Has_Transparent_Children();
+        bool Has_Transparent_Children();    
 
-        std::vector<Element*>& Get_Childs();
+        virtual std::vector<Element*>& Get_Childs();
 
         virtual bool Remove(Element* handle);
 
@@ -1321,10 +1207,13 @@ namespace GGUI{
         void Set_Text_Color(RGB color);
 
         void Allow_Dynamic_Size(bool True);
+
+        // Allows by default hidden overflow, so that child elements can exceed the parent element dimension limits, whiteout resizing parent.  
+        void Allow_Overflow(bool True);
         
         RGB Get_Text_Color();
 
-        static std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
+        static std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
 
         void Compute_Dynamic_Size();
 
@@ -1395,6 +1284,22 @@ namespace GGUI{
             return result;
         }
 
+        std::vector<Element*> Get_All_Nested_Elements(bool Show_Hidden = false){
+            std::vector<Element*> result;
+
+            if (!Show)
+                return {};
+            
+            result.push_back(this);
+
+            for (auto e : Childs){
+                std::vector<Element*> child_result = e->Get_All_Nested_Elements();
+                result.insert(result.end(), child_result.begin(), child_result.end());
+            }
+
+            return result;
+        }
+
         template<typename T>
         T* At(std::string s){
             T* v = (T*)Style[s];
@@ -1421,6 +1326,109 @@ namespace GGUI{
         std::vector<GGUI::UTF> Process_Opacity(std::vector<GGUI::UTF> Current_Buffer);
 
         virtual std::vector<GGUI::UTF> Postprocess();
+
+        // Uses the post_processed widths and height values
+        bool Child_Is_Shown(Element* other);
+    };
+}
+
+#endif
+#ifndef _TEXT_FIELD_H_
+#define _TEXT_FIELD_H_
+
+#include <string>
+#include <vector>
+
+
+
+namespace GGUI{
+    enum class TEXT_LOCATION{
+        LEFT,
+        CENTER,
+        RIGHT,
+    };
+
+    class Text_Field : public Element{
+    protected:
+        std::string Data = "";
+        std::string Previus_Data = "";
+        bool Allow_Text_Input = false;
+        
+    public:
+
+        Text_Field(){}
+
+        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {});
+
+        //These next constructors are mainly for users to more easily create elements.
+
+        Text_Field(
+            std::string Text,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Text_Field(
+            std::string Text,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        //End of user constructors.
+
+        void Fully_Stain() override;
+
+        void Set_Data(std::string Data);
+
+        std::string Get_Data();
+
+        void Set_Text_Position(TEXT_LOCATION Text_Position);
+
+        TEXT_LOCATION Get_Text_Position();
+        
+        void Show_Border(bool state) override;
+        
+        static std::pair<unsigned int, unsigned int> Get_Text_Dimensions(std::string& text); 
+
+        std::vector<UTF> Render() override;
+        
+        bool Resize_To(Element* parent) override;
+
+        std::string Get_Name() const override;
+
+        //async function, 
+        void Input(std::function<void(char)> Then);
+
+        void Enable_Text_Input();
+
+        void Disable_Text_Input();
+
+        bool Is_Input_Allowed(){
+            return Allow_Text_Input;
+        }
+
+        //Non visual updates dont need to update frame
+        void Enable_Input_Overflow();
+
+        //Non visual updates dont need to update frame
+        void Disable_Input_Overflow();
+
+        void Enable_Dynamic_Size();
+
+        void Disable_Dynamic_Size();
+
+        static void Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+        static void Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+        static void Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+
+        Element* Safe_Move() override {
+            Text_Field* new_Text_Field = new Text_Field();
+            *new_Text_Field = *(Text_Field*)this;
+
+            return new_Text_Field;
+        }
     };
 }
 
@@ -1428,7 +1436,7 @@ namespace GGUI{
 #ifndef _FILE_STREAMER_H_
 #define _FILE_STREAMER_H_
 
-#include "Element.h"
+
 
 #include <string>
 #include <fstream>
@@ -1499,11 +1507,563 @@ namespace GGUI{
 }
 
 #endif
+#ifndef _BUTTON_H_
+#define _BUTTON_H_
+
+#include <vector>
+#include <string>
+
+#include <functional>
+
+
+
+namespace GGUI{
+
+    class Button : public Text_Field{
+    protected:
+        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
+            On_Click([=](Event* e){
+                // The default, on_click wont do anything.
+                press(this);
+
+                return true;
+            });
+        }
+    
+        void Default_Button_Text_Align(){
+            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
+        }
+
+        // DONT USE AS USER!!
+        Button(){}
+    public:
+
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
+            Defualt_Button_Behaviour(press);
+            Default_Button_Text_Align();
+            Enable_Input_Overflow();
+            Dirty.Dirty(STAIN_TYPE::TEXT);
+            Show_Border(true);
+            Set_Name(Text);
+        }
+
+        Element* Safe_Move() override {
+            Button* new_Button = new Button();
+            *new_Button = *(Button*)this;
+
+            return new_Button;
+        }
+
+        std::string Get_Name() const override{
+            return "Button<" + Name + ">";
+        }
+    };
+}
+
+#endif
+#ifndef _RENDERER_H_
+#define _RENDERER_H_
+
+#undef min
+#undef max
+
+#include <iostream>
+#include <functional>
+#include <thread>
+#include <map>
+#include <atomic>
+
+
+
+
+
+namespace GGUI{
+    extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
+    extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
+    extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
+    extern std::atomic_bool Pause_Event_Thread;                                 //Main window
+
+    extern int Max_Width;
+    extern int Max_Height;
+
+    extern std::vector<Memory> Remember;
+
+    extern std::vector<Action*> Event_Handlers;
+    extern std::vector<Input*> Inputs;
+    
+    extern std::map<std::string, Element*> Element_Names;
+
+    extern Element* Focused_On;
+    extern Element* Hovered_On;
+
+    extern Coordinates Mouse;    
+    extern bool Mouse_Movement_Enabled;
+
+    extern std::map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+
+    extern time_t UPDATE_SPEED_MIILISECONDS;
+    extern int Inputs_Per_Second;
+    extern int Inputs_Per_Query;
+
+    extern std::map<int, std::map<std::string, VALUE*>> Classes;
+    extern std::map<std::string, int> Class_Names;
+
+    extern Window* Main;  
+    extern std::unordered_map<int, Element*> Outboxed_Elements;
+
+    void SLEEP(unsigned int milliseconds);
+
+    extern bool Collides(GGUI::Element* a, GGUI::Element* b);
+
+    extern bool Collides(GGUI::Element* a, GGUI::Coordinates b);
+
+    extern bool Collides(GGUI::Element* a, GGUI::Coordinates c, unsigned int Width, unsigned int Height);
+
+    extern Element* Get_Accurate_Element_From(Coordinates c, Element* Parent);
+
+    extern Coordinates Find_Upper_Element();
+
+    extern Coordinates Find_Lower_Element();
+
+    extern Coordinates Find_Left_Element();
+
+    extern Coordinates Find_Right_Element();
+
+    extern signed long long Min(signed long long a, signed long long b);
+
+    extern signed long long Max(signed long long a, signed long long b);
+
+    extern void ClearScreen();
+
+    extern void Render_Frame();
+
+    extern void Update_Max_Width_And_Height();
+
+    extern Coordinates Get_Terminal_Content_Size();
+
+    void Update_Frame();
+    //Is called on every cycle.
+    extern void Query_Inputs();
+
+    extern void MOUSE_API();
+
+    extern void Init_Platform_Stuff();
+
+    extern int Get_Unicode_Length(char first_char);
+
+    extern int Get_Max_Width();
+
+    extern int Get_Max_Height();
+
+    //Returns a char if given ASCII, or a short if given UNICODE
+    extern GGUI::UTF* Get(GGUI::Coordinates Abselute_Position);
+
+    extern std::string Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height);
+
+    extern void Update_Frame();
+    
+    extern void Pause_Renderer();
+
+    extern void Resume_Renderer();
+
+    extern void Recall_Memories();
+
+    extern bool Is(unsigned long long f, unsigned long long Flag);
+
+    extern void Un_Focus_Element();
+
+    extern void Un_Hover_Element();
+
+    extern void Update_Focused_Element(GGUI::Element* new_candidate);
+
+    extern void Update_Hovered_Element(GGUI::Element* new_candidate);
+
+    extern void Event_Handler();
+
+    extern int Get_Free_Class_ID(std::string n);
+
+    extern void Add_Class(std::string name, std::map<std::string, VALUE*> Styling);
+
+    extern void Init_Classes();
+
+    //Inits GGUI and returns the main window.
+    extern GGUI::Window* Init_Renderer();
+
+    extern void Report(std::string Problem);
+
+    extern void Report_Stack(std::string Problem);
+
+    extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
+
+    extern void Pause_Renderer(std::function<void()> f);
+
+    // Use this to access GGUI.
+    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
+
+    extern void Exit();
+
+    // Also handles shift tabs!
+    extern void Handle_Tabulator();
+
+    extern void Handle_Escape();
+
+    extern void Render_Outbox();
+
+    extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
+
+    extern void Init_Inspect_Tool();
+}
+
+#endif
+#ifndef _SWITCH_H_
+#define _SWITCH_H_
+
+#include <vector>
+#include <string>
+
+
+
+namespace GGUI{
+    class Switch : public Element{
+    private:
+        // DONT GIVE TO USER !!!
+        Switch(){}
+    protected:
+        bool State = false;
+
+        std::string Text = "";
+        //COntains the unchecked version of the symbol and the checked version.
+        std::vector<std::string> States;
+
+    public:
+        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = [](Element* e){});
+
+        std::vector<UTF> Render() override;
+
+        void Toggle(){
+            State = !State;
+
+            Dirty.Dirty(STAIN_TYPE::STATE);
+        }
+
+        std::string Get_Data() { return Text; }
+
+        void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
+        
+        Element* Safe_Move() override {
+            Switch* new_Switch = new Switch();
+            *new_Switch = *(Switch*)this;
+
+            return new_Switch;
+        }
+
+        std::string Get_Name() const override{
+            return "Switch<" + Name + ">";
+        }
+    };
+
+    class Radio_Button : public Switch{
+    public:
+        Radio_Button(std::string text) : Switch(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
+
+        bool Get_State(){
+            return State;
+        }
+        
+        // The Swtich overrides it for us.
+        //Element* Safe_Move() override;
+        
+        std::string Get_Name() const override{
+            return "Radio_Button<" + Name + ">";
+        }
+    };
+
+    class Check_Box : public Switch{
+    public:
+        Check_Box(std::string text) : Switch(text, {SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}){}
+
+        bool Get_State(){
+            return State;
+        }
+        
+        // The Swtich overrides it for us.
+        //Element* Safe_Move() override;
+
+        std::string Get_Name() const override{
+            return "Check_Box<" + Name + ">";
+        }
+    };
+}
+
+#endif
+#ifndef _WINDOW_H_
+#define _WINDOW_H_
+
+#include <string>
+#include <vector>
+
+
+
+//GGUI uses the ANSI escape code
+//https://en.wikipedia.org/wiki/ANSI_escape_code
+namespace GGUI{
+    class Window : public Element{
+        std::string Title = "";  //if this is empty then no title
+
+        RGB Before_Hiding_Border_Color = COLOR::WHITE;
+        RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
+        bool Has_Hidden_Borders = false;
+    public:
+        Window() : Element() {}
+
+        Window(std::string title, std::vector<std::string> classes = {});
+
+        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        
+        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+
+        //These next constructors are mainly for users to more easily create elements.
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        Window(
+            std::string title,
+            unsigned int width,
+            unsigned int height,
+            std::vector<Element*> Tree 
+        );
+
+        //End of user constructors.
+
+        void Set_Title(std::string t);
+
+        std::string Get_Title();
+        
+        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
+
+        std::string Get_Name() const override;
+
+        void Show_Border(bool state) override;
+
+        void Show_Border(bool state, bool previus_state) override;
+
+        Element* Safe_Move() override {
+            Window* new_Window = new Window();
+            *new_Window = *(Window*)this;
+
+            return new_Window;
+        }
+    };
+}
+
+#endif
+#ifndef _LIST_VIEW_H_
+#define _LIST_VIEW_H_
+
+
+
+#include <vector>
+#include <iostream>
+
+using namespace std;
+
+namespace GGUI{
+    enum class Grow_Direction{
+        ROW,
+        COLUMN
+    };
+
+    class List_View : public Element{
+    public:
+        //We can always assume that the list starts from the upper left corner, right?
+        Element* Last_Child = new Element(0, 0, {0, 0});
+
+        std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
+
+        List_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
+
+        //These next constructors are mainly for users to more easily create elements.
+        List_View(
+            RGB text_color,
+            RGB background_color
+        );
+
+        List_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        List_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        Element* Handle_Or_Operator(Element* other) override{
+            Add_Child(other);
+            return this;
+        }
+
+        //End of user constructors.
+
+        void Add_Child(Element* e) override;
+        
+        std::string Get_Name() const override;
+
+        bool Remove(Element* e) override;
+
+        void Set_Growth_Direction(Grow_Direction gd){
+            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
+        }
+
+        Grow_Direction Get_Growth_Direction(){
+            return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
+        }
+
+        template<typename  T>
+        T* Get(int index){
+            if (index > Childs.size() - 1)
+                return nullptr;
+
+            if (index < 0)
+                index = Childs.size() + index - 1;
+
+            return (T*)this->Childs[index];
+        }
+
+        Element* Safe_Move() override {
+            List_View* new_List_View = new List_View();
+            *new_List_View = *(List_View*)this;
+
+            return new_List_View;
+        }
+
+    };
+
+    class Scroll_View : public Element{
+    protected:
+        unsigned int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
+    public:
+
+        // Constructors:
+        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+        Scroll_View(Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        Scroll_View(List_View& container);
+
+        Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        Scroll_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
+
+        //These next constructors are mainly for users to more easily create elements.
+        Scroll_View(
+            RGB text_color,
+            RGB background_color
+        );
+
+        Scroll_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color
+        );
+
+        Scroll_View(
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color,
+            RGB border_background_color
+        );
+
+        Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        // Re-pipeline functions:
+        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+        void Add_Child(Element* e) override;
+
+        void Allow_Scrolling(bool allow);
+    
+        bool Is_Scrolling_Enabled(){
+            return At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
+        }
+
+        void Scroll_Up();
+
+        void Scroll_Down();
+
+        bool Remove(Element* e) override;
+        
+        std::vector<UTF> Render() override{
+            return Element::Render();
+        }
+
+        std::string Get_Name() const override;
+
+        void Set_Growth_Direction(Grow_Direction gd){
+            Childs[0]->At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
+        }
+
+        Grow_Direction Get_Growth_Direction(){
+            return (Grow_Direction)Childs[0]->At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
+        }
+
+        template<typename  T>
+        T* Get(int index){
+            return ((List_View*)Childs[0])->Get<T>(index);
+        }
+
+        List_View* Get_Container(){
+            return (List_View*)Childs[0];
+        }
+    
+    };
+}
+
+#endif
 #ifndef _HTML_H_
 #define _HTML_H_
 
-#include "Element.h"
-#include "File_Streamer.h"
+
+
 
 namespace GGUI{
 
@@ -1652,13 +2212,20 @@ namespace GGUI{
 
     extern std::unordered_map<std::string, void*> RELATIVE_COEFFICIENT;
 
+    // Hash function for __FILE__
+    // the CXX20+ Cannot for some reason use constexpr at compile time, probably because of PREPROCESSOR being computed before CONSTEXPR. 
+    constexpr unsigned int hash(const char* str, int h = 0)
+    {
+        return !str[h] ? 5381 : (hash(str, h+1) * 33) ^ str[h];
+    }
+
     // helper functions
     #define CONCAT_IMPL(x, y) x##y
     #define CONCAT(x, y) CONCAT_IMPL(x, y)
 
     // For ease of use for adding translators for user custom HTML TAG parsers.
     #define GGUI_Add_Translator(id, handler) \
-        auto CONCAT(_, __LINE__) = [](){ \
+        auto CONCAT(CONCAT(_, __LINE__), __COUNTER__) = [](){ \
             if (GGUI::HTML_Translators == nullptr){ \
                 GGUI::HTML_Translators = new std::unordered_map<std::string, std::function<GGUI::Element* (GGUI::HTML_Node*)>>(); \
             } \
@@ -1693,134 +2260,10 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _LIST_VIEW_H_
-#define _LIST_VIEW_H_
-
-#include "Element.h"
-
-#include <vector>
-#include <iostream>
-
-using namespace std;
-
-namespace GGUI{
-    enum class Grow_Direction{
-        ROW,
-        COLUMN
-    };
-
-    class List_View : public Element{
-    public:
-        //We can always assume that the list starts from the upper left corner, right?
-        Element* Last_Child = new Element(0, 0, {0, 0});
-
-        std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
-
-        List_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
-
-        //These next constructors are mainly for users to more easily create elements.
-        List_View(
-            RGB text_color,
-            RGB background_color
-        );
-
-        List_View(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color
-        );
-
-        List_View(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
-
-        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
-
-        Element* Handle_Or_Operator(Element* other) override{
-            Add_Child(other);
-            return this;
-        }
-
-        //End of user constructors.
-
-        void Add_Child(Element* e) override;
-        
-        //std::vector<UTF> Render() override;
-
-        std::string Get_Name() const override;
-
-        bool Remove(Element* e) override;
-
-        void Set_Growth_Direction(Grow_Direction gd){
-            At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
-        }
-
-        Grow_Direction Get_Growth_Direction(){
-            return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
-        }
-
-        template<typename  T>
-        T* Get(int index){
-            if (index > Childs.size() - 1)
-                return nullptr;
-
-            if (index < 0)
-                index = Childs.size() + index - 1;
-
-            return (T*)this->Childs[index];
-        }
-
-        Element* Safe_Move() override {
-            List_View* new_List_View = new List_View();
-            *new_List_View = *(List_View*)this;
-
-            return new_List_View;
-        }
-
-    };
-
-    class Scroll_View : public Element{
-    protected:
-        unsigned int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
-
-        List_View* Container = nullptr;
-    public:
-
-        // Constructors:
-        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-        Scroll_View(Grow_Direction grow_direction = Grow_Direction::ROW);
-
-        Scroll_View(List_View& container);
-
-        Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
-
-        // Re-pipeline functions:
-        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-        void Add_Child(Element* e) override;
-
-        void Allow_Scrolling(bool allow);
-    
-        bool Is_Scrolling_Enabled(){
-            return At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
-        }
-
-        void Scroll_Up();
-
-        void Scroll_Down();
-    };
-}
-
-#endif
 #ifndef _PROGRESS_BAR_H_
 #define _PROGRESS_BAR_H_
 
-#include "Element.h"
+
 
 namespace GGUI{
 
@@ -1861,275 +2304,83 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _SWITCH_H_
-#define _SWITCH_H_
+#ifndef _CANVAS_H_
+#define _CANVAS_H_
+
+
 
 #include <vector>
-#include <string>
-
-#include "Button.h"
 
 namespace GGUI{
-    class Switch : public Element{
+
+    class Canvas : public Element{
     private:
-        // DONT GIVE TO USER !!!
-        Switch(){}
+        // DONT GIVE THIS TO USER!
+        Canvas(){}
     protected:
-        bool State = false;
-
-        std::string Text = "";
-        //COntains the unchecked version of the symbol and the checked version.
-        std::vector<std::string> States;
-
+        std::vector<RGB> Buffer;
     public:
-        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = [](Element* e){});
+        Canvas(unsigned int w, unsigned int h, Coordinates position);
+        
+        // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
+        void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
+        
+        void Flush();
 
         std::vector<UTF> Render() override;
 
-        void Toggle(){
-            State = !State;
-
-            Dirty.Dirty(STAIN_TYPE::STATE);
-        }
-
-        std::string Get_Data() { return Text; }
-
-        void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
-        
         Element* Safe_Move() override {
-            Switch* new_Switch = new Switch();
-            *new_Switch = *(Switch*)this;
+            Canvas* new_Canvas = new Canvas();
+            *new_Canvas = *(Canvas*)this;
 
-            return new_Switch;
+            return new_Canvas;
         }
 
         std::string Get_Name() const override{
-            return "Switch<" + Name + ">";
+            return "Canvas<" + Name + ">";
         }
     };
 
-    class Radio_Button : public Switch{
+    class Sprite{
     public:
-        Radio_Button(std::string text) : Switch(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
+        RGB Background_Color;
+        RGB Foreground_Color;
+        UTF Texture;
 
-        bool Get_State(){
-            return State;
-        }
-        
-        // The Swtich overrides it for us.
-        //Element* Safe_Move() override;
-        
-        std::string Get_Name() const override{
-            return "Radio_Button<" + Name + ">";
-        }
+        Sprite(UTF t = UTF(" "), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
+
+        UTF Render();
     };
 
-    class Check_Box : public Switch{
-    public:
-        Check_Box(std::string text) : Switch(text, {SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}){}
-
-        bool Get_State(){
-            return State;
-        }
-        
-        // The Swtich overrides it for us.
-        //Element* Safe_Move() override;
-
-        std::string Get_Name() const override{
-            return "Check_Box<" + Name + ">";
-        }
-    };
-}
-
-#endif
-#ifndef _TEXT_FIELD_H_
-#define _TEXT_FIELD_H_
-
-#include <string>
-#include <vector>
-
-#include "Element.h"
-
-namespace GGUI{
-    enum class TEXT_LOCATION{
-        LEFT,
-        CENTER,
-        RIGHT,
-    };
-
-    class Text_Field : public Element{
+    class Terminal_Canvas : public Element{
+    private:
+        // DONT GIVE THIS TO USER!!!
+        Terminal_Canvas(){}
     protected:
-        std::string Data = "";
-        std::string Previus_Data = "";
-        bool Allow_Text_Input = false;
-        
+        std::vector<Sprite> Buffer;
     public:
-
-        Text_Field(){}
-
-        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {});
-
-        //These next constructors are mainly for users to more easily create elements.
-
-        Text_Field(
-            std::string Text,
-            RGB text_color,
-            RGB background_color
-        );
-
-        Text_Field(
-            std::string Text,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
-
-        //End of user constructors.
-
-        void Fully_Stain() override;
-
-        void Set_Data(std::string Data);
-
-        std::string Get_Data();
-
-        void Set_Text_Position(TEXT_LOCATION Text_Position);
-
-        TEXT_LOCATION Get_Text_Position();
+        Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         
-        void Show_Border(bool state) override;
-        
-        static std::pair<unsigned int, unsigned int> Get_Text_Dimensions(std::string& text); 
+        void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
 
+        void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
+        
+        void Flush();
+        
         std::vector<UTF> Render() override;
         
-        bool Resize_To(Element* parent) override;
+        Element* Safe_Move() override {
+            Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
+            *new_Terminal_Canvas = *(Terminal_Canvas*)this;
 
-        std::string Get_Name() const override;
-
-        //async function, 
-        void Input(std::function<void(char)> Then);
-
-        void Enable_Text_Input();
-
-        void Disable_Text_Input();
-
-        bool Is_Input_Allowed(){
-            return Allow_Text_Input;
+            return new_Terminal_Canvas;
         }
 
-        //Non visual updates dont need to update frame
-        void Enable_Input_Overflow();
-
-        //Non visual updates dont need to update frame
-        void Disable_Input_Overflow();
-
-        void Enable_Dynamic_Size();
-
-        void Disable_Dynamic_Size();
-
-        static void Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
-        static void Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
-        static void Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
-
-        Element* Safe_Move() override {
-            Text_Field* new_Text_Field = new Text_Field();
-            *new_Text_Field = *(Text_Field*)this;
-
-            return new_Text_Field;
+        std::string Get_Name() const override{
+            return "Terminal_Canvas<" + Name + ">";
         }
     };
-}
 
-#endif
-#ifndef _WINDOW_H_
-#define _WINDOW_H_
-
-#include <string>
-#include <vector>
-
-#include "Element.h"
-
-//GGUI uses the ANSI escape code
-//https://en.wikipedia.org/wiki/ANSI_escape_code
-namespace GGUI{
-    class Window : public Element{
-        std::string Title = "";  //if this is empty then no title
-
-        RGB Before_Hiding_Border_Color = COLOR::WHITE;
-        RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
-        bool Has_Hidden_Borders = false;
-    public:
-        Window() : Element() {}
-
-        Window(std::string title, std::vector<std::string> classes = {});
-
-        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
-        
-        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
-
-        //These next constructors are mainly for users to more easily create elements.
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
-
-        Window(
-            std::string title,
-            unsigned int width,
-            unsigned int height,
-            std::vector<Element*> Tree 
-        );
-
-        //End of user constructors.
-
-        void Set_Title(std::string t);
-
-        std::string Get_Title();
-        
-        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
-
-        std::string Get_Name() const override;
-
-        void Show_Border(bool state) override;
-
-        void Show_Border(bool state, bool previus_state) override;
-
-        Element* Safe_Move() override {
-            Window* new_Window = new Window();
-            *new_Window = *(Window*)this;
-
-            return new_Window;
-        }
-    };
 }
 
 #endif

@@ -67,7 +67,7 @@ int main()
 # Building this project
 ```bash
 cd include
-g++ ./Build_Script.cpp -O3
+g++ ./include/Build_Script.cpp
 ./a.exe
 ```
 
