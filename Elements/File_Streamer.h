@@ -72,6 +72,16 @@ namespace GGUI{
     };
 
     #ifdef _WIN32
+        class CMD{
+        private:
+            void* In;
+            void* Out;
+        public:
+            CMD();
+            ~CMD();
+
+            std::string Run(std::string command);
+        };
     #else
         class CMD{  // Unix implementation:
         private:

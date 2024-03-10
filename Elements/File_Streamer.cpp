@@ -4,7 +4,7 @@
 #include <filesystem>
 
 #ifdef _WIN32
-    int a = 0;
+    #include <windows.h>
 #else
     #include <unistd.h>
     #include <sys/types.h>
@@ -118,6 +118,47 @@ namespace GGUI{
     }
 
     #ifdef _WIN32
+        CMD::CMD(){
+            SECURITY_ATTRIBUTES sa;
+            sa.nLength = sizeof(sa);
+            sa.lpSecurityDescriptor = NULL;
+            sa.bInheritHandle = TRUE;
+
+            if (!CreatePipe(&In, &Out, &sa, 0)) {
+                Report("Failed to create pipe for CMD!");
+            }
+        }
+
+        std::string CMD::Run(std::string Command){
+            PROCESS_INFORMATION pi;
+            STARTUPINFO si;
+
+            ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+            ZeroMemory(&si, sizeof(STARTUPINFO));
+            si.cb = sizeof(STARTUPINFO);
+            si.hStdOutput = Out;
+            si.hStdError = Out;
+            si.dwFlags |= STARTF_USESTDHANDLES;
+
+            if (!CreateProcess(NULL, (LPSTR)Command.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+                Report("Failed to run command: '" + Command + "' !");
+            }
+
+            CloseHandle(Out);
+
+            DWORD bytesRead;
+            CHAR buffer[4096];
+            std::string output;
+            while (ReadFile(In, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) {
+                buffer[bytesRead] = '\0';
+                output += buffer;
+            }
+
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+
+            return output;
+        }
 
     #else
 
