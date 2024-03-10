@@ -8,6 +8,7 @@
 #include <functional>
 #include <unordered_map>
 #include <vector>
+#include <stdio.h>
 
 namespace GGUI{
 
@@ -69,6 +70,18 @@ namespace GGUI{
             return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
         }
     };
+
+    class CMD{
+    private:
+        FILE* Handle;
+    public:
+
+        CMD();
+        ~CMD();
+
+        void Run(std::string command);
+    };
+
 }
 
 #endif

@@ -46,6 +46,8 @@ int main()
     - Text input
 - **List_View features**
     - Flow direction
+- **Scroll_View features**
+    - Ability to add elements over boundaries and also scrolling vertically or horizontally, based on the Flow direction.
 - **Canvas features**
     - Pixel per Pixel rendering
 - **Progress_Bar**
@@ -62,11 +64,11 @@ int main()
 
 # Developing this project further
 ### This project uses 'meson' so use `meson setup Build` to setup the meson environment if you have not yet done so.
-### Use 'launch.json' and 'tasks.json' to build and debug this project if your in VSCode.
+### Use `meson compile -C Build` to build the GGUI project.
+### Builtin .vscode tasks.json and launch.json also useful for Dev.
 
 # Building this project
 ```bash
-cd include
 g++ ./include/Build_Script.cpp
 ./a.exe
 ```

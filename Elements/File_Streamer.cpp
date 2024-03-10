@@ -107,4 +107,31 @@ namespace GGUI{
     std::string Get_Current_Location(){
         return std::filesystem::current_path().string();
     }
+
+    CMD::CMD(){
+        #ifdef _WIN32
+            Handle = _popen("cmd", "w");
+        #else
+            Handle = popen("sh", "w");
+        #endif
+
+        // check if Handle was established successfully
+        if (!Handle){
+            Report("Failed to open command line!");
+        }
+    }
+
+    CMD::~CMD(){
+        #ifdef _WIN32
+            _pclose(Handle);
+        #else
+            pclose(Handle);
+        #endif
+    }
+
+    void CMD::Run(std::string command){
+
+        fwrite(command.data(), sizeof(char), command.size(), Handle);
+
+    }
 }
