@@ -3,6 +3,13 @@
 
 #include <filesystem>
 
+#ifdef _WIN32
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#elif
+#endif
+
 namespace GGUI{
     std::unordered_map<std::string, FILE_STREAM*> File_Streamer_Handles;
 
@@ -108,30 +115,12 @@ namespace GGUI{
         return std::filesystem::current_path().string();
     }
 
-    CMD::CMD(){
-        #ifdef _WIN32
-            Handle = _popen("cmd", "w");
-        #else
-            Handle = popen("sh", "w");
-        #endif
+    #ifdef _WIN32
 
-        // check if Handle was established successfully
-        if (!Handle){
-            Report("Failed to open command line!");
-        }
+    CMD::CMD(){ // Unix implementation
+        
     }
 
-    CMD::~CMD(){
-        #ifdef _WIN32
-            _pclose(Handle);
-        #else
-            pclose(Handle);
-        #endif
-    }
-
-    void CMD::Run(std::string command){
-
-        fwrite(command.data(), sizeof(char), command.size(), Handle);
-
-    }
+    #elif
+    #endif
 }

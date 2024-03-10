@@ -477,6 +477,30 @@ namespace GGUI{
         exit(0);
     }
 
+    // For getting all font files:
+    std::vector<std::string> Get_List_Of_Font_Files() {
+        std::vector<std::string> Result;
+        HKEY hKey;
+        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+            DWORD cValues; 
+            RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL, &cValues, NULL, NULL, NULL, NULL);
+            for (DWORD i = 0; i < cValues; i++) {
+                char valueName[1024];
+                DWORD valueNameSize = 1024;
+                BYTE valueData[1024];
+                DWORD valueDataSize = 1024;
+                DWORD valueType;
+                if (RegEnumValue(hKey, i, valueName, &valueNameSize, NULL, &valueType, valueData, &valueDataSize) == ERROR_SUCCESS) {
+                    // add the file to the Result list.
+                    Result.push_back((char*)valueData);
+                }
+            }
+            RegCloseKey(hKey);
+        }
+
+        return Result;
+    }
+
     #else
     #include <unistd.h>
     #include <termios.h>
@@ -932,6 +956,12 @@ namespace GGUI{
 
         raw.c_lflag &= ~(ECHO | ICANON);
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+    }
+
+    std::vector<std::string> Get_List_Of_Font_Files(){
+
+        
+
     }
 
     #endif

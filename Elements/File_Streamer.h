@@ -71,17 +71,21 @@ namespace GGUI{
         }
     };
 
-    class CMD{
-    private:
-        FILE* Handle;
-    public:
+    #ifdef _WIN32
+        class CMD{  // Unix implementation:
+        private:
+            int File_Descriptor_In = 0;
+            int File_Descriptor_Out = 0;
+            int File_Descriptor_Error = 0;
+        public:
 
-        CMD();
-        ~CMD();
+            CMD();
+            ~CMD();
 
-        void Run(std::string command);
-    };
-
+            void Run(std::string command);
+        };
+    #elif
+    #endif
 }
 
 #endif
