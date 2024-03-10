@@ -72,19 +72,23 @@ namespace GGUI{
     };
 
     #ifdef _WIN32
+    #else
         class CMD{  // Unix implementation:
         private:
-            int File_Descriptor_In = 0;
-            int File_Descriptor_Out = 0;
-            int File_Descriptor_Error = 0;
+            union FileDescriptor {
+                struct {
+                    int In;
+                    int Out;
+                };
+                int FDS[2];
+            } File_Descriptor;
         public:
 
             CMD();
             ~CMD();
 
-            void Run(std::string command);
+            std::string Run(std::string command);
         };
-    #elif
     #endif
 }
 

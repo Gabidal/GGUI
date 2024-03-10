@@ -4,10 +4,12 @@
 #include <filesystem>
 
 #ifdef _WIN32
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#elif
+    int a = 0;
+#else
+    #include <unistd.h>
+    #include <sys/types.h>
+    #include <sys/wait.h>
+    #include <cstring>
 #endif
 
 namespace GGUI{
@@ -117,10 +119,35 @@ namespace GGUI{
 
     #ifdef _WIN32
 
-    CMD::CMD(){ // Unix implementation
-        
+    #else
+
+    CMD::CMD(){ 
+        // Unix implementation
+        pipe(File_Descriptor.FDS);
     }
 
-    #elif
+    std::string CMD::Run(std::string Command){
+        if (fork() == 0) {
+            // Child process
+            dup2(File_Descriptor.Out, STDOUT_FILENO);
+            system(Command.c_str());
+            exit(0);
+        } else {
+            // Parent process
+            close(File_Descriptor.Out);
+
+            char buffer[256];
+            std::string output = "";
+
+            while (read(File_Descriptor.In, buffer, sizeof(buffer)) > 0) {
+
+                output += buffer;
+                memset(buffer, 0, sizeof(buffer));
+
+            }
+            wait(NULL);  // Wait for child process to finish
+            return output;
+        }
+    }
     #endif
 }
