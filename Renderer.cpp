@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <math.h>
+#include <sstream>
 
 namespace GGUI{
 
@@ -959,9 +960,26 @@ namespace GGUI{
     }
 
     std::vector<std::string> Get_List_Of_Font_Files(){
+        CMD Handle;
 
-        
+        // we will run the command and it will return us a list of all font file names.
+        std::string Raw_Result = Handle.Run("fc-list -v | grep file");
 
+        std::vector<std::string> File_Names;
+        std::stringstream ss(Raw_Result);
+        std::string temp;
+
+        // Process the output line by line
+        while(std::getline(ss, temp, '\n')) {
+            // Extract the file name from each line and add it to the vector
+            std::size_t pos = temp.find(": ");
+            if(pos != std::string::npos) {
+                std::string file_name = temp.substr(pos+2);
+                File_Names.push_back(file_name);
+            }
+        }
+
+        return File_Names;
     }
 
     #endif
