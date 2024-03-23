@@ -1071,31 +1071,33 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
     if (!w->Has_Border())
         return;
 
+    GGUI::BORDER_STYLE_VALUE* custom_border = this->At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
+
     for (int y = 0; y < Height; y++){
         for (int x = 0; x < Width; x++){
             //top left corner
             if (y == 0 && x == 0){
-                Result[y * Width + x] = GGUI::UTF(SYMBOLS::TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border->TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //top right corner
             else if (y == 0 && x == Width - 1){
-                Result[y * Width + x] = GGUI::UTF(SYMBOLS::TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border->TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom left corner
             else if (y == Height - 1 && x == 0){
-                Result[y * Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border->BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom right corner
             else if (y == Height - 1 && x == Width - 1){
-                Result[y * Width + x] = GGUI::UTF(SYMBOLS::BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border->BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //The roof border
             else if (y == 0 || y == Height - 1){
-                Result[y * Width + x] = GGUI::UTF(SYMBOLS::HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border->HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
             }
             //The left border
             else if (x == 0 || x == Width - 1){
-                Result[y * Width + x] = GGUI::UTF(SYMBOLS::VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border->VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
             }
         }
     }
@@ -1184,6 +1186,29 @@ inline GGUI::UTF* From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_B
     return &Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
 }
 
+std::map<unsigned int, std::string> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
+    GGUI::BORDER_STYLE_VALUE* custom_border_style = e->At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
+
+    return {
+            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style->TOP_LEFT_CORNER},
+            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style->TOP_RIGHT_CORNER},
+            {GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style->BOTTOM_LEFT_CORNER},
+            {GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style->BOTTOM_RIGHT_CORNER},
+
+            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_UP, custom_border_style->VERTICAL_LINE},
+
+            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style->HORIZONTAL_LINE},
+
+            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style->VERTICAL_RIGHT_CONNECTOR},
+            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style->VERTICAL_LEFT_CONNECTOR},
+
+            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT | GGUI::SYMBOLS::CONNECTS_DOWN, custom_border_style->HORIZONTAL_BOTTOM_CONNECTOR},
+            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT | GGUI::SYMBOLS::CONNECTS_UP, custom_border_style->HORIZONTAL_TOP_CONNECTOR},
+
+            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT | GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_DOWN, custom_border_style->CROSS_CONNECTOR}
+        };
+}
+
 void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer){
 
     // We only need to calculate the childs points in which they intersect with the parent borders.
@@ -1253,6 +1278,8 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         );
     }
 
+    std::map<unsigned int, std::string> custom_border = Get_Custom_Border_Map(A);
+
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
 
@@ -1275,10 +1302,10 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         if (Is_In_Bounds(Right, this) && From(Right, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
 
-        if (SYMBOLS::Border_Identifiers.find(Current_Masks) == SYMBOLS::Border_Identifiers.end())
+        if (custom_border.find(Current_Masks) == custom_border.end())
             continue;
 
-        From(c, Parent_Buffer, this)->Unicode = SYMBOLS::Border_Identifiers[Current_Masks];
+        From(c, Parent_Buffer, this)->Unicode = custom_border[Current_Masks];
     }
 }
 

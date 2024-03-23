@@ -830,6 +830,21 @@ namespace GGUI{
         SHADOW_VALUE(){}
     };
 
+    class BORDER_STYLE_VALUE : public VALUE{
+    public:
+        std::string TOP_LEFT_CORNER             = "┌";//"\e(0\x6c\e(B";
+        std::string BOTTOM_LEFT_CORNER          = "└";//"\e(0\x6d\e(B";
+        std::string TOP_RIGHT_CORNER            = "┐";//"\e(0\x6b\e(B";
+        std::string BOTTOM_RIGHT_CORNER         = "┘";//"\e(0\x6a\e(B";
+        std::string VERTICAL_LINE               = "│";//"\e(0\x78\e(B";
+        std::string HORIZONTAL_LINE             = "─";//"\e(0\x71\e(B";
+        std::string VERTICAL_RIGHT_CONNECTOR    = "├";//"\e(0\x74\e(B";
+        std::string VERTICAL_LEFT_CONNECTOR     = "┤";//"\e(0\x75\e(B";
+        std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        std::string HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
+        std::string CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
+    };
+
     namespace STYLES{
         inline std::string Border                           = "Border";
         inline std::string Text_Color                       = "Text_Color";
@@ -846,6 +861,8 @@ namespace GGUI{
         inline std::string Focus_Text_Color                 = "Focus_Text_Color";
         inline std::string Focus_Background_Color           = "Focus_Background_Color";
         inline std::string Focus_Border_Background_Color    = "Focus_Border_Background_Color";
+
+        inline std::string Border_Style                     = "Border_Style";
 
         inline std::string Flow_Priority                    = "Flow_Priority";
         inline std::string Wrap                             = "Wrap";     
@@ -1233,6 +1250,8 @@ namespace GGUI{
         void Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source);
 
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
+
+        std::map<unsigned int, std::string> Get_Custom_Border_Map(Element* e);
 
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 

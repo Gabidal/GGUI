@@ -73,7 +73,38 @@ namespace GGUI{
         std::string Get_Name() const override{
             return "Terminal_Canvas<" + Name + ">";
         }
+    
+        
     };
+
+    namespace DRAW{
+
+        // Expects fully initialized 2D list of booleans, which it will put the result.
+        void Line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width);
+
+        std::vector<bool> Line(Vector2 Start, Vector2 End, int Buffer_Width);
+
+        // Symmetrical circle draw helper:
+        void Symmetry_Filler_For_Circle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width);
+
+        void Circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width);
+
+        std::vector<bool> Circle(Vector2 Center, int Radius, int Buffer_Width);
+
+        void Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, std::vector<bool>& pixels, int width);
+        
+        std::vector<bool> Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, int Buffer_Width);
+
+    }
+
+    namespace FONT{
+        // Based on: https://learn.microsoft.com/en-us/typography/opentype/spec/otff
+        class Font_Header{
+        public:
+        };
+
+        Font_Header Parse_Font_File(std::string File_Name);
+    }
 
 }
 
