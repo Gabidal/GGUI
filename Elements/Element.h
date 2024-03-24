@@ -68,14 +68,13 @@ namespace GGUI{
         inline std::string SEPERATE = ";";
         inline std::string Text_Color = "38";
         inline std::string Back_Ground_Color = "48";
-        inline std::string RESET_Text_Color;
-        inline std::string RESET_Back_Ground_Color;
         inline std::string USE_RGB = "2";
         inline std::string END_COMMAND = "m";
         inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
         inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
         inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
         inline std::string RESET_CONSOLE = ESC_CODE + "c";
+        inline std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;
 
         inline std::string EnableFeature(std::string command) { return ESC_CODE + "?" + command + "h"; }
         inline std::string DisableFeature(std::string command) { return ESC_CODE + "?" + command + "l"; }
@@ -147,8 +146,6 @@ namespace GGUI{
 
         inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = (unsigned long long)1 << 45;
         inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = (unsigned long long)1 << 46;
-
-        inline void Init();
     }
     
     namespace BUTTON_STATES{
@@ -248,24 +245,22 @@ namespace GGUI{
 
     class RGB{
     public:
-        union{
-            unsigned char Red = 0;
-            unsigned char R;
-        };
-        union{
-            unsigned char Green = 0;
-            unsigned char G;
-        };
-        union{
-            unsigned char Blue = 0;
-            unsigned char B;
-        };
+        unsigned char Red = 0;
+        unsigned char Green = 0;
+        unsigned char Blue = 0;
 
-        RGB(unsigned char r, unsigned char g, unsigned char b){
-            R = r;
-            G = g;
-            B = b;
+        constexpr RGB(unsigned char r, unsigned char g, unsigned char b, bool Use_Const){
+            Red = r;
+            Green = g;
+            Blue = b;
         }
+        
+        RGB(unsigned char r, unsigned char g, unsigned char b){
+            Red = r;
+            Green = g;
+            Blue = b;
+        }
+
 
         RGB(){}
 
@@ -297,10 +292,7 @@ namespace GGUI{
     // Ranging from 0. - 1.
         float Fast_Alpha = 1;
 
-        union{
-            unsigned char Alpha = std::numeric_limits<unsigned char>::max();
-            unsigned char A;
-        };
+        unsigned char Alpha = std::numeric_limits<unsigned char>::max();
     public:
 
         void Set_Alpha(unsigned char a){
@@ -314,18 +306,18 @@ namespace GGUI{
         }
 
         RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
-            R = r;
-            G = g;
-            B = b;
+            Red = r;
+            Green = g;
+            Blue = b;
             Set_Alpha(a);
         }
 
         RGBA(){}
 
         RGBA(RGB primal){
-            R = primal.R;
-            G = primal.G;
-            B = primal.B;
+            Red = primal.Red;
+            Green = primal.Green;
+            Blue = primal.Blue;
         }
 
         float &Get_Float_Alpha(){
@@ -402,34 +394,31 @@ namespace GGUI{
     };
 
     namespace COLOR{
-        static const RGB WHITE = RGB(255, 255, 255);
-        static const RGB BLACK = RGB(0, 0, 0);
-        static const RGB RED = RGB(255, 0, 0);
-        static const RGB GREEN = RGB(0, 255, 0);
-        static const RGB BLUE = RGB(0, 0, 255);
-        static const RGB YELLOW = RGB(255, 255, 0);
-        static const RGB CYAN = RGB(0, 255, 255);
-        static const RGB MAGENTA = RGB(255, 0, 255);
-        static const RGB GRAY = RGB(128, 128, 128);
-        static const RGB LIGHT_RED = RGB(255, 0, 0);
-        static const RGB LIGHT_GREEN = RGB(0, 255, 0);
-        static const RGB LIGHT_BLUE = RGB(0, 0, 255);
-        static const RGB LIGHT_YELLOW = RGB(255, 255, 0);
-        static const RGB LIGHT_CYAN = RGB(0, 255, 255);
-        static const RGB LIGHT_MAGENTA = RGB(255, 0, 255);
-        static const RGB LIGHT_GRAY = RGB(192, 192, 192);
-        static const RGB DARK_RED = RGB(128, 0, 0);
-        static const RGB DARK_GREEN = RGB(0, 128, 0);
-        static const RGB DARK_BLUE = RGB(0, 0, 128);
-        static const RGB DARK_YELLOW = RGB(128, 128, 0);
-        static const RGB DARK_CYAN = RGB(0, 128, 128);
-        static const RGB DARK_MAGENTA = RGB(128, 0, 128);
-        static const RGB DARK_GRAY = RGB(64, 64, 64);
-    }
-
-    void Constants::Init(){
-        RESET_Text_Color = ESC_CODE + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
-        RESET_Back_Ground_Color = ESC_CODE + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
+        static constexpr RGB WHITE = RGB(255, 255, 255, true);
+        static constexpr RGB BLACK = RGB(0, 0, 0, true);
+        static constexpr RGB RED = RGB(255, 0, 0, true);
+        static constexpr RGB GREEN = RGB(0, 255, 0, true);
+        static constexpr RGB BLUE = RGB(0, 0, 255, true);
+        static constexpr RGB YELLOW = RGB(255, 255, 0, true);
+        static constexpr RGB ORANGE = RGB(255, 128, 0, true);
+        static constexpr RGB CYAN = RGB(0, 255, 255, true);
+        static constexpr RGB TEAL = RGB(0, 128, 128, true);
+        static constexpr RGB MAGENTA = RGB(255, 0, 255, true);
+        static constexpr RGB GRAY = RGB(128, 128, 128, true);
+        static constexpr RGB LIGHT_RED = RGB(255, 128, 128, true);
+        static constexpr RGB LIGHT_GREEN = RGB(128, 255, 128, true);
+        static constexpr RGB LIGHT_BLUE = RGB(128, 128, 255, true);
+        static constexpr RGB LIGHT_YELLOW = RGB(255, 255, 128, true);
+        static constexpr RGB LIGHT_CYAN = RGB(128, 255, 255, true);
+        static constexpr RGB LIGHT_MAGENTA = RGB(255, 128, 255, true);
+        static constexpr RGB LIGHT_GRAY = RGB(192, 192, 192, true);
+        static constexpr RGB DARK_RED = RGB(128, 0, 0, true);
+        static constexpr RGB DARK_GREEN = RGB(0, 128, 0, true);
+        static constexpr RGB DARK_BLUE = RGB(0, 0, 128, true);
+        static constexpr RGB DARK_YELLOW = RGB(128, 128, 0, true);
+        static constexpr RGB DARK_CYAN = RGB(0, 128, 128, true);
+        static constexpr RGB DARK_MAGENTA = RGB(128, 0, 128, true);
+        static constexpr RGB DARK_GRAY = RGB(64, 64, 64, true);
     }
 
     class Vector2{
@@ -519,6 +508,7 @@ namespace GGUI{
 
         ~UTF(){}
 
+        // {Foreground, Background}
         UTF(char data, std::pair<RGB, RGB> color = {{}, {}}){
             Ascii = data;
             Foreground = {color.first};
@@ -526,6 +516,7 @@ namespace GGUI{
             FLAGS = UTF_FLAG::IS_ASCII;
         }
 
+        // {Foreground, Background}
         UTF(std::string data, std::pair<RGB, RGB> color = {{}, {}}){
             Unicode = data;
             Foreground = {color.first};
@@ -824,21 +815,7 @@ namespace GGUI{
         std::string HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
         std::string CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
 
-        BORDER_STYLE_VALUE(std::vector<std::string> values){
-            if(values.size() == 9){
-                TOP_LEFT_CORNER = values[0];
-                BOTTOM_LEFT_CORNER = values[1];
-                TOP_RIGHT_CORNER = values[2];
-                BOTTOM_RIGHT_CORNER = values[3];
-                VERTICAL_LINE = values[4];
-                HORIZONTAL_LINE = values[5];
-                VERTICAL_RIGHT_CONNECTOR = values[6];
-                VERTICAL_LEFT_CONNECTOR = values[7];
-                HORIZONTAL_BOTTOM_CONNECTOR = values[8];
-                HORIZONTAL_TOP_CONNECTOR = values[9];
-                CROSS_CONNECTOR = values[10];
-            }
-        }
+        BORDER_STYLE_VALUE(std::vector<std::string> values);
 
         // Re-import defaults:
         BORDER_STYLE_VALUE() = default;

@@ -42,7 +42,7 @@ std::string GGUI::UTF::To_String(){
         Result += Ascii;
     }
 
-    return Result + Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
+    return Result + Constants::RESET_COLOR;
 }
 
 std::string GGUI::UTF::To_Encoded_String(){
@@ -62,7 +62,7 @@ std::string GGUI::UTF::To_Encoded_String(){
     }
 
     if (Is(UTF_FLAG::ENCODE_END))
-        return Result + Constants::RESET_Text_Color + Constants::RESET_Back_Ground_Color;
+        return Result + Constants::RESET_COLOR;
     else
         return Result;
 }

@@ -78,7 +78,7 @@ namespace GGUI{
             void* Out;
         public:
             CMD();
-            ~CMD();
+            ~CMD() = default;
 
             std::string Run(std::string command);
         };
@@ -95,7 +95,7 @@ namespace GGUI{
         public:
 
             CMD();
-            ~CMD();
+            ~CMD() = default;
 
             std::string Run(std::string command);
         };

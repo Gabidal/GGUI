@@ -502,6 +502,17 @@ namespace GGUI{
         return Result;
     }
 
+    void Report_Stack(std::string Problem){
+        // Print the stack information and the function names can be got from .PDATA section
+        unsigned long long Stack_Pointer = (unsigned long long)__builtin_return_address(0);
+
+        // Stacktracing doesnt work atm :(
+        //auto& stack = std::stacktrace::current();
+
+
+        Report(Problem);
+    }
+
     #else
     #include <unistd.h>
     #include <termios.h>
@@ -510,6 +521,7 @@ namespace GGUI{
     #include <fcntl.h>
     #include <signal.h>
     #include <termios.h>
+    #include <execinfo.h>
 
     int Previus_Flags = 0;
     struct termios Previus_Raw;
@@ -980,6 +992,47 @@ namespace GGUI{
         }
 
         return File_Names;
+    }
+
+    void Report_Stack(std::string Problem){
+        int Stack_Trace_Depth = 10;
+        void *Ptr_Table[Stack_Trace_Depth];
+
+        // Declare a pointer to an array of strings. This will hold the symbol names of the stack trace
+        char **Name_Table;
+
+        // Get the stack trace and store it in the array. The return value is the number of stack frames obtained
+        size_t Usable_Depth = backtrace(Ptr_Table, Stack_Trace_Depth);
+
+        // Convert the addresses in the stack trace into an array of strings that describe the addresses symbolically
+        Name_Table = backtrace_symbols(Ptr_Table, Usable_Depth);
+
+        // Now that we have the stack frame label names in the Name_Table list, we can construct an visually apleasing stack trace information:
+        std::string Result = "Stack Trace:\n";
+
+        for (int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
+            string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
+
+            // For last branch use different branch start symbol
+            if (Stack_Index == Usable_Depth - 1)
+                Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
+
+            // now add indentation by the amount of index:
+            string Indent = "";
+
+            for (int i = 0; i < Stack_Index; i++)
+                Indent += SYMBOLS::HORIZONTAL_LINE;
+
+            Result += Branch_Start + Indent + Name_Table[Stack_Index] + "\n";
+        }
+
+        // Free the memory allocated for the string array
+        free(Name_Table);
+
+        // now add the problem into the message
+        Result += "Problem: " + Problem;
+
+        Report(Result);
     }
 
     #endif
@@ -1561,8 +1614,6 @@ namespace GGUI{
         Pause_Event_Thread = true;
 
         Init_Platform_Stuff();
-
-        GGUI::Constants::Init();
         Init_Classes();
 
 
@@ -1784,6 +1835,7 @@ namespace GGUI{
 
         }
         else{
+
             // This is for the non GGUI space errors.
             UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
 
@@ -1791,17 +1843,6 @@ namespace GGUI{
         }
 
         Resume_Renderer();
-    }
-
-    void Report_Stack(std::string Problem){
-        // Print the stack information and the function names can be got from .PDATA section
-        unsigned long long Stack_Pointer = (unsigned long long)__builtin_return_address(0);
-
-        // Stacktracing doesnt work atm :(
-        //auto& stack = std::stacktrace::current();
-
-
-        Report(Problem);
     }
 
     void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){
