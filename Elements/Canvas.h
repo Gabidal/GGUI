@@ -74,7 +74,7 @@ namespace GGUI{
             return "Terminal_Canvas<" + Name + ">";
         }
     
-        
+        void Embed_Points(std::vector<bool> pixels, BORDER_STYLE_VALUE border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
     };
 
     namespace DRAW{

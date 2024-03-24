@@ -10,6 +10,25 @@
 #undef min
 #undef max
 
+GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<std::string> values){
+    if(values.size() == 9){
+        TOP_LEFT_CORNER = values[0];
+        BOTTOM_LEFT_CORNER = values[1];
+        TOP_RIGHT_CORNER = values[2];
+        BOTTOM_RIGHT_CORNER = values[3];
+        VERTICAL_LINE = values[4];
+        HORIZONTAL_LINE = values[5];
+        VERTICAL_RIGHT_CONNECTOR = values[6];
+        VERTICAL_LEFT_CONNECTOR = values[7];
+        HORIZONTAL_BOTTOM_CONNECTOR = values[8];
+        HORIZONTAL_TOP_CONNECTOR = values[9];
+        CROSS_CONNECTOR = values[10];
+    }
+    else{
+        Report_Stack("Internal error: Border style value has wrong number of values. Expected 9 got: '" + std::to_string(values.size()) + "'");
+    }
+}
+
 std::string GGUI::UTF::To_String(){
     std::string Result = (
         Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND + 

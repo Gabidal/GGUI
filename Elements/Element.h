@@ -42,26 +42,6 @@ namespace GGUI{
         inline std::string EMPTY_CHECK_BOX = "☐";
         inline std::string CHECKED_CHECK_BOX = "☒";
 
-        inline std::map<unsigned int, std::string> Border_Identifiers = {
-
-            {CONNECTS_DOWN | CONNECTS_RIGHT, TOP_LEFT_CORNER},
-            {CONNECTS_DOWN | CONNECTS_LEFT, TOP_RIGHT_CORNER},
-            {CONNECTS_UP | CONNECTS_RIGHT, BOTTOM_LEFT_CORNER},
-            {CONNECTS_UP | CONNECTS_LEFT, BOTTOM_RIGHT_CORNER},
-
-            {CONNECTS_DOWN | CONNECTS_UP, VERTICAL_LINE},
-
-            {CONNECTS_LEFT | CONNECTS_RIGHT, HORIZONTAL_LINE},
-
-            {CONNECTS_DOWN | CONNECTS_UP | CONNECTS_RIGHT, VERTICAL_RIGHT_CONNECTOR},
-            {CONNECTS_DOWN | CONNECTS_UP | CONNECTS_LEFT, VERTICAL_LEFT_CONNECTOR},
-
-            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_DOWN, HORIZONTAL_BOTTOM_CONNECTOR},
-            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_UP, HORIZONTAL_TOP_CONNECTOR},
-
-            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_UP | CONNECTS_DOWN, CROSS_CONNECTOR}
-        };
-
     }
 
     namespace TIME{
@@ -843,6 +823,28 @@ namespace GGUI{
         std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
         std::string HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
         std::string CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
+
+        BORDER_STYLE_VALUE(std::vector<std::string> values){
+            if(values.size() == 9){
+                TOP_LEFT_CORNER = values[0];
+                BOTTOM_LEFT_CORNER = values[1];
+                TOP_RIGHT_CORNER = values[2];
+                BOTTOM_RIGHT_CORNER = values[3];
+                VERTICAL_LINE = values[4];
+                HORIZONTAL_LINE = values[5];
+                VERTICAL_RIGHT_CONNECTOR = values[6];
+                VERTICAL_LEFT_CONNECTOR = values[7];
+                HORIZONTAL_BOTTOM_CONNECTOR = values[8];
+                HORIZONTAL_TOP_CONNECTOR = values[9];
+                CROSS_CONNECTOR = values[10];
+            }
+        }
+
+        // Re-import defaults:
+        BORDER_STYLE_VALUE() = default;
+        ~BORDER_STYLE_VALUE() = default;
+        BORDER_STYLE_VALUE(const BORDER_STYLE_VALUE& other) = default;
+        BORDER_STYLE_VALUE& operator=(const BORDER_STYLE_VALUE& other) = default;
     };
 
     namespace STYLES{
@@ -878,6 +880,29 @@ namespace GGUI{
         inline std::string Anchor                           = "Anchor";  // gives the line number in which the element is anchored.
 
         inline std::string Allow_Scrolling                  = "Allow_Scrolling";
+
+        namespace BORDER{
+            const inline BORDER_STYLE_VALUE Double = std::vector<std::string>{
+                "╔", "╚", "╗", "╝", "║", "═", "╠", "╣", "╦", "╩", "╬"
+            };
+
+            const inline BORDER_STYLE_VALUE Round = std::vector<std::string>{
+                "╭", "╰", "╮", "╯", "│", "─", "├", "┤", "┬", "┴", "┼"
+            };
+
+            const inline BORDER_STYLE_VALUE Single = std::vector<std::string>{
+                "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
+            };
+
+            const inline BORDER_STYLE_VALUE Bold = std::vector<std::string>{
+                "▛", "▙", "▜", "▟", "█", "▅", "▉", "▉", "▉", "▉", "▉"
+            };
+
+            const inline BORDER_STYLE_VALUE Modern = std::vector<std::string>{
+                "/", "\\", "\\", "/", "|", "-", "|", "|", "-", "-", "+"
+            };
+            
+        }
     };
 
     enum class STAIN_TYPE{
