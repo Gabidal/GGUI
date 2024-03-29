@@ -21,11 +21,11 @@ namespace GGUI{
         int Length = Handle.tellg();
 
         if (Length == 0){
-            // Report("Empty file: '" + this->Name + "'");
+            Report("Empty file: '" + this->Name + "'");
             return "";
         }
         else if (Length < 0){
-            // Report("Failed to read file: '" + this->Name + "' !");
+            Report("Failed to read file: '" + this->Name + "' !");
             return "";
         }
 
@@ -47,7 +47,7 @@ namespace GGUI{
         std::string New_Buffer = Read();
 
         if (New_Buffer.size() == 0){
-            // Report("Failed to check if file: '" + this->Name + "' changes!");
+            Report("Failed to check if file: '" + this->Name + "' changes!");
 
             return;
         }
@@ -125,7 +125,7 @@ namespace GGUI{
             sa.bInheritHandle = TRUE;
 
             if (!CreatePipe(&In, &Out, &sa, 0)) {
-                // Report("Failed to create pipe for CMD!");
+                Report("Failed to create pipe for CMD!");
             }
         }
 
@@ -141,7 +141,7 @@ namespace GGUI{
             si.dwFlags |= STARTF_USESTDHANDLES;
 
             if (!CreateProcess(NULL, (LPSTR)Command.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-                // Report("Failed to run command: '" + Command + "' !");
+                Report("Failed to run command: '" + Command + "' !");
             }
 
             CloseHandle(Out);

@@ -1157,14 +1157,14 @@ std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned in
     unsigned int Child_Start_Y = Min_Allowed_Height + GGUI::Max(Child->Position.Y, 0);    // If the child is negatively positioned, then put it to zero and minimize the parent height.
     unsigned int Child_Start_X = Min_Allowed_Width + GGUI::Max(Child->Position.X, 0);    
 
-    unsigned int Negative_Offset_X = abs(Min(Child->Position.X, 0));
-    unsigned int Negative_Offset_Y = abs(Min(Child->Position.Y, 0));
+    unsigned int Negative_Offset_X = abs(GGUI::Min(Child->Position.X, 0));
+    unsigned int Negative_Offset_Y = abs(GGUI::Min(Child->Position.Y, 0));
 
     unsigned int Child_End_X = GGUI::Max(0, (int)(Child_Start_X + Child->Get_Processed_Width()) - (int)Negative_Offset_X);
     unsigned int Child_End_Y = GGUI::Max(0, (int)(Child_Start_Y + Child->Get_Processed_Height()) - (int)Negative_Offset_Y);
 
-    Child_End_X = Min(Max_Allowed_Width, Child_End_X);
-    Child_End_Y = Min(Max_Allowed_Height, Child_End_Y);
+    Child_End_X = GGUI::Min(Max_Allowed_Width, Child_End_X);
+    Child_End_Y = GGUI::Min(Max_Allowed_Height, Child_End_Y);
 
     // {Negative offset},                             {Child Starting offset},        {Child Ending offset}
     return {{Negative_Offset_X, Negative_Offset_Y}, {{Child_Start_X, Child_Start_Y}, {Child_End_X, Child_End_Y}} };
