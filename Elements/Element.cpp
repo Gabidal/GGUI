@@ -558,8 +558,8 @@ void GGUI::Element::Add_Child(Element* Child){
     ){
         if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
             //Add the border offsetter to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = std::max(Child->Position.X + Child->Width + Border_Offsetter, Width);
-            unsigned int New_Height = std::max(Child->Position.Y + Child->Height + Border_Offsetter, Height);
+            unsigned int New_Width = GGUI::Max(Child->Position.X + Child->Width + Border_Offsetter, Width);
+            unsigned int New_Height = GGUI::Max(Child->Position.Y + Child->Height + Border_Offsetter, Height);
 
             //TODO: Maybe check the parent of this element to check?
             Height = New_Height;
@@ -972,8 +972,8 @@ void GGUI::Element::Compute_Dynamic_Size(){
             int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
 
             // Add the border offsetter to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = (unsigned int)std::max(c->Position.X + (signed int)c->Width + Border_Offsetter, (signed int)Width);
-            unsigned int New_Height = (unsigned int)std::max(c->Position.Y + (signed int)c->Height + Border_Offsetter, (signed int)Height);
+            unsigned int New_Width = (unsigned int)GGUI::Max(c->Position.X + (signed int)c->Width + Border_Offsetter, (signed int)Width);
+            unsigned int New_Height = (unsigned int)GGUI::Max(c->Position.Y + (signed int)c->Height + Border_Offsetter, (signed int)Height);
 
             // but only update those who actually allow dynamic sizing.
             if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && (New_Width != Width || New_Height != Height)){
@@ -1154,14 +1154,14 @@ std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned in
     unsigned int Min_Allowed_Height = 0 + Border_Offset;                            //add top borders from calculation
     unsigned int Min_Allowed_Width = 0 + Border_Offset;                             //add left borders from calculation
 
-    unsigned int Child_Start_Y = Min_Allowed_Height + max(Child->Position.Y, 0);    // If the child is negatively positioned, then put it to zero and minimize the parent height.
-    unsigned int Child_Start_X = Min_Allowed_Width + max(Child->Position.X, 0);    
+    unsigned int Child_Start_Y = Min_Allowed_Height + GGUI::Max(Child->Position.Y, 0);    // If the child is negatively positioned, then put it to zero and minimize the parent height.
+    unsigned int Child_Start_X = Min_Allowed_Width + GGUI::Max(Child->Position.X, 0);    
 
-    unsigned int Negative_Offset_X = abs(min(Child->Position.X, 0));
-    unsigned int Negative_Offset_Y = abs(min(Child->Position.Y, 0));
+    unsigned int Negative_Offset_X = abs(Min(Child->Position.X, 0));
+    unsigned int Negative_Offset_Y = abs(Min(Child->Position.Y, 0));
 
-    unsigned int Child_End_X = max(0, (int)(Child_Start_X + Child->Get_Processed_Width()) - (int)Negative_Offset_X);
-    unsigned int Child_End_Y = max(0, (int)(Child_Start_Y + Child->Get_Processed_Height()) - (int)Negative_Offset_Y);
+    unsigned int Child_End_X = GGUI::Max(0, (int)(Child_Start_X + Child->Get_Processed_Width()) - (int)Negative_Offset_X);
+    unsigned int Child_End_Y = GGUI::Max(0, (int)(Child_Start_Y + Child->Get_Processed_Height()) - (int)Negative_Offset_Y);
 
     Child_End_X = Min(Max_Allowed_Width, Child_End_X);
     Child_End_Y = Min(Max_Allowed_Height, Child_End_Y);
@@ -1451,11 +1451,11 @@ std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, G
     int Bigger_Square_End_X = start_offset.X + Width + 1;
     int Bigger_Square_End_Y = start_offset.Y + Height + 1;
 
-    int Smaller_Square_Start_X = start_offset.X + (Offset.X * min(0, (int)Offset.X));
-    int Smaller_Square_Start_Y = start_offset.Y + (Offset.Y * min(0, (int)Offset.Y));
+    int Smaller_Square_Start_X = start_offset.X + (Offset.X * GGUI::Min(0, (int)Offset.X));
+    int Smaller_Square_Start_Y = start_offset.Y + (Offset.Y * GGUI::Min(0, (int)Offset.Y));
 
-    int Smaller_Square_End_X = start_offset.X + Width - (Offset.X * max(0, (int)Offset.X));
-    int Smaller_Square_End_Y = start_offset.Y + Height - (Offset.Y * max(0, (int)Offset.Y));
+    int Smaller_Square_End_X = start_offset.X + Width - (Offset.X * GGUI::Max(0, (int)Offset.X));
+    int Smaller_Square_End_Y = start_offset.Y + Height - (Offset.Y * GGUI::Max(0, (int)Offset.Y));
 
     for (int y = Bigger_Square_Start_Y; y < Bigger_Square_End_Y; y++){
         for (int x = Bigger_Square_Start_X; x < Bigger_Square_End_X; x++){
@@ -1506,7 +1506,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
     int Current_Shadow_Height = Height;
 
     for (int i = 0; i < Shadow_Length; i++){
-        vector<Coordinates> Shadow_Indicies = Get_Surrounding_Indicies(
+        std::vector<Coordinates> Shadow_Indicies = Get_Surrounding_Indicies(
             Current_Shadow_Width,
             Current_Shadow_Height,
             { 
@@ -1527,7 +1527,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
             Shadow_Box[index.Y * Shadow_Box_Width + index.X] = shadow_pixel;
         }
 
-        previus_opacity *= min(0.9f, (float)properties.Direction.Z);
+        previus_opacity *= GGUI::Min(0.9f, (float)properties.Direction.Z);
         Current_Alpha = previus_opacity * std::numeric_limits<unsigned char>::max();;
     }
 
@@ -1539,8 +1539,8 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
     Result.resize(Offset_Box_Width * Offset_Box_Height);
 
     Coordinates Shadow_Box_Start = {
-        max(0, (int)properties.Direction.X),
-        max(0, (int)properties.Direction.Y)
+        GGUI::Max(0, (int)properties.Direction.X),
+        GGUI::Max(0, (int)properties.Direction.Y)
     };
 
     Coordinates Original_Box_Start = {
@@ -1613,7 +1613,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Opacity(std::vector<GGUI::UTF> Cur
 }
 
 std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
-    vector<UTF> Result = Render_Buffer;
+    std::vector<UTF> Result = Render_Buffer;
 
     Result = Process_Shadow(Result);
     //...

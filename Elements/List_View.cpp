@@ -207,7 +207,7 @@ GGUI::Scroll_View::Scroll_View(
 void GGUI::List_View::Add_Child(Element* e){
     Pause_Renderer([=](){
 
-        pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
+        std::pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
 
         unsigned int max_width = limits.first;
         unsigned int max_height = limits.second;

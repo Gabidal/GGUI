@@ -312,7 +312,7 @@ void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::E
 void GGUI::Text_Field::Set_Data(std::string Data){
     this->Data = Data;
 
-    pair<unsigned int, unsigned int> dim = Get_Text_Dimensions(Data);
+    std::pair<unsigned int, unsigned int> dim = Get_Text_Dimensions(Data);
 
     GGUI::STAIN_TYPE flags = STAIN_TYPE::TEXT;
 

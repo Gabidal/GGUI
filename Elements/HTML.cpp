@@ -1,6 +1,8 @@
 #include "HTML.h"
 #include "../Renderer.h"
 
+#include <vector>
+
 namespace GGUI{
 
     PARSE_BY operator|(PARSE_BY first, PARSE_BY second){
@@ -511,8 +513,8 @@ namespace GGUI{
         Result->Type = HTML_GROUP_TYPES::WRAPPER;
 
         // now add the attributes
-        Result->Attributes["width"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, to_string(e->Get_Width()));
-        Result->Attributes["height"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, to_string(e->Get_Height()));
+        Result->Attributes["width"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, std::to_string(e->Get_Width()));
+        Result->Attributes["height"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, std::to_string(e->Get_Height()));
 
         return Result;
     }
@@ -567,9 +569,9 @@ namespace GGUI{
         else if (postfix == "%")
             Result *= std::stod(parent->Attributes[attr_name]->Data);
         else if (postfix == "vmin")
-            Result *= max(1.0, min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
+            Result *= GGUI::Max(1.0, GGUI::Min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
         else if (postfix == "vmax")
-            Result *= max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
+            Result *= GGUI::Max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
         else
             Report("Unknown relative type: " + postfix, parent->Position);
 

@@ -4,10 +4,8 @@
 #undef min
 #undef max
 
-#include <iostream>
 #include <functional>
 #include <thread>
-#include <map>
 #include <atomic>
 
 #include "Elements/Window.h"

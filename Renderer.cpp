@@ -1,20 +1,12 @@
 #include "Renderer.h"
 #include "Elements/File_Streamer.h"
 
-#include <map>
 #include <string>
-#include <iostream>
 #include <cassert>
 #include <math.h>
 #include <sstream>
 
 namespace GGUI{
-
-    extern "C" void* PDATA;
-
-
-    extern "C" void* PDATA;
-
     std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
@@ -55,7 +47,7 @@ namespace GGUI{
     inline std::map<std::string, int> Class_Names;
 
     Window* Main = nullptr;     
-    unordered_map<int, Element*> Outboxed_Elements;
+    std::unordered_map<int, Element*> Outboxed_Elements;
     
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
     const std::string HISTORY = "_HISTORY_";
@@ -196,7 +188,7 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    Element* Find_Closest_Absolute_Element(Coordinates start, vector<Element*> Candidates){
+    Element* Find_Closest_Absolute_Element(Coordinates start, std::vector<Element*> Candidates){
         // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
         // If they are, check if they collide with any element.
         // cast "rays" to each four directions, and return the lenghts of each collision between the center of the rectangles and the start point.
@@ -420,9 +412,9 @@ namespace GGUI{
         return Result;
     }
 
-    vector<char> Read_Console(){
-        vector<char> Buffer;
-        vector<CHAR_INFO> Fake_Buffer;
+    std::vector<char> Read_Console(){
+        std::vector<char> Buffer;
+        std::vector<CHAR_INFO> Fake_Buffer;
 
         CONSOLE_SCREEN_BUFFER_INFO Info = Get_Console_Info();
 
@@ -443,7 +435,7 @@ namespace GGUI{
 
     // Returns the actual length of the terminal and all of its new lines made init.
     Coordinates Get_Terminal_Content_Size(){
-        vector<char> Buffer = Read_Console();
+        std::vector<char> Buffer = Read_Console();
 
         // The buffer gotten from the function above will only return a square containing the console rendered content.
         
@@ -1127,7 +1119,7 @@ namespace GGUI{
         if (!Current && Event_Handlers.size() > 0){
             // If there is no element selected per se (perse). find the closest element to the (0;0) (Top Left)
 
-            vector<Element*> handler_elements;
+            std::vector<Element*> handler_elements;
             handler_elements.resize(Event_Handlers.size());
 
             for (int i = 0; i < Event_Handlers.size(); i++){
@@ -1501,7 +1493,7 @@ namespace GGUI{
             // TODO: Do better you dum!
             // GO through the inputs and check if they contain all the flags required
             unsigned long long Remaining_Flags = e->Criteria;
-            vector<GGUI::Input *> Accepted_Inputs;
+            std::vector<GGUI::Input *> Accepted_Inputs;
 
             // if an input has flags that meet the criteria, then remove the criteria from the remaining flags and continue until the remaining flags are equal to zero.
             for (auto& i : Inputs){
@@ -1806,7 +1798,7 @@ namespace GGUI{
 
                 // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                 // We can assume that the singular error is at least one tall.
-                if (min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
+                if (GGUI::Min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
                     // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
                     // Element* First_Child = History->Get_Childs()[0];
                     // History->Remove(First_Child);
@@ -1966,9 +1958,9 @@ namespace GGUI{
 
         // Update the stats
         Stats->Set_Data(
-            "Encode: " + to_string(Abstract_Frame_Buffer.size()) + "\n" + 
-            "Decode: " + to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + to_string(Main->Get_All_Nested_Elements().size())
+            "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
+            "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
+            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size())
         );
 
         // return success.
@@ -1997,9 +1989,9 @@ namespace GGUI{
         
         // Add a count for how many UTF are being streamed.
         Text_Field* Stats = new Text_Field(
-            "Encode: " + to_string(Abstract_Frame_Buffer.size()) + "\n" + 
-            "Decode: " + to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + to_string(Main->Get_All_Nested_Elements().size())
+            "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
+            "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
+            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size())
         );
 
         Stats->Set_Name("STATS");

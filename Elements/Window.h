@@ -1,9 +1,6 @@
 #ifndef _WINDOW_H_
 #define _WINDOW_H_
 
-#include <string>
-#include <vector>
-
 #include "Element.h"
 
 //GGUI uses the ANSI escape code

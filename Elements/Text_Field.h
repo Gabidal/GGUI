@@ -1,9 +1,6 @@
 #ifndef _TEXT_FIELD_H_
 #define _TEXT_FIELD_H_
 
-#include <string>
-#include <vector>
-
 #include "Element.h"
 
 namespace GGUI{

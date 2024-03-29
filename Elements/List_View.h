@@ -3,11 +3,6 @@
 
 #include "Element.h"
 
-#include <vector>
-#include <iostream>
-
-using namespace std;
-
 namespace GGUI{
     enum class Grow_Direction{
         ROW,

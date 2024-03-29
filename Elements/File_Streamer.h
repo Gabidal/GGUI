@@ -71,7 +71,7 @@ namespace GGUI{
         }
     };
 
-    #ifdef _WIN32
+    #if _WIN32
         class CMD{
         private:
             void* In;
