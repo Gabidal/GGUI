@@ -193,6 +193,8 @@ namespace GGUI{
         inline std::string MOUSE_LEFT = "MOUSE_LEFT";
         inline std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
         inline std::string MOUSE_RIGHT = "MOUSE_RIGHT";
+        inline std::string MOUSE_SCROLL_UP = "MOUSE_SCROLL_UP";
+        inline std::string MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
     };
 
     inline std::map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
@@ -1335,6 +1337,10 @@ namespace GGUI{
         }
 
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+        // By default elements do not have inherent scrolling abilities.
+        virtual void Scroll_Up() {}
+        virtual void Scroll_Down() {}
 
         void Re_Order_Childs();
 

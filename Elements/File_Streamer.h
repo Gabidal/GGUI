@@ -3,12 +3,11 @@
 
 #include "Element.h"
 
-#include <string>
 #include <fstream>
 #include <functional>
 #include <unordered_map>
-#include <vector>
 #include <stdio.h>
+#include <deque>
 
 namespace GGUI{
 
@@ -70,6 +69,37 @@ namespace GGUI{
             return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
         }
     };
+
+    // Custom stream buffer that adds lines to a history
+    class OUTBOX_BUFFER : public std::streambuf {
+    private:
+        std::streambuf* Rendered_Stream_Buffer = nullptr;
+        std::string Current_Line = "";
+        std::deque<std::string> Console_History;
+        
+        // When 0, starts at bottom, the higher it goes the more it: 'Y - Scroll_Index'
+        int Scroll_Index = 0;
+    public:
+        OUTBOX_BUFFER(std::streambuf* oldBuffer);
+        
+        OUTBOX_BUFFER();
+
+        ~OUTBOX_BUFFER(){
+            Close();
+        }
+
+        // Called from streambuf base class.
+        int overflow(int c) override;
+
+        // Safe close of std buffer hijack.
+        void Close();
+
+        void Scroll_Up(int Speed = 1);
+        void Scroll_Down(int Speed = 1);
+
+        GGUI::Coordinates Get_History_Dimensions();
+    };
+
 
     #if _WIN32
         class CMD{

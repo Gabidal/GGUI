@@ -132,9 +132,9 @@ namespace GGUI{
             return At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
         }
 
-        void Scroll_Up();
+        void Scroll_Up() override;
 
-        void Scroll_Down();
+        void Scroll_Down() override;
 
         bool Remove(Element* e) override;
         

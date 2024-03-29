@@ -117,6 +117,61 @@ namespace GGUI{
         return std::filesystem::current_path().string();
     }
 
+    OUTBOX_BUFFER::OUTBOX_BUFFER(std::streambuf* oldBuffer)
+    {
+        Current_Line = "";
+
+        Rendered_Stream_Buffer = oldBuffer;
+
+        std::cout.rdbuf(&Outbox_Buffer);
+    }
+
+    OUTBOX_BUFFER::OUTBOX_BUFFER(){
+
+        Current_Line = "";
+
+        Rendered_Stream_Buffer = std::cout.rdbuf();
+        std::cout.rdbuf(this);
+    }
+
+    int OUTBOX_BUFFER::overflow(int c) {
+        if (c == '\n') {
+            Console_History.push_back(Current_Line);
+            Current_Line.clear();
+        } else {
+            Current_Line += static_cast<char>(c);
+        }
+        return Rendered_Stream_Buffer->sputc(c);
+    }
+
+    void OUTBOX_BUFFER::Close(){
+        std::cout.rdbuf(Rendered_Stream_Buffer);
+    }
+
+    void OUTBOX_BUFFER::Scroll_Up(int Speed = 1){
+
+        if (Scroll_Index + Speed <= GGUI::Max_Height)
+            Scroll_Index += Speed;
+
+        // The anchoring has changed, so we need to shift all the elements.
+        Update_Frame();
+    }
+
+    void OUTBOX_BUFFER::Scroll_Down(int Speed = 1){
+
+        if (Scroll_Index - Speed >= 0)
+            Scroll_Index -= Speed;
+
+        // The anchoring has changed, so we need to shift all the elements.
+        Update_Frame();
+    }
+
+    GGUI::Coordinates OUTBOX_BUFFER::Get_History_Dimensions(){
+        GGUI::Update_Max_Width_And_Height();
+
+        return {GGUI::Max_Width, Console_History.size()};
+    }
+
     #ifdef _WIN32
         CMD::CMD(){
             SECURITY_ATTRIBUTES sa;

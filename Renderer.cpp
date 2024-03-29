@@ -12,6 +12,8 @@ namespace GGUI{
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
     std::atomic_bool Pause_Event_Thread = false;                //if true, the event handler will pause.
 
+    OUTBOX_BUFFER Outbox_Buffer;
+
     int Max_Width = 0;
     int Max_Height = 0;
 
@@ -25,6 +27,8 @@ namespace GGUI{
 
     Element* Focused_On = nullptr;
     Element* Hovered_On = nullptr;
+
+    bool Platform_Initialized = false;
 
     Coordinates Mouse;
     //move 1 by 1, or element by element.
@@ -226,6 +230,7 @@ namespace GGUI{
 
     #if _WIN32
     #include <windows.h>
+    #include <DbgHelp.h>
 
     void SLEEP(unsigned int mm){
         _sleep(mm);
@@ -376,8 +381,29 @@ namespace GGUI{
                     //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
                 }
+            
+                // mouse scroll up
+                if (Input[i].Event.MouseEvent.dwEventFlags == MOUSE_WHEELED){
+                    // check if it has been wheeled up or down
+                    int Scroll_Direction = GET_WHEEL_DELTA_WPARAM(Input[i].Event.MouseEvent.dwButtonState);
+
+                    if (Scroll_Direction > 0){
+                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State = true;
+                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State = false;
+
+                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].Capture_Time = std::chrono::high_resolution_clock::now();
+                    }
+                    else if (Scroll_Direction < 0){
+                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State = true;
+                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State = false;
+
+                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].Capture_Time = std::chrono::high_resolution_clock::now();
+                    }
+                }
             }
         }
+
+        SCROLL_API();
 
         MOUSE_API();
     }
@@ -392,6 +418,8 @@ namespace GGUI{
         std::cout.flush();
 
         SetConsoleOutputCP(65001);
+
+        Platform_Initialized = true;
     }
 
     CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info(){
@@ -433,30 +461,6 @@ namespace GGUI{
         return Buffer;
     }
 
-    // Returns the actual length of the terminal and all of its new lines made init.
-    Coordinates Get_Terminal_Content_Size(){
-        std::vector<char> Buffer = Read_Console();
-
-        // The buffer gotten from the function above will only return a square containing the console rendered content.
-        
-
-        unsigned int New_Line_Count = 0;
-
-        for (unsigned int i = 0; i < Buffer.size(); i++){
-            if (Buffer[i] == '\n'){
-                New_Line_Count++;
-            }
-        }
-
-        printf(Buffer.data());
-
-        // a   = w * h
-        // a/h = w
-        unsigned int Width = Buffer.size() / New_Line_Count;
-
-        return Coordinates(Width, New_Line_Count);
-    }
-
     void Exit(){
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
@@ -466,6 +470,8 @@ namespace GGUI{
         std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
         std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
         std::cout << std::flush;
+
+        Outbox_Buffer.Close();
 
         exit(0);
     }
@@ -495,14 +501,48 @@ namespace GGUI{
     }
 
     void Report_Stack(std::string Problem){
-        // Print the stack information and the function names can be got from .PDATA section
-        unsigned long long Stack_Pointer = (unsigned long long)__builtin_return_address(0);
+        const int Stack_Trace_Depth = 10;
+        void* Ptr_Table[Stack_Trace_Depth];
+        unsigned short Usable_Depth;
+        SYMBOL_INFO* symbol;
+        HANDLE process;
 
-        // Stacktracing doesnt work atm :(
-        //auto& stack = std::stacktrace::current();
+        process = GetCurrentProcess();
 
+        SymInitialize(process, NULL, TRUE);
+        Usable_Depth = CaptureStackBackTrace(0, Stack_Trace_Depth, Ptr_Table, NULL);
+        symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+        symbol->MaxNameLen = 255;
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
-        Report(Problem);
+        std::string Result = "Stack Trace:\n";
+        for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
+            SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol);
+
+            // check if the symbol->name is empty, if so then skip
+            if (symbol->Name[0] == 0)
+                continue;
+
+            std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
+
+            // For last branch use different branch start symbol
+            if (Stack_Index == Usable_Depth - 1)
+                Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
+
+            // now add indentation by the amount of index:
+            std::string Indent = "";
+
+            for (int i = 0; i < Stack_Index; i++)
+                Indent += SYMBOLS::HORIZONTAL_LINE;
+
+            Result += Branch_Start + Indent + symbol->Name + "\n";
+        }
+
+        free(symbol);
+
+        Result += "Problem: " + Problem;
+
+        Report(Result);
     }
 
     #else
@@ -518,6 +558,8 @@ namespace GGUI{
     int Previus_Flags = 0;
     struct termios Previus_Raw;
     void Exit(int signum){
+        Outbox_Buffer.Close();
+
         std::cout << Constants::EnableFeature(Constants::MOUSE_CURSOR);
         std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
         std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
@@ -1003,14 +1045,14 @@ namespace GGUI{
         std::string Result = "Stack Trace:\n";
 
         for (int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
-            string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
+            std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
 
             // For last branch use different branch start symbol
             if (Stack_Index == Usable_Depth - 1)
                 Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
 
             // now add indentation by the amount of index:
-            string Indent = "";
+            std::string Indent = "";
 
             for (int i = 0; i < Stack_Index; i++)
                 Indent += SYMBOLS::HORIZONTAL_LINE;
@@ -1083,6 +1125,21 @@ namespace GGUI{
         else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
         }   
+    }
+
+    void SCROLL_API(){
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State){
+            Outbox_Buffer.Scroll_Up();
+
+            if (Focused_On)
+                Focused_On->Scroll_Up();
+        }
+        else if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State){
+            Outbox_Buffer.Scroll_Down();
+
+            if (Focused_On)
+                Focused_On->Scroll_Down();
+        }
     }
 
     void Handle_Escape(){
@@ -1827,6 +1884,9 @@ namespace GGUI{
 
         }
         else{
+            if (!Platform_Initialized){
+                Init_Platform_Stuff();
+            }
 
             // This is for the non GGUI space errors.
             UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
@@ -1880,7 +1940,7 @@ namespace GGUI{
 
     void Render_Outbox(){
         // Use Max_Width and Height to determine the "render distance" in which the newlines are searched through.
-        Coordinates Current_Terminal_Content_Size = Get_Terminal_Content_Size();
+        Coordinates Current_Terminal_Content_Size = Outbox_Buffer.Get_History_Dimensions();
 
         int Current_Terminal_Start_Y = Current_Terminal_Content_Size.Y - Max_Height;
         int Current_Terminal_Start_X = Current_Terminal_Content_Size.X - Max_Width;
@@ -1908,7 +1968,7 @@ namespace GGUI{
 
     // Use this to use GGUI.
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
-        bool Previud_Event_Value = Pause_Event_Thread;
+        bool Previus_Event_Value = Pause_Event_Thread;
         Pause_Event_Thread = true;
 
         Pause_Renderer([=](){
@@ -1918,7 +1978,7 @@ namespace GGUI{
             DOM();
         });
 
-        Pause_Event_Thread = Previud_Event_Value;
+        Pause_Event_Thread = Previus_Event_Value;
         SLEEP(Sleep_For);
     }
 

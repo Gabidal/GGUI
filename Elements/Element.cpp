@@ -383,7 +383,7 @@ int GGUI::Element::Get_Anchor_Location(){
 }
 
 void GGUI::Element::Set_Anchor_At_Current_Location(){
-    Coordinates Current_Position = GGUI::Get_Terminal_Content_Size();
+    Coordinates Current_Position = GGUI::Get_Terminal_History_Size();
 
     At<NUMBER_VALUE>(STYLES::Anchor)->Value = Current_Position.Y;
 }

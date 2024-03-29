@@ -18,6 +18,8 @@ namespace GGUI{
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
     extern std::atomic_bool Pause_Event_Thread;                                 //Main window
 
+    extern class OUTBOX_BUFFER Outbox_Buffer;
+
     extern int Max_Width;
     extern int Max_Height;
 
@@ -74,13 +76,14 @@ namespace GGUI{
 
     extern void Update_Max_Width_And_Height();
 
-    extern Coordinates Get_Terminal_Content_Size();
-
     void Update_Frame();
     //Is called on every cycle.
     extern void Query_Inputs();
 
     extern void MOUSE_API();
+
+    // Handles also UP and DOWN buttons
+    extern void SCROLL_API();
 
     extern void Init_Platform_Stuff();
 
