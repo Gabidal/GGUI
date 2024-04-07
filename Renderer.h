@@ -17,9 +17,7 @@ namespace GGUI{
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
     extern std::atomic_bool Pause_Event_Thread;                                 //Main window
-
-    extern class OUTBOX_BUFFER Outbox_Buffer;
-
+    
     extern int Max_Width;
     extern int Max_Height;
 
@@ -46,7 +44,6 @@ namespace GGUI{
     extern std::map<std::string, int> Class_Names;
 
     extern Window* Main;  
-    extern std::unordered_map<int, Element*> Outboxed_Elements;
 
     void SLEEP(unsigned int milliseconds);
 
@@ -144,8 +141,6 @@ namespace GGUI{
     extern void Handle_Tabulator();
 
     extern void Handle_Escape();
-
-    extern void Render_Outbox();
 
     extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
 

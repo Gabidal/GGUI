@@ -103,7 +103,7 @@ GGUI::Element::Element() {
     if (GGUI::Main == nullptr){
         // Lets go with B.
         Set_Anchor_At_Current_Location();
-        Outboxed_Elements.at(Get_Anchor_Location()) = this;
+        // Outbox.Add_Child(this);
     }
 }
 
@@ -383,7 +383,7 @@ int GGUI::Element::Get_Anchor_Location(){
 }
 
 void GGUI::Element::Set_Anchor_At_Current_Location(){
-    Coordinates Current_Position = GGUI::Get_Terminal_History_Size();
+    Vector2 Current_Position = {0, 0}; // GGUI::Outbox.Buffer.Get_History_Dimensions();
 
     At<NUMBER_VALUE>(STYLES::Anchor)->Value = Current_Position.Y;
 }
@@ -443,7 +443,7 @@ void GGUI::Element::Set_Parent(Element* parent){
         Parent = parent;
 
         // if the element is a Anchored element, we want it to change into a relative.
-        Outboxed_Elements.erase(Get_Anchor_Location());
+        // Outbox.Remove(Get_Anchor_Location());
         Remove_Anchor();
     }
 }

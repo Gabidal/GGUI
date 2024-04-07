@@ -487,6 +487,10 @@ namespace GGUI{
         Coordinates operator+(Coordinates& other){
             return Coordinates(X + other.X, Y + other.Y, Z + other.Z);
         }
+    
+        std::string To_String(){
+            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
+        }
     };
 
     namespace UTF_FLAG{
@@ -1189,7 +1193,7 @@ namespace GGUI{
 
         virtual bool Remove(Element* handle);
 
-        bool Remove(int index);
+        virtual bool Remove(int index);
 
         void Set_Dimensions(int width, int height);
 

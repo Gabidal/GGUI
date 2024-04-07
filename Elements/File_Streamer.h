@@ -27,16 +27,22 @@ namespace GGUI{
 
     class FILE_STREAM{
     private:
-        std::ifstream Handle;
+        std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
+        std::fstream Handle;
         std::vector<std::function<void()>> On_Change = {};
         std::string Previous_Content = "";
         unsigned long long Previous_Hash = 0;
     public:
         std::string Name = "";
 
-        FILE_STREAM(std::string File_Name, std::function<void()> on_change);
+        FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout = false);
 
         ~FILE_STREAM(){
+            if (STD_COUT_RESTORATION_HANDLE){
+                // Restore the std::cout
+                std::cout.rdbuf(STD_COUT_RESTORATION_HANDLE);
+            }
+
             Handle.close();
         }
 
@@ -69,37 +75,6 @@ namespace GGUI{
             return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
         }
     };
-
-    // Custom stream buffer that adds lines to a history
-    class OUTBOX_BUFFER : public std::streambuf {
-    private:
-        std::streambuf* Rendered_Stream_Buffer = nullptr;
-        std::string Current_Line = "";
-        std::deque<std::string> Console_History;
-        
-        // When 0, starts at bottom, the higher it goes the more it: 'Y - Scroll_Index'
-        int Scroll_Index = 0;
-    public:
-        OUTBOX_BUFFER(std::streambuf* oldBuffer);
-        
-        OUTBOX_BUFFER();
-
-        ~OUTBOX_BUFFER(){
-            Close();
-        }
-
-        // Called from streambuf base class.
-        int overflow(int c) override;
-
-        // Safe close of std buffer hijack.
-        void Close();
-
-        void Scroll_Up(int Speed = 1);
-        void Scroll_Down(int Speed = 1);
-
-        GGUI::Coordinates Get_History_Dimensions();
-    };
-
 
     #if _WIN32
         class CMD{

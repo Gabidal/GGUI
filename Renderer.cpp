@@ -7,12 +7,10 @@
 #include <sstream>
 
 namespace GGUI{
-    std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
+    std::vector<UTF> Abstract_Frame_Buffer;                     //2D clean vector whitout bold nor color
     std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
     std::atomic_bool Pause_Event_Thread = false;                //if true, the event handler will pause.
-
-    OUTBOX_BUFFER Outbox_Buffer;
 
     int Max_Width = 0;
     int Max_Height = 0;
@@ -50,8 +48,7 @@ namespace GGUI{
 
     inline std::map<std::string, int> Class_Names;
 
-    Window* Main = nullptr;     
-    std::unordered_map<int, Element*> Outboxed_Elements;
+    Window* Main = nullptr;
     
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
     const std::string HISTORY = "_HISTORY_";
@@ -462,6 +459,8 @@ namespace GGUI{
     }
 
     void Exit(){
+
+        // Also handles STD_COUT capture restorations.
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
         }
@@ -470,8 +469,6 @@ namespace GGUI{
         std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
         std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
         std::cout << std::flush;
-
-        Outbox_Buffer.Close();
 
         exit(0);
     }
@@ -558,7 +555,10 @@ namespace GGUI{
     int Previus_Flags = 0;
     struct termios Previus_Raw;
     void Exit(int signum){
-        Outbox_Buffer.Close();
+        // Also handles STD_COUT capture restorations.
+        for (auto File_Handle : File_Streamer_Handles){
+            File_Handle.second->~FILE_STREAM();
+        }
 
         std::cout << Constants::EnableFeature(Constants::MOUSE_CURSOR);
         std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
@@ -1129,13 +1129,11 @@ namespace GGUI{
 
     void SCROLL_API(){
         if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State){
-            Outbox_Buffer.Scroll_Up();
 
             if (Focused_On)
                 Focused_On->Scroll_Up();
         }
         else if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State){
-            Outbox_Buffer.Scroll_Down();
 
             if (Focused_On)
                 Focused_On->Scroll_Down();
@@ -1351,7 +1349,12 @@ namespace GGUI{
         }
         else{
             // Use OUTBOX rendering method.
-            Render_Outbox();
+            // Abstract_Frame_Buffer = Outbox.Render();
+
+            // // ENCODE for optimize
+            // Encode_Buffer(Abstract_Frame_Buffer);
+
+            // Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Outbox.Get_Width(), Outbox.Get_Height());
         }
 
         //Unlock the event handler.
@@ -1719,6 +1722,10 @@ namespace GGUI{
         return Result.substr(0, Result.size() - 1);
     }
 
+    void Enable_fast_STD_COUT_monitoring(){
+        
+    }
+
     void Report(std::string Problem){
         Pause_Renderer();
 
@@ -1936,34 +1943,6 @@ namespace GGUI{
 
         if (!Original_Value)
             Resume_Renderer(); 
-    }
-
-    void Render_Outbox(){
-        // Use Max_Width and Height to determine the "render distance" in which the newlines are searched through.
-        Coordinates Current_Terminal_Content_Size = Outbox_Buffer.Get_History_Dimensions();
-
-        int Current_Terminal_Start_Y = Current_Terminal_Content_Size.Y - Max_Height;
-        int Current_Terminal_Start_X = Current_Terminal_Content_Size.X - Max_Width;
-
-        int Current_Terminal_End_Y = Current_Terminal_Content_Size.Y;
-        int Current_Terminal_End_X = Current_Terminal_Content_Size.X;
-
-
-        for (int REL_Y = 0; REL_Y < Max_Height; REL_Y++){
-            int ABS_Y = REL_Y + Current_Terminal_Start_Y;
-
-            if (Outboxed_Elements.find(ABS_Y) == Outboxed_Elements.end())
-                continue;
-
-            for (int REL_X = 0; REL_X < Max_Width; REL_X++){
-                int ABS_X = REL_X + Current_Terminal_Start_X;
-
-                
-                
-            }
-
-        }
-
     }
 
     // Use this to use GGUI.
