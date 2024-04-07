@@ -512,7 +512,12 @@ namespace GGUI{
         symbol->MaxNameLen = 255;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
+        if (Max_Width == 0){
+            Update_Max_Width_And_Height();
+        }
+
         std::string Result = "Stack Trace:\n";
+        int Usable_Stack_Index = 0;
         for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
             SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol);
 
@@ -529,10 +534,12 @@ namespace GGUI{
             // now add indentation by the amount of index:
             std::string Indent = "";
 
-            for (int i = 0; i < Stack_Index; i++)
+            for (int i = 0; i < Usable_Stack_Index && Usable_Depth < Max_Width; i++)
                 Indent += SYMBOLS::HORIZONTAL_LINE;
 
             Result += Branch_Start + Indent + symbol->Name + "\n";
+
+            Usable_Stack_Index++;
         }
 
         free(symbol);
