@@ -639,7 +639,7 @@ namespace GGUI{
 
 
     // this global variable is only meant for unix use, since unix has ability to return non finished input events, so we need to store the first half for later use.
-    vector<char> Input_Buffer;
+    std::vector<char> Input_Buffer;
 
     namespace MODIFIERS{
         constexpr char SHIFT = '2';    // 1 + 1
@@ -648,7 +648,7 @@ namespace GGUI{
         constexpr char META = '9';     // 8 + 1
     };
 
-    bool Contains(char* a, string b, int a_lenght){
+    bool Contains(char* a, std::string b, int a_lenght){
         for (int i = 0; i < a_lenght; i++){
             if (b[i] != a[i]){
                 return false;
@@ -1048,6 +1048,10 @@ namespace GGUI{
         // Convert the addresses in the stack trace into an array of strings that describe the addresses symbolically
         Name_Table = backtrace_symbols(Ptr_Table, Usable_Depth);
 
+        if (Max_Width == 0){
+            Update_Max_Width_And_Height();
+        }
+
         // Now that we have the stack frame label names in the Name_Table list, we can construct an visually apleasing stack trace information:
         std::string Result = "Stack Trace:\n";
 
@@ -1061,7 +1065,7 @@ namespace GGUI{
             // now add indentation by the amount of index:
             std::string Indent = "";
 
-            for (int i = 0; i < Stack_Index; i++)
+            for (int i = 0; i < Stack_Index && Usable_Depth < Max_Width; i++)
                 Indent += SYMBOLS::HORIZONTAL_LINE;
 
             Result += Branch_Start + Indent + Name_Table[Stack_Index] + "\n";
