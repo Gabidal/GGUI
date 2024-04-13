@@ -12,12 +12,18 @@
 #include "Elements/Text_Field.h"
 #include "Elements/List_View.h"
 
+namespace INTERNAL{
+    class BUFFER_CAPTURE;
+}
+
 namespace GGUI{
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
     extern std::atomic_bool Pause_Event_Thread;                                 //Main window
     
+    extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
+
     extern int Max_Width;
     extern int Max_Height;
 
@@ -145,6 +151,8 @@ namespace GGUI{
     extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
 
     extern void Init_Inspect_Tool();
+
+    extern void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer);
 }
 
 #endif

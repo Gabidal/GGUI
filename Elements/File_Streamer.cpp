@@ -16,30 +16,37 @@ namespace GGUI{
     std::unordered_map<std::string, FILE_STREAM*> File_Streamer_Handles;
 
     std::string FILE_STREAM::Read(){
-        // Get the length of the file.
-        Handle.seekg(0, std::ios::end);
-        int Length = Handle.tellg();
-
-        if (Length == 0){
-            Report("Empty file: '" + this->Name + "'");
-            return "";
+        if (Buffer_Capture){
+            return Buffer_Capture->Read();
         }
-        else if (Length < 0){
-            Report("Failed to read file: '" + this->Name + "' !");
-            return "";
+        else{
+            // Get the length of the file.
+            Handle.seekg(0, std::ios::end);
+            int Length = Handle.tellg();
+
+            if (Length == 0){
+                Report("Empty file: '" + this->Name + "'");
+                return "";
+            }
+            else if (Length < 0){
+                Report("Failed to read file: '" + this->Name + "' !");
+                return "";
+            }
+
+            // Allocate the buffer.
+            char* Buffer = new char[Length];
+
+            // Read from top.
+            Handle.seekg(0, std::ios::beg);
+            Handle.read(Buffer, Length);
+
+            // Return the data.
+            std::string Data = std::string(Buffer, Length);
+            delete[] Buffer;
+            return Data;
         }
 
-        // Allocate the buffer.
-        char* Buffer = new char[Length];
-
-        // Read from top.
-        Handle.seekg(0, std::ios::beg);
-        Handle.read(Buffer, Length);
-
-        // Return the data.
-        std::string Data = std::string(Buffer, Length);
-        delete[] Buffer;
-        return Data;
+        // uuhhh.. how did we end up here?
     }
 
     void FILE_STREAM::Changed(){
@@ -79,14 +86,10 @@ namespace GGUI{
         Handle = std::fstream(Name.c_str(), (std::ios_base::openmode)Type);
 
         // if the read_from_std_cout is invoked, then we need to create a file where we are going to pipe the std::cout into
-        if (read_from_std_cout){
-            STD_COUT_RESTORATION_HANDLE = std::cout.rdbuf();
-
-            // Redirect the std::cout to the file
-            std::cout.rdbuf(Handle.rdbuf());
-        }
-        
-        On_Change.push_back(on_change);
+        if (read_from_std_cout)
+            Buffer_Capture = new INTERNAL::BUFFER_CAPTURE(on_change);
+        else
+            On_Change.push_back(on_change);
         
         if (!Handle.is_open()) {
             // GGUI::Report("Could not open file: '" + File_Name + "' !");
@@ -207,4 +210,108 @@ namespace GGUI{
         }
     }
     #endif
+
+    namespace INTERNAL{
+
+        BUFFER_CAPTURE::BUFFER_CAPTURE(std::function<void()> on_change, bool Global, std::string Name) : Is_Global(Global), Name(Name){
+            Current_Line = "";
+
+            // Store the previous handle
+            STD_COUT_RESTORATION_HANDLE = std::cout.rdbuf();
+
+            // Insert this as the new cout output stream.
+            std::cout.rdbuf(this);
+
+            On_Change.push_back(on_change);
+
+            if (Global){
+                Global_Buffer_Captures.push_back(this);
+            }
+        }
+
+        int BUFFER_CAPTURE::overflow(int c) {
+            if (c == '\n') {
+                Console_History.push_back(Current_Line);
+                Current_Line.clear();
+
+                // call all the function which need to informed about the change.
+                for (auto& on_change : On_Change){
+                    on_change();
+                }
+
+                // TODO: this functionality is volatile to change.
+                // If current BUFFER_CAPTURE is a global it will only then inform other global BUFFER_CAPTURES about the events.
+                if (Is_Global){
+                    Inform_All_Global_BUFFER_CAPTURES(this);
+                }
+
+            } else {
+                Current_Line += static_cast<char>(c);
+            }
+
+            return STD_COUT_RESTORATION_HANDLE->sputc(c);   
+        }
+
+        void BUFFER_CAPTURE::Close(){
+            // If the STD_COUT_RESTORATION_HANDLE is nullptr at this point, it means that the predecessor BUFFER_CAPTURE has been already disclosed.
+            if (STD_COUT_RESTORATION_HANDLE)
+                std::cout.rdbuf(STD_COUT_RESTORATION_HANDLE);
+        }
+
+        std::string BUFFER_CAPTURE::Read(){
+            std::string Output = "";
+
+            for (auto& Line : Console_History){
+                Output += Line + "\n";
+            }
+
+            return Output;
+        }
+
+        // Expects that the informer, has the latest data.
+        // Will also clear the un-composed line which this capture holds.
+        bool BUFFER_CAPTURE::Sync(BUFFER_CAPTURE* Informer){
+            // first check if the syncable BUFFER_CAPTURE is in the sync history.
+            if (Synced.find(Informer) != Synced.end()){
+                // this means that these two object have previously been synced, so only the latest row needs to be shared.
+                Console_History.push_back(Informer->Console_History.back());
+
+                return true;    // The synchronization was successful.
+            }
+
+            // now if these two have not previously synced, we need to check whether these two are compatible.
+            int Difference = Console_History.size() - Informer->Console_History.size();
+
+            if (Difference > 0){
+                // This means that the informer has less data than this object. in which case in basic GIT systems, the synchronization is not possible.
+                Report(
+                    "Failed to sync buffer capture: '" + Get_Name() + "' with: '" + Informer->Get_Name() + "' !\n" + 
+                    "Try obj->Merge(Informer) before trying to sync them again."
+                );
+
+                return false;
+            }
+            else{
+                // This means that the informer has more data than this object. in which case in basic GIT systems, the synchronization is possible.
+                for (int i = 0; i < Difference; i++){
+                    int Actual_Offset = Console_History.size() - Difference + i - 1;
+
+                    Console_History.push_back(Informer->Console_History[Actual_Offset]);
+                }
+
+                Synced[Informer] = true;
+
+                return true;
+            }
+        }
+
+        std::string BUFFER_CAPTURE::Get_Name(){
+            if (Name.size() == 0){
+                Name = "BUFFER_CAPTURE<" + std::to_string((unsigned long long)this) + ">";
+            }
+
+            return Name;
+        }
+    }
+
 }

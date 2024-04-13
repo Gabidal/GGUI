@@ -25,9 +25,61 @@ namespace GGUI{
 
     extern std::string Get_Current_Location();
 
+    namespace INTERNAL{
+        // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
+        // These black boxes work like Stack Frames, where the data collected will be deleted when the current "Frame" capturer is destructed.
+        class BUFFER_CAPTURE : public std::streambuf{
+        private:
+            std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
+            std::string Current_Line = "";
+            std::deque<std::string> Console_History;
+
+            // Multiple handlers.
+            std::vector<std::function<void()>> On_Change = {};
+
+            // For speeding up.
+            std::unordered_map<BUFFER_CAPTURE*, bool> Synced;
+
+            std::string Name = "";
+        public:
+            // We could just search it from the global listing, but that would be slow.
+            // Stuck into the constructed position.
+            const bool Is_Global = false;
+
+            BUFFER_CAPTURE(std::function<void()> on_change, bool Global = false, std::string Name = "");
+
+            BUFFER_CAPTURE() = default;
+
+            ~BUFFER_CAPTURE(){
+                Close();
+            }
+
+            // Called from streambuf base class.
+            int overflow(int c) override;
+
+            // Safe close of std buffer hijack.
+            void Close();
+
+            std::string Read();
+
+            void Add_On_Change_Handler(std::function<void()> on_change){                
+                On_Change.push_back(on_change);
+            }
+
+            bool Sync(BUFFER_CAPTURE* Informer);
+
+            std::string Get_Name();
+
+            void Set_Name(std::string Name){
+                this->Name = Name;
+            }
+        };
+
+    }
+
     class FILE_STREAM{
     private:
-        std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
+        INTERNAL::BUFFER_CAPTURE* Buffer_Capture = nullptr;
         std::fstream Handle;
         std::vector<std::function<void()>> On_Change = {};
         std::string Previous_Content = "";
@@ -38,10 +90,8 @@ namespace GGUI{
         FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout = false);
 
         ~FILE_STREAM(){
-            if (STD_COUT_RESTORATION_HANDLE){
-                // Restore the std::cout
-                std::cout.rdbuf(STD_COUT_RESTORATION_HANDLE);
-            }
+            if (Buffer_Capture)
+                Buffer_Capture->Close();
 
             Handle.close();
         }
@@ -53,7 +103,14 @@ namespace GGUI{
         void Changed();
 
         void Add_On_Change_Handler(std::function<void()> on_change){
-            On_Change.push_back(on_change);
+            if (Buffer_Capture)
+                Buffer_Capture->Add_On_Change_Handler(on_change);
+            else
+                On_Change.push_back(on_change);
+        }
+
+        bool Is_Cout_Stream(){
+            return Buffer_Capture != nullptr;
         }
     };
 

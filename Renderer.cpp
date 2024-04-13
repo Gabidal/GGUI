@@ -12,6 +12,8 @@ namespace GGUI{
     std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
     std::atomic_bool Pause_Event_Thread = false;                //if true, the event handler will pause.
 
+    std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
+
     int Max_Width = 0;
     int Max_Height = 0;
 
@@ -518,6 +520,7 @@ namespace GGUI{
 
         std::string Result = "Stack Trace:\n";
         int Usable_Stack_Index = 0;
+        bool Use_Indent = Usable_Depth < (Max_Width / 2);
         for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
             SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol);
 
@@ -534,7 +537,7 @@ namespace GGUI{
             // now add indentation by the amount of index:
             std::string Indent = "";
 
-            for (int i = 0; i < Usable_Stack_Index && Usable_Depth < Max_Width; i++)
+            for (int i = 0; i < Usable_Stack_Index && Use_Indent; i++)
                 Indent += SYMBOLS::HORIZONTAL_LINE;
 
             Result += Branch_Start + Indent + symbol->Name + "\n";
@@ -1055,6 +1058,7 @@ namespace GGUI{
         // Now that we have the stack frame label names in the Name_Table list, we can construct an visually apleasing stack trace information:
         std::string Result = "Stack Trace:\n";
 
+        bool Use_Indent = Usable_Depth < (Max_Width / 2);
         for (int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
             std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
 
@@ -1065,7 +1069,7 @@ namespace GGUI{
             // now add indentation by the amount of index:
             std::string Indent = "";
 
-            for (int i = 0; i < Stack_Index && Usable_Depth < Max_Width; i++)
+            for (int i = 0; i < Stack_Index && Use_Indent; i++)
                 Indent += SYMBOLS::HORIZONTAL_LINE;
 
             Result += Branch_Start + Indent + Name_Table[Stack_Index] + "\n";
@@ -1652,7 +1656,8 @@ namespace GGUI{
 
     void Go_Through_File_Streams(){
         for (auto& File_Handle : File_Streamer_Handles){
-            File_Handle.second->Changed();
+            if (!File_Handle.second->Is_Cout_Stream())  // Cout handlers get called whenever a new line is inserted.
+                File_Handle.second->Changed();
         }
     }
 
@@ -2087,6 +2092,24 @@ namespace GGUI{
                 "Update Stats"
             )
         );
+    }
+
+    void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer){
+
+        for (auto* capturer : Global_Buffer_Captures){
+            if (!capturer->Is_Global)
+                continue;
+
+            // Give the capturers the latest row of captured buffer data
+            if (capturer->Sync(informer)){
+                // success
+            }
+            else{
+                // fail, maybe try merge?
+            }
+
+        }
+
     }
 
 }
