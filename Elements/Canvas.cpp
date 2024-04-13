@@ -6,15 +6,17 @@
 namespace GGUI{
 
     Canvas::Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
-        Buffer.resize(w * h);
+        Pause_Renderer([=](){
+            Buffer.resize(w * h);
 
-        Width = w;
-        Height = h;
+            Width = w;
+            Height = h;
 
-        Set_Position(position);
+            Set_Position(position);
 
-        //We dont need any other than the color.
-        Dirty.Clean(STAIN_TYPE::DEEP);
+            //We dont need any other than the color.
+            Dirty.Clean(STAIN_TYPE::DEEP);
+        });
     }
     
     void Canvas::Set(unsigned int x, unsigned int y, RGB color, bool Flush){

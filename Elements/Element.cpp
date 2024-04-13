@@ -11,7 +11,7 @@
 #undef max
 
 GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<std::string> values){
-    if(values.size() == 9){
+    if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
         BOTTOM_LEFT_CORNER = values[1];
         TOP_RIGHT_CORNER = values[2];
@@ -108,30 +108,32 @@ GGUI::Element::Element() {
 }
 
 GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
-    Add_Class("default");
-    Parse_Classes();
+    Pause_Renderer([=](){
+        Add_Class("default");
+        Parse_Classes();
 
-    bool Previus_Border_State = Has_Border();
+        bool Previus_Border_State = Has_Border();
 
-    Style = css;
+        Style = css;
 
-    Fully_Stain();
+        Fully_Stain();
 
-    //Check if the css changed the border state, if so we need to increment or decrement the width & height.
-    Show_Border(Has_Border(), Previus_Border_State);
+        //Check if the css changed the border state, if so we need to increment or decrement the width & height.
+        Show_Border(Has_Border(), Previus_Border_State);
 
-    if (width != 0)
-        Set_Width(width);
-    if (height != 0)
-        Set_Height(height);
+        if (width != 0)
+            Set_Width(width);
+        if (height != 0)
+            Set_Height(height);
 
-    if (parent){
-        Set_Parent(parent);
+        if (parent){
+            Set_Parent(parent);
 
-        Set_Position(position);
-    }
+            Set_Position(position);
+        }
 
-    Name = std::to_string((unsigned long long)this);
+        Name = std::to_string((unsigned long long)this);
+    });
 }
 
 GGUI::Element::Element(
@@ -139,10 +141,12 @@ GGUI::Element::Element(
     unsigned int height,
     Coordinates position
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
 
-    Set_Position(position);
+        Set_Position(position);
+    });
 }
 
 //These next constructors are mainly for users to more easily create elements.
@@ -150,9 +154,10 @@ GGUI::Element::Element(
     unsigned int width,
     unsigned int height
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
-
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
+    });
 }
 
 GGUI::Element::Element(
@@ -161,11 +166,13 @@ GGUI::Element::Element(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+    });
 }
 
 GGUI::Element::Element(
@@ -176,15 +183,17 @@ GGUI::Element::Element(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
-    Set_Border_Color(border_color);
-    Set_Border_Background_Color(border_background_color);
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        Set_Border_Color(border_color);
+        Set_Border_Background_Color(border_background_color);
 
-    Show_Border(true);
+        Show_Border(true);
+    });
 }
 
 GGUI::Element::Element(const Element& copyable){
@@ -1226,6 +1235,13 @@ std::map<unsigned int, std::string> GGUI::Element::Get_Custom_Border_Map(GGUI::E
 
             {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT | GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_DOWN, custom_border_style->CROSS_CONNECTOR}
         };
+}
+
+void GGUI::Element::Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style){
+    *At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style) = style;
+    Dirty.Dirty(STAIN_TYPE::EDGE);
+
+    Show_Border(true);
 }
 
 void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer){

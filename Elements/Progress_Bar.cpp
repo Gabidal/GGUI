@@ -142,25 +142,33 @@ namespace GGUI{
     
     Progress_Bar::Progress_Bar(RGB Fill_Color, RGB Empty_Color) : Element(){
         Progress = 0;
-        Set_Fill_Color(Fill_Color);
-        Set_Empty_Color(Empty_Color);
+        Pause_Renderer([=](){
+            Set_Fill_Color(Fill_Color);
+            Set_Empty_Color(Empty_Color);
+        });
     }
 
     
-    Progress_Bar::Progress_Bar(RGB Fill_COlor, RGB Empty_Color, unsigned int Width, unsigned int Height) : Element(Width, Height){
+    Progress_Bar::Progress_Bar(RGB Fill_Color, RGB Empty_Color, unsigned int Width, unsigned int Height) : Element(Width, Height){
         Progress = 0;
-        Set_Fill_Color(Fill_COlor);
-        Set_Empty_Color(Empty_Color);
+        Pause_Renderer([=](){
+            Set_Fill_Color(Fill_Color);
+            Set_Empty_Color(Empty_Color);
+        });
     }
 
     void Progress_Bar::Set_Fill_Color(RGB value){
         At<RGB_VALUE>(STYLES::Text_Color)->Value = value;
         Dirty.Dirty(STAIN_TYPE::COLOR);
+
+        Update_Frame();
     }
 
     void Progress_Bar::Set_Empty_Color(RGB value){
         At<RGB_VALUE>(STYLES::Background_Color)->Value = value;
         Dirty.Dirty(STAIN_TYPE::COLOR);
+
+        Update_Frame();
     }
 
     void Progress_Bar::Show_Border(bool b){

@@ -45,8 +45,10 @@ GGUI::List_View::List_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
+    Pause_Renderer([=](){
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+    });
     
     Allow_Dynamic_Size(true);
 }
@@ -57,11 +59,13 @@ GGUI::List_View::List_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+    });
     
     Allow_Dynamic_Size(true);
 }
@@ -74,16 +78,18 @@ GGUI::List_View::List_View(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
-    Set_Border_Color(border_color);
-    Set_Border_Background_Color(border_background_color);
-    
-    Show_Border(true);
-    
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        Set_Border_Color(border_color);
+        Set_Border_Background_Color(border_background_color);
+        
+        Show_Border(true);
+    });
+
     Allow_Dynamic_Size(true);
 }
 
@@ -92,27 +98,31 @@ GGUI::List_View::List_View(
 GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
 
-    List_View* Container = new List_View();
-    Container->Set_Growth_Direction(grow_direction);
-    Allow_Overflow(true);
-    
-    Element::Add_Child(Container);
+    Pause_Renderer([=](){
+        List_View* Container = new List_View();
+        Container->Set_Growth_Direction(grow_direction);
+        Allow_Overflow(true);
+        
+        Element::Add_Child(Container);
+    });
 }
 
 GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
     // Make the system into a Dynamic allowing parent.
-
-    Allow_Overflow(true);
-    Element::Add_Child(&container);
+    Pause_Renderer([&container, this](){
+        Allow_Overflow(true);
+        Element::Add_Child(&container);
+    });
 }
 
 GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
+    Pause_Renderer([=](){
+        List_View* Container = new List_View(this, Childs, grow_direction);
 
-    List_View* Container = new List_View(this, Childs, grow_direction);
-
-    Allow_Overflow(true);
-    Element::Add_Child(Container);
+        Allow_Overflow(true);
+        Element::Add_Child(Container);
+    });
 }
 
 GGUI::Scroll_View::Scroll_View(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
@@ -127,20 +137,22 @@ GGUI::Scroll_View::Scroll_View(std::map<std::string, VALUE*> css, unsigned int w
 
             Set_Position(position);
         }
+
+        List_View* Container = new List_View(css, width, height, this, position);
+
+        Allow_Overflow(true);
+        Element::Add_Child(Container);
     });
 
-    List_View* Container = new List_View(css, width, height, this, position);
-
-    Allow_Overflow(true);
-    Element::Add_Child(Container);
 }
 
 GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
+    Pause_Renderer([=](){
+        List_View* Container = new List_View(this, Tree, grow_direction);
 
-    List_View* Container = new List_View(this, Tree, grow_direction);
-
-    Allow_Overflow(true);
-    Element::Add_Child(Container);
+        Allow_Overflow(true);
+        Element::Add_Child(Container);
+    });
 }
 
 //These next constructors are mainly for users to more easily create elements.
@@ -148,14 +160,16 @@ GGUI::Scroll_View::Scroll_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
-    
+    Pause_Renderer([=](){
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        
 
-    List_View* Container = new List_View(text_color, background_color);
-    
-    Allow_Overflow(true);
-    Element::Add_Child(Container);
+        List_View* Container = new List_View(text_color, background_color);
+        
+        Allow_Overflow(true);
+        Element::Add_Child(Container);
+    });
 }
 
 GGUI::Scroll_View::Scroll_View(
@@ -164,17 +178,19 @@ GGUI::Scroll_View::Scroll_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
-    
-    
-    List_View* Container = new List_View(width, height, text_color, background_color);
-    
-    Allow_Overflow(true);
-    Element::Add_Child(Container);
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        
+        
+        List_View* Container = new List_View(width, height, text_color, background_color);
+        
+        Allow_Overflow(true);
+        Element::Add_Child(Container);
+    });
 }
 
 GGUI::Scroll_View::Scroll_View(
@@ -185,21 +201,23 @@ GGUI::Scroll_View::Scroll_View(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Set_Width(width);
-    Set_Height(height);
+    Pause_Renderer([=](){
+        Set_Width(width);
+        Set_Height(height);
 
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
-    Set_Border_Color(border_color);
-    Set_Border_Background_Color(border_background_color);
-    
-    Show_Border(true);
-    
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        Set_Border_Color(border_color);
+        Set_Border_Background_Color(border_background_color);
+        
+        Show_Border(true);
+        
 
-    List_View* Container = new List_View(width, height, text_color, background_color, border_color, border_background_color);
-    
-    Allow_Overflow(true);
-    Element::Add_Child(Container);
+        List_View* Container = new List_View(width, height, text_color, background_color, border_color, border_background_color);
+        
+        Allow_Overflow(true);
+        Element::Add_Child(Container);
+    });
 }
 
 //End of user constructors.

@@ -25,8 +25,10 @@ GGUI::Text_Field::Text_Field(
     RGB text_color,
     RGB background_color
 ) : Text_Field(Text, {}){
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
+    Pause_Renderer([=](){
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+    });
 }
 
 GGUI::Text_Field::Text_Field(
@@ -35,13 +37,15 @@ GGUI::Text_Field::Text_Field(
     RGB background_color,
     RGB border_color,
     RGB border_background_color
-) : Text_Field(Text, {}){
-    Set_Text_Color(text_color);
-    Set_Background_Color(background_color);
-    Set_Border_Color(border_color);
-    Set_Border_Background_Color(border_background_color);
-    
-    Show_Border(true);
+) : Text_Field(Text, {}){    
+    Pause_Renderer([=](){
+        Set_Text_Color(text_color);
+        Set_Background_Color(background_color);
+        Set_Border_Color(border_color);
+        Set_Border_Background_Color(border_background_color);
+        
+        Show_Border(true);
+    });
 }
 
 //End of user constructors.

@@ -48,8 +48,12 @@ namespace GGUI{
     };
 
     HTML::HTML(std::string File_Name){
-        Handle = new FILE_STREAM(File_Name, [&](){
-            this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
+        Pause_Renderer([=](){
+            Handle = new FILE_STREAM(File_Name, [&](){
+                this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
+            });
+
+            Set_Name(File_Name);
         });
     }
 

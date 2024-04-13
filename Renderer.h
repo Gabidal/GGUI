@@ -12,11 +12,13 @@
 #include "Elements/Text_Field.h"
 #include "Elements/List_View.h"
 
-namespace INTERNAL{
-    class BUFFER_CAPTURE;
-}
 
 namespace GGUI{
+    
+    namespace INTERNAL{
+        class BUFFER_CAPTURE;
+    }
+
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.

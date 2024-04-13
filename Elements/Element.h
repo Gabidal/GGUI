@@ -1261,6 +1261,8 @@ namespace GGUI{
 
         std::map<unsigned int, std::string> Get_Custom_Border_Map(Element* e);
 
+        void Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style);
+
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 
         std::pair<RGB, RGB>  Compose_All_Text_RGB_Values();
