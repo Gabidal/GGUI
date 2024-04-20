@@ -348,7 +348,7 @@ namespace GGUI{
     std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input){
         std::vector<Element*> Result;
 
-        GGUI::Pause_Renderer([=](){
+        GGUI::Pause_Renderer([&Input, &Result](){
             for (int i = 0; i < Input.size(); i++){
 
                 HTML_Node* Current = Input[i];

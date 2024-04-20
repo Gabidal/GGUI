@@ -74,7 +74,7 @@ namespace GGUI{
         }
     }
 
-    FILE_STREAM::FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout = false){
+    FILE_STREAM::FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout){
         Name = File_Name;
         
         int Type = std::ios::in;

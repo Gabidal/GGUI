@@ -17,5 +17,5 @@ int main()
     GGUI::Progress_Bar* Download_A = new GGUI::Progress_Bar(GGUI::COLOR::BLUE, GGUI::COLOR::GRAY, 100);
 
     // Your code here...
-    _sleep(UINT32_MAX);
+    GGUI::SLEEP(UINT32_MAX);
 }
