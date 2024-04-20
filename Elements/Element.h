@@ -242,7 +242,9 @@ namespace GGUI{
 
         {BUTTON_STATES::MOUSE_LEFT, Constants::MOUSE_LEFT_CLICKED},
         {BUTTON_STATES::MOUSE_MIDDLE, Constants::MOUSE_MIDDLE_CLICKED},
-        {BUTTON_STATES::MOUSE_RIGHT, Constants::MOUSE_RIGHT_CLICKED}
+        {BUTTON_STATES::MOUSE_RIGHT, Constants::MOUSE_RIGHT_CLICKED},
+        {BUTTON_STATES::MOUSE_SCROLL_UP, Constants::MOUSE_MIDDLE_SCROLL_UP},
+        {BUTTON_STATES::MOUSE_SCROLL_DOWN, Constants::MOUSE_MIDDLE_SCROLL_DOWN},
     };
 
     class RGB{
@@ -834,7 +836,7 @@ namespace GGUI{
         inline std::string Border                           = "Border";
         inline std::string Text_Color                       = "Text_Color";
         inline std::string Background_Color                 = "Background_Color";
-        inline std::string Border_Colour                    = "Border_Colour";
+        inline std::string Border_Color                    = "Border_Color";
         inline std::string Border_Background_Color          = "Border_Background_Color";
 
         inline std::string Hover_Border_Color               = "Hover_Border_Color";
@@ -1064,7 +1066,7 @@ namespace GGUI{
 
         //
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-                
+
         virtual Element* Safe_Move(){
             Element* new_element = new Element();
             *new_element = *(Element*)this;
@@ -1217,19 +1219,19 @@ namespace GGUI{
 
         Margin Get_Margin();
 
-        void Set_Background_Color(RGB color);
+        virtual void Set_Background_Color(RGB color);
 
         RGB Get_Background_Color();
         
-        void Set_Border_Color(RGB color);
+        virtual void Set_Border_Color(RGB color);
         
         RGB Get_Border_Color();
 
-        void Set_Border_Background_Color(RGB color);
+        virtual void Set_Border_Background_Color(RGB color);
         
         RGB Get_Border_Background_Color();
         
-        void Set_Text_Color(RGB color);
+        virtual void Set_Text_Color(RGB color);
 
         void Allow_Dynamic_Size(bool True);
 

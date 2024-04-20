@@ -38,14 +38,16 @@ int main()
         B->Set_Position({30, 10});
         C->Set_Position({20, 15});
 
-        A->Set_Custom_Border_Style(GGUI::STYLES::BORDER::Round);
-        B->Set_Custom_Border_Style(GGUI::STYLES::BORDER::Round);
-        C->Set_Custom_Border_Style(GGUI::STYLES::BORDER::Round);
+        A->Set_Custom_Border_Style(GGUI::STYLES::BORDER::Double);
+        B->Set_Custom_Border_Style(GGUI::STYLES::BORDER::Double);
+        C->Set_Custom_Border_Style(GGUI::STYLES::BORDER::Double);
     });
     
     GGUI::Main->Set_Title("Your App UI");
     GGUI::Main->Set_Background_Color(COLOR::WHITE);
     GGUI::Main->Set_Text_Color(COLOR::BLACK);
+    GGUI::Main->Set_Border_Background_Color(COLOR::WHITE);
+    GGUI::Main->Set_Border_Color(COLOR::BLACK);
     GGUI::Main->Show_Border(true);    
 
     // Your code here...

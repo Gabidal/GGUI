@@ -1633,16 +1633,14 @@ namespace GGUI{
             {STYLES::Text_Color, new RGB_VALUE(COLOR::WHITE)},
             {STYLES::Background_Color, new RGB_VALUE(COLOR::BLACK)},
 
-            {STYLES::Border_Colour, new RGB_VALUE(COLOR::WHITE)},
+            {STYLES::Border_Color, new RGB_VALUE(COLOR::WHITE)},
             {STYLES::Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
-
 
             {STYLES::Hover_Text_Color, new RGB_VALUE(COLOR::WHITE)},
             {STYLES::Hover_Background_Color, new RGB_VALUE(COLOR::DARK_GRAY)},
 
             {STYLES::Hover_Border_Color, new RGB_VALUE(COLOR::WHITE)},
             {STYLES::Hover_Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
-
 
             {STYLES::Focus_Text_Color, new RGB_VALUE(COLOR::BLACK)},
             {STYLES::Focus_Background_Color, new RGB_VALUE(COLOR::WHITE)},

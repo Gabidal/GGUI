@@ -318,7 +318,7 @@ std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
         return {At<RGB_VALUE>(STYLES::Hover_Border_Color)->Value, At<RGB_VALUE>(STYLES::Hover_Border_Background_Color)->Value};
     }
     else{
-        return {At<RGB_VALUE>(STYLES::Border_Colour)->Value, At<RGB_VALUE>(STYLES::Border_Background_Color)->Value};
+        return {At<RGB_VALUE>(STYLES::Border_Color)->Value, At<RGB_VALUE>(STYLES::Border_Background_Color)->Value};
     }
 }
 
@@ -926,13 +926,13 @@ GGUI::RGB GGUI::Element::Get_Background_Color(){
 }
 
 void GGUI::Element::Set_Border_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Border_Colour)->Value = color;
+    At<RGB_VALUE>(STYLES::Border_Color)->Value = color;
     Dirty.Dirty(STAIN_TYPE::COLOR);
     Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Color(){
-    return At<RGB_VALUE>(STYLES::Border_Colour)->Value;
+    return At<RGB_VALUE>(STYLES::Border_Color)->Value;
 }
 
 void GGUI::Element::Set_Border_Background_Color(RGB color){

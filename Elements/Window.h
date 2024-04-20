@@ -13,7 +13,10 @@ namespace GGUI{
         RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
         bool Has_Hidden_Borders = false;
     public:
-        Window() : Element() {}
+        Window() : Element() {
+            Before_Hiding_Border_Background_Color = Get_Background_Color();
+            Before_Hiding_Border_Color = Get_Border_Color();
+        }
 
         Window(std::string title, std::vector<std::string> classes = {});
 
@@ -75,6 +78,14 @@ namespace GGUI{
         void Show_Border(bool state) override;
 
         void Show_Border(bool state, bool previus_state) override;
+
+        void Set_Background_Color(RGB color) override;
+
+        void Set_Text_Color(RGB color) override;
+
+        void Set_Border_Background_Color(RGB color) override;
+
+        void Set_Border_Color(RGB color) override;
 
         Element* Safe_Move() override {
             Window* new_Window = new Window();

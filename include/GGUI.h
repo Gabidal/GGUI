@@ -834,7 +834,7 @@ namespace GGUI{
         inline std::string Border                           = "Border";
         inline std::string Text_Color                       = "Text_Color";
         inline std::string Background_Color                 = "Background_Color";
-        inline std::string Border_Colour                    = "Border_Colour";
+        inline std::string Border_Color                    = "Border_Colour";
         inline std::string Border_Background_Color          = "Border_Background_Color";
 
         inline std::string Hover_Border_Color               = "Hover_Border_Color";
