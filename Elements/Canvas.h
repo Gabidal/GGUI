@@ -37,13 +37,20 @@ namespace GGUI{
 
     class Sprite{
     public:
-        RGB Background_Color;
-        RGB Foreground_Color;
-        UTF Texture;
+        std::vector<GGUI::UTF> Frames;
 
-        Sprite(UTF t = UTF(" "), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
+        int Speed = 1;      // Using decimals too slow hmmm...
+        int Offset = 0;     // This is for more beautiful mass animation systems
 
-        UTF Render();
+        Sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1) : Frames(frames), Offset(offset), Speed(speed) {}
+
+        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed) {
+            Frames.push_back(frame);
+        }
+
+        Sprite() = default;
+
+        UTF Render(time_t Current_Time);
     };
 
     class Terminal_Canvas : public Element{
@@ -55,11 +62,13 @@ namespace GGUI{
     public:
         Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         
+        ~Terminal_Canvas();
+
         void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
 
         void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
         
-        void Flush();
+        void Flush(bool Force_Flush = false);
         
         std::vector<UTF> Render() override;
         

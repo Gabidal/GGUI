@@ -11,7 +11,7 @@
 #include "Elements/Window.h"
 #include "Elements/Text_Field.h"
 #include "Elements/List_View.h"
-
+#include "Elements/Canvas.h"
 
 namespace GGUI{
     
@@ -52,6 +52,8 @@ namespace GGUI{
     extern std::map<std::string, int> Class_Names;
 
     extern Window* Main;  
+
+    extern std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
     void SLEEP(unsigned int milliseconds);
 

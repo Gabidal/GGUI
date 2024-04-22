@@ -98,9 +98,20 @@ namespace GGUI{
         Dirty.Clean(STAIN_TYPE::DEEP);
     }
 
+    Terminal_Canvas::~Terminal_Canvas(){
+        // Check if this is added to the multiframe list and if so then remove it from there.
+        if (Multi_Frame_Canvas.find(this) != Multi_Frame_Canvas.end()){
+            Multi_Frame_Canvas.erase(this);
+        }
+    }
+
     void Terminal_Canvas::Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush){
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
+
+        if (sprite.Frames.size() > 1 && Multi_Frame_Canvas.find(this) == Multi_Frame_Canvas.end()){
+            Multi_Frame_Canvas[this] = true;
+        }
 
         Buffer[Actual_X + Actual_Y * Width] = sprite;
 
@@ -114,7 +125,7 @@ namespace GGUI{
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
 
-        Buffer[Actual_X + Actual_Y * Width].Texture = sprite;
+        Buffer[Actual_X + Actual_Y * Width].Frames.push_back(sprite);
 
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
@@ -122,7 +133,11 @@ namespace GGUI{
             Update_Frame();
     }
 
-    void Terminal_Canvas::Flush(){
+    void Terminal_Canvas::Flush(bool Force_Flush){
+        if (Force_Flush){
+            Dirty.Dirty(STAIN_TYPE::COLOR);
+        }
+
         Update_Frame();
     }
 
@@ -151,6 +166,9 @@ namespace GGUI{
 
             Dirty.Clean(STAIN_TYPE::COLOR);
 
+            // Get the current Time Frame
+            time_t Current_Time = time(NULL);
+
             unsigned int Start_X = Has_Border();
             unsigned int Start_Y = Has_Border();
 
@@ -159,7 +177,7 @@ namespace GGUI{
 
             for (unsigned int y = Start_Y; y < End_Y; y++){
                 for (unsigned int x = Start_X; x < End_X; x++){
-                    Result[x + y * Width] = Buffer[x + y * Width].Render();
+                    Result[x + y * Width] = Buffer[x + y * Width].Render(Current_Time);
                 }
             }
         }
@@ -174,11 +192,11 @@ namespace GGUI{
 
     }
 
-    UTF Sprite::Render(){
-        UTF Result = Texture;
-
-        Result.Set_Background(Background_Color);
-        Result.Set_Foreground(Foreground_Color);
+    UTF Sprite::Render(time_t Current_Frame){
+        UTF Result;
+        
+        if (Frames.size() > 0)
+            Result = Frames[(Current_Frame * Speed + Offset) % Frames.size()];
         
         return Result;
     }

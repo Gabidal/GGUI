@@ -50,6 +50,8 @@ namespace GGUI{
 
     inline std::map<std::string, int> Class_Names;
 
+    std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
+
     Window* Main = nullptr;
     
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
@@ -1173,6 +1175,7 @@ namespace GGUI{
         }
     }
 
+    // Will select the new tabbed element as Selected and NOT Hovered!
     void Handle_Tabulator(){
         if (!KEYBOARD_STATES[BUTTON_STATES::TAB].State)
             return;
@@ -1659,6 +1662,14 @@ namespace GGUI{
         }
     }
 
+    void Refresh_Multi_Frame_Canvas(){
+        for (auto i : Multi_Frame_Canvas){
+
+            i.first->Flush(true);
+
+        }
+    }
+
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_Renderer(){
         Update_Max_Width_And_Height();
@@ -1710,6 +1721,7 @@ namespace GGUI{
                 Recall_Memories();
                 Event_Handler();
                 Go_Through_File_Streams();
+                Refresh_Multi_Frame_Canvas();
  
                 Previous_Time = Current_Time;
                 std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
