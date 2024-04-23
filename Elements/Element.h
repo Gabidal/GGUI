@@ -1365,6 +1365,26 @@ namespace GGUI{
         // Uses the post_processed widths and height values
         bool Child_Is_Shown(Element* other);
     };
+
+    // UTILS : -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+    // Linear interpolation function
+    template<typename T>
+    constexpr T lerp(T a, T b, T t) {
+        // Clamp t between a and b
+        return a + t * (b - a);
+    }
+
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, unsigned char Distance, int Domain_Size = UCHAR_MAX){
+        GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
+
+        Result.Red = lerp<float>(A.Red, B.Red, (float)Distance / (float)Domain_Size);
+        Result.Green = lerp<float>(A.Green, B.Green, (float)Distance / (float)Domain_Size);
+        Result.Blue = lerp<float>(A.Blue, B.Blue, (float)Distance / (float)Domain_Size);
+
+        return Result;
+    }
+
 }
 
 #endif

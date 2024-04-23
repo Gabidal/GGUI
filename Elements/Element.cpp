@@ -1659,6 +1659,8 @@ bool GGUI::Element::Child_Is_Shown(Element* other){
     return X_Is_Inside && Y_Is_Inside;
 }
 
+// UTILS : -_-_-_-_-_-_-_-_-_
+
 GGUI::Element* Translate_Element(GGUI::HTML_Node* input){
     GGUI::Element* Result = new GGUI::Element();
 

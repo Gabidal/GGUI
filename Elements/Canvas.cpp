@@ -144,6 +144,8 @@ namespace GGUI{
     std::vector<UTF> Terminal_Canvas::Render(){
         std::vector<GGUI::UTF> Result = Render_Buffer;
                 
+        Current_Animation_Frame++;
+
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
@@ -166,9 +168,6 @@ namespace GGUI{
 
             Dirty.Clean(STAIN_TYPE::COLOR);
 
-            // Get the current Time Frame
-            time_t Current_Time = time(NULL);
-
             unsigned int Start_X = Has_Border();
             unsigned int Start_Y = Has_Border();
 
@@ -177,7 +176,7 @@ namespace GGUI{
 
             for (unsigned int y = Start_Y; y < End_Y; y++){
                 for (unsigned int x = Start_X; x < End_X; x++){
-                    Result[x + y * Width] = Buffer[x + y * Width].Render(Current_Time);
+                    Result[x + y * Width] = Buffer[x + y * Width].Render(Current_Animation_Frame);
                 }
             }
         }
@@ -192,12 +191,42 @@ namespace GGUI{
 
     }
 
-    UTF Sprite::Render(time_t Current_Frame){
-        UTF Result;
-        
-        if (Frames.size() > 0)
-            Result = Frames[(Current_Frame * Speed + Offset) % Frames.size()];
-        
+    UTF Sprite::Render(unsigned char Current_Frame){
+        int Frame_Count = Frames.size();
+
+        if (Frame_Count <= 1){
+            return Frames.back();
+        }
+
+        const int Frame_Distance = UCHAR_MAX / (Frame_Count);    // Add 1, because 256 overflows back to zero, and we need detailed distance.
+
+        // Apply the speed modifier 
+        unsigned char Animation_Frame = (Current_Frame + Offset) * Speed;
+
+        // now check where the current animation frame lies in between two animation frames.
+        int Frame_Below = Animation_Frame / Frame_Distance;
+        int Frame_Above = (Frame_Below + 1);
+
+        // now interpolate the foreground color between he two points
+        GGUI::RGB foreground = Lerp(
+            Frames[Frame_Below].Foreground, 
+            Frames[Frame_Above % Frame_Count].Foreground, 
+            Animation_Frame % Frame_Distance,
+            Frame_Distance
+        );
+
+        // do same for background
+        GGUI::RGB background = Lerp(
+            Frames[Frame_Below].Background, 
+            Frames[Frame_Above % Frame_Count].Background, 
+            Animation_Frame % Frame_Distance,
+            Frame_Distance
+        );
+
+        GGUI::UTF Result = Frames[Frame_Below];
+        Result.Set_Foreground(foreground);
+        Result.Set_Background(background);
+
         return Result;
     }
 

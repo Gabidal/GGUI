@@ -48,9 +48,14 @@ namespace GGUI{
             Frames.push_back(frame);
         }
 
-        Sprite() = default;
+        Sprite(){
+            Frames.push_back(GGUI::UTF(""));
+            
+            Offset = 0;
+            Speed = 1;
+        }
 
-        UTF Render(time_t Current_Time);
+        UTF Render(unsigned char Current_Time);
     };
 
     class Terminal_Canvas : public Element{
@@ -59,6 +64,8 @@ namespace GGUI{
         Terminal_Canvas(){}
     protected:
         std::vector<Sprite> Buffer;
+
+        unsigned char Current_Animation_Frame = 0;
     public:
         Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         

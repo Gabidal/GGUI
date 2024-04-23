@@ -48,6 +48,8 @@ namespace GGUI{
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 
+    extern unsigned long long Delta_Time;
+
     extern std::map<int, std::map<std::string, VALUE*>> Classes;
     extern std::map<std::string, int> Class_Names;
 
