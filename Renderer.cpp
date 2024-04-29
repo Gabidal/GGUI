@@ -1713,18 +1713,18 @@ namespace GGUI{
                 if (Pause_Event_Thread.load())
                     continue;
 
-                Current_Time = std::chrono::high_resolution_clock::now();
-
-                // Calculate the delta time.
-                Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
-
                 Recall_Memories();
                 Event_Handler();
                 Go_Through_File_Streams();
                 Refresh_Multi_Frame_Canvas();
  
                 Previous_Time = Current_Time;
-                std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SPEED_MIILISECONDS)); 
+                Current_Time = std::chrono::high_resolution_clock::now();
+
+                // Calculate the delta time.
+                Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MIILISECONDS - Delta_Time, 0))); 
             }
         });
 
@@ -2047,7 +2047,7 @@ namespace GGUI{
         });
         Inspect->Set_Background_Color(Main->Get_Background_Color());
         Inspect->Set_Text_Color(Main->Get_Text_Color());
-        Inspect->Set_Opacity(0.2f);
+        Inspect->Set_Opacity(0.8f);
         Inspect->Set_Name("Inspect");
 
         Main->Add_Child(Inspect);

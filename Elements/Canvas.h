@@ -42,21 +42,34 @@ namespace GGUI{
         int Speed = 1;      // Using decimals too slow hmmm...
         int Offset = 0;     // This is for more beautiful mass animation systems
 
-        Sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1) : Frames(frames), Offset(offset), Speed(speed) {}
+        float Frame_Distance = 0.0f;
 
-        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed) {
+        bool Is_Power_Of_Two = false;
+
+        Sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1);
+
+        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed), Frame_Distance(UCHAR_MAX) {
             Frames.push_back(frame);
         }
 
-        Sprite(){
+        Sprite() : Frame_Distance(UCHAR_MAX){
             Frames.push_back(GGUI::UTF(""));
             
             Offset = 0;
             Speed = 1;
+            
+            Is_Power_Of_Two = false;
         }
 
         UTF Render(unsigned char Current_Time);
     };
+
+    namespace GROUP_TYPE{
+        // Defines the group sizes for Sprite group optimizing.
+        inline unsigned char DUAL = 1 << 1;
+        inline unsigned char QUAD = 1 << 2;
+        inline unsigned char HEX = 1 << 3;
+    }
 
     class Terminal_Canvas : public Element{
     private:
@@ -66,6 +79,9 @@ namespace GGUI{
         std::vector<Sprite> Buffer;
 
         unsigned char Current_Animation_Frame = 0;
+
+        // Used by the heuristics to clamp optimize multiple X amount Multi-frame-Sprites.
+        std::vector<unsigned char> Groups;
     public:
         Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         
@@ -79,6 +95,10 @@ namespace GGUI{
         
         std::vector<UTF> Render() override;
         
+        void Group_Heuristics();
+
+        void Group(unsigned int Start_Index, int length);
+
         Element* Safe_Move() override {
             Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
             *new_Terminal_Canvas = *(Terminal_Canvas*)this;

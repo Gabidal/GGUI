@@ -987,7 +987,7 @@ namespace GGUI{
         inline unsigned long long Input_Clear_Time = 16;
         inline bool Word_Wrapping = true;
     };
-  
+
     // For templates.
     extern std::vector<Action*> Event_Handlers;
 
@@ -1375,12 +1375,22 @@ namespace GGUI{
         return a + t * (b - a);
     }
 
-    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, unsigned char Distance, int Domain_Size = UCHAR_MAX){
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, int Distance, int Domain_Size = UCHAR_MAX){
         GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
 
         Result.Red = lerp<float>(A.Red, B.Red, (float)Distance / (float)Domain_Size);
         Result.Green = lerp<float>(A.Green, B.Green, (float)Distance / (float)Domain_Size);
         Result.Blue = lerp<float>(A.Blue, B.Blue, (float)Distance / (float)Domain_Size);
+
+        return Result;
+    }
+
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance){
+        GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
+
+        Result.Red = lerp<float>(A.Red, B.Red, Distance);
+        Result.Green = lerp<float>(A.Green, B.Green, Distance);
+        Result.Blue = lerp<float>(A.Blue, B.Blue, Distance);
 
         return Result;
     }
