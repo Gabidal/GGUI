@@ -203,7 +203,9 @@ namespace GGUI{
             std::vector<float> All_Group_Nodes_Frame_Below_Divisor;
             std::vector<float> All_Group_Nodes_Frame_Below_Remainder_Divisor;
             std::vector<float> All_Group_Nodes_Frame_Above_Divisor;
+            std::vector<float> All_Group_Nodes_Frame_Above_Modulo_Constant_Divider;
             std::vector<float> All_Group_Nodes_Current_Frame_Divisor;
+
 
             // Doesn't matter of the largest used size is less than the max, because we just wont be writing there.
             // Init all with zero, since it will automaticaly point to the default frame.
@@ -220,6 +222,7 @@ namespace GGUI{
             All_Group_Nodes_Frame_Below_Divisor.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Frame_Below_Remainder_Divisor.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Frame_Above_Divisor.resize(MAX_SIMD_SIZE);
+            All_Group_Nodes_Frame_Above_Modulo_Constant_Divider.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Current_Frame_Divisor.resize(MAX_SIMD_SIZE);
 
             for (int i = 0; i < Buffer.size(); i += Current_Group_Size){
@@ -275,12 +278,21 @@ namespace GGUI{
                         All_Group_Nodes_Frame_Above_Dividend[j] = All_Group_Nodes_Frame_Below[j] + 1;
                         All_Group_Nodes_Frame_Above_Divisor[j] = Current_Sprite->Frames.size();
 
+                        All_Group_Nodes_Frame_Above_Modulo_Constant_Divider[j] = Current_Sprite->Frames.size();
+
                         unsigned char Animation_Frame = (Current_Animation_Frame + Current_Sprite->Offset) * Current_Sprite->Speed;
 
                         // int Modulo = Animation_Frame - Divination * Frame_Distance;
                         All_Group_Nodes_Current_Frame_Dividend[j] = Animation_Frame - All_Group_Nodes_Frame_Below[j] * Current_Sprite->Frame_Distance;
                         All_Group_Nodes_Current_Frame_Divisor[j] = Current_Sprite->Frame_Distance;
                     }
+
+                    Operate_SIMD_Modulo(
+                        All_Group_Nodes_Frame_Above_Dividend.data(),
+                        All_Group_Nodes_Frame_Above_Modulo_Constant_Divider.data(),
+                        All_Group_Nodes_Frame_Above_Dividend.data(),
+                        Current_Group_Size
+                    );
 
                     // Now we can calculate the Frame Above and the current frame distance
                     Operate_SIMD_Modulo(
