@@ -189,30 +189,36 @@ namespace GGUI{
 
             // The vectors holding the final answer
             std::vector<float> All_Group_Nodes_Frame_Below;
+            std::vector<float> All_Group_Nodes_Frame_Below_Remainder;
             std::vector<float> All_Group_Nodes_Frame_Above;
             std::vector<float> All_Group_Nodes_Current_Frame;
             
             // The vectors containing the dividend value
             std::vector<float> All_Group_Nodes_Frame_Below_Dividend;
+            std::vector<float> All_Group_Nodes_Frame_Below_Remainder_Dividend;
             std::vector<float> All_Group_Nodes_Frame_Above_Dividend;
             std::vector<float> All_Group_Nodes_Current_Frame_Dividend;
 
             // The vectors containing the divisor value
             std::vector<float> All_Group_Nodes_Frame_Below_Divisor;
+            std::vector<float> All_Group_Nodes_Frame_Below_Remainder_Divisor;
             std::vector<float> All_Group_Nodes_Frame_Above_Divisor;
             std::vector<float> All_Group_Nodes_Current_Frame_Divisor;
 
             // Doesn't matter of the largest used size is less than the max, because we just wont be writing there.
             // Init all with zero, since it will automaticaly point to the default frame.
             All_Group_Nodes_Frame_Below.resize(MAX_SIMD_SIZE);  
+            All_Group_Nodes_Frame_Below_Remainder.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Frame_Above.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Current_Frame.resize(MAX_SIMD_SIZE);
 
             All_Group_Nodes_Frame_Below_Dividend.resize(MAX_SIMD_SIZE);
+            All_Group_Nodes_Frame_Below_Remainder_Dividend.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Frame_Above_Dividend.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Current_Frame_Dividend.resize(MAX_SIMD_SIZE);
 
             All_Group_Nodes_Frame_Below_Divisor.resize(MAX_SIMD_SIZE);
+            All_Group_Nodes_Frame_Below_Remainder_Divisor.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Frame_Above_Divisor.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Current_Frame_Divisor.resize(MAX_SIMD_SIZE);
 
@@ -236,6 +242,9 @@ namespace GGUI{
 
                         All_Group_Nodes_Frame_Below_Dividend[j] = Animation_Frame;
                         All_Group_Nodes_Frame_Below_Divisor[j] = Frame_Distance;
+
+                        All_Group_Nodes_Frame_Below_Remainder_Dividend[j] = Animation_Frame;
+                        All_Group_Nodes_Frame_Below_Remainder_Divisor[j] = (float)Frame_Count * Frame_Distance;
                     }
 
                     // Since the other two SIMD division operations require the resulting value of the Frame Below, we need to calculate that first 
@@ -245,6 +254,18 @@ namespace GGUI{
                         All_Group_Nodes_Frame_Below.data(),
                         Current_Group_Size
                     );
+
+                    Operate_SIMD_Division(
+                        All_Group_Nodes_Frame_Below_Remainder_Dividend.data(),
+                        All_Group_Nodes_Frame_Below_Remainder_Divisor.data(),
+                        All_Group_Nodes_Frame_Below_Remainder.data(),
+                        Current_Group_Size
+                    );
+
+                    // now minus the Frame Below remainder from the Frame Below main data
+                    for (int j = 0; j < Current_Group_Size; j++){
+                        All_Group_Nodes_Frame_Below[j] -= All_Group_Nodes_Frame_Below_Remainder[j];
+                    }
 
                     // Now that the frame below has been calculated we can calculate the other two.
                     for (int j = 0; j < Current_Group_Size; j++){
@@ -262,7 +283,7 @@ namespace GGUI{
                     }
 
                     // Now we can calculate the Frame Above and the current frame distance
-                    Operate_SIMD_Division(
+                    Operate_SIMD_Modulo(
                         All_Group_Nodes_Frame_Above_Dividend.data(),
                         All_Group_Nodes_Frame_Above_Divisor.data(),
                         All_Group_Nodes_Frame_Above.data(),
@@ -281,19 +302,19 @@ namespace GGUI{
                         GGUI::Sprite* Current_Sprite = &Buffer[i + j];
 
                         GGUI::RGB foreground = Lerp(
-                            Current_Sprite->Frames[floor(All_Group_Nodes_Frame_Below[j])].Foreground, 
-                            Current_Sprite->Frames[floor(All_Group_Nodes_Frame_Above[j])].Foreground,
+                            Current_Sprite->Frames[All_Group_Nodes_Frame_Below[j]].Foreground, 
+                            Current_Sprite->Frames[All_Group_Nodes_Frame_Above[j]].Foreground,
                             All_Group_Nodes_Current_Frame[j]
                         );
 
                         // do same for background
                         GGUI::RGB background = Lerp(
-                            Current_Sprite->Frames[floor(All_Group_Nodes_Frame_Below[j])].Background, 
-                            Current_Sprite->Frames[floor(All_Group_Nodes_Frame_Above[j])].Background,
+                            Current_Sprite->Frames[All_Group_Nodes_Frame_Below[j]].Background, 
+                            Current_Sprite->Frames[All_Group_Nodes_Frame_Above[j]].Background,
                             All_Group_Nodes_Current_Frame[j]
                         );
 
-                        GGUI::UTF Current_Result = Current_Sprite->Frames[floor(All_Group_Nodes_Frame_Below[j])];
+                        GGUI::UTF Current_Result = Current_Sprite->Frames[All_Group_Nodes_Frame_Below[j]];
                         Current_Result.Set_Foreground(foreground);
                         Current_Result.Set_Background(background);
 

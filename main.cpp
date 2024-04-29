@@ -13,12 +13,13 @@ int main()
 
         for (int x = 0; x < tem->Get_Width(); x++){
             for (int y = 0; y < tem->Get_Height(); y++){
-                GGUI::Sprite s({
-                    {"a", {GGUI::COLOR::ORANGE, GGUI::COLOR::DARK_BLUE}}, 
-                    {"b", {GGUI::COLOR::BLUE, GGUI::COLOR::WHITE}}, 
-                    {"c", {GGUI::COLOR::RED, GGUI::COLOR::YELLOW}}}, 
+                GGUI::Sprite s(
+                    {
+                        {"a", {GGUI::RGB(x, y, x), GGUI::RGB(x, y, x)}}, 
+                        {"b", {GGUI::RGB(y, x, y), GGUI::RGB(y, x, y)}}, 
+                    },
                     x,
-                    y
+                    1
                 );
 
                 tem->Set(x, y, s);

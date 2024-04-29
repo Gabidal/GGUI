@@ -39,6 +39,16 @@ namespace GGUI{
         }
     }
 
+    void Operate_SIMD_Modulo(float* dividend, float* divider, float* result, int length){
+        // Uses the division variants and then calculates for each the modulo
+        Operate_SIMD_Division(dividend, divider, result, length);
+
+        for(int i = 0; i < length; i++){
+            // by the formula: a - b * floor(a / b)
+            result[i] = dividend[i] - divider[i] * floor(result[i]);
+        }
+    }
+
     #if defined(__SSE__)
         void simd_division_2(float* a, float* b, float* c) {
             __m128 va = _mm_loadu_ps(a);
