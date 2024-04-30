@@ -23,7 +23,7 @@ sources = [
   'main.cpp',
 ]
 
-cpp_args = ['-fpermissive', '-Wno-narrowing', '-msse2']
+cpp_args = ['-fpermissive', '-Wno-narrowing', '-mavx']
 link_args = []
 
 # Add Windows-specific compile arguments

@@ -42,7 +42,7 @@ namespace GGUI{
         int Speed = 1;      // Using decimals too slow hmmm...
         int Offset = 0;     // This is for more beautiful mass animation systems
 
-        float Frame_Distance = 0.0f;
+        int Frame_Distance = 0;
 
         bool Is_Power_Of_Two = false;
 

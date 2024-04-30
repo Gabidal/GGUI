@@ -94,7 +94,7 @@ namespace GGUI{
         if (std::bitset<sizeof(unsigned char)>(Frames.size()).count() == 1)
             Is_Power_Of_Two = true;
 
-        Frame_Distance = (float)UCHAR_MAX / (float)Frames.size();
+        Frame_Distance = ((float)UCHAR_MAX + 1) / (float)Frames.size();
     }
 
     Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
@@ -188,42 +188,35 @@ namespace GGUI{
             int Current_Group_Size = 0;
 
             // The vectors holding the final answer
-            std::vector<float> All_Group_Nodes_Frame_Below;
-            std::vector<float> All_Group_Nodes_Frame_Below_Remainder;
-            std::vector<float> All_Group_Nodes_Frame_Above;
+            std::vector<float> Divination;
+            std::vector<float> Frame_Below;
+            std::vector<float> Frame_Above;
             std::vector<float> All_Group_Nodes_Current_Frame;
             
             // The vectors containing the dividend value
-            std::vector<float> All_Group_Nodes_Frame_Below_Dividend;
-            std::vector<float> All_Group_Nodes_Frame_Below_Remainder_Dividend;
-            std::vector<float> All_Group_Nodes_Frame_Above_Dividend;
-            std::vector<float> All_Group_Nodes_Current_Frame_Dividend;
+            std::vector<float> Animation_Frame;
+            std::vector<float> Frame_Above_Dividend;
+            std::vector<float> Modulo;
 
             // The vectors containing the divisor value
-            std::vector<float> All_Group_Nodes_Frame_Below_Divisor;
-            std::vector<float> All_Group_Nodes_Frame_Below_Remainder_Divisor;
-            std::vector<float> All_Group_Nodes_Frame_Above_Divisor;
-            std::vector<float> All_Group_Nodes_Frame_Above_Modulo_Constant_Divider;
-            std::vector<float> All_Group_Nodes_Current_Frame_Divisor;
-
+            std::vector<float> Frame_Distance;
+            std::vector<float> Overflow;
+            std::vector<float> Frame_Count;
 
             // Doesn't matter of the largest used size is less than the max, because we just wont be writing there.
             // Init all with zero, since it will automaticaly point to the default frame.
-            All_Group_Nodes_Frame_Below.resize(MAX_SIMD_SIZE);  
-            All_Group_Nodes_Frame_Below_Remainder.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Frame_Above.resize(MAX_SIMD_SIZE);
+            Divination.resize(MAX_SIMD_SIZE);  
+            Frame_Below.resize(MAX_SIMD_SIZE);
+            Frame_Above.resize(MAX_SIMD_SIZE);
             All_Group_Nodes_Current_Frame.resize(MAX_SIMD_SIZE);
 
-            All_Group_Nodes_Frame_Below_Dividend.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Frame_Below_Remainder_Dividend.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Frame_Above_Dividend.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Current_Frame_Dividend.resize(MAX_SIMD_SIZE);
+            Animation_Frame.resize(MAX_SIMD_SIZE);
+            Frame_Above_Dividend.resize(MAX_SIMD_SIZE);
+            Modulo.resize(MAX_SIMD_SIZE);
 
-            All_Group_Nodes_Frame_Below_Divisor.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Frame_Below_Remainder_Divisor.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Frame_Above_Divisor.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Frame_Above_Modulo_Constant_Divider.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Current_Frame_Divisor.resize(MAX_SIMD_SIZE);
+            Frame_Distance.resize(MAX_SIMD_SIZE);
+            Overflow.resize(MAX_SIMD_SIZE);
+            Frame_Count.resize(MAX_SIMD_SIZE);
 
             for (int i = 0; i < Buffer.size(); i += Current_Group_Size){
                 Current_Group_Size = Groups[i];
@@ -237,37 +230,32 @@ namespace GGUI{
                     for (int j = 0; j < Current_Group_Size; j++){
                         GGUI::Sprite* Current_Sprite = &Buffer[i + j];
 
-                        int Frame_Count = Current_Sprite->Frames.size();
+                        // Divination
+                        Animation_Frame[j] = (unsigned char)((Current_Animation_Frame + Current_Sprite->Offset) * Current_Sprite->Speed);
+                        Frame_Distance[j] = Current_Sprite->Frame_Distance;
 
-                        float Frame_Distance = Current_Sprite->Frame_Distance;
-
-                        unsigned char Animation_Frame = (Current_Animation_Frame + Current_Sprite->Offset) * Current_Sprite->Speed;
-
-                        All_Group_Nodes_Frame_Below_Dividend[j] = Animation_Frame;
-                        All_Group_Nodes_Frame_Below_Divisor[j] = Frame_Distance;
-
-                        All_Group_Nodes_Frame_Below_Remainder_Dividend[j] = Animation_Frame;
-                        All_Group_Nodes_Frame_Below_Remainder_Divisor[j] = (float)Frame_Count * Frame_Distance;
+                        // Frame Below
+                        Overflow[j] = Current_Sprite->Frames.size() * Current_Sprite->Frame_Distance;
                     }
 
                     // Since the other two SIMD division operations require the resulting value of the Frame Below, we need to calculate that first 
                     Operate_SIMD_Division(
-                        All_Group_Nodes_Frame_Below_Dividend.data(),
-                        All_Group_Nodes_Frame_Below_Divisor.data(),
-                        All_Group_Nodes_Frame_Below.data(),
+                        Animation_Frame.data(),
+                        Frame_Distance.data(),
+                        Divination.data(),
                         Current_Group_Size
                     );
 
                     Operate_SIMD_Division(
-                        All_Group_Nodes_Frame_Below_Remainder_Dividend.data(),
-                        All_Group_Nodes_Frame_Below_Remainder_Divisor.data(),
-                        All_Group_Nodes_Frame_Below_Remainder.data(),
+                        Animation_Frame.data(),
+                        Overflow.data(),
+                        Frame_Below.data(),
                         Current_Group_Size
                     );
 
                     // now minus the Frame Below remainder from the Frame Below main data
                     for (int j = 0; j < Current_Group_Size; j++){
-                        All_Group_Nodes_Frame_Below[j] -= All_Group_Nodes_Frame_Below_Remainder[j];
+                        Frame_Below[j] = floor(Divination[j]) - floor(Frame_Below[j]);
                     }
 
                     // Now that the frame below has been calculated we can calculate the other two.
@@ -275,36 +263,27 @@ namespace GGUI{
                         // int Frame_Above = (Frame_Below + 1) % Frame_Count;
                         GGUI::Sprite* Current_Sprite = &Buffer[i + j];
 
-                        All_Group_Nodes_Frame_Above_Dividend[j] = All_Group_Nodes_Frame_Below[j] + 1;
-                        All_Group_Nodes_Frame_Above_Divisor[j] = Current_Sprite->Frames.size();
-
-                        All_Group_Nodes_Frame_Above_Modulo_Constant_Divider[j] = Current_Sprite->Frames.size();
+                        // Frame Above
+                        Frame_Above_Dividend[j] = Divination[j] + 1;
+                        Frame_Count[j] = Current_Sprite->Frames.size();
 
                         unsigned char Animation_Frame = (Current_Animation_Frame + Current_Sprite->Offset) * Current_Sprite->Speed;
 
                         // int Modulo = Animation_Frame - Divination * Frame_Distance;
-                        All_Group_Nodes_Current_Frame_Dividend[j] = Animation_Frame - All_Group_Nodes_Frame_Below[j] * Current_Sprite->Frame_Distance;
-                        All_Group_Nodes_Current_Frame_Divisor[j] = Current_Sprite->Frame_Distance;
+                        Modulo[j] = Animation_Frame - Frame_Below[j] * Current_Sprite->Frame_Distance;
                     }
-
-                    Operate_SIMD_Modulo(
-                        All_Group_Nodes_Frame_Above_Dividend.data(),
-                        All_Group_Nodes_Frame_Above_Modulo_Constant_Divider.data(),
-                        All_Group_Nodes_Frame_Above_Dividend.data(),
-                        Current_Group_Size
-                    );
 
                     // Now we can calculate the Frame Above and the current frame distance
                     Operate_SIMD_Modulo(
-                        All_Group_Nodes_Frame_Above_Dividend.data(),
-                        All_Group_Nodes_Frame_Above_Divisor.data(),
-                        All_Group_Nodes_Frame_Above.data(),
+                        Frame_Above_Dividend.data(),
+                        Frame_Count.data(),
+                        Frame_Above.data(),
                         Current_Group_Size
                     );
 
                     Operate_SIMD_Division(
-                        All_Group_Nodes_Current_Frame_Dividend.data(),
-                        All_Group_Nodes_Current_Frame_Divisor.data(),
+                        Modulo.data(),
+                        Frame_Distance.data(),
                         All_Group_Nodes_Current_Frame.data(),
                         Current_Group_Size
                     );
@@ -314,19 +293,19 @@ namespace GGUI{
                         GGUI::Sprite* Current_Sprite = &Buffer[i + j];
 
                         GGUI::RGB foreground = Lerp(
-                            Current_Sprite->Frames[All_Group_Nodes_Frame_Below[j]].Foreground, 
-                            Current_Sprite->Frames[All_Group_Nodes_Frame_Above[j]].Foreground,
+                            Current_Sprite->Frames[Frame_Below[j]].Foreground, 
+                            Current_Sprite->Frames[Frame_Above[j]].Foreground,
                             All_Group_Nodes_Current_Frame[j]
                         );
 
                         // do same for background
                         GGUI::RGB background = Lerp(
-                            Current_Sprite->Frames[All_Group_Nodes_Frame_Below[j]].Background, 
-                            Current_Sprite->Frames[All_Group_Nodes_Frame_Above[j]].Background,
+                            Current_Sprite->Frames[Frame_Below[j]].Background, 
+                            Current_Sprite->Frames[Frame_Above[j]].Background,
                             All_Group_Nodes_Current_Frame[j]
                         );
 
-                        GGUI::UTF Current_Result = Current_Sprite->Frames[All_Group_Nodes_Frame_Below[j]];
+                        GGUI::UTF Current_Result = Current_Sprite->Frames[Frame_Below[j]];
                         Current_Result.Set_Foreground(foreground);
                         Current_Result.Set_Background(background);
 
@@ -389,8 +368,6 @@ namespace GGUI{
             return Frames.back();
         }
 
-        const int Frame_Distance = UCHAR_MAX / Frame_Count;
-
         // Apply the speed modifier 
         unsigned char Animation_Frame = (Current_Frame + Offset) * Speed;
 
@@ -402,9 +379,10 @@ namespace GGUI{
         // => A(C - 1)/(CD) >> (Animation_Frame * (Frame_Count - 1)) / (Frame_Distance * Frame_Count)
         int Divination = Animation_Frame / Frame_Distance;
 
-        int Modulo = Animation_Frame - Divination * Frame_Distance;
-
         int Frame_Below = Divination - (Animation_Frame / (Frame_Count * Frame_Distance));
+
+        int Modulo = Animation_Frame - Frame_Below * Frame_Distance;
+
         int Frame_Above = (Frame_Below + 1) % Frame_Count;
 
         // now interpolate the foreground color between he two points
