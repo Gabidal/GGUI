@@ -1484,43 +1484,44 @@ namespace GGUI{
         if (Focused_On == new_candidate || new_candidate == Main)
             return;
 
-        //put the previus focused candidate into not-focus
-        if (Focused_On){
-            Un_Focus_Element();
-        }
+        Pause_Renderer([new_candidate](){
+            //put the previus focused candidate into not-focus
+            if (Focused_On){
+                Un_Focus_Element();
+            }
 
-        //switch the candidate
-        Focused_On = new_candidate;
-        
-        //set the new candidate to focused.
-        Focused_On->Set_Focus(true);
-        Focused_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
-        Update_Frame();
+            //switch the candidate
+            Focused_On = new_candidate;
+            
+            //set the new candidate to focused.
+            Focused_On->Set_Focus(true);
+            Focused_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        });
     }
 
     void Update_Hovered_Element(GGUI::Element* new_candidate){
         if (Hovered_On == new_candidate || new_candidate == Main)
             return;
 
-        //put the previus focused candidate into not-focus
-        if (Hovered_On){
-            Un_Hover_Element();
-        }
+        Pause_Renderer([new_candidate](){
+            //put the previus focused candidate into not-focus
+            if (Hovered_On){
+                Un_Hover_Element();
+            }
 
-        //switch the candidate
-        Hovered_On = new_candidate;
-        
-        //set the new candidate to focused.
-        Hovered_On->Set_Hover_State(true);
-        Hovered_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
-        Update_Frame();
+            //switch the candidate
+            Hovered_On = new_candidate;
+            
+            //set the new candidate to focused.
+            Hovered_On->Set_Hover_State(true);
+            Hovered_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        });
     }
 
     // Events
     void Event_Handler(){
         if (Hovered_On && !Collides(Hovered_On, GGUI::Mouse)){
             Un_Hover_Element();
-            Update_Frame();
         }
 
         Query_Inputs();
@@ -1713,10 +1714,12 @@ namespace GGUI{
                 if (Pause_Event_Thread.load())
                     continue;
 
-                Recall_Memories();
-                Event_Handler();
-                Go_Through_File_Streams();
-                Refresh_Multi_Frame_Canvas();
+                Pause_Renderer([](){
+                    Recall_Memories();
+                    Event_Handler();
+                    Go_Through_File_Streams();
+                    Refresh_Multi_Frame_Canvas();
+                });
  
                 Previous_Time = Current_Time;
                 Current_Time = std::chrono::high_resolution_clock::now();
