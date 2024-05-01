@@ -1371,7 +1371,7 @@ namespace GGUI{
         return a + t * (b - a);
     }
 
-    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, int Distance, int Domain_Size = UCHAR_MAX){
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, int Distance, int Domain_Size = UINT8_MAX){
         GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
 
         Result.Red = lerp<float>(A.Red, B.Red, (float)Distance / (float)Domain_Size);

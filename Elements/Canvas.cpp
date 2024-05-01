@@ -94,7 +94,7 @@ namespace GGUI{
         if (std::bitset<sizeof(unsigned char)>(Frames.size()).count() == 1)
             Is_Power_Of_Two = true;
 
-        Frame_Distance = ((float)UCHAR_MAX + 1) / (float)Frames.size();
+        Frame_Distance = ((float)UINT8_MAX + 1) / (float)Frames.size();
     }
 
     Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){

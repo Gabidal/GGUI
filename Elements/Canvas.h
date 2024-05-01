@@ -48,11 +48,11 @@ namespace GGUI{
 
         Sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1);
 
-        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed), Frame_Distance(UCHAR_MAX) {
+        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed), Frame_Distance(UINT8_MAX) {
             Frames.push_back(frame);
         }
 
-        Sprite() : Frame_Distance(UCHAR_MAX){
+        Sprite() : Frame_Distance(UINT8_MAX){
             Frames.push_back(GGUI::UTF(""));
             
             Offset = 0;

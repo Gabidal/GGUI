@@ -1371,7 +1371,7 @@ namespace GGUI{
         return a + t * (b - a);
     }
 
-    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, int Distance, int Domain_Size = UCHAR_MAX){
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, int Distance, int Domain_Size = UINT8_MAX){
         GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
 
         Result.Red = lerp<float>(A.Red, B.Red, (float)Distance / (float)Domain_Size);
@@ -2511,11 +2511,11 @@ namespace GGUI{
 
         Sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1);
 
-        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed), Frame_Distance(UCHAR_MAX) {
+        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed), Frame_Distance(UINT8_MAX) {
             Frames.push_back(frame);
         }
 
-        Sprite() : Frame_Distance(UCHAR_MAX){
+        Sprite() : Frame_Distance(UINT8_MAX){
             Frames.push_back(GGUI::UTF(""));
             
             Offset = 0;
