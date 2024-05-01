@@ -1,9 +1,18 @@
 project(
   'GGUI', 'cpp',
   version : '0.1.7',
+  #DEBUG
   default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
+  #RELEASE
   #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=false', 'buildtype=release', 'optimization=3']
+  #PROFILE
+  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
 )
+
+DEBUG = 1
+RELEASE = 2
+PROFILE = 3
+TYPE = DEBUG
 
 sources = [
   'Elements/Element.cpp',
@@ -34,7 +43,14 @@ cpp_args = [
   '-Wno-narrowing', 
   SIMD_MODE
 ]
+
 link_args = []
+
+# Add profiling flag
+if TYPE == PROFILE
+  cpp_args += ['-pg']
+  link_args += ['-pg']
+endif
 
 # Add Windows-specific compile arguments
 if host_machine.system() == 'windows'
