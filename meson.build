@@ -23,7 +23,17 @@ sources = [
   'main.cpp',
 ]
 
-cpp_args = ['-fpermissive', '-Wno-narrowing', '-mavx']
+SSE     = '-msse'
+AVX     = '-mavx'
+AVX512  = '-mavx512f'
+
+SIMD_MODE = AVX
+
+cpp_args = [
+  '-fpermissive', 
+  '-Wno-narrowing', 
+  SIMD_MODE
+]
 link_args = []
 
 # Add Windows-specific compile arguments

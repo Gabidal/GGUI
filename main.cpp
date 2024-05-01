@@ -19,7 +19,7 @@ int main()
                         {"b", {GGUI::RGB(y, x, y), GGUI::RGB(y, x, y)}}, 
                     },
                     0,
-                    2
+                    1
                 );
 
                 tem->Set(x, y, s);

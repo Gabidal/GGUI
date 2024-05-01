@@ -294,19 +294,15 @@ namespace GGUI{
     class RGBA : public RGB{
     private:
     // Ranging from 0. - 1.
-        float Fast_Alpha = 1;
-
-        unsigned char Alpha = std::numeric_limits<unsigned char>::max();
+        float Alpha = 1;
     public:
 
         void Set_Alpha(unsigned char a){
-            Alpha = a;
-            Fast_Alpha = (float)Alpha / std::numeric_limits<unsigned char>::max();
+            Alpha = (float)a / std::numeric_limits<unsigned char>::max();
         }
 
         void Set_Alpha(float a){
-            Fast_Alpha = a;
-            Alpha = (unsigned char)(a * std::numeric_limits<unsigned char>::max());
+            Alpha = a;
         }
 
         RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
@@ -325,11 +321,11 @@ namespace GGUI{
         }
 
         float &Get_Float_Alpha(){
-            return Fast_Alpha;
+            return Alpha;
         }
 
-        unsigned char &Get_Alpha(){
-            return Alpha;
+        unsigned char Get_Alpha(){
+            return (unsigned char)(Alpha * std::numeric_limits<unsigned char>::max());
         }
     
         bool operator==(const RGBA& Other){
@@ -338,35 +334,35 @@ namespace GGUI{
 
         RGBA operator*(const RGBA& Other){
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
             
             return RGBA(
-                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha), 
-                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha), 
-                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha),
-                Fast_Alpha
+                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Alpha), 
+                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Alpha), 
+                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Alpha),
+                Alpha
             );
         }
 
         RGBA operator+(const RGBA& Other){
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
 
             return RGBA(
-                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha), 
-                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha), 
-                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha),
-                Fast_Alpha
+                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Alpha), 
+                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Alpha), 
+                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Alpha),
+                Alpha
             );
         }
 
         RGBA operator*=(const RGBA& Other){
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
 
-            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha);
+            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Alpha);
 
             return *this;
         }
@@ -377,11 +373,11 @@ namespace GGUI{
             // Fast_Alpha ranges from 0 to 1.
 
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
 
-            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha);
+            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Alpha);
 
             // float Divider = 1 + Other.Fast_Alpha;
 

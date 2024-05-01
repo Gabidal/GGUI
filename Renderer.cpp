@@ -486,7 +486,7 @@ namespace GGUI{
             RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL, &cValues, NULL, NULL, NULL, NULL);
             for (DWORD i = 0; i < cValues; i++) {
                 char valueName[1024];
-                DWORD valueNameSize = 1024;
+                DWORD valueNameSize = 1024; 
                 BYTE valueData[1024];
                 DWORD valueDataSize = 1024;
                 DWORD valueType;

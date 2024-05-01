@@ -66,9 +66,9 @@ namespace GGUI{
 
     namespace GROUP_TYPE{
         // Defines the group sizes for Sprite group optimizing.
-        inline unsigned char DUAL = 1 << 1;
         inline unsigned char QUAD = 1 << 2;
         inline unsigned char HEX = 1 << 3;
+        inline unsigned char OCTAL = 1 << 4;
     }
 
     class Terminal_Canvas : public Element{

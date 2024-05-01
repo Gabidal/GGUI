@@ -5,15 +5,16 @@
 #include <vector>
 #include <fstream>
 #include <regex>
+#include <intrin.h>
 
 using namespace std;
 
 class Header_File{
 public:
     unsigned int Use_Count = 0;
-    string Data = "";
+    std::string Data = "";
 
-    Header_File(string Data){
+    Header_File(std::string Data){
         this->Data = Data;
     }
 
@@ -21,8 +22,8 @@ public:
 };
 
 // returns all the file names in the dir.
-vector<string> get_all_files(const string& directory) {
-    vector<string> files;
+std::vector<std::string> get_all_files(const std::string& directory) {
+    std::vector<std::string> files;
     for (const auto & entry : std::filesystem::directory_iterator(directory)) {
 
         // Make sure that only header filers are selected:
@@ -45,26 +46,26 @@ void Compile_Headers(){
     // - Remove local #include "" lines.
     // Order the files before combination in the including order so that the files which are included the most are at the top. 
 
-    string Destination_File_Name = "./include/GGUI.h";
-    string Header_Source_Folder = "./Elements/";
+    std::string Destination_File_Name = "./include/GGUI.h";
+    std::string Header_Source_Folder = "./Elements/";
 
-    unordered_map<string, Header_File> Header_Files;
+    std::unordered_map<std::string, Header_File> Header_Files;
 
     // get all the file names:
     for(const auto& file : get_all_files(Header_Source_Folder)){
         // read the file
-        string File_Path = Header_Source_Folder + file;
+        std::string File_Path = Header_Source_Folder + file;
 
         // Special case for Renderer.h since it is not located aat the same place as the elements.
         if (file == "Renderer.h") File_Path = "./Renderer.h";
 
-        ifstream File(File_Path);
+        std::ifstream File(File_Path);
         
-        string Data = "";
+        std::string Data = "";
 
         if(File.is_open()){
-            string Line;
-            while(getline(File, Line)){
+            std::string Line;
+            while(std::getline(File, Line)){
                 Data += Line + "\n";
             }
         }
@@ -74,18 +75,18 @@ void Compile_Headers(){
     }
 
     // now on each Header_Files instance we need to use regex to find the lines with local includes like: `#include "localheaderfile.h"`
-    regex include_regex(R"(#include \"(.*)\")");
+    std::regex include_regex(R"(#include \"(.*)\")");
 
 
     // matches[1] is the file name which is included and matches[0] is the whole line.
     for(auto& Header : Header_Files){
         auto& File = Header.second;
-        smatch matches;
-        while(regex_search(File.Data, matches, include_regex)){
+        std::smatch matches;
+        while(std::regex_search(File.Data, matches, include_regex)){
             // now that we have a match we need to do two things:
             // First increase the count of the header file which is named in the matches[1]
             // Secondly remove this include line from the File.Data
-            string Include_File_Name = matches[1].str();
+            std::string Include_File_Name = matches[1].str();
 
             // increase the count of the header file
             if(Header_Files.find(Include_File_Name) != Header_Files.end()){
@@ -98,15 +99,15 @@ void Compile_Headers(){
     }
 
     // Transform the map into a vector
-    vector<pair<string, Header_File>> headers(Header_Files.begin(), Header_Files.end());
+    std::vector<std::pair<std::string, Header_File>> headers(Header_Files.begin(), Header_Files.end());
 
     // Sort the vector by the count, where the less count is closer to zero index.
-    sort(headers.begin(), headers.end(), [](const pair<string, Header_File>& a, const pair<string, Header_File>& b){
+    sort(headers.begin(), headers.end(), [](const std::pair<std::string, Header_File>& a, const std::pair<std::string, Header_File>& b){
         return a.second.Use_Count > b.second.Use_Count;
     });
 
     // Now write the output file with the data in the sorted order.
-    ofstream Output(Destination_File_Name);
+    std::ofstream Output(Destination_File_Name);
 
     if(Output.is_open()){
         for(auto& Header : headers){
@@ -118,8 +119,22 @@ void Compile_Headers(){
     Output.close();
 }
 
+std::string Get_Machine_SIMD_Type(){
+    // Uses the CMD utility to prone 'lscpu' command
+    int cpuInfo[4];
+    __cpuid(cpuInfo, 1);
+
+    bool sseSupport = cpuInfo[3] & (1 << 25);
+    bool avxSupport = cpuInfo[2] & (1 << 28);
+
+    if (avxSupport) return "-mavx";
+    if (sseSupport) return "-msse";
+
+    return "";
+}
+
 int main(){
-    string Double_Command_Mark = " ; ";
+    std::string Double_Command_Mark = " ; ";
 
 #if _WIN32
 	Double_Command_Mark = " && ";
@@ -129,29 +144,36 @@ int main(){
 
     // generate the .o file for window and linux
 
+    std::string SIMD_Support = Get_Machine_SIMD_Type();
+
+    if (SIMD_Support.size() > 0)
+        std::cout << "Using SIMD type: " << SIMD_Support << std::endl;
+
+    std::string Universal_Args = " -c ./include/GGUI_Body.cpp -c -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " --std=c++17 ";
+
     // generate for the main platform this script is run from with gcc
-    string Command = string("g++ -c ./include/GGUI_Body.cpp -c -O3 -fpermissive") + Double_Command_Mark + 
-    string("ar rcs GGUI_Win.lib ./GGUI_Body.o");
+    std::string Command = std::string("g++" + Universal_Args) + Double_Command_Mark + 
+    std::string("ar rcs GGUI_Win.lib ./GGUI_Body.o");
 
 #if _WIN32
     // if we are in windows, then generate for unix
-    Command += Double_Command_Mark + string("x86_64-w64-mingw32-g++ -c ./include/GGUI_Body.cpp -c -O3 -fpermissive") + Double_Command_Mark + 
-    string("ar rcs GGUI_Unix.lib ./GGUI_Body.o");
+    Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
+    std::string("ar rcs GGUI_Unix.lib ./GGUI_Body.o");
 #else
     // if we are on Unix, then generate for windows too
-    Command += Double_Command_Mark + string("x86_64-w64-mingw32-g++ -c ./include/GGUI_Body.cpp -c -O3 -fpermissive") + Double_Command_Mark + 
-    string("x86_64-w64-mingw32-ar rcs GGUI_Win.lib ./GGUI_Body.o");
+    Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
+    std::string("x86_64-w64-mingw32-ar rcs GGUI_Win.lib ./GGUI_Body.o");
 #endif
 
     system(Command.c_str());
 
 #if _WIN32
     // Clean the *.o file
-    Command = string("del GGUI_Body.o");
+    Command = std::string("del GGUI_Body.o");
     system(Command.c_str());
 #else
     // Clean the *.o file
-    Command = string("rm ./GGUI_Body.o");
+    Command = std::string("rm ./GGUI_Body.o");
     system(Command.c_str());
 #endif
 }

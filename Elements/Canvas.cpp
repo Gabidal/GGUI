@@ -318,7 +318,6 @@ namespace GGUI{
         Render_Buffer = Result;
 
         return Result;
-
     }
 
     void Terminal_Canvas::Group_Heuristics(){
@@ -327,7 +326,7 @@ namespace GGUI{
             return;
 
         // Starts from the end towards the start, if 
-        for (int i = Buffer.size() - 1 - MAX_SIMD_SIZE; i >= 0; i -= MAX_SIMD_SIZE){
+        for (int i = Buffer.size() - MAX_SIMD_SIZE; i >= 0; i -= MAX_SIMD_SIZE){
             Group(i, MAX_SIMD_SIZE);
         }
     }
@@ -339,7 +338,7 @@ namespace GGUI{
         bool All_Multi_Frame = true;
 
         // Only group if more than one element.
-        if (length < 2)
+        if (length < GROUP_TYPE::QUAD)
             return;
 
         for (int i = 0; i <= length; i++){

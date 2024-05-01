@@ -42,26 +42,6 @@ namespace GGUI{
         inline std::string EMPTY_CHECK_BOX = "☐";
         inline std::string CHECKED_CHECK_BOX = "☒";
 
-        inline std::map<unsigned int, std::string> Border_Identifiers = {
-
-            {CONNECTS_DOWN | CONNECTS_RIGHT, TOP_LEFT_CORNER},
-            {CONNECTS_DOWN | CONNECTS_LEFT, TOP_RIGHT_CORNER},
-            {CONNECTS_UP | CONNECTS_RIGHT, BOTTOM_LEFT_CORNER},
-            {CONNECTS_UP | CONNECTS_LEFT, BOTTOM_RIGHT_CORNER},
-
-            {CONNECTS_DOWN | CONNECTS_UP, VERTICAL_LINE},
-
-            {CONNECTS_LEFT | CONNECTS_RIGHT, HORIZONTAL_LINE},
-
-            {CONNECTS_DOWN | CONNECTS_UP | CONNECTS_RIGHT, VERTICAL_RIGHT_CONNECTOR},
-            {CONNECTS_DOWN | CONNECTS_UP | CONNECTS_LEFT, VERTICAL_LEFT_CONNECTOR},
-
-            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_DOWN, HORIZONTAL_BOTTOM_CONNECTOR},
-            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_UP, HORIZONTAL_TOP_CONNECTOR},
-
-            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_UP | CONNECTS_DOWN, CROSS_CONNECTOR}
-        };
-
     }
 
     namespace TIME{
@@ -88,14 +68,13 @@ namespace GGUI{
         inline std::string SEPERATE = ";";
         inline std::string Text_Color = "38";
         inline std::string Back_Ground_Color = "48";
-        inline std::string RESET_Text_Color;
-        inline std::string RESET_Back_Ground_Color;
         inline std::string USE_RGB = "2";
         inline std::string END_COMMAND = "m";
         inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
         inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
         inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
         inline std::string RESET_CONSOLE = ESC_CODE + "c";
+        inline std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;
 
         inline std::string EnableFeature(std::string command) { return ESC_CODE + "?" + command + "h"; }
         inline std::string DisableFeature(std::string command) { return ESC_CODE + "?" + command + "l"; }
@@ -167,8 +146,6 @@ namespace GGUI{
 
         inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = (unsigned long long)1 << 45;
         inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = (unsigned long long)1 << 46;
-
-        inline void Init();
     }
     
     namespace BUTTON_STATES{
@@ -216,6 +193,8 @@ namespace GGUI{
         inline std::string MOUSE_LEFT = "MOUSE_LEFT";
         inline std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
         inline std::string MOUSE_RIGHT = "MOUSE_RIGHT";
+        inline std::string MOUSE_SCROLL_UP = "MOUSE_SCROLL_UP";
+        inline std::string MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
     };
 
     inline std::map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
@@ -263,29 +242,29 @@ namespace GGUI{
 
         {BUTTON_STATES::MOUSE_LEFT, Constants::MOUSE_LEFT_CLICKED},
         {BUTTON_STATES::MOUSE_MIDDLE, Constants::MOUSE_MIDDLE_CLICKED},
-        {BUTTON_STATES::MOUSE_RIGHT, Constants::MOUSE_RIGHT_CLICKED}
+        {BUTTON_STATES::MOUSE_RIGHT, Constants::MOUSE_RIGHT_CLICKED},
+        {BUTTON_STATES::MOUSE_SCROLL_UP, Constants::MOUSE_MIDDLE_SCROLL_UP},
+        {BUTTON_STATES::MOUSE_SCROLL_DOWN, Constants::MOUSE_MIDDLE_SCROLL_DOWN},
     };
 
     class RGB{
     public:
-        union{
-            unsigned char Red = 0;
-            unsigned char R;
-        };
-        union{
-            unsigned char Green = 0;
-            unsigned char G;
-        };
-        union{
-            unsigned char Blue = 0;
-            unsigned char B;
-        };
+        unsigned char Red = 0;
+        unsigned char Green = 0;
+        unsigned char Blue = 0;
 
-        RGB(unsigned char r, unsigned char g, unsigned char b){
-            R = r;
-            G = g;
-            B = b;
+        constexpr RGB(unsigned char r, unsigned char g, unsigned char b, bool Use_Const){
+            Red = r;
+            Green = g;
+            Blue = b;
         }
+        
+        RGB(unsigned char r, unsigned char g, unsigned char b){
+            Red = r;
+            Green = g;
+            Blue = b;
+        }
+
 
         RGB(){}
 
@@ -315,45 +294,38 @@ namespace GGUI{
     class RGBA : public RGB{
     private:
     // Ranging from 0. - 1.
-        float Fast_Alpha = 1;
-
-        union{
-            unsigned char Alpha = std::numeric_limits<unsigned char>::max();
-            unsigned char A;
-        };
+        float Alpha = 1;
     public:
 
         void Set_Alpha(unsigned char a){
-            Alpha = a;
-            Fast_Alpha = (float)Alpha / std::numeric_limits<unsigned char>::max();
+            Alpha = (float)a / std::numeric_limits<unsigned char>::max();
         }
 
         void Set_Alpha(float a){
-            Fast_Alpha = a;
-            Alpha = (unsigned char)(a * std::numeric_limits<unsigned char>::max());
+            Alpha = a;
         }
 
         RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
-            R = r;
-            G = g;
-            B = b;
+            Red = r;
+            Green = g;
+            Blue = b;
             Set_Alpha(a);
         }
 
         RGBA(){}
 
         RGBA(RGB primal){
-            R = primal.R;
-            G = primal.G;
-            B = primal.B;
+            Red = primal.Red;
+            Green = primal.Green;
+            Blue = primal.Blue;
         }
 
         float &Get_Float_Alpha(){
-            return Fast_Alpha;
+            return Alpha;
         }
 
-        unsigned char &Get_Alpha(){
-            return Alpha;
+        unsigned char Get_Alpha(){
+            return (unsigned char)(Alpha * std::numeric_limits<unsigned char>::max());
         }
     
         bool operator==(const RGBA& Other){
@@ -362,35 +334,35 @@ namespace GGUI{
 
         RGBA operator*(const RGBA& Other){
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
             
             return RGBA(
-                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha), 
-                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha), 
-                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha),
-                Fast_Alpha
+                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Alpha), 
+                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Alpha), 
+                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Alpha),
+                Alpha
             );
         }
 
         RGBA operator+(const RGBA& Other){
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
 
             return RGBA(
-                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha), 
-                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha), 
-                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha),
-                Fast_Alpha
+                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Alpha), 
+                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Alpha), 
+                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Alpha),
+                Alpha
             );
         }
 
         RGBA operator*=(const RGBA& Other){
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
 
-            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha);
+            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Alpha);
 
             return *this;
         }
@@ -401,11 +373,11 @@ namespace GGUI{
             // Fast_Alpha ranges from 0 to 1.
 
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            float Reverse_Alpha = 1 - Other.Alpha;
 
-            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha);
+            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Alpha);
 
             // float Divider = 1 + Other.Fast_Alpha;
 
@@ -422,34 +394,31 @@ namespace GGUI{
     };
 
     namespace COLOR{
-        static const RGB WHITE = RGB(255, 255, 255);
-        static const RGB BLACK = RGB(0, 0, 0);
-        static const RGB RED = RGB(255, 0, 0);
-        static const RGB GREEN = RGB(0, 255, 0);
-        static const RGB BLUE = RGB(0, 0, 255);
-        static const RGB YELLOW = RGB(255, 255, 0);
-        static const RGB CYAN = RGB(0, 255, 255);
-        static const RGB MAGENTA = RGB(255, 0, 255);
-        static const RGB GRAY = RGB(128, 128, 128);
-        static const RGB LIGHT_RED = RGB(255, 0, 0);
-        static const RGB LIGHT_GREEN = RGB(0, 255, 0);
-        static const RGB LIGHT_BLUE = RGB(0, 0, 255);
-        static const RGB LIGHT_YELLOW = RGB(255, 255, 0);
-        static const RGB LIGHT_CYAN = RGB(0, 255, 255);
-        static const RGB LIGHT_MAGENTA = RGB(255, 0, 255);
-        static const RGB LIGHT_GRAY = RGB(192, 192, 192);
-        static const RGB DARK_RED = RGB(128, 0, 0);
-        static const RGB DARK_GREEN = RGB(0, 128, 0);
-        static const RGB DARK_BLUE = RGB(0, 0, 128);
-        static const RGB DARK_YELLOW = RGB(128, 128, 0);
-        static const RGB DARK_CYAN = RGB(0, 128, 128);
-        static const RGB DARK_MAGENTA = RGB(128, 0, 128);
-        static const RGB DARK_GRAY = RGB(64, 64, 64);
-    }
-
-    void Constants::Init(){
-        RESET_Text_Color = ESC_CODE + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
-        RESET_Back_Ground_Color = ESC_CODE + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
+        static constexpr RGB WHITE = RGB(255, 255, 255, true);
+        static constexpr RGB BLACK = RGB(0, 0, 0, true);
+        static constexpr RGB RED = RGB(255, 0, 0, true);
+        static constexpr RGB GREEN = RGB(0, 255, 0, true);
+        static constexpr RGB BLUE = RGB(0, 0, 255, true);
+        static constexpr RGB YELLOW = RGB(255, 255, 0, true);
+        static constexpr RGB ORANGE = RGB(255, 128, 0, true);
+        static constexpr RGB CYAN = RGB(0, 255, 255, true);
+        static constexpr RGB TEAL = RGB(0, 128, 128, true);
+        static constexpr RGB MAGENTA = RGB(255, 0, 255, true);
+        static constexpr RGB GRAY = RGB(128, 128, 128, true);
+        static constexpr RGB LIGHT_RED = RGB(255, 128, 128, true);
+        static constexpr RGB LIGHT_GREEN = RGB(128, 255, 128, true);
+        static constexpr RGB LIGHT_BLUE = RGB(128, 128, 255, true);
+        static constexpr RGB LIGHT_YELLOW = RGB(255, 255, 128, true);
+        static constexpr RGB LIGHT_CYAN = RGB(128, 255, 255, true);
+        static constexpr RGB LIGHT_MAGENTA = RGB(255, 128, 255, true);
+        static constexpr RGB LIGHT_GRAY = RGB(192, 192, 192, true);
+        static constexpr RGB DARK_RED = RGB(128, 0, 0, true);
+        static constexpr RGB DARK_GREEN = RGB(0, 128, 0, true);
+        static constexpr RGB DARK_BLUE = RGB(0, 0, 128, true);
+        static constexpr RGB DARK_YELLOW = RGB(128, 128, 0, true);
+        static constexpr RGB DARK_CYAN = RGB(0, 128, 128, true);
+        static constexpr RGB DARK_MAGENTA = RGB(128, 0, 128, true);
+        static constexpr RGB DARK_GRAY = RGB(64, 64, 64, true);
     }
 
     class Vector2{
@@ -516,6 +485,10 @@ namespace GGUI{
         Coordinates operator+(Coordinates& other){
             return Coordinates(X + other.X, Y + other.Y, Z + other.Z);
         }
+    
+        std::string To_String(){
+            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
+        }
     };
 
     namespace UTF_FLAG{
@@ -539,6 +512,7 @@ namespace GGUI{
 
         ~UTF(){}
 
+        // {Foreground, Background}
         UTF(char data, std::pair<RGB, RGB> color = {{}, {}}){
             Ascii = data;
             Foreground = {color.first};
@@ -546,6 +520,7 @@ namespace GGUI{
             FLAGS = UTF_FLAG::IS_ASCII;
         }
 
+        // {Foreground, Background}
         UTF(std::string data, std::pair<RGB, RGB> color = {{}, {}}){
             Unicode = data;
             Foreground = {color.first};
@@ -830,11 +805,34 @@ namespace GGUI{
         SHADOW_VALUE(){}
     };
 
+    class BORDER_STYLE_VALUE : public VALUE{
+    public:
+        std::string TOP_LEFT_CORNER             = "┌";//"\e(0\x6c\e(B";
+        std::string BOTTOM_LEFT_CORNER          = "└";//"\e(0\x6d\e(B";
+        std::string TOP_RIGHT_CORNER            = "┐";//"\e(0\x6b\e(B";
+        std::string BOTTOM_RIGHT_CORNER         = "┘";//"\e(0\x6a\e(B";
+        std::string VERTICAL_LINE               = "│";//"\e(0\x78\e(B";
+        std::string HORIZONTAL_LINE             = "─";//"\e(0\x71\e(B";
+        std::string VERTICAL_RIGHT_CONNECTOR    = "├";//"\e(0\x74\e(B";
+        std::string VERTICAL_LEFT_CONNECTOR     = "┤";//"\e(0\x75\e(B";
+        std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        std::string HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
+        std::string CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
+
+        BORDER_STYLE_VALUE(std::vector<std::string> values);
+
+        // Re-import defaults:
+        BORDER_STYLE_VALUE() = default;
+        ~BORDER_STYLE_VALUE() = default;
+        BORDER_STYLE_VALUE(const BORDER_STYLE_VALUE& other) = default;
+        BORDER_STYLE_VALUE& operator=(const BORDER_STYLE_VALUE& other) = default;
+    };
+
     namespace STYLES{
         inline std::string Border                           = "Border";
         inline std::string Text_Color                       = "Text_Color";
         inline std::string Background_Color                 = "Background_Color";
-        inline std::string Border_Color                    = "Border_Colour";
+        inline std::string Border_Color                    = "Border_Color";
         inline std::string Border_Background_Color          = "Border_Background_Color";
 
         inline std::string Hover_Border_Color               = "Hover_Border_Color";
@@ -846,6 +844,8 @@ namespace GGUI{
         inline std::string Focus_Text_Color                 = "Focus_Text_Color";
         inline std::string Focus_Background_Color           = "Focus_Background_Color";
         inline std::string Focus_Border_Background_Color    = "Focus_Border_Background_Color";
+
+        inline std::string Border_Style                     = "Border_Style";
 
         inline std::string Flow_Priority                    = "Flow_Priority";
         inline std::string Wrap                             = "Wrap";     
@@ -861,6 +861,29 @@ namespace GGUI{
         inline std::string Anchor                           = "Anchor";  // gives the line number in which the element is anchored.
 
         inline std::string Allow_Scrolling                  = "Allow_Scrolling";
+
+        namespace BORDER{
+            const inline BORDER_STYLE_VALUE Double = std::vector<std::string>{
+                "╔", "╚", "╗", "╝", "║", "═", "╠", "╣", "╦", "╩", "╬"
+            };
+
+            const inline BORDER_STYLE_VALUE Round = std::vector<std::string>{
+                "╭", "╰", "╮", "╯", "│", "─", "├", "┤", "┬", "┴", "┼"
+            };
+
+            const inline BORDER_STYLE_VALUE Single = std::vector<std::string>{
+                "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
+            };
+
+            const inline BORDER_STYLE_VALUE Bold = std::vector<std::string>{
+                "▛", "▙", "▜", "▟", "█", "▅", "▉", "▉", "▉", "▉", "▉"
+            };
+
+            const inline BORDER_STYLE_VALUE Modern = std::vector<std::string>{
+                "/", "\\", "\\", "/", "|", "-", "|", "|", "-", "-", "+"
+            };
+            
+        }
     };
 
     enum class STAIN_TYPE{
@@ -960,7 +983,7 @@ namespace GGUI{
         inline unsigned long long Input_Clear_Time = 16;
         inline bool Word_Wrapping = true;
     };
-  
+
     // For templates.
     extern std::vector<Action*> Event_Handlers;
 
@@ -1039,7 +1062,7 @@ namespace GGUI{
 
         //
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-                
+
         virtual Element* Safe_Move(){
             Element* new_element = new Element();
             *new_element = *(Element*)this;
@@ -1168,7 +1191,7 @@ namespace GGUI{
 
         virtual bool Remove(Element* handle);
 
-        bool Remove(int index);
+        virtual bool Remove(int index);
 
         void Set_Dimensions(int width, int height);
 
@@ -1192,19 +1215,19 @@ namespace GGUI{
 
         Margin Get_Margin();
 
-        void Set_Background_Color(RGB color);
+        virtual void Set_Background_Color(RGB color);
 
         RGB Get_Background_Color();
         
-        void Set_Border_Color(RGB color);
+        virtual void Set_Border_Color(RGB color);
         
         RGB Get_Border_Color();
 
-        void Set_Border_Background_Color(RGB color);
+        virtual void Set_Border_Background_Color(RGB color);
         
         RGB Get_Border_Background_Color();
         
-        void Set_Text_Color(RGB color);
+        virtual void Set_Text_Color(RGB color);
 
         void Allow_Dynamic_Size(bool True);
 
@@ -1233,6 +1256,10 @@ namespace GGUI{
         void Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source);
 
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
+
+        std::map<unsigned int, std::string> Get_Custom_Border_Map(Element* e);
+
+        void Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style);
 
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 
@@ -1315,6 +1342,10 @@ namespace GGUI{
 
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
+        // By default elements do not have inherent scrolling abilities.
+        virtual void Scroll_Up() {}
+        virtual void Scroll_Down() {}
+
         void Re_Order_Childs();
 
         void Focus();
@@ -1330,14 +1361,41 @@ namespace GGUI{
         // Uses the post_processed widths and height values
         bool Child_Is_Shown(Element* other);
     };
+
+    // UTILS : -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+    // Linear interpolation function
+    template<typename T>
+    constexpr T lerp(T a, T b, T t) {
+        // Clamp t between a and b
+        return a + t * (b - a);
+    }
+
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, int Distance, int Domain_Size = UCHAR_MAX){
+        GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
+
+        Result.Red = lerp<float>(A.Red, B.Red, (float)Distance / (float)Domain_Size);
+        Result.Green = lerp<float>(A.Green, B.Green, (float)Distance / (float)Domain_Size);
+        Result.Blue = lerp<float>(A.Blue, B.Blue, (float)Distance / (float)Domain_Size);
+
+        return Result;
+    }
+
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance){
+        GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
+
+        Result.Red = lerp<float>(A.Red, B.Red, Distance);
+        Result.Green = lerp<float>(A.Green, B.Green, Distance);
+        Result.Blue = lerp<float>(A.Blue, B.Blue, Distance);
+
+        return Result;
+    }
+
 }
 
 #endif
 #ifndef _TEXT_FIELD_H_
 #define _TEXT_FIELD_H_
-
-#include <string>
-#include <vector>
 
 
 
@@ -1438,11 +1496,11 @@ namespace GGUI{
 
 
 
-#include <string>
 #include <fstream>
 #include <functional>
 #include <unordered_map>
-#include <vector>
+#include <stdio.h>
+#include <deque>
 
 namespace GGUI{
 
@@ -1460,18 +1518,74 @@ namespace GGUI{
 
     extern std::string Get_Current_Location();
 
+    namespace INTERNAL{
+        // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
+        // These black boxes work like Stack Frames, where the data collected will be deleted when the current "Frame" capturer is destructed.
+        class BUFFER_CAPTURE : public std::streambuf{
+        private:
+            std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
+            std::string Current_Line = "";
+            std::deque<std::string> Console_History;
+
+            // Multiple handlers.
+            std::vector<std::function<void()>> On_Change = {};
+
+            // For speeding up.
+            std::unordered_map<BUFFER_CAPTURE*, bool> Synced;
+
+            std::string Name = "";
+        public:
+            // We could just search it from the global listing, but that would be slow.
+            // Stuck into the constructed position.
+            const bool Is_Global = false;
+
+            BUFFER_CAPTURE(std::function<void()> on_change, bool Global = false, std::string Name = "");
+
+            BUFFER_CAPTURE() = default;
+
+            ~BUFFER_CAPTURE(){
+                Close();
+            }
+
+            // Called from streambuf base class.
+            int overflow(int c) override;
+
+            // Safe close of std buffer hijack.
+            void Close();
+
+            std::string Read();
+
+            void Add_On_Change_Handler(std::function<void()> on_change){                
+                On_Change.push_back(on_change);
+            }
+
+            bool Sync(BUFFER_CAPTURE* Informer);
+
+            std::string Get_Name();
+
+            void Set_Name(std::string Name){
+                this->Name = Name;
+            }
+        };
+
+    }
+
     class FILE_STREAM{
     private:
-        std::ifstream Handle;
+        INTERNAL::BUFFER_CAPTURE* Buffer_Capture = nullptr;
+        std::fstream Handle;
         std::vector<std::function<void()>> On_Change = {};
         std::string Previous_Content = "";
         unsigned long long Previous_Hash = 0;
     public:
         std::string Name = "";
 
-        FILE_STREAM(std::string File_Name, std::function<void()> on_change);
+        FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout = false);
 
         ~FILE_STREAM(){
+            if (Buffer_Capture)
+                Buffer_Capture->Close();
+
             Handle.close();
         }
 
@@ -1482,7 +1596,14 @@ namespace GGUI{
         void Changed();
 
         void Add_On_Change_Handler(std::function<void()> on_change){
-            On_Change.push_back(on_change);
+            if (Buffer_Capture)
+                Buffer_Capture->Add_On_Change_Handler(on_change);
+            else
+                On_Change.push_back(on_change);
+        }
+
+        bool Is_Cout_Stream(){
+            return Buffer_Capture != nullptr;
         }
     };
 
@@ -1504,6 +1625,36 @@ namespace GGUI{
             return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
         }
     };
+
+    #if _WIN32
+        class CMD{
+        private:
+            void* In;
+            void* Out;
+        public:
+            CMD();
+            ~CMD() = default;
+
+            std::string Run(std::string command);
+        };
+    #else
+        class CMD{  // Unix implementation:
+        private:
+            union FileDescriptor {
+                struct {
+                    int In;
+                    int Out;
+                };
+                int FDS[2];
+            } File_Descriptor;
+        public:
+
+            CMD();
+            ~CMD() = default;
+
+            std::string Run(std::string command);
+        };
+    #endif
 }
 
 #endif
@@ -1538,14 +1689,7 @@ namespace GGUI{
         Button(){}
     public:
 
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
-            Defualt_Button_Behaviour(press);
-            Default_Button_Text_Align();
-            Enable_Input_Overflow();
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-            Show_Border(true);
-            Set_Name(Text);
-        }
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){});
 
         Element* Safe_Move() override {
             Button* new_Button = new Button();
@@ -1567,21 +1711,27 @@ namespace GGUI{
 #undef min
 #undef max
 
-#include <iostream>
 #include <functional>
 #include <thread>
-#include <map>
 #include <atomic>
 
 
 
 
 
+
 namespace GGUI{
+    
+    namespace INTERNAL{
+        class BUFFER_CAPTURE;
+    }
+
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
     extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
     extern std::atomic_bool Pause_Event_Thread;                                 //Main window
+    
+    extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
     extern int Max_Width;
     extern int Max_Height;
@@ -1605,11 +1755,14 @@ namespace GGUI{
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 
+    extern unsigned long long Delta_Time;
+
     extern std::map<int, std::map<std::string, VALUE*>> Classes;
     extern std::map<std::string, int> Class_Names;
 
     extern Window* Main;  
-    extern std::unordered_map<int, Element*> Outboxed_Elements;
+
+    extern std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
     void SLEEP(unsigned int milliseconds);
 
@@ -1639,13 +1792,14 @@ namespace GGUI{
 
     extern void Update_Max_Width_And_Height();
 
-    extern Coordinates Get_Terminal_Content_Size();
-
     void Update_Frame();
     //Is called on every cycle.
     extern void Query_Inputs();
 
     extern void MOUSE_API();
+
+    // Handles also UP and DOWN buttons
+    extern void SCROLL_API();
 
     extern void Init_Platform_Stuff();
 
@@ -1707,11 +1861,11 @@ namespace GGUI{
 
     extern void Handle_Escape();
 
-    extern void Render_Outbox();
-
     extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
 
     extern void Init_Inspect_Tool();
+
+    extern void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer);
 }
 
 #endif
@@ -1799,9 +1953,6 @@ namespace GGUI{
 #ifndef _WINDOW_H_
 #define _WINDOW_H_
 
-#include <string>
-#include <vector>
-
 
 
 //GGUI uses the ANSI escape code
@@ -1814,7 +1965,10 @@ namespace GGUI{
         RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
         bool Has_Hidden_Borders = false;
     public:
-        Window() : Element() {}
+        Window() : Element() {
+            Before_Hiding_Border_Background_Color = Get_Background_Color();
+            Before_Hiding_Border_Color = Get_Border_Color();
+        }
 
         Window(std::string title, std::vector<std::string> classes = {});
 
@@ -1877,6 +2031,14 @@ namespace GGUI{
 
         void Show_Border(bool state, bool previus_state) override;
 
+        void Set_Background_Color(RGB color) override;
+
+        void Set_Text_Color(RGB color) override;
+
+        void Set_Border_Background_Color(RGB color) override;
+
+        void Set_Border_Color(RGB color) override;
+
         Element* Safe_Move() override {
             Window* new_Window = new Window();
             *new_Window = *(Window*)this;
@@ -1891,11 +2053,6 @@ namespace GGUI{
 #define _LIST_VIEW_H_
 
 
-
-#include <vector>
-#include <iostream>
-
-using namespace std;
 
 namespace GGUI{
     enum class Grow_Direction{
@@ -2026,9 +2183,9 @@ namespace GGUI{
             return At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
         }
 
-        void Scroll_Up();
+        void Scroll_Up() override;
 
-        void Scroll_Down();
+        void Scroll_Down() override;
 
         bool Remove(Element* e) override;
         
@@ -2343,14 +2500,39 @@ namespace GGUI{
 
     class Sprite{
     public:
-        RGB Background_Color;
-        RGB Foreground_Color;
-        UTF Texture;
+        std::vector<GGUI::UTF> Frames;
 
-        Sprite(UTF t = UTF(" "), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
+        int Speed = 1;      // Using decimals too slow hmmm...
+        int Offset = 0;     // This is for more beautiful mass animation systems
 
-        UTF Render();
+        int Frame_Distance = 0;
+
+        bool Is_Power_Of_Two = false;
+
+        Sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1);
+
+        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) : Offset(offset), Speed(speed), Frame_Distance(UCHAR_MAX) {
+            Frames.push_back(frame);
+        }
+
+        Sprite() : Frame_Distance(UCHAR_MAX){
+            Frames.push_back(GGUI::UTF(""));
+            
+            Offset = 0;
+            Speed = 1;
+            
+            Is_Power_Of_Two = false;
+        }
+
+        UTF Render(unsigned char Current_Time);
     };
+
+    namespace GROUP_TYPE{
+        // Defines the group sizes for Sprite group optimizing.
+        inline unsigned char QUAD = 1 << 2;
+        inline unsigned char HEX = 1 << 3;
+        inline unsigned char OCTAL = 1 << 4;
+    }
 
     class Terminal_Canvas : public Element{
     private:
@@ -2358,17 +2540,28 @@ namespace GGUI{
         Terminal_Canvas(){}
     protected:
         std::vector<Sprite> Buffer;
+
+        unsigned char Current_Animation_Frame = 0;
+
+        // Used by the heuristics to clamp optimize multiple X amount Multi-frame-Sprites.
+        std::vector<unsigned char> Groups;
     public:
         Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         
+        ~Terminal_Canvas();
+
         void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
 
         void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
         
-        void Flush();
+        void Flush(bool Force_Flush = false);
         
         std::vector<UTF> Render() override;
         
+        void Group_Heuristics();
+
+        void Group(unsigned int Start_Index, int length);
+
         Element* Safe_Move() override {
             Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
             *new_Terminal_Canvas = *(Terminal_Canvas*)this;
@@ -2379,7 +2572,38 @@ namespace GGUI{
         std::string Get_Name() const override{
             return "Terminal_Canvas<" + Name + ">";
         }
+    
+        void Embed_Points(std::vector<bool> pixels, BORDER_STYLE_VALUE border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
     };
+
+    namespace DRAW{
+
+        // Expects fully initialized 2D list of booleans, which it will put the result.
+        void Line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width);
+
+        std::vector<bool> Line(Vector2 Start, Vector2 End, int Buffer_Width);
+
+        // Symmetrical circle draw helper:
+        void Symmetry_Filler_For_Circle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width);
+
+        void Circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width);
+
+        std::vector<bool> Circle(Vector2 Center, int Radius, int Buffer_Width);
+
+        void Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, std::vector<bool>& pixels, int width);
+        
+        std::vector<bool> Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, int Buffer_Width);
+
+    }
+
+    namespace FONT{
+        // Based on: https://learn.microsoft.com/en-us/typography/opentype/spec/otff
+        class Font_Header{
+        public:
+        };
+
+        Font_Header Parse_Font_File(std::string File_Name);
+    }
 
 }
 
