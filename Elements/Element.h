@@ -1329,12 +1329,10 @@ namespace GGUI{
 
         template<typename T>
         T* At(std::string s){
-            T* v = (T*)Style[s];
+            T*& v = (T*&)Style[s];
 
             if (v == nullptr){
                 v = new T();
-
-                Style[s] = v;
             }
 
             return v;
