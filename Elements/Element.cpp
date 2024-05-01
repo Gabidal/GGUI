@@ -107,7 +107,7 @@ GGUI::Element::Element() {
     }
 }
 
-GGUI::Element::Element(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
+GGUI::Element::Element(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Pause_Renderer([=](){
         Add_Class("default");
         Parse_Classes();
@@ -470,7 +470,7 @@ void GGUI::Element::Parse_Classes(){
             Dirty.Dirty(STAIN_TYPE::CLASS);
         }
 
-        std::map<std::string, VALUE*> Current = GGUI::Classes[Class];
+        std::unordered_map<std::string, VALUE*> Current = GGUI::Classes[Class];
 
         for (auto& Current_Style : Current){
 
@@ -500,11 +500,11 @@ void GGUI::Element::Set_Hover_State(bool h){
     Update_Frame();
 }
 
-std::map<std::string, GGUI::VALUE*> GGUI::Element::Get_Style(){
+std::unordered_map<std::string, GGUI::VALUE*> GGUI::Element::Get_Style(){
     return Style;
 }
 
-void GGUI::Element::Set_Style(std::map<std::string, VALUE*> css){
+void GGUI::Element::Set_Style(std::unordered_map<std::string, VALUE*> css){
     Style = css;
 
     Update_Frame();
@@ -1214,7 +1214,7 @@ inline GGUI::UTF* From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_B
     return &Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
 }
 
-std::map<unsigned int, std::string> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
+std::unordered_map<unsigned int, std::string> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
     GGUI::BORDER_STYLE_VALUE* custom_border_style = e->At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
 
     return {
@@ -1313,7 +1313,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         );
     }
 
-    std::map<unsigned int, std::string> custom_border = Get_Custom_Border_Map(A);
+    std::unordered_map<unsigned int, std::string> custom_border = Get_Custom_Border_Map(A);
 
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){

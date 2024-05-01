@@ -415,7 +415,7 @@ namespace GGUI{
             Report_Stack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((Width - 2 * Has_Border()) * (Height - 2 * Has_Border())) + " Got: " + std::to_string(pixels.size()));
         }
 
-        std::map<unsigned int, std::string> custom_border = Get_Custom_Border_Map(this);
+        std::unordered_map<unsigned int, std::string> custom_border = Get_Custom_Border_Map(this);
 
         // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
         for (int Y = 0; Y < Usable_Height; Y++){

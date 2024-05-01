@@ -20,9 +20,9 @@ namespace GGUI{
 
         Window(std::string title, std::vector<std::string> classes = {});
 
-        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        Window(std::unordered_map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
         
-        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        Window(std::string title, std::unordered_map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
 
         //These next constructors are mainly for users to more easily create elements.
         Window(

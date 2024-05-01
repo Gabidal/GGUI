@@ -9,7 +9,7 @@
 #undef BOOL
 #undef NUMBER
 
-GGUI::List_View::List_View(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+GGUI::List_View::List_View(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
     GGUI::Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);
@@ -125,7 +125,7 @@ GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow
     });
 }
 
-GGUI::Scroll_View::Scroll_View(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+GGUI::Scroll_View::Scroll_View(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
     GGUI::Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);

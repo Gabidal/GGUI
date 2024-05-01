@@ -20,7 +20,7 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
     });
 }
 
-GGUI::Window::Window(std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
+GGUI::Window::Window(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
     Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);
@@ -38,7 +38,7 @@ GGUI::Window::Window(std::map<std::string, VALUE*> css, unsigned int width, unsi
     });
 }
 
-GGUI::Window::Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
+GGUI::Window::Window(std::string title, std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
     Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);

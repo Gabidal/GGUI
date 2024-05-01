@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-GGUI::Text_Field::Text_Field(std::string Text, std::map<std::string, VALUE*> css) : Element(css) {
+GGUI::Text_Field::Text_Field(std::string Text, std::unordered_map<std::string, VALUE*> css) : Element(css) {
     Data = Text;
     
     std::pair<int, int> D = Get_Text_Dimensions(Text);

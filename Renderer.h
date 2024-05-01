@@ -34,7 +34,7 @@ namespace GGUI{
     extern std::vector<Action*> Event_Handlers;
     extern std::vector<Input*> Inputs;
     
-    extern std::map<std::string, Element*> Element_Names;
+    extern std::unordered_map<std::string, Element*> Element_Names;
 
     extern Element* Focused_On;
     extern Element* Hovered_On;
@@ -42,7 +42,7 @@ namespace GGUI{
     extern Coordinates Mouse;    
     extern bool Mouse_Movement_Enabled;
 
-    extern std::map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+    extern std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
 
     extern time_t UPDATE_SPEED_MIILISECONDS;
     extern int Inputs_Per_Second;
@@ -50,8 +50,8 @@ namespace GGUI{
 
     extern unsigned long long Delta_Time;
 
-    extern std::map<int, std::map<std::string, VALUE*>> Classes;
-    extern std::map<std::string, int> Class_Names;
+    extern std::unordered_map<int, std::unordered_map<std::string, VALUE*>> Classes;
+    extern std::unordered_map<std::string, int> Class_Names;
 
     extern Window* Main;  
 
@@ -129,7 +129,7 @@ namespace GGUI{
 
     extern int Get_Free_Class_ID(std::string n);
 
-    extern void Add_Class(std::string name, std::map<std::string, VALUE*> Styling);
+    extern void Add_Class(std::string name, std::unordered_map<std::string, VALUE*> Styling);
 
     extern void Init_Classes();
 

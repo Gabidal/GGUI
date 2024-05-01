@@ -23,7 +23,7 @@ namespace GGUI{
     std::vector<Input*> Inputs;
     std::chrono::system_clock::time_point Last_Input_Clear_Time;
 
-    std::map<std::string, Element*> Element_Names;
+    std::unordered_map<std::string, Element*> Element_Names;
 
     Element* Focused_On = nullptr;
     Element* Hovered_On = nullptr;
@@ -34,8 +34,8 @@ namespace GGUI{
     //move 1 by 1, or element by element.
     bool Mouse_Movement_Enabled = true;
 
-    std::map<std::string, BUTTON_STATE> KEYBOARD_STATES;
-    std::map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
+    std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+    std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
 
     // Time stuff
     inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
@@ -46,9 +46,9 @@ namespace GGUI{
     std::chrono::high_resolution_clock::time_point Current_Time;
     unsigned long long Delta_Time;
 
-    inline std::map<int, std::map<std::string, VALUE*>> Classes;
+    inline std::unordered_map<int, std::unordered_map<std::string, VALUE*>> Classes;
 
-    inline std::map<std::string, int> Class_Names;
+    inline std::unordered_map<std::string, int> Class_Names;
 
     std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
@@ -1623,7 +1623,7 @@ namespace GGUI{
         }
     }
 
-    void Add_Class(std::string name, std::map<std::string, VALUE*> Styling){
+    void Add_Class(std::string name, std::unordered_map<std::string, VALUE*> Styling){
         int Class_ID = Get_Free_Class_ID(name);
 
         Classes[Class_ID] = Styling;
@@ -1632,7 +1632,7 @@ namespace GGUI{
     void Init_Classes(){
         // Add default class
         std::string DEFAULT_NAME = "default";
-        std::map<std::string, VALUE*> DEFAULT = {
+        std::unordered_map<std::string, VALUE*> DEFAULT = {
             {STYLES::Text_Color, new RGB_VALUE(COLOR::WHITE)},
             {STYLES::Background_Color, new RGB_VALUE(COLOR::BLACK)},
 

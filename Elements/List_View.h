@@ -16,7 +16,7 @@ namespace GGUI{
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
-        List_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
+        List_View(std::unordered_map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
 
         //These next constructors are mainly for users to more easily create elements.
         List_View(
@@ -96,7 +96,7 @@ namespace GGUI{
 
         Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
 
-        Scroll_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
+        Scroll_View(std::unordered_map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
 
         //These next constructors are mainly for users to more easily create elements.
         Scroll_View(

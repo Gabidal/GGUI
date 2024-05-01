@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <functional>
 #include <chrono>
 #include <atomic>
@@ -197,7 +197,7 @@ namespace GGUI{
         inline std::string MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
     };
 
-    inline std::map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
+    inline std::unordered_map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
 
         {BUTTON_STATES::ESC, Constants::ESCAPE},
         {BUTTON_STATES::F1, Constants::F1},
@@ -1013,16 +1013,16 @@ namespace GGUI{
 
         std::string Name = "";
 
-        std::map<std::string, VALUE*> Style;
+        std::unordered_map<std::string, VALUE*> Style;
 
-        std::map<State, std::function<void()>> State_Handlers;
+        std::unordered_map<State, std::function<void()>> State_Handlers;
     public:
 
         Element();
 
         Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
 
-        Element(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+        Element(std::unordered_map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
 
         Element(
             unsigned int width,
@@ -1099,9 +1099,9 @@ namespace GGUI{
 
         void Check(State s);
 
-        std::map<std::string, VALUE*> Get_Style();
+        std::unordered_map<std::string, VALUE*> Get_Style();
 
-        void Set_Style(std::map<std::string, VALUE*> css);
+        void Set_Style(std::unordered_map<std::string, VALUE*> css);
 
         virtual Element* Handle_Or_Operator(Element* other){
             Set_Style(other->Get_Style());
@@ -1257,7 +1257,7 @@ namespace GGUI{
 
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
 
-        std::map<unsigned int, std::string> Get_Custom_Border_Map(Element* e);
+        std::unordered_map<unsigned int, std::string> Get_Custom_Border_Map(Element* e);
 
         void Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style);
 
