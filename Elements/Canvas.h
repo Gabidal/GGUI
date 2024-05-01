@@ -53,7 +53,7 @@ namespace GGUI{
         }
 
         Sprite() : Frame_Distance(UINT8_MAX){
-            Frames.push_back(GGUI::UTF(""));
+            Frames.push_back(GGUI::UTF(' '));
             
             Offset = 0;
             Speed = 1;

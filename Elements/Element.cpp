@@ -1346,7 +1346,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         if (custom_border.find(Current_Masks) == custom_border.end())
             continue;
 
-        From(c, Parent_Buffer, this)->Unicode = custom_border[Current_Masks];
+        *From(c, Parent_Buffer, this) = custom_border[Current_Masks];
     }
 }
 
