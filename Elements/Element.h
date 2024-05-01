@@ -2,6 +2,7 @@
 #define _ELEMENT_H_
 
 #include <string>
+#include <cstring>
 #include <vector>
 #include <unordered_map>
 #include <functional>
@@ -538,6 +539,12 @@ namespace GGUI{
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
+        UTF(const char* data, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data), Unicode_Length(std::strlen(data)){
+            Foreground = {color.first};
+            Background = {color.second};
+            FLAGS = UTF_FLAG::IS_UNICODE;
+        }
+
         UTF(std::string& data, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data.data()), Unicode_Length(data.length()){
             Foreground = {color.first};
             Background = {color.second};
@@ -827,19 +834,19 @@ namespace GGUI{
 
     class BORDER_STYLE_VALUE : public VALUE{
     public:
-        std::string TOP_LEFT_CORNER             = "┌";//"\e(0\x6c\e(B";
-        std::string BOTTOM_LEFT_CORNER          = "└";//"\e(0\x6d\e(B";
-        std::string TOP_RIGHT_CORNER            = "┐";//"\e(0\x6b\e(B";
-        std::string BOTTOM_RIGHT_CORNER         = "┘";//"\e(0\x6a\e(B";
-        std::string VERTICAL_LINE               = "│";//"\e(0\x78\e(B";
-        std::string HORIZONTAL_LINE             = "─";//"\e(0\x71\e(B";
-        std::string VERTICAL_RIGHT_CONNECTOR    = "├";//"\e(0\x74\e(B";
-        std::string VERTICAL_LEFT_CONNECTOR     = "┤";//"\e(0\x75\e(B";
-        std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
-        std::string HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
-        std::string CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
+        const char* TOP_LEFT_CORNER             = "┌";//"\e(0\x6c\e(B";
+        const char* BOTTOM_LEFT_CORNER          = "└";//"\e(0\x6d\e(B";
+        const char* TOP_RIGHT_CORNER            = "┐";//"\e(0\x6b\e(B";
+        const char* BOTTOM_RIGHT_CORNER         = "┘";//"\e(0\x6a\e(B";
+        const char* VERTICAL_LINE               = "│";//"\e(0\x78\e(B";
+        const char* HORIZONTAL_LINE             = "─";//"\e(0\x71\e(B";
+        const char* VERTICAL_RIGHT_CONNECTOR    = "├";//"\e(0\x74\e(B";
+        const char* VERTICAL_LEFT_CONNECTOR     = "┤";//"\e(0\x75\e(B";
+        const char* HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        const char* HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
+        const char* CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
 
-        BORDER_STYLE_VALUE(std::vector<std::string> values);
+        BORDER_STYLE_VALUE(std::vector<const char*> values);
 
         // Re-import defaults:
         BORDER_STYLE_VALUE() = default;
@@ -883,23 +890,23 @@ namespace GGUI{
         inline std::string Allow_Scrolling                  = "Allow_Scrolling";
 
         namespace BORDER{
-            const inline BORDER_STYLE_VALUE Double = std::vector<std::string>{
+            const inline BORDER_STYLE_VALUE Double = std::vector<const char*>{
                 "╔", "╚", "╗", "╝", "║", "═", "╠", "╣", "╦", "╩", "╬"
             };
 
-            const inline BORDER_STYLE_VALUE Round = std::vector<std::string>{
+            const inline BORDER_STYLE_VALUE Round = std::vector<const char*>{
                 "╭", "╰", "╮", "╯", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            const inline BORDER_STYLE_VALUE Single = std::vector<std::string>{
+            const inline BORDER_STYLE_VALUE Single = std::vector<const char*>{
                 "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            const inline BORDER_STYLE_VALUE Bold = std::vector<std::string>{
+            const inline BORDER_STYLE_VALUE Bold = std::vector<const char*>{
                 "▛", "▙", "▜", "▟", "█", "▅", "▉", "▉", "▉", "▉", "▉"
             };
 
-            const inline BORDER_STYLE_VALUE Modern = std::vector<std::string>{
+            const inline BORDER_STYLE_VALUE Modern = std::vector<const char*>{
                 "/", "\\", "\\", "/", "|", "-", "|", "|", "-", "-", "+"
             };
             

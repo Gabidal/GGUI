@@ -16,7 +16,7 @@ namespace GGUI{
     }
 }
 
-GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<std::string> values){
+GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values){
     if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
         BOTTOM_LEFT_CORNER = values[1];
@@ -42,7 +42,8 @@ std::string GGUI::UTF::To_String(){
     );
 
     if(Is(UTF_FLAG::IS_UNICODE)){
-        Result += Unicode;
+        // Add the const char* to the Result
+        Result.append(Unicode, Unicode_Length);
     }
     else{
         Result += Ascii;
