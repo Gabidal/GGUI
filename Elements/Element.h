@@ -508,7 +508,7 @@ namespace GGUI{
 
         char Ascii = ' ';
         const char* Unicode = " ";
-        const int Unicode_Length = 1;
+        int Unicode_Length = 1;
 
         RGBA Foreground = {0, 0, 0}; 
         RGBA Background = {0, 0, 0};
@@ -525,27 +525,13 @@ namespace GGUI{
             FLAGS = UTF_FLAG::IS_ASCII;
         }
 
-        // {Foreground, Background}
-        template<int N>
-        UTF(const char (&data)[N], std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data), Unicode_Length(N - 1){
-            Foreground = {color.first};
-            Background = {color.second};
-            FLAGS = UTF_FLAG::IS_UNICODE;
-        }
-
-        UTF(const char* data, const int data_length, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data), Unicode_Length(data_length){
-            Foreground = {color.first};
-            Background = {color.second};
-            FLAGS = UTF_FLAG::IS_UNICODE;
-        }
-
         UTF(const char* data, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data), Unicode_Length(std::strlen(data)){
             Foreground = {color.first};
             Background = {color.second};
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
-        UTF(std::string& data, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data.data()), Unicode_Length(data.length()){
+        UTF(std::string& data, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data.data()), Unicode_Length(data.size() - 1){
             Foreground = {color.first};
             Background = {color.second};
             FLAGS = UTF_FLAG::IS_UNICODE;
@@ -575,6 +561,7 @@ namespace GGUI{
 
         void Set_Text(std::string data){
             Unicode = data.data();
+            Unicode_Length = data.size();
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
@@ -601,6 +588,16 @@ namespace GGUI{
         }
 
         UTF& operator=(const UTF& other){
+            Ascii = other.Ascii;
+            Unicode = other.Unicode;
+            Unicode_Length = other.Unicode_Length;
+            FLAGS = other.FLAGS;
+            Foreground = other.Foreground;
+            Background = other.Background;
+
+            Unicode = new char[Unicode_Length];
+            std::strcpy((char*)Unicode, (char*)other.Unicode);
+
             return *this;
         }
 

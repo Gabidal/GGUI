@@ -62,7 +62,8 @@ std::string GGUI::UTF::To_Encoded_String(){
         );
 
     if(Is(UTF_FLAG::IS_UNICODE)){
-        Result += Unicode;
+        // Add the const char* to the Result
+        Result.append(Unicode, Unicode_Length);
     }
     else{
         Result += Ascii;
@@ -1332,6 +1333,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
         unsigned int Current_Masks = 0;
 
+        // TODO: fix support for custom borders.
         if (Is_In_Bounds(Above, this) && From(Above, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
             Current_Masks |= SYMBOLS::CONNECTS_UP;
 
