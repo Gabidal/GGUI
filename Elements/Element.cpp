@@ -10,6 +10,12 @@
 #undef min
 #undef max
 
+namespace GGUI{
+    namespace SYMBOLS{
+        GGUI::UTF EMPTY_UTF(' ');
+    }
+}
+
 GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<std::string> values){
     if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
@@ -1018,7 +1024,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
     if (Dirty.is(STAIN_TYPE::STRECH)){
         Result.clear();
-        Result.resize(Width * Height);
+        Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
         Dirty.Clean(STAIN_TYPE::STRECH);
 
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);

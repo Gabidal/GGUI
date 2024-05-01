@@ -15,6 +15,8 @@ namespace GGUI{
     //GGUI uses the ANSI escape code
     //https://en.wikipedia.org/wiki/ANSI_escape_code
 
+    class UTF;
+
     namespace SYMBOLS{
         inline std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
         inline std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
@@ -42,6 +44,7 @@ namespace GGUI{
         inline std::string EMPTY_CHECK_BOX = "☐";
         inline std::string CHECKED_CHECK_BOX = "☒";
 
+        extern GGUI::UTF EMPTY_UTF;
     }
 
     namespace TIME{
