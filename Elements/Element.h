@@ -525,13 +525,19 @@ namespace GGUI{
             FLAGS = UTF_FLAG::IS_ASCII;
         }
 
-        UTF(const char* data, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data), Unicode_Length(std::strlen(data)){
+        UTF(const char* data, std::pair<RGB, RGB> color = {{}, {}}){
+            Unicode = data;
+            Unicode_Length = std::strlen(data);
+            
             Foreground = {color.first};
             Background = {color.second};
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
-        UTF(std::string& data, std::pair<RGB, RGB> color = {{}, {}}) : Unicode(data.data()), Unicode_Length(data.size() - 1){
+        UTF(std::string& data, std::pair<RGB, RGB> color = {{}, {}}){
+            Unicode = data.data();
+            Unicode_Length = data.size() - 1;
+            
             Foreground = {color.first};
             Background = {color.second};
             FLAGS = UTF_FLAG::IS_UNICODE;
@@ -561,13 +567,19 @@ namespace GGUI{
 
         void Set_Text(std::string data){
             Unicode = data.data();
-            Unicode_Length = data.size();
+            Unicode_Length = data.size() -1;
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
         void Set_Text(char data){
             Ascii = data;
             FLAGS = UTF_FLAG::IS_ASCII;
+        }
+
+        void Set_Text(const char* data){
+            Unicode = data;
+            Unicode_Length = std::strlen(data);
+            FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
         void Set_Text(UTF other){
@@ -595,14 +607,11 @@ namespace GGUI{
             Foreground = other.Foreground;
             Background = other.Background;
 
-            Unicode = new char[Unicode_Length];
-            std::strcpy((char*)Unicode, (char*)other.Unicode);
-
             return *this;
         }
 
         bool Has_Non_Default_Text(){
-            return (Ascii != ' ') || (Unicode != " ");
+            return (Ascii != ' ') || (Unicode[0] != ' ');
         }
 
     };
@@ -1281,9 +1290,11 @@ namespace GGUI{
 
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
 
-        std::unordered_map<unsigned int, std::string> Get_Custom_Border_Map(Element* e);
+        std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(Element* e);
 
         void Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style);
+
+        GGUI::BORDER_STYLE_VALUE Get_Custom_Border_Style();
 
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 

@@ -1222,7 +1222,7 @@ inline GGUI::UTF* From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_B
     return &Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
 }
 
-std::unordered_map<unsigned int, std::string> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
+std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
     GGUI::BORDER_STYLE_VALUE* custom_border_style = e->At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
 
     return {
@@ -1250,6 +1250,10 @@ void GGUI::Element::Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style){
     Dirty.Dirty(STAIN_TYPE::EDGE);
 
     Show_Border(true);
+}
+
+GGUI::BORDER_STYLE_VALUE GGUI::Element::Get_Custom_Border_Style(){
+    return *At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
 }
 
 void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer){
@@ -1321,7 +1325,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         );
     }
 
-    std::unordered_map<unsigned int, std::string> custom_border = Get_Custom_Border_Map(A);
+    std::unordered_map<unsigned int, const char*> custom_border = Get_Custom_Border_Map(A);
 
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
@@ -1333,23 +1337,35 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
         unsigned int Current_Masks = 0;
 
-        // TODO: fix support for custom borders.
-        if (Is_In_Bounds(Above, this) && From(Above, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
+        // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
+        if (Is_In_Bounds(Above, this) && (
+            From(Above, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().VERTICAL_LINE ||
+            From(Above, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().VERTICAL_LINE
+        ))
             Current_Masks |= SYMBOLS::CONNECTS_UP;
 
-        if (Is_In_Bounds(Below, this) && From(Below, Parent_Buffer, this)->Unicode == SYMBOLS::VERTICAL_LINE)
+        if (Is_In_Bounds(Below, this) && (
+            From(Below, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().VERTICAL_LINE ||
+            From(Below, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().VERTICAL_LINE
+        ))
             Current_Masks |= SYMBOLS::CONNECTS_DOWN;
 
-        if (Is_In_Bounds(Left, this) && From(Left, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
+        if (Is_In_Bounds(Left, this) && (
+            From(Left, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
+            From(Left, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().HORIZONTAL_LINE
+        ))
             Current_Masks |= SYMBOLS::CONNECTS_LEFT;
 
-        if (Is_In_Bounds(Right, this) && From(Right, Parent_Buffer, this)->Unicode == SYMBOLS::HORIZONTAL_LINE)
+        if (Is_In_Bounds(Right, this) && (
+            From(Right, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
+            From(Right, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().HORIZONTAL_LINE
+        ))
             Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
 
         if (custom_border.find(Current_Masks) == custom_border.end())
             continue;
 
-        *From(c, Parent_Buffer, this) = custom_border[Current_Masks];
+        From(c, Parent_Buffer, this)->Set_Text(custom_border[Current_Masks]);
     }
 }
 
