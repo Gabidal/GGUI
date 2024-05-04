@@ -1334,17 +1334,18 @@ namespace GGUI{
         }
     }
 
-    std::string Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
-        std::string Result = "";
+    GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
+        Super_String Result(Width * Height);
 
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
-                Result += Text[y * Width + x].To_Encoded_String();
+                Super_String tmp = Text[y * Width + x].To_Encoded_Super_String();
+                Result.Add(tmp);
             }
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
             if (!SETTINGS::Word_Wrapping){
-                Result += "\n";   // the system is word wrapped.
+                Result.Add("\n");   // the system is word wrapped.
             }
         }
 
@@ -1363,7 +1364,7 @@ namespace GGUI{
             // ENCODE for optimize
             Encode_Buffer(Abstract_Frame_Buffer);
 
-            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
+            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
         }
         else{
             // Use OUTBOX rendering method.
@@ -1706,7 +1707,7 @@ namespace GGUI{
 
         Encode_Buffer(Abstract_Frame_Buffer);
 
-        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height());
+        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
 
         std::thread Job_Scheduler([&](){
             int i = 0;

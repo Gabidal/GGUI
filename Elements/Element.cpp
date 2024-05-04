@@ -16,6 +16,24 @@ namespace GGUI{
     }
 }
 
+
+std::string GGUI::RGB::Get_Colour() const{
+    return Constants::To_String[Red] + Constants::SEPERATE + Constants::To_String[Green] + Constants::SEPERATE + Constants::To_String[Blue];
+}
+
+GGUI::Super_String GGUI::RGB::Get_Colour_As_Super_String() const{
+    Super_String result(5);
+
+    result.Add(
+        Constants::To_String[Red], Constants::SEPERATE, 
+        Constants::To_String[Green], Constants::SEPERATE, 
+        Constants::To_String[Blue]
+    );
+
+    return result;
+}
+    
+
 GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values){
     if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
@@ -36,30 +54,55 @@ GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values){
 }
 
 std::string GGUI::UTF::To_String(){
-    std::string Result = (
+    std::string Result =
         Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND + 
-        Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND
-    );
+        Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND;
 
     if(Is(UTF_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
         Result.append(Unicode, Unicode_Length);
     }
     else{
-        Result += Ascii;
+        Result + Ascii;
     }
 
     return Result + Constants::RESET_COLOR;
 }
 
-std::string GGUI::UTF::To_Encoded_String(){
-    std::string Result = "";
+GGUI::Super_String GGUI::UTF::To_Super_String(){
+    // 6 for Foreground and background
+    // 1 for either Ascii or Unicode
+    // 1 for color reset.
+    Super_String Result(8);
+
+    Super_String text_overhead = Foreground.Get_Over_Head_As_Super_String(true);
+    Super_String text_colour = Foreground.Get_Colour_As_Super_String();
+    Super_String background_overhead = Background.Get_Over_Head_As_Super_String(false);
+    Super_String background_colour = Background.Get_Colour_As_Super_String();
+
+    Result.Add(
+        text_overhead, text_colour, Constants::END_COMMAND,
+        background_overhead, background_colour, Constants::END_COMMAND
+    );
+
+    if (Is(UTF_FLAG::IS_UNICODE)){
+        Result.Add(Unicode, Unicode_Length);
+    }
+    else{
+        Result.Add(Ascii);
+    }
+
+    Result.Add(Constants::RESET_COLOR);
+
+    return Result;
+}
+
+std::string GGUI::UTF::To_Encoded_String() {
+    std::string Result;
     
     if (Is(UTF_FLAG::ENCODE_START))
-        Result = (
-            Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND + 
-            Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND
-        );
+        Result = Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND 
+               + Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND;
 
     if(Is(UTF_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
@@ -70,9 +113,38 @@ std::string GGUI::UTF::To_Encoded_String(){
     }
 
     if (Is(UTF_FLAG::ENCODE_END))
-        return Result + Constants::RESET_COLOR;
-    else
-        return Result;
+        Result += Constants::RESET_COLOR;
+
+    return Result;
+}
+
+GGUI::Super_String GGUI::UTF::To_Encoded_Super_String(){
+    Super_String Result(1); // Atleast one for the main data.
+
+    if (Is(UTF_FLAG::ENCODE_START)){
+        Super_String text_overhead = Foreground.Get_Over_Head_As_Super_String(true);
+        Super_String background_overhead = Background.Get_Over_Head_As_Super_String(false);
+        Super_String text_colour = Foreground.Get_Colour_As_Super_String();
+        Super_String background_colour = Background.Get_Colour_As_Super_String();
+
+        Result.Add(
+            text_overhead, text_colour, Constants::END_COMMAND,
+            background_overhead, background_colour, Constants::END_COMMAND
+        );
+    }
+
+    if (Is(UTF_FLAG::IS_UNICODE)){
+        Result.Add(Unicode, Unicode_Length);
+    }
+    else{
+        Result.Add(Ascii);
+    }
+
+    if (Is(UTF_FLAG::ENCODE_END)){
+        Result.Add(Constants::RESET_COLOR);
+    }
+
+    return Result;
 }
 
 GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
@@ -1257,7 +1329,6 @@ GGUI::BORDER_STYLE_VALUE GGUI::Element::Get_Custom_Border_Style(){
 }
 
 void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer){
-
     // We only need to calculate the childs points in which they intersect with the parent borders.
     // At these intersecting points of border we will construct a bit mask that portraits the connections the middle point has.
     // With the calculated bit mask we can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
