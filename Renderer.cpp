@@ -1337,10 +1337,16 @@ namespace GGUI{
     GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
         Super_String Result(Width * Height);
 
+        Super_String tmp_container(8);  // We can expect the maximum size each can omit.
+
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
-                Super_String tmp = Text[y * Width + x].To_Encoded_Super_String();
-                Result.Add(tmp);
+                Text[y * Width + x].To_Encoded_Super_String(&tmp_container);
+                
+                Result.Add(tmp_container);
+
+                // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
+                tmp_container.Data.clear();
             }
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.

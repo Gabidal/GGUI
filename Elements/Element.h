@@ -766,7 +766,7 @@ namespace GGUI{
         std::string To_Encoded_String();    // For UTF Strip Encoding.
 
         Super_String To_Super_String();
-        Super_String To_Encoded_Super_String();
+        void To_Encoded_Super_String(Super_String* Result);
 
         void operator=(char text){
             Set_Text(text);

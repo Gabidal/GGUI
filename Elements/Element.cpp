@@ -118,8 +118,7 @@ std::string GGUI::UTF::To_Encoded_String() {
     return Result;
 }
 
-GGUI::Super_String GGUI::UTF::To_Encoded_Super_String(){
-    Super_String Result(8); // Atleast one for the main data.
+void GGUI::UTF::To_Encoded_Super_String(Super_String* Result){
 
     if (Is(UTF_FLAG::ENCODE_START)){
         Super_String text_overhead = Foreground.Get_Over_Head_As_Super_String(true);
@@ -127,24 +126,22 @@ GGUI::Super_String GGUI::UTF::To_Encoded_Super_String(){
         Super_String text_colour = Foreground.Get_Colour_As_Super_String();
         Super_String background_colour = Background.Get_Colour_As_Super_String();
 
-        Result.Add(
+        Result->Add(
             text_overhead, text_colour, Constants::END_COMMAND,
             background_overhead, background_colour, Constants::END_COMMAND
         );
     }
 
     if (Is(UTF_FLAG::IS_UNICODE)){
-        Result.Add(Unicode, Unicode_Length);
+        Result->Add(Unicode, Unicode_Length);
     }
     else{
-        Result.Add(Ascii);
+        Result->Add(Ascii);
     }
 
     if (Is(UTF_FLAG::ENCODE_END)){
-        Result.Add(Constants::RESET_COLOR);
+        Result->Add(Constants::RESET_COLOR);
     }
-
-    return Result;
 }
 
 GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
