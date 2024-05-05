@@ -25,9 +25,9 @@ GGUI::Super_String GGUI::RGB::Get_Colour_As_Super_String() const{
     Super_String result(5);
 
     result.Add(
-        Constants::To_String[Red], Constants::SEPERATE, 
-        Constants::To_String[Green], Constants::SEPERATE, 
-        Constants::To_String[Blue]
+        Constants::To_Compact[Red], Constants::SEPERATE,
+        Constants::To_Compact[Green], Constants::SEPERATE,
+        Constants::To_Compact[Blue]
     );
 
     return result;
@@ -119,7 +119,7 @@ std::string GGUI::UTF::To_Encoded_String() {
 }
 
 GGUI::Super_String GGUI::UTF::To_Encoded_Super_String(){
-    Super_String Result(1); // Atleast one for the main data.
+    Super_String Result(8); // Atleast one for the main data.
 
     if (Is(UTF_FLAG::ENCODE_START)){
         Super_String text_overhead = Foreground.Get_Over_Head_As_Super_String(true);

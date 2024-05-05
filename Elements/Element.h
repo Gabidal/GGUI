@@ -20,10 +20,10 @@ namespace GGUI{
     class UTF;
 
     namespace UTF_FLAG{
-        inline unsigned char IS_ASCII          = 1 << 0;
-        inline unsigned char IS_UNICODE        = 1 << 1;
-        inline unsigned char ENCODE_START      = 1 << 2;
-        inline unsigned char ENCODE_END        = 1 << 3;
+        constexpr inline unsigned char IS_ASCII          = 1 << 0;
+        constexpr inline unsigned char IS_UNICODE        = 1 << 1;
+        constexpr inline unsigned char ENCODE_START      = 1 << 2;
+        constexpr inline unsigned char ENCODE_END        = 1 << 3;
     };
 
     // And lighter-weight version of the UTF class. [Probably after making the RGBA use unsigned char instead of float, and thus making the overall size into 32 bits, replace this class with UTF.]
@@ -34,11 +34,11 @@ namespace GGUI{
         const char* Data = nullptr;
         int Size = 0;
 
-        Compact_String(const char* data, int size){
-            Data = data;
-            Size = size;
-            FLAGS = UTF_FLAG::IS_UNICODE;
-        }
+        // Compact_String(const char* data, int size){
+        //     Data = data;
+        //     Size = size;
+        //     FLAGS = UTF_FLAG::IS_UNICODE;
+        // }
 
         Compact_String(const char* data){
             Data = data;
@@ -51,6 +51,12 @@ namespace GGUI{
             Size = 1;
             FLAGS = UTF_FLAG::IS_ASCII;
         }
+
+        constexpr Compact_String(const char* data, int size){
+            Data = data;
+            Size = size;
+            FLAGS = UTF_FLAG::IS_UNICODE;
+        }
     };
 
     // Instead of reconstructing new strings every time, this class stores the components, and then only one time constructs the final string representation.
@@ -62,9 +68,9 @@ namespace GGUI{
             Data.reserve(Final_Size);
         }
 
-        void Add(const char* data){
-            Data.push_back(data);
-        }
+        // void Add(const char* data){
+        //     Data.push_back(data);
+        // }
 
         void Add(const char* data, int size){
             Data.push_back(Compact_String(data, size + 1));
@@ -78,17 +84,21 @@ namespace GGUI{
             Data.push_back(Compact_String(data.data(), data.size()));
         }
 
-        // Used for ease of use of list way of adding different types at the same time whiteout OOP.
-        template<typename ... T>
-        void Add(T&... list){
-            (Add(list), ...);
-        }
-
         void Add(Super_String& other){
             // enlarge the reservation
             Data.reserve(Data.size() + other.Data.size());
 
             Data.insert(Data.end(), other.Data.begin(), other.Data.end());
+        }
+
+        void Add(const Compact_String& other){
+            Data.push_back(other);
+        }
+
+        // Used for ease of use of list way of adding different types at the same time whiteout OOP.
+        template<typename ... T>
+        void Add(T&... list){
+            (Add(list), ...);
         }
 
         std::string To_String(){
@@ -278,6 +288,35 @@ namespace GGUI{
             "230", "231", "232", "233", "234", "235", "236", "237", "238", "239",
             "240", "241", "242", "243", "244", "245", "246", "247", "248", "249",
             "250", "251", "252", "253", "254", "255"
+        };
+
+        constexpr const Compact_String To_Compact[256] = {
+            Compact_String("0", 1), Compact_String("1", 1), Compact_String("2", 1), Compact_String("3", 1), Compact_String("4", 1), Compact_String("5", 1), Compact_String("6", 1), Compact_String("7", 1), Compact_String("8", 1), Compact_String("9", 1),
+            Compact_String("10", 2), Compact_String("11", 2), Compact_String("12", 2), Compact_String("13", 2), Compact_String("14", 2), Compact_String("15", 2), Compact_String("16", 2), Compact_String("17", 2), Compact_String("18", 2), Compact_String("19", 2),
+            Compact_String("20", 2), Compact_String("21", 2), Compact_String("22", 2), Compact_String("23", 2), Compact_String("24", 2), Compact_String("25", 2), Compact_String("26", 2), Compact_String("27", 2), Compact_String("28", 2), Compact_String("29", 2),
+            Compact_String("30", 2), Compact_String("31", 2), Compact_String("32", 2), Compact_String("33", 2), Compact_String("34", 2), Compact_String("35", 2), Compact_String("36", 2), Compact_String("37", 2), Compact_String("38", 2), Compact_String("39", 2),
+            Compact_String("40", 2), Compact_String("41", 2), Compact_String("42", 2), Compact_String("43", 2), Compact_String("44", 2), Compact_String("45", 2), Compact_String("46", 2), Compact_String("47", 2), Compact_String("48", 2), Compact_String("49", 2),
+            Compact_String("50", 2), Compact_String("51", 2), Compact_String("52", 2), Compact_String("53", 2), Compact_String("54", 2), Compact_String("55", 2), Compact_String("56", 2), Compact_String("57", 2), Compact_String("58", 2), Compact_String("59", 2),
+            Compact_String("60", 2), Compact_String("61", 2), Compact_String("62", 2), Compact_String("63", 2), Compact_String("64", 2), Compact_String("65", 2), Compact_String("66", 2), Compact_String("67", 2), Compact_String("68", 2), Compact_String("69", 2),
+            Compact_String("70", 2), Compact_String("71", 2), Compact_String("72", 2), Compact_String("73", 2), Compact_String("74", 2), Compact_String("75", 2), Compact_String("76", 2), Compact_String("77", 2), Compact_String("78", 2), Compact_String("79", 2),
+            Compact_String("80", 2), Compact_String("81", 2), Compact_String("82", 2), Compact_String("83", 2), Compact_String("84", 2), Compact_String("85", 2), Compact_String("86", 2), Compact_String("87", 2), Compact_String("88", 2), Compact_String("89", 2),
+            Compact_String("90", 2), Compact_String("91", 2), Compact_String("92", 2), Compact_String("93", 2), Compact_String("94", 2), Compact_String("95", 2), Compact_String("96", 2), Compact_String("97", 2), Compact_String("98", 2), Compact_String("99", 2),
+            Compact_String("100", 3), Compact_String("101", 3), Compact_String("102", 3), Compact_String("103", 3), Compact_String("104", 3), Compact_String("105", 3), Compact_String("106", 3), Compact_String("107", 3), Compact_String("108", 3), Compact_String("109", 3),
+            Compact_String("110", 3), Compact_String("111", 3), Compact_String("112", 3), Compact_String("113", 3), Compact_String("114", 3), Compact_String("115", 3), Compact_String("116", 3), Compact_String("117", 3), Compact_String("118", 3), Compact_String("119", 3),
+            Compact_String("120", 3), Compact_String("121", 3), Compact_String("122", 3), Compact_String("123", 3), Compact_String("124", 3), Compact_String("125", 3), Compact_String("126", 3), Compact_String("127", 3), Compact_String("128", 3), Compact_String("129", 3),
+            Compact_String("130", 3), Compact_String("131", 3), Compact_String("132", 3), Compact_String("133", 3), Compact_String("134", 3), Compact_String("135", 3), Compact_String("136", 3), Compact_String("137", 3), Compact_String("138", 3), Compact_String("139", 3),
+            Compact_String("140", 3), Compact_String("141", 3), Compact_String("142", 3), Compact_String("143", 3), Compact_String("144", 3), Compact_String("145", 3), Compact_String("146", 3), Compact_String("147", 3), Compact_String("148", 3), Compact_String("149", 3),
+            Compact_String("150", 3), Compact_String("151", 3), Compact_String("152", 3), Compact_String("153", 3), Compact_String("154", 3), Compact_String("155", 3), Compact_String("156", 3), Compact_String("157", 3), Compact_String("158", 3), Compact_String("159", 3),
+            Compact_String("160", 3), Compact_String("161", 3), Compact_String("162", 3), Compact_String("163", 3), Compact_String("164", 3), Compact_String("165", 3), Compact_String("166", 3), Compact_String("167", 3), Compact_String("168", 3), Compact_String("169", 3),
+            Compact_String("170", 3), Compact_String("171", 3), Compact_String("172", 3), Compact_String("173", 3), Compact_String("174", 3), Compact_String("175", 3), Compact_String("176", 3), Compact_String("177", 3), Compact_String("178", 3), Compact_String("179", 3),
+            Compact_String("180", 3), Compact_String("181", 3), Compact_String("182", 3), Compact_String("183", 3), Compact_String("184", 3), Compact_String("185", 3), Compact_String("186", 3), Compact_String("187", 3), Compact_String("188", 3), Compact_String("189", 3),
+            Compact_String("190", 3), Compact_String("191", 3), Compact_String("192", 3), Compact_String("193", 3), Compact_String("194", 3), Compact_String("195", 3), Compact_String("196", 3), Compact_String("197", 3), Compact_String("198", 3), Compact_String("199", 3),
+            Compact_String("200", 3), Compact_String("201", 3), Compact_String("202", 3), Compact_String("203", 3), Compact_String("204", 3), Compact_String("205", 3), Compact_String("206", 3), Compact_String("207", 3), Compact_String("208", 3), Compact_String("209", 3),
+            Compact_String("210", 3), Compact_String("211", 3), Compact_String("212", 3), Compact_String("213", 3), Compact_String("214", 3), Compact_String("215", 3), Compact_String("216", 3), Compact_String("217", 3), Compact_String("218", 3), Compact_String("219", 3),
+            Compact_String("220", 3), Compact_String("221", 3), Compact_String("222", 3), Compact_String("223", 3), Compact_String("224", 3), Compact_String("225", 3), Compact_String("226", 3), Compact_String("227", 3), Compact_String("228", 3), Compact_String("229", 3),
+            Compact_String("230", 3), Compact_String("231", 3), Compact_String("232", 3), Compact_String("233", 3), Compact_String("234", 3), Compact_String("235", 3), Compact_String("236", 3), Compact_String("237", 3), Compact_String("238", 3), Compact_String("239", 3),
+            Compact_String("240", 3), Compact_String("241", 3), Compact_String("242", 3), Compact_String("243", 3), Compact_String("244", 3), Compact_String("245", 3), Compact_String("246", 3), Compact_String("247", 3), Compact_String("248", 3), Compact_String("249", 3),
+            Compact_String("250", 3), Compact_String("251", 3), Compact_String("252", 3), Compact_String("253", 3), Compact_String("254", 3), Compact_String("255", 3)
         };
     }
     
