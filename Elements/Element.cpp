@@ -21,16 +21,12 @@ std::string GGUI::RGB::Get_Colour() const{
     return Constants::To_String[Red] + Constants::SEPERATE + Constants::To_String[Green] + Constants::SEPERATE + Constants::To_String[Blue];
 }
 
-GGUI::Super_String GGUI::RGB::Get_Colour_As_Super_String() const{
-    Super_String result(5);
-
-    result.Add(
+void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
+    Result->Add(
         Constants::To_Compact[Red], Constants::SEPERATE,
         Constants::To_Compact[Green], Constants::SEPERATE,
         Constants::To_Compact[Blue]
     );
-
-    return result;
 }
     
 
@@ -69,32 +65,26 @@ std::string GGUI::UTF::To_String(){
     return Result + Constants::RESET_COLOR;
 }
 
-GGUI::Super_String GGUI::UTF::To_Super_String(){
-    // 6 for Foreground and background
-    // 1 for either Ascii or Unicode
-    // 1 for color reset.
-    Super_String Result(8);
+void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour){
+    Foreground.Get_Over_Head_As_Super_String(Text_Overhead, true);
+    Foreground.Get_Colour_As_Super_String(Text_Colour);
+    Background.Get_Over_Head_As_Super_String(Background_Overhead, false);
+    Background.Get_Colour_As_Super_String(Background_Colour);
 
-    Super_String text_overhead = Foreground.Get_Over_Head_As_Super_String(true);
-    Super_String text_colour = Foreground.Get_Colour_As_Super_String();
-    Super_String background_overhead = Background.Get_Over_Head_As_Super_String(false);
-    Super_String background_colour = Background.Get_Colour_As_Super_String();
-
-    Result.Add(
-        text_overhead, text_colour, Constants::END_COMMAND,
-        background_overhead, background_colour, Constants::END_COMMAND
-    );
+    Result->Add(Text_Overhead);
+    Result->Add(Text_Colour);
+    Result->Add(Constants::END_COMMAND);
+    Result->Add(Background_Overhead);
+    Result->Add(Background_Colour);
 
     if (Is(UTF_FLAG::IS_UNICODE)){
-        Result.Add(Unicode, Unicode_Length);
+        Result->Add(Unicode, Unicode_Length);
     }
     else{
-        Result.Add(Ascii);
+        Result->Add(Ascii);
     }
 
-    Result.Add(Constants::RESET_COLOR);
-
-    return Result;
+    Result->Add(Constants::RESET_COLOR);
 }
 
 std::string GGUI::UTF::To_Encoded_String() {
@@ -118,18 +108,20 @@ std::string GGUI::UTF::To_Encoded_String() {
     return Result;
 }
 
-void GGUI::UTF::To_Encoded_Super_String(Super_String* Result){
+void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour) {
 
     if (Is(UTF_FLAG::ENCODE_START)){
-        Super_String text_overhead = Foreground.Get_Over_Head_As_Super_String(true);
-        Super_String background_overhead = Background.Get_Over_Head_As_Super_String(false);
-        Super_String text_colour = Foreground.Get_Colour_As_Super_String();
-        Super_String background_colour = Background.Get_Colour_As_Super_String();
+        Foreground.Get_Over_Head_As_Super_String(Text_Overhead, true);
+        Foreground.Get_Colour_As_Super_String(Text_Colour);
+        Background.Get_Over_Head_As_Super_String(Background_Overhead, false);
+        Background.Get_Colour_As_Super_String(Background_Colour);
 
-        Result->Add(
-            text_overhead, text_colour, Constants::END_COMMAND,
-            background_overhead, background_colour, Constants::END_COMMAND
-        );
+        Result->Add(Text_Overhead);
+        Result->Add(Text_Colour);
+        Result->Add(Constants::END_COMMAND);
+        Result->Add(Background_Overhead);
+        Result->Add(Background_Colour);
+        Result->Add(Constants::END_COMMAND);
     }
 
     if (Is(UTF_FLAG::IS_UNICODE)){

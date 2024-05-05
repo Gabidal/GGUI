@@ -1338,15 +1338,23 @@ namespace GGUI{
         Super_String Result(Width * Height);
 
         Super_String tmp_container(8);  // We can expect the maximum size each can omit.
+        Super_String Text_Overhead(5);
+        Super_String Background_Overhead(5);
+        Super_String Text_Colour(5);
+        Super_String Background_Colour(5);
 
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
-                Text[y * Width + x].To_Encoded_Super_String(&tmp_container);
+                Text[y * Width + x].To_Encoded_Super_String(&tmp_container, &Text_Overhead, &Background_Overhead, &Text_Colour, &Background_Colour);
                 
                 Result.Add(tmp_container);
 
                 // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
                 tmp_container.Data.clear();
+                Text_Overhead.Data.clear();
+                Background_Overhead.Data.clear();   
+                Text_Colour.Data.clear();
+                Background_Colour.Data.clear();
             }
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.

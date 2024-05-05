@@ -84,6 +84,13 @@ namespace GGUI{
             Data.push_back(Compact_String(data.data(), data.size()));
         }
 
+        void Add(Super_String* other){
+            // enlarge the reservation
+            Data.reserve(Data.size() + other->Data.size());
+
+            Data.insert(Data.end(), other->Data.begin(), other->Data.end());
+        }
+        
         void Add(Super_String& other){
             // enlarge the reservation
             Data.reserve(Data.size() + other.Data.size());
@@ -442,7 +449,7 @@ namespace GGUI{
 
         std::string Get_Colour() const;
 
-        Super_String Get_Colour_As_Super_String() const;
+        void Get_Colour_As_Super_String(Super_String* Result) const;
     
         std::string Get_Over_Head(bool Is_Text_Color = true) const{
             if(Is_Text_Color){
@@ -453,17 +460,14 @@ namespace GGUI{
             }
         }
 
-        Super_String Get_Over_Head_As_Super_String(bool Is_Text_Color = true) const{
-            Super_String result(5);
-            
+        // Needs the Result to be initialized with atleast 5
+        void Get_Over_Head_As_Super_String(Super_String* Result, bool Is_Text_Color = true) const{
             if (Is_Text_Color){
-                result.Add(Constants::ESC_CODE, Constants::Text_Color, Constants::SEPERATE, Constants::USE_RGB, Constants::SEPERATE);
+                Result->Add(Constants::ESC_CODE, Constants::Text_Color, Constants::SEPERATE, Constants::USE_RGB, Constants::SEPERATE);
             }
             else{
-                result.Add(Constants::ESC_CODE, Constants::Back_Ground_Color, Constants::SEPERATE, Constants::USE_RGB, Constants::SEPERATE);
+                Result->Add(Constants::ESC_CODE, Constants::Back_Ground_Color, Constants::SEPERATE, Constants::USE_RGB, Constants::SEPERATE);
             }
-
-            return result;
         }
     
         bool operator==(const RGB& Other) const{
@@ -765,8 +769,11 @@ namespace GGUI{
         std::string To_String();
         std::string To_Encoded_String();    // For UTF Strip Encoding.
 
-        Super_String To_Super_String();
-        void To_Encoded_Super_String(Super_String* Result);
+        // Needs Result to be initalized with 8 at max.
+        void To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
+        
+        // Needs Result to be initalized with 8 at max.
+        void To_Encoded_Super_String(Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
 
         void operator=(char text){
             Set_Text(text);
