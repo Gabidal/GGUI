@@ -1337,7 +1337,7 @@ namespace GGUI{
     GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
         Super_String Result(Width * Height);
 
-        Super_String tmp_container(8);  // We can expect the maximum size each can omit.
+        Super_String tmp_container(22);  // We can expect the maximum size each can omit.
         Super_String Text_Overhead(5);
         Super_String Background_Overhead(5);
         Super_String Text_Colour(5);

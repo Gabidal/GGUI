@@ -84,9 +84,10 @@ namespace GGUI{
             Data.push_back(Compact_String(data.data(), data.size()));
         }
 
-        void Add(Super_String* other){
+        void Add(Super_String* other, bool Expected = false){
             // enlarge the reservation
-            Data.reserve(Data.size() + other->Data.size());
+            if (!Expected)
+                Data.reserve(Data.size() + other->Data.size());
 
             Data.insert(Data.end(), other->Data.begin(), other->Data.end());
         }
@@ -449,6 +450,7 @@ namespace GGUI{
 
         std::string Get_Colour() const;
 
+        // Needs the Result to be initialized with atleast 5
         void Get_Colour_As_Super_String(Super_String* Result) const;
     
         std::string Get_Over_Head(bool Is_Text_Color = true) const{
@@ -769,10 +771,10 @@ namespace GGUI{
         std::string To_String();
         std::string To_Encoded_String();    // For UTF Strip Encoding.
 
-        // Needs Result to be initalized with 8 at max.
+        // Needs Result to be initalized with 22 at max.
         void To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
         
-        // Needs Result to be initalized with 8 at max.
+        // Needs Result to be initalized with 22 at max.
         void To_Encoded_Super_String(Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
 
         void operator=(char text){
