@@ -22,7 +22,7 @@ namespace GGUI{
         }
     
         void Default_Button_Text_Align(){
-            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
+            Style->Text_Position = (int)TEXT_LOCATION::CENTER;
         }
 
         // DONT USE AS USER!!

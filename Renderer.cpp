@@ -46,7 +46,7 @@ namespace GGUI{
     std::chrono::high_resolution_clock::time_point Current_Time;
     unsigned long long Delta_Time;
 
-    inline std::unordered_map<int, std::unordered_map<std::string, VALUE*>> Classes;
+    inline std::unordered_map<int, Styling> Classes;
 
     inline std::unordered_map<std::string, int> Class_Names;
 
@@ -1639,7 +1639,7 @@ namespace GGUI{
         }
     }
 
-    void Add_Class(std::string name, std::unordered_map<std::string, VALUE*> Styling){
+    void Add_Class(std::string name, Styling Styling){
         int Class_ID = Get_Free_Class_ID(name);
 
         Classes[Class_ID] = Styling;
@@ -1648,26 +1648,25 @@ namespace GGUI{
     void Init_Classes(){
         // Add default class
         std::string DEFAULT_NAME = "default";
-        std::unordered_map<std::string, VALUE*> DEFAULT = {
-            {STYLES::Text_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Background_Color, new RGB_VALUE(COLOR::BLACK)},
+        Styling DEFAULT;
+        DEFAULT.Text_Color = COLOR::WHITE;
+        DEFAULT.Background_Color = COLOR::BLACK;
 
-            {STYLES::Border_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
+        DEFAULT.Border_Color = COLOR::WHITE;
+        DEFAULT.Border_Background_Color = COLOR::BLACK;
 
-            {STYLES::Hover_Text_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Hover_Background_Color, new RGB_VALUE(COLOR::DARK_GRAY)},
+        DEFAULT.Hover_Text_Color = COLOR::WHITE;
+        DEFAULT.Hover_Background_Color = COLOR::DARK_GRAY;
 
-            {STYLES::Hover_Border_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Hover_Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
+        DEFAULT.Hover_Border_Color = COLOR::WHITE;
+        DEFAULT.Hover_Border_Background_Color = COLOR::BLACK;
+         
+        DEFAULT.Focus_Text_Color = COLOR::BLACK;
+        DEFAULT.Focus_Background_Color = COLOR::WHITE;
 
-            {STYLES::Focus_Text_Color, new RGB_VALUE(COLOR::BLACK)},
-            {STYLES::Focus_Background_Color, new RGB_VALUE(COLOR::WHITE)},
-
-            {STYLES::Focus_Border_Color, new RGB_VALUE(COLOR::WHITE)},
-            {STYLES::Focus_Border_Background_Color, new RGB_VALUE(COLOR::BLACK)},
-        };
-
+        DEFAULT.Focus_Border_Color = COLOR::WHITE;
+        DEFAULT.Focus_Border_Background_Color = COLOR::BLACK;
+        
         Add_Class(DEFAULT_NAME, DEFAULT);
     }
 

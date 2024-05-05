@@ -20,7 +20,7 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
     });
 }
 
-GGUI::Window::Window(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
+GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
     Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);
@@ -38,7 +38,7 @@ GGUI::Window::Window(std::unordered_map<std::string, VALUE*> css, unsigned int w
     });
 }
 
-GGUI::Window::Window(std::string title, std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
+GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
     Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);
@@ -242,7 +242,7 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
     if (!w->Has_Border())
         return;
     
-    GGUI::BORDER_STYLE_VALUE* custom_border = this->At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
+    GGUI::BORDER_STYLE_VALUE* custom_border = &Style->Border_Style;
 
     for (int y = 0; y < w->Get_Height(); y++){
         for (int x = 0; x < w->Get_Width(); x++){
@@ -290,8 +290,8 @@ void GGUI::Window::Show_Border(bool b){
         Set_Border_Background_Color(Before_Hiding_Border_Background_Color);
     }
 
-    if (b != At<BOOL_VALUE>(STYLES::Border)->Value){
-        At<BOOL_VALUE>(STYLES::Border)->Value = b;
+    if (b != Style->Border_Enabled){
+        Style->Border_Enabled = b;
 
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
@@ -307,7 +307,7 @@ void GGUI::Window::Show_Border(bool b, bool Previus_State){
     }
 
     if (b != Previus_State){
-        At<BOOL_VALUE>(STYLES::Border)->Value = b;
+        Style->Border_Enabled = b;
 
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
@@ -315,7 +315,7 @@ void GGUI::Window::Show_Border(bool b, bool Previus_State){
 }
 
 void GGUI::Window::Set_Background_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Background_Color)->Value = color;
+    Style->Background_Color = color;
 
     Before_Hiding_Border_Background_Color = color;
 
@@ -324,7 +324,7 @@ void GGUI::Window::Set_Background_Color(RGB color){
 }
 
 void GGUI::Window::Set_Text_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Text_Color)->Value = color;
+    Style->Text_Color = color;
     
     Before_Hiding_Border_Color = color;
     
@@ -333,7 +333,7 @@ void GGUI::Window::Set_Text_Color(RGB color){
 }
 
 void GGUI::Window::Set_Border_Background_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Border_Background_Color)->Value = color;
+    Style->Border_Background_Color = color;
 
     Before_Hiding_Border_Background_Color = color;
 
@@ -342,7 +342,7 @@ void GGUI::Window::Set_Border_Background_Color(RGB color){
 }
 
 void GGUI::Window::Set_Border_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Border_Color)->Value = color;
+    Style->Border_Color = color;
 
     Before_Hiding_Border_Color = color;
 

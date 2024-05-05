@@ -176,14 +176,14 @@ GGUI::Element::Element() {
     }
 }
 
-GGUI::Element::Element(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
+GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
     Pause_Renderer([=](){
         Add_Class("default");
         Parse_Classes();
 
         bool Previus_Border_State = Has_Border();
 
-        Style = css;
+        Style = new Styling(css);
 
         Fully_Stain();
 
@@ -296,8 +296,7 @@ GGUI::Element::~Element(){
             delete Childs[i];
 
     // Delete all the styles.
-    for (auto i : Style)
-        delete i.second;
+    delete Style;
 
     //now also update the event handlers.
     for (int i = 0; i < Event_Handlers.size(); i++)
@@ -332,95 +331,72 @@ void GGUI::Element::Inherit_States_From(Element* abstract){
 
 std::pair<GGUI::RGB, GGUI::RGB>  GGUI::Element::Compose_All_Text_RGB_Values(){
     if (Focused){
-        return {At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value, At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value};
+        return {Style->Focus_Text_Color, Style->Focus_Background_Color};
     }
     else if (Hovered){
-        return {At<RGB_VALUE>(STYLES::Hover_Text_Color)->Value, At<RGB_VALUE>(STYLES::Hover_Background_Color)->Value};
+        return {Style->Hover_Text_Color, Style->Hover_Background_Color};
     }
     else{
-        return {At<RGB_VALUE>(STYLES::Text_Color)->Value, At<RGB_VALUE>(STYLES::Background_Color)->Value};
+        return {Style->Text_Color, Style->Background_Color};
     }
 }
 
 GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
     // if (Focused){
-    //     return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Over_Head(true) + 
-    //     At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value.Get_Colour() + 
+    //     return Style->Focus_Text_Color.Get_Over_Head(true) + 
+    //     Style->Focus_Text_Color.Get_Colour() + 
     //     Constants::END_COMMAND;
     // }
     // else{
-    //     return At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Over_Head(true) + 
-    //     At<RGB_VALUE>(STYLES::Text_Color)->Value.Get_Colour() + 
+    //     return Style->Text_Color.Get_Over_Head(true) + 
+    //     Style->Text_Color.Get_Colour() + 
     //     Constants::END_COMMAND;
     // }
 
     if (Focused){
-        return At<RGB_VALUE>(STYLES::Focus_Text_Color)->Value;
+        return Style->Focus_Text_Color;
     }
     else if (Hovered){
-        return At<RGB_VALUE>(STYLES::Hover_Text_Color)->Value;
+        return Style->Hover_Text_Color;
     }
     else{
-        return At<RGB_VALUE>(STYLES::Text_Color)->Value;
+        return Style->Text_Color;
     }
 
 }
 
 GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
     if (Focused){
-        return At<RGB_VALUE>(STYLES::Focus_Background_Color)->Value;
+        return Style->Focus_Background_Color;
     }
     else if (Hovered){
-        return At<RGB_VALUE>(STYLES::Hover_Background_Color)->Value;
+        return Style->Hover_Background_Color;
     }
     else{
-        return At<RGB_VALUE>(STYLES::Background_Color)->Value;
+        return Style->Background_Color;
     }
 
 }
 
 std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
     if (Focused){
-        return {At<RGB_VALUE>(STYLES::Focus_Border_Color)->Value, At<RGB_VALUE>(STYLES::Focus_Border_Background_Color)->Value};
+        return {Style->Focus_Border_Color, Style->Focus_Border_Background_Color};
     }
     else if (Hovered){
-        return {At<RGB_VALUE>(STYLES::Hover_Border_Color)->Value, At<RGB_VALUE>(STYLES::Hover_Border_Background_Color)->Value};
+        return {Style->Hover_Border_Color, Style->Hover_Border_Background_Color};
     }
     else{
-        return {At<RGB_VALUE>(STYLES::Border_Color)->Value, At<RGB_VALUE>(STYLES::Border_Background_Color)->Value};
+        return {Style->Border_Color, Style->Border_Background_Color};
     }
 }
 
 //End of user constructors.
 
-GGUI::RGB GGUI::Element::Get_RGB_Style(std::string style_name){
-    return At<RGB_VALUE>(style_name)->Value;
-}
-
-int GGUI::Element::Get_Number_Style(std::string style_name){
-    return At<NUMBER_VALUE>(style_name)->Value;
-}
-
-bool GGUI::Element::Get_Bool_Style(std::string style_name){
-    return At<BOOL_VALUE>(style_name)->Value;
-}
-
-GGUI::VALUE* GGUI::Element::Get_Style(std::string style_name){
-    return At<VALUE>(style_name);
-}
-
-void GGUI::Element::Set_Style(std::string style_name, VALUE* value){
-    *At<VALUE>(style_name) = *value;
-
-    Dirty.Dirty(STAIN_TYPE::CLASS);
-    Update_Frame();
-}
-
 // Takes 0.0f to 1.0f
 void GGUI::Element::Set_Opacity(float Opacity){
     // Normalize the float of 0.0 - 1.0 to 0 - 100 int value
     Opacity *= 100;
-    At<NUMBER_VALUE>(STYLES::Opacity)->Value = (int)Opacity;
+    Style->Opacity = (int)Opacity;
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
@@ -429,7 +405,7 @@ void GGUI::Element::Set_Opacity(float Opacity){
 void GGUI::Element::Set_Opacity(unsigned char Opacity){
     // Normalize the unsigned char of 0 - 255 to 0  - 100
     float tmp = (float)Opacity / (float)std::numeric_limits<unsigned char>::max();;
-    At<NUMBER_VALUE>(STYLES::Opacity)->Value = (int)(tmp * 100);
+    Style->Opacity = (int)(tmp * 100);
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
@@ -437,37 +413,31 @@ void GGUI::Element::Set_Opacity(unsigned char Opacity){
 
 // returns int as 0 - 100
 int GGUI::Element::Get_Opacity(){
-    return At<NUMBER_VALUE>(STYLES::Opacity)->Value;
+    return Style->Opacity;
 }
 
 bool GGUI::Element::Is_Transparent(){
-    if (Style.find(STYLES::Opacity) == Style.end())
-        return false;
-    
     int FULL_OPACITY = 100;
 
     return Get_Opacity() < FULL_OPACITY;
 }
 
 bool GGUI::Element::Is_Anchored(){
-    if (Style.find(STYLES::Anchor) == Style.end())
-        return false;
-
-    return true;
+    return Style->Anchor != -1;
 }
 
 int GGUI::Element::Get_Anchor_Location(){
-    return At<NUMBER_VALUE>(STYLES::Anchor)->Value;
+    return Style->Anchor;
 }
 
 void GGUI::Element::Set_Anchor_At_Current_Location(){
-    Vector2 Current_Position = {0, 0}; // GGUI::Outbox.Buffer.Get_History_Dimensions();
+    Vector2 Current_Position = {-1, -1}; // GGUI::Outbox.Buffer.Get_History_Dimensions();
 
-    At<NUMBER_VALUE>(STYLES::Anchor)->Value = Current_Position.Y;
+    Style->Anchor = Current_Position.Y;
 }
 
 void GGUI::Element::Remove_Anchor(){
-    Style.erase(STYLES::Anchor);
+    Style->Anchor = -1;
 
     Dirty.Dirty(STAIN_TYPE::STRECH);
     Update_Frame();
@@ -487,7 +457,7 @@ unsigned int GGUI::Element::Get_Processed_Height(){
 }
 
 void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opacity, float Length){
-    SHADOW_VALUE* properties = At<SHADOW_VALUE>(STYLES::Shadow);
+    SHADOW_VALUE* properties = &Style->Shadow;
 
     properties->Color = Shadow_Color;
     properties->Direction = {Direction.X, Direction.Y, Length};
@@ -503,7 +473,7 @@ void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opaci
 }
 
 void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
-    SHADOW_VALUE* properties = At<SHADOW_VALUE>(STYLES::Shadow);
+    SHADOW_VALUE* properties = &Style->Shadow;
 
     properties->Color = Shadow_Color;
     properties->Direction = {0, 0, Length};
@@ -527,9 +497,12 @@ void GGUI::Element::Set_Parent(Element* parent){
 }
 
 void GGUI::Element::Parse_Classes(){
+    if (Style == nullptr){
+        Style = new Styling();
+    }
 
     bool Remember_To_Affect_Width_And_Height_Because_Of_Border = false;
-    bool Previus_Border_Value = At<BOOL_VALUE>(STYLES::Border)->Value;
+    bool Previus_Border_Value = Style->Border_Enabled;
 
     //Go through all classes and their styles and accumulate them.
     for(auto& Class : Classes){
@@ -539,23 +512,24 @@ void GGUI::Element::Parse_Classes(){
             Dirty.Dirty(STAIN_TYPE::CLASS);
         }
 
-        std::unordered_map<std::string, VALUE*> Current = GGUI::Classes[Class];
+        // TODO: FIX!!!
+        Styling Current = GGUI::Classes[Class];
 
-        for (auto& Current_Style : Current){
+        // for (auto& Current_Style : Current){
 
-            if (Current_Style.first == GGUI::STYLES::Border){
-                Remember_To_Affect_Width_And_Height_Because_Of_Border = true;
-            }
+        //     if (Current_Style.first == GGUI::STYLES::Border){
+        //         Remember_To_Affect_Width_And_Height_Because_Of_Border = true;
+        //     }
 
-            //Classes only affect globally, but local styles are priority.
-            if (Style.find(Current_Style.first) == Style.end()){
-                Style[Current_Style.first] = Current_Style.second->Copy();
-            }
-        }
+        //     //Classes only affect globally, but local styles are priority.
+        //     // if (Style.find(Current_Style.first) == Style.end()){
+        //     //     Style[Current_Style.first] = Current_Style.second->Copy();
+        //     // }
+        // }
     }
 
     if (Remember_To_Affect_Width_And_Height_Because_Of_Border){
-        Show_Border(At<BOOL_VALUE>(STYLES::Border)->Value, Previus_Border_Value);
+        Show_Border(Style->Border_Enabled, Previus_Border_Value);
     }
 }
 
@@ -569,12 +543,12 @@ void GGUI::Element::Set_Hover_State(bool h){
     Update_Frame();
 }
 
-std::unordered_map<std::string, GGUI::VALUE*> GGUI::Element::Get_Style(){
-    return Style;
+GGUI::Styling GGUI::Element::Get_Style(){
+    return *Style;
 }
 
-void GGUI::Element::Set_Style(std::unordered_map<std::string, VALUE*> css){
-    Style = css;
+void GGUI::Element::Set_Style(Styling css){
+    Style = new Styling(css);
 
     Update_Frame();
 }
@@ -603,8 +577,8 @@ bool GGUI::Element::Has(std::string s){
 }
 
 void GGUI::Element::Show_Border(bool b){
-    if (b != At<BOOL_VALUE>(STYLES::Border)->Value){
-        At<BOOL_VALUE>(STYLES::Border)->Value = b;
+    if (b != Style->Border_Enabled){
+        Style->Border_Enabled = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
     }
@@ -612,14 +586,14 @@ void GGUI::Element::Show_Border(bool b){
 
 void GGUI::Element::Show_Border(bool b, bool Previus_State){
     if (b != Previus_State){
-        At<BOOL_VALUE>(STYLES::Border)->Value = b;
+        Style->Border_Enabled = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
     }
 }
 
 bool GGUI::Element::Has_Border(){
-    return At<BOOL_VALUE>(STYLES::Border)->Value;
+    return Style->Border_Enabled;
 }
 
 void GGUI::Element::Add_Child(Element* Child){
@@ -634,7 +608,7 @@ void GGUI::Element::Add_Child(Element* Child){
         Child->Position.X + Child->Width > (Width - Border_Offsetter) || 
         Child->Position.Y + Child->Height > (Height - Border_Offsetter)
     ){
-        if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+        if (Style->Allow_Dynamic_Size){
             //Add the border offsetter to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = GGUI::Max(Child->Position.X + Child->Width + Border_Offsetter, Width);
             unsigned int New_Height = GGUI::Max(Child->Position.Y + Child->Height + Border_Offsetter, Height);
@@ -859,11 +833,11 @@ GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
 }
 
 void GGUI::Element::Set_Margin(Margin margin){
-    At<MARGIN_VALUE>(STYLES::Margin)->Value = margin;
+    Style->Margin = margin;
 }
 
 GGUI::Margin GGUI::Element::Get_Margin(){
-    return At<MARGIN_VALUE>(STYLES::Margin)->Value;
+    return Style->Margin;
 }
 
 GGUI::Element* GGUI::Element::Copy(){
@@ -891,9 +865,7 @@ GGUI::Element* GGUI::Element::Copy(){
     }
 
     // copy the styles over.
-    for (auto s : this->Style){
-        new_element->Style[s.first] = s.second->Copy();
-    }
+    *new_element->Style = *this->Style;
 
     //now also update the event handlers.
     for (auto& e : Event_Handlers){
@@ -981,9 +953,9 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
 }
 
 void GGUI::Element::Set_Background_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Background_Color)->Value = color;
-    if (At<RGB_VALUE>(STYLES::Border_Background_Color)->Value == At<RGB_VALUE>(STYLES::Background_Color)->Value)
-        At<RGB_VALUE>(STYLES::Border_Background_Color)->Value = color;
+    Style->Background_Color = color;
+    if (Style->Border_Background_Color == Style->Background_Color)
+        Style->Border_Background_Color = color;
         
     Dirty.Dirty(STAIN_TYPE::COLOR);
     
@@ -991,47 +963,47 @@ void GGUI::Element::Set_Background_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Background_Color(){
-    return At<RGB_VALUE>(STYLES::Background_Color)->Value;
+    return Style->Background_Color;
 }
 
 void GGUI::Element::Set_Border_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Border_Color)->Value = color;
+    Style->Border_Color = color;
     Dirty.Dirty(STAIN_TYPE::COLOR);
     Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Color(){
-    return At<RGB_VALUE>(STYLES::Border_Color)->Value;
+    return Style->Border_Color;
 }
 
 void GGUI::Element::Set_Border_Background_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Border_Background_Color)->Value = color;
+    Style->Border_Background_Color = color;
     Dirty.Dirty(STAIN_TYPE::COLOR);
     Update_Frame();
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Background_Color(){
-    return At<RGB_VALUE>(STYLES::Border_Background_Color)->Value;
+    return Style->Border_Background_Color;
 }
 
 void GGUI::Element::Set_Text_Color(RGB color){
-    At<RGB_VALUE>(STYLES::Text_Color)->Value = color;
+    Style->Text_Color = color;
     Dirty.Dirty(STAIN_TYPE::COLOR);
     Update_Frame();
 }
 
 void GGUI::Element::Allow_Dynamic_Size(bool True){
-    At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value = True; 
+    Style->Allow_Dynamic_Size = True; 
     // No need to update the frame, since this is used only on content change which has the update frame.
 }
 
 void GGUI::Element::Allow_Overflow(bool True){
-    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = True; 
+    Style->Allow_Overflow = True; 
     // No need to update the frame, since this is used only on content change which has the update frame.
 }
 
 GGUI::RGB GGUI::Element::Get_Text_Color(){
-    return At<RGB_VALUE>(STYLES::Text_Color)->Value;
+    return Style->Text_Color;
 }
 
 void GGUI::Element::Compute_Dynamic_Size(){
@@ -1054,7 +1026,7 @@ void GGUI::Element::Compute_Dynamic_Size(){
             unsigned int New_Height = (unsigned int)GGUI::Max(c->Position.Y + (signed int)c->Height + Border_Offsetter, (signed int)Height);
 
             // but only update those who actually allow dynamic sizing.
-            if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && (New_Width != Width || New_Height != Height)){
+            if (Style->Allow_Dynamic_Size && (New_Width != Width || New_Height != Height)){
                 Height = New_Height;
                 Width = New_Width;
                 Dirty.Dirty(STAIN_TYPE::STRECH);
@@ -1168,7 +1140,7 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
     if (!w->Has_Border())
         return;
 
-    GGUI::BORDER_STYLE_VALUE* custom_border = this->At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
+    GGUI::BORDER_STYLE_VALUE* custom_border = &Style->Border_Style;
 
     for (int y = 0; y < Height; y++){
         for (int x = 0; x < Width; x++){
@@ -1284,7 +1256,7 @@ inline GGUI::UTF* From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_B
 }
 
 std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
-    GGUI::BORDER_STYLE_VALUE* custom_border_style = e->At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
+    GGUI::BORDER_STYLE_VALUE* custom_border_style = &e->Get_Border_Style();
 
     return {
             {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style->TOP_LEFT_CORNER},
@@ -1307,14 +1279,14 @@ std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_M
 }
 
 void GGUI::Element::Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style){
-    *At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style) = style;
+    Style->Border_Style = style;
     Dirty.Dirty(STAIN_TYPE::EDGE);
 
     Show_Border(true);
 }
 
 GGUI::BORDER_STYLE_VALUE GGUI::Element::Get_Custom_Border_Style(){
-    return *At<GGUI::BORDER_STYLE_VALUE>(GGUI::STYLES::Border_Style);
+    return Style->Border_Style;
 }
 
 void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer){
@@ -1574,10 +1546,10 @@ std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, G
 }
 
 std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Current_Buffer){
-    if (Style.find(STYLES::Shadow) == Style.end())
+    if (!Style->Shadow.Enabled)
         return Current_Buffer;
 
-    SHADOW_VALUE& properties = *At<SHADOW_VALUE>(STYLES::Shadow);
+    SHADOW_VALUE& properties = Style->Shadow;
 
 
     // First calculate the new buffer size.
@@ -1694,12 +1666,10 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
 }
 
 std::vector<GGUI::UTF> GGUI::Element::Process_Opacity(std::vector<GGUI::UTF> Current_Buffer){
-    if (Style.find(STYLES::Opacity) == Style.end())
+    if (!Is_Transparent())
         return Current_Buffer;
 
-    NUMBER_VALUE properties = *At<NUMBER_VALUE>(STYLES::Opacity);
-
-    float As_Float = (float)properties.Value / 100.0f;
+    float As_Float = (float)Style->Opacity / 100.0f;
 
     for (unsigned int Y = 0; Y < Get_Processed_Height(); Y++){
         for (unsigned int X = 0; X < Get_Processed_Width(); X++){

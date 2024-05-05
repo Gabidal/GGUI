@@ -50,7 +50,7 @@ namespace GGUI{
 
     extern unsigned long long Delta_Time;
 
-    extern std::unordered_map<int, std::unordered_map<std::string, VALUE*>> Classes;
+    extern std::unordered_map<int, Styling> Classes;
     extern std::unordered_map<std::string, int> Class_Names;
 
     extern Window* Main;  
@@ -129,7 +129,7 @@ namespace GGUI{
 
     extern int Get_Free_Class_ID(std::string n);
 
-    extern void Add_Class(std::string name, std::unordered_map<std::string, VALUE*> Styling);
+    extern void Add_Class(std::string name, Styling Styling);
 
     extern void Init_Classes();
 

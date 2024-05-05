@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-GGUI::Text_Field::Text_Field(std::string Text, std::unordered_map<std::string, VALUE*> css) : Element(css) {
+GGUI::Text_Field::Text_Field(std::string Text, Styling css) : Element(css) {
     Data = Text;
     
     std::pair<int, int> D = Get_Text_Dimensions(Text);
@@ -85,7 +85,7 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     if (Dirty.is(STAIN_TYPE::TEXT)){
         Dirty.Clean(STAIN_TYPE::TEXT);
 
-        switch ((TEXT_LOCATION)At<NUMBER_VALUE>(STYLES::Text_Position)->Value)
+        switch ((TEXT_LOCATION)Style->Text_Position)
         {
         case TEXT_LOCATION::CENTER:
             Center_Text(this, Data, Parent, Result);
@@ -113,18 +113,18 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
 }
 
 void GGUI::Text_Field::Show_Border(bool state){
-    if (state && At<BOOL_VALUE>(STYLES::Border)->Value == false){
+    if (state && Style->Border_Enabled == false){
         //enlarge the text field area to compas the borders
         Width += 2;
         Height += 2;
     }
-    else if (!state && At<BOOL_VALUE>(STYLES::Border)->Value == true){
+    else if (!state && Style->Border_Enabled == true){
         //shrink the text field area to compas the borders
         Width -= 2;
         Height -= 2;
     }
     
-    At<BOOL_VALUE>(STYLES::Border)->Value = state;
+    Style->Border_Enabled = state;
     Dirty.Dirty(STAIN_TYPE::EDGE);
 
     Update_Frame();
@@ -336,13 +336,13 @@ std::string GGUI::Text_Field::Get_Data(){
 }
 
 void GGUI::Text_Field::Set_Text_Position(TEXT_LOCATION Text_Position){
-    At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)Text_Position;
+    Style->Text_Position = (int)Text_Position;
     Dirty.Dirty(STAIN_TYPE::TEXT);
     Update_Frame();
 }
 
 GGUI::TEXT_LOCATION GGUI::Text_Field::Get_Text_Position(){
-    return (TEXT_LOCATION)At<NUMBER_VALUE>(STYLES::Text_Position)->Value;
+    return (TEXT_LOCATION)Style->Text_Position;
 }
 
 std::string GGUI::Text_Field::Get_Name() const {
@@ -432,12 +432,12 @@ void GGUI::Text_Field::Enable_Text_Input(){
         if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
 
             std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
-            if (At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
+            if (Style->Allow_Overflow){
                 Data.push_back(input);
                 Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
                 Update_Frame();
             }
-            else if (At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value){
+            else if (Style->Allow_Dynamic_Size){
 
                 //check what to grow.
                 if (Dimensions.first > Width - (Has_Border() * 2)){
@@ -472,22 +472,22 @@ void GGUI::Text_Field::Disable_Text_Input(){
 
 void GGUI::Text_Field::Enable_Input_Overflow(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = true;
+    Style->Allow_Overflow = true;
 }
 
 void GGUI::Text_Field::Disable_Input_Overflow(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = false;
+    Style->Allow_Overflow = false;
 }
 
 void GGUI::Text_Field::Enable_Dynamic_Size(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = true;
+    Style->Allow_Overflow = true;
 }
 
 void GGUI::Text_Field::Disable_Dynamic_Size(){
 
-    At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value = false;
+    Style->Allow_Overflow = false;
 }
 
 GGUI::Element* Translate_Text_Fields(GGUI::HTML_Node* input){

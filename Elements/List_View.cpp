@@ -9,7 +9,7 @@
 #undef BOOL
 #undef NUMBER
 
-GGUI::List_View::List_View(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+GGUI::List_View::List_View(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
     GGUI::Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);
@@ -31,7 +31,7 @@ GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, Grow_Dir
 
     GGUI::Pause_Renderer([=](){
         Set_Parent(parent);
-        At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)grow_direction;
+        Style->Flow_Priority = (int)grow_direction;
 
         for (auto i : Tree)
             Add_Child(i);
@@ -125,7 +125,7 @@ GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow
     });
 }
 
-GGUI::Scroll_View::Scroll_View(std::unordered_map<std::string, VALUE*> css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+GGUI::Scroll_View::Scroll_View(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
     GGUI::Pause_Renderer([=](){
         if (width != 0)
             Set_Width(width);
@@ -240,7 +240,7 @@ void GGUI::List_View::Add_Child(Element* e){
         unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset * 2;
 
 
-        if (At<BOOL_VALUE>(STYLES::Wrap)->Value){
+        if (Style->Wrap){
             Report(
                 "Overflow wrapping is not supported!"
             );
@@ -250,7 +250,7 @@ void GGUI::List_View::Add_Child(Element* e){
 
             // Add reverse support for the list to grow from the end -> start.
             // Add sticky support for two child elements with borders to loan the same border space.
-            if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
+            if (Style->Flow_Priority == (int)Grow_Direction::ROW){
 
                 // Affect minimum width needed, when current child has borders as well as the previus one.
                 signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
@@ -259,7 +259,7 @@ void GGUI::List_View::Add_Child(Element* e){
                 unsigned long long Proposed_Width = Max(Last_Child->Get_Position().X + Child_Needs_Minimum_Width_Of - Width_Modifier, Get_Width());
 
                 // Check if the parent has the capability to allow to stretch in the direction if this list elements.
-                if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
+                if (!Parent->Is_Dynamic_Size_Allowed() && !Parent->Is_Overflow_Allowed()){
                     Height = Min(max_height, Proposed_Height);
                     Width = Min(max_width, Proposed_Width);
                 }
@@ -285,7 +285,7 @@ void GGUI::List_View::Add_Child(Element* e){
                 unsigned long long Proposed_Height = Max(Last_Child->Get_Position().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, Get_Height());
 
                 // Check if the parent has the capability to allow to stretch in the direction if this list elements.
-                if (!Parent->At<BOOL_VALUE>(STYLES::Allow_Dynamic_Size)->Value && !Parent->At<BOOL_VALUE>(STYLES::Allow_Overflow)->Value){
+                if (!Parent->Is_Dynamic_Size_Allowed() && !Parent->Is_Overflow_Allowed()){
                     Width = Min(max_width, Proposed_Width);
                     Height = Min(max_height, Proposed_Height);
                 }
@@ -345,7 +345,7 @@ bool GGUI::List_View::Remove(Element* remove){
         bool Is_Stretcher = remove->Get_Width() == Inner_Width || remove->Get_Height() == Inner_Height;
 
         // now sadly we need to branch the code into the vertical and horizontal calculations.
-        if (At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value == (int)Grow_Direction::ROW){
+        if (Style->Flow_Priority == (int)Grow_Direction::ROW){
             // represents the horizontal list
             unsigned int Gap = remove->Get_Width();
 
@@ -416,9 +416,9 @@ void GGUI::Scroll_View::Add_Child(Element* e) {
 }
 
 void GGUI::Scroll_View::Allow_Scrolling(bool allow){
-    bool previous = At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
+    bool previous = Style->Allow_Scrolling;
     if (allow != previous){
-        At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value = allow;
+        Style->Allow_Scrolling = allow;
 
         // no need to dirty or update frame, this feature is a non-passive change so it needs the user to do something after the enable.
     }

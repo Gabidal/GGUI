@@ -158,22 +158,22 @@ namespace GGUI{
     }
 
     void Progress_Bar::Set_Fill_Color(RGB value){
-        At<RGB_VALUE>(STYLES::Text_Color)->Value = value;
+        Style->Text_Color = value;
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
         Update_Frame();
     }
 
     void Progress_Bar::Set_Empty_Color(RGB value){
-        At<RGB_VALUE>(STYLES::Background_Color)->Value = value;
+        Style->Background_Color = value;
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
         Update_Frame();
     }
 
     void Progress_Bar::Show_Border(bool b){
-        if (b != At<BOOL_VALUE>(STYLES::Border)->Value){
-            At<BOOL_VALUE>(STYLES::Border)->Value = b;
+        if (b != Style->Border_Enabled){
+            Style->Border_Enabled = b;
 
             if (b) Height += 2;
             else Height -= 2;

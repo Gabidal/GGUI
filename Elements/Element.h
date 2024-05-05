@@ -946,63 +946,6 @@ namespace GGUI{
         }  
     };
 
-    class NUMBER_VALUE : public VALUE{
-    public:
-        int Value = 0;
-
-        NUMBER_VALUE(int value){
-            Value = value;
-            Type = VALUE_TYPES::NUMBER;
-        }
-
-        NUMBER_VALUE(){
-            Type = VALUE_TYPES::NUMBER;
-        }
-
-        VALUE* Copy() override {
-            NUMBER_VALUE* copy = new NUMBER_VALUE(Value);
-            return copy;
-        } 
-    };
-
-    class RGB_VALUE : public VALUE{
-    public:
-        RGB Value = RGB();
-
-        RGB_VALUE(RGB value){
-            Value = value;
-            Type = VALUE_TYPES::RGB;
-        }
-
-        RGB_VALUE(){
-            Type = VALUE_TYPES::RGB;
-        }
-
-        VALUE* Copy() override {
-            RGB_VALUE* copy = new RGB_VALUE(Value);
-            return copy;
-        } 
-    };
-
-    class BOOL_VALUE : public VALUE{
-    public:
-        bool Value = false;
-
-        BOOL_VALUE(bool value){
-            Value = value;
-            Type = VALUE_TYPES::BOOL;
-        }
-
-        BOOL_VALUE(){
-            Type = VALUE_TYPES::BOOL;
-        }
-
-        VALUE* Copy() override {
-            BOOL_VALUE* copy = new BOOL_VALUE(Value);
-            return copy;
-        } 
-    };
-
     class COORDINATES_VALUE : public VALUE{
     public:
         Coordinates Value = Coordinates();
@@ -1022,30 +965,12 @@ namespace GGUI{
         } 
     };
 
-    class MARGIN_VALUE : public VALUE{
-    public:
-        Margin Value = Margin();
-
-        MARGIN_VALUE(){
-            Type = VALUE_TYPES::MARGIN;
-        }
-
-        MARGIN_VALUE(Margin value){
-            Value = value;
-            Type = VALUE_TYPES::MARGIN;
-        }
-
-        VALUE* Copy() override {
-            MARGIN_VALUE* copy = new MARGIN_VALUE(Value);
-            return copy;
-        } 
-    };
-
     class SHADOW_VALUE : public VALUE{
     public:
         Vector3 Direction = {0, 0, 0.5};
         RGB Color = {};
         float Opacity = 1;
+        bool Enabled = false;
 
         SHADOW_VALUE(){}
     };
@@ -1232,6 +1157,42 @@ namespace GGUI{
     // For templates.
     extern std::vector<Action*> Event_Handlers;
 
+    class Styling{
+    public:
+        bool Border_Enabled = false;
+        RGB Text_Color;
+        RGB Background_Color;
+        RGB Border_Color;
+        RGB Border_Background_Color;
+        
+        RGB Hover_Border_Color;
+        RGB Hover_Text_Color;
+        RGB Hover_Background_Color;
+        RGB Hover_Border_Background_Color;
+
+        RGB Focus_Border_Color;
+        RGB Focus_Text_Color;
+        RGB Focus_Background_Color;
+        RGB Focus_Border_Background_Color;
+
+        BORDER_STYLE_VALUE Border_Style;
+        
+        int Flow_Priority;
+        bool Wrap = false;
+
+        int Text_Position;
+        bool Allow_Overflow = false;
+        bool Allow_Dynamic_Size = false;
+        Margin Margin;
+
+        SHADOW_VALUE Shadow;
+        int Opacity = 100;  // 100%
+
+        int Anchor = -1;    // No Anchoring
+
+        bool Allow_Scrolling = false;
+    };
+
     class Element{
     protected:
         Coordinates Position;
@@ -1258,7 +1219,7 @@ namespace GGUI{
 
         std::string Name = "";
 
-        std::unordered_map<std::string, VALUE*> Style;
+        Styling* Style = nullptr;
 
         std::unordered_map<State, std::function<void()>> State_Handlers;
     public:
@@ -1267,7 +1228,7 @@ namespace GGUI{
 
         Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
 
-        Element(std::unordered_map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+        Element(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
 
         Element(
             unsigned int width,
@@ -1344,9 +1305,9 @@ namespace GGUI{
 
         void Check(State s);
 
-        std::unordered_map<std::string, VALUE*> Get_Style();
+        Styling Get_Style();
 
-        void Set_Style(std::unordered_map<std::string, VALUE*> css);
+        void Set_Style(Styling css);
 
         virtual Element* Handle_Or_Operator(Element* other){
             Set_Style(other->Get_Style());
@@ -1354,21 +1315,15 @@ namespace GGUI{
 
         void Add_Class(std::string class_name);
 
-        RGB Get_RGB_Style(std::string style_name);
-
-        int Get_Number_Style(std::string style_name);
-
-        bool Get_Bool_Style(std::string style_name);
-
-        VALUE* Get_Style(std::string style_name);
-
-        void Set_Style(std::string style_name, VALUE* value);
-
         // Takes 0.0f to 1.0f
         void Set_Opacity(float Opacity);
 
         // RGBA - Alpha channel. 0 - 255
         void Set_Opacity(unsigned char Opacity);
+
+        BORDER_STYLE_VALUE Get_Border_Style(){
+            return Style->Border_Style;
+        }
 
         // return int as 0 - 100
         int Get_Opacity(); 
@@ -1476,8 +1431,16 @@ namespace GGUI{
 
         void Allow_Dynamic_Size(bool True);
 
+        bool Is_Dynamic_Size_Allowed(){
+            return Style->Allow_Dynamic_Size;
+        }
+
         // Allows by default hidden overflow, so that child elements can exceed the parent element dimension limits, whiteout resizing parent.  
         void Allow_Overflow(bool True);
+
+        bool Is_Overflow_Allowed(){
+            return Style->Allow_Overflow;
+        }
         
         RGB Get_Text_Color();
 
@@ -1572,17 +1535,6 @@ namespace GGUI{
             }
 
             return result;
-        }
-
-        template<typename T>
-        T* At(std::string s){
-            T*& v = (T*&)Style[s];
-
-            if (v == nullptr){
-                v = new T();
-            }
-
-            return v;
         }
 
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
