@@ -1335,13 +1335,13 @@ namespace GGUI{
     }
 
     GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
-        Super_String Result(Width * Height);
+        Super_String Result(Width * Height * Constants::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);
 
-        Super_String tmp_container(22);  // We can expect the maximum size each can omit.
-        Super_String Text_Overhead(5);
-        Super_String Background_Overhead(5);
-        Super_String Text_Colour(5);
-        Super_String Background_Colour(5);
+        Super_String tmp_container(Constants::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
+        Super_String Text_Overhead(Constants::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        Super_String Background_Overhead(Constants::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        Super_String Text_Colour(Constants::Maximum_Needed_Pre_Allocation_For_Color);
+        Super_String Background_Colour(Constants::Maximum_Needed_Pre_Allocation_For_Color);
 
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){

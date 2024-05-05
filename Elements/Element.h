@@ -326,6 +326,32 @@ namespace GGUI{
             Compact_String("240", 3), Compact_String("241", 3), Compact_String("242", 3), Compact_String("243", 3), Compact_String("244", 3), Compact_String("245", 3), Compact_String("246", 3), Compact_String("247", 3), Compact_String("248", 3), Compact_String("249", 3),
             Compact_String("250", 3), Compact_String("251", 3), Compact_String("252", 3), Compact_String("253", 3), Compact_String("254", 3), Compact_String("255", 3)
         };
+        
+        // 1 to ESC_CODE
+        // 1 to Text_Color | Background_Color
+        // 1 to SEPERATE
+        // 1 to USE_RGB
+        // 1 to SEPERATE
+        static const unsigned int Maximum_Needed_Pre_Allocation_For_Over_Head = 1 + 1 + 1 + 1 + 1;
+
+        // 1 to Red
+        // 1 to SEPERATE
+        // 1 to Green
+        // 1 to SEPERATE
+        // 1 to Blue
+        static const unsigned int Maximum_Needed_Pre_Allocation_For_Color = 1 + 1 + 1 + 1 + 1;
+
+        // 5 to Text_Overhead
+        // 5 to Text_Colour
+        // 1 to END_COMMAND
+        // 5 to Background_Overhead
+        // 5 to Background_Colour
+        // 1 to END_COMMAND
+        // 1 to Data
+        // 1 to RESET_COLOR
+        static const unsigned int Maximum_Needed_Pre_Allocation_For_Encoded_Super_String = 
+            Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 +
+            Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 + 1 + 1;
     }
     
     namespace BUTTON_STATES{
@@ -450,7 +476,7 @@ namespace GGUI{
 
         std::string Get_Colour() const;
 
-        // Needs the Result to be initialized with atleast 5
+        // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Color
         void Get_Colour_As_Super_String(Super_String* Result) const;
     
         std::string Get_Over_Head(bool Is_Text_Color = true) const{
@@ -462,7 +488,7 @@ namespace GGUI{
             }
         }
 
-        // Needs the Result to be initialized with atleast 5
+        // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Over_Head
         void Get_Over_Head_As_Super_String(Super_String* Result, bool Is_Text_Color = true) const{
             if (Is_Text_Color){
                 Result->Add(Constants::ESC_CODE, Constants::Text_Color, Constants::SEPERATE, Constants::USE_RGB, Constants::SEPERATE);
@@ -771,10 +797,10 @@ namespace GGUI{
         std::string To_String();
         std::string To_Encoded_String();    // For UTF Strip Encoding.
 
-        // Needs Result to be initalized with 22 at max.
+        // Needs Result to be initalized with Maximum_Needed_Pre_Allocation_For_Super_String at max.
         void To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
         
-        // Needs Result to be initalized with 22 at max.
+        // Needs Result to be initalized with Maximum_Needed_Pre_Allocation_For_Super_String at max.
         void To_Encoded_Super_String(Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
 
         void operator=(char text){
