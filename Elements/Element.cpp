@@ -513,7 +513,7 @@ void GGUI::Element::Parse_Classes(){
         }
 
         // TODO: FIX!!!
-        Styling Current = GGUI::Classes[Class];
+        Style = new Styling(GGUI::Classes[Class]);
 
         // for (auto& Current_Style : Current){
 
