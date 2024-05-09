@@ -12,7 +12,7 @@
 
 namespace GGUI{
     namespace SYMBOLS{
-        GGUI::UTF EMPTY_UTF(' ');
+        GGUI::UTF EMPTY_UTF(' ', {GGUI::COLOR::WHITE, GGUI::COLOR::BLACK});
     }
 }
 
@@ -29,8 +29,7 @@ void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
     );
 }
     
-
-GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values){
+GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
     if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
         BOTTOM_LEFT_CORNER = values[1];
@@ -331,13 +330,13 @@ void GGUI::Element::Inherit_States_From(Element* abstract){
 
 std::pair<GGUI::RGB, GGUI::RGB>  GGUI::Element::Compose_All_Text_RGB_Values(){
     if (Focused){
-        return {Style->Focus_Text_Color, Style->Focus_Background_Color};
+        return {Style->Focus_Text_Color.Value, Style->Focus_Background_Color.Value};
     }
     else if (Hovered){
-        return {Style->Hover_Text_Color, Style->Hover_Background_Color};
+        return {Style->Hover_Text_Color.Value, Style->Hover_Background_Color.Value};
     }
     else{
-        return {Style->Text_Color, Style->Background_Color};
+        return {Style->Text_Color.Value, Style->Background_Color.Value};
     }
 }
 
@@ -354,39 +353,39 @@ GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
     // }
 
     if (Focused){
-        return Style->Focus_Text_Color;
+        return Style->Focus_Text_Color.Value;
     }
     else if (Hovered){
-        return Style->Hover_Text_Color;
+        return Style->Hover_Text_Color.Value;
     }
     else{
-        return Style->Text_Color;
+        return Style->Text_Color.Value;
     }
 
 }
 
 GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
     if (Focused){
-        return Style->Focus_Background_Color;
+        return Style->Focus_Background_Color.Value;
     }
     else if (Hovered){
-        return Style->Hover_Background_Color;
+        return Style->Hover_Background_Color.Value;
     }
     else{
-        return Style->Background_Color;
+        return Style->Background_Color.Value;
     }
 
 }
 
 std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
     if (Focused){
-        return {Style->Focus_Border_Color, Style->Focus_Border_Background_Color};
+        return {Style->Focus_Border_Color.Value, Style->Focus_Border_Background_Color.Value};
     }
     else if (Hovered){
-        return {Style->Hover_Border_Color, Style->Hover_Border_Background_Color};
+        return {Style->Hover_Border_Color.Value, Style->Hover_Border_Background_Color.Value};
     }
     else{
-        return {Style->Border_Color, Style->Border_Background_Color};
+        return {Style->Border_Color.Value, Style->Border_Background_Color.Value};
     }
 }
 
@@ -413,7 +412,7 @@ void GGUI::Element::Set_Opacity(unsigned char Opacity){
 
 // returns int as 0 - 100
 int GGUI::Element::Get_Opacity(){
-    return Style->Opacity;
+    return Style->Opacity.Value;
 }
 
 bool GGUI::Element::Is_Transparent(){
@@ -423,11 +422,11 @@ bool GGUI::Element::Is_Transparent(){
 }
 
 bool GGUI::Element::Is_Anchored(){
-    return Style->Anchor != -1;
+    return Style->Anchor.Value != -1;
 }
 
 int GGUI::Element::Get_Anchor_Location(){
-    return Style->Anchor;
+    return Style->Anchor.Value;
 }
 
 void GGUI::Element::Set_Anchor_At_Current_Location(){
@@ -502,34 +501,23 @@ void GGUI::Element::Parse_Classes(){
     }
 
     bool Remember_To_Affect_Width_And_Height_Because_Of_Border = false;
-    bool Previus_Border_Value = Style->Border_Enabled;
+    bool Previus_Border_Value = Style->Border_Enabled.Value;
 
     //Go through all classes and their styles and accumulate them.
     for(auto& Class : Classes){
 
-        // The class wantwd has not been yet constructed.
+        // The class wanted has not been yet constructed.
+        // Pass it for the next render iteration
         if (GGUI::Classes.find(Class) == GGUI::Classes.end()){
             Dirty.Dirty(STAIN_TYPE::CLASS);
         }
 
-        // TODO: FIX!!!
-        Style = new Styling(GGUI::Classes[Class]);
-
-        // for (auto& Current_Style : Current){
-
-        //     if (Current_Style.first == GGUI::STYLES::Border){
-        //         Remember_To_Affect_Width_And_Height_Because_Of_Border = true;
-        //     }
-
-        //     //Classes only affect globally, but local styles are priority.
-        //     // if (Style.find(Current_Style.first) == Style.end()){
-        //     //     Style[Current_Style.first] = Current_Style.second->Copy();
-        //     // }
-        // }
+        Style->Copy(new Styling(GGUI::Classes[Class]));
+        
     }
 
     if (Remember_To_Affect_Width_And_Height_Because_Of_Border){
-        Show_Border(Style->Border_Enabled, Previus_Border_Value);
+        Show_Border(Style->Border_Enabled.Value, Previus_Border_Value);
     }
 }
 
@@ -577,7 +565,7 @@ bool GGUI::Element::Has(std::string s){
 }
 
 void GGUI::Element::Show_Border(bool b){
-    if (b != Style->Border_Enabled){
+    if (b != Style->Border_Enabled.Value){
         Style->Border_Enabled = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
@@ -593,7 +581,7 @@ void GGUI::Element::Show_Border(bool b, bool Previus_State){
 }
 
 bool GGUI::Element::Has_Border(){
-    return Style->Border_Enabled;
+    return Style->Border_Enabled.Value;
 }
 
 void GGUI::Element::Add_Child(Element* Child){
@@ -608,7 +596,7 @@ void GGUI::Element::Add_Child(Element* Child){
         Child->Position.X + Child->Width > (Width - Border_Offsetter) || 
         Child->Position.Y + Child->Height > (Height - Border_Offsetter)
     ){
-        if (Style->Allow_Dynamic_Size){
+        if (Style->Allow_Dynamic_Size.Value){
             //Add the border offsetter to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = GGUI::Max(Child->Position.X + Child->Width + Border_Offsetter, Width);
             unsigned int New_Height = GGUI::Max(Child->Position.Y + Child->Height + Border_Offsetter, Height);
@@ -832,11 +820,11 @@ GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
     return Result;
 }
 
-void GGUI::Element::Set_Margin(Margin margin){
+void GGUI::Element::Set_Margin(MARGIN_VALUE margin){
     Style->Margin = margin;
 }
 
-GGUI::Margin GGUI::Element::Get_Margin(){
+GGUI::MARGIN_VALUE GGUI::Element::Get_Margin(){
     return Style->Margin;
 }
 
@@ -954,7 +942,7 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
 
 void GGUI::Element::Set_Background_Color(RGB color){
     Style->Background_Color = color;
-    if (Style->Border_Background_Color == Style->Background_Color)
+    if (Style->Border_Background_Color.Value == Style->Background_Color.Value)
         Style->Border_Background_Color = color;
         
     Dirty.Dirty(STAIN_TYPE::COLOR);
@@ -963,7 +951,7 @@ void GGUI::Element::Set_Background_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Background_Color(){
-    return Style->Background_Color;
+    return Style->Background_Color.Value;
 }
 
 void GGUI::Element::Set_Border_Color(RGB color){
@@ -973,7 +961,7 @@ void GGUI::Element::Set_Border_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Color(){
-    return Style->Border_Color;
+    return Style->Border_Color.Value;
 }
 
 void GGUI::Element::Set_Border_Background_Color(RGB color){
@@ -983,7 +971,7 @@ void GGUI::Element::Set_Border_Background_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Background_Color(){
-    return Style->Border_Background_Color;
+    return Style->Border_Background_Color.Value;
 }
 
 void GGUI::Element::Set_Text_Color(RGB color){
@@ -997,13 +985,21 @@ void GGUI::Element::Allow_Dynamic_Size(bool True){
     // No need to update the frame, since this is used only on content change which has the update frame.
 }
 
+bool GGUI::Element::Is_Dynamic_Size_Allowed(){
+    return Style->Allow_Dynamic_Size.Value;
+}
+
 void GGUI::Element::Allow_Overflow(bool True){
     Style->Allow_Overflow = True; 
     // No need to update the frame, since this is used only on content change which has the update frame.
 }
 
+bool GGUI::Element::Is_Overflow_Allowed(){
+    return Style->Allow_Overflow.Value;
+}
+
 GGUI::RGB GGUI::Element::Get_Text_Color(){
-    return Style->Text_Color;
+    return Style->Text_Color.Value;
 }
 
 void GGUI::Element::Compute_Dynamic_Size(){
@@ -1026,7 +1022,7 @@ void GGUI::Element::Compute_Dynamic_Size(){
             unsigned int New_Height = (unsigned int)GGUI::Max(c->Position.Y + (signed int)c->Height + Border_Offsetter, (signed int)Height);
 
             // but only update those who actually allow dynamic sizing.
-            if (Style->Allow_Dynamic_Size && (New_Width != Width || New_Height != Height)){
+            if (Style->Allow_Dynamic_Size.Value && (New_Width != Width || New_Height != Height)){
                 Height = New_Height;
                 Width = New_Width;
                 Dirty.Dirty(STAIN_TYPE::STRECH);
@@ -1669,7 +1665,7 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Opacity(std::vector<GGUI::UTF> Cur
     if (!Is_Transparent())
         return Current_Buffer;
 
-    float As_Float = (float)Style->Opacity / 100.0f;
+    float As_Float = (float)Style->Opacity.Value / 100.0f;
 
     for (unsigned int Y = 0; Y < Get_Processed_Height(); Y++){
         for (unsigned int X = 0; X < Get_Processed_Width(); X++){

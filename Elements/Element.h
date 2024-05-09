@@ -906,63 +906,84 @@ namespace GGUI{
         }
     };
 
-    class Margin{
+    // --STYLING STUFF--
+
+    enum class VALUE_STATE{
+        UNINITIALIZED,
+        INITIALIZED,
+        VALUE
+    };
+
+    class VALUE{
+    public:
+        VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
+
+        VALUE(VALUE_STATE status) : Status(status){}
+
+        VALUE() = default;
+
+        // Default VALUE wont do any parsing.
+        static VALUE* Parse(std::string val){
+            return nullptr;
+        }
+    
+    };
+
+    class MARGIN_VALUE : public VALUE{
     public:
         unsigned int Top = 0;
         unsigned int Bottom = 0;
         unsigned int Left = 0;
         unsigned int Right = 0;
 
-        Margin(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0){
+        MARGIN_VALUE(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
             Top = top;
             Bottom = bottom;
             Left = left;
             Right = right;
         }
-    };
 
-    enum class VALUE_TYPES{
-        UNDEFINED,
-        NUMBER,
-        RGB,
-        BOOL,
-        COORDINATES,
-        MARGIN,
-    };
+        // operator overload for copy operator
+        MARGIN_VALUE& operator=(const MARGIN_VALUE& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Top = other.Top;
+                Bottom = other.Bottom;
+                Left = other.Left;
+                Right = other.Right;
 
-    class VALUE{
-    public:
-        VALUE_TYPES Type = VALUE_TYPES::UNDEFINED;
-
-        VALUE(){}
-
-        virtual VALUE* Copy() {
-            return nullptr;
-        };
-
-        // Default VALUE wont do any parsing.
-        static VALUE* Parse(std::string val){
-            return nullptr;
-        }  
+                Status = other.Status;
+            }
+            return *this;
+        }
     };
 
     class COORDINATES_VALUE : public VALUE{
     public:
         Coordinates Value = Coordinates();
 
-        COORDINATES_VALUE(Coordinates value){
+        COORDINATES_VALUE(Coordinates value, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
             Value = value;
-            Type = VALUE_TYPES::COORDINATES;
         }
 
-        COORDINATES_VALUE(){
-            Type = VALUE_TYPES::COORDINATES;
+        COORDINATES_VALUE() = default;
+
+        // operator overload for copy operator
+        COORDINATES_VALUE& operator=(const COORDINATES_VALUE& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
         }
 
-        VALUE* Copy() override {
-            COORDINATES_VALUE* copy = new COORDINATES_VALUE(Value);
-            return copy;
-        } 
+        COORDINATES_VALUE& operator=(const GGUI::Coordinates other){
+            Value = other;
+            Status = VALUE_STATE::VALUE;
+            return *this;
+        }
     };
 
     class SHADOW_VALUE : public VALUE{
@@ -972,7 +993,27 @@ namespace GGUI{
         float Opacity = 1;
         bool Enabled = false;
 
-        SHADOW_VALUE(){}
+        SHADOW_VALUE(Vector3 direction, RGB color, float opacity, bool enabled, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
+            Direction = direction;
+            Color = color;
+            Opacity = opacity;
+            Enabled = enabled;
+        }
+
+        SHADOW_VALUE() : VALUE(){}
+
+        SHADOW_VALUE& operator=(const SHADOW_VALUE& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Direction = other.Direction;
+                Color = other.Color;
+                Opacity = other.Opacity;
+                Enabled = other.Enabled;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
     };
 
     class BORDER_STYLE_VALUE : public VALUE{
@@ -989,49 +1030,187 @@ namespace GGUI{
         const char* HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
         const char* CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
 
-        BORDER_STYLE_VALUE(std::vector<const char*> values);
+        BORDER_STYLE_VALUE(std::vector<const char*> values, VALUE_STATE Default = VALUE_STATE::VALUE);
 
         // Re-import defaults:
-        BORDER_STYLE_VALUE() = default;
+        BORDER_STYLE_VALUE() = default; // This should also call the base class
         ~BORDER_STYLE_VALUE() = default;
         BORDER_STYLE_VALUE(const BORDER_STYLE_VALUE& other) = default;
-        BORDER_STYLE_VALUE& operator=(const BORDER_STYLE_VALUE& other) = default;
+        BORDER_STYLE_VALUE& operator=(const BORDER_STYLE_VALUE& other){
+            if (other.Status >= Status){
+                TOP_LEFT_CORNER = other.TOP_LEFT_CORNER;
+                BOTTOM_LEFT_CORNER = other.BOTTOM_LEFT_CORNER;
+                TOP_RIGHT_CORNER = other.TOP_RIGHT_CORNER;
+                BOTTOM_RIGHT_CORNER = other.BOTTOM_RIGHT_CORNER;
+                VERTICAL_LINE = other.VERTICAL_LINE;
+                HORIZONTAL_LINE = other.HORIZONTAL_LINE;
+                VERTICAL_RIGHT_CONNECTOR = other.VERTICAL_RIGHT_CONNECTOR;
+                VERTICAL_LEFT_CONNECTOR = other.VERTICAL_LEFT_CONNECTOR;
+                HORIZONTAL_BOTTOM_CONNECTOR = other.HORIZONTAL_BOTTOM_CONNECTOR;
+                HORIZONTAL_TOP_CONNECTOR = other.HORIZONTAL_TOP_CONNECTOR;
+                CROSS_CONNECTOR = other.CROSS_CONNECTOR;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+    };
+
+    class RGB_VALUE : public VALUE{
+    public:
+        RGB Value = RGB(0, 0, 0);
+
+        RGB_VALUE(RGB value, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
+            Value = value;
+        }
+
+        RGB_VALUE() = default;
+
+        // operator overload for copy operator
+        RGB_VALUE& operator=(const RGB_VALUE& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        RGB_VALUE& operator=(const GGUI::RGB other){
+            Value = other;
+            Status = VALUE_STATE::VALUE;
+            return *this;
+        }
+    };
+
+    class BOOL_VALUE : public VALUE{
+    public:
+        bool Value = false;
+
+        BOOL_VALUE(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
+            Value = value;
+        }
+
+        BOOL_VALUE() = default;
+
+        // operator overload for copy operator
+        BOOL_VALUE& operator=(const BOOL_VALUE& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        BOOL_VALUE& operator=(const bool other){
+            Value = other;
+            Status = VALUE_STATE::VALUE;
+            return *this;
+        }
+    };
+    
+    class NUMBER_VALUE : public VALUE{
+    public:
+        int Value = 0;
+
+        NUMBER_VALUE(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
+            Value = value;
+        }
+
+        NUMBER_VALUE() = default;
+
+        // operator overload for copy operator
+        NUMBER_VALUE& operator=(const NUMBER_VALUE& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        NUMBER_VALUE& operator=(const int other){
+            Value = other;
+            Status = VALUE_STATE::VALUE;
+            return *this;
+        }
+    };
+
+    class Styling{
+    public:
+        BOOL_VALUE Border_Enabled = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+        RGB_VALUE Text_Color;
+        RGB_VALUE Background_Color;
+        RGB_VALUE Border_Color;
+        RGB_VALUE Border_Background_Color;
+        
+        RGB_VALUE Hover_Border_Color;
+        RGB_VALUE Hover_Text_Color;
+        RGB_VALUE Hover_Background_Color;
+        RGB_VALUE Hover_Border_Background_Color;
+
+        RGB_VALUE Focus_Border_Color;
+        RGB_VALUE Focus_Text_Color;
+        RGB_VALUE Focus_Background_Color;
+        RGB_VALUE Focus_Border_Background_Color;
+
+        BORDER_STYLE_VALUE Border_Style;
+        
+        NUMBER_VALUE Flow_Priority;
+        BOOL_VALUE Wrap = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+
+        NUMBER_VALUE Text_Position;
+        BOOL_VALUE Allow_Overflow = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+        BOOL_VALUE Allow_Dynamic_Size = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+        MARGIN_VALUE Margin;
+
+        SHADOW_VALUE Shadow;
+        NUMBER_VALUE Opacity = NUMBER_VALUE(100, VALUE_STATE::INITIALIZED);  // 100%
+
+        NUMBER_VALUE Anchor = NUMBER_VALUE(-1, VALUE_STATE::INITIALIZED);    // No Anchoring
+
+        BOOL_VALUE Allow_Scrolling = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+
+        Styling() = default;
+
+        void Copy(const Styling& other){
+            Border_Enabled = other.Border_Enabled;
+            Text_Color = other.Text_Color;
+            Background_Color = other.Background_Color;
+            Border_Color = other.Border_Color;
+            Border_Background_Color = other.Border_Background_Color;
+            Hover_Border_Color = other.Hover_Border_Color;
+            Hover_Text_Color = other.Hover_Text_Color;
+            Hover_Background_Color = other.Hover_Background_Color;
+            Hover_Border_Background_Color = other.Hover_Border_Background_Color;
+            Focus_Border_Color = other.Focus_Border_Color;
+            Focus_Text_Color = other.Focus_Text_Color;
+            Focus_Background_Color = other.Focus_Background_Color;
+            Focus_Border_Background_Color = other.Focus_Border_Background_Color;
+            Border_Style = other.Border_Style;
+            Flow_Priority = other.Flow_Priority;
+            Wrap = other.Wrap;
+            Text_Position = other.Text_Position;
+            Allow_Overflow = other.Allow_Overflow;
+            Allow_Dynamic_Size = other.Allow_Dynamic_Size;
+            Margin = other.Margin;
+            Shadow = other.Shadow;
+            Opacity = other.Opacity;
+            Anchor = other.Anchor;
+            Allow_Scrolling = other.Allow_Scrolling;
+        }
+
+        void Copy(const Styling* other){
+            // use the reference one
+            Copy(*other);
+        }
     };
 
     namespace STYLES{
-        inline std::string Border                           = "Border";
-        inline std::string Text_Color                       = "Text_Color";
-        inline std::string Background_Color                 = "Background_Color";
-        inline std::string Border_Color                    = "Border_Color";
-        inline std::string Border_Background_Color          = "Border_Background_Color";
-
-        inline std::string Hover_Border_Color               = "Hover_Border_Color";
-        inline std::string Hover_Text_Color                 = "Hover_Text_Color";
-        inline std::string Hover_Background_Color           = "Hover_Background_Color";
-        inline std::string Hover_Border_Background_Color    = "Hover_Border_Background_Color";
-
-        inline std::string Focus_Border_Color               = "Focus_Border_Color";
-        inline std::string Focus_Text_Color                 = "Focus_Text_Color";
-        inline std::string Focus_Background_Color           = "Focus_Background_Color";
-        inline std::string Focus_Border_Background_Color    = "Focus_Border_Background_Color";
-
-        inline std::string Border_Style                     = "Border_Style";
-
-        inline std::string Flow_Priority                    = "Flow_Priority";
-        inline std::string Wrap                             = "Wrap";     
-        
-        inline std::string Text_Position                    = "Text_Position";
-        inline std::string Allow_Overflow                   = "Allow_Overflow"; // This is for when child can dynamically go over parent borders, but parent size is static
-        inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size"; // boolean, Tries to emulate the size of the parent like in 'Flexbox: Display;' 
-        inline std::string Margin                           = "Margin";
-
-        inline std::string Shadow                           = "Shadow";  // 0 - 100
-        inline std::string Opacity                          = "Opacity"; // 0 - 100
-
-        inline std::string Anchor                           = "Anchor";  // gives the line number in which the element is anchored.
-
-        inline std::string Allow_Scrolling                  = "Allow_Scrolling";
-
         namespace BORDER{
             const inline BORDER_STYLE_VALUE Double = std::vector<const char*>{
                 "╔", "╚", "╗", "╝", "║", "═", "╠", "╣", "╦", "╩", "╬"
@@ -1055,6 +1234,8 @@ namespace GGUI{
             
         }
     };
+
+    // --END OF STYLING STUFF--
 
     enum class STAIN_TYPE{
         CLEAN = 0,        //No change
@@ -1156,42 +1337,6 @@ namespace GGUI{
 
     // For templates.
     extern std::vector<Action*> Event_Handlers;
-
-    class Styling{
-    public:
-        bool Border_Enabled = false;
-        RGB Text_Color;
-        RGB Background_Color;
-        RGB Border_Color;
-        RGB Border_Background_Color;
-        
-        RGB Hover_Border_Color;
-        RGB Hover_Text_Color;
-        RGB Hover_Background_Color;
-        RGB Hover_Border_Background_Color;
-
-        RGB Focus_Border_Color;
-        RGB Focus_Text_Color;
-        RGB Focus_Background_Color;
-        RGB Focus_Border_Background_Color;
-
-        BORDER_STYLE_VALUE Border_Style;
-        
-        int Flow_Priority;
-        bool Wrap = false;
-
-        int Text_Position;
-        bool Allow_Overflow = false;
-        bool Allow_Dynamic_Size = false;
-        Margin Margin;
-
-        SHADOW_VALUE Shadow;
-        int Opacity = 100;  // 100%
-
-        int Anchor = -1;    // No Anchoring
-
-        bool Allow_Scrolling = false;
-    };
 
     class Element{
     protected:
@@ -1411,9 +1556,9 @@ namespace GGUI{
 
         Coordinates Get_Absolute_Position();
 
-        void Set_Margin(Margin margin);
+        void Set_Margin(MARGIN_VALUE margin);
 
-        Margin Get_Margin();
+        MARGIN_VALUE Get_Margin();
 
         virtual void Set_Background_Color(RGB color);
 
@@ -1431,16 +1576,12 @@ namespace GGUI{
 
         void Allow_Dynamic_Size(bool True);
 
-        bool Is_Dynamic_Size_Allowed(){
-            return Style->Allow_Dynamic_Size;
-        }
+        bool Is_Dynamic_Size_Allowed();
 
         // Allows by default hidden overflow, so that child elements can exceed the parent element dimension limits, whiteout resizing parent.  
         void Allow_Overflow(bool True);
 
-        bool Is_Overflow_Allowed(){
-            return Style->Allow_Overflow;
-        }
+        bool Is_Overflow_Allowed();
         
         RGB Get_Text_Color();
 

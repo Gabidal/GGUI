@@ -15,8 +15,7 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
 
         Fully_Stain();
 
-        Before_Hiding_Border_Background_Color = Get_Background_Color();
-        Before_Hiding_Border_Color = Get_Border_Color();
+        Update_Hidden_Border_Colors();
     });
 }
 
@@ -33,8 +32,8 @@ GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Eleme
             Set_Position(position);
         }
 
-        Before_Hiding_Border_Background_Color = Get_Background_Color();
-        Before_Hiding_Border_Color = Get_Border_Color();
+        
+        Update_Hidden_Border_Colors();
     });
 }
 
@@ -53,8 +52,8 @@ GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigne
 
         Set_Name(title);
 
-        Before_Hiding_Border_Background_Color = Get_Background_Color();
-        Before_Hiding_Border_Color = Get_Border_Color();
+        
+        Update_Hidden_Border_Colors();
     });
 }
 
@@ -76,8 +75,7 @@ GGUI::Window::Window(
 
             Has_Hidden_Borders = true;
 
-            Before_Hiding_Border_Color = Get_Background_Color();
-            Before_Hiding_Border_Background_Color = Get_Background_Color();
+            Update_Hidden_Border_Colors();
 
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
@@ -109,8 +107,7 @@ GGUI::Window::Window(
 
             Has_Hidden_Borders = true;
 
-            Before_Hiding_Border_Color = Get_Background_Color();
-            Before_Hiding_Border_Background_Color = Get_Background_Color();
+            Update_Hidden_Border_Colors();
 
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
@@ -142,8 +139,7 @@ GGUI::Window::Window(
 
         Set_Name(title);
 
-        Before_Hiding_Border_Background_Color = Get_Background_Color();
-        Before_Hiding_Border_Color = Get_Border_Color();
+        Update_Hidden_Border_Colors();
     });
 }
 
@@ -170,8 +166,7 @@ GGUI::Window::Window(
 
         Set_Name(title);
 
-        Before_Hiding_Border_Background_Color = Get_Background_Color();
-        Before_Hiding_Border_Color = Get_Border_Color();
+        Update_Hidden_Border_Colors();
     });
 }
 
@@ -194,8 +189,7 @@ GGUI::Window::Window(
 
             Has_Hidden_Borders = true;
 
-            Before_Hiding_Border_Color = Get_Background_Color();
-            Before_Hiding_Border_Background_Color = Get_Background_Color();
+            Update_Hidden_Border_Colors();
 
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
@@ -209,6 +203,23 @@ GGUI::Window::Window(
 }
 
 //End of user constructors.
+
+void GGUI::Window::Update_Hidden_Border_Colors(){
+    // prioritizes the border variants if they are available
+    if (Style->Border_Color.Status >= VALUE_STATE::INITIALIZED)
+        Before_Hiding_Border_Color = Style->Border_Color.Value;
+    else if (Style->Text_Color.Status >= VALUE_STATE::INITIALIZED)
+        Before_Hiding_Border_Color = Style->Text_Color.Value;
+    else
+        Before_Hiding_Border_Color = GGUI::Classes[GGUI::Class_Names["default"]].Border_Color.Value;
+
+    if (Style->Border_Background_Color.Status >= VALUE_STATE::INITIALIZED)
+        Before_Hiding_Border_Background_Color = Style->Border_Background_Color.Value;
+    else if (Style->Background_Color.Status >= VALUE_STATE::INITIALIZED)
+        Before_Hiding_Border_Background_Color = Style->Background_Color.Value;
+    else
+        Before_Hiding_Border_Background_Color = GGUI::Classes[GGUI::Class_Names["default"]].Border_Background_Color.Value;            
+}
 
 void GGUI::Window::Set_Title(std::string t){
     Pause_Renderer([=](){
@@ -290,7 +301,7 @@ void GGUI::Window::Show_Border(bool b){
         Set_Border_Background_Color(Before_Hiding_Border_Background_Color);
     }
 
-    if (b != Style->Border_Enabled){
+    if (b != Style->Border_Enabled.Value){
         Style->Border_Enabled = b;
 
         Dirty.Dirty(STAIN_TYPE::EDGE);

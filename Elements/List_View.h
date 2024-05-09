@@ -60,7 +60,7 @@ namespace GGUI{
         }
 
         Grow_Direction Get_Growth_Direction(){
-            return (Grow_Direction)Style->Flow_Priority;
+            return (Grow_Direction)Style->Flow_Priority.Value;
         }
 
         template<typename  T>
@@ -129,7 +129,7 @@ namespace GGUI{
         void Allow_Scrolling(bool allow);
     
         bool Is_Scrolling_Enabled(){
-            return Style->Allow_Scrolling;
+            return Style->Allow_Scrolling.Value;
         }
 
         void Scroll_Up() override;

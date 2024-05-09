@@ -172,7 +172,7 @@ namespace GGUI{
     }
 
     void Progress_Bar::Show_Border(bool b){
-        if (b != Style->Border_Enabled){
+        if (b != Style->Border_Enabled.Value){
             Style->Border_Enabled = b;
 
             if (b) Height += 2;

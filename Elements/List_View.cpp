@@ -240,7 +240,7 @@ void GGUI::List_View::Add_Child(Element* e){
         unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset * 2;
 
 
-        if (Style->Wrap){
+        if (Style->Wrap.Value){
             Report(
                 "Overflow wrapping is not supported!"
             );
@@ -250,7 +250,7 @@ void GGUI::List_View::Add_Child(Element* e){
 
             // Add reverse support for the list to grow from the end -> start.
             // Add sticky support for two child elements with borders to loan the same border space.
-            if (Style->Flow_Priority == (int)Grow_Direction::ROW){
+            if (Style->Flow_Priority.Value == (int)Grow_Direction::ROW){
 
                 // Affect minimum width needed, when current child has borders as well as the previus one.
                 signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
@@ -345,7 +345,7 @@ bool GGUI::List_View::Remove(Element* remove){
         bool Is_Stretcher = remove->Get_Width() == Inner_Width || remove->Get_Height() == Inner_Height;
 
         // now sadly we need to branch the code into the vertical and horizontal calculations.
-        if (Style->Flow_Priority == (int)Grow_Direction::ROW){
+        if (Style->Flow_Priority.Value == (int)Grow_Direction::ROW){
             // represents the horizontal list
             unsigned int Gap = remove->Get_Width();
 
@@ -416,7 +416,7 @@ void GGUI::Scroll_View::Add_Child(Element* e) {
 }
 
 void GGUI::Scroll_View::Allow_Scrolling(bool allow){
-    bool previous = Style->Allow_Scrolling;
+    bool previous = Style->Allow_Scrolling.Value;
     if (allow != previous){
         Style->Allow_Scrolling = allow;
 

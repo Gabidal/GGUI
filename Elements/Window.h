@@ -14,8 +14,7 @@ namespace GGUI{
         bool Has_Hidden_Borders = false;
     public:
         Window() : Element() {
-            Before_Hiding_Border_Background_Color = Get_Background_Color();
-            Before_Hiding_Border_Color = Get_Border_Color();
+            Update_Hidden_Border_Colors();
         }
 
         Window(std::string title, std::vector<std::string> classes = {});
@@ -66,6 +65,8 @@ namespace GGUI{
         );
 
         //End of user constructors.
+
+        void Update_Hidden_Border_Colors();
 
         void Set_Title(std::string t);
 

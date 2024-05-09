@@ -1649,23 +1649,23 @@ namespace GGUI{
         // Add default class
         std::string DEFAULT_NAME = "default";
         Styling DEFAULT;
-        DEFAULT.Text_Color = COLOR::WHITE;
-        DEFAULT.Background_Color = COLOR::BLACK;
+        DEFAULT.Text_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Border_Color = COLOR::WHITE;
-        DEFAULT.Border_Background_Color = COLOR::BLACK;
+        DEFAULT.Border_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Border_Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Hover_Text_Color = COLOR::WHITE;
-        DEFAULT.Hover_Background_Color = COLOR::DARK_GRAY;
+        DEFAULT.Hover_Text_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Background_Color = RGB_VALUE(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Hover_Border_Color = COLOR::WHITE;
-        DEFAULT.Hover_Border_Background_Color = COLOR::BLACK;
+        DEFAULT.Hover_Border_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Border_Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
          
-        DEFAULT.Focus_Text_Color = COLOR::BLACK;
-        DEFAULT.Focus_Background_Color = COLOR::WHITE;
+        DEFAULT.Focus_Text_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Background_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Focus_Border_Color = COLOR::WHITE;
-        DEFAULT.Focus_Border_Background_Color = COLOR::BLACK;
+        DEFAULT.Focus_Border_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Border_Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         
         Add_Class(DEFAULT_NAME, DEFAULT);
     }
@@ -2050,6 +2050,7 @@ namespace GGUI{
     }
 
     void Init_Inspect_Tool(){
+        return;
         GGUI::Window* Inspect = new GGUI::Window(
             "Inspect",
             Main->Get_Width() / 3,

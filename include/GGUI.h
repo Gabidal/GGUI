@@ -661,14 +661,14 @@ namespace GGUI{
         }
     };
 
-    class Margin{
+    class MARGIN_VALUE{
     public:
         unsigned int Top = 0;
         unsigned int Bottom = 0;
         unsigned int Left = 0;
         unsigned int Right = 0;
 
-        Margin(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0){
+        MARGIN_VALUE(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0){
             Top = top;
             Bottom = bottom;
             Left = left;
@@ -779,13 +779,13 @@ namespace GGUI{
 
     class MARGIN_VALUE : public VALUE{
     public:
-        Margin Value = Margin();
+        MARGIN_VALUE Value = MARGIN_VALUE();
 
         MARGIN_VALUE(){
             Type = VALUE_TYPES::MARGIN;
         }
 
-        MARGIN_VALUE(Margin value){
+        MARGIN_VALUE(MARGIN_VALUE value){
             Value = value;
             Type = VALUE_TYPES::MARGIN;
         }
@@ -1211,9 +1211,9 @@ namespace GGUI{
 
         Coordinates Get_Absolute_Position();
 
-        void Set_Margin(Margin margin);
+        void Set_Margin(MARGIN_VALUE margin);
 
-        Margin Get_Margin();
+        MARGIN_VALUE Get_Margin();
 
         virtual void Set_Background_Color(RGB color);
 
