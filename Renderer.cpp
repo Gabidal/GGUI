@@ -580,7 +580,7 @@ namespace GGUI{
         fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previus_Raw);
 
-        exit(0);
+        exit(signum);
     }
 
     void Exit(){
@@ -1005,7 +1005,7 @@ namespace GGUI{
 
         if (sigaction(SIGINT, wrapper_ctrc, NULL) == -1) {
             perror("sigaction");
-            exit(1);
+            Exit(1);
         }
 
         struct termios raw;
