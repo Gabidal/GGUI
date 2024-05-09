@@ -577,7 +577,7 @@ namespace GGUI{
             Set_Text(text);
         }
 
-        bool Has_Non_Default_Text(){
+        bool Has_Default_Text(){
             return (Ascii != ' ') || (Unicode != " ");
         }
 

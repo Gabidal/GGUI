@@ -1170,22 +1170,22 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 
 void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
     // If the Source element has full opacity, the destination gets fully rewritten over.
-    if (Source.Background.Get_Alpha() == std::numeric_limits<unsigned char>::max()){
+    if (Source.Background.Alpha == 1.0f){
         Dest = Source;
         return;
     }
     
-    if (Source.Background.Get_Alpha() == 0) return;         // Dont need to do anything.
+    if (Source.Background.Alpha == 0.0f) return;         // Dont need to do anything.
 
     // Color the Destination UTF by the Source UTF background color.
     Dest.Background += Source.Background;
 
     // Check if source has text
-    if (Source.Has_Non_Default_Text()){
+    if (!Source.Has_Default_Text()){
         Dest.Set_Text(Source);
 
         // Set the text color right.
-        if (Dest.Has_Non_Default_Text()){
+        if (!Dest.Has_Default_Text()){
             Dest.Foreground += Source.Foreground; 
         }
     }
@@ -1219,6 +1219,7 @@ std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned in
 void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
     std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Limits = Get_Fitting_Area(Parent, Child);
 
+    // This is to combat child elements which are located halfway outside the parent area.
     unsigned int Negative_Offset_X = Limits.first.first;
     unsigned int Negative_Offset_Y = Limits.first.second;
 
@@ -1671,8 +1672,8 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Opacity(std::vector<GGUI::UTF> Cur
         for (unsigned int X = 0; X < Get_Processed_Width(); X++){
             UTF& tmp = Current_Buffer[Y * Get_Processed_Width() + X];
 
-            tmp.Background.Set_Alpha(tmp.Background.Get_Float_Alpha() * As_Float);
-            tmp.Foreground.Set_Alpha(tmp.Foreground.Get_Float_Alpha() * As_Float);
+            tmp.Background.Alpha = tmp.Background.Alpha * As_Float;
+            tmp.Foreground.Alpha = tmp.Foreground.Alpha * As_Float;
         }
     }
 

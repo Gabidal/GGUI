@@ -509,10 +509,9 @@ namespace GGUI{
     };
 
     class RGBA : public RGB{
-    private:
-    // Ranging from 0. - 1.
-        float Alpha = 1;
     public:
+    // Ranging from 0. - 1.
+        float Alpha = 1.0f;
 
         void Set_Alpha(unsigned char a){
             Alpha = (float)a / std::numeric_limits<unsigned char>::max();
@@ -535,14 +534,6 @@ namespace GGUI{
             Red = primal.Red;
             Green = primal.Green;
             Blue = primal.Blue;
-        }
-
-        float &Get_Float_Alpha(){
-            return Alpha;
-        }
-
-        unsigned char Get_Alpha(){
-            return (unsigned char)(Alpha * std::numeric_limits<unsigned char>::max());
         }
     
         bool operator==(const RGBA& Other){
@@ -791,6 +782,7 @@ namespace GGUI{
         void Set_Text(UTF other){
             Ascii = other.Ascii;
             Unicode = other.Unicode;
+            Unicode_Length = other.Unicode_Length;
             FLAGS = other.FLAGS;
         }
 
@@ -822,8 +814,11 @@ namespace GGUI{
             return *this;
         }
 
-        bool Has_Non_Default_Text(){
-            return (Ascii != ' ') || (Unicode[0] != ' ');
+        inline bool Has_Default_Text(){
+            if (Is(UTF_FLAG::IS_ASCII))
+                return Ascii == ' ';
+            else
+                return Unicode[0] == ' ';
         }
 
     };
