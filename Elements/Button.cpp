@@ -9,7 +9,6 @@ namespace GGUI{
             Defualt_Button_Behaviour(press);
             Default_Button_Text_Align();
             Enable_Input_Overflow();
-            Dirty.Dirty(STAIN_TYPE::TEXT);
             Show_Border(true);
             Set_Name(Text);
         });

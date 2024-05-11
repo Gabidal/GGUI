@@ -31,7 +31,7 @@ namespace GGUI{
 
         std::string Get_Data() { return Text; }
 
-        void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
+        void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::DEEP); }
         
         Element* Safe_Move() override {
             Switch* new_Switch = new Switch();

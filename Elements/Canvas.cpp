@@ -50,10 +50,10 @@ namespace GGUI{
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
-        if (Dirty.is(STAIN_TYPE::STRECH)){
+        if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
             Result.resize(Width * Height);
-            Dirty.Clean(STAIN_TYPE::STRECH);
+            Dirty.Clean(STAIN_TYPE::STRETCH);
 
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         }
@@ -164,10 +164,10 @@ namespace GGUI{
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
-        if (Dirty.is(STAIN_TYPE::STRECH)){
+        if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
             Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
-            Dirty.Clean(STAIN_TYPE::STRECH);
+            Dirty.Clean(STAIN_TYPE::STRETCH);
 
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         }

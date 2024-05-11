@@ -15,8 +15,6 @@ GGUI::Text_Field::Text_Field(std::string Text, Styling css) : Element(css) {
     if (Height == 0 || Height < D.second){
         Height = D.second;
     }
-
-    Fully_Stain();
 }
 
 //These next constructors are mainly for users to more easily create elements.
@@ -50,13 +48,6 @@ GGUI::Text_Field::Text_Field(
 
 //End of user constructors.
 
-void GGUI::Text_Field::Fully_Stain(){
-    // Call the base stainer.
-    Element::Fully_Stain();
-
-    this->Dirty.Dirty(STAIN_TYPE::TEXT);
-}
-
 std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
             
@@ -70,20 +61,20 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
     }
 
     if (Data.size() != Previus_Data.size()){
-        Dirty.Dirty(STAIN_TYPE::STRECH);
+        Dirty.Dirty(STAIN_TYPE::STRETCH);
         Previus_Data = Data;
     }
 
-    if (Dirty.is(STAIN_TYPE::STRECH)){
+    if (Dirty.is(STAIN_TYPE::STRETCH)){
         Result.clear();
         Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
-        Dirty.Clean(STAIN_TYPE::STRECH);
+        Dirty.Clean(STAIN_TYPE::STRETCH);
         
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
 
-    if (Dirty.is(STAIN_TYPE::TEXT)){
-        Dirty.Clean(STAIN_TYPE::TEXT);
+    if (Dirty.is(STAIN_TYPE::DEEP)){
+        Dirty.Clean(STAIN_TYPE::DEEP);
 
         switch ((TEXT_LOCATION)Style->Text_Position.Value)
         {
@@ -168,7 +159,7 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
     Width = New_Width;
     Height = New_Height;
 
-    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 
     return true;
@@ -318,10 +309,10 @@ void GGUI::Text_Field::Set_Data(std::string Data){
 
     std::pair<unsigned int, unsigned int> dim = Get_Text_Dimensions(Data);
 
-    GGUI::STAIN_TYPE flags = STAIN_TYPE::TEXT;
+    GGUI::STAIN_TYPE flags = STAIN_TYPE::DEEP;
 
     if (dim.first > Width || dim.second > Height){
-        flags = (GGUI::STAIN_TYPE)(flags | STAIN_TYPE::STRECH);
+        flags = (GGUI::STAIN_TYPE)(flags | STAIN_TYPE::STRETCH);
 
         Width = dim.first;
         Height = dim.second;
@@ -337,7 +328,7 @@ std::string GGUI::Text_Field::Get_Data(){
 
 void GGUI::Text_Field::Set_Text_Position(TEXT_LOCATION Text_Position){
     Style->Text_Position = (int)Text_Position;
-    Dirty.Dirty(STAIN_TYPE::TEXT);
+    Dirty.Dirty(STAIN_TYPE::DEEP);
     Update_Frame();
 }
 
@@ -399,7 +390,7 @@ void GGUI::Text_Field::Input(std::function<void(char)> Then){
                 
                 if (Data.size() > 0){
                     Data.pop_back();
-                    Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
+                    Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
                     Update_Frame();
 
                 }
@@ -434,7 +425,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
             std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
             if (Style->Allow_Overflow.Value){
                 Data.push_back(input);
-                Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
+                Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
                 Update_Frame();
             }
             else if (Style->Allow_Dynamic_Size.Value){
@@ -448,7 +439,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
                 }
                 
                 Data.push_back(input);
-                Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::STRECH | STAIN_TYPE::EDGE | STAIN_TYPE::COLOR);
+                Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH | STAIN_TYPE::EDGE | STAIN_TYPE::COLOR);
                 Update_Frame();
             }
             else{
@@ -459,7 +450,7 @@ void GGUI::Text_Field::Enable_Text_Input(){
         }
         else{                
             Data.push_back(input);
-            Dirty.Dirty(STAIN_TYPE::TEXT | STAIN_TYPE::EDGE);
+            Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
             Update_Frame();
         }
     });

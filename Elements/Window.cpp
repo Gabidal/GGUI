@@ -22,9 +22,9 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
 GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
     Pause_Renderer([=](){
         if (width != 0)
-            Set_Width(width);
+            Width = width;
         if (height != 0)
-            Set_Height(height);
+            Height = height;
 
         if (parent){
             Set_Parent(parent);
@@ -40,9 +40,9 @@ GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Eleme
 GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
     Pause_Renderer([=](){
         if (width != 0)
-            Set_Width(width);
+            Width = width;
         if (height != 0)
-            Set_Height(height);
+            Height = height;
 
         if (parent){
             Set_Parent(parent);
@@ -66,8 +66,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_Renderer([=](){
         Title = title;
-        Set_Width(width);
-        Set_Height(height);
+        Width = width;
+        Height = height;
 
         //Because the Title will not be displayed until the border is, we will create a invisible border.
         if (Title.size() > 0){
@@ -94,8 +94,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_Renderer([=](){
         Title = title;
-        Set_Width(width);
-        Set_Height(height);
+        Width = width;
+        Height = height;
 
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
@@ -127,8 +127,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_Renderer([=](){
         Title = title;
-        Set_Width(width);
-        Set_Height(height);
+        Width = width;
+        Height = height;
 
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
@@ -154,8 +154,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_Renderer([=](){
         Title = title;
-        Set_Width(width);
-        Set_Height(height);
+        Width = width;
+        Height = height;
 
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
@@ -179,8 +179,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_Renderer([=](){
         Title = title;
-        Set_Width(width);
-        Set_Height(height);
+        Width = width;
+        Height = height;
 
         //Because the Title will not be displayed until the border is, we will create a invisible border.
         if (Title.size() > 0){

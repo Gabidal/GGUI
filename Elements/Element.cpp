@@ -319,7 +319,7 @@ GGUI::Element::~Element(){
 
 void GGUI::Element::Fully_Stain(){
 
-    this->Dirty.Dirty(STAIN_TYPE::CLASS | STAIN_TYPE::STRECH | STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
+    this->Dirty.Dirty(STAIN_TYPE::CLASS | STAIN_TYPE::STRETCH | STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
 
 }
 
@@ -397,7 +397,7 @@ void GGUI::Element::Set_Opacity(float Opacity){
     Opacity *= 100;
     Style->Opacity = (int)Opacity;
 
-    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 }
 
@@ -406,7 +406,7 @@ void GGUI::Element::Set_Opacity(unsigned char Opacity){
     float tmp = (float)Opacity / (float)std::numeric_limits<unsigned char>::max();;
     Style->Opacity = (int)(tmp * 100);
 
-    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 }
 
@@ -438,7 +438,7 @@ void GGUI::Element::Set_Anchor_At_Current_Location(){
 void GGUI::Element::Remove_Anchor(){
     Style->Anchor = -1;
 
-    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 }
 
@@ -467,7 +467,7 @@ void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opaci
 
     Position += Direction * -1;
 
-    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 }
 
@@ -481,7 +481,7 @@ void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
     Position.X -= Length * Opacity;
     Position.Y -= Length * Opacity;
 
-    Dirty.Dirty(STAIN_TYPE::STRECH);
+    Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 }
 
@@ -692,14 +692,7 @@ void GGUI::Element::Display(bool f){
         }
         else{
             Check(State::HIDDEN);
-        }   
-
-        // if (f == false && Parent){
-        //     // This means that the element has been displayed before, and hiding it, would remove it from being computed in the Childs forloop.
-        //     // This itail will leave all It's childs hanging in the DOM.
-        //     // So we would need to tell the parent that it needs to redraw the entire DOM its in.
-        //     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
-        // }
+        }
 
         Update_Frame();
     }
@@ -746,7 +739,7 @@ void GGUI::Element::Set_Dimensions(int width, int height){
         Width = width;
         Height = height;
         //Fully_Stain();
-        Dirty.Dirty(STAIN_TYPE::STRECH);
+        Dirty.Dirty(STAIN_TYPE::STRETCH);
         Update_Frame();
     }
 }
@@ -763,9 +756,6 @@ void GGUI::Element::Set_Width(int width){
     if (width != Width){
         Width = width;
         Fully_Stain();
-        // if (Parent)
-        //     Update_Parent(this);
-        // else
         Update_Frame();
     }
 }
@@ -781,7 +771,13 @@ void GGUI::Element::Set_Height(int height){
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
 
-    this->Dirty.Dirty(STAIN_TYPE::MOVE);
+    // The parent is called os that the current element children are not gone through if only moved, thus set the parent stain to DEEP to tell about this move operation.
+    if (Parent){
+        Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
+    }
+    else{
+        this->Dirty.Dirty(STAIN_TYPE::DEEP);
+    }
 
     Update_Frame();
 }
@@ -789,10 +785,14 @@ void GGUI::Element::Set_Position(Coordinates c){
 void GGUI::Element::Set_Position(Coordinates* c){
     if (c){
         Position = *c;
-        // if (Parent)
-        //     Parent->Dirty.Dirty(STAIN_TYPE::STRECH);
 
-        this->Dirty.Dirty(STAIN_TYPE::MOVE);
+        // The parent is called os that the current element children are not gone through if only moved, thus set the parent stain to DEEP to tell about this move operation.
+        if (Parent){
+            Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
+        }
+        else{
+            this->Dirty.Dirty(STAIN_TYPE::DEEP);
+        }
 
         Update_Frame();
     }
@@ -1025,7 +1025,7 @@ void GGUI::Element::Compute_Dynamic_Size(){
             if (Style->Allow_Dynamic_Size.Value && (New_Width != Width || New_Height != Height)){
                 Height = New_Height;
                 Width = New_Width;
-                Dirty.Dirty(STAIN_TYPE::STRECH);
+                Dirty.Dirty(STAIN_TYPE::STRETCH);
             }
         }
     }
@@ -1039,7 +1039,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
     //if inned children have changed whitout this changing, then this will trigger.
     if (Children_Changed() || Has_Transparent_Children()){
-        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRECH);
+        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
     }
 
     Compute_Dynamic_Size();
@@ -1053,10 +1053,10 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         Dirty.Clean(STAIN_TYPE::CLASS);
     }
 
-    if (Dirty.is(STAIN_TYPE::STRECH)){
+    if (Dirty.is(STAIN_TYPE::STRETCH)){
         Result.clear();
         Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
-        Dirty.Clean(STAIN_TYPE::STRECH);
+        Dirty.Clean(STAIN_TYPE::STRETCH);
 
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
@@ -1439,15 +1439,24 @@ void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Eve
 }
 
 bool GGUI::Element::Children_Changed(){
-    // Either report the element to be changed if and only if the element has Stains and is shows, if the element is not displayed all following conclusions can be skipped.
-    if (Dirty.Type != STAIN_TYPE::CLEAN && Show){
-        // Clean the state changed elements already here.
-        if (Dirty.is(STAIN_TYPE::STATE))
-            Dirty.Clean(STAIN_TYPE::STATE);
+    // This is used if an element is recently hidden so the DEEP search wound't find it if not for this. 
+    // Clean the state changed elements already here.
+    if (Dirty.is(STAIN_TYPE::STATE)){
+        Dirty.Clean(STAIN_TYPE::STATE);
         return true;
     }
 
-    for (auto& e : Childs){
+    // Not counting State machine, if element is not being drawn return always false.
+    if (!Show)
+        return false;
+
+    // If the element is dirty.
+    if (Dirty.Type != STAIN_TYPE::CLEAN){
+        return true;
+    }
+
+    // recursion
+    for (auto e : Childs){
         if (e->Children_Changed())
             return true;
     }
@@ -1456,10 +1465,14 @@ bool GGUI::Element::Children_Changed(){
 }
 
 bool GGUI::Element::Has_Transparent_Children(){
-    if (Is_Transparent() && Childs.size() > 0)
+    if (!Show)
+        return false;
+
+    // If the current is a transparent and has is NOT clean.
+    if (Is_Transparent() && Dirty.Type != STAIN_TYPE::CLEAN)
         return true;
     
-    for (auto& e : Childs){
+    for (auto e : Childs){
         if (e->Has_Transparent_Children())
             return true;
     }

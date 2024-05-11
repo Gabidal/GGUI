@@ -267,7 +267,7 @@ void GGUI::List_View::Add_Child(Element* e){
                     Width = Proposed_Width;
                     Height = Proposed_Height;
 
-                    Dirty.Dirty(STAIN_TYPE::STRECH);
+                    Dirty.Dirty(STAIN_TYPE::STRETCH);
                 }
 
                 e->Set_Position({Last_Child->Get_Position().X - Width_Modifier, e->Get_Position().Y});
@@ -293,7 +293,7 @@ void GGUI::List_View::Add_Child(Element* e){
                     Width = Proposed_Width;
                     Height = Proposed_Height;
                     
-                    Dirty.Dirty(STAIN_TYPE::STRECH);
+                    Dirty.Dirty(STAIN_TYPE::STRETCH);
                 }
 
                 e->Set_Position({e->Get_Position().X, Last_Child->Get_Position().Y - Height_Modifier});

@@ -1233,15 +1233,13 @@ namespace GGUI{
     // --END OF STYLING STUFF--
 
     enum class STAIN_TYPE{
-        CLEAN = 0,        //No change
-        COLOR = 1 << 0,  //BG and other color related changes
-        EDGE = 1 << 1,   //title and border changes.
-        DEEP = 1 << 2,   //children changes. Deep because the childs are connected via AST.
-        STRECH = 1 << 3,  //width and or height changes.
-        TEXT = 1 << 4,   //text changes, this is primarily for text_field
-        CLASS = 1 << 5, //This is used to tell the renderer that there are still un_parsed classes.
-        STATE = 1 << 6, // This is for Switches that based on their state display one symbol differently.
-        MOVE = 1 << 7, // This is for elements that are moved.
+        CLEAN = 0,              // No change
+        COLOR = 1 << 0,         // BG and other color related changes
+        EDGE = 1 << 1,          // Title and border changes.
+        DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
+        STRETCH = 1 << 3,       // Width and or height changes.
+        CLASS = 1 << 5,         // This is used to tell the renderer that there are still un_parsed classes.
+        STATE = 1 << 6,         // This is for Switches that based on their state display one symbol differently. And also for state handlers.
     };
  
     inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
@@ -1258,7 +1256,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = STAIN_TYPE::CLEAN; //(STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
+        STAIN_TYPE Type = STAIN_TYPE::CLEAN; //(STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
 
 
         bool is(STAIN_TYPE f){
@@ -1285,7 +1283,7 @@ namespace GGUI{
         }
 
         // void Stain_All(){
-        //     Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
+        //     Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
         // }
 
     };

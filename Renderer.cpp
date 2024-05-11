@@ -1712,8 +1712,8 @@ namespace GGUI{
         //now we need to allocate the buffer string by the width and height of the terminal
         Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
 
-        // Set the Main to be anything but nullptr, since its won constructor will try anchor it otherwise.
-        Main = (Window*)0xFFFF;
+        // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
+        Main = (Window*)0xFFFFFF;
         Main = new Window("", Max_Width, Max_Height);
 
         Abstract_Frame_Buffer = Main->Render();
@@ -2042,7 +2042,8 @@ namespace GGUI{
         Stats->Set_Data(
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size())
+            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
+            "FPS: " + std::to_string(Delta_Time)
         );
 
         // return success.
@@ -2050,7 +2051,6 @@ namespace GGUI{
     }
 
     void Init_Inspect_Tool(){
-        return;
         GGUI::Window* Inspect = new GGUI::Window(
             "Inspect",
             Main->Get_Width() / 3,
@@ -2074,7 +2074,8 @@ namespace GGUI{
         Text_Field* Stats = new Text_Field(
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size())
+            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
+            "FPS: " + std::to_string(Delta_Time)
         );
 
         Stats->Set_Name("STATS");
