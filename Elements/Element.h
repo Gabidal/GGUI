@@ -474,11 +474,6 @@ namespace GGUI{
 
         RGB(){}
 
-        virtual unsigned int Pack() const {
-            return  (static_cast<unsigned int>(Red) << 16) |
-                    (static_cast<unsigned int>(Green) << 8) |
-                    static_cast<unsigned int>(Blue);
-        }
 
         std::string Get_Colour() const;
 
@@ -504,6 +499,10 @@ namespace GGUI{
             }
         }
     
+        inline unsigned int Pack() const {
+            return *(unsigned int*)this;
+        }
+
         bool operator==(const RGB& Other) const{
             // only use the RGB overriden versions of the Pack for both of the RGBs
             return RGB::Pack() == Other.Pack();
