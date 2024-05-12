@@ -18,10 +18,6 @@ int main()
 
         bar->Show_Border(true);
 
-        // for (auto i : bar->Get_Childs()){
-        //     i->Show_Border(false);
-        // }
-
         Window* A = new Window("A", 20, 10, COLOR::MAGENTA, COLOR::RED);
         Window* B = new Window("B", 20, 10, COLOR::YELLOW, COLOR::GREEN);
         Window* C = new Window("C", 20, 10, COLOR::CYAN, COLOR::BLUE);

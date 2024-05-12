@@ -2013,8 +2013,8 @@ namespace GGUI{
 
         for (int Index = 1; Index < Buffer.size() - 1; Index++){
 
-            bool Same_Colours_As_Previous = Buffer[Index].Background == Buffer[Index - 1].Background && Buffer[Index].Foreground == Buffer[Index - 1].Foreground;
-            bool Same_Colours_As_Next = Buffer[Index].Background == Buffer[Index + 1].Background && Buffer[Index].Foreground == Buffer[Index + 1].Foreground;
+            bool Same_Colours_As_Previous = (RGB)Buffer[Index].Background == (RGB)Buffer[Index - 1].Background && (RGB)Buffer[Index].Foreground == (RGB)Buffer[Index - 1].Foreground;
+            bool Same_Colours_As_Next = (RGB)Buffer[Index].Background == (RGB)Buffer[Index + 1].Background && (RGB)Buffer[Index].Foreground == (RGB)Buffer[Index + 1].Foreground;
 
             // if the current colours are same as the previous but not the next then the current is a end of a encode strip.
             if (!Same_Colours_As_Next){

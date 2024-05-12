@@ -474,6 +474,12 @@ namespace GGUI{
 
         RGB(){}
 
+        virtual unsigned int Pack() const {
+            return  (static_cast<unsigned int>(Red) << 16) |
+                    (static_cast<unsigned int>(Green) << 8) |
+                    static_cast<unsigned int>(Blue);
+        }
+
         std::string Get_Colour() const;
 
         // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Color
@@ -499,7 +505,8 @@ namespace GGUI{
         }
     
         bool operator==(const RGB& Other) const{
-            return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue);
+            // only use the RGB overriden versions of the Pack for both of the RGBs
+            return RGB::Pack() == Other.Pack();
         }
     
         RGB operator+(const RGB& Other) const{
