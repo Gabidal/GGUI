@@ -1549,9 +1549,9 @@ std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, G
 
 }
 
-std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Current_Buffer){
+void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     if (!Style->Shadow.Enabled)
-        return Current_Buffer;
+        return;
 
     SHADOW_VALUE& properties = Style->Shadow;
 
@@ -1612,8 +1612,9 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
     int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.X);
     int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Y);
 
-    std::vector<GGUI::UTF> Result;
-    Result.resize(Offset_Box_Width * Offset_Box_Height);
+    std::vector<GGUI::UTF> Swapped_Buffer = Current_Buffer;
+
+    Current_Buffer.resize(Offset_Box_Width * Offset_Box_Height);
 
     Coordinates Shadow_Box_Start = {
         GGUI::Max(0, (int)properties.Direction.X),
@@ -1655,23 +1656,21 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Shadow(std::vector<GGUI::UTF> Curr
                 Raw_Y < Shadow_Box_End.Y;
 
             if (Is_Inside_Original_Area){
-                Result[Final_Index++] = Current_Buffer[Original_Buffer_Index++];
+                Current_Buffer[Final_Index++] = Swapped_Buffer[Original_Buffer_Index++];
             }
             else if (Is_Inside_Shadow_Box) {
-                Result[Final_Index++] = Shadow_Box[Original_Buffer_Index + Shadow_Buffer_Index++];
+                Current_Buffer[Final_Index++] = Shadow_Box[Original_Buffer_Index + Shadow_Buffer_Index++];
             }
         }
     }
 
     Post_Process_Width = Offset_Box_Width;
     Post_Process_Height = Offset_Box_Height;
-
-    return Result;
 }
 
-std::vector<GGUI::UTF> GGUI::Element::Process_Opacity(std::vector<GGUI::UTF> Current_Buffer){
+void GGUI::Element::Process_Opacity(std::vector<GGUI::UTF>& Current_Buffer){
     if (!Is_Transparent())
-        return Current_Buffer;
+        return;
 
     float As_Float = (float)Style->Opacity.Value / 100.0f;
 
@@ -1683,18 +1682,16 @@ std::vector<GGUI::UTF> GGUI::Element::Process_Opacity(std::vector<GGUI::UTF> Cur
             tmp.Foreground.Alpha = tmp.Foreground.Alpha * As_Float;
         }
     }
-
-    return Current_Buffer;
 }
 
 std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
     std::vector<UTF> Result = Render_Buffer;
 
-    Result = Process_Shadow(Result);
+    Process_Shadow(Result);
     //...
 
     // One of the last postprocessing for total control of when not to display.
-    Result = Process_Opacity(Result);
+    Process_Opacity(Result);
 
     //Render_Buffer = Result;
     return Result;

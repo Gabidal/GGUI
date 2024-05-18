@@ -1703,9 +1703,9 @@ namespace GGUI{
 
         void On_State(State s, std::function<void()> job);
 
-        std::vector<GGUI::UTF> Process_Shadow(std::vector<GGUI::UTF> Current_Buffer);
+        void Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer);
 
-        std::vector<GGUI::UTF> Process_Opacity(std::vector<GGUI::UTF> Current_Buffer);
+        void Process_Opacity(std::vector<GGUI::UTF>& Current_Buffer);
 
         virtual std::vector<GGUI::UTF> Postprocess();
 

@@ -1708,10 +1708,6 @@ namespace GGUI{
         Init_Platform_Stuff();
         Init_Classes();
 
-
-        //now we need to allocate the buffer string by the width and height of the terminal
-        Abstract_Frame_Buffer.resize(Max_Height * Max_Width);
-
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
         Main = (Window*)0xFFFFFF;
         Main = new Window("", Max_Width, Max_Height);
