@@ -1347,14 +1347,14 @@ namespace GGUI{
             for (int x = 0; x < Width; x++){
                 Text[y * Width + x].To_Encoded_Super_String(&tmp_container, &Text_Overhead, &Background_Overhead, &Text_Colour, &Background_Colour);
                 
-                Result.Add(tmp_container);
+                Result.Add(tmp_container, true);
 
                 // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
-                tmp_container.Data.clear();
-                Text_Overhead.Data.clear();
-                Background_Overhead.Data.clear();   
-                Text_Colour.Data.clear();
-                Background_Colour.Data.clear();
+                tmp_container.Clear();
+                Text_Overhead.Clear();
+                Background_Overhead.Clear();   
+                Text_Colour.Clear();
+                Background_Colour.Clear();
             }
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.

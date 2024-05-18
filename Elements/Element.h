@@ -32,13 +32,10 @@ namespace GGUI{
         unsigned char FLAGS = UTF_FLAG::IS_UNICODE;
 
         const char* Data = nullptr;
-        int Size = 0;
+        unsigned short Size = 0;
 
-        // Compact_String(const char* data, int size){
-        //     Data = data;
-        //     Size = size;
-        //     FLAGS = UTF_FLAG::IS_UNICODE;
-        // }
+        // Only for resize!!!
+        Compact_String() = default;
 
         Compact_String(const char* data){
             Data = data;
@@ -52,7 +49,7 @@ namespace GGUI{
             FLAGS = UTF_FLAG::IS_ASCII;
         }
 
-        constexpr Compact_String(const char* data, int size){
+        constexpr Compact_String(const char* data, unsigned short size){
             Data = data;
             Size = size;
             FLAGS = UTF_FLAG::IS_UNICODE;
@@ -63,44 +60,53 @@ namespace GGUI{
     class Super_String{
     public:
         std::vector<Compact_String> Data;
+        unsigned int Current_Index = 0;
 
         Super_String(int Final_Size = 1){
-            Data.reserve(Final_Size);
+            Data.resize(Final_Size);
+            Current_Index = 0;
         }
 
-        // void Add(const char* data){
-        //     Data.push_back(data);
-        // }
+        void Clear(){
+            Current_Index = 0;
+        }
 
         void Add(const char* data, int size){
-            Data.push_back(Compact_String(data, size + 1));
+            Data[Current_Index++] = Compact_String(data, size + 1);
         }
 
         void Add(char data){
-            Data.push_back(Compact_String(data));
+            Data[Current_Index++] = Compact_String(data);
         }
 
         void Add(std::string& data){
-            Data.push_back(Compact_String(data.data(), data.size()));
+            Data[Current_Index++] = Compact_String(data.data(), data.size());
         }
 
         void Add(Super_String* other, bool Expected = false){
             // enlarge the reservation
             if (!Expected)
-                Data.reserve(Data.size() + other->Data.size());
+                Data.resize(Current_Index + other->Current_Index);
 
-            Data.insert(Data.end(), other->Data.begin(), other->Data.end());
+            for (int i = 0; i < other->Current_Index; i++){
+
+                Data[Current_Index++] = other->Data[i];
+            }
         }
         
-        void Add(Super_String& other){
+        void Add(Super_String& other, bool Expected = false){
             // enlarge the reservation
-            Data.reserve(Data.size() + other.Data.size());
+            if (!Expected)
+                Data.resize(Current_Index + other.Current_Index);
 
-            Data.insert(Data.end(), other.Data.begin(), other.Data.end());
+            for (int i = 0; i < other.Current_Index; i++){
+
+                Data[Current_Index++] = other.Data[i];
+            }
         }
 
         void Add(const Compact_String& other){
-            Data.push_back(other);
+            Data[Current_Index++] = other;
         }
 
         // Used for ease of use of list way of adding different types at the same time whiteout OOP.
@@ -112,22 +118,24 @@ namespace GGUI{
         std::string To_String(){
             unsigned int Overall_Size = 0;
 
-            for(Compact_String& data : Data){
-                Overall_Size += data.Size;
-            }            
+            for(int i = 0; i < Current_Index; i++){
+                Overall_Size += Data[i].Size;
+            }
 
             std::string result;
-            result.reserve(Overall_Size);
+            result.resize(Overall_Size);
 
-            for(Compact_String& data : Data){
+            int Current_UTF_Insert_Index = 0;
+            for(int i = 0; i < Current_Index; i++){
+                Compact_String data = Data[i];
+
                 if (data.FLAGS == UTF_FLAG::IS_UNICODE){
-                    if (data.Data == nullptr){
-                        int a = 0;
-                    }
-                    result.append(data.Data, data.Size);
+                    result.insert(Current_UTF_Insert_Index, data.Data, data.Size);
+
+                    Current_UTF_Insert_Index += data.Size;
                 }
                 else{
-                    result.push_back((char)data.Data);
+                    result[Current_UTF_Insert_Index++] = (char)data.Data;
                 }
             }
 

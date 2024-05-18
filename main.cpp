@@ -149,6 +149,6 @@ int main(int Argument_Count, char** Arguments){
     GGUI::GGUI([=](){
         Menu();
         Campaing();
-    }, 1000);
+    }, 100000);
     return 0;
 }
