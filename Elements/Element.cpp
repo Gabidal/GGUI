@@ -772,12 +772,10 @@ void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
 
     // The parent is called os that the current element children are not gone through if only moved, thus set the parent stain to DEEP to tell about this move operation.
-    if (Parent){
+    if (Parent)
         Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
-    }
-    else{
-        this->Dirty.Dirty(STAIN_TYPE::DEEP);
-    }
+
+    this->Dirty.Dirty(STAIN_TYPE::MOVE);
 
     Update_Frame();
 }
@@ -787,12 +785,10 @@ void GGUI::Element::Set_Position(Coordinates* c){
         Position = *c;
 
         // The parent is called os that the current element children are not gone through if only moved, thus set the parent stain to DEEP to tell about this move operation.
-        if (Parent){
+        if (Parent)
             Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
-        }
-        else{
-            this->Dirty.Dirty(STAIN_TYPE::DEEP);
-        }
+
+        this->Dirty.Dirty(STAIN_TYPE::MOVE);
 
         Update_Frame();
     }
@@ -803,21 +799,7 @@ GGUI::Coordinates GGUI::Element::Get_Position(){
 }
 
 GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
-    Coordinates Result = {0, 0};
-    
-    Element* current_element = this;
-    Result = current_element->Position;
-    current_element = current_element->Parent;
-
-    while (current_element != nullptr){
-        Result.X += current_element->Position.X;
-        Result.Y += current_element->Position.Y;
-        Result.Z += current_element->Position.Z;
-
-        current_element = current_element->Parent;
-    }
-
-    return Result;
+    return Absolute_Position_Cache;
 }
 
 void GGUI::Element::Set_Margin(MARGIN_VALUE margin){
@@ -1053,6 +1035,18 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         Dirty.Clean(STAIN_TYPE::CLASS);
     }
 
+    if (Dirty.is(STAIN_TYPE::MOVE)){
+        Dirty.Clean(STAIN_TYPE::MOVE);
+
+        Absolute_Position_Cache = {0, 0, 0};
+
+        if (Parent){
+            Absolute_Position_Cache = Parent->Get_Position();
+        }
+
+        Absolute_Position_Cache += Position;
+    }
+
     if (Dirty.is(STAIN_TYPE::STRETCH)){
         Result.clear();
         Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
@@ -1136,33 +1130,33 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
     if (!w->Has_Border())
         return;
 
-    GGUI::BORDER_STYLE_VALUE* custom_border = &Style->Border_Style;
+    GGUI::BORDER_STYLE_VALUE custom_border = Style->Border_Style;
 
     for (int y = 0; y < Height; y++){
         for (int x = 0; x < Width; x++){
             //top left corner
             if (y == 0 && x == 0){
-                Result[y * Width + x] = GGUI::UTF(custom_border->TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border.TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //top right corner
             else if (y == 0 && x == Width - 1){
-                Result[y * Width + x] = GGUI::UTF(custom_border->TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border.TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom left corner
             else if (y == Height - 1 && x == 0){
-                Result[y * Width + x] = GGUI::UTF(custom_border->BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border.BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //bottom right corner
             else if (y == Height - 1 && x == Width - 1){
-                Result[y * Width + x] = GGUI::UTF(custom_border->BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border.BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
             }
             //The roof border
             else if (y == 0 || y == Height - 1){
-                Result[y * Width + x] = GGUI::UTF(custom_border->HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border.HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
             }
             //The left border
             else if (x == 0 || x == Width - 1){
-                Result[y * Width + x] = GGUI::UTF(custom_border->VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
+                Result[y * Width + x] = GGUI::UTF(custom_border.VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
             }
         }
     }

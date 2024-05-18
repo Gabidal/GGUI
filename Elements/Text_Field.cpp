@@ -60,6 +60,18 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
         Dirty.Clean(STAIN_TYPE::CLASS);
     }
 
+    if (Dirty.is(STAIN_TYPE::MOVE)){
+        Dirty.Clean(STAIN_TYPE::MOVE);
+
+        Absolute_Position_Cache = {0, 0, 0};
+
+        if (Parent){
+            Absolute_Position_Cache = Parent->Get_Position();
+        }
+
+        Absolute_Position_Cache += Position;
+    }
+
     if (Data.size() != Previus_Data.size()){
         Dirty.Dirty(STAIN_TYPE::STRETCH);
         Previus_Data = Data;

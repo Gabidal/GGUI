@@ -1716,11 +1716,13 @@ namespace GGUI{
         Main = (Window*)0xFFFFFF;
         Main = new Window("", Max_Width, Max_Height);
 
-        Abstract_Frame_Buffer = Main->Render();
+        if (!Pause_Event_Thread.load()){
+            Abstract_Frame_Buffer = Main->Render();
 
-        Encode_Buffer(Abstract_Frame_Buffer);
+            Encode_Buffer(Abstract_Frame_Buffer);
 
-        Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
+            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
+        }
 
         std::thread Job_Scheduler([&](){
             int i = 0;

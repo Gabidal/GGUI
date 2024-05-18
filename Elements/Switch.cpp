@@ -48,6 +48,18 @@ namespace GGUI{
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
+        if (Dirty.is(STAIN_TYPE::MOVE)){
+            Dirty.Clean(STAIN_TYPE::MOVE);
+
+            Absolute_Position_Cache = {0, 0, 0};
+
+            if (Parent){
+                Absolute_Position_Cache = Parent->Get_Position();
+            }
+
+            Absolute_Position_Cache += Position;
+        }
+
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
             Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);

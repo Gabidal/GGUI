@@ -691,6 +691,12 @@ namespace GGUI{
             X += other.X;
             Y += other.Y;
         }
+
+        void operator+=(Coordinates other){
+            X += other.X;
+            Y += other.Y;
+            Z += other.Z;
+        }
     
         Coordinates operator+(Coordinates& other){
             return Coordinates(X + other.X, Y + other.Y, Z + other.Z);
@@ -1242,6 +1248,7 @@ namespace GGUI{
         STRETCH = 1 << 3,       // Width and or height changes.
         CLASS = 1 << 5,         // This is used to tell the renderer that there are still un_parsed classes.
         STATE = 1 << 6,         // This is for Switches that based on their state display one symbol differently. And also for state handlers.
+        MOVE = 1 << 7,          // Enabled, to signal absolute position caching.
     };
  
     inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
@@ -1336,6 +1343,9 @@ namespace GGUI{
     class Element{
     protected:
         Coordinates Position;
+
+        // Only fetch one parent UP, and own position +, then child repeat.
+        Coordinates Absolute_Position_Cache;
 
         unsigned int Width = 1;
         unsigned int Height = 1;

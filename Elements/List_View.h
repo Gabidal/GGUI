@@ -137,10 +137,6 @@ namespace GGUI{
         void Scroll_Down() override;
 
         bool Remove(Element* e) override;
-        
-        std::vector<UTF> Render() override{
-            return Element::Render();
-        }
 
         std::string Get_Name() const override;
 
