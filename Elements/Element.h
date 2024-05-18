@@ -474,7 +474,6 @@ namespace GGUI{
 
         RGB(){}
 
-
         std::string Get_Colour() const;
 
         // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Color
@@ -499,13 +498,9 @@ namespace GGUI{
             }
         }
     
-        inline unsigned int Pack() const {
-            return *(unsigned int*)this;
-        }
-
         bool operator==(const RGB& Other) const{
-            // only use the RGB overriden versions of the Pack for both of the RGBs
-            return RGB::Pack() == Other.Pack();
+            // only take the bits from the first 3 unsigned chars
+            return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
         }
     
         RGB operator+(const RGB& Other) const{
@@ -543,7 +538,8 @@ namespace GGUI{
         }
     
         bool operator==(const RGBA& Other){
-            return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue) && (Alpha == Other.Alpha);
+            // only take the bits which are the 3 unsigned chars and one float
+            return (*(unsigned long long*)this & 0xFFFFFFFFFF) == (*(unsigned long long*)&Other & 0xFFFFFFFFFF);
         }
 
         RGBA operator*(const RGBA& Other){
