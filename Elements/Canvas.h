@@ -39,8 +39,8 @@ namespace GGUI{
     public:
         std::vector<GGUI::UTF> Frames;
 
-        int Speed = 1;      // Using decimals too slow hmmm...
         int Offset = 0;     // This is for more beautiful mass animation systems
+        int Speed = 1;      // Using decimals too slow hmmm...
 
         int Frame_Distance = 0;
 
@@ -85,7 +85,7 @@ namespace GGUI{
     public:
         Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         
-        ~Terminal_Canvas();
+        ~Terminal_Canvas() override;
 
         void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
 

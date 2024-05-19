@@ -213,7 +213,7 @@ namespace GGUI{
 
     namespace INTERNAL{
 
-        BUFFER_CAPTURE::BUFFER_CAPTURE(std::function<void()> on_change, bool Global, std::string Name) : Is_Global(Global), Name(Name){
+        BUFFER_CAPTURE::BUFFER_CAPTURE(std::function<void()> on_change, std::string Name, bool Global) : Name(Name), Is_Global(Global){
             Current_Line = "";
 
             // Store the previous handle

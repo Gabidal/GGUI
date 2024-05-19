@@ -29,30 +29,37 @@ namespace GGUI{
     // And lighter-weight version of the UTF class. [Probably after making the RGBA use unsigned char instead of float, and thus making the overall size into 32 bits, replace this class with UTF.]
     class Compact_String{
     public:
-        unsigned char FLAGS = UTF_FLAG::IS_UNICODE;
+        union{
+            const char* Unicode_Data;
+            char Ascii_Data;
+        } Data = { nullptr };
 
-        const char* Data = nullptr;
-        unsigned short Size = 0;
+        unsigned int Size = 0;
 
         // Only for resize!!!
         Compact_String() = default;
 
         Compact_String(const char* data){
-            Data = data;
             Size = std::strlen(data); 
-            FLAGS = UTF_FLAG::IS_UNICODE;
+
+            if (Size > 1)
+                Data.Unicode_Data = data;
+            else
+                Data.Ascii_Data = data[0];
         }
 
         Compact_String(char data){
-            Data = (const char*)data;
+            Data.Ascii_Data = data;
             Size = 1;
-            FLAGS = UTF_FLAG::IS_ASCII;
         }
 
-        constexpr Compact_String(const char* data, unsigned short size){
-            Data = data;
+        Compact_String(const char* data, unsigned int size){
             Size = size;
-            FLAGS = UTF_FLAG::IS_UNICODE;
+
+            if (Size > 1)
+                Data.Unicode_Data = data;
+            else
+                Data.Ascii_Data = data[0];
         }
     };
 
@@ -88,7 +95,7 @@ namespace GGUI{
             if (!Expected)
                 Data.resize(Current_Index + other->Current_Index);
 
-            for (int i = 0; i < other->Current_Index; i++){
+            for (unsigned int i = 0; i < other->Current_Index; i++){
 
                 Data[Current_Index++] = other->Data[i];
             }
@@ -99,7 +106,7 @@ namespace GGUI{
             if (!Expected)
                 Data.resize(Current_Index + other.Current_Index);
 
-            for (int i = 0; i < other.Current_Index; i++){
+            for (unsigned int i = 0; i < other.Current_Index; i++){
 
                 Data[Current_Index++] = other.Data[i];
             }
@@ -109,16 +116,10 @@ namespace GGUI{
             Data[Current_Index++] = other;
         }
 
-        // Used for ease of use of list way of adding different types at the same time whiteout OOP.
-        template<typename ... T>
-        void Add(T&... list){
-            (Add(list), ...);
-        }
-
         std::string To_String(){
             unsigned int Overall_Size = 0;
 
-            for(int i = 0; i < Current_Index; i++){
+            for(unsigned int i = 0; i < Current_Index; i++){
                 Overall_Size += Data[i].Size;
             }
 
@@ -126,16 +127,17 @@ namespace GGUI{
             result.resize(Overall_Size);
 
             int Current_UTF_Insert_Index = 0;
-            for(int i = 0; i < Current_Index; i++){
+            for(unsigned int i = 0; i < Current_Index; i++){
                 Compact_String data = Data[i];
 
-                if (data.FLAGS == UTF_FLAG::IS_UNICODE){
-                    result.insert(Current_UTF_Insert_Index, data.Data, data.Size);
+                // Size of ones are always already loaded from memory into a char.
+                if (data.Size > 1){
+                    result.insert(Current_UTF_Insert_Index, data.Data.Unicode_Data, data.Size);
 
                     Current_UTF_Insert_Index += data.Size;
                 }
                 else{
-                    result[Current_UTF_Insert_Index++] = (char)data.Data;
+                    result[Current_UTF_Insert_Index++] = data.Data.Ascii_Data;
                 }
             }
 
@@ -193,7 +195,7 @@ namespace GGUI{
     };
 
     namespace Constants{
-        inline std::string ESC_CODE = "\e[";
+        inline std::string ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
         inline std::string SEPERATE = ";";
         inline std::string Text_Color = "38";
         inline std::string Back_Ground_Color = "48";
@@ -209,14 +211,16 @@ namespace GGUI{
         inline std::string DisableFeature(std::string command) { return ESC_CODE + "?" + command + "l"; }
  
         // Enable settings for ANSI
-        inline std::string REPORT_MOUSE_HIGHLIGHTS = ESC_CODE + "1000";
-        inline std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = ESC_CODE + "1002";
-        inline std::string REPORT_MOUSE_ALL_EVENTS = ESC_CODE + "1003";
+        inline std::string REPORT_MOUSE_HIGHLIGHTS = "1000";
+        inline std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
+        inline std::string REPORT_MOUSE_ALL_EVENTS = "1003";
 
         inline std::string MOUSE_CURSOR = "25";
         inline std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
         inline std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
         // End of enable settings for ANSI
+
+        inline int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
 
         inline unsigned long long NON = (unsigned long long)1 << 0;
         inline unsigned long long ENTER = (unsigned long long)1 << 1;
@@ -306,7 +310,7 @@ namespace GGUI{
             "250", "251", "252", "253", "254", "255"
         };
 
-        constexpr const Compact_String To_Compact[256] = {
+        const Compact_String To_Compact[256] = {
             Compact_String("0", 1), Compact_String("1", 1), Compact_String("2", 1), Compact_String("3", 1), Compact_String("4", 1), Compact_String("5", 1), Compact_String("6", 1), Compact_String("7", 1), Compact_String("8", 1), Compact_String("9", 1),
             Compact_String("10", 2), Compact_String("11", 2), Compact_String("12", 2), Compact_String("13", 2), Compact_String("14", 2), Compact_String("15", 2), Compact_String("16", 2), Compact_String("17", 2), Compact_String("18", 2), Compact_String("19", 2),
             Compact_String("20", 2), Compact_String("21", 2), Compact_String("22", 2), Compact_String("23", 2), Compact_String("24", 2), Compact_String("25", 2), Compact_String("26", 2), Compact_String("27", 2), Compact_String("28", 2), Compact_String("29", 2),
@@ -467,7 +471,7 @@ namespace GGUI{
         unsigned char Green = 0;
         unsigned char Blue = 0;
 
-        constexpr RGB(unsigned char r, unsigned char g, unsigned char b, bool Use_Const){
+        constexpr RGB(unsigned char r, unsigned char g, unsigned char b, [[maybe_unused]] bool Use_Const){
             Red = r;
             Green = g;
             Blue = b;
@@ -499,10 +503,18 @@ namespace GGUI{
         // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Over_Head
         void Get_Over_Head_As_Super_String(Super_String* Result, bool Is_Text_Color = true) const{
             if (Is_Text_Color){
-                Result->Add(Constants::ESC_CODE, Constants::Text_Color, Constants::SEPERATE, Constants::USE_RGB, Constants::SEPERATE);
+                Result->Add(Constants::ESC_CODE);
+                Result->Add(Constants::Text_Color);
+                Result->Add(Constants::SEPERATE);
+                Result->Add(Constants::USE_RGB);
+                Result->Add(Constants::SEPERATE);
             }
             else{
-                Result->Add(Constants::ESC_CODE, Constants::Back_Ground_Color, Constants::SEPERATE, Constants::USE_RGB, Constants::SEPERATE);
+                Result->Add(Constants::ESC_CODE);
+                Result->Add(Constants::Back_Ground_Color);
+                Result->Add(Constants::SEPERATE);
+                Result->Add(Constants::USE_RGB);
+                Result->Add(Constants::SEPERATE);
             }
         }
     
@@ -522,11 +534,11 @@ namespace GGUI{
     // Ranging from 0. - 1.
         float Alpha = 1.0f;
 
-        void Set_Alpha(unsigned char a){
+        constexpr void Set_Alpha(unsigned char a){
             Alpha = (float)a / std::numeric_limits<unsigned char>::max();
         }
 
-        void Set_Alpha(float a){
+        constexpr void Set_Alpha(float a){
             Alpha = a;
         }
 
@@ -534,6 +546,10 @@ namespace GGUI{
             Red = r;
             Green = g;
             Blue = b;
+            Set_Alpha(a);
+        }
+
+        constexpr RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a, bool Use_Const) : RGB(r, g, b, Use_Const){
             Set_Alpha(a);
         }
 
@@ -729,6 +745,8 @@ namespace GGUI{
         UTF(){}
 
         ~UTF(){}
+
+        constexpr UTF(const GGUI::UTF& other) : FLAGS(other.FLAGS), Ascii(other.Ascii), Unicode(other.Unicode), Unicode_Length(other.Unicode_Length), Foreground(other.Foreground), Background(other.Background){}
 
         // {Foreground, Background}
         UTF(char data, std::pair<RGB, RGB> color = {{}, {}}){
@@ -929,15 +947,11 @@ namespace GGUI{
     public:
         VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
 
+        constexpr VALUE(VALUE_STATE status, [[maybe_unused]] bool use_constexpr) : Status(status){}
+        
         VALUE(VALUE_STATE status) : Status(status){}
 
         VALUE() = default;
-
-        // Default VALUE wont do any parsing.
-        static VALUE* Parse(std::string val){
-            return nullptr;
-        }
-    
     };
 
     class MARGIN_VALUE : public VALUE{
@@ -967,6 +981,13 @@ namespace GGUI{
             }
             return *this;
         }
+
+        constexpr MARGIN_VALUE(const GGUI::MARGIN_VALUE& other) : VALUE(other.Status, true){
+            Top = other.Top;
+            Bottom = other.Bottom;
+            Left = other.Left;
+            Right = other.Right;
+        }
     };
 
     class COORDINATES_VALUE : public VALUE{
@@ -995,6 +1016,8 @@ namespace GGUI{
             Status = VALUE_STATE::VALUE;
             return *this;
         }
+
+        constexpr COORDINATES_VALUE(const GGUI::COORDINATES_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
     };
 
     class SHADOW_VALUE : public VALUE{
@@ -1025,6 +1048,8 @@ namespace GGUI{
             }
             return *this;
         }
+    
+        constexpr SHADOW_VALUE(const GGUI::SHADOW_VALUE& other) : VALUE(other.Status, true), Direction(other.Direction), Color(other.Color), Opacity(other.Opacity), Enabled(other.Enabled){}
     };
 
     class BORDER_STYLE_VALUE : public VALUE{
@@ -1046,7 +1071,6 @@ namespace GGUI{
         // Re-import defaults:
         BORDER_STYLE_VALUE() = default; // This should also call the base class
         ~BORDER_STYLE_VALUE() = default;
-        BORDER_STYLE_VALUE(const BORDER_STYLE_VALUE& other) = default;
         BORDER_STYLE_VALUE& operator=(const BORDER_STYLE_VALUE& other){
             if (other.Status >= Status){
                 TOP_LEFT_CORNER = other.TOP_LEFT_CORNER;
@@ -1064,6 +1088,20 @@ namespace GGUI{
                 Status = other.Status;
             }
             return *this;
+        }
+    
+        constexpr BORDER_STYLE_VALUE(const GGUI::BORDER_STYLE_VALUE& other) : VALUE(other.Status, true){
+            TOP_LEFT_CORNER = other.TOP_LEFT_CORNER;
+            BOTTOM_LEFT_CORNER = other.BOTTOM_LEFT_CORNER;
+            TOP_RIGHT_CORNER = other.TOP_RIGHT_CORNER;
+            BOTTOM_RIGHT_CORNER = other.BOTTOM_RIGHT_CORNER;
+            VERTICAL_LINE = other.VERTICAL_LINE;
+            HORIZONTAL_LINE = other.HORIZONTAL_LINE;
+            VERTICAL_RIGHT_CONNECTOR = other.VERTICAL_RIGHT_CONNECTOR;
+            VERTICAL_LEFT_CONNECTOR = other.VERTICAL_LEFT_CONNECTOR;
+            HORIZONTAL_BOTTOM_CONNECTOR = other.HORIZONTAL_BOTTOM_CONNECTOR;
+            HORIZONTAL_TOP_CONNECTOR = other.HORIZONTAL_TOP_CONNECTOR;
+            CROSS_CONNECTOR = other.CROSS_CONNECTOR;
         }
     };
 
@@ -1093,6 +1131,8 @@ namespace GGUI{
             Status = VALUE_STATE::VALUE;
             return *this;
         }
+    
+        constexpr RGB_VALUE(const GGUI::RGB_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
     };
 
     class BOOL_VALUE : public VALUE{
@@ -1121,6 +1161,8 @@ namespace GGUI{
             Status = VALUE_STATE::VALUE;
             return *this;
         }
+    
+        constexpr BOOL_VALUE(const GGUI::BOOL_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
     };
     
     class NUMBER_VALUE : public VALUE{
@@ -1149,6 +1191,8 @@ namespace GGUI{
             Status = VALUE_STATE::VALUE;
             return *this;
         }
+    
+        constexpr NUMBER_VALUE(const GGUI::NUMBER_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
     };
 
     class Styling{
@@ -1419,10 +1463,12 @@ namespace GGUI{
         // Disable Copy constructor
         Element(const Element&);
 
+        Element& operator=(const GGUI::Element&) = default;
+
         //Start of destructors.
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
-        ~Element();
+        virtual ~Element();
 
         //
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -1434,7 +1480,7 @@ namespace GGUI{
             return new_element;
         }
 
-        // USe this when you want to duplicate the same element with its properties safely.
+        // Use this when you want to duplicate the same element with its properties safely.
         Element* Copy();
 
         virtual void Fully_Stain();
@@ -1469,6 +1515,8 @@ namespace GGUI{
 
         virtual Element* Handle_Or_Operator(Element* other){
             Set_Style(other->Get_Style());
+
+            return this;
         }
 
         void Add_Class(std::string class_name);
@@ -1549,17 +1597,17 @@ namespace GGUI{
 
         virtual bool Remove(Element* handle);
 
-        virtual bool Remove(int index);
+        virtual bool Remove(unsigned int index);
 
-        void Set_Dimensions(int width, int height);
+        void Set_Dimensions(unsigned int width, unsigned int height);
 
-        int Get_Width();
+        unsigned int Get_Width();
 
-        int Get_Height();
+        unsigned int Get_Height();
 
-        void Set_Width(int width);
+        void Set_Width(unsigned int width);
 
-        void Set_Height(int height);
+        void Set_Height(unsigned int height);
 
         void Set_Position(Coordinates c);
        
@@ -1611,7 +1659,7 @@ namespace GGUI{
 
         virtual void Apply_Colors(Element* w, std::vector<UTF>& Result);
 
-        virtual bool Resize_To(Element* parent){
+        virtual bool Resize_To([[maybe_unused]] Element* parent){
             return false;
         }
 
@@ -1620,6 +1668,8 @@ namespace GGUI{
         void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
 
         std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(Element* e);
+
+        std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(GGUI::BORDER_STYLE_VALUE custom_border_style);
 
         void Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style);
 
@@ -1630,7 +1680,7 @@ namespace GGUI{
         std::pair<RGB, RGB>  Compose_All_Text_RGB_Values();
 
         RGB  Compose_Text_RGB_Values();
-        RGB  Compose_Background_RGB_Values(bool Get_As_Foreground = false);
+        RGB  Compose_Background_RGB_Values();
 
         std::pair<RGB, RGB>  Compose_All_Border_RGB_Values();
 
@@ -1678,13 +1728,13 @@ namespace GGUI{
         std::vector<Element*> Get_All_Nested_Elements(bool Show_Hidden = false){
             std::vector<Element*> result;
 
-            if (!Show)
+            if (!Show && !Show_Hidden)
                 return {};
             
             result.push_back(this);
 
             for (auto e : Childs){
-                std::vector<Element*> child_result = e->Get_All_Nested_Elements();
+                std::vector<Element*> child_result = e->Get_All_Nested_Elements(Show_Hidden);
                 result.insert(result.end(), child_result.begin(), child_result.end());
             }
 

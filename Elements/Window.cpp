@@ -255,8 +255,8 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
     
     GGUI::BORDER_STYLE_VALUE* custom_border = &Style->Border_Style;
 
-    for (int y = 0; y < w->Get_Height(); y++){
-        for (int x = 0; x < w->Get_Width(); x++){
+    for (unsigned int y = 0; y < w->Get_Height(); y++){
+        for (unsigned int x = 0; x < w->Get_Width(); x++){
             //top left corner
             if (y == 0 && x == 0){
                 Result[y * w->Get_Width() + x] = GGUI::UTF(custom_border->TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());

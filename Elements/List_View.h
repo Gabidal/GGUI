@@ -42,6 +42,15 @@ namespace GGUI{
 
         List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
 
+        ~List_View() override{
+            for (Element* e : Childs){
+                delete e;
+            }
+
+            // call the base destructor.
+            Element::~Element();
+        }
+
         Element* Handle_Or_Operator(Element* other) override{
             Add_Child(other);
             return this;
@@ -65,11 +74,11 @@ namespace GGUI{
 
         template<typename  T>
         T* Get(int index){
-            if (index > Childs.size() - 1)
+            if (index > (signed)Childs.size() - 1)
                 return nullptr;
 
             if (index < 0)
-                index = Childs.size() + index - 1;
+                index = (signed)Childs.size() + index - 1;
 
             return (T*)this->Childs[index];
         }

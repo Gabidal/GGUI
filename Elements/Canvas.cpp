@@ -112,6 +112,9 @@ namespace GGUI{
         if (Multi_Frame_Canvas.find(this) != Multi_Frame_Canvas.end()){
             Multi_Frame_Canvas.erase(this);
         }
+
+        // Call the base class destructor
+        Element::~Element();
     }
 
     void Terminal_Canvas::Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush){
@@ -230,7 +233,7 @@ namespace GGUI{
             Overflow.resize(MAX_SIMD_SIZE);
             Frame_Count.resize(MAX_SIMD_SIZE);
 
-            for (int i = 0; i < Buffer.size(); i += Current_Group_Size){
+            for (unsigned int i = 0; i < Buffer.size(); i += Current_Group_Size){
                 Current_Group_Size = Groups[i];
 
                 if (Current_Group_Size == 1){
@@ -419,19 +422,19 @@ namespace GGUI{
 
     void GGUI::Terminal_Canvas::Embed_Points(std::vector<bool> pixels, BORDER_STYLE_VALUE border_style, bool flush){
 
-        int Usable_Width = Width - 2 * Has_Border();
-        int Usable_Height = Height - 2 * Has_Border();
+        unsigned int Usable_Width = Width - 2 * Has_Border();
+        unsigned int Usable_Height = Height - 2 * Has_Border();
 
         // first check that the embed-able vector is within the usable area.
         if (pixels.size() != Usable_Width * Usable_Height){
             Report_Stack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((Width - 2 * Has_Border()) * (Height - 2 * Has_Border())) + " Got: " + std::to_string(pixels.size()));
         }
 
-        std::unordered_map<unsigned int, const char*> custom_border = Get_Custom_Border_Map(this);
+        std::unordered_map<unsigned int, const char*> custom_border = Get_Custom_Border_Map(border_style);
 
         // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
-        for (int Y = 0; Y < Usable_Height; Y++){
-            for (int X = 0; X < Usable_Width; X++){
+        for (unsigned int Y = 0; Y < Usable_Height; Y++){
+            for (unsigned int X = 0; X < Usable_Width; X++){
                 unsigned int Current_Masks = 0;
 
                 if ((signed)Y - 1 < 0 && pixels[X + ((signed)Y - 1) * Usable_Width])
@@ -563,13 +566,13 @@ namespace GGUI{
 
     }
 
-    namespace FONT{
-        Font_Header Parse_Font_File(std::string File_Name){
+    // namespace FONT{
+    //     Font_Header Parse_Font_File(std::string File_Name){
 
             
 
-        }
-    }
+    //     }
+    // }
 
 
 }

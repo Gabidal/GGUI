@@ -19,7 +19,12 @@ namespace GGUI{
         std::vector<std::string> States;
 
     public:
-        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = [](Element* e){});
+        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){});
+
+        ~Switch() override{
+            // call the base destructor.
+            Element::~Element();
+        }
 
         std::vector<UTF> Render() override;
 
@@ -48,6 +53,11 @@ namespace GGUI{
     class Radio_Button : public Switch{
     public:
         Radio_Button(std::string text) : Switch(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
+
+        ~Radio_Button() override{
+            // call the base destructor.
+            Element::~Element();
+        }
 
         bool Get_State(){
             return State;

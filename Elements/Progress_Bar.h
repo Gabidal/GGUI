@@ -26,6 +26,10 @@ namespace GGUI{
         Progress_Bar(RGB Fill_Color, RGB Empty_Color);
         Progress_Bar(RGB Fill_COlor, RGB Empty_Color, unsigned int Width, unsigned int Height = 1);
 
+        ~Progress_Bar() override{
+            // call the base destructor.
+            Element::~Element();
+        }
         
         Element* Safe_Move() override {
             Progress_Bar* new_Progress_Bar = new Progress_Bar();

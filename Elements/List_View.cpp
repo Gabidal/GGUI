@@ -152,6 +152,8 @@ GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, Grow
 
         Allow_Overflow(true);
         Element::Add_Child(Container);
+
+        Set_Parent(parent);
     });
 }
 
@@ -232,9 +234,6 @@ void GGUI::List_View::Add_Child(Element* e){
 
         // (This->left_border_size - child->left_border_size) * on_of_switch
         unsigned Offset = (Has_Border() - e->Has_Border()) * Has_Border();
-
-        unsigned int Max_Inner_Space_Height = Get_Height() - Offset * 2;
-        unsigned int Max_Inner_Space_Width = Get_Width() - Offset * 2;
 
         unsigned int Child_Needs_Minimum_Height_Of = e->Get_Height() + Offset * 2;
         unsigned int Child_Needs_Minimum_Width_Of = e->Get_Width() + Offset * 2;
@@ -405,6 +404,7 @@ bool GGUI::List_View::Remove(Element* remove){
             Last_Child->Show_Border(tmp->Has_Border());
         }
 
+        return true;
     });
 
     return true;
@@ -427,7 +427,7 @@ void GGUI::Scroll_View::Allow_Scrolling(bool allow){
     bool Scroll_Down_Event_Exists = false;
 
     // if this Scroll_View does not have a scrolling event then make one.
-    for (int i = 0; i < GGUI::Event_Handlers.size(); i++){
+    for (unsigned int i = 0; i < GGUI::Event_Handlers.size(); i++){
 
         if (GGUI::Event_Handlers[i]->Host != this)
             continue;
@@ -439,7 +439,7 @@ void GGUI::Scroll_View::Allow_Scrolling(bool allow){
     }
 
     if (!Scroll_Up_Event_Exists){
-        this->On(Constants::MOUSE_MIDDLE_SCROLL_UP, [&](GGUI::Event* e){
+        this->On(Constants::MOUSE_MIDDLE_SCROLL_UP, [&]([[maybe_unused]] GGUI::Event* e){
             this->Scroll_Up();
 
             return true;
@@ -447,7 +447,7 @@ void GGUI::Scroll_View::Allow_Scrolling(bool allow){
     }
 
     if (!Scroll_Down_Event_Exists){
-        this->On(Constants::MOUSE_MIDDLE_SCROLL_DOWN, [&](GGUI::Event* e){
+        this->On(Constants::MOUSE_MIDDLE_SCROLL_DOWN, [&]([[maybe_unused]] GGUI::Event* e){
             this->Scroll_Down();
 
             return true;

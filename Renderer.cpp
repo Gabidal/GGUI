@@ -67,7 +67,12 @@ namespace GGUI{
         int B_X = b->Get_Position().X;
         int B_Y = b->Get_Position().Y;
 
-        return (A_X < B_X + b->Get_Width() && A_X + a->Get_Width() > B_X && A_Y < B_Y + b->Get_Height() && A_Y + a->Get_Height() > B_Y);
+        return (
+            A_X < B_X + (signed)b->Get_Width() &&
+            A_X + (signed)a->Get_Width() > B_X &&
+            A_Y < B_Y + (signed)b->Get_Height() &&
+            A_Y + (signed)a->Get_Height() > B_Y
+        );
     }
 
     bool Collides(GGUI::Element* a, GGUI::Coordinates b){
@@ -76,7 +81,12 @@ namespace GGUI{
 
         int B_X = b.X;
         int B_Y = b.Y;
-        return (A_X < B_X + 1 && A_X + a->Get_Width() > B_X && A_Y < B_Y + 1 && A_Y + a->Get_Height() > B_Y);
+        return (
+            A_X < B_X + 1 &&
+            A_X + (signed)a->Get_Width() > B_X &&
+            A_Y < B_Y + 1 &&
+            A_Y + (signed)a->Get_Height() > B_Y
+        );
     }
 
     bool Collides(GGUI::Element* a, GGUI::Coordinates c, unsigned int Width, unsigned int Height){
@@ -85,7 +95,12 @@ namespace GGUI{
 
         int B_X = c.X;
         int B_Y = c.Y;
-        return (A_X < B_X + Width && A_X + a->Get_Width() > B_X && A_Y < B_Y + Height && A_Y + a->Get_Height() > B_Y);
+        return (
+            A_X < B_X + (signed)Width &&
+            A_X + (signed)a->Get_Width() > B_X &&
+            A_Y < B_Y + (signed)Height &&
+            A_Y + (signed)a->Get_Height() > B_Y
+        );
     }
 
     Element* Get_Accurate_Element_From(Coordinates c, Element* Parent){
@@ -234,7 +249,7 @@ namespace GGUI{
     #include <DbgHelp.h>
 
     void SLEEP(unsigned int mm){
-        _sleep(mm);
+        Sleep(mm);
     }
 
     GGUI::HANDLE GLOBAL_STD_HANDLE;
@@ -253,7 +268,9 @@ namespace GGUI{
         Max_Width = info.srWindow.Right - info.srWindow.Left + 1;
         Max_Height = info.srWindow.Bottom - info.srWindow.Top + 1;  // this doesn't take into consideration of politics
 
-        assert(("Terminal Size non-existant!", Max_Width > 0 && Max_Height > 0));
+        if (Max_Width == 0 || Max_Height == 0){
+            Report("Failed to get console info!");
+        }
     }
 
     void Update_Frame(bool Lock_Event_Thread);
@@ -414,11 +431,10 @@ namespace GGUI{
         SetConsoleMode(GLOBAL_STD_HANDLE, -1);
         SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
 
-        // std::cout << "\033[?1003h";
-        std::cout << "\e[?1003h\e[?25l";
+        std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS) + Constants::DisableFeature(Constants::MOUSE_CURSOR);
         std::cout.flush();
 
-        SetConsoleOutputCP(65001);
+        SetConsoleOutputCP(Constants::ENABLE_UTF8_MODE_FOR_WINDOWS);
 
         Platform_Initialized = true;
     }
@@ -533,7 +549,7 @@ namespace GGUI{
             std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
 
             // For last branch use different branch start symbol
-            if (Stack_Index == Usable_Depth - 1)
+            if (Stack_Index == (unsigned int)Usable_Depth - 1)
                 Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
 
             // now add indentation by the amount of index:
@@ -1116,16 +1132,16 @@ namespace GGUI{
     }
 
     void MOUSE_API(){
-        auto Mouse_Left_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
+        unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
 
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= (long long)SETTINGS::Mouse_Press_Down_Cooldown){
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
         }
         else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
         }
 
-        auto Mouse_Right_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
+        unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
 
         if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
@@ -1134,7 +1150,7 @@ namespace GGUI{
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
         }
 
-        auto Mouse_Middle_Pressed_For = std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
+        unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
 
         if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
             Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
@@ -1160,8 +1176,6 @@ namespace GGUI{
     void Handle_Escape(){
         if (!KEYBOARD_STATES[BUTTON_STATES::ESC].State)
             return;
-
-        Element* Current = nullptr;
 
         if (Focused_On){
             Hovered_On = Focused_On;
@@ -1195,7 +1209,7 @@ namespace GGUI{
             std::vector<Element*> handler_elements;
             handler_elements.resize(Event_Handlers.size());
 
-            for (int i = 0; i < Event_Handlers.size(); i++){
+            for (unsigned int i = 0; i < Event_Handlers.size(); i++){
                 handler_elements[i] = Event_Handlers[i]->Host;
             }
 
@@ -1214,14 +1228,6 @@ namespace GGUI{
             return;
 
         if (Current->Get_Childs().size() > 0){
-            int Start_index = 0;
-            int End_Index = Current->Get_Childs().size() - 1;
-
-            if (Shift_Is_Pressed){
-                Start_index = Current->Get_Childs().size() - 1;
-                End_Index = 0;
-            }
-
             // Find the last child.
             for (int i = Current->Get_Childs().size() - 1; i >= 0;){
                 if (!Current->Get_Childs()[i]->Is_Displayed())
@@ -1251,7 +1257,7 @@ namespace GGUI{
             // Find this current elements index in the parents child list.
             int Index = -1;
 
-            for (int i = 0; i < Current->Get_Parent()->Get_Childs().size(); i++){
+            for (int i = 0; i < (signed)Current->Get_Parent()->Get_Childs().size(); i++){
                 if (Current->Get_Parent()->Get_Childs()[i] == Current){
                     Index = i;
                     break;
@@ -1268,7 +1274,7 @@ namespace GGUI{
             }
             else{
                 Index++;
-                if (Index >= Current->Get_Parent()->Get_Childs().size())
+                if (Index >= (signed)Current->Get_Parent()->Get_Childs().size())
                     Index = 0;
             }
 
@@ -1421,8 +1427,8 @@ namespace GGUI{
         std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
         // Prolong prolongable memories.
-        for (int i = 0; i < Remember.size(); i++){
-            for (int j = 1; j < Remember.size(); j++){
+        for (unsigned int i = 0; i < Remember.size(); i++){
+            for (unsigned int j = 1; j < Remember.size(); j++){
                 if (Remember[i].Is(MEMORY_FLAGS::PROLONG_MEMORY) && Remember[j].Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
                     if (Remember[i].Job.target<bool(*)(GGUI::Event* e)>() == Remember[j].Job.target<bool(*)(GGUI::Event* e)>()){
                         Remember[i].Start_Time = Remember[j].Start_Time;
@@ -1433,7 +1439,7 @@ namespace GGUI{
             }
         }
 
-        for (int i = 0; i < Remember.size(); i++){
+        for (unsigned int i = 0; i < Remember.size(); i++){
             //first calculate the time difference between the start if the task and the end task
             size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Remember[i].Start_Time).count();
 
@@ -1457,7 +1463,7 @@ namespace GGUI{
                         i--;
                     }
                 }
-                catch (std::exception e){
+                catch (std::exception& e){
                     Report("In memory: '" + Remember[i].ID + "' Problem: " + std::string(e.what()));
                 }
                 
@@ -1545,7 +1551,7 @@ namespace GGUI{
 
             bool Has_Select_Event = false;
 
-            for (int i = 0; i < Inputs.size(); i++){
+            for (unsigned int i = 0; i < Inputs.size(); i++){
                 if (Has(Inputs[i]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
                     Has_Select_Event = true;
 
@@ -1614,7 +1620,7 @@ namespace GGUI{
                 //check if this job could be runned succesfully.
                 if (e->Job(Best_Candidate)){
                     // Now remove the candidates from the input
-                    for (int i = 0; i < Inputs.size(); i++){
+                    for (unsigned int i = 0; i < Inputs.size(); i++){
                         if (Inputs[i] == Best_Candidate){
                             Inputs.erase(Inputs.begin() + i);
                             i--;
@@ -1696,7 +1702,6 @@ namespace GGUI{
 
         //Save the state before the init
         bool Default_Render_State = Pause_Render;
-        bool Default_Event_State = Pause_Event_Thread;
 
         Current_Time = std::chrono::high_resolution_clock::now();
         Previous_Time = Current_Time;
@@ -1721,7 +1726,6 @@ namespace GGUI{
         }
 
         std::thread Job_Scheduler([&](){
-            int i = 0;
             while (true){
                 if (Pause_Event_Thread.load())
                     continue;
@@ -1786,7 +1790,7 @@ namespace GGUI{
             </Window>
         */
 
-        if (Main){
+        if (Main && (Max_Width != 0 && Max_Height != 0)){
             bool Create_New_Line = true;
 
             // First check if there already is a report log.
@@ -1814,7 +1818,7 @@ namespace GGUI{
                 std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
 
                 if (Rows.size() > 0){
-                    Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
+                    //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
                     Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
                     Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
 
@@ -1919,7 +1923,7 @@ namespace GGUI{
 
                 Remember.push_back(Memory(
                     TIME::SECOND * 30,
-                    [=](GGUI::Event* e){
+                    [=]([[maybe_unused]] GGUI::Event* e){
                         //delete tmp;
                         Error_Logger->Display(false);
                         //job successfully done
@@ -1964,12 +1968,15 @@ namespace GGUI{
         GGUI::Coordinates C = child->Get_Position();
 
         int i = 0;
-        for (int Parent_Y = 0; Parent_Y < Parent->Get_Height(); Parent_Y++){
-            for (int Parent_X = 0; Parent_X < Parent->Get_Width(); Parent_X++){
-                if (Parent_Y >= C.Y && Parent_X >= C.X &&
-                    Parent_Y <= C.Y + child->Get_Height() && Parent_X <= C.X + child->Get_Width())
+        for (int Parent_Y = 0; Parent_Y < (signed)Parent->Get_Height(); Parent_Y++){
+            for (int Parent_X = 0; Parent_X < (signed)Parent->Get_Width(); Parent_X++){
+                if (
+                    Parent_Y >= C.Y && Parent_X >= C.X &&
+                    Parent_Y <= C.Y + (signed)child->Get_Height() &&
+                    Parent_X <= C.X + (signed)child->Get_Width()
+                )
                 {
-                    Parent_Buffer[Parent_Y * Parent->Get_Width() + Parent_X] = Text[i++];
+                    Parent_Buffer[Parent_Y * (signed)Parent->Get_Width() + Parent_X] = Text[i++];
                 }
             }
         }
@@ -2009,7 +2016,7 @@ namespace GGUI{
         Buffer[0].Set_Flag(UTF_FLAG::ENCODE_START);
         Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_END);
 
-        for (int Index = 1; Index < Buffer.size() - 1; Index++){
+        for (unsigned int Index = 1; Index < Buffer.size() - 1; Index++){
 
             bool Same_Colours_As_Previous = (RGB)Buffer[Index].Background == (RGB)Buffer[Index - 1].Background && (RGB)Buffer[Index].Foreground == (RGB)Buffer[Index - 1].Foreground;
             bool Same_Colours_As_Next = (RGB)Buffer[Index].Background == (RGB)Buffer[Index + 1].Background && (RGB)Buffer[Index].Foreground == (RGB)Buffer[Index + 1].Foreground;
@@ -2026,7 +2033,7 @@ namespace GGUI{
         }
     }
 
-    bool Update_Stats(GGUI::Event* e){
+    bool Update_Stats([[maybe_unused]] GGUI::Event* e){
         // Check if Inspect tool is displayed
         Element* Inspect_Tool = Main->Get_Element("Inspect");
 

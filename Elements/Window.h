@@ -64,6 +64,11 @@ namespace GGUI{
             std::vector<Element*> Tree 
         );
 
+        ~Window() override{
+            // call the base destructor.
+            Element::~Element();
+        }
+
         //End of user constructors.
 
         void Update_Hidden_Border_Colors();

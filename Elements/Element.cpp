@@ -22,14 +22,14 @@ std::string GGUI::RGB::Get_Colour() const{
 }
 
 void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
-    Result->Add(
-        Constants::To_Compact[Red], Constants::SEPERATE,
-        Constants::To_Compact[Green], Constants::SEPERATE,
-        Constants::To_Compact[Blue]
-    );
+    Result->Add(Constants::To_Compact[Red]);
+    Result->Add(Constants::SEPERATE);
+    Result->Add(Constants::To_Compact[Green]);
+    Result->Add(Constants::SEPERATE);
+    Result->Add(Constants::To_Compact[Blue]);
 }
     
-GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
+GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values, VALUE_STATE Default) : VALUE(Default){
     if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
         BOTTOM_LEFT_CORNER = values[1];
@@ -279,7 +279,7 @@ GGUI::Element::~Element(){
 
     // Make sure this element is not listed in the parent element.
     // And if it does, then remove it from the parent element.
-    for (int i = 0; Parent && i < Parent->Childs.size(); i++)
+    for (unsigned int i = 0; Parent && i < Parent->Childs.size(); i++)
         if (Parent->Childs[i] == this){
             Parent->Childs.erase(Parent->Childs.begin() + i);
 
@@ -290,7 +290,7 @@ GGUI::Element::~Element(){
         }
 
     // Fire all the childs.
-    for (int i = Childs.size() -1; i >= 0; i--)
+    for (int i = (signed)Childs.size() -1; i >= 0; i--)
         if (Childs[i]->Parent == this) 
             delete Childs[i];
 
@@ -298,7 +298,7 @@ GGUI::Element::~Element(){
     delete Style;
 
     //now also update the event handlers.
-    for (int i = 0; i < Event_Handlers.size(); i++)
+    for (unsigned int i = 0; i < Event_Handlers.size(); i++)
         if (Event_Handlers[i]->Host == this){
             
             //delete the event
@@ -364,7 +364,7 @@ GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
 
 }
 
-GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
+GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(){
     if (Focused){
         return Style->Focus_Background_Color.Value;
     }
@@ -374,7 +374,6 @@ GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(bool Get_As_Foreground){
     else{
         return Style->Background_Color.Value;
     }
-
 }
 
 std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
@@ -555,7 +554,7 @@ bool GGUI::Element::Has(std::string s){
     int id = Class_Names[s];
 
     //then check if the element has the class
-    for(int i = 0; i < Classes.size(); i++){
+    for(unsigned int i = 0; i < Classes.size(); i++){
         if(Classes[i] == id){
             return true;
         }
@@ -644,7 +643,7 @@ std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){
 }
 
 bool GGUI::Element::Remove(Element* handle){
-    for (int i = 0; i < Childs.size(); i++){
+    for (unsigned int i = 0; i < Childs.size(); i++){
         if (Childs[i] == handle){
             //If the mouse if focused on this about to be deleted element, change mouse position into it's parent Position.
             if (Focused_On == Childs[i]){
@@ -702,7 +701,7 @@ bool GGUI::Element::Is_Displayed(){
     return Show;
 }
 
-bool GGUI::Element::Remove(int index){
+bool GGUI::Element::Remove(unsigned int index){
     if (index > Childs.size() - 1){
         return false;
     }
@@ -734,7 +733,7 @@ void GGUI::Element::Remove(){
     }
 }
 
-void GGUI::Element::Set_Dimensions(int width, int height){
+void GGUI::Element::Set_Dimensions(unsigned int width, unsigned int height){
     if (width != Width || height != Height){    
         Width = width;
         Height = height;
@@ -744,15 +743,15 @@ void GGUI::Element::Set_Dimensions(int width, int height){
     }
 }
 
-int GGUI::Element::Get_Width(){
+unsigned int GGUI::Element::Get_Width(){
     return Width;
 }
 
-int GGUI::Element::Get_Height(){
+unsigned int GGUI::Element::Get_Height(){
     return Height;
 }
 
-void GGUI::Element::Set_Width(int width){
+void GGUI::Element::Set_Width(unsigned int width){
     if (width != Width){
         Width = width;
         Fully_Stain();
@@ -760,7 +759,7 @@ void GGUI::Element::Set_Width(int width){
     }
 }
 
-void GGUI::Element::Set_Height(int height){
+void GGUI::Element::Set_Height(unsigned int height){
     if (height != Height){
         Height = height;
         Fully_Stain();
@@ -830,7 +829,7 @@ GGUI::Element* GGUI::Element::Copy(){
     new_element->Parent = nullptr;
 
     // copy the childs over.
-    for (int i = 0; i < this->Get_Childs().size(); i++){
+    for (unsigned int i = 0; i < this->Get_Childs().size(); i++){
         new_element->Childs[i] = this->Get_Childs()[i]->Copy();
     }
 
@@ -1060,7 +1059,6 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         Apply_Colors(this, Result);
 
     bool Connect_Borders_With_Parent = Has_Border();
-    bool Connect_Borders_With_Other_Childs = false;
     unsigned int Childs_With_Borders = 0;
 
     //This will add the child windows to the Result buffer
@@ -1132,8 +1130,8 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 
     GGUI::BORDER_STYLE_VALUE custom_border = Style->Border_Style;
 
-    for (int y = 0; y < Height; y++){
-        for (int x = 0; x < Width; x++){
+    for (unsigned int y = 0; y < Height; y++){
+        for (unsigned int x = 0; x < Width; x++){
             //top left corner
             if (y == 0 && x == 0){
                 Result[y * Width + x] = GGUI::UTF(custom_border.TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
@@ -1186,7 +1184,7 @@ void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
 }
 
 std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> GGUI::Element::Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child){
-    bool Border_Offset = (Parent->Has_Border() - Child->Has_Border()) * Parent->Has_Border();
+    bool Border_Offset = (Parent->Has_Border() - Child->Has_Border()) && Parent->Has_Border();
     
     unsigned int Max_Allowed_Height = Parent->Height - Border_Offset;               //remove bottom borders from calculation
     unsigned int Max_Allowed_Width = Parent->Width - Border_Offset;                 //remove right borders from calculation
@@ -1225,8 +1223,8 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     unsigned int End_X = Limits.second.second.first;
     unsigned int End_Y = Limits.second.second.second;
 
-    for (int y = Start_Y; y < End_Y; y++){
-        for (int x = Start_X; x < End_X; x++){
+    for (unsigned int y = Start_Y; y < End_Y; y++){
+        for (unsigned int x = Start_X; x < End_X; x++){
             unsigned int Child_Buffer_Y = (y - Start_Y + Negative_Offset_Y) * Child->Get_Processed_Width();
             unsigned int Child_Buffer_X = (x - Start_X + Negative_Offset_X); 
             Compute_Alpha_To_Nesting(Parent_Buffer[y * Width + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X]);
@@ -1236,7 +1234,7 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
 
 inline bool Is_In_Bounds(GGUI::Coordinates index, GGUI::Element* parent){
     // checks if the index is out of bounds
-    if (index.X < 0 || index.Y < 0 || index.X >= parent->Get_Width() || index.Y >= parent->Get_Height())
+    if (index.X < 0 || index.Y < 0 || index.X >= (signed)parent->Get_Width() || index.Y >= (signed)parent->Get_Height())
         return false;
 
     return true;
@@ -1249,6 +1247,10 @@ inline GGUI::UTF* From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_B
 std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
     GGUI::BORDER_STYLE_VALUE custom_border_style = e->Get_Border_Style();
 
+    return Get_Custom_Border_Map(custom_border_style);
+}
+
+std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_Map(GGUI::BORDER_STYLE_VALUE custom_border_style){
     return {
             {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style.TOP_LEFT_CORNER},
             {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style.TOP_RIGHT_CORNER},
@@ -1289,11 +1291,21 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
     // If not, there is no need to calculate anything.
 
     // First calculate if the child is outside the parent.
-    if (B->Position.X + B->Width < A->Position.X || B->Position.X > A->Position.X + A->Width || B->Position.Y + B->Height < A->Position.Y || B->Position.Y > A->Position.Y + A->Height)
+    if (
+        B->Position.X + (signed)B->Width < A->Position.X ||
+        B->Position.X > A->Position.X + (signed)A->Width ||
+        B->Position.Y + (signed)B->Height < A->Position.Y ||
+        B->Position.Y > A->Position.Y + (signed)A->Height
+    )
         return;
 
     // Now calculate if the child is inside the parent.
-    if (B->Position.X > A->Position.X && B->Position.X + B->Width < A->Position.X + A->Width && B->Position.Y > A->Position.Y && B->Position.Y + B->Height < A->Position.Y + A->Height)
+    if (
+        B->Position.X > A->Position.X &&
+        B->Position.X + (signed)B->Width < A->Position.X + (signed)A->Width &&
+        B->Position.Y > A->Position.Y &&
+        B->Position.Y + (signed)B->Height < A->Position.Y + (signed)A->Height
+    )
         return;
 
 
@@ -1331,13 +1343,10 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
     };
 
-    int Participants_Count = 2;
-    int Box_Axes_Count = 2;
-
     std::vector<Coordinates> Crossing_Indicies;
 
     // Go through singular box
-    for (int Box_Index = 0; Box_Index < Horizontal_Line_Y_Cordinates.size(); Box_Index++){
+    for (unsigned int Box_Index = 0; Box_Index < Horizontal_Line_Y_Cordinates.size(); Box_Index++){
         // Now just pair the indicies from the two lists.
         Crossing_Indicies.push_back(
             // First pair
@@ -1571,9 +1580,6 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     std::vector<GGUI::UTF> Shadow_Box;
     Shadow_Box.resize(Shadow_Box_Width * Shadow_Box_Height);
 
-    int Shadow_Box_Center_X = Shadow_Box_Width / 2;
-    int Shadow_Box_Center_Y = Shadow_Box_Height / 2;
-
     unsigned char Current_Alpha = properties.Opacity * std::numeric_limits<unsigned char>::max();;
     float previus_opacity = properties.Opacity;
     int Current_Box_Start_X = Shadow_Length;
@@ -1699,7 +1705,7 @@ std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
 
 bool GGUI::Element::Child_Is_Shown(Element* other){
 
-    bool Border_Modifier = (Has_Border() - other->Has_Border()) * Has_Border();
+    bool Border_Modifier = (Has_Border() - other->Has_Border()) && Has_Border();
 
     // Check if the child element is atleast above the {0, 0} 
     int Minimum_X = other->Position.X + other->Get_Processed_Width();

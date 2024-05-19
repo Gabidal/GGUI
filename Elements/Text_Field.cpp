@@ -7,7 +7,7 @@
 GGUI::Text_Field::Text_Field(std::string Text, Styling css) : Element(css) {
     Data = Text;
     
-    std::pair<int, int> D = Get_Text_Dimensions(Text);
+    std::pair<unsigned int, unsigned int> D = Get_Text_Dimensions(Text);
 
     if (Width == 0 || Width < D.first){
         Width = D.first;
@@ -91,13 +91,13 @@ std::vector<GGUI::UTF> GGUI::Text_Field::Render(){
         switch ((TEXT_LOCATION)Style->Text_Position.Value)
         {
         case TEXT_LOCATION::CENTER:
-            Center_Text(this, Data, Parent, Result);
+            Center_Text(this, Data, Result);
             break;
         case TEXT_LOCATION::LEFT:
-            Left_Text(this, Data, Parent, Result);
+            Left_Text(this, Data, Result);
             break;
         case TEXT_LOCATION::RIGHT:
-            Right_Text(this, Data, Parent, Result);
+            Right_Text(this, Data, Result);
             break;
         default:
             break;
@@ -139,7 +139,7 @@ std::pair<unsigned int, unsigned int> GGUI::Text_Field::Get_Text_Dimensions(std:
     int Current_Row = 0;
 
     int longest_Height = 1;
-    for (int c = 0; c < text.size(); c++){
+    for (unsigned int c = 0; c < text.size(); c++){
         if (text[c] == '\n'){
             Current_Row = 0;
             longest_Height++;
@@ -178,9 +178,9 @@ bool GGUI::Text_Field::Resize_To(Element* parent){
 }
 
 //The Text buffer needs to contain already left centered text.
-void GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Result){
-    int self_width = self->Get_Width();
-    int self_height = self->Get_Height();
+void GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, std::vector<GGUI::UTF>& Result){
+    unsigned int self_width = self->Get_Width();
+    unsigned int self_height = self->Get_Height();
 
     int Has_Border = self->Has_Border();
 
@@ -189,18 +189,18 @@ void GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::
     if (Result.size() == 0)
         Result.resize(self_height * self_width);
 
-    int i = 0;
-    for (int Y = Has_Border; Y < self_height - Has_Border; Y++){
+    unsigned int i = 0;
+    for (unsigned int Y = Has_Border; Y < self_height - Has_Border; Y++){
 
         int Row_Index = Y - Has_Border;
 
         // Calculate on what row we are on.
-        int This_Text_Row_Length = (Text.size() - (Row_Index * self_width));
+        unsigned int This_Text_Row_Length = (Text.size() - (Row_Index * self_width));
 
         //check if this row of text reaches tot he two ends of this wrapped width.
         if (This_Text_Row_Length > 0){
             //This means that the text has enough size to take all space on this row.
-            for (int X = Has_Border; X < self_width - Has_Border; X++){
+            for (unsigned int X = Has_Border; X < self_width - Has_Border; X++){
                 if (i < Text.size()){
                     Result[Y * self_width + X] = Text[i++];
                 }
@@ -208,9 +208,9 @@ void GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::
         }
         else{
             //This means we have to center the text here
-            int Starting_X = Width_Center - This_Text_Row_Length / 2;
+            unsigned int Starting_X = Width_Center - This_Text_Row_Length / 2;
 
-            for (int X = Has_Border; X < This_Text_Row_Length - Has_Border; X++){       
+            for (unsigned int X = Has_Border; X < This_Text_Row_Length - Has_Border; X++){       
                 if (i < Text.size()){
                     Result[Y * self_width + X + Starting_X] = Text[i++];
                 }
@@ -219,9 +219,9 @@ void GGUI::Text_Field::Center_Text(GGUI::Element* self, std::string Text, GGUI::
     }
 }
 
-void GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Result){
-    int self_width = self->Get_Width();
-    int self_height = self->Get_Height();
+void GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, std::vector<GGUI::UTF>& Result){
+    unsigned int self_width = self->Get_Width();
+    unsigned int self_height = self->Get_Height();
 
     bool Has_border = self->Has_Border();
 
@@ -230,7 +230,7 @@ void GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::El
 
     std::vector<int> New_Line_Indicies;
 
-    for (int i = 0; i < Text.size(); i++){
+    for (unsigned int i = 0; i < Text.size(); i++){
 
         if (Text[i] == '\n'){
             New_Line_Indicies.push_back(i);
@@ -241,12 +241,12 @@ void GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::El
 
     std::reverse(New_Line_Indicies.begin(), New_Line_Indicies.end());
 
-    int i = 0;
-    for (int Y = Has_border; Y < (self_height - Has_border); Y++){
-        for (int X = Has_border; X < (self_width - Has_border); X++){
+    unsigned int i = 0;
+    for (unsigned int Y = Has_border; Y < (self_height - Has_border); Y++){
+        for (unsigned int X = Has_border; X < (self_width - Has_border); X++){
             if (i < Text.size()){
 
-                if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+                if (New_Line_Indicies.size() > 0 && i == (unsigned)New_Line_Indicies.back()){
                     New_Line_Indicies.pop_back();
                     break;  //close the x loop and increase the Y loop.
                 }
@@ -265,15 +265,15 @@ void GGUI::Text_Field::Left_Text(GGUI::Element* self, std::string Text, GGUI::El
         }
 
         //every wrapped line acts like a newline so delete the next newline
-        if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+        if (New_Line_Indicies.size() > 0 && i == (unsigned)New_Line_Indicies.back()){
             New_Line_Indicies.pop_back();
         }
     }
 }
 
-void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Result){
-    int self_width = self->Get_Width();
-    int self_height = self->Get_Height();
+void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, std::vector<GGUI::UTF>& Result){
+    unsigned int self_width = self->Get_Width();
+    unsigned int self_height = self->Get_Height();
 
     bool Has_border = self->Has_Border();
 
@@ -282,7 +282,7 @@ void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::E
 
     std::vector<int> New_Line_Indicies;
 
-    for (int i = 0; i < Text.size(); i++){
+    for (unsigned int i = 0; i < Text.size(); i++){
 
         if (Text[i] == '\n'){
             New_Line_Indicies.push_back(i);
@@ -293,12 +293,12 @@ void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::E
 
     std::reverse(New_Line_Indicies.begin(), New_Line_Indicies.end());
 
-    int i = 0;
-    for (int Y = Has_border; Y < (self_height - Has_border); Y++){
-        for (int X = Has_border; X < (self_width - Has_border); X++){
+    unsigned int i = 0;
+    for (unsigned int Y = Has_border; Y < (self_height - Has_border); Y++){
+        for (unsigned int X = Has_border; X < (self_width - Has_border); X++){
             if (i < Text.size()){
 
-                if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+                if (New_Line_Indicies.size() > 0 && i == (unsigned)New_Line_Indicies.back()){
                     New_Line_Indicies.pop_back();
                     break;  //close the x loop and increase the Y loop.
                 }
@@ -310,7 +310,7 @@ void GGUI::Text_Field::Right_Text(GGUI::Element* self, std::string Text, GGUI::E
         }
 
         //every wrapped line acts like a newline so delete the next newline
-        if (New_Line_Indicies.size() > 0 && i == New_Line_Indicies.back()){
+        if (New_Line_Indicies.size() > 0 && i == (unsigned)New_Line_Indicies.back()){
             New_Line_Indicies.pop_back();
         }
     }
@@ -397,7 +397,7 @@ void GGUI::Text_Field::Input(std::function<void(char)> Then){
 
     Action* back_space = new Action(
         Constants::BACKSPACE,
-        [=](GGUI::Event* e){
+        [=]([[maybe_unused]] GGUI::Event* e){
             if (Focused && Allow_Text_Input){
                 
                 if (Data.size() > 0){
@@ -433,8 +433,6 @@ void GGUI::Text_Field::Enable_Text_Input(){
         std::pair<unsigned int, unsigned int> Dimensions = Get_Text_Dimensions(tmp_Data);
 
         if (Dimensions.first > Width - (Has_Border() * 2) || Dimensions.second > Height - (Has_Border() * 2)){
-
-            std::pair<unsigned int, unsigned int> max_dimensions = this->Parent->Get_Fitting_Dimensions(this);
             if (Style->Allow_Overflow.Value){
                 Data.push_back(input);
                 Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);

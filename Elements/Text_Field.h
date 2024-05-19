@@ -38,6 +38,11 @@ namespace GGUI{
             RGB border_background_color
         );
 
+        ~Text_Field() override{
+            // call the base destructor.
+            Element::~Element();
+        }
+
         //End of user constructors.
 
         void Set_Data(std::string Data);
@@ -79,9 +84,9 @@ namespace GGUI{
 
         void Disable_Dynamic_Size();
 
-        static void Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
-        static void Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
-        static void Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+        static void Center_Text(GGUI::Element* self, std::string Text, std::vector<GGUI::UTF>& Previus_Render);
+        static void Left_Text(GGUI::Element* self, std::string Text, std::vector<GGUI::UTF>& Previus_Render);
+        static void Right_Text(GGUI::Element* self, std::string Text, std::vector<GGUI::UTF>& Previus_Render);
 
         Element* Safe_Move() override {
             Text_Field* new_Text_Field = new Text_Field();

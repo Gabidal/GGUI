@@ -16,7 +16,7 @@ namespace GGUI{
 
         Text = text;
 
-        On_Click([=](Event* e){
+        On_Click([=]([[maybe_unused]] Event* e){
             Togler();
 
             Update_Frame();
@@ -72,7 +72,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::DEEP)){
             std::string Display_Text = States[State] + " " + Text;
 
-            Text_Field::Left_Text(this, Display_Text, Parent, Result);
+            Text_Field::Left_Text(this, Display_Text, Result);
 
             //Clean text update notice and state change notice.
             //NOTE: Cleaning STATE flag whitout checking it's existance might lead to unexpecte results.

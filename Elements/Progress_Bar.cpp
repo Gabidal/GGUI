@@ -93,7 +93,8 @@ namespace GGUI{
                 Result[Index].Set_Color({});
 
                 if (x >= floor(FILL)){
-                    Result[Index].Set_Background(Compose_Background_RGB_Values(true));
+                    // NOTE: Maybe use the Text colors instead?
+                    Result[Index].Set_Background(Compose_Background_RGB_Values());
                 }
                 else{
                     Result[Index].Set_Foreground(Compose_Text_RGB_Values());

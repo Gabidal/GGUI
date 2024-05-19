@@ -46,7 +46,7 @@ namespace GGUI{
             // Stuck into the constructed position.
             const bool Is_Global = false;
 
-            BUFFER_CAPTURE(std::function<void()> on_change, bool Global = false, std::string Name = "");
+            BUFFER_CAPTURE(std::function<void()> on_change, std::string Name = "", bool Global = false);
 
             BUFFER_CAPTURE() = default;
 
