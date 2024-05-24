@@ -57,50 +57,24 @@ namespace GGUI{
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
     const std::string HISTORY = "_HISTORY_";
 
-    bool Collides(GGUI::Element* a, GGUI::Element* b){
-        if (a == b)
-            return false;
-            
-        int A_X = a->Get_Position().X;
-        int A_Y = a->Get_Position().Y;
-
-        int B_X = b->Get_Position().X;
-        int B_Y = b->Get_Position().Y;
-
+    bool Collides(GGUI::Coordinates A, GGUI::Coordinates B, int A_Width, int A_Height, int B_Width, int B_Height){
         return (
-            A_X < B_X + (signed)b->Get_Width() &&
-            A_X + (signed)a->Get_Width() > B_X &&
-            A_Y < B_Y + (signed)b->Get_Height() &&
-            A_Y + (signed)a->Get_Height() > B_Y
+            A.X < B.X + B_Width &&
+            A.X + A_Width > B.X &&
+            A.Y < B.Y + B_Height &&
+            A.Y + A_Height > B.Y
         );
+    }
+
+    bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity){
+        if (a == b)
+            return Identity;    // For custom purposes, defaults into true
+            
+        return Collides(a->Get_Absolute_Position(), b->Get_Absolute_Position(), a->Get_Width(), a->Get_Height(), b->Get_Width(), b->Get_Height());
     }
 
     bool Collides(GGUI::Element* a, GGUI::Coordinates b){
-        int A_X = a->Get_Absolute_Position().X;
-        int A_Y = a->Get_Absolute_Position().Y;
-
-        int B_X = b.X;
-        int B_Y = b.Y;
-        return (
-            A_X < B_X + 1 &&
-            A_X + (signed)a->Get_Width() > B_X &&
-            A_Y < B_Y + 1 &&
-            A_Y + (signed)a->Get_Height() > B_Y
-        );
-    }
-
-    bool Collides(GGUI::Element* a, GGUI::Coordinates c, unsigned int Width, unsigned int Height){
-        int A_X = a->Get_Absolute_Position().X;
-        int A_Y = a->Get_Absolute_Position().Y;
-
-        int B_X = c.X;
-        int B_Y = c.Y;
-        return (
-            A_X < B_X + (signed)Width &&
-            A_X + (signed)a->Get_Width() > B_X &&
-            A_Y < B_Y + (signed)Height &&
-            A_Y + (signed)a->Get_Height() > B_Y
-        );
+        return Collides(a->Get_Absolute_Position(), b, a->Get_Width(), a->Get_Height(), 1, 1);
     }
 
     Element* Get_Accurate_Element_From(Coordinates c, Element* Parent){
@@ -478,7 +452,7 @@ namespace GGUI{
         return Buffer;
     }
 
-    void Exit(){
+    void Exit(bool Only_DeInitialize){
 
         // Also handles STD_COUT capture restorations.
         for (auto File_Handle : File_Streamer_Handles){
@@ -490,7 +464,8 @@ namespace GGUI{
         std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
         std::cout << std::flush;
 
-        exit(0);
+        if (!Only_DeInitialize)
+            exit(0);
     }
 
     // For getting all font files:
@@ -582,7 +557,7 @@ namespace GGUI{
 
     int Previus_Flags = 0;
     struct termios Previus_Raw;
-    void Exit(int signum){
+    void Exit(int signum, bool Only_DeInitialize){
         // Also handles STD_COUT capture restorations.
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
@@ -596,12 +571,13 @@ namespace GGUI{
         fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previus_Raw);
 
-        exit(signum);
+        if (!Only_DeInitialize)
+            exit(signum);
     }
 
-    void Exit(){
+    void Exit(bool Only_DeInitialize){
         // Call the signum exit
-        Exit(SIGINT);
+        Exit(SIGINT, Only_DeInitialize);
     }
 
     void SLEEP(unsigned int mm){
@@ -1535,7 +1511,6 @@ namespace GGUI{
             
             //set the new candidate to focused.
             Hovered_On->Set_Hover_State(true);
-            Hovered_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         });
     }
 
@@ -1556,7 +1531,7 @@ namespace GGUI{
                     Has_Select_Event = true;
 
                 if (e->Criteria == Inputs[i]->Criteria){
-                    //check if this job could be runned succesfully.
+                    // Check if this job could be run successfully.
                     if (e->Job(Inputs[i])){
                         //dont let anyone else react to this event.
                         Inputs.erase(Inputs.begin() + i);
@@ -1735,15 +1710,15 @@ namespace GGUI{
                     Event_Handler();
                     Go_Through_File_Streams();
                     Refresh_Multi_Frame_Canvas();
+
+                    Previous_Time = Current_Time;
+                    Current_Time = std::chrono::high_resolution_clock::now();
+
+                    // Calculate the delta time.
+                    Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+
+                    std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MIILISECONDS - Delta_Time, 0))); 
                 });
- 
-                Previous_Time = Current_Time;
-                Current_Time = std::chrono::high_resolution_clock::now();
-
-                // Calculate the delta time.
-                Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MIILISECONDS - Delta_Time, 0))); 
             }
         });
 
@@ -1994,7 +1969,7 @@ namespace GGUI{
     }
 
     // Use this to use GGUI.
-    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
+    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For, bool DeInitialize_GGUI_After_Sleep){
         bool Previus_Event_Value = Pause_Event_Thread;
         Pause_Event_Thread = true;
 
@@ -2007,6 +1982,9 @@ namespace GGUI{
 
         Pause_Event_Thread = Previus_Event_Value;
         SLEEP(Sleep_For);
+
+        if (DeInitialize_GGUI_After_Sleep)
+            Exit(true);
     }
 
     void Encode_Buffer(std::vector<GGUI::UTF>& Buffer){
@@ -2048,7 +2026,7 @@ namespace GGUI{
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
             "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-            "FPS: " + std::to_string(Delta_Time)
+            "FPS: " + std::to_string(GGUI::TIME::SECOND / Max(Delta_Time, 1))
         );
 
         // return success.
@@ -2080,7 +2058,7 @@ namespace GGUI{
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
             "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-            "FPS: " + std::to_string(Delta_Time)
+            "FPS: " + std::to_string(GGUI::TIME::SECOND / Max(Delta_Time, 1))
         );
 
         Stats->Set_Name("STATS");

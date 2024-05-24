@@ -319,7 +319,7 @@ GGUI::Element::~Element(){
 
 void GGUI::Element::Fully_Stain(){
 
-    this->Dirty.Dirty(STAIN_TYPE::CLASS | STAIN_TYPE::STRETCH | STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE);
+    this->Dirty.Dirty(STAIN_TYPE::CLASS | STAIN_TYPE::STRETCH | STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | STAIN_TYPE::EDGE | STAIN_TYPE::MOVE);
 
 }
 
@@ -521,13 +521,23 @@ void GGUI::Element::Parse_Classes(){
 }
 
 void GGUI::Element::Set_Focus(bool f){
-    Focused = f;
-    Update_Frame();
+    if (f != Focused){
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::CLASS);
+
+        Focused = f;
+
+        Update_Frame();
+    }
 }
 
 void GGUI::Element::Set_Hover_State(bool h){
-    Hovered = h;
-    Update_Frame();
+    if (h != Hovered){
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::CLASS);
+
+        Hovered = h;
+
+        Update_Frame();
+    }
 }
 
 GGUI::Styling GGUI::Element::Get_Style(){
@@ -693,7 +703,12 @@ void GGUI::Element::Display(bool f){
             Check(State::HIDDEN);
         }
 
-        Update_Frame();
+        // now also update all children, this is for the sake of events, since they do not obey AST structure where parental hidden would stop going deeper into AST events are linear list.
+        GGUI::Pause_Renderer([this, f](){
+            for (Element* c : Childs){
+                c->Display(f);
+            }
+        });
     }
 }
 
@@ -886,7 +901,8 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
         }
         
         for (auto c : Childs){
-            if (child != c && Collides(c, Current_Position, Result_Width, Result_Height)){
+            // Use local positioning since this is a civil dispute :)
+            if (child != c && Collides(c->Get_Position(), Current_Position, c->Get_Width(), c->Get_Height(), Result_Width, Result_Height)){
                 //there are already other childs occupying this area so we can stop here.
                 return {Result_Width, Result_Height};
             }

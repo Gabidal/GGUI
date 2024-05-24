@@ -885,14 +885,15 @@ namespace GGUI{
 
     class Action : public Event{
     public:
-        class Element* Host;
+        class Element* Host = nullptr;
 
         std::function<bool(GGUI::Event* e)> Job;
     
-        Action(){}
+        Action() = default;
         Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job){
             Criteria = criteria;
             Job = job;
+            Host = nullptr;
         }
 
         Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job, class Element* host){
@@ -1581,6 +1582,7 @@ namespace GGUI{
 
         bool Has_Border();
 
+        // NOTE: This will also HIDE ALL children in the AST beneath this element!!!
         void Display(bool f);
 
         bool Is_Displayed();

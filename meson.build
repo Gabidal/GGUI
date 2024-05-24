@@ -41,8 +41,6 @@ SIMD_MODE = AVX
 cpp_args = [
   '-fpermissive', 
   '-Wno-narrowing', 
-  '-Wall',
-  '-Werror',
   SIMD_MODE
 ]
 

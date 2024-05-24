@@ -59,11 +59,12 @@ namespace GGUI{
 
     void SLEEP(unsigned int milliseconds);
 
-    extern bool Collides(GGUI::Element* a, GGUI::Element* b);
+    extern bool Collides(GGUI::Coordinates A, GGUI::Coordinates B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
+
+    // If both given elements are the same will return Identity
+    extern bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity = true);
 
     extern bool Collides(GGUI::Element* a, GGUI::Coordinates b);
-
-    extern bool Collides(GGUI::Element* a, GGUI::Coordinates c, unsigned int Width, unsigned int Height);
 
     extern Element* Get_Accurate_Element_From(Coordinates c, Element* Parent);
 
@@ -145,9 +146,9 @@ namespace GGUI{
     extern void Pause_Renderer(std::function<void()> f);
 
     // Use this to access GGUI.
-    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
+    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0, bool DeInitialize_GGUI_After_Sleep = true);
 
-    extern void Exit();
+    extern void Exit(bool Only_DeInitialize = false);
 
     // Also handles shift tabs!
     extern void Handle_Tabulator();

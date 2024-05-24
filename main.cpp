@@ -52,7 +52,7 @@ void Menu(){
 
     GGUI::Button* Exit_Button = new GGUI::Button(
         "Exit",
-        []([[maybe_unused]] GGUI::Button* This){
+        [](GGUI::Button* This){
             exit(0);
         }
     );
@@ -71,7 +71,7 @@ void Menu(){
     menu->Set_Height(GGUI::Main->Get_Height());
 }
 
-void Adventure_Mode([[maybe_unused]] GGUI::Window* Parent){
+void Adventure_Mode(GGUI::Window* Parent){
 
 
 
@@ -145,10 +145,10 @@ void Campaing(){
     GGUI::Main->Add_Child(Campaing);
 }
 
-int main([[maybe_unused]] int Argument_Count, [[maybe_unused]] char** Arguments){
+int main(int Argument_Count, char** Arguments){
     GGUI::GGUI([=](){
         Menu();
         Campaing();
-    }, 1000);
+    }, INT32_MAX);
     return 0;
 }

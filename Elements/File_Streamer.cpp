@@ -136,6 +136,26 @@ namespace GGUI{
         return std::filesystem::current_path().string();
     }
 
+    std::string Pull_STDIN(){
+        std::string Result = "";
+        
+        // check if TTY is enabled for assurance
+        if (Has_Started_As_TTY()){
+            Report("Cannot pull STDIN from a TTY enabled environment!");
+
+            return Result;
+        }
+        
+        // Now that we know the exe has been started as an non TTY object we can assume the STDIN buffer holds the previous executed output
+        char buffer[256];
+
+        while (std::cin.getline(buffer, sizeof(buffer))){
+            Result += buffer;
+        }
+
+        return Result;
+    }
+
     #ifdef _WIN32
         CMD::CMD(){
             SECURITY_ATTRIBUTES sa;
@@ -179,36 +199,43 @@ namespace GGUI{
             return output;
         }
 
+        bool Has_Started_As_TTY(){
+            return (_isatty(_fileno(stdin)));
+        }
     #else
 
-    CMD::CMD(){ 
-        // Unix implementation
-        pipe(File_Descriptor.FDS);
-    }
-
-    std::string CMD::Run(std::string Command){
-        if (fork() == 0) {
-            // Child process
-            dup2(File_Descriptor.Out, STDOUT_FILENO);
-            system(Command.c_str());
-            exit(0);
-        } else {
-            // Parent process
-            close(File_Descriptor.Out);
-
-            char buffer[256];
-            std::string output = "";
-
-            while (read(File_Descriptor.In, buffer, sizeof(buffer)) > 0) {
-
-                output += buffer;
-                memset(buffer, 0, sizeof(buffer));
-
-            }
-            wait(NULL);  // Wait for child process to finish
-            return output;
+        CMD::CMD(){ 
+            // Unix implementation
+            pipe(File_Descriptor.FDS);
         }
-    }
+
+        std::string CMD::Run(std::string Command){
+            if (fork() == 0) {
+                // Child process
+                dup2(File_Descriptor.Out, STDOUT_FILENO);
+                system(Command.c_str());
+                exit(0);
+            } else {
+                // Parent process
+                close(File_Descriptor.Out);
+
+                char buffer[256];
+                std::string output = "";
+
+                while (read(File_Descriptor.In, buffer, sizeof(buffer)) > 0) {
+
+                    output += buffer;
+                    memset(buffer, 0, sizeof(buffer));
+
+                }
+                wait(NULL);  // Wait for child process to finish
+                return output;
+            }
+        }
+
+        bool Has_Started_As_TTY(){
+            return (isatty(STDIN_FILENO));
+        }
     #endif
 
     namespace INTERNAL{

@@ -1672,7 +1672,7 @@ namespace GGUI{
 
     class Button : public Text_Field{
     protected:
-        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
+        void Default_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
             On_Click([=](Event* e){
                 // The default, on_click wont do anything.
                 press(this);

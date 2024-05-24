@@ -9,6 +9,13 @@
 #include <stdio.h>
 #include <deque>
 
+#if _WIN32
+    #include <io.h>
+    #include <fcntl.h>
+#else
+    #include <unistd.h>
+#endif
+
 namespace GGUI{
 
     /*
@@ -24,6 +31,11 @@ namespace GGUI{
     extern FILE_STREAM* Get_File_Stream_Handle(std::string File_Name);
 
     extern std::string Get_Current_Location();
+
+    // Requires the TTY to be disabled and this exe is being piped.
+    extern std::string Pull_STDIN();
+    
+    extern bool Has_Started_As_TTY();
 
     namespace INTERNAL{
         // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
