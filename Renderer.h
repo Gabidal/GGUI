@@ -146,7 +146,7 @@ namespace GGUI{
     extern void Pause_Renderer(std::function<void()> f);
 
     // Use this to access GGUI.
-    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0, bool DeInitialize_GGUI_After_Sleep = true);
+    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0, bool DeInitialize_GGUI_After_Sleep = false);
 
     extern void Exit(bool Only_DeInitialize = false);
 

@@ -420,27 +420,6 @@ bool GGUI::Element::Is_Transparent(){
     return Get_Opacity() < FULL_OPACITY;
 }
 
-bool GGUI::Element::Is_Anchored(){
-    return Style->Anchor.Value != -1;
-}
-
-int GGUI::Element::Get_Anchor_Location(){
-    return Style->Anchor.Value;
-}
-
-void GGUI::Element::Set_Anchor_At_Current_Location(){
-    Vector2 Current_Position = {-1, -1}; // GGUI::Outbox.Buffer.Get_History_Dimensions();
-
-    Style->Anchor = Current_Position.Y;
-}
-
-void GGUI::Element::Remove_Anchor(){
-    Style->Anchor = -1;
-
-    Dirty.Dirty(STAIN_TYPE::STRETCH);
-    Update_Frame();
-}
-
 unsigned int GGUI::Element::Get_Processed_Width(){
     if (Post_Process_Width != 0){
         return Post_Process_Width;
@@ -813,7 +792,18 @@ GGUI::Coordinates GGUI::Element::Get_Position(){
 }
 
 GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
-    return Absolute_Position_Cache;
+    return Style->Absolute_Position_Cache.Value;
+}
+
+void GGUI::Element::Update_Absolute_Position_Cache(){
+    Style->Absolute_Position_Cache.Value = {0, 0, 0};
+    Style->Absolute_Position_Cache.Status = VALUE_STATE::VALUE;
+
+    if (Parent){
+        Style->Absolute_Position_Cache.Value = Parent->Get_Position();
+    }
+
+    Style->Absolute_Position_Cache.Value += Position;
 }
 
 void GGUI::Element::Set_Margin(MARGIN_VALUE margin){
@@ -1034,7 +1024,7 @@ void GGUI::Element::Compute_Dynamic_Size(){
 std::vector<GGUI::UTF> GGUI::Element::Render(){
     std::vector<GGUI::UTF> Result = Render_Buffer;
 
-    //if inned children have changed whitout this changing, then this will trigger.
+    //if inned children have changed without this changing, then this will trigger.
     if (Children_Changed() || Has_Transparent_Children()){
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
     }
@@ -1052,14 +1042,8 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
 
     if (Dirty.is(STAIN_TYPE::MOVE)){
         Dirty.Clean(STAIN_TYPE::MOVE);
-
-        Absolute_Position_Cache = {0, 0, 0};
-
-        if (Parent){
-            Absolute_Position_Cache = Parent->Get_Position();
-        }
-
-        Absolute_Position_Cache += Position;
+        
+        Update_Absolute_Position_Cache();
     }
 
     if (Dirty.is(STAIN_TYPE::STRETCH)){

@@ -28,13 +28,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::MOVE)){
             Dirty.Clean(STAIN_TYPE::MOVE);
 
-            Absolute_Position_Cache = {0, 0, 0};
-
-            if (Parent){
-                Absolute_Position_Cache = Parent->Get_Position();
-            }
-
-            Absolute_Position_Cache += Position;
+            Update_Absolute_Position_Cache();
         }
 
         if (Dirty.is(STAIN_TYPE::STRETCH)){

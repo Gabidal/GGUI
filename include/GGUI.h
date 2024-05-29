@@ -1409,7 +1409,7 @@ namespace GGUI{
     class Text_Field : public Element{
     protected:
         std::string Data = "";
-        std::string Previus_Data = "";
+        std::string Previous_Data = "";
         bool Allow_Text_Input = false;
         
     public:

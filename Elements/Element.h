@@ -61,6 +61,13 @@ namespace GGUI{
             else
                 Data.Ascii_Data = data[0];
         }
+
+        char operator[](unsigned int index){
+            if (Size > 1)
+                return Data.Unicode_Data[index];
+            else
+                return Data.Ascii_Data;
+        }
     };
 
     // Instead of reconstructing new strings every time, this class stores the components, and then only one time constructs the final string representation.
@@ -938,6 +945,14 @@ namespace GGUI{
 
     // --STYLING STUFF--
 
+    enum class ALIGN{
+        UP,
+        DOWN,
+        LEFT,
+        RIGHT,
+        CENTER
+    };
+
     enum class VALUE_STATE{
         UNINITIALIZED,
         INITIALIZED,
@@ -1196,6 +1211,36 @@ namespace GGUI{
         constexpr NUMBER_VALUE(const GGUI::NUMBER_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
     };
 
+    class ALIGN_VALUE : public VALUE{
+    public:
+        ALIGN Value = ALIGN::CENTER;
+
+        ALIGN_VALUE(ALIGN value, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
+            Value = value;
+        }
+
+        ALIGN_VALUE() = default;
+
+        // operator overload for copy operator
+        ALIGN_VALUE& operator=(const ALIGN_VALUE& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        ALIGN_VALUE& operator=(const ALIGN other){
+            Value = other;
+            Status = VALUE_STATE::VALUE;
+            return *this;
+        }
+    
+        constexpr ALIGN_VALUE(const GGUI::ALIGN_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
+    };
+
     class Styling{
     public:
         BOOL_VALUE Border_Enabled = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
@@ -1227,9 +1272,12 @@ namespace GGUI{
         SHADOW_VALUE Shadow;
         NUMBER_VALUE Opacity = NUMBER_VALUE(100, VALUE_STATE::INITIALIZED);  // 100%
 
-        NUMBER_VALUE Anchor = NUMBER_VALUE(-1, VALUE_STATE::INITIALIZED);    // No Anchoring
-
         BOOL_VALUE Allow_Scrolling = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+
+        // Only fetch one parent UP, and own position +, then child repeat.
+        COORDINATES_VALUE Absolute_Position_Cache;
+
+        ALIGN_VALUE Align = ALIGN_VALUE(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
 
         Styling() = default;
 
@@ -1256,7 +1304,6 @@ namespace GGUI{
             Margin = other.Margin;
             Shadow = other.Shadow;
             Opacity = other.Opacity;
-            Anchor = other.Anchor;
             Allow_Scrolling = other.Allow_Scrolling;
         }
 
@@ -1388,6 +1435,7 @@ namespace GGUI{
         inline unsigned long long Mouse_Press_Down_Cooldown = 365;
         inline unsigned long long Input_Clear_Time = 16;
         inline bool Word_Wrapping = true;
+        inline unsigned int Text_Field_Minimum_Line_Count = 1;  // Tailor this to the minimum rows of text you'll be using for faster but more memory if not all rows are used.
     };
 
     // For templates.
@@ -1396,9 +1444,6 @@ namespace GGUI{
     class Element{
     protected:
         Coordinates Position;
-
-        // Only fetch one parent UP, and own position +, then child repeat.
-        Coordinates Absolute_Position_Cache;
 
         unsigned int Width = 1;
         unsigned int Height = 1;
@@ -1618,6 +1663,8 @@ namespace GGUI{
         Coordinates Get_Position();
 
         Coordinates Get_Absolute_Position();
+
+        void Update_Absolute_Position_Cache();
 
         void Set_Margin(MARGIN_VALUE margin);
 
