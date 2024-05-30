@@ -14,15 +14,22 @@ namespace GGUI{
         void Update_Text_Cache();
     public:
 
-        Text_Field(std::string& text) : Element(), Text(text){
+        Text_Field(std::string text, ALIGN align = ALIGN::LEFT, int width = 1, int height = 1) : Element(width, height), Text(text){
             // Reserve one row for the text if no newlines.
-            Text_Cache.reserve(SETTINGS::Text_Field_Minimum_Line_Count);
-        }
+            Text_Cache.reserve(SETTINGS::Text_Field_Minimum_Line_Count | height);
 
-        void Set_Text(std::string& text){
-            Text = text;
+            Style->Align.Value = align;
+
+            if (Width == 1 && Height == 1){
+                Allow_Dynamic_Size(true);
+            }
+
             Update_Text_Cache();
         }
+
+        Text_Field() = default;
+
+        void Set_Text(std::string text);
 
         std::string Get_Text(){
             return Text;

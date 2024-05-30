@@ -4,11 +4,10 @@
 
 namespace GGUI{
 
-    Button::Button(std::string Text, std::function<void (Button* This)> press) : Text_Field(Text){
+    Button::Button(std::string Text, std::function<void (Button* This)> press) : Text_Field(Text, ALIGN::CENTER){
         GGUI::Pause_Renderer([=](){
             Default_Button_Behaviour(press);
-            Default_Button_Text_Align();
-            Enable_Input_Overflow();
+            Allow_Overflow(true);
             Show_Border(true);
             Set_Name(Text);
         });

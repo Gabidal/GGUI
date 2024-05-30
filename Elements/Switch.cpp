@@ -6,34 +6,40 @@
 namespace GGUI{
 
     Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event) : Element(){
-        States = states;
+        Pause_Renderer([=](){
+            States = states;
+            
+            Text.Allow_Overflow(true);
+            Set_Text(text);
 
-        auto Togler = [=](){
-            this->Toggle();
+            On_Click([=]([[maybe_unused]] Event* e){
+                this->Toggle();
 
-            event(this);
-        };
+                event(this);
 
-        Text = text;
+                Update_Frame();
 
-        On_Click([=]([[maybe_unused]] Event* e){
-            Togler();
+                return true;
+            });
 
-            Update_Frame();
+            Width = Text.Get_Width();
+            Height = Text.Get_Height();
 
-            return true;
+            Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STATE);
         });
+    }
 
-        int Symbol_Lenght = 1;
+    void Switch::Set_Text(std::string text) { 
+        Pause_Renderer([=](){
+            std::string Symbol = " ";
+            char Space = ' ';
 
-        int Space_Lenght = 1;
+            Dirty.Dirty(STAIN_TYPE::DEEP);
+            Text.Set_Text(Symbol + Space + text);   // This will call the update_frame for us.
 
-        std::pair<unsigned int, unsigned int> Text_Dimensions = Text_Field::Get_Text_Dimensions(Text);
-
-        Width = Symbol_Lenght + Space_Lenght + Text_Dimensions.first;
-        Height = Text_Dimensions.second;
-
-        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STATE);
+            Set_Width(Text.Get_Width() + Has_Border() * 2);
+            Set_Height(Text.Get_Height() + Has_Border() * 2);
+        });
     }
 
     std::vector<UTF> Switch::Render(){
@@ -64,13 +70,11 @@ namespace GGUI{
 
         //Check if the text has been changed.
         if (Dirty.is(STAIN_TYPE::DEEP)){
-            std::string Display_Text = States[State] + " " + Text;
-
-            Text_Field::Left_Text(this, Display_Text, Result);
+            Nest_Element(this, &Text, Result, Text.Render());
 
             //Clean text update notice and state change notice.
-            //NOTE: Cleaning STATE flag whitout checking it's existance might lead to unexpecte results.
-            Dirty.Clean(STAIN_TYPE::DEEP | STAIN_TYPE::STATE);
+            //NOTE: Cleaning STATE flag without checking it's existence might lead to unexpected results.
+            Dirty.Clean(STAIN_TYPE::DEEP);
 
             Dirty.Dirty(STAIN_TYPE::COLOR);
         }

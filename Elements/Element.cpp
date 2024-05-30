@@ -170,8 +170,7 @@ GGUI::Element::Element() {
     // B.) He is trying to use the OUTBOX feature.
     if (GGUI::Main == nullptr){
         // Lets go with B.
-        Set_Anchor_At_Current_Location();
-        // Outbox.Add_Child(this);
+        Report_Stack("OUTBOX not supported, cannot anchor: " + Get_Name());
     }
 }
 
@@ -466,10 +465,6 @@ void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
 void GGUI::Element::Set_Parent(Element* parent){
     if (parent){
         Parent = parent;
-
-        // if the element is a Anchored element, we want it to change into a relative.
-        // Outbox.Remove(Get_Anchor_Location());
-        Remove_Anchor();
     }
 }
 

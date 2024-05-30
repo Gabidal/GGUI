@@ -8,27 +8,51 @@ namespace GGUI{
 
         Text_Cache.clear();
 
-        if (Text_Cache.capacity() < SETTINGS::Text_Field_Minimum_Line_Count){
+        if (Text_Cache.capacity() < 1){
             // This should not happen
             Report_Stack("Internal error with zero capacity in: " + this->Get_Name());
         }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
-        Compact_String current_line(Text.data(), 0);
+        Compact_String current_line(Text.data(), 0, true);
+        unsigned int Longest_Line = 0;
 
         for (unsigned int i = 0; i < Text.size(); i++){
+            bool flush_row = false;
 
             if (Text[i] == '\n'){
                 // Newlines are not counted as line lengths
+                flush_row = true;
+            }
+            else if (Text[i] == ' '){
+                // This is for the word wrapping to beautifully end at when word end and not abruptly
+                
+                // Check if the current line length added one more word would go over the Width
+                // For this we first need to know how long is this next word if there is any
+                int New_Word_Length = Text.find_first_of(' ', i + 1) - i;
+
+                if (New_Word_Length + current_line.Size >= Width){
+                    // We want to add the space to this row
+                    current_line.Size++;
+
+                    flush_row = true;
+                }
+            }
+
+            if (flush_row){
+                // If the next word would go over the Width then add the current line to the Text_Cache
                 Text_Cache.push_back(current_line);
 
+                // check if the current line is longer than the longest line
+                if (current_line.Size > Longest_Line)
+                    Longest_Line = current_line.Size;
+
                 // reset current
-                current_line = Compact_String(Text.data() + i + 1, 0);
+                current_line = Compact_String(Text.data() + i + 1, 0, true);
             }
             else{
                 current_line.Size++;
             }
-
         }
 
         // Make sure the last line is added
@@ -36,17 +60,15 @@ namespace GGUI{
             Text_Cache.push_back(current_line);
         }
 
+        // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
+        if (Style->Allow_Dynamic_Size.Value){
+            // Set the new size
+            Set_Dimensions(Max(Longest_Line, Width), Max(Text_Cache.size(), Height));
+        }
     }
 
     std::vector<UTF> Text_Field::Render(){
         std::vector<GGUI::UTF> Result = Render_Buffer;
-
-        //if inned children have changed without this changing, then this will trigger.
-        if (Children_Changed() || Has_Transparent_Children()){
-            Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
-        }
-
-        Compute_Dynamic_Size();
 
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
@@ -97,72 +119,104 @@ namespace GGUI{
         return Result;
     }
 
+    void Text_Field::Set_Text(std::string text){
+        Text = text;
+        Update_Text_Cache();
+
+        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
+
+        Update_Frame();
+    }
+
     void Text_Field::Align_Text_Left(std::vector<UTF>& Result){
+        unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
+
         for (Compact_String line : Text_Cache){
-            int Line_Index = 0;
+            unsigned int Row_Index = 0;
 
-            for (int Y = 0; Y < Height; Y++){
-                for (int X = 0; X < Width; X++){
+            if (Line_Index >= Height)
+                break;  // All possible usable lines filled.
 
-                    if (Y * Width + X >= Line_Index)
+            for (unsigned int Y = 0; Y < Height; Y++){
+                for (unsigned int X = 0; X < Width; X++){
+
+                    if (Y * Width + X >= line.Size)
                         goto Next_Line;
 
                     // write to the Result
-                    Result[Y * Width + X] = line[Line_Index++];
+                    Result[(Y + Line_Index) * Width + X] = line[Row_Index++];
                 }
 
                 // If current line has ended and the text is not word wrapped
-                if (!Style->Allow_Overflow.Value)
+                if (Style->Allow_Overflow.Value)
                     goto Next_Line; // An break would suffice but use goto for more readability
 
             }
 
             Next_Line:;
+            Line_Index++;
         }
     }
 
-    void Text_Field::Align_Text_Right(std::vector<UTF>& Result){
+    void Text_Field::Align_Text_Right(std::vector<UTF>& Result){        
+        unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
+
         for (Compact_String line : Text_Cache){
-            int Line_Index = line.Size - 1;  // Start from the end of the line
+            int Row_Index = line.Size - 1;  // Start from the end of the line
 
-            for (int Y = 0; Y < Height; Y++){
-                for (int X = Width - 1; X >= 0; X--){
+            if (Line_Index >= Height)
+                break;  // All possible usable lines filled.
 
-                    if (Line_Index < 0)  // If there are no more characters in the line
+            for (unsigned int Y = 0; Y < Height; Y++){
+                for (int X = (signed)Width - 1; X >= 0; X--){
+
+                    if (Row_Index < 0)  // If there are no more characters in the line
                         goto Next_Line;
 
                     // write to the Result
-                    Result[Y * Width + X] = line[Line_Index--];  // Decrement Line_Index
+                    Result[(Y + Line_Index) * Width + (unsigned)X] = line[Row_Index--];  // Decrement Line_Index
                 }
 
                 // If current line has ended and the text is not word wrapped
-                if (!Style->Allow_Overflow.Value)
+                if (Style->Allow_Overflow.Value)
                     goto Next_Line; // An break would suffice but use goto for more readability
             }
 
             Next_Line:;
+            Line_Index++;
         }
     }
 
     void Text_Field::Align_Text_Center(std::vector<UTF>& Result){
+        unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
+
         for (Compact_String line : Text_Cache){
-            int Line_Index = 0;  // Start from the beginning of the line
-            int Start_Pos = (Width - line.Size) / 2;  // Calculate the starting position
+            unsigned int Row_Index = 0;  // Start from the beginning of the line
+            unsigned int Start_Pos = (Width - line.Size) / 2;  // Calculate the starting position
 
-            for (int Y = 0; Y < Height; Y++){
-                for (int X = 0; X < Width; X++){
+            if (Line_Index >= Height)
+                break;  // All possible usable lines filled.
 
-                    if (X < Start_Pos || Line_Index >= line.Size)  // If the current position is before the start or after the end of the line
+            for (unsigned int Y = 0; Y < Height; Y++){
+                for (unsigned int X = 0; X < Width; X++){
+
+                    if (X < Start_Pos || X > Start_Pos + line.Size)
                         continue;
 
+                    if (Y * Width + X >= line.Size)
+                        goto Next_Line;
+
                     // write to the Result
-                    Result[Y * Width + X] = line[Line_Index++];  // Increment Line_Index
+                    Result[(Y + Line_Index) * Width + X] = line[Row_Index++];
                 }
 
                 // If current line has ended and the text is not word wrapped
-                if (!Style->Allow_Overflow.Value)
-                    break;
+                if (Style->Allow_Overflow.Value)
+                    goto Next_Line; // An break would suffice but use goto for more readability
             }
+
+            Next_Line:;
+            Line_Index++;
         }
     }
 

@@ -20,10 +20,6 @@ namespace GGUI{
                 return true;
             });
         }
-    
-        void Default_Button_Text_Align(){
-            Style->Text_Position = (int)TEXT_LOCATION::CENTER;
-        }
 
         // DONT USE AS USER!!
         Button(){}

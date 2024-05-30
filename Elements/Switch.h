@@ -14,17 +14,12 @@ namespace GGUI{
     protected:
         bool State = false;
 
-        std::string Text = "";
         //COntains the unchecked version of the symbol and the checked version.
         std::vector<std::string> States;
 
+        Text_Field Text;
     public:
         Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){});
-
-        ~Switch() override{
-            // call the base destructor.
-            Element::~Element();
-        }
 
         std::vector<UTF> Render() override;
 
@@ -34,9 +29,7 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::STATE);
         }
 
-        std::string Get_Data() { return Text; }
-
-        void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::DEEP); }
+        void Set_Text(std::string text);
         
         Element* Safe_Move() override {
             Switch* new_Switch = new Switch();

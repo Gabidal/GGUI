@@ -53,10 +53,10 @@ namespace GGUI{
             Size = 1;
         }
 
-        Compact_String(const char* data, unsigned int size){
+        Compact_String(const char* data, unsigned int size, bool Force_Unicode = false){
             Size = size;
 
-            if (Size > 1)
+            if (Size > 1 || Force_Unicode)
                 Data.Unicode_Data = data;
             else
                 Data.Ascii_Data = data[0];
@@ -1264,7 +1264,6 @@ namespace GGUI{
         NUMBER_VALUE Flow_Priority;
         BOOL_VALUE Wrap = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
 
-        NUMBER_VALUE Text_Position;
         BOOL_VALUE Allow_Overflow = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
         BOOL_VALUE Allow_Dynamic_Size = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
         MARGIN_VALUE Margin;
@@ -1298,7 +1297,6 @@ namespace GGUI{
             Border_Style = other.Border_Style;
             Flow_Priority = other.Flow_Priority;
             Wrap = other.Wrap;
-            Text_Position = other.Text_Position;
             Allow_Overflow = other.Allow_Overflow;
             Allow_Dynamic_Size = other.Allow_Dynamic_Size;
             Margin = other.Margin;
@@ -1581,14 +1579,6 @@ namespace GGUI{
         int Get_Opacity(); 
 
         bool Is_Transparent();
-
-        bool Is_Anchored();
-
-        int Get_Anchor_Location();
-
-        void Set_Anchor_At_Current_Location();
-
-        void Remove_Anchor();
 
         unsigned int Get_Processed_Width();
         unsigned int Get_Processed_Height();

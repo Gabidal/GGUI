@@ -1798,7 +1798,7 @@ namespace GGUI{
                     Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
 
                     //check if the previous problem was same problem
-                    if (Previous_Problem->Get_Data() == Problem){
+                    if (Previous_Problem->Get_Text() == Problem){
                         // increase the repetition count by one
                         if (!Previous_Repetitions){
                             Previous_Repetitions = new Text_Field("2");
@@ -1806,8 +1806,8 @@ namespace GGUI{
                         }
                         else{
                             // translate the string to int
-                            int Repetition = std::stoi(Previous_Repetitions->Get_Data()) + 1;
-                            Previous_Repetitions->Set_Data(std::to_string(Repetition));
+                            int Repetition = std::stoi(Previous_Repetitions->Get_Text()) + 1;
+                            Previous_Repetitions->Set_Text(std::to_string(Repetition));
                         }
 
                         // We dont need to create a new line.
@@ -2022,7 +2022,7 @@ namespace GGUI{
         Text_Field* Stats = (Text_Field*)Main->Get_Element("STATS");
 
         // Update the stats
-        Stats->Set_Data(
+        Stats->Set_Text(
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
             "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
@@ -2058,8 +2058,12 @@ namespace GGUI{
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
             "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-            "FPS: " + std::to_string(GGUI::TIME::SECOND / Max(Delta_Time, 1))
+            "FPS: " + std::to_string(GGUI::TIME::SECOND / Max(Delta_Time, 1)),
+            ALIGN::LEFT,
+            Inspect->Get_Width(),
+            4
         );
+        Stats->Allow_Dynamic_Size(true);
 
         Stats->Set_Name("STATS");
 
