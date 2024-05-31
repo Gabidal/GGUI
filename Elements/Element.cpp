@@ -1024,6 +1024,8 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
     }
 
+    Calculate_Childs_Hitboxes();    // Normally elements will NOT oder their content by hitbox system.
+
     Compute_Dynamic_Size();
 
     if (Dirty.is(STAIN_TYPE::CLEAN))

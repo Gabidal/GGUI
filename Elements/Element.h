@@ -1557,6 +1557,8 @@ namespace GGUI{
 
         void Set_Style(Styling css);
 
+        virtual void Calculate_Childs_Hitboxes(){}
+
         virtual Element* Handle_Or_Operator(Element* other){
             Set_Style(other->Get_Style());
 

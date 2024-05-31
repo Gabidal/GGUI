@@ -311,6 +311,12 @@ void GGUI::List_View::Add_Child(Element* e){
     });
 }
 
+void GGUI::List_View::Calculate_Childs_Hitboxes(){
+    if ()
+
+
+}
+
 std::string GGUI::List_View::Get_Name() const{
     return "List_View<" + Name + ">";
 }

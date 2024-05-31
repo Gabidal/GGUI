@@ -60,6 +60,8 @@ namespace GGUI{
 
         void Add_Child(Element* e) override;
         
+        void Calculate_Childs_Hitboxes() override;
+
         std::string Get_Name() const override;
 
         bool Remove(Element* e) override;
