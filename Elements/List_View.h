@@ -4,11 +4,6 @@
 #include "Element.h"
 
 namespace GGUI{
-    enum class Grow_Direction{
-        ROW,
-        COLUMN
-    };
-
     class List_View : public Element{
     public:
         //We can always assume that the list starts from the upper left corner, right?
@@ -40,7 +35,7 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
+        List_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction = DIRECTION::ROW);
 
         ~List_View() override{
             for (Element* e : Childs){
@@ -60,18 +55,19 @@ namespace GGUI{
 
         void Add_Child(Element* e) override;
         
-        void Calculate_Childs_Hitboxes() override;
+        // Given offset will determine where the calculation will start from.
+        void Calculate_Childs_Hitboxes(unsigned int Starting_Offset = 0) override;
 
         std::string Get_Name() const override;
 
         bool Remove(Element* e) override;
 
-        void Set_Growth_Direction(Grow_Direction gd){
-            Style->Flow_Priority = (int)gd;
+        void Set_Flow_Direction(DIRECTION gd){
+            Style->Flow_Priority = gd;
         }
 
-        Grow_Direction Get_Growth_Direction(){
-            return (Grow_Direction)Style->Flow_Priority.Value;
+        DIRECTION Get_Flow_Direction(){
+            return (DIRECTION)Style->Flow_Priority.Value;
         }
 
         template<typename  T>
@@ -101,11 +97,11 @@ namespace GGUI{
 
         // Constructors:
         // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-        Scroll_View(Grow_Direction grow_direction = Grow_Direction::ROW);
+        Scroll_View(DIRECTION grow_direction = DIRECTION::ROW);
 
         Scroll_View(List_View& container);
 
-        Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
+        Scroll_View(std::vector<Element*> Childs, DIRECTION grow_direction = DIRECTION::ROW);
 
         Scroll_View(Styling css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
 
@@ -131,7 +127,7 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
+        Scroll_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction = DIRECTION::ROW);
 
         // Re-pipeline functions:
         // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -151,12 +147,12 @@ namespace GGUI{
 
         std::string Get_Name() const override;
 
-        void Set_Growth_Direction(Grow_Direction gd){
-            ((List_View*)Childs[0])->Set_Growth_Direction(gd);
+        void Set_Growth_Direction(DIRECTION gd){
+            ((List_View*)Childs[0])->Set_Flow_Direction(gd);
         }
 
-        Grow_Direction Get_Growth_Direction(){
-            return ((List_View*)Childs[0])->Get_Growth_Direction();
+        DIRECTION Get_Growth_Direction(){
+            return ((List_View*)Childs[0])->Get_Flow_Direction();
         }
 
         template<typename  T>

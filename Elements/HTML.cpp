@@ -601,9 +601,9 @@ namespace GGUI{
 
                 if (attr.first == "flex-direction"){
                     if (attr.second->Data == "column")
-                        ((List_View*)e)->Set_Growth_Direction(GGUI::Grow_Direction::COLUMN);
+                        ((List_View*)e)->Set_Flow_Direction(GGUI::DIRECTION::COLUMN);
                     else if (attr.second->Data == "row")
-                        ((List_View*)e)->Set_Growth_Direction(GGUI::Grow_Direction::ROW);
+                        ((List_View*)e)->Set_Flow_Direction(GGUI::DIRECTION::ROW);
                     else
                         GGUI::Report("Unknown flex-direction: " + attr.second->Data, input->Position);
                 }

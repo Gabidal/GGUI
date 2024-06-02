@@ -2055,7 +2055,7 @@ namespace GGUI{
 
 
 namespace GGUI{
-    enum class Grow_Direction{
+    enum class DIRECTION{
         ROW,
         COLUMN
     };
@@ -2091,7 +2091,7 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
+        List_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction = DIRECTION::ROW);
 
         Element* Handle_Or_Operator(Element* other) override{
             Add_Child(other);
@@ -2106,12 +2106,12 @@ namespace GGUI{
 
         bool Remove(Element* e) override;
 
-        void Set_Growth_Direction(Grow_Direction gd){
+        void Set_Flow_Direction(DIRECTION gd){
             At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
         }
 
-        Grow_Direction Get_Growth_Direction(){
-            return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
+        DIRECTION Get_Flow_Direction(){
+            return (DIRECTION)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
         }
 
         template<typename  T>
@@ -2141,11 +2141,11 @@ namespace GGUI{
 
         // Constructors:
         // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-        Scroll_View(Grow_Direction grow_direction = Grow_Direction::ROW);
+        Scroll_View(DIRECTION grow_direction = DIRECTION::ROW);
 
         Scroll_View(List_View& container);
 
-        Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
+        Scroll_View(std::vector<Element*> Childs, DIRECTION grow_direction = DIRECTION::ROW);
 
         Scroll_View(std::map<std::string, VALUE*> css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates position = {0, 0, 0});
 
@@ -2171,7 +2171,7 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction = Grow_Direction::ROW);
+        Scroll_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction = DIRECTION::ROW);
 
         // Re-pipeline functions:
         // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -2195,12 +2195,12 @@ namespace GGUI{
 
         std::string Get_Name() const override;
 
-        void Set_Growth_Direction(Grow_Direction gd){
+        void Set_Growth_Direction(DIRECTION gd){
             Childs[0]->At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
         }
 
-        Grow_Direction Get_Growth_Direction(){
-            return (Grow_Direction)Childs[0]->At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
+        DIRECTION Get_Growth_Direction(){
+            return (DIRECTION)Childs[0]->At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
         }
 
         template<typename  T>

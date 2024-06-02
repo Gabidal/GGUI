@@ -959,6 +959,11 @@ namespace GGUI{
         VALUE
     };
 
+    enum class DIRECTION{
+        ROW,
+        COLUMN
+    };
+
     class VALUE{
     public:
         VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
@@ -1211,18 +1216,19 @@ namespace GGUI{
         constexpr NUMBER_VALUE(const GGUI::NUMBER_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
     };
 
-    class ALIGN_VALUE : public VALUE{
+    template<typename T>
+    class ENUM_VALUE : public VALUE{
     public:
-        ALIGN Value = ALIGN::CENTER;
+        T Value;
 
-        ALIGN_VALUE(ALIGN value, VALUE_STATE Default = VALUE_STATE::VALUE) : VALUE(Default){
+        ENUM_VALUE(T value, VALUE_STATE Default = VALUE_STATE::INITIALIZED) : VALUE(Default){
             Value = value;
         }
 
-        ALIGN_VALUE() = default;
+        ENUM_VALUE() = default;
 
         // operator overload for copy operator
-        ALIGN_VALUE& operator=(const ALIGN_VALUE& other){
+        ENUM_VALUE& operator=(const ENUM_VALUE& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
                 Value = other.Value;
@@ -1232,13 +1238,13 @@ namespace GGUI{
             return *this;
         }
 
-        ALIGN_VALUE& operator=(const ALIGN other){
+        ENUM_VALUE& operator=(const T other){
             Value = other;
             Status = VALUE_STATE::VALUE;
             return *this;
         }
     
-        constexpr ALIGN_VALUE(const GGUI::ALIGN_VALUE& other) : VALUE(other.Status, true), Value(other.Value){}
+        constexpr ENUM_VALUE(const GGUI::ENUM_VALUE<T>& other) : VALUE(other.Status, true), Value(other.Value){}
     };
 
     class Styling{
@@ -1261,7 +1267,7 @@ namespace GGUI{
 
         BORDER_STYLE_VALUE Border_Style;
         
-        NUMBER_VALUE Flow_Priority;
+        ENUM_VALUE<DIRECTION> Flow_Priority = ENUM_VALUE<DIRECTION>(DIRECTION::ROW, VALUE_STATE::INITIALIZED);
         BOOL_VALUE Wrap = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
 
         BOOL_VALUE Allow_Overflow = BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
@@ -1276,7 +1282,7 @@ namespace GGUI{
         // Only fetch one parent UP, and own position +, then child repeat.
         COORDINATES_VALUE Absolute_Position_Cache;
 
-        ALIGN_VALUE Align = ALIGN_VALUE(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
+        ENUM_VALUE<ALIGN> Align = ENUM_VALUE<ALIGN>(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
 
         Styling() = default;
 
@@ -1557,7 +1563,7 @@ namespace GGUI{
 
         void Set_Style(Styling css);
 
-        virtual void Calculate_Childs_Hitboxes(){}
+        virtual void Calculate_Childs_Hitboxes([[maybe_unused]] unsigned int Starting_Offset = 0){}
 
         virtual Element* Handle_Or_Operator(Element* other){
             Set_Style(other->Get_Style());

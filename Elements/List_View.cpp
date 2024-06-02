@@ -26,12 +26,12 @@ GGUI::List_View::List_View(Styling css, unsigned int width, unsigned int height,
     Allow_Dynamic_Size(true);
 }
 
-GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
+GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction) : Element(){
     Allow_Dynamic_Size(true);
 
     GGUI::Pause_Renderer([=](){
         Set_Parent(parent);
-        Style->Flow_Priority = (int)grow_direction;
+        Style->Flow_Priority = grow_direction;
 
         for (auto i : Tree)
             Add_Child(i);
@@ -95,12 +95,12 @@ GGUI::List_View::List_View(
 
 // Scroll_View constructors: -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
-GGUI::Scroll_View::Scroll_View(Grow_Direction grow_direction) : Element(){
+GGUI::Scroll_View::Scroll_View(DIRECTION grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
 
     Pause_Renderer([=](){
         List_View* Container = new List_View();
-        Container->Set_Growth_Direction(grow_direction);
+        Container->Set_Flow_Direction(grow_direction);
         Allow_Overflow(true);
         
         Element::Add_Child(Container);
@@ -115,7 +115,7 @@ GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
     });
 }
 
-GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction) : Element(){
+GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, DIRECTION grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
     Pause_Renderer([=](){
         List_View* Container = new List_View(this, Childs, grow_direction);
@@ -146,7 +146,7 @@ GGUI::Scroll_View::Scroll_View(Styling css, unsigned int width, unsigned int hei
 
 }
 
-GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, Grow_Direction grow_direction) : Element(){
+GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction) : Element(){
     Pause_Renderer([=](){
         List_View* Container = new List_View(this, Tree, grow_direction);
 
@@ -249,7 +249,7 @@ void GGUI::List_View::Add_Child(Element* e){
 
             // Add reverse support for the list to grow from the end -> start.
             // Add sticky support for two child elements with borders to loan the same border space.
-            if (Style->Flow_Priority.Value == (int)Grow_Direction::ROW){
+            if (Style->Flow_Priority.Value == DIRECTION::ROW){
 
                 // Affect minimum width needed, when current child has borders as well as the previus one.
                 signed int Width_Modifier = e->Has_Border() & Last_Child->Has_Border();
@@ -311,10 +311,40 @@ void GGUI::List_View::Add_Child(Element* e){
     });
 }
 
-void GGUI::List_View::Calculate_Childs_Hitboxes(){
-    if ()
+void GGUI::List_View::Calculate_Childs_Hitboxes(unsigned int Starting_Offset){
+    // If the childs are already clean then there is nothing to do here
+    if (Dirty.Type == STAIN_TYPE::CLEAN || Childs.size() == 0)
+        return;
 
+    // Out mission is quite similar to the Remove(Element* c) like behaviour.
+    // Since there are two different flow directions we need to slice the code into 2 separate algorithms.
+    Element* Current = Childs[Starting_Offset];
 
+    if (Style->Flow_Priority.Value == DIRECTION::ROW){
+
+        for (unsigned int i = Starting_Offset + 1; i < Childs.size(); i++){
+            Element* Next = Childs[i];
+
+            // Affect minimum width needed, when current child has borders as well as the previous one.
+            signed int Width_Modifier = Next->Has_Border() & Current->Has_Border();
+
+            Next->Set_Position({Current->Get_Position().X + Current->Get_Width() - Width_Modifier, Next->Get_Position().Y});
+
+            Current = Next;
+        }
+    }
+    else{
+        for (unsigned int i = Starting_Offset + 1; i < Childs.size(); i++){
+            Element* Next = Childs[i];
+
+            // Affect minimum height needed, when current child has borders as well as the previous one.
+            signed int Height_Modifier = Next->Has_Border() & Current->Has_Border();
+
+            Next->Set_Position({Next->Get_Position().X, Current->Get_Position().Y + Current->Get_Height() - Height_Modifier});
+
+            Current = Next;
+        }
+    }
 }
 
 std::string GGUI::List_View::Get_Name() const{
@@ -350,7 +380,7 @@ bool GGUI::List_View::Remove(Element* remove){
         bool Is_Stretcher = remove->Get_Width() == Inner_Width || remove->Get_Height() == Inner_Height;
 
         // now sadly we need to branch the code into the vertical and horizontal calculations.
-        if (Style->Flow_Priority.Value == (int)Grow_Direction::ROW){
+        if (Style->Flow_Priority.Value == DIRECTION::ROW){
             // represents the horizontal list
             unsigned int Gap = remove->Get_Width();
 
@@ -471,7 +501,7 @@ void GGUI::Scroll_View::Scroll_Up(){
         List_View* Container = Get_Container();
 
         // Now also re-set the container position dependent of the growth direction.
-        if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
+        if (Container->Get_Flow_Direction() == DIRECTION::ROW)
             Container->Set_Position({Container->Get_Position().X + 1});
         else
             Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y + 1});
@@ -486,7 +516,7 @@ void GGUI::Scroll_View::Scroll_Down(){
     // We also want to still be able to show the last child, so get the heigh of the current child height.
     unsigned Offset = (Has_Border() - Get_Container()->Last_Child->Has_Border()) * Has_Border();
 
-    if (Get_Container()->Get_Growth_Direction() == Grow_Direction::ROW){
+    if (Get_Container()->Get_Flow_Direction() == DIRECTION::ROW){
         if (Scroll_Index > Get_Container()->Get_Width() - Get_Container()->Last_Child->Get_Width() - Offset)
             return;
     }
@@ -501,7 +531,7 @@ void GGUI::Scroll_View::Scroll_Down(){
         List_View* Container = Get_Container();
 
         // Now also re-set the container position dependent of the growth direction.
-        if (Container->Get_Growth_Direction() == Grow_Direction::ROW)
+        if (Container->Get_Flow_Direction() == DIRECTION::ROW)
             Container->Set_Position({Container->Get_Position().X - 1});
         else
             Container->Set_Position({Container->Get_Position().X, Container->Get_Position().Y - 1});

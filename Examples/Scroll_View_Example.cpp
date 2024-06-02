@@ -9,7 +9,7 @@ int main(int Argument_Count, char** Arguments){
     GGUI::Element* child;
 
     GGUI::GGUI([&](){
-        scrollable = new GGUI::Scroll_View(GGUI::Grow_Direction::ROW);
+        scrollable = new GGUI::Scroll_View(GGUI::DIRECTION::ROW);
         scrollable->Set_Background_Color(GGUI::COLOR::RED);
         scrollable->Set_Dimensions(10, 10);
 

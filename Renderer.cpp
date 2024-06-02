@@ -1784,7 +1784,7 @@ namespace GGUI{
                         GGUI::COLOR::RED,
                         GGUI::COLOR::BLACK
                     );
-                    History->Set_Growth_Direction(Grow_Direction::COLUMN);
+                    History->Set_Growth_Direction(DIRECTION::COLUMN);
                     History->Set_Name(HISTORY);
 
                     Error_Logger->Add_Child(History);
@@ -1842,7 +1842,7 @@ namespace GGUI{
                     GGUI::COLOR::RED,
                     GGUI::COLOR::BLACK
                 );
-                History->Set_Growth_Direction(Grow_Direction::COLUMN);
+                History->Set_Growth_Direction(DIRECTION::COLUMN);
                 History->Set_Name(HISTORY);
 
                 Error_Logger->Add_Child(History);
@@ -1861,7 +1861,7 @@ namespace GGUI{
                     GGUI::COLOR::BLACK
                 );
                 Row->Set_Parent(History);
-                Row->Set_Growth_Direction(Grow_Direction::ROW);
+                Row->Set_Flow_Direction(DIRECTION::ROW);
 
                 // TODO: replace the text_field into Date_Element !
                 Text_Field* Date = new Text_Field(Now() + " ");

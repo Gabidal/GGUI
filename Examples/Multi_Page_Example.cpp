@@ -63,7 +63,7 @@ void Menu(){
             Campaing_Button,
             Exit_Button
         },
-        GGUI::Grow_Direction::COLUMN
+        GGUI::DIRECTION::COLUMN
     );
 
     menu->Set_Name(MENU_NAME);
