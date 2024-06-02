@@ -759,10 +759,6 @@ void GGUI::Element::Set_Height(unsigned int height){
 void GGUI::Element::Set_Position(Coordinates c){
     Position = c;
 
-    // The parent is called os that the current element children are not gone through if only moved, thus set the parent stain to DEEP to tell about this move operation.
-    if (Parent)
-        Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
-
     this->Dirty.Dirty(STAIN_TYPE::MOVE);
 
     Update_Frame();
@@ -771,10 +767,6 @@ void GGUI::Element::Set_Position(Coordinates c){
 void GGUI::Element::Set_Position(Coordinates* c){
     if (c){
         Position = *c;
-
-        // The parent is called os that the current element children are not gone through if only moved, thus set the parent stain to DEEP to tell about this move operation.
-        if (Parent)
-            Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
 
         this->Dirty.Dirty(STAIN_TYPE::MOVE);
 

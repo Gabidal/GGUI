@@ -319,6 +319,8 @@ void GGUI::List_View::Calculate_Childs_Hitboxes(unsigned int Starting_Offset){
     // Out mission is quite similar to the Remove(Element* c) like behaviour.
     // Since there are two different flow directions we need to slice the code into 2 separate algorithms.
     Element* Current = Childs[Starting_Offset];
+    unsigned int Max_Width = Current->Get_Width();
+    unsigned int Max_Height = Current->Get_Height();
 
     if (Style->Flow_Priority.Value == DIRECTION::ROW){
 
@@ -328,7 +330,10 @@ void GGUI::List_View::Calculate_Childs_Hitboxes(unsigned int Starting_Offset){
             // Affect minimum width needed, when current child has borders as well as the previous one.
             signed int Width_Modifier = Next->Has_Border() & Current->Has_Border();
 
-            Next->Set_Position({Current->Get_Position().X + Current->Get_Width() - Width_Modifier, Next->Get_Position().Y});
+            Next->Set_Position({Current->Get_Position().X + Current->Get_Width() - Width_Modifier, Next->Get_Position().Y, Next->Get_Position().Z});
+
+            if (Next->Get_Height() > Max_Height)
+                Max_Height = Next->Get_Height();
 
             Current = Next;
         }
@@ -340,10 +345,17 @@ void GGUI::List_View::Calculate_Childs_Hitboxes(unsigned int Starting_Offset){
             // Affect minimum height needed, when current child has borders as well as the previous one.
             signed int Height_Modifier = Next->Has_Border() & Current->Has_Border();
 
-            Next->Set_Position({Next->Get_Position().X, Current->Get_Position().Y + Current->Get_Height() - Height_Modifier});
+            Next->Set_Position({Next->Get_Position().X, Current->Get_Position().Y + Current->Get_Height() - Height_Modifier, Next->Get_Position().Z});
+
+            if (Next->Get_Width() > Max_Width)
+                Max_Width = Next->Get_Width();
 
             Current = Next;
         }
+    }
+
+    if (Is_Dynamic_Size_Allowed() && Max_Height > Get_Height() && Max_Width > Get_Width()){
+        Set_Dimensions(Max_Width, Max_Height);
     }
 }
 

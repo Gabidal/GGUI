@@ -38,9 +38,9 @@ namespace GGUI{
     std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
 
     // Time stuff
-    inline time_t UPDATE_SPEED_MIILISECONDS = TIME::MILLISECOND * 16;
+    inline time_t UPDATE_SPEED_MILLISECONDS = TIME::MILLISECOND * 16;
     inline int Inputs_Per_Second = INT16_MAX;
-    inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MIILISECONDS), (time_t)1);
+    inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MILLISECONDS), (time_t)1);
 
     std::chrono::high_resolution_clock::time_point Previous_Time;
     std::chrono::high_resolution_clock::time_point Current_Time;
@@ -1353,6 +1353,7 @@ namespace GGUI{
             return;
 
         Pause_Event_Thread = true;
+        Pause_Render = true;
 
         if (Main){
             Abstract_Frame_Buffer = Main->Render();
@@ -1374,6 +1375,7 @@ namespace GGUI{
 
         //Unlock the event handler.
         Pause_Event_Thread = false;
+        Pause_Render = false;
         Render_Frame();
     }
 
@@ -1717,8 +1719,9 @@ namespace GGUI{
                     // Calculate the delta time.
                     Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
-                    std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MIILISECONDS - Delta_Time, 0))); 
+                    std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MILLISECONDS - Delta_Time, 0))); 
                 });
+
             }
         });
 
@@ -2034,20 +2037,20 @@ namespace GGUI{
     }
 
     void Init_Inspect_Tool(){
-        GGUI::Window* Inspect = new GGUI::Window(
-            "Inspect",
+        GGUI::List_View* Inspect = new GGUI::List_View(
             Main->Get_Width() / 3,
-            Main->Get_Height()
+            Main->Get_Height(),
+            Main->Get_Text_Color(),
+            Main->Get_Background_Color()
         );
 
+        Inspect->Set_Flow_Direction(DIRECTION::COLUMN);
         Inspect->Show_Border(false);
         Inspect->Set_Position({
             Main->Get_Width() - (Main->Get_Width() / 3),
             0,
             INT32_MAX - 1,
         });
-        Inspect->Set_Background_Color(Main->Get_Background_Color());
-        Inspect->Set_Text_Color(Main->Get_Text_Color());
         Inspect->Set_Opacity(0.8f);
         Inspect->Set_Name("Inspect");
 
@@ -2064,10 +2067,8 @@ namespace GGUI{
             4
         );
         Stats->Allow_Dynamic_Size(true);
-
         Stats->Set_Name("STATS");
 
-        Stats->Set_Position({0, 0});
         Inspect->Add_Child(Stats);
 
         // Add the error logger kidnapper:
@@ -2082,11 +2083,9 @@ namespace GGUI{
         );
 
         Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
-
-        Error_Logger_Kidnapper->Set_Position({0, Stats->Get_Height()});
         Error_Logger_Kidnapper->Allow_Overflow(true);
-        Inspect->Add_Child(Error_Logger_Kidnapper);
 
+        Inspect->Add_Child(Error_Logger_Kidnapper);
         Inspect->Display(false);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
