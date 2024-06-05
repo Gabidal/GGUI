@@ -37,8 +37,8 @@ namespace GGUI{
     std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
     std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
 
-    // Time stuff
-    inline time_t UPDATE_SPEED_MILLISECONDS = TIME::MILLISECOND * 16;
+    // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
+    inline time_t UPDATE_SPEED_MILLISECONDS = TIME::MILLISECOND * 128;
     inline int Inputs_Per_Second = INT16_MAX;
     inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MILLISECONDS), (time_t)1);
 
@@ -557,7 +557,7 @@ namespace GGUI{
 
     int Previus_Flags = 0;
     struct termios Previus_Raw;
-    void Exit(int signum, bool Only_DeInitialize){
+    void De_Initialize(){
         // Also handles STD_COUT capture restorations.
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
@@ -570,14 +570,13 @@ namespace GGUI{
 
         fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previus_Raw);
-
-        if (!Only_DeInitialize)
-            exit(signum);
     }
 
-    void Exit(bool Only_DeInitialize){
-        // Call the signum exit
-        Exit(SIGINT, Only_DeInitialize);
+    void Exit(int signum){
+
+        De_Initialize();
+
+        exit(signum);
     }
 
     void SLEEP(unsigned int mm){
@@ -628,12 +627,15 @@ namespace GGUI{
 
         Max_Width = w.ws_col;
         Max_Height = w.ws_row - 1;
+
+        // Convenience sake :)
+        if (Main)
+            Main->Set_Dimensions(Max_Width, Max_Height);
     }
 
     Coordinates Get_Terminal_Content_Size(){
         return {1, 1};
     }
-
 
     // this global variable is only meant for unix use, since unix has ability to return non finished input events, so we need to store the first half for later use.
     std::vector<char> Input_Buffer;
@@ -656,24 +658,18 @@ namespace GGUI{
         return a_lenght > 0;
     }
 
-    //Is called on every cycle.
+    //Is called as soon as possible and gets stuck awaiting for the user input.
     void Query_Inputs(){
-        // For keyboard input handling.
+        // The code gets stuck here waiting for the user input, only proceed after required from user the input.
+        // Since capturing an longer stream in an un-supervised situation might halt, we need to just choply take each character one by one and determining the rest ourselves smh.
         char Buffer[256];
         int Bytes_Read = read(STDIN_FILENO, Buffer, sizeof(Buffer));
 
-        Update_Max_Width_And_Height();
-
-        // For outbox use.
-        if (Main)
-            Main->Set_Dimensions(Max_Width, Max_Height);
-
-        // All of the if-else statemets could just make into a map, where each key of combination repremts the value of the keyboard state, but you know what?
-        // haha code go brrrr
+        // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
+        // haha code go brrrr -- 2024 gab here, nice joke, although who asked?
         for (int i = 0; i < Bytes_Read; i++) {
-
             // Check for the starting escape code: <ecs>
-            if (Buffer[i] == '\e'){
+            if (Buffer[i] == Constants::ESC_CODE[0] && i + 1 < Bytes_Read) {
                 i++;
 
                 // ESC button code: <ecs><ecs>
@@ -681,12 +677,16 @@ namespace GGUI{
                     Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
                     KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
                     Handle_Escape();
+
+                    i++;
                 }
                 // ESC button code2: <esc><nochar>
-                else if (Buffer[i] == 0 && Bytes_Read - i >= 0){
+                else if (Buffer[i] == 0){
                     Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
                     KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
                     Handle_Escape();
+
+                    i++;
                 }
                 else if (Buffer[i] == '['){
                     i++;
@@ -700,6 +700,7 @@ namespace GGUI{
                         // We want to first get the modifiers so that the event ordering is the same on xterm and vt for the user.
                         bool Has_Modifiers = false;
                         int Semi_Colon_Index = i;
+                        int Old_I = i;
 
                         // check if the code: ';' exists before the '~'
                         for (Semi_Colon_Index = i; Semi_Colon_Index < Squigly_Line_Index && Has_Modifiers == false; Has_Modifiers = Buffer[Semi_Colon_Index++] == ';');
@@ -868,26 +869,38 @@ namespace GGUI{
                         if (Buffer[i] == 'A'){ // UP
                             Inputs.push_back(new GGUI::Input(' ', Constants::UP));
                             KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
+
+                            i++;
                         }
                         else if (Buffer[i] == 'B'){ // DOWN
                             Inputs.push_back(new GGUI::Input(' ', Constants::DOWN));
                             KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
+                            
+                            i++;
                         }
                         else if (Buffer[i] == 'C'){ // RIGHT
                             Inputs.push_back(new GGUI::Input(' ', Constants::RIGHT));
                             KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
+                            
+                            i++;
                         }
                         else if (Buffer[i] == 'D'){ // LEFT
                             Inputs.push_back(new GGUI::Input(' ', Constants::LEFT));
                             KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
+                            
+                            i++;
                         }
                         else if (Buffer[i] == 'F'){ // END
                             Inputs.push_back(new GGUI::Input(' ', Constants::END));
                             KEYBOARD_STATES[BUTTON_STATES::END] = BUTTON_STATE(true);
+                            
+                            i++;
                         }
                         else if (Buffer[i] == 'H'){ // HOME
                             Inputs.push_back(new GGUI::Input(' ', Constants::HOME));
                             KEYBOARD_STATES[BUTTON_STATES::HOME] = BUTTON_STATE(true);
+                            
+                            i++;
                         }
                     
                         if (Buffer[i] == 'M'){  // Decode Mouse handling
@@ -912,6 +925,7 @@ namespace GGUI{
                                 KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
                             }
 
+                            i += 3;
                         }
                     }
                 
@@ -922,46 +936,49 @@ namespace GGUI{
                         
                         KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
                         KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
+
+                        i++;
                     }
                 }
             }
             else if (Buffer[i] == '\r'){    // ENTER
                 Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
                 KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
+
+                i++;
             }
-            else if (Buffer[i] == 0x9){   // TABULATOR
+            else if (Buffer[i] == '\t'){   // TABULATOR
                 Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
                 KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
                 Handle_Tabulator();
+
+                i++;
             }
             else if (Buffer[i] == 0x7f){  // backspace
                 Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
                 KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
+
+                i++;
             }
             else{
                 Inputs.push_back(new GGUI::Input(Buffer[i], Constants::KEY_PRESS));
+
+                i++;
             }
         }
     
-    }
-
-    void signal_handler(int code){
-        Inputs.push_back(new Input(' ', Constants::CONTROL));
-        Inputs.push_back(new Input('c', Constants::KEY_PRESS));
-
-        KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(!KEYBOARD_STATES[BUTTON_STATES::CONTROL].State);
     }
 
     void Init_Platform_Stuff(){
         std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
         std::cout << Constants::DisableFeature(Constants::MOUSE_CURSOR);
         std::cout << Constants::EnableFeature(Constants::SCREEN_CAPTURE);   // for on exit to restore
-        //std::cout << Constants::RESET_CONSOLE;
-        std::cout << std::flush;
+        // std::cout << Constants::RESET_CONSOLE;
         // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
+        std::cout << std::flush;
 
         Previus_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-        int flags = O_NONBLOCK | O_RDONLY | O_CLOEXEC;
+        int flags = O_RDONLY | O_CLOEXEC;
         fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
 
         /*
@@ -987,17 +1004,6 @@ namespace GGUI{
                 SIGTERM
             }){
             sigaction(i, wrapper, NULL);
-        }
-
-        // Add for ctrl+C
-        struct sigaction* wrapper_ctrc = new struct sigaction();
-        wrapper_ctrc->sa_handler = signal_handler;
-        sigemptyset(&wrapper_ctrc->sa_mask);
-        wrapper_ctrc->sa_flags = 0;
-
-        if (sigaction(SIGINT, wrapper_ctrc, NULL) == -1) {
-            perror("sigaction");
-            Exit(1);
         }
 
         struct termios raw;
@@ -1518,12 +1524,17 @@ namespace GGUI{
 
     // Events
     void Event_Handler(){
+        Query_Inputs();
+
+        // Disable hovered element if the mouse isn't on top of it anymore.
         if (Hovered_On && !Collides(Hovered_On, GGUI::Mouse)){
             Un_Hover_Element();
         }
 
-        Query_Inputs();
+        // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
         Populate_Inputs_For_Held_Down_Keys();
+
+
         for (auto& e : Event_Handlers){
 
             bool Has_Select_Event = false;
@@ -1702,30 +1713,54 @@ namespace GGUI{
             Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
         }
 
-        std::thread Job_Scheduler([&](){
+        std::thread Passive_Scheduler([&](){
+            while (true){
+                if (Pause_Event_Thread.load())
+                    continue;
+
+                Pause_Event_Thread = true;
+
+                Pause_Renderer([](){
+                    // First update Main size if needed.
+                    Update_Max_Width_And_Height();
+
+                    // Order independent --------------
+                    Recall_Memories();
+                    Go_Through_File_Streams();
+                    Refresh_Multi_Frame_Canvas();
+                    // --------------
+                });
+
+                Previous_Time = Current_Time;
+                Current_Time = std::chrono::high_resolution_clock::now();
+
+                // Calculate the delta time.
+                Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+
+                Pause_Event_Thread = false;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MILLISECONDS - Delta_Time, 0))); 
+            }
+        });
+
+        std::thread Inquire_Scheduler([&](){
             while (true){
                 if (Pause_Event_Thread.load())
                     continue;
 
                 Pause_Renderer([](){
-                    Recall_Memories();
+                    Pause_Event_Thread = true;
+                    
+                    // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
                     Event_Handler();
-                    Go_Through_File_Streams();
-                    Refresh_Multi_Frame_Canvas();
-
-                    Previous_Time = Current_Time;
-                    Current_Time = std::chrono::high_resolution_clock::now();
-
-                    // Calculate the delta time.
-                    Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
-
-                    std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MILLISECONDS - Delta_Time, 0))); 
+ 
+                    Pause_Event_Thread = false;
                 });
-
             }
         });
 
-        Job_Scheduler.detach();
+        Passive_Scheduler.detach();
+        Inquire_Scheduler.detach();
 
         Init_Inspect_Tool();
 
@@ -1967,6 +2002,12 @@ namespace GGUI{
 
         f();
 
+        // If another thread has been pausing this at the same time, then we need to check for it if it has already unpaused it.
+        if (!Pause_Render && !Original_Value){
+            Pause_Render = false;
+            Original_Value = false;
+        }
+
         if (!Original_Value)
             Resume_Renderer(); 
     }
@@ -1987,7 +2028,9 @@ namespace GGUI{
         SLEEP(Sleep_For);
 
         if (DeInitialize_GGUI_After_Sleep)
-            Exit(true);
+            De_Initialize();
+        else
+            Exit(1);
     }
 
     void Encode_Buffer(std::vector<GGUI::UTF>& Buffer){
