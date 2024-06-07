@@ -8,10 +8,10 @@
 #include <unordered_map>
 #include <stdio.h>
 #include <deque>
+#include <fcntl.h>
 
 #if _WIN32
     #include <io.h>
-    #include <fcntl.h>
 #else
     #include <unistd.h>
 #endif

@@ -546,11 +546,7 @@ namespace GGUI{
     }
 
     #else
-    #include <unistd.h>
-    #include <termios.h>
     #include <sys/ioctl.h>
-    #include <unistd.h>
-    #include <fcntl.h>
     #include <signal.h>
     #include <termios.h>
     #include <execinfo.h>
@@ -633,10 +629,6 @@ namespace GGUI{
             Main->Set_Dimensions(Max_Width, Max_Height);
     }
 
-    Coordinates Get_Terminal_Content_Size(){
-        return {1, 1};
-    }
-
     // this global variable is only meant for unix use, since unix has ability to return non finished input events, so we need to store the first half for later use.
     std::vector<char> Input_Buffer;
 
@@ -647,15 +639,21 @@ namespace GGUI{
         constexpr char META = '9';     // 8 + 1
     };
 
-    bool Contains(char* a, std::string b, int a_lenght){
-        for (int i = 0; i < a_lenght; i++){
-            if (b[i] != a[i]){
-                return false;
+    // Takes in an buffer with hex and octal values and transforms them into printable strings
+    std::string To_String(char* buffer, int length){
+        std::string Result = "";
+
+        for (int i = 0; i < length; i++){
+            if (isprint(buffer[i])){
+                Result += buffer[i];
+                continue;
             }
+
+            // add base
+            Result += " " + std::to_string((unsigned char)buffer[i]);
         }
 
-        // if a lenght is zero then return false none the less.
-        return a_lenght > 0;
+        return Result;
     }
 
     //Is called as soon as possible and gets stuck awaiting for the user input.
@@ -665,36 +663,33 @@ namespace GGUI{
         char Buffer[256];
         int Bytes_Read = read(STDIN_FILENO, Buffer, sizeof(Buffer));
 
+        std::string Result = To_String(Buffer, Bytes_Read);
+
+        Report(Result);
+
         // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
         // haha code go brrrr -- 2024 gab here, nice joke, although who asked?
         for (int i = 0; i < Bytes_Read; i++) {
+            
             // Check for the starting escape code: <ecs>
             if (Buffer[i] == Constants::ESC_CODE[0] && i + 1 < Bytes_Read) {
                 i++;
 
                 // ESC button code: <ecs><ecs>
-                if (Buffer[i] == '\e'){
+                if (Buffer[i] == Constants::ESC_CODE[0]){
                     Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
                     KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
                     Handle_Escape();
 
                     i++;
                 }
-                // ESC button code2: <esc><nochar>
-                else if (Buffer[i] == 0){
-                    Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
-                    KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
-                    Handle_Escape();
-
-                    i++;
-                }
-                else if (Buffer[i] == '['){
+                else if (Buffer[i] == Constants::ESC_CODE[1]){
                     i++;
                     bool Uses_VT = false;   // Uses xterm by default.
-                    int Squigly_Line_Index = i;
+                    int Squiggly_Line_Index = i;
 
                     // check if the escape code ends with an '~' or not.
-                    for (Squigly_Line_Index = i; Squigly_Line_Index < Bytes_Read && Uses_VT == false; Uses_VT = Buffer[Squigly_Line_Index++] == '~');
+                    for (Squiggly_Line_Index = i; Squiggly_Line_Index < Bytes_Read && Uses_VT == false; Uses_VT = Buffer[Squiggly_Line_Index++] == '~');
 
                     if (Uses_VT){
                         // We want to first get the modifiers so that the event ordering is the same on xterm and vt for the user.
@@ -703,7 +698,7 @@ namespace GGUI{
                         int Old_I = i;
 
                         // check if the code: ';' exists before the '~'
-                        for (Semi_Colon_Index = i; Semi_Colon_Index < Squigly_Line_Index && Has_Modifiers == false; Has_Modifiers = Buffer[Semi_Colon_Index++] == ';');
+                        for (Semi_Colon_Index = i; Semi_Colon_Index < Squiggly_Line_Index && Has_Modifiers == false; Has_Modifiers = Buffer[Semi_Colon_Index++] == ';');
 
                         if (Has_Modifiers){
                             if (Buffer[Semi_Colon_Index + 1] == MODIFIERS::SHIFT){
@@ -941,6 +936,14 @@ namespace GGUI{
                     }
                 }
             }
+            else if (Buffer[i] == Constants::ESC_CODE[0] && (Bytes_Read-1) == i){   // ESC button code2: <esc><nochar>
+                // The: (Bytes_Read-1) == i; means to check if the current index is at the end, where bytes_Read is an size so we need to change it to an index. 
+                Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
+                KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
+                Handle_Escape();
+
+                i++;
+            }
             else if (Buffer[i] == '\r'){    // ENTER
                 Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
                 KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
@@ -977,9 +980,20 @@ namespace GGUI{
         // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
         std::cout << std::flush;
 
+        // Setup the new flags and take an snapshot of the flags before GGUI
         Previus_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
         int flags = O_RDONLY | O_CLOEXEC;
         fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
+
+        struct termios Term_Handle;
+        tcgetattr(STDIN_FILENO, &Term_Handle);
+
+        Previus_Raw = Term_Handle;
+
+        Term_Handle.c_lflag &= ~(ECHO | ICANON);
+        Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
+        Term_Handle.c_cc[VTIME] = 0;    // Suppress automatic returning, since we want the Input_Query() to await until the user has given an input.  
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
 
         /*
         SIGINT -> This is skipped because we want the user to be able to use copy and paste
@@ -1005,14 +1019,6 @@ namespace GGUI{
             }){
             sigaction(i, wrapper, NULL);
         }
-
-        struct termios raw;
-        tcgetattr(STDIN_FILENO, &raw);
-
-        Previus_Raw = raw;
-
-        raw.c_lflag &= ~(ECHO | ICANON);
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
     }
 
     std::vector<std::string> Get_List_Of_Font_Files(){
@@ -1524,8 +1530,6 @@ namespace GGUI{
 
     // Events
     void Event_Handler(){
-        Query_Inputs();
-
         // Disable hovered element if the mouse isn't on top of it anymore.
         if (Hovered_On && !Collides(Hovered_On, GGUI::Mouse)){
             Un_Hover_Element();
@@ -1718,8 +1722,6 @@ namespace GGUI{
                 if (Pause_Event_Thread.load())
                     continue;
 
-                Pause_Event_Thread = true;
-
                 Pause_Renderer([](){
                     // First update Main size if needed.
                     Update_Max_Width_And_Height();
@@ -1737,8 +1739,6 @@ namespace GGUI{
                 // Calculate the delta time.
                 Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
-                Pause_Event_Thread = false;
-
                 std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MILLISECONDS - Delta_Time, 0))); 
             }
         });
@@ -1748,13 +1748,13 @@ namespace GGUI{
                 if (Pause_Event_Thread.load())
                     continue;
 
+                // First await for the user input outside the pause_renderer, so that awaiting for the user wont affect other processes.
+                Query_Inputs();
+
+                // Now if needed we can start reacting to the user input if given.
                 Pause_Renderer([](){
-                    Pause_Event_Thread = true;
-                    
                     // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
                     Event_Handler();
- 
-                    Pause_Event_Thread = false;
                 });
             }
         });
@@ -2129,7 +2129,7 @@ namespace GGUI{
         Error_Logger_Kidnapper->Allow_Overflow(true);
 
         Inspect->Add_Child(Error_Logger_Kidnapper);
-        Inspect->Display(false);
+        Inspect->Display(true);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;

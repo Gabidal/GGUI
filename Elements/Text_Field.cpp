@@ -119,6 +119,35 @@ namespace GGUI{
         return Result;
     }
 
+    void Text_Field::Set_Size_To_Fill_Parent(){
+        if (!Is_Dynamic_Size_Allowed())
+            return;
+
+        int New_Width = Min(Parent->Get_Width() - Position.X, Text.size());
+        
+        Update_Text_Cache();    // re-calculate the new height with the new suggested width.
+
+        int New_Height = Min(Parent->Get_Height() - Position.Y, Text_Cache.size());
+
+        Set_Dimensions(New_Width, New_Height);
+    }
+
+    void Text_Field::Set_Parent(Element* parent){
+        if (parent){
+            Parent = parent;
+
+            Set_Size_To_Fill_Parent();
+        }
+    }
+
+    void Text_Field::Set_Position(Coordinates c){
+        Position = c;
+
+        this->Dirty.Dirty(STAIN_TYPE::MOVE);
+
+        Set_Size_To_Fill_Parent();
+    }
+
     void Text_Field::Set_Text(std::string text){
         Text = text;
         Update_Text_Cache();

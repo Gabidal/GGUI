@@ -766,11 +766,7 @@ void GGUI::Element::Set_Position(Coordinates c){
 
 void GGUI::Element::Set_Position(Coordinates* c){
     if (c){
-        Position = *c;
-
-        this->Dirty.Dirty(STAIN_TYPE::MOVE);
-
-        Update_Frame();
+        Set_Position(*c);
     }
 }
 

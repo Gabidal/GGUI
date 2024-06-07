@@ -86,7 +86,9 @@ namespace GGUI{
 
     extern void Update_Max_Width_And_Height();
 
+    // Will pause all other internal GGUI threads while updating the rendering pipeline.
     void Update_Frame();
+
     //Is called on every cycle.
     extern void Query_Inputs();
 
