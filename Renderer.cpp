@@ -590,17 +590,8 @@ namespace GGUI{
     //pthread_mutex_t stdout_mutex = PTHREAD_MUTEX_INITIALIZER;
 
     void Render_Frame() {
-        // Store the previous flags
-        Previus_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-        
-        // remove the non-clock flag from the current flags
-        int flags = Previus_Flags & ~O_NONBLOCK;
-        
-        // apply the new flags
-        fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
-
         // Move cursor to top-left corner
-        // Previously used: Constants::CLEAR_SCROLLBACK + As a prefix to clear the history, when it was accumulating, but lately tests point this to be useless.
+        // Previously used: Constants::CLEAR_SCROLLBAR + As a prefix to clear the history, when it was accumulating, but lately tests point this to be useless.
         printf((Constants::SET_CURSOR_TO_START).c_str());
 
         // Flush the output to ensure it's written immediately
@@ -608,13 +599,6 @@ namespace GGUI{
 
         int printed = 0;
         printed = write(1, Frame_Buffer.data(), Frame_Buffer.size());
-
-        // Add the non_lock flag back if the previous flags had it
-        if (Previus_Flags & O_NONBLOCK)
-            flags = Previus_Flags | O_NONBLOCK;
- 
-        // apply the new flags
-        fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
     }
 
     void Update_Max_Width_And_Height(){
@@ -640,17 +624,21 @@ namespace GGUI{
     };
 
     // Takes in an buffer with hex and octal values and transforms them into printable strings
-    std::string To_String(char* buffer, int length){
+    std::string To_String(char* buffer, int length, bool Obfuscate = false){
         std::string Result = "";
 
         for (int i = 0; i < length; i++){
+            // This is used as an precession to avoid accidental ANSI escape sequences to trigger from printing the buffer contents.
+            if (Obfuscate)
+                Result += " ";
+
             if (isprint(buffer[i])){
                 Result += buffer[i];
                 continue;
             }
 
             // add base
-            Result += " " + std::to_string((unsigned char)buffer[i]);
+            Result += std::to_string((unsigned char)buffer[i]);
         }
 
         return Result;
@@ -663,7 +651,7 @@ namespace GGUI{
         char Buffer[256];
         int Bytes_Read = read(STDIN_FILENO, Buffer, sizeof(Buffer));
 
-        std::string Result = To_String(Buffer, Bytes_Read);
+        std::string Result = To_String(Buffer, Bytes_Read, true);
 
         Report(Result);
 
@@ -1364,6 +1352,9 @@ namespace GGUI{
         if (Pause_Render.load())
             return;
 
+        bool Previous_Event_Thread = Pause_Event_Thread;
+        bool Previous_Render = Pause_Render;
+
         Pause_Event_Thread = true;
         Pause_Render = true;
 
@@ -1385,18 +1376,20 @@ namespace GGUI{
             // Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Outbox.Get_Width(), Outbox.Get_Height());
         }
 
-        //Unlock the event handler.
-        Pause_Event_Thread = false;
-        Pause_Render = false;
         Render_Frame();
+        //Unlock the event handler.
+        Pause_Event_Thread = Previous_Event_Thread;
+        Pause_Render = Previous_Render;
     }
 
     void Pause_Renderer(){
         Pause_Render = true;
+        Pause_Event_Thread = true;
     }
 
     void Resume_Renderer(){
         Pause_Render = false;
+        Pause_Event_Thread = false;
 
         Update_Frame();
     }
@@ -1778,10 +1771,6 @@ namespace GGUI{
         std::string Result = std::ctime(&now);
 
         return Result.substr(0, Result.size() - 1);
-    }
-
-    void Enable_fast_STD_COUT_monitoring(){
-        
     }
 
     void Report(std::string Problem){

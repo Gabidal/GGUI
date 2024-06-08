@@ -123,12 +123,19 @@ namespace GGUI{
         if (!Is_Dynamic_Size_Allowed())
             return;
 
-        int New_Width = Min(Parent->Get_Width() - Position.X, Text.size());
+        int New_Width, New_Height;
+
+        if (Parent->Is_Dynamic_Size_Allowed()){
+            // Since the parent can just stretch we can set the max size.
+            New_Width = Text.size();
+            New_Height = 1;
+        }
+        else{
+            New_Width = Min(Parent->Get_Width() - Position.X, Text.size());
+            Update_Text_Cache();    // re-calculate the new height with the new suggested width.
+            New_Height = Min(Parent->Get_Height() - Position.Y, Text_Cache.size());
+        }
         
-        Update_Text_Cache();    // re-calculate the new height with the new suggested width.
-
-        int New_Height = Min(Parent->Get_Height() - Position.Y, Text_Cache.size());
-
         Set_Dimensions(New_Width, New_Height);
     }
 
