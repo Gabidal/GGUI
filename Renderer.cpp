@@ -268,19 +268,31 @@ namespace GGUI{
     }
 
     void Query_Inputs(){
-        std::vector<INPUT_RECORD> Input;
+        INPUT_RECORD Input[UINT8_MAX];
 
         int Buffer_Size = 0;
 
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
 
-        if (GetNumberOfConsoleInputEvents(GetStdHandle(STD_INPUT_HANDLE), (LPDWORD)&Buffer_Size) && Buffer_Size > 0){
+        ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, UINT8_MAX, (LPDWORD)&Buffer_Size);
 
-            Input.resize(Buffer_Size);
+        std::string tmp = "";
 
-            ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input.data(), Buffer_Size, (LPDWORD)&Buffer_Size);
+        for (int i = 0; i < Buffer_Size; i++){
+            // pack the INPUT_RECORD details for debug into tmp
+            tmp += "Event: " + std::to_string(i) + "\n";
+            tmp += "Type: " + std::to_string(Input[i].EventType) + "\n";
+            tmp += "Key: " + std::to_string(Input[i].Event.KeyEvent.wVirtualKeyCode) + "\n";
+            tmp += "Char: " + std::to_string(Input[i].Event.KeyEvent.uChar.AsciiChar) + "\n";
+            tmp += "Flags: " + std::to_string(Input[i].Event.KeyEvent.dwControlKeyState) + "\n";
+            tmp += "Down: " + std::to_string(Input[i].Event.KeyEvent.bKeyDown) + "\n";
+            tmp += "Mouse: " + std::to_string(Input[i].Event.MouseEvent.dwButtonState) + "\n";
+            tmp += "Mouse X: " + std::to_string(Input[i].Event.MouseEvent.dwMousePosition.X) + "\n";
+            tmp += "Mouse Y: " + std::to_string(Input[i].Event.MouseEvent.dwMousePosition.Y) + "\n";
         }
+
+        Report(tmp);
 
         for (int i = 0; i < Buffer_Size; i++){
             if (Input[i].EventType == KEY_EVENT){
@@ -452,8 +464,7 @@ namespace GGUI{
         return Buffer;
     }
 
-    void Exit(bool Only_DeInitialize){
-
+    void De_Initialize(){
         // Also handles STD_COUT capture restorations.
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
@@ -463,9 +474,12 @@ namespace GGUI{
         std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
         std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
         std::cout << std::flush;
+    }
 
-        if (!Only_DeInitialize)
-            exit(0);
+    void Exit(int signum){
+        De_Initialize();
+
+        exit(signum);
     }
 
     // For getting all font files:
@@ -1388,10 +1402,13 @@ namespace GGUI{
     }
 
     void Resume_Renderer(){
+        // Dont give any chance of restarting the event thread, first un-pause Main thread and update, then continue.
         Pause_Render = false;
-        Pause_Event_Thread = false;
 
         Update_Frame();
+
+        // Main thread is now complete, can continue to unlocking the secondary threads.
+        Pause_Event_Thread = false;
     }
 
     void Clear_Inputs(){
@@ -1891,7 +1908,7 @@ namespace GGUI{
                 Row->Set_Flow_Direction(DIRECTION::ROW);
 
                 // TODO: replace the text_field into Date_Element !
-                Text_Field* Date = new Text_Field(Now() + " ");
+                Text_Field* Date = new Text_Field(Now());
                 Text_Field* Problem_Text = new Text_Field(Problem);
 
                 Row->Add_Child(Date);
@@ -2019,7 +2036,7 @@ namespace GGUI{
         if (DeInitialize_GGUI_After_Sleep)
             De_Initialize();
         else
-            Exit(1);
+            Exit(0);
     }
 
     void Encode_Buffer(std::vector<GGUI::UTF>& Buffer){

@@ -150,7 +150,7 @@ namespace GGUI{
     // Use this to access GGUI.
     extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0, bool DeInitialize_GGUI_After_Sleep = false);
 
-    extern void Exit(bool Only_DeInitialize = false);
+    extern void Exit(int Signum = 0);
 
     // Also handles shift tabs!
     extern void Handle_Tabulator();
