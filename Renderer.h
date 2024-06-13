@@ -44,7 +44,7 @@ namespace GGUI{
 
     extern std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
 
-    extern time_t UPDATE_SPEED_MILLISECONDS;
+    extern time_t UPDATE_SPEED;
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 

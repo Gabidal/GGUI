@@ -31,7 +31,7 @@ namespace GGUI{
                 // For this we first need to know how long is this next word if there is any
                 int New_Word_Length = Text.find_first_of(' ', i + 1) - i;
 
-                if (New_Word_Length + current_line.Size >= Width){
+                if (New_Word_Length + current_line.Size >= Width && !Style->Allow_Dynamic_Size.Value){
                     // We want to add the space to this row
                     current_line.Size++;
 
@@ -57,7 +57,27 @@ namespace GGUI{
 
         // Make sure the last line is added
         if (current_line.Size > 0){
-            Text_Cache.push_back(current_line);
+            // check if this new word could be added to the last line
+            if (Text_Cache.size() == 0 || current_line.Size + Text_Cache.back().Size >= Width){
+                // If not then add the current line to the Text_Cache
+                Text_Cache.push_back(current_line);
+
+                Longest_Line = Max(Longest_Line, current_line.Size);
+            }
+            else{
+                // If it can be added then add it to the last line
+                Text_Cache.back().Size += current_line.Size;
+
+                Longest_Line = Max(Longest_Line, Text_Cache.back().Size);
+            }
+        }
+
+        // now we need to go through each compact string and make sure that those that are enforced as unicode's but are still 1 long, need to be transformed into the char bearing.
+        for (Compact_String& line : Text_Cache){
+            // We need to take care of the "Force Unicode" shenanigans before we add it to this list.
+            if (line.Size == 1){
+                line.Data.Ascii_Data = line.Data.Unicode_Data[0];
+            }
         }
 
         // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes

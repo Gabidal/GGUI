@@ -38,9 +38,9 @@ namespace GGUI{
     std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
 
     // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
-    inline time_t UPDATE_SPEED_MILLISECONDS = TIME::MILLISECOND * 128;
+    inline time_t UPDATE_SPEED = TIME::SECOND;
     inline int Inputs_Per_Second = INT16_MAX;
-    inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED_MILLISECONDS), (time_t)1);
+    inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED), (time_t)1);
 
     std::chrono::high_resolution_clock::time_point Previous_Time;
     std::chrono::high_resolution_clock::time_point Current_Time;
@@ -1749,7 +1749,7 @@ namespace GGUI{
                 // Calculate the delta time.
                 Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED_MILLISECONDS - Delta_Time, 0))); 
+                std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED - Delta_Time, 0))); 
             }
         });
 
@@ -2115,7 +2115,6 @@ namespace GGUI{
             Inspect->Get_Width(),
             4
         );
-        Stats->Allow_Dynamic_Size(true);
         Stats->Set_Name("STATS");
 
         Inspect->Add_Child(Stats);
