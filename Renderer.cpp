@@ -289,10 +289,10 @@ namespace GGUI{
             tmp += "Down: " + std::to_string(Input[i].Event.KeyEvent.bKeyDown) + "\n";
             tmp += "Mouse: " + std::to_string(Input[i].Event.MouseEvent.dwButtonState) + "\n";
             tmp += "Mouse X: " + std::to_string(Input[i].Event.MouseEvent.dwMousePosition.X) + "\n";
-            tmp += "Mouse Y: " + std::to_string(Input[i].Event.MouseEvent.dwMousePosition.Y) + "\n";
+            tmp += "Mouse Y: " + std::to_string(Input[i].Event.MouseEvent.dwMousePosition.Y);
+        
+            Report(tmp);
         }
-
-        Report(tmp);
 
         for (int i = 0; i < Buffer_Size; i++){
             if (Input[i].EventType == KEY_EVENT){

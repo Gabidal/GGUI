@@ -1600,7 +1600,7 @@ namespace GGUI{
             return Parent;
         }
 
-        virtual void Set_Parent(Element* parent);
+        void Set_Parent(Element* parent);
 
         bool Has(std::string s);
 
@@ -1654,7 +1654,7 @@ namespace GGUI{
 
         void Set_Height(unsigned int height);
 
-        virtual void Set_Position(Coordinates c);
+        void Set_Position(Coordinates c);
        
         void Set_Position(Coordinates* c);
 

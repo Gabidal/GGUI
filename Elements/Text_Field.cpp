@@ -17,25 +17,35 @@ namespace GGUI{
         Compact_String current_line(Text.data(), 0, true);
         unsigned int Longest_Line = 0;
 
+        // This is for the remaining liners to determine if they can append into the previous line or not.
+        enum class Line_Reason {
+            NONE,
+            NEWLINE,
+            WORDWRAP
+        } Previous_Line_Reason = Line_Reason::NONE;
+
         for (unsigned int i = 0; i < Text.size(); i++){
             bool flush_row = false;
 
             if (Text[i] == '\n'){
                 // Newlines are not counted as line lengths
                 flush_row = true;
+                Previous_Line_Reason = Line_Reason::NEWLINE;
             }
-            else if (Text[i] == ' '){
-                // This is for the word wrapping to beautifully end at when word end and not abruptly
-                
+            else{   // NOTE: If there is a newline character we need to TOTALLY skip it!!!
+                // Since in all situations the delimeter is also wanted to be part of the current line, we need to increase the current line length before deciding if we want to add it.
+                current_line.Size++;
+            }
+            
+            // This is for the word wrapping to beautifully end at when word end and not abruptly
+            if (Text[i] == ' ' && !Style->Allow_Dynamic_Size.Value){    
                 // Check if the current line length added one more word would go over the Width
                 // For this we first need to know how long is this next word if there is any
                 int New_Word_Length = Text.find_first_of(' ', i + 1) - i;
 
-                if (New_Word_Length + current_line.Size >= Width && !Style->Allow_Dynamic_Size.Value){
-                    // We want to add the space to this row
-                    current_line.Size++;
-
+                if (New_Word_Length + current_line.Size >= Width){
                     flush_row = true;
+                    Previous_Line_Reason = Line_Reason::WORDWRAP;
                 }
             }
 
@@ -50,26 +60,31 @@ namespace GGUI{
                 // reset current
                 current_line = Compact_String(Text.data() + i + 1, 0, true);
             }
-            else{
-                current_line.Size++;
-            }
         }
 
         // Make sure the last line is added
         if (current_line.Size > 0){
-            // check if this new word could be added to the last line
-            if (Text_Cache.size() == 0 || current_line.Size + Text_Cache.back().Size >= Width){
+
+            bool Last_Line_Exceeds_Width_With_Current_Line = current_line.Size + Text_Cache.back().Size >= Width;
+
+            // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
+            if (
+                Text_Cache.size() == 0 ||
+                (
+                    Last_Line_Exceeds_Width_With_Current_Line &&
+                    !Style->Allow_Dynamic_Size.Value
+                ) ||
+                Previous_Line_Reason == Line_Reason::NEWLINE
+            ){
                 // If not then add the current line to the Text_Cache
                 Text_Cache.push_back(current_line);
-
-                Longest_Line = Max(Longest_Line, current_line.Size);
             }
             else{
                 // If it can be added then add it to the last line
                 Text_Cache.back().Size += current_line.Size;
-
-                Longest_Line = Max(Longest_Line, Text_Cache.back().Size);
             }
+
+            Longest_Line = Max(Longest_Line, Text_Cache.back().Size);
         }
 
         // now we need to go through each compact string and make sure that those that are enforced as unicode's but are still 1 long, need to be transformed into the char bearing.
@@ -159,21 +174,21 @@ namespace GGUI{
         Set_Dimensions(New_Width, New_Height);
     }
 
-    void Text_Field::Set_Parent(Element* parent){
-        if (parent){
-            Parent = parent;
+    // void Text_Field::Set_Parent(Element* parent){
+    //     if (parent){
+    //         Parent = parent;
 
-            Set_Size_To_Fill_Parent();
-        }
-    }
+    //         Set_Size_To_Fill_Parent();
+    //     }
+    // }
 
-    void Text_Field::Set_Position(Coordinates c){
-        Position = c;
+    // void Text_Field::Set_Position(Coordinates c){
+    //     Position = c;
 
-        this->Dirty.Dirty(STAIN_TYPE::MOVE);
+    //     this->Dirty.Dirty(STAIN_TYPE::MOVE);
 
-        Set_Size_To_Fill_Parent();
-    }
+    //     Set_Size_To_Fill_Parent();
+    // }
 
     void Text_Field::Set_Text(std::string text){
         Text = text;

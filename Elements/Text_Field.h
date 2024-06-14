@@ -29,9 +29,9 @@ namespace GGUI{
 
         void Set_Size_To_Fill_Parent();
 
-        void Set_Parent(Element* parent) override;
+        // void Set_Parent(Element* parent) override;
 
-        void Set_Position(Coordinates c) override;
+        // void Set_Position(Coordinates c) override;
 
         Text_Field() = default;
 
