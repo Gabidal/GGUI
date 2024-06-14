@@ -277,23 +277,6 @@ namespace GGUI{
 
         ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, UINT8_MAX, (LPDWORD)&Buffer_Size);
 
-        std::string tmp = "";
-
-        for (int i = 0; i < Buffer_Size; i++){
-            // pack the INPUT_RECORD details for debug into tmp
-            tmp += "Event: " + std::to_string(i) + "\n";
-            tmp += "Type: " + std::to_string(Input[i].EventType) + "\n";
-            tmp += "Key: " + std::to_string(Input[i].Event.KeyEvent.wVirtualKeyCode) + "\n";
-            tmp += "Char: " + std::to_string(Input[i].Event.KeyEvent.uChar.AsciiChar) + "\n";
-            tmp += "Flags: " + std::to_string(Input[i].Event.KeyEvent.dwControlKeyState) + "\n";
-            tmp += "Down: " + std::to_string(Input[i].Event.KeyEvent.bKeyDown) + "\n";
-            tmp += "Mouse: " + std::to_string(Input[i].Event.MouseEvent.dwButtonState) + "\n";
-            tmp += "Mouse X: " + std::to_string(Input[i].Event.MouseEvent.dwMousePosition.X) + "\n";
-            tmp += "Mouse Y: " + std::to_string(Input[i].Event.MouseEvent.dwMousePosition.Y);
-        
-            Report(tmp);
-        }
-
         for (int i = 0; i < Buffer_Size; i++){
             if (Input[i].EventType == KEY_EVENT){
 
