@@ -174,22 +174,6 @@ namespace GGUI{
         Set_Dimensions(New_Width, New_Height);
     }
 
-    // void Text_Field::Set_Parent(Element* parent){
-    //     if (parent){
-    //         Parent = parent;
-
-    //         Set_Size_To_Fill_Parent();
-    //     }
-    // }
-
-    // void Text_Field::Set_Position(Coordinates c){
-    //     Position = c;
-
-    //     this->Dirty.Dirty(STAIN_TYPE::MOVE);
-
-    //     Set_Size_To_Fill_Parent();
-    // }
-
     void Text_Field::Set_Text(std::string text){
         Text = text;
         Update_Text_Cache();
