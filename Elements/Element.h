@@ -1286,30 +1286,7 @@ namespace GGUI{
 
         Styling() = default;
 
-        void Copy(const Styling& other){
-            Border_Enabled = other.Border_Enabled;
-            Text_Color = other.Text_Color;
-            Background_Color = other.Background_Color;
-            Border_Color = other.Border_Color;
-            Border_Background_Color = other.Border_Background_Color;
-            Hover_Border_Color = other.Hover_Border_Color;
-            Hover_Text_Color = other.Hover_Text_Color;
-            Hover_Background_Color = other.Hover_Background_Color;
-            Hover_Border_Background_Color = other.Hover_Border_Background_Color;
-            Focus_Border_Color = other.Focus_Border_Color;
-            Focus_Text_Color = other.Focus_Text_Color;
-            Focus_Background_Color = other.Focus_Background_Color;
-            Focus_Border_Background_Color = other.Focus_Border_Background_Color;
-            Border_Style = other.Border_Style;
-            Flow_Priority = other.Flow_Priority;
-            Wrap = other.Wrap;
-            Allow_Overflow = other.Allow_Overflow;
-            Allow_Dynamic_Size = other.Allow_Dynamic_Size;
-            Margin = other.Margin;
-            Shadow = other.Shadow;
-            Opacity = other.Opacity;
-            Allow_Scrolling = other.Allow_Scrolling;
-        }
+        void Copy(const Styling& other);
 
         void Copy(const Styling* other){
             // use the reference one
@@ -1471,6 +1448,7 @@ namespace GGUI{
 
         std::string Name = "";
 
+        // NOTE: do NOT set the .VALUEs manually set each member straight with the operator= overload.
         Styling* Style = nullptr;
 
         std::unordered_map<State, std::function<void()>> State_Handlers;

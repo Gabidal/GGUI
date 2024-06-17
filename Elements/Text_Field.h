@@ -18,7 +18,7 @@ namespace GGUI{
             // Reserve one row for the text if no newlines.
             Text_Cache.reserve(SETTINGS::Text_Field_Minimum_Line_Count | height);
 
-            Style->Align.Value = align;
+            Style->Align = align;
 
             if (Width == 1 && Height == 1){
                 Allow_Dynamic_Size(true);

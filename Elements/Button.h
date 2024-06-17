@@ -10,7 +10,7 @@
 
 namespace GGUI{
 
-    class Button : public Text_Field{
+    class Button : public Element{
     protected:
         void Default_Button_Behaviour(std::function<void (Button* This)> press = []([[maybe_unused]] Button* This){}){
             On_Click([=]([[maybe_unused]] Event* e){
@@ -22,7 +22,9 @@ namespace GGUI{
         }
 
         // DONT USE AS USER!!
-        Button(){}
+        Button() : Element(){
+            Childs.push_back(new Text_Field());
+        }
     public:
 
         Button(std::string Text, std::function<void (Button* This)> press = []([[maybe_unused]] Button* This){});

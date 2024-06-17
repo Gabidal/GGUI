@@ -48,6 +48,31 @@ GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values, VA
     }
 }
 
+void GGUI::Styling::Copy(const Styling& other){
+    Border_Enabled = other.Border_Enabled;
+    Text_Color = other.Text_Color;
+    Background_Color = other.Background_Color;
+    Border_Color = other.Border_Color;
+    Border_Background_Color = other.Border_Background_Color;
+    Hover_Border_Color = other.Hover_Border_Color;
+    Hover_Text_Color = other.Hover_Text_Color;
+    Hover_Background_Color = other.Hover_Background_Color;
+    Hover_Border_Background_Color = other.Hover_Border_Background_Color;
+    Focus_Border_Color = other.Focus_Border_Color;
+    Focus_Text_Color = other.Focus_Text_Color;
+    Focus_Background_Color = other.Focus_Background_Color;
+    Focus_Border_Background_Color = other.Focus_Border_Background_Color;
+    Border_Style = other.Border_Style;
+    Flow_Priority = other.Flow_Priority;
+    Wrap = other.Wrap;
+    Allow_Overflow = other.Allow_Overflow;
+    Allow_Dynamic_Size = other.Allow_Dynamic_Size;
+    Margin = other.Margin;
+    Shadow = other.Shadow;
+    Opacity = other.Opacity;
+    Allow_Scrolling = other.Allow_Scrolling;
+}
+
 std::string GGUI::UTF::To_String(){
     std::string Result =
         Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND + 
@@ -443,6 +468,8 @@ void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opaci
     Position.Y -= Length * Opacity;
 
     Position += Direction * -1;
+    
+    properties->Status = VALUE_STATE::VALUE;
 
     Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
@@ -457,6 +484,8 @@ void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
 
     Position.X -= Length * Opacity;
     Position.Y -= Length * Opacity;
+
+    properties->Status = VALUE_STATE::VALUE;
 
     Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
@@ -519,7 +548,10 @@ GGUI::Styling GGUI::Element::Get_Style(){
 }
 
 void GGUI::Element::Set_Style(Styling css){
-    Style = new Styling(css);
+    if (Style)
+        Style->Copy(css);
+    else
+        Style = new Styling(css);
 
     Update_Frame();
 }
@@ -581,8 +613,8 @@ void GGUI::Element::Add_Child(Element* Child){
     ){
         if (Style->Allow_Dynamic_Size.Value){
             //Add the border offsetter to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = GGUI::Max(Child->Position.X + Child->Width + Border_Offsetter, Width);
-            unsigned int New_Height = GGUI::Max(Child->Position.Y + Child->Height + Border_Offsetter, Height);
+            unsigned int New_Width = GGUI::Max(Child->Position.X + Child->Width + Border_Offsetter*2, Width);
+            unsigned int New_Height = GGUI::Max(Child->Position.Y + Child->Height + Border_Offsetter*2, Height);
 
             //TODO: Maybe check the parent of this element to check?
             Height = New_Height;
@@ -779,11 +811,10 @@ GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
 }
 
 void GGUI::Element::Update_Absolute_Position_Cache(){
-    Style->Absolute_Position_Cache.Value = {0, 0, 0};
-    Style->Absolute_Position_Cache.Status = VALUE_STATE::VALUE;
+    Style->Absolute_Position_Cache = {0, 0, 0};
 
     if (Parent){
-        Style->Absolute_Position_Cache.Value = Parent->Get_Position();
+        Style->Absolute_Position_Cache = Parent->Get_Position();
     }
 
     Style->Absolute_Position_Cache.Value += Position;

@@ -1927,7 +1927,7 @@ namespace GGUI{
         Error_Logger_Kidnapper->Allow_Overflow(true);
 
         Inspect->Add_Child(Error_Logger_Kidnapper);
-        Inspect->Display(true);
+        Inspect->Display(false);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;

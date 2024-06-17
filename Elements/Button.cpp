@@ -4,13 +4,14 @@
 
 namespace GGUI{
 
-    Button::Button(std::string Text, std::function<void (Button* This)> press) : Text_Field(Text, ALIGN::CENTER){
-        GGUI::Pause_Renderer([=](){
-            Default_Button_Behaviour(press);
-            Allow_Overflow(true);
-            Show_Border(true);
-            Set_Name(Text);
-        });
+    Button::Button(std::string text, std::function<void (Button* This)> press) : Element(){
+        Default_Button_Behaviour(press);
+        Set_Name(text);
+
+        Allow_Dynamic_Size(true);
+        Show_Border(true);
+
+        Add_Child(new Text_Field(text, ALIGN::CENTER));
     }
 
 }
