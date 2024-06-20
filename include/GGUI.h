@@ -1751,7 +1751,7 @@ namespace GGUI{
 
     extern std::map<std::string, BUTTON_STATE> KEYBOARD_STATES;
 
-    extern time_t UPDATE_SPEED;
+    extern time_t MAX_UPDATE_SPEED;
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 

@@ -44,7 +44,7 @@ namespace GGUI{
 
     extern std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
 
-    extern time_t UPDATE_SPEED;
+    extern time_t MAX_UPDATE_SPEED;
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 
@@ -148,7 +148,7 @@ namespace GGUI{
     extern void Pause_Renderer(std::function<void()> f);
 
     // Use this to access GGUI.
-    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0, bool DeInitialize_GGUI_After_Sleep = false);
+    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
 
     extern void Exit(int Signum = 0);
 

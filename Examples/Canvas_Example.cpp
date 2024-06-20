@@ -7,7 +7,6 @@ using namespace GGUI;
 int main() 
 {
     GGUI::GGUI([&](){
-
         GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(GGUI::Max_Width, GGUI::Max_Height, {0, 0});
 
 
@@ -30,5 +29,5 @@ int main()
     });  
 
     // Your code here...
-    _sleep(UINT32_MAX);
+    GGUI::SLEEP(UINT32_MAX);
 }

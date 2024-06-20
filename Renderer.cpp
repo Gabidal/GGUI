@@ -38,9 +38,10 @@ namespace GGUI{
     std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
 
     // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
-    inline time_t UPDATE_SPEED = TIME::SECOND;
-    inline int Inputs_Per_Second = INT16_MAX;
-    inline int Inputs_Per_Query = Max(Inputs_Per_Second / (TIME::SECOND / UPDATE_SPEED), (time_t)1);
+    inline time_t MAX_UPDATE_SPEED = TIME::SECOND;
+    inline time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 16;    // Close approximation to 60 fps.
+    inline time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
+    inline float Event_Thread_Load = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
     std::chrono::high_resolution_clock::time_point Previous_Time;
     std::chrono::high_resolution_clock::time_point Current_Time;
@@ -1124,7 +1125,7 @@ namespace GGUI{
     }
 
     GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
-        Super_String Result(Width * Height * Constants::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);
+        Super_String Result(Width * Height * Constants::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
 
         Super_String tmp_container(Constants::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
         Super_String Text_Overhead(Constants::Maximum_Needed_Pre_Allocation_For_Over_Head);
@@ -1479,10 +1480,23 @@ namespace GGUI{
     }
 
     void Refresh_Multi_Frame_Canvas(){
+        // Go through all animation needing elements (currently only for multi-frame canvases)
         for (auto i : Multi_Frame_Canvas){
 
             i.first->Flush(true);
 
+        }
+
+        if (Multi_Frame_Canvas.size() > 0){
+            // Since the multi frame canvases need to be smooth we recon to go with 60fps realtime
+            // First calculate the possible length of which our load can represent on.
+            float Length_Of_Possible_Values = MAX_UPDATE_SPEED - MIN_UPDATE_SPEED;
+
+            // Get the offset of which the wanted target fps deviates from the minimum value
+            float Offset_Of_Our_Load = 16 - MIN_UPDATE_SPEED;
+
+            // calculate the simple probability.
+            Event_Thread_Load = 1 - Offset_Of_Our_Load / Length_Of_Possible_Values;
         }
     }
 
@@ -1525,6 +1539,9 @@ namespace GGUI{
                 if (Pause_Event_Thread.load())
                     continue;
 
+                // Reset the thread load counter
+                Event_Thread_Load = 0;
+
                 Pause_Renderer([](){
                     // First update Main size if needed.
                     Update_Max_Width_And_Height();
@@ -1542,7 +1559,16 @@ namespace GGUI{
                 // Calculate the delta time.
                 Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(Max(UPDATE_SPEED - Delta_Time, 0))); 
+                CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
+
+                Report(std::to_string(CURRENT_UPDATE_SPEED));
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(
+                    Max(
+                        CURRENT_UPDATE_SPEED - Delta_Time, 
+                        MIN_UPDATE_SPEED
+                    )
+                )); 
             }
         });
 
@@ -1586,7 +1612,7 @@ namespace GGUI{
     void Report(std::string Problem){
         Pause_Renderer();
 
-        Problem += " ";
+        Problem = " " + Problem + " ";
 
         // Error logger structure:
         /*
@@ -1812,7 +1838,7 @@ namespace GGUI{
     }
 
     // Use this to use GGUI.
-    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For, bool DeInitialize_GGUI_After_Sleep){
+    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
         bool Previus_Event_Value = Pause_Event_Thread;
         Pause_Event_Thread = true;
 
@@ -1826,10 +1852,7 @@ namespace GGUI{
         Pause_Event_Thread = Previus_Event_Value;
         SLEEP(Sleep_For);
 
-        if (DeInitialize_GGUI_After_Sleep)
-            De_Initialize();
-        else
-            Exit(0);
+        // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
     }
 
     void Encode_Buffer(std::vector<GGUI::UTF>& Buffer){
@@ -1853,6 +1876,11 @@ namespace GGUI{
             if (!Same_Colours_As_Previous){
                 Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_START);
             }
+        }
+
+        // Check if the second to last was also an ending node, if so then add the last node the start tag
+        if (Buffer[Buffer.size() - 2].Is(UTF_FLAG::ENCODE_END)){
+            Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_START | UTF_FLAG::ENCODE_END);
         }
     }
 
