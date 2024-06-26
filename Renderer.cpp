@@ -5,12 +5,20 @@
 #include <cassert>
 #include <math.h>
 #include <sstream>
+#include <condition_variable>
+#include <mutex>
 
 namespace GGUI{
-    std::vector<UTF> Abstract_Frame_Buffer;                     //2D clean vector whitout bold nor color
-    std::string Frame_Buffer;                                   //string with bold and color, this what gets drawn to console.
-    std::atomic_bool Pause_Render = false;                      //if true, the render will not be updated, good for window creation.
-    std::atomic_bool Pause_Event_Thread = false;                //if true, the event handler will pause.
+    std::vector<UTF> Abstract_Frame_Buffer;                     // 2D clean vector without bold nor color
+    std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
+    
+    // THEAD SYSTEM --
+    bool Pause_Render = false;                                  // if true, the render will not be updated, good for window creation.
+    bool Pause_Event_Thread = false;                            // if true, the event handler will pause.
+
+    std::mutex Atomic_Mutex;                                    // Gives ownership of boolean for single thread at a time.
+    std::condition_variable Atomic_Condition;                   // Will lock all other threads until the wanted boolean is true.
+    // --
 
     std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
@@ -583,9 +591,7 @@ namespace GGUI{
         while(nanosleep(&req, &req) == -1)
             continue;
     }
- 
-    // Declare a mutex for stdout
-    //pthread_mutex_t stdout_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
     void Render_Frame() {
         // Move cursor to top-left corner
@@ -1157,14 +1163,13 @@ namespace GGUI{
     }
 
     void Update_Frame(){
-        if (Pause_Render.load())
+        if (Pause_Render)
             return;
 
         bool Previous_Event_Thread = Pause_Event_Thread;
         bool Previous_Render = Pause_Render;
 
-        Pause_Event_Thread = true;
-        Pause_Render = true;
+        Pause_GGUI();
 
         if (Main){
             Abstract_Frame_Buffer = Main->Render();
@@ -1190,12 +1195,12 @@ namespace GGUI{
         Pause_Render = Previous_Render;
     }
 
-    void Pause_Renderer(){
+    void Pause_GGUI(){
         Pause_Render = true;
         Pause_Event_Thread = true;
     }
 
-    void Resume_Renderer(){
+    void Resume_GGUI(){
         // Dont give any chance of restarting the event thread, first un-pause Main thread and update, then continue.
         Pause_Render = false;
 
@@ -1203,6 +1208,8 @@ namespace GGUI{
 
         // Main thread is now complete, can continue to unlocking the secondary threads.
         Pause_Event_Thread = false;
+
+        Atomic_Condition.notify_one();
     }
 
     void Clear_Inputs(){
@@ -1299,7 +1306,7 @@ namespace GGUI{
         if (Focused_On == new_candidate || new_candidate == Main)
             return;
 
-        Pause_Renderer([new_candidate](){
+        Pause_GGUI([new_candidate](){
             //put the previus focused candidate into not-focus
             if (Focused_On){
                 Un_Focus_Element();
@@ -1318,7 +1325,7 @@ namespace GGUI{
         if (Hovered_On == new_candidate || new_candidate == Main)
             return;
 
-        Pause_Renderer([new_candidate](){
+        Pause_GGUI([new_candidate](){
             //put the previus focused candidate into not-focus
             if (Hovered_On){
                 Un_Hover_Element();
@@ -1526,7 +1533,7 @@ namespace GGUI{
         Main = (Window*)0xFFFFFF;
         Main = new Window("", Max_Width, Max_Height);
 
-        if (!Pause_Event_Thread.load()){
+        if (!Pause_Event_Thread){
             Abstract_Frame_Buffer = Main->Render();
 
             Encode_Buffer(Abstract_Frame_Buffer);
@@ -1534,15 +1541,17 @@ namespace GGUI{
             Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
         }
 
+        Init_Inspect_Tool();
+
         std::thread Passive_Scheduler([&](){
             while (true){
-                if (Pause_Event_Thread.load())
-                    continue;
+                std::unique_lock Current_Lock(Atomic_Mutex);
+                Atomic_Condition.wait(Current_Lock, [](){ return !Pause_Event_Thread; });
 
                 // Reset the thread load counter
                 Event_Thread_Load = 0;
 
-                Pause_Renderer([](){
+                Pause_GGUI([](){
                     // First update Main size if needed.
                     Update_Max_Width_And_Height();
 
@@ -1561,27 +1570,25 @@ namespace GGUI{
 
                 CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
 
-                Report(std::to_string(CURRENT_UPDATE_SPEED));
-
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(
                         CURRENT_UPDATE_SPEED - Delta_Time, 
                         MIN_UPDATE_SPEED
                     )
-                )); 
+                ));
             }
         });
 
         std::thread Inquire_Scheduler([&](){
             while (true){
-                if (Pause_Event_Thread.load())
-                    continue;
+                std::unique_lock Current_Lock(Atomic_Mutex);
+                Atomic_Condition.wait(Current_Lock, [](){ return !Pause_Event_Thread; });
 
                 // First await for the user input outside the pause_renderer, so that awaiting for the user wont affect other processes.
                 Query_Inputs();
 
                 // Now if needed we can start reacting to the user input if given.
-                Pause_Renderer([](){
+                Pause_GGUI([](){
                     // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
                     Event_Handler();
                 });
@@ -1590,8 +1597,6 @@ namespace GGUI{
 
         Passive_Scheduler.detach();
         Inquire_Scheduler.detach();
-
-        Init_Inspect_Tool();
 
         Pause_Render = Default_Render_State;
 
@@ -1610,7 +1615,7 @@ namespace GGUI{
     }
 
     void Report(std::string Problem){
-        Pause_Renderer();
+        Pause_GGUI();
 
         Problem = " " + Problem + " ";
 
@@ -1784,7 +1789,7 @@ namespace GGUI{
             std::cout << _error__tmp_.To_String() + Problem << std::endl;
         }
 
-        Resume_Renderer();
+        Resume_GGUI();
     }
 
     void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){
@@ -1820,10 +1825,10 @@ namespace GGUI{
         }
     }
 
-    void Pause_Renderer(std::function<void()> f){
+    void Pause_GGUI(std::function<void()> f){
         bool Original_Value = Pause_Render;
 
-        Pause_Renderer();
+        Pause_GGUI();
 
         f();
 
@@ -1834,24 +1839,19 @@ namespace GGUI{
         }
 
         if (!Original_Value)
-            Resume_Renderer(); 
+            Resume_GGUI(); 
     }
 
     // Use this to use GGUI.
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
-        bool Previus_Event_Value = Pause_Event_Thread;
-        Pause_Event_Thread = true;
-
-        Pause_Renderer([=](){
+        Pause_GGUI([=](){
 
             Init_Renderer();
 
             DOM();
         });
 
-        Pause_Event_Thread = Previus_Event_Value;
         SLEEP(Sleep_For);
-
         // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
     }
 

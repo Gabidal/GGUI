@@ -10,7 +10,7 @@
 #undef NUMBER
 
 GGUI::List_View::List_View(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
-    GGUI::Pause_Renderer([=](){
+    GGUI::Pause_GGUI([=](){
         if (width != 0)
             Set_Width(width);
         if (height != 0)
@@ -29,7 +29,7 @@ GGUI::List_View::List_View(Styling css, unsigned int width, unsigned int height,
 GGUI::List_View::List_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction) : Element(){
     Allow_Dynamic_Size(true);
 
-    GGUI::Pause_Renderer([=](){
+    GGUI::Pause_GGUI([=](){
         Set_Parent(parent);
         Style->Flow_Priority = grow_direction;
 
@@ -45,7 +45,7 @@ GGUI::List_View::List_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
     });
@@ -59,7 +59,7 @@ GGUI::List_View::List_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
 
@@ -78,7 +78,7 @@ GGUI::List_View::List_View(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
 
@@ -98,7 +98,7 @@ GGUI::List_View::List_View(
 GGUI::Scroll_View::Scroll_View(DIRECTION grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
 
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         List_View* Container = new List_View();
         Container->Set_Flow_Direction(grow_direction);
         Allow_Overflow(true);
@@ -109,7 +109,7 @@ GGUI::Scroll_View::Scroll_View(DIRECTION grow_direction) : Element(){
 
 GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
     // Make the system into a Dynamic allowing parent.
-    Pause_Renderer([&container, this](){
+    Pause_GGUI([&container, this](){
         Allow_Overflow(true);
         Element::Add_Child(&container);
     });
@@ -117,7 +117,7 @@ GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
 
 GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, DIRECTION grow_direction) : Element(){
     // Make the system into a Dynamic allowing parent.
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         List_View* Container = new List_View(this, Childs, grow_direction);
 
         Allow_Overflow(true);
@@ -126,7 +126,7 @@ GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, DIRECTION grow_dire
 }
 
 GGUI::Scroll_View::Scroll_View(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
-    GGUI::Pause_Renderer([=](){
+    GGUI::Pause_GGUI([=](){
         if (width != 0)
             Set_Width(width);
         if (height != 0)
@@ -147,7 +147,7 @@ GGUI::Scroll_View::Scroll_View(Styling css, unsigned int width, unsigned int hei
 }
 
 GGUI::Scroll_View::Scroll_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         List_View* Container = new List_View(this, Tree, grow_direction);
 
         Allow_Overflow(true);
@@ -162,7 +162,7 @@ GGUI::Scroll_View::Scroll_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
         
@@ -180,7 +180,7 @@ GGUI::Scroll_View::Scroll_View(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
 
@@ -203,7 +203,7 @@ GGUI::Scroll_View::Scroll_View(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
 
@@ -225,7 +225,7 @@ GGUI::Scroll_View::Scroll_View(
 //End of user constructors.
 
 void GGUI::List_View::Add_Child(Element* e){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
 
         std::pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
 
@@ -364,7 +364,7 @@ std::string GGUI::List_View::Get_Name() const{
 }
 
 bool GGUI::List_View::Remove(Element* remove){
-    GGUI::Pause_Renderer([=](){
+    GGUI::Pause_GGUI([=](){
         unsigned int Index = 0;
 
         //first find the removable element index.
@@ -507,7 +507,7 @@ void GGUI::Scroll_View::Scroll_Up(){
     if (Scroll_Index <= 0)
         return;
 
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Scroll_Index--;
 
         List_View* Container = Get_Container();
@@ -537,7 +537,7 @@ void GGUI::Scroll_View::Scroll_Down(){
             return;
     }
 
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Scroll_Index++;
 
         List_View* Container = Get_Container();

@@ -48,7 +48,7 @@ namespace GGUI{
     };
 
     HTML::HTML(std::string File_Name){
-        Pause_Renderer([=](){
+        Pause_GGUI([=](){
             Handle = new FILE_STREAM(File_Name, [&](){
                 this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
             });
@@ -348,7 +348,7 @@ namespace GGUI{
     std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input){
         std::vector<Element*> Result;
 
-        GGUI::Pause_Renderer([&Input, &Result](){
+        GGUI::Pause_GGUI([&Input, &Result](){
             for (unsigned int i = 0; i < Input.size(); i++){
 
                 HTML_Node* Current = Input[i];

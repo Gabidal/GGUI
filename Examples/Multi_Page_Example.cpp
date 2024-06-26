@@ -33,7 +33,7 @@ void Switch(string From, string To, GGUI::Element* parent){
     GGUI::Element* To_Element = parent->Get_Element(To);
 
     // Run these changes in safe mode.
-    GGUI::Pause_Renderer([=](){
+    GGUI::Pause_GGUI([=](){
         From_Element->Display(false);
         To_Element->Display(true);
     });
@@ -150,5 +150,7 @@ int main(int Argument_Count, char** Arguments){
         Menu();
         Campaing();
     }, INT32_MAX);
-    return 0;
+    
+    // Then exit properly
+    GGUI::Exit();
 }

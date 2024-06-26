@@ -35,7 +35,7 @@ int main(int Argument_Count, char** Arguments){
     GGUI::Coordinates C_velocity = {1, 1};
 
     while (true){
-        GGUI::Pause_Renderer();
+        GGUI::Pause_GGUI();
         // Update the position of each window
         A->Set_Position(A->Get_Position() + A_velocity);
         B->Set_Position(B->Get_Position() + B_velocity);
@@ -57,11 +57,13 @@ int main(int Argument_Count, char** Arguments){
         if (C->Get_Position().Y <= 0 || C->Get_Position().Y + C->Get_Processed_Height() >= GGUI::Main->Get_Processed_Height())
             C_velocity.Y = -C_velocity.Y;
         
-        GGUI::Resume_Renderer();
+        GGUI::Resume_GGUI();
         GGUI::Report(to_string(A->Get_Position().X));
         GGUI::SLEEP(16);
     }
 
     GGUI::SLEEP(INT32_MAX);
-    return 0;
+    
+    // Then exit properly
+    GGUI::Exit();
 }

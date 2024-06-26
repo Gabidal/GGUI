@@ -9,7 +9,7 @@
 namespace GGUI{
 
     Canvas::Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
-        Pause_Renderer([=](){
+        Pause_GGUI([=](){
             Buffer.resize(w * h);
 
             Width = w;
@@ -99,7 +99,6 @@ namespace GGUI{
 
     Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
         Buffer.resize(w * h);
-        Groups.resize(w * h, 1);
 
         Width = w;
         Height = h;
@@ -127,7 +126,7 @@ namespace GGUI{
 
         Buffer[Actual_X + Actual_Y * Width] = sprite;
 
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::DEEP);
+        Dirty.Dirty(STAIN_TYPE::COLOR);
 
         if (Flush)
             Update_Frame();
@@ -181,192 +180,32 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         }
 
-        // Activated by own Set() function
-        if (Dirty.is(STAIN_TYPE::DEEP)){
-            Dirty.Clean(STAIN_TYPE::DEEP);
-
-            Group_Heuristics();
-        }
-
         //Apply the color system to the resized result list
         if (Dirty.is(STAIN_TYPE::COLOR)){
 
             Dirty.Clean(STAIN_TYPE::COLOR);
 
-            // Borders are disabled.
-            int Current_Group_Size = 0;
+            unsigned int Start_X = Has_Border();
+            unsigned int Start_Y = Has_Border();
 
-            // The vectors holding the final answer
-            std::vector<float> Divination;
-            std::vector<float> Frame_Below;
-            std::vector<float> Frame_Above;
-            std::vector<float> All_Group_Nodes_Current_Frame;
-            
-            // The vectors containing the dividend value
-            std::vector<float> Animation_Frame;
-            std::vector<float> Frame_Above_Dividend;
-            std::vector<float> Modulo;
+            unsigned int End_X = Width - Has_Border();
+            unsigned int End_Y = Height - Has_Border();
 
-            // The vectors containing the divisor value
-            std::vector<float> Frame_Distance;
-            std::vector<float> Overflow;
-            std::vector<float> Frame_Count;
-
-            // Doesn't matter of the largest used size is less than the max, because we just wont be writing there.
-            // Init all with zero, since it will automaticaly point to the default frame.
-            Divination.resize(MAX_SIMD_SIZE);  
-            Frame_Below.resize(MAX_SIMD_SIZE);
-            Frame_Above.resize(MAX_SIMD_SIZE);
-            All_Group_Nodes_Current_Frame.resize(MAX_SIMD_SIZE);
-
-            Animation_Frame.resize(MAX_SIMD_SIZE);
-            Frame_Above_Dividend.resize(MAX_SIMD_SIZE);
-            Modulo.resize(MAX_SIMD_SIZE);
-
-            Frame_Distance.resize(MAX_SIMD_SIZE);
-            Overflow.resize(MAX_SIMD_SIZE);
-            Frame_Count.resize(MAX_SIMD_SIZE);
-
-            for (unsigned int i = 0; i < Buffer.size(); i += Current_Group_Size){
-                Current_Group_Size = Groups[i];
-
-                if (Current_Group_Size == 1){
-                    // Just call the normal render
-                    Result[i] = Buffer[i].Render(Current_Animation_Frame);
-                }
-                else{
-                    // Now go through each SPrite in this group, and fill the vectors with the right values for the SIMD operations for division operations.
-                    for (int j = 0; j < Current_Group_Size; j++){
-                        GGUI::Sprite* Current_Sprite = &Buffer[i + j];
-
-                        // Divination
-                        Animation_Frame[j] = (unsigned char)((Current_Animation_Frame + Current_Sprite->Offset) * Current_Sprite->Speed);
-                        Frame_Distance[j] = Current_Sprite->Frame_Distance;
-
-                        // Frame Below
-                        Overflow[j] = Current_Sprite->Frames.size() * Current_Sprite->Frame_Distance;
-                    }
-
-                    // Since the other two SIMD division operations require the resulting value of the Frame Below, we need to calculate that first 
-                    Operate_SIMD_Division(
-                        Animation_Frame.data(),
-                        Frame_Distance.data(),
-                        Divination.data(),
-                        Current_Group_Size
-                    );
-
-                    Operate_SIMD_Division(
-                        Animation_Frame.data(),
-                        Overflow.data(),
-                        Frame_Below.data(),
-                        Current_Group_Size
-                    );
-
-                    // now minus the Frame Below remainder from the Frame Below main data
-                    for (int j = 0; j < Current_Group_Size; j++){
-                        Frame_Below[j] = floor(Divination[j]) - floor(Frame_Below[j]);
-                    }
-
-                    // Now that the frame below has been calculated we can calculate the other two.
-                    for (int j = 0; j < Current_Group_Size; j++){
-                        // int Frame_Above = (Frame_Below + 1) % Frame_Count;
-                        GGUI::Sprite* Current_Sprite = &Buffer[i + j];
-
-                        // Frame Above
-                        Frame_Above_Dividend[j] = Divination[j] + 1;
-                        Frame_Count[j] = Current_Sprite->Frames.size();
-
-                        unsigned char Animation_Frame = (Current_Animation_Frame + Current_Sprite->Offset) * Current_Sprite->Speed;
-
-                        // int Modulo = Animation_Frame - Divination * Frame_Distance;
-                        Modulo[j] = Animation_Frame - Frame_Below[j] * Current_Sprite->Frame_Distance;
-                    }
-
-                    // Now we can calculate the Frame Above and the current frame distance
-                    Operate_SIMD_Modulo(
-                        Frame_Above_Dividend.data(),
-                        Frame_Count.data(),
-                        Frame_Above.data(),
-                        Current_Group_Size
-                    );
-
-                    Operate_SIMD_Division(
-                        Modulo.data(),
-                        Frame_Distance.data(),
-                        All_Group_Nodes_Current_Frame.data(),
-                        Current_Group_Size
-                    );
-                    
-                    // now that the frames above and below have been calculated we can calculate the right interpolation frame for each Sprite.
-                    for (int j = 0; j < Current_Group_Size; j++){
-                        GGUI::Sprite* Current_Sprite = &Buffer[i + j];
-
-                        GGUI::RGB foreground = Lerp(
-                            Current_Sprite->Frames[Frame_Below[j]].Foreground, 
-                            Current_Sprite->Frames[Frame_Above[j]].Foreground,
-                            All_Group_Nodes_Current_Frame[j]
-                        );
-
-                        // do same for background
-                        GGUI::RGB background = Lerp(
-                            Current_Sprite->Frames[Frame_Below[j]].Background, 
-                            Current_Sprite->Frames[Frame_Above[j]].Background,
-                            All_Group_Nodes_Current_Frame[j]
-                        );
-
-                        GGUI::UTF Current_Result = Current_Sprite->Frames[Frame_Below[j]];
-                        Current_Result.Set_Foreground(foreground);
-                        Current_Result.Set_Background(background);
-
-                        Result[i + j] = Current_Result;
-                    } 
+            unsigned int Pixel_Index = 0;
+            for (unsigned int y = Start_Y; y < End_Y; y++){
+                for (unsigned int x = Start_X; x < End_X; x++){
+                    Result[x + y * Width] = Buffer[Pixel_Index++].Render(Current_Animation_Frame);
                 }
             }
         }
+        
+        //This will add the borders if necessary.
+        if (Dirty.is(STAIN_TYPE::EDGE))
+            Add_Overhead(this, Result);
 
         Render_Buffer = Result;
 
         return Result;
-    }
-
-    void Terminal_Canvas::Group_Heuristics(){
-        // In machines where SIMD is not available just skip heuristics
-        if (MAX_SIMD_SIZE < 2)
-            return;
-
-        // Starts from the end towards the start, if 
-        for (int i = Buffer.size() - MAX_SIMD_SIZE; i >= 0; i -= MAX_SIMD_SIZE){
-            Group(i, MAX_SIMD_SIZE);
-        }
-    }
-
-    // Set the first char into the Flag IF all of the data in the length have atleast more than one animation frame.
-    // Accepts Length as only power of twos.
-    // The Flags follow same values as the length.
-    void Terminal_Canvas::Group(unsigned int Start_Index, int length){
-        bool All_Multi_Frame = true;
-
-        // Only group if more than one element.
-        if (length < GROUP_TYPE::QUAD)
-            return;
-
-        for (int i = 0; i <= length; i++){
-
-            if (Buffer[Start_Index].Frames.size() < 2)
-                All_Multi_Frame = false;
-            
-        }
-
-        if (All_Multi_Frame)
-            Groups[Start_Index] = length;
-        else{
-            // Now call the same function recursively where the length is halved.
-            // But since we also know that the length is always an power of two we can just shift it down by one.
-            int New_Length = length >> 1;
-
-            Group(Start_Index, New_Length);
-            Group(Start_Index + New_Length, New_Length);
-        }
     }
 
     UTF Sprite::Render(unsigned char Current_Frame){

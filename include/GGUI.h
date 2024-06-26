@@ -1816,9 +1816,9 @@ namespace GGUI{
 
     extern void Update_Frame();
     
-    extern void Pause_Renderer();
+    extern void Pause_GGUI();
 
-    extern void Resume_Renderer();
+    extern void Resume_GGUI();
 
     extern void Recall_Memories();
 
@@ -1849,7 +1849,7 @@ namespace GGUI{
 
     extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 
-    extern void Pause_Renderer(std::function<void()> f);
+    extern void Pause_GGUI(std::function<void()> f);
 
     // Use this to access GGUI.
     extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);

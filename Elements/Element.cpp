@@ -200,7 +200,7 @@ GGUI::Element::Element() {
 }
 
 GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Add_Class("default");
         Parse_Classes();
 
@@ -233,7 +233,7 @@ GGUI::Element::Element(
     unsigned int height,
     Coordinates position
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
 
@@ -246,7 +246,7 @@ GGUI::Element::Element(
     unsigned int width,
     unsigned int height
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
     });
@@ -258,7 +258,7 @@ GGUI::Element::Element(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
 
@@ -275,7 +275,7 @@ GGUI::Element::Element(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Set_Width(width);
         Set_Height(height);
 
@@ -647,7 +647,7 @@ void GGUI::Element::Add_Child(Element* Child){
 }
 
 void GGUI::Element::Set_Childs(std::vector<Element*> childs){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         for (auto& Child : childs){
             Add_Child(Child);
         }
@@ -710,7 +710,7 @@ void GGUI::Element::Display(bool f){
         }
 
         // now also update all children, this is for the sake of events, since they do not obey AST structure where parental hidden would stop going deeper into AST events are linear list.
-        GGUI::Pause_Renderer([this, f](){
+        GGUI::Pause_GGUI([this, f](){
             for (Element* c : Childs){
                 c->Display(f);
             }

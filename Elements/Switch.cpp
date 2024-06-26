@@ -6,7 +6,7 @@
 namespace GGUI{
 
     Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event) : Element(){
-        Pause_Renderer([=](){
+        Pause_GGUI([=](){
             States = states;
             
             Text.Allow_Overflow(true);
@@ -30,7 +30,7 @@ namespace GGUI{
     }
 
     void Switch::Set_Text(std::string text) { 
-        Pause_Renderer([=](){
+        Pause_GGUI([=](){
             std::string Symbol = " ";
             char Space = ' ';
 

@@ -149,7 +149,7 @@ namespace GGUI{
     
     Progress_Bar::Progress_Bar(RGB Fill_Color, RGB Empty_Color) : Element(){
         Progress = 0;
-        Pause_Renderer([=](){
+        Pause_GGUI([=](){
             Set_Fill_Color(Fill_Color);
             Set_Empty_Color(Empty_Color);
         });
@@ -158,7 +158,7 @@ namespace GGUI{
     
     Progress_Bar::Progress_Bar(RGB Fill_Color, RGB Empty_Color, unsigned int Width, unsigned int Height) : Element(Width, Height){
         Progress = 0;
-        Pause_Renderer([=](){
+        Pause_GGUI([=](){
             Set_Fill_Color(Fill_Color);
             Set_Empty_Color(Empty_Color);
         });

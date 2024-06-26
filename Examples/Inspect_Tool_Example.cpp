@@ -71,5 +71,7 @@ int main()
     });    
 
     GGUI::SLEEP(INT32_MAX);
-    return 0;
+    
+    // Then exit properly
+    GGUI::Exit();
 }

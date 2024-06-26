@@ -2,7 +2,7 @@
 #include "../Renderer.h"
 
 GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         for (auto& c : classes){
             Add_Class(c);
         }
@@ -20,7 +20,7 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
 }
 
 GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         if (width != 0)
             Width = width;
         if (height != 0)
@@ -38,7 +38,7 @@ GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Eleme
 }
 
 GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         if (width != 0)
             Width = width;
         if (height != 0)
@@ -64,7 +64,7 @@ GGUI::Window::Window(
     unsigned int width,
     unsigned int height
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Title = title;
         Width = width;
         Height = height;
@@ -92,7 +92,7 @@ GGUI::Window::Window(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Title = title;
         Width = width;
         Height = height;
@@ -125,7 +125,7 @@ GGUI::Window::Window(
     RGB background_color,
     RGB border_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Title = title;
         Width = width;
         Height = height;
@@ -152,7 +152,7 @@ GGUI::Window::Window(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Title = title;
         Width = width;
         Height = height;
@@ -177,7 +177,7 @@ GGUI::Window::Window(
     unsigned int height,
     std::vector<Element*> Tree 
 ) : Element(){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Title = title;
         Width = width;
         Height = height;
@@ -222,7 +222,7 @@ void GGUI::Window::Update_Hidden_Border_Colors(){
 }
 
 void GGUI::Window::Set_Title(std::string t){
-    Pause_Renderer([=](){
+    Pause_GGUI([=](){
         Title = t;
 
         if (!Has_Border() && t.size() > 0){

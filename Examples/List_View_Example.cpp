@@ -3,7 +3,7 @@
 using namespace std;
 
 int main(){
-    GGUI::Pause_Renderer();
+    GGUI::Pause_GGUI();
     
     GGUI::Window* Main = GGUI::Init_Renderer();
 
@@ -37,10 +37,12 @@ int main(){
 
     //You can also press SHIFT to togle element HOP mode to hop easily between elements.
 
-    GGUI::Resume_Renderer();
+    GGUI::Resume_GGUI();
 
     while(true){ 
         //Your programm here :D
     }
 
+    // Then exit properly
+    GGUI::Exit();
 }

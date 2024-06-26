@@ -29,4 +29,6 @@ int main(){
         //Your programm here :D
     }
 
+    // Then exit properly
+    GGUI::Exit();
 }

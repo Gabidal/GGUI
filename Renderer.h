@@ -19,10 +19,10 @@ namespace GGUI{
         class BUFFER_CAPTURE;
     }
 
-    extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
-    extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
-    extern std::atomic_bool Pause_Render;                     //if true, the render will not be updated, good for window creation.
-    extern std::atomic_bool Pause_Event_Thread;                                 //Main window
+    extern std::vector<UTF> Abstract_Frame_Buffer;                  //2D clean vector whitout bold nor color
+    extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
+    extern bool Pause_Render;                                       //if true, the render will not be updated, good for window creation.
+    extern bool Pause_Event_Thread;                                 //Main window
     
     extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
@@ -112,9 +112,9 @@ namespace GGUI{
 
     extern void Update_Frame();
     
-    extern void Pause_Renderer();
+    extern void Pause_GGUI();
 
-    extern void Resume_Renderer();
+    extern void Resume_GGUI();
 
     extern void Recall_Memories();
 
@@ -145,7 +145,7 @@ namespace GGUI{
 
     extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 
-    extern void Pause_Renderer(std::function<void()> f);
+    extern void Pause_GGUI(std::function<void()> f);
 
     // Use this to access GGUI.
     extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);

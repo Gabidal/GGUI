@@ -30,4 +30,7 @@ int main()
 
     // Your code here...
     GGUI::SLEEP(UINT32_MAX);
+
+    // Then exit properly
+    GGUI::Exit();
 }

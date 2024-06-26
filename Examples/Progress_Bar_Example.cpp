@@ -41,5 +41,7 @@ int main(int Argument_Count, char** Arguments){
     Main();
 
     GGUI::SLEEP(INT64_MAX);
-    return 0;
+    
+    // Then exit properly
+    GGUI::Exit();
 }

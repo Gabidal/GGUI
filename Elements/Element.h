@@ -86,7 +86,7 @@ namespace GGUI{
         }
 
         void Add(const char* data, int size){
-            Data[Current_Index++] = Compact_String(data, size + 1);
+            Data[Current_Index++] = Compact_String(data, size);
         }
 
         void Add(char data){
@@ -139,7 +139,7 @@ namespace GGUI{
 
                 // Size of ones are always already loaded from memory into a char.
                 if (data.Size > 1){
-                    result.insert(Current_UTF_Insert_Index, data.Data.Unicode_Data, data.Size);
+                    result.replace(Current_UTF_Insert_Index, data.Size, data.Data.Unicode_Data);
 
                     Current_UTF_Insert_Index += data.Size;
                 }

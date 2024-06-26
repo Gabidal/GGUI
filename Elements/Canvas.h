@@ -79,9 +79,6 @@ namespace GGUI{
         std::vector<Sprite> Buffer;
 
         unsigned char Current_Animation_Frame = 0;
-
-        // Used by the heuristics to clamp optimize multiple X amount Multi-frame-Sprites.
-        std::vector<unsigned char> Groups;
     public:
         Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         

@@ -37,5 +37,6 @@ int main(int Argument_Count, char** Arguments){
 
     }, INT32_MAX);
 
-    return 0;
+    // Then exit properly
+    GGUI::Exit();
 }
