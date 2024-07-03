@@ -26,11 +26,7 @@ int main()
         }
 
         GGUI::Main->Add_Child(tem);
-    });  
+    }, UINT32_MAX);
 
-    // Your code here...
-    GGUI::SLEEP(UINT32_MAX);
-
-    // Then exit properly
     GGUI::Exit();
 }

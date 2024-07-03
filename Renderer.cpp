@@ -235,14 +235,18 @@ namespace GGUI{
         Sleep(mm);
     }
 
-    GGUI::HANDLE GLOBAL_STD_HANDLE;
+    GGUI::HANDLE GLOBAL_STD_OUTPUT_HANDLE;
+    GGUI::HANDLE GLOBAL_STD_INPUT_HANDLE;
+
+    DWORD PREVIOUS_CONSOLE_OUTPUT_STATE;
+    DWORD PREVIOUS_CONSOLE_INPUT_STATE;
 
     CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info();
 
     void Render_Frame(){
         unsigned long long tmp = 0;
-        SetConsoleCursorPosition(GLOBAL_STD_HANDLE, {0, 0});
-        WriteFile(GLOBAL_STD_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
+        SetConsoleCursorPosition(GLOBAL_STD_OUTPUT_HANDLE, {0, 0});
+        WriteFile(GLOBAL_STD_OUTPUT_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
     }
 
     void Update_Max_Width_And_Height(){
@@ -284,7 +288,7 @@ namespace GGUI{
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
 
-        ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), Input, UINT8_MAX, (LPDWORD)&Buffer_Size);
+        ReadConsoleInput(GLOBAL_STD_INPUT_HANDLE, Input, UINT8_MAX, (LPDWORD)&Buffer_Size);
 
         for (int i = 0; i < Buffer_Size; i++){
             if (Input[i].EventType == KEY_EVENT){
@@ -405,9 +409,15 @@ namespace GGUI{
     }
 
     void Init_Platform_Stuff(){
-        GLOBAL_STD_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleMode(GLOBAL_STD_HANDLE, -1);
-        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
+        // Save the STD handles to prevent excess calls.
+        GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+        GLOBAL_STD_INPUT_HANDLE = GLOBAL_STD_INPUT_HANDLE;
+
+        GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &PREVIOUS_CONSOLE_OUTPUT_STATE);
+        GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
+
+        SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, -1);
+        SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
 
         std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS) + Constants::DisableFeature(Constants::MOUSE_CURSOR);
         std::cout.flush();
@@ -418,14 +428,14 @@ namespace GGUI{
     }
 
     CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info(){
-        if (GLOBAL_STD_HANDLE == 0){
-            GLOBAL_STD_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (GLOBAL_STD_OUTPUT_HANDLE == 0){
+            GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
         }
 
         CONSOLE_SCREEN_BUFFER_INFO Result;
 
         // first get the size of the file
-        if (!GetConsoleScreenBufferInfo(GLOBAL_STD_HANDLE, &Result)){
+        if (!GetConsoleScreenBufferInfo(GLOBAL_STD_OUTPUT_HANDLE, &Result)){
 
             int Last_Error = GetLastError();
 
@@ -446,7 +456,7 @@ namespace GGUI{
 
         // The area to read:
         SMALL_RECT rect {0,0, Info.dwSize.X-1, Info.dwSize.Y} ; // the console screen (buffer) region to read from (120x4)
-        ReadConsoleOutput( GLOBAL_STD_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size colsxrows*/, {0,0} /*buffer top,left*/, &rect );
+        ReadConsoleOutput( GLOBAL_STD_OUTPUT_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size colsxrows*/, {0,0} /*buffer top,left*/, &rect );
 
         // now transform all the data from CHAR_INFO to char
         for (unsigned int i = 0; i < Fake_Buffer.size(); i++){
@@ -461,6 +471,9 @@ namespace GGUI{
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
         }
+
+        SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
+        SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
 
         std::cout << Constants::EnableFeature(Constants::MOUSE_CURSOR);
         std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
@@ -1193,6 +1206,9 @@ namespace GGUI{
         //Unlock the event handler.
         Pause_Event_Thread = Previous_Event_Thread;
         Pause_Render = Previous_Render;
+
+        if (!Pause_Event_Thread)
+            Atomic_Condition.notify_one();
     }
 
     void Pause_GGUI(){
@@ -1518,13 +1534,13 @@ namespace GGUI{
 
         //Save the state before the init
         bool Default_Render_State = Pause_Render;
+        bool Default_Event_Thread_State = Pause_Event_Thread;
 
         Current_Time = std::chrono::high_resolution_clock::now();
         Previous_Time = Current_Time;
 
         //pause the renderer
-        Pause_Render = true;
-        Pause_Event_Thread = true;
+        Pause_GGUI();
 
         Init_Platform_Stuff();
         Init_Classes();
@@ -1550,6 +1566,7 @@ namespace GGUI{
 
                 // Reset the thread load counter
                 Event_Thread_Load = 0;
+                Previous_Time = Current_Time;
 
                 Pause_GGUI([](){
                     // First update Main size if needed.
@@ -1562,13 +1579,17 @@ namespace GGUI{
                     // --------------
                 });
 
-                Previous_Time = Current_Time;
                 Current_Time = std::chrono::high_resolution_clock::now();
+
+                Atomic_Condition.notify_one();
 
                 // Calculate the delta time.
                 Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
+
+                int a = CURRENT_UPDATE_SPEED;
+                int b = Delta_Time;
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(
@@ -1592,6 +1613,8 @@ namespace GGUI{
                     // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
                     Event_Handler();
                 });
+
+                Atomic_Condition.notify_one();
             }
         });
 
@@ -1599,6 +1622,10 @@ namespace GGUI{
         Inquire_Scheduler.detach();
 
         Pause_Render = Default_Render_State;
+        Pause_Event_Thread = Default_Event_Thread_State;
+
+        if (!Pause_Event_Thread)
+            Atomic_Condition.notify_one();
 
         return Main;
     }
