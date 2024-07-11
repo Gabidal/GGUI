@@ -411,7 +411,7 @@ namespace GGUI{
     void Init_Platform_Stuff(){
         // Save the STD handles to prevent excess calls.
         GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
-        GLOBAL_STD_INPUT_HANDLE = GLOBAL_STD_INPUT_HANDLE;
+        GLOBAL_STD_INPUT_HANDLE = GetStdHandle(STD_INPUT_HANDLE);
 
         GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &PREVIOUS_CONSOLE_OUTPUT_STATE);
         GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
@@ -985,10 +985,7 @@ namespace GGUI{
             Un_Focus_Element();
         }
         else if (Hovered_On){
-            if (Hovered_On->Get_Parent())
-                Update_Hovered_Element(Hovered_On->Get_Parent());
-            else
-                Un_Hover_Element();
+            Un_Hover_Element();
         }
     }
 
@@ -1005,90 +1002,28 @@ namespace GGUI{
         if (!Current)
             Current = Hovered_On;
 
-        // Check if there is no focused element yet
-        if (!Current && Event_Handlers.size() > 0){
-            // If there is no element selected per se (perse). find the closest element to the (0;0) (Top Left)
+        int Current_Index = 0;
 
-            std::vector<Element*> handler_elements;
-            handler_elements.resize(Event_Handlers.size());
-
-            for (unsigned int i = 0; i < Event_Handlers.size(); i++){
-                handler_elements[i] = Event_Handlers[i]->Host;
-            }
-
-            Current = Find_Closest_Absolute_Element({0, 0}, handler_elements);
-
-            // This is done here because if there was no previously selected, then we want the tab to select the first and not the second to first.
-            Update_Hovered_Element(Current);            
-            Mouse = Current->Get_Absolute_Position();
-            Mouse.X += Current->Has_Border();
-            Mouse.Y += Current->Has_Border();
-
-            return;
-        }
-
-        if (!Current)
-            return;
-
-        if (Current->Get_Childs().size() > 0){
-            // Find the last child.
-            for (int i = Current->Get_Childs().size() - 1; i >= 0;){
-                if (!Current->Get_Childs()[i]->Is_Displayed())
-                    goto CONTINUE;
-
-                // try to find if this child has a event handler.
-                for (auto e : Event_Handlers){
-                    if (e->Host != Current->Get_Childs()[i])
-                        continue;
-
-                    Mouse = Current->Get_Childs()[i]->Get_Absolute_Position();
-                    Mouse.X += Current->Get_Childs()[i]->Has_Border();
-                    Mouse.Y += Current->Get_Childs()[i]->Has_Border();
-                }
-
-                CONTINUE:;
-                if (Shift_Is_Pressed)
-                    i--;
-                else
-                    i++;
-            }
-        }
-        else{
-            if (!Current->Get_Parent())
-                return;
-
-            // Find this current elements index in the parents child list.
-            int Index = -1;
-
-            for (int i = 0; i < (signed)Current->Get_Parent()->Get_Childs().size(); i++){
-                if (Current->Get_Parent()->Get_Childs()[i] == Current){
-                    Index = i;
+        // If there has not been anything selected then then skip this phase and default to zero.
+        if (Current)
+            for (;Current_Index < Event_Handlers.size(); Current_Index++){
+                if (Event_Handlers[Current_Index]->Host == Current)
                     break;
-                }
             }
 
-            if (Index == -1)
-                Report("Child " + Current->Get_Name() + " could not be found from it's parent!");
+        // Generalize index hopping, if shift is pressed then go backwards.
+        Current_Index += 1 + (-2 * Shift_Is_Pressed);
 
-            if (Shift_Is_Pressed){
-                Index--;
-                if (Index < 0)
-                    Index = Current->Get_Parent()->Get_Childs().size() - 1;
-            }
-            else{
-                Index++;
-                if (Index >= (signed)Current->Get_Parent()->Get_Childs().size())
-                    Index = 0;
-            }
-
-            Element* new_Current = Current->Get_Parent()->Get_Childs()[Index];
-            Mouse = new_Current->Get_Absolute_Position();
-            Mouse.X += new_Current->Has_Border();
-            Mouse.Y += new_Current->Has_Border();
-
-            if (Focused_On)
-                Update_Focused_Element(new_Current);
+        if (Current_Index < 0){
+            Current_Index = Event_Handlers.size() - 1;
         }
+        else if (Current_Index >= Event_Handlers.size()){
+            Current_Index = 0;
+        }
+
+        // now incorporate the index into its corresponding element
+        Un_Hover_Element();
+        Update_Focused_Element(Event_Handlers[Current_Index]->Host);
     }
 
     bool Has_Bit_At(char val, int i){
@@ -1305,7 +1240,6 @@ namespace GGUI{
     void Un_Focus_Element(){
         if (!Focused_On)
             return;
-        Focused_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         Focused_On->Set_Focus(false);
         Focused_On = nullptr;
     }
@@ -1313,7 +1247,6 @@ namespace GGUI{
     void Un_Hover_Element(){
         if (!Hovered_On)
             return;
-        Hovered_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         Hovered_On->Set_Hover_State(false);
         Hovered_On = nullptr;
     }
@@ -1333,7 +1266,6 @@ namespace GGUI{
             
             //set the new candidate to focused.
             Focused_On->Set_Focus(true);
-            Focused_On->Get_Dirty().Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         });
     }
 
@@ -1374,11 +1306,21 @@ namespace GGUI{
                 if (Has(Inputs[i]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
                     Has_Select_Event = true;
 
+                // Criteria must be identical for more accurate criteria listing.
                 if (e->Criteria == Inputs[i]->Criteria){
-                    // Check if this job could be run successfully.
-                    if (e->Job(Inputs[i])){
-                        //dont let anyone else react to this event.
-                        Inputs.erase(Inputs.begin() + i);
+                    try{
+                        // Check if this job could be run successfully.
+                        if (e->Job(Inputs[i])){
+                            //dont let anyone else react to this event.
+                            Inputs.erase(Inputs.begin() + i);
+                        }
+                        else{
+                            // TODO: report miscarried event job.
+                            Report_Stack("Job '" + e->ID + "' failed!");
+                        }
+                    }
+                    catch(std::exception& problem){
+                        Report("In event: '" + e->ID + "' Problem: " + std::string(problem.what()));
                     }
                 }
             }
@@ -1587,9 +1529,6 @@ namespace GGUI{
                 Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
-
-                int a = CURRENT_UPDATE_SPEED;
-                int b = Delta_Time;
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(

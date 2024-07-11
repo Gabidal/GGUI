@@ -490,6 +490,12 @@ namespace GGUI{
             Blue = b;
         }
 
+        // Takes in a Hexadecimal representation of the RGB value, where 0xFFFFFF is White and 0x000000 is Black  
+        RGB(unsigned short hex){
+            Red = (hex >> 16) & 0xFF;
+            Green = (hex >> 8) & 0xFF;
+            Blue = hex & 0xFF;
+        }
 
         RGB(){}
 
@@ -525,6 +531,10 @@ namespace GGUI{
             }
         }
     
+        virtual unsigned int Get_Hexadecimal_Value(){
+            return (Red << 16) | (Green << 8) | Blue;
+        }
+
         bool operator==(const RGB& Other) const{
             // only take the bits from the first 3 unsigned chars
             return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
@@ -538,26 +548,25 @@ namespace GGUI{
 
     class RGBA : public RGB{
     public:
-    // Ranging from 0. - 1.
-        float Alpha = 1.0f;
+        unsigned char Alpha = std::numeric_limits<unsigned char>::max();
 
-        constexpr void Set_Alpha(unsigned char a){
-            Alpha = (float)a / std::numeric_limits<unsigned char>::max();
-        }
-
-        constexpr void Set_Alpha(float a){
-            Alpha = a;
-        }
-
-        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
+        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = std::numeric_limits<unsigned char>::max()){
             Red = r;
             Green = g;
             Blue = b;
-            Set_Alpha(a);
+            Alpha = a;
         }
 
         constexpr RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a, bool Use_Const) : RGB(r, g, b, Use_Const){
-            Set_Alpha(a);
+            Alpha = a;
+        }
+
+        // Takes in a Hexadecimal representation of the RGB value, where 0xFFFFFFFF is White and 0x000000FF is Black
+        RGBA(unsigned int Hex){
+            Red = (Hex >> 24) & 0xFF;
+            Green = (Hex >> 16) & 0xFF;
+            Blue = (Hex >> 8) & 0xFF;
+            Alpha = Hex & 0xFF;
         }
 
         RGBA(){}
@@ -568,67 +577,71 @@ namespace GGUI{
             Blue = primal.Blue;
         }
     
+        // For float API's
+        constexpr void Set_Alpha(float a){
+            Alpha = (unsigned char)(a * std::numeric_limits<unsigned char>::max());
+        }
+
+        constexpr float Get_Alpha() const{
+            return (float)Alpha / std::numeric_limits<unsigned char>::max();
+        }
+
+        unsigned int Get_Hexadecimal_Value() override{
+            return (Red << 24) | (Green << 16) | (Blue << 8) | Alpha;
+        }
+
         bool operator==(const RGBA& Other){
             // only take the bits which are the 3 unsigned chars and one float
             return (*(unsigned long long*)this & 0xFFFFFFFFFF) == (*(unsigned long long*)&Other & 0xFFFFFFFFFF);
         }
 
         RGBA operator*(const RGBA& Other){
+            float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Alpha;
+            float Reverse_Alpha = 1 - Decimal_Alpha;
             
             return RGBA(
-                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Alpha), 
-                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Alpha), 
-                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Alpha),
+                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Decimal_Alpha), 
+                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Decimal_Alpha), 
+                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Decimal_Alpha),
                 Alpha
             );
         }
 
         RGBA operator+(const RGBA& Other){
+            float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Alpha;
+            float Reverse_Alpha = 1 - Decimal_Alpha;
 
             return RGBA(
-                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Alpha), 
-                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Alpha), 
-                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Alpha),
+                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Decimal_Alpha), 
+                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Decimal_Alpha), 
+                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Decimal_Alpha),
                 Alpha
             );
         }
 
         RGBA operator*=(const RGBA& Other){
+            float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Alpha;
+            float Reverse_Alpha = 1 - Decimal_Alpha;
 
-            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Alpha);
+            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Decimal_Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Decimal_Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Decimal_Alpha);
 
             return *this;
         }
 
         RGBA operator+=(const RGBA& Other){
-
-            // Calculate the divider which is by default 2, but gets smaller the less the Fast_Alpha is.
-            // Fast_Alpha ranges from 0 to 1.
-
+            float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
-            float Reverse_Alpha = 1 - Other.Alpha;
+            float Reverse_Alpha = 1 - Decimal_Alpha;
 
-            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Alpha);
+            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Decimal_Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Decimal_Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Decimal_Alpha);
 
-            // float Divider = 1 + Other.Fast_Alpha;
-
-            // Red = ((float)Red + ((float)Other.Red * (float)Other.Fast_Alpha)) / Divider;
-            // Green = ((float)Green + ((float)Other.Green * (float)Other.Fast_Alpha)) / Divider;
-            // Blue = ((float)Blue + ((float)Other.Blue * (float)Other.Fast_Alpha)) / Divider;
-
-            // Red += ((float)Other.Red * (float)Other.Fast_Alpha);
-            // Green += ((float)Other.Green * (float)Other.Fast_Alpha);
-            // Blue += ((float)Other.Blue * (float)Other.Fast_Alpha);
             return *this;
         }
 
@@ -895,18 +908,22 @@ namespace GGUI{
         class Element* Host = nullptr;
 
         std::function<bool(GGUI::Event* e)> Job;
+        
+        std::string ID; 
     
         Action() = default;
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job, std::string id = ""){
             Criteria = criteria;
             Job = job;
             Host = nullptr;
+            ID = id;
         }
 
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job, class Element* host){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job, class Element* host, std::string id = ""){
             Criteria = criteria;
             Job = job;
             Host = host;
+            ID = id;
         }
     };
 
@@ -922,8 +939,6 @@ namespace GGUI{
 
         // By default all memories automatically will not prolong each other similar memories.
         unsigned char Flags = 0x0;
-
-        std::string ID; 
 
         // When the job starts, job, prolong previous similar job by this time.
         Memory(size_t end, std::function<bool(GGUI::Event* e)>job, unsigned char flags = 0x0, std::string id = ""){
