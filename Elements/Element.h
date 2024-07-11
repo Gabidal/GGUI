@@ -592,7 +592,7 @@ namespace GGUI{
 
         bool operator==(const RGBA& Other){
             // only take the bits which are the 3 unsigned chars and one float
-            return (*(unsigned long long*)this & 0xFFFFFFFFFF) == (*(unsigned long long*)&Other & 0xFFFFFFFFFF);
+            return (*(unsigned long long*)this & 0xFFFFFFFF) == (*(unsigned long long*)&Other & 0xFFFFFFFF);
         }
 
         RGBA operator*(const RGBA& Other){

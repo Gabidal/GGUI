@@ -1177,13 +1177,13 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 }
 
 void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
-    // If the Source element has full opacity, the destination gets fully rewritten over.
-    if (Source.Background.Alpha == 1.0f){
+    // If the Source element has full opacity, then the destination gets fully rewritten over.
+    if (Source.Background.Alpha == std::numeric_limits<unsigned char>::max()){
         Dest = Source;
         return;
     }
     
-    if (Source.Background.Alpha == 0.0f) return;         // Dont need to do anything.
+    if (Source.Background.Alpha == std::numeric_limits<unsigned char>::min()) return;         // Dont need to do anything.
 
     // Color the Destination UTF by the Source UTF background color.
     Dest.Background += Source.Background;
