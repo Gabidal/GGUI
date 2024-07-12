@@ -1620,7 +1620,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
 
         UTF shadow_pixel;
         shadow_pixel.Background = properties.Color;
-        shadow_pixel.Background.Set_Alpha(Current_Alpha);
+        shadow_pixel.Background.Alpha = Current_Alpha;
 
         for (auto& index : Shadow_Indicies){
             Shadow_Box[index.Y * Shadow_Box_Width + index.X] = shadow_pixel;

@@ -550,10 +550,7 @@ namespace GGUI{
     public:
         unsigned char Alpha = std::numeric_limits<unsigned char>::max();
 
-        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = std::numeric_limits<unsigned char>::max()){
-            Red = r;
-            Green = g;
-            Blue = b;
+        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = std::numeric_limits<unsigned char>::max()) : RGB(r, g, b){
             Alpha = a;
         }
 
@@ -561,21 +558,9 @@ namespace GGUI{
             Alpha = a;
         }
 
-        // Takes in a Hexadecimal representation of the RGB value, where 0xFFFFFFFF is White and 0x000000FF is Black
-        RGBA(unsigned int Hex){
-            Red = (Hex >> 24) & 0xFF;
-            Green = (Hex >> 16) & 0xFF;
-            Blue = (Hex >> 8) & 0xFF;
-            Alpha = Hex & 0xFF;
-        }
-
         RGBA(){}
 
-        RGBA(RGB primal){
-            Red = primal.Red;
-            Green = primal.Green;
-            Blue = primal.Blue;
-        }
+        RGBA(RGB primal) : RGB(primal){}
     
         // For float API's
         constexpr void Set_Alpha(float a){
@@ -591,8 +576,9 @@ namespace GGUI{
         }
 
         bool operator==(const RGBA& Other){
-            // only take the bits which are the 3 unsigned chars and one float
-            return (*(unsigned long long*)this & 0xFFFFFFFF) == (*(unsigned long long*)&Other & 0xFFFFFFFF);
+            // only take the bits which are the 4 unsigned chars, which is same as single integer.
+            // Starting from Red since Red is the first member and normally Virtual function will also allocate their own space before members.
+            return *(unsigned int*)&this->Red == *(unsigned int*)&Other;
         }
 
         RGBA operator*(const RGBA& Other){
