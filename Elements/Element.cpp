@@ -525,7 +525,7 @@ void GGUI::Element::Parse_Classes(){
 
 void GGUI::Element::Set_Focus(bool f){
     if (f != Focused){
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::CLASS);
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
 
         Focused = f;
 
@@ -535,7 +535,7 @@ void GGUI::Element::Set_Focus(bool f){
 
 void GGUI::Element::Set_Hover_State(bool h){
     if (h != Hovered){
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::CLASS);
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
 
         Hovered = h;
 

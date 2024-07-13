@@ -1237,10 +1237,57 @@ namespace GGUI{
         return (smoll & big) == smoll;
     }
 
+    // Recursive's are made for instances like buttons where the default styling of borders does not change on focus nor on hover and the content is filled by text.
+    void Recursively_Apply_Focus(Element* current, bool Focus){
+        // check if the current element is one of the Event handlers, if not, then apply the focus buff.
+        bool Is_An_Event_handler = false;
+
+        for (auto i : Event_Handlers){
+            if (i->Host == current){
+                Is_An_Event_handler = true;
+                break;
+            }
+        } 
+
+        if (Is_An_Event_handler && current->Is_Focused() != Focus)
+            return;
+
+        current->Set_Focus(Focus);
+
+        for (auto c : current->Get_Childs()){
+            Recursively_Apply_Focus(c, Focus);
+        }
+    }
+
+    // Recursive's are made for instances like buttons where the default styling of borders does not change on focus nor on hover and the content is filled by text.
+    void Recursively_Apply_Hover(Element* current, bool Hover){
+        // check if the current element is one of the Event handlers, if not, then apply the focus buff.
+        bool Is_An_Event_handler = false;
+
+        for (auto i : Event_Handlers){
+            if (i->Host == current){
+                Is_An_Event_handler = true;
+                break;
+            }
+        }
+
+        if (Is_An_Event_handler && current->Is_Hovered() != Hover)
+            return;
+
+        current->Set_Hover_State(Hover);
+
+        for (auto c : current->Get_Childs()){
+            Recursively_Apply_Hover(c, Hover);
+        }
+    }
+
     void Un_Focus_Element(){
         if (!Focused_On)
             return;
         Focused_On->Set_Focus(false);
+
+        Recursively_Apply_Focus(Focused_On, false);
+
         Focused_On = nullptr;
     }
 
@@ -1248,6 +1295,9 @@ namespace GGUI{
         if (!Hovered_On)
             return;
         Hovered_On->Set_Hover_State(false);
+
+        Recursively_Apply_Hover(Hovered_On, false);
+
         Hovered_On = nullptr;
     }
 
@@ -1255,36 +1305,36 @@ namespace GGUI{
         if (Focused_On == new_candidate || new_candidate == Main)
             return;
 
-        Pause_GGUI([new_candidate](){
-            //put the previus focused candidate into not-focus
-            if (Focused_On){
-                Un_Focus_Element();
-            }
+        //put the previus focused candidate into not-focus
+        if (Focused_On){
+            Un_Focus_Element();
+        }
 
-            //switch the candidate
-            Focused_On = new_candidate;
-            
-            //set the new candidate to focused.
-            Focused_On->Set_Focus(true);
-        });
+        //switch the candidate
+        Focused_On = new_candidate;
+        
+        //set the new candidate to focused.
+        Focused_On->Set_Focus(true);
+
+        Recursively_Apply_Focus(Focused_On, true);
     }
 
     void Update_Hovered_Element(GGUI::Element* new_candidate){
         if (Hovered_On == new_candidate || new_candidate == Main)
             return;
 
-        Pause_GGUI([new_candidate](){
-            //put the previus focused candidate into not-focus
-            if (Hovered_On){
-                Un_Hover_Element();
-            }
+        //put the previus focused candidate into not-focus
+        if (Hovered_On){
+            Un_Hover_Element();
+        }
 
-            //switch the candidate
-            Hovered_On = new_candidate;
-            
-            //set the new candidate to focused.
-            Hovered_On->Set_Hover_State(true);
-        });
+        //switch the candidate
+        Hovered_On = new_candidate;
+        
+        //set the new candidate to focused.
+        Hovered_On->Set_Hover_State(true);
+
+        Recursively_Apply_Hover(Hovered_On, true);
     }
 
     // Events
@@ -1544,11 +1594,11 @@ namespace GGUI{
                 std::unique_lock Current_Lock(Atomic_Mutex);
                 Atomic_Condition.wait(Current_Lock, [](){ return !Pause_Event_Thread; });
 
-                // First await for the user input outside the pause_renderer, so that awaiting for the user wont affect other processes.
-                Query_Inputs();
-
                 // Now if needed we can start reacting to the user input if given.
                 Pause_GGUI([](){
+                    // First await for the user input outside the pause_renderer, so that awaiting for the user wont affect other processes.
+                    Query_Inputs();
+
                     // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
                     Event_Handler();
                 });
