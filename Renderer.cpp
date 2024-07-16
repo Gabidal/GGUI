@@ -1542,7 +1542,7 @@ namespace GGUI{
         Init_Classes();
 
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
-        Main = (Window*)0xFFFFFF;
+        Main = (Window*)0xFFFFFFFF;
         Main = new Window("", Max_Width, Max_Height);
 
         if (!Pause_Event_Thread){
