@@ -5,7 +5,7 @@ using namespace std;
 
 int main(){
     //Pause renderer and resume renderer are only for super optimization purposes, if you dont need blazing fast TUI you can just ignore them.
-    GGUI::Window* Main = GGUI::Init_Renderer();
+    GGUI::Window* Main = GGUI::Init_GGUI();
     Main->Show_Border(true);
     
     GGUI::Window* Text = new GGUI::Window(

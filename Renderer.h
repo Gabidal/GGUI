@@ -137,7 +137,7 @@ namespace GGUI{
     extern void Init_Classes();
 
     //Inits GGUI and returns the main window.
-    extern GGUI::Window* Init_Renderer();
+    extern GGUI::Window* Init_GGUI();
 
     extern void Report(std::string Problem);
 

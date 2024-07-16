@@ -402,10 +402,6 @@ namespace GGUI{
                 }
             }
         }
-
-        SCROLL_API();
-
-        MOUSE_API();
     }
 
     void Init_Platform_Stuff(){
@@ -780,10 +776,6 @@ namespace GGUI{
             }
 
         }
-    
-        SCROLL_API();
-
-        MOUSE_API();
     }
 
     void Init_Platform_Stuff(){
@@ -1175,14 +1167,31 @@ namespace GGUI{
         }
     }
 
+    // Custom Lerp for Thread Load calculation.
+    float Lerp(int Min, int Max, int Position){
+        // First calculate the possible length of which our load can represent on.
+        float Length_Of_Possible_Values = Max - Min;
+
+        // Get the offset of which the wanted target fps deviates from the minimum value
+        float Offset_Of_Our_Load = GGUI::Max(Position - Min, 0);
+
+        // calculate the simple probability.
+        return 1 - Offset_Of_Our_Load / Length_Of_Possible_Values;
+    }
+
     void Recall_Memories(){
         std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
+        // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
+        size_t Shortest_Time = std::numeric_limits<size_t>::max();
+
         // Prolong prolongable memories.
         for (unsigned int i = 0; i < Remember.size(); i++){
-            for (unsigned int j = 1; j < Remember.size(); j++){
+            for (unsigned int j = i + 1; j < Remember.size(); j++){
                 if (Remember[i].Is(MEMORY_FLAGS::PROLONG_MEMORY) && Remember[j].Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
+                    // Check if the Job at I is same as the one at J.
                     if (Remember[i].Job.target<bool(*)(GGUI::Event* e)>() == Remember[j].Job.target<bool(*)(GGUI::Event* e)>()){
+                        // Since J will always be one later than I, J will contain the prolonging memory if there is one. 
                         Remember[i].Start_Time = Remember[j].Start_Time;
 
                         Remember.erase(Remember.begin() + j--);
@@ -1195,10 +1204,13 @@ namespace GGUI{
             //first calculate the time difference between the start if the task and the end task
             size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Remember[i].Start_Time).count();
 
+            size_t Time_Left = Remember[i].End_Time - Time_Difference;
+
+            if (Time_Left < Shortest_Time)
+                Shortest_Time = Time_Left;
+
             //if the time difference is greater than the time limit, then delete the memory
             if (Time_Difference > Remember[i].End_Time){
-                //Pause_Renderer();
-
                 try{
                     bool Success = Remember[i].Job((Event*)&Remember[i]);
 
@@ -1218,11 +1230,11 @@ namespace GGUI{
                 catch (std::exception& e){
                     Report("In memory: '" + Remember[i].ID + "' Problem: " + std::string(e.what()));
                 }
-                
-                //Resume_Renderer();
             }
 
         }
+
+        Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, Shortest_Time);
     }
 
     bool Is(unsigned long long f, unsigned long long Flag){
@@ -1503,20 +1515,12 @@ namespace GGUI{
         }
 
         if (Multi_Frame_Canvas.size() > 0){
-            // Since the multi frame canvases need to be smooth we recon to go with 60fps realtime
-            // First calculate the possible length of which our load can represent on.
-            float Length_Of_Possible_Values = MAX_UPDATE_SPEED - MIN_UPDATE_SPEED;
-
-            // Get the offset of which the wanted target fps deviates from the minimum value
-            float Offset_Of_Our_Load = 16 - MIN_UPDATE_SPEED;
-
-            // calculate the simple probability.
-            Event_Thread_Load = 1 - Offset_Of_Our_Load / Length_Of_Possible_Values;
+            Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
         }
     }
 
     //Inits GGUI and returns the main window.
-    GGUI::Window* Init_Renderer(){
+    GGUI::Window* Init_GGUI(){
         Update_Max_Width_And_Height();
         
         if (Max_Height == 0 || Max_Width == 0){
@@ -1591,19 +1595,15 @@ namespace GGUI{
 
         std::thread Inquire_Scheduler([&](){
             while (true){
-                std::unique_lock Current_Lock(Atomic_Mutex);
-                Atomic_Condition.wait(Current_Lock, [](){ return !Pause_Event_Thread; });
-
                 // Now if needed we can start reacting to the user input if given.
                 Pause_GGUI([](){
                     // First await for the user input outside the pause_renderer, so that awaiting for the user wont affect other processes.
                     Query_Inputs();
-
+                    SCROLL_API();
+                    MOUSE_API();
                     // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
                     Event_Handler();
                 });
-
-                Atomic_Condition.notify_one();
             }
         });
 
@@ -1862,7 +1862,7 @@ namespace GGUI{
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
         Pause_GGUI([=](){
 
-            Init_Renderer();
+            Init_GGUI();
 
             DOM();
         });

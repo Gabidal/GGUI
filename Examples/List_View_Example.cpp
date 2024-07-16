@@ -5,7 +5,7 @@ using namespace std;
 int main(){
     GGUI::Pause_GGUI();
     
-    GGUI::Window* Main = GGUI::Init_Renderer();
+    GGUI::Window* Main = GGUI::Init_GGUI();
 
     GGUI::List_View* l = new GGUI::List_View(); 
 
