@@ -65,9 +65,9 @@ namespace GGUI{
 
     namespace Constants{
         inline std::string ESC_CODE = "\e[";
-        inline std::string SEPERATE = ";";
-        inline std::string Text_Color = "38";
-        inline std::string Back_Ground_Color = "48";
+        inline std::string SEPARATE = ";";
+        inline std::string TEXT_COLOR = "38";
+        inline std::string BACKGROUND_COLOR = "48";
         inline std::string USE_RGB = "2";
         inline std::string END_COMMAND = "m";
         inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
@@ -76,8 +76,8 @@ namespace GGUI{
         inline std::string RESET_CONSOLE = ESC_CODE + "c";
         inline std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;
 
-        inline std::string EnableFeature(std::string command) { return ESC_CODE + "?" + command + "h"; }
-        inline std::string DisableFeature(std::string command) { return ESC_CODE + "?" + command + "l"; }
+        inline std::string Enable_Feature(std::string command) { return ESC_CODE + "?" + command + "h"; }
+        inline std::string Disable_Feature(std::string command) { return ESC_CODE + "?" + command + "l"; }
  
         // Enable settings for ANSI
         inline std::string REPORT_MOUSE_HIGHLIGHTS = ESC_CODE + "1000";
@@ -269,15 +269,15 @@ namespace GGUI{
         RGB(){}
 
         std::string Get_Colour() const{
-            return std::to_string(Red) + Constants::SEPERATE + std::to_string(Green) + Constants::SEPERATE + std::to_string(Blue);
+            return std::to_string(Red) + Constants::SEPARATE + std::to_string(Green) + Constants::SEPARATE + std::to_string(Blue);
         }
     
         std::string Get_Over_Head(bool Is_Text_Color = true) const{
             if(Is_Text_Color){
-                return Constants::ESC_CODE + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC_CODE + Constants::TEXT_COLOR + Constants::SEPARATE + Constants::USE_RGB + Constants::SEPARATE;
             }
             else{
-                return Constants::ESC_CODE + Constants::Back_Ground_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC_CODE + Constants::BACKGROUND_COLOR + Constants::SEPARATE + Constants::USE_RGB + Constants::SEPARATE;
             }
         }
     

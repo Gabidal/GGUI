@@ -18,14 +18,14 @@ namespace GGUI{
 
 
 std::string GGUI::RGB::Get_Colour() const{
-    return Constants::To_String[Red] + Constants::SEPERATE + Constants::To_String[Green] + Constants::SEPERATE + Constants::To_String[Blue];
+    return Constants::To_String[Red] + Constants::SEPARATE + Constants::To_String[Green] + Constants::SEPARATE + Constants::To_String[Blue];
 }
 
 void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
     Result->Add(Constants::To_Compact[Red]);
-    Result->Add(Constants::SEPERATE);
+    Result->Add(Constants::SEPARATE);
     Result->Add(Constants::To_Compact[Green]);
-    Result->Add(Constants::SEPERATE);
+    Result->Add(Constants::SEPARATE);
     Result->Add(Constants::To_Compact[Blue]);
 }
     

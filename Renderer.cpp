@@ -404,6 +404,10 @@ namespace GGUI{
         }
     }
 
+    namespace Constants{
+        inline int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
+    }
+
     void Init_Platform_Stuff(){
         // Save the STD handles to prevent excess calls.
         GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -574,9 +578,9 @@ namespace GGUI{
             File_Handle.second->~FILE_STREAM();
         }
 
-        std::cout << Constants::EnableFeature(Constants::MOUSE_CURSOR);
-        std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
-        std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
+        std::cout << Constants::Enable_Private_SGR_Feature(Constants::MOUSE_CURSOR).To_String();
+        std::cout << Constants::Enable_Private_SGR_Feature(Constants::REPORT_MOUSE_ALL_EVENTS).To_String();
+        std::cout << Constants::Enable_Private_SGR_Feature(Constants::SCREEN_CAPTURE).To_String();  // restores the screen.
         std::cout << std::flush;
 
         fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
@@ -626,6 +630,25 @@ namespace GGUI{
             Main->Set_Dimensions(Max_Width, Max_Height);
     }
 
+    void Add_Automatic_Terminal_Size_Update_Handler(){
+        // To automatically update GGUI max dimensions, we need to make an WINCH Signal handler.
+        struct sigaction Handler;
+        
+        // Setup the function handler with a lambda
+        Handler.sa_handler = [](int signum){
+            Update_Max_Width_And_Height();
+        };
+
+        // Clears any other handler which could potentially hinder this handler.
+        sigemptyset(&Handler.sa_mask);
+
+        // Since sigaction flags does not get auto constructed, we need to clean it.
+        Handler.sa_flags = 0;
+
+        // Now set this handler up.
+        sigaction(SIGWINCH, &Handler, nullptr);
+    }
+
     // this global variable is only meant for unix use, since unix has ability to return non finished input events, so we need to store the first half for later use.
     std::vector<char> Input_Buffer;
 
@@ -661,6 +684,9 @@ namespace GGUI{
         // Since capturing an longer stream in an un-supervised situation might halt, we need to just choply take each character one by one and determining the rest ourselves smh.
         char Buffer[256];
         int Bytes_Read = read(STDIN_FILENO, Buffer, sizeof(Buffer));
+
+        // Clean the keyboard states.
+        PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
 
         // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
         // haha code go brrrr -- 2024 gab here, nice joke, although who asked? 
@@ -751,12 +777,15 @@ namespace GGUI{
 
                         if (Bit_Mask == 0){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = BUTTON_STATE(true);
+                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
                         else if (Bit_Mask == 1){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = BUTTON_STATE(true);
+                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
                         else if (Bit_Mask == 2){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
+                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
 
                         i += 4;
@@ -779,9 +808,9 @@ namespace GGUI{
     }
 
     void Init_Platform_Stuff(){
-        std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
-        std::cout << Constants::DisableFeature(Constants::MOUSE_CURSOR);
-        std::cout << Constants::EnableFeature(Constants::SCREEN_CAPTURE);   // for on exit to restore
+        std::cout << Constants::Enable_Private_SGR_Feature(Constants::REPORT_MOUSE_ALL_EVENTS).To_String();
+        std::cout << Constants::Enable_Private_SGR_Feature(Constants::MOUSE_CURSOR).To_String();
+        std::cout << Constants::Enable_Private_SGR_Feature(Constants::SCREEN_CAPTURE).To_String();   // for on exit to restore
         // std::cout << Constants::RESET_CONSOLE;
         // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
         std::cout << std::flush;
@@ -826,6 +855,8 @@ namespace GGUI{
             }){
             sigaction(i, wrapper, NULL);
         }
+    
+        Add_Automatic_Terminal_Size_Update_Handler();
     }
 
     std::vector<std::string> Get_List_Of_Font_Files(){
