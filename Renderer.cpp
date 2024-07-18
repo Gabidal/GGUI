@@ -405,7 +405,9 @@ namespace GGUI{
     }
 
     namespace Constants{
-        inline int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
+        namespace ANSI{
+            inline int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
+        }
     }
 
     void Init_Platform_Stuff(){
@@ -419,10 +421,10 @@ namespace GGUI{
         SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, -1);
         SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
 
-        std::cout << Constants::EnableFeature(Constants::REPORT_MOUSE_ALL_EVENTS) + Constants::DisableFeature(Constants::MOUSE_CURSOR);
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String() + Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
         std::cout.flush();
 
-        SetConsoleOutputCP(Constants::ENABLE_UTF8_MODE_FOR_WINDOWS);
+        SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
 
         Platform_Initialized = true;
     }
@@ -475,9 +477,9 @@ namespace GGUI{
         SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
         SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
 
-        std::cout << Constants::EnableFeature(Constants::MOUSE_CURSOR);
-        std::cout << Constants::DisableFeature(Constants::REPORT_MOUSE_ALL_EVENTS);
-        std::cout << Constants::DisableFeature(Constants::SCREEN_CAPTURE);  // restores the screen.
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
         std::cout << std::flush;
     }
 
