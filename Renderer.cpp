@@ -263,7 +263,7 @@ namespace GGUI{
     void Update_Frame(bool Lock_Event_Thread);
     //Is called on every cycle.
 
-    char Reverse_Engineer_Keybind(char keybind_value){
+    char Reverse_Engineer_Keybinds(char keybind_value){
         // The current known keybinding table:
         /*
             CTRL+SHIFT+I => TAB
@@ -338,7 +338,7 @@ namespace GGUI{
                     Handle_Tabulator();
                 }
                 else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
-                    char Result = Reverse_Engineer_Keybind(Input[i].Event.KeyEvent.uChar.AsciiChar);
+                    char Result = Reverse_Engineer_Keybinds(Input[i].Event.KeyEvent.uChar.AsciiChar);
 
                     Inputs.push_back(new GGUI::Input(Result, Constants::KEY_PRESS));
                 }
@@ -680,6 +680,21 @@ namespace GGUI{
         return Result;
     }
 
+    // Contains termios raw terminal keybinds, reverse engineering.
+    char Reverse_Engineer_Keybinds(char keybind_value){
+
+        // SHIFT + TAB => \e[Z
+        if (keybind_value == 'Z'){
+            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+            KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
+
+            keybind_value = 0;
+        }
+
+
+        return keybind_value;
+    }
+
     //Is called as soon as possible and gets stuck awaiting for the user input.
     void Query_Inputs(){
         // The code gets stuck here waiting for the user input, only proceed after required from user the input.
@@ -700,6 +715,7 @@ namespace GGUI{
             // Check if SHIFT has been modifying the keys
             if ((Buffer[i] >= 'A' && Buffer[i] <= 'Z') || (Buffer[i] >= '!' && Buffer[i] <= '/')){
                 // SHIFT key is pressed
+                Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                 KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
             }
 
@@ -744,7 +760,6 @@ namespace GGUI{
                 // GG go next
                 i++;
 
-
                 // The current data can either be an ALT key initiative or an escape sequence followed by '['
                 if (Buffer[i] == Constants::ANSI::ESC_CODE[1]){
                     // Escape sequence codes:
@@ -770,13 +785,13 @@ namespace GGUI{
                         KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
                         i++;
                     }
-
-                    if (Buffer[i + 1] == 'M'){  // Decode Mouse handling
+                    else if (Buffer[i + 1] == 'M'){  // Decode Mouse handling
                         // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
                         char Bit_Mask = Buffer[i+2]; 
 
                         // Check if the bit 2'rd has been set, is so then the SHIFT has been pressed
                         if (Bit_Mask & 4){
+                            Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                             KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
                             // also remove the bit from the bitmask
                             Bit_Mask &= ~4;
@@ -784,6 +799,7 @@ namespace GGUI{
 
                         // Check if the 3'th bit has been set, is so then the SUPER has been pressed
                         if (Bit_Mask & 8){
+                            Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
                             KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(true);
                             // also remove the bit from the bitmask
                             Bit_Mask &= ~8;
@@ -791,6 +807,7 @@ namespace GGUI{
 
                         // Check if the 4'th bit has been set, is so then the CTRL has been pressed
                         if (Bit_Mask & 16){
+                            Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
                             KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
                             // also remove the bit from the bitmask
                             Bit_Mask &= ~16;
@@ -804,8 +821,9 @@ namespace GGUI{
                             char X = Buffer[i+3];
                             char Y = Buffer[i+4];
 
-                            Mouse.X = X;
-                            Mouse.Y = Y;
+                            // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
+                            Mouse.X = X - 32;
+                            Mouse.Y = Y - 32;
 
                             Bit_Mask &= ~64;
                         }
@@ -813,30 +831,45 @@ namespace GGUI{
                         // Bits 7'th are not widely supported. But clear this bit just in case
                         Bit_Mask &= ~(128);
 
-
-                        if (Bit_Mask == 1){
+                        if (Bit_Mask == 0){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
-                        else if (Bit_Mask == 2){
+                        else if (Bit_Mask == 1){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
-                        else if (Bit_Mask == 3){
+                        else if (Bit_Mask == 2){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
+                        }
+                        else if (Bit_Mask == 3){
+                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
+                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = false;
+                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
                         }
 
                         i += 4;
                     }
+                    else if (Buffer[i + 1] == 'Z'){
+                        // SHIFT + TAB => Z
+                        Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                        Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
+
+                        KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+                        KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
+
+                        Handle_Tabulator();
+
+                        i++;
+                    }
+                
                 }
                 else{
                     // This is an ALT key
                     Inputs.push_back(new GGUI::Input(Buffer[i], Constants::ALT));
                     KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
                 }
-
-
             }
             else{
                 // Normal character data
