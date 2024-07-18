@@ -18,14 +18,14 @@ namespace GGUI{
 
 
 std::string GGUI::RGB::Get_Colour() const{
-    return Constants::To_String[Red] + Constants::SEPARATE + Constants::To_String[Green] + Constants::SEPARATE + Constants::To_String[Blue];
+    return Constants::To_String[Red] + Constants::ANSI::SEPARATE + Constants::To_String[Green] + Constants::ANSI::SEPARATE + Constants::To_String[Blue];
 }
 
 void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
     Result->Add(Constants::To_Compact[Red]);
-    Result->Add(Constants::SEPARATE);
+    Result->Add(Constants::ANSI::SEPARATE);
     Result->Add(Constants::To_Compact[Green]);
-    Result->Add(Constants::SEPARATE);
+    Result->Add(Constants::ANSI::SEPARATE);
     Result->Add(Constants::To_Compact[Blue]);
 }
     
@@ -75,8 +75,8 @@ void GGUI::Styling::Copy(const Styling& other){
 
 std::string GGUI::UTF::To_String(){
     std::string Result =
-        Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND + 
-        Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND;
+        Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::ANSI::END_COMMAND + 
+        Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::ANSI::END_COMMAND;
 
     if(Is(UTF_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
@@ -86,7 +86,7 @@ std::string GGUI::UTF::To_String(){
         Result + Ascii;
     }
 
-    return Result + Constants::RESET_COLOR;
+    return Result + Constants::ANSI::RESET_COLOR;
 }
 
 void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour){
@@ -97,7 +97,7 @@ void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_O
 
     Result->Add(Text_Overhead, true);
     Result->Add(Text_Colour, true);
-    Result->Add(Constants::END_COMMAND);
+    Result->Add(Constants::ANSI::END_COMMAND);
     Result->Add(Background_Overhead, true);
     Result->Add(Background_Colour, true);
 
@@ -108,15 +108,15 @@ void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_O
         Result->Add(Ascii);
     }
 
-    Result->Add(Constants::RESET_COLOR);
+    Result->Add(Constants::ANSI::RESET_COLOR);
 }
 
 std::string GGUI::UTF::To_Encoded_String() {
     std::string Result;
     
     if (Is(UTF_FLAG::ENCODE_START))
-        Result = Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::END_COMMAND 
-               + Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::END_COMMAND;
+        Result = Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::ANSI::END_COMMAND 
+               + Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::ANSI::END_COMMAND;
 
     if(Is(UTF_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
@@ -127,7 +127,7 @@ std::string GGUI::UTF::To_Encoded_String() {
     }
 
     if (Is(UTF_FLAG::ENCODE_END))
-        Result += Constants::RESET_COLOR;
+        Result += Constants::ANSI::RESET_COLOR;
 
     return Result;
 }
@@ -142,10 +142,10 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
 
         Result->Add(Text_Overhead, true);
         Result->Add(Text_Colour, true);
-        Result->Add(Constants::END_COMMAND);
+        Result->Add(Constants::ANSI::END_COMMAND);
         Result->Add(Background_Overhead, true);
         Result->Add(Background_Colour, true);
-        Result->Add(Constants::END_COMMAND);
+        Result->Add(Constants::ANSI::END_COMMAND);
     }
 
     if (Is(UTF_FLAG::IS_UNICODE)){
@@ -156,7 +156,7 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
     }
 
     if (Is(UTF_FLAG::ENCODE_END)){
-        Result->Add(Constants::RESET_COLOR);
+        Result->Add(Constants::ANSI::RESET_COLOR);
     }
 }
 
@@ -368,12 +368,12 @@ GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
     // if (Focused){
     //     return Style->Focus_Text_Color.Get_Over_Head(true) + 
     //     Style->Focus_Text_Color.Get_Colour() + 
-    //     Constants::END_COMMAND;
+    //     Constants::ANSI::END_COMMAND;
     // }
     // else{
     //     return Style->Text_Color.Get_Over_Head(true) + 
     //     Style->Text_Color.Get_Colour() + 
-    //     Constants::END_COMMAND;
+    //     Constants::ANSI::END_COMMAND;
     // }
 
     if (Focused){

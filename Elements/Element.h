@@ -202,125 +202,162 @@ namespace GGUI{
     };
 
     namespace Constants{
-        // 1 to ESC_CODE
-        // 1 to Text_Color | Background_Color
-        // 1 to SEPARATE
-        // 1 to USE_RGB
-        // 1 to SEPARATE
-        static const unsigned int Maximum_Needed_Pre_Allocation_For_Over_Head = 1 + 1 + 1 + 1 + 1;
+        namespace ANSI{
+            // 1 to ESC_CODE
+            // 1 to Text_Color | Background_Color
+            // 1 to SEPARATE
+            // 1 to USE_RGB
+            // 1 to SEPARATE
+            static const unsigned int Maximum_Needed_Pre_Allocation_For_Over_Head = 1 + 1 + 1 + 1 + 1;
 
-        // 1 to Red
-        // 1 to SEPARATE
-        // 1 to Green
-        // 1 to SEPARATE
-        // 1 to Blue
-        static const unsigned int Maximum_Needed_Pre_Allocation_For_Color = 1 + 1 + 1 + 1 + 1;
+            // 1 to Red
+            // 1 to SEPARATE
+            // 1 to Green
+            // 1 to SEPARATE
+            // 1 to Blue
+            static const unsigned int Maximum_Needed_Pre_Allocation_For_Color = 1 + 1 + 1 + 1 + 1;
 
-        // 5 to Text_Overhead
-        // 5 to Text_Colour
-        // 1 to END_COMMAND
-        // 5 to Background_Overhead
-        // 5 to Background_Colour
-        // 1 to END_COMMAND
-        // 1 to Data
-        // 1 to RESET_COLOR
-        static const unsigned int Maximum_Needed_Pre_Allocation_For_Encoded_Super_String = 
-            Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 +
-            Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 + 1 + 1;
-    
-        // 1 to Escape code
-        // 1 to private SGR telltale '?'
-        // 1 to Feature to be disabled or enabled
-        // 1 to Enable/Disable feature told above.
-        static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature = 1 + 1 + 1 + 1;
-    
-        // 1 to Escape code
-        // 1 to feature to be enabled
-        // 1 to END_COMMAND
-        static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature = 1 + 1 + 1;
-
-        inline std::string ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
-        inline std::string SEPARATE = ";";
-        inline std::string USE_RGB = "2";
-        inline std::string END_COMMAND = "m";
-        inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
-        inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
-        inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
-        inline std::string RESET_CONSOLE = ESC_CODE + "c";
-        inline std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;  // Basically same as RESET_SGR but baked the end command into it for Super_String
-
-        inline Super_String Enable_Private_SGR_Feature(std::string command, bool Enable = true) { 
-            Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature);
-
-            Result.Add(ESC_CODE);
-            Result.Add('?');
-            Result.Add(command);
-
-            if (Enable)
-                Result.Add('h');
-            else
-                Result.Add('l');
-
-            return Result;
-        }
-
-        // SGR (Select Graphic Rendition)
+            // 5 to Text_Overhead
+            // 5 to Text_Colour
+            // 1 to END_COMMAND
+            // 5 to Background_Overhead
+            // 5 to Background_Colour
+            // 1 to END_COMMAND
+            // 1 to Data
+            // 1 to RESET_COLOR
+            static const unsigned int Maximum_Needed_Pre_Allocation_For_Encoded_Super_String = 
+                Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 +
+                Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 + 1 + 1;
         
-        // Since most of the SGR have the disable code after 20, we can make a pair of helper functions.
-        // Also usually only those with pair of enable and disable codes are supported widely.
-        inline Super_String Enable_SGR_Feature(std::string command) {
-            Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature);
+            // 1 to Escape code
+            // 1 to private SGR telltale '?'
+            // 1 to Feature to be disabled or enabled
+            // 1 to Enable/Disable feature told above.
+            static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature = 1 + 1 + 1 + 1;
+        
+            // 1 to Escape code
+            // 1 to feature to be enabled
+            // 1 to END_COMMAND
+            static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature = 1 + 1 + 1;
 
-            Result.Add(ESC_CODE);
-            Result.Add(command);
-            Result.Add(END_COMMAND);
+            // CSI (Control Sequence Introducer) sequences.
+            inline std::string ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
+            inline std::string SEPARATE = ";";
+            inline std::string USE_RGB = "2";
+            inline std::string END_COMMAND = "m";
+            inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
+            inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
+            inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
+            inline std::string RESET_CONSOLE = ESC_CODE + "c";
+            inline std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;  // Basically same as RESET_SGR but baked the end command into it for Super_String
 
-            return Result;
+            inline Super_String Enable_Private_SGR_Feature(std::string command, bool Enable = true) { 
+                Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature);
+
+                Result.Add(ESC_CODE);
+                Result.Add('?');
+                Result.Add(command);
+
+                if (Enable)
+                    Result.Add('h');
+                else
+                    Result.Add('l');
+
+                return Result;
+            }
+
+            // SGR (Select Graphic Rendition)
+            
+            // Since most of the SGR have the disable code after 20, we can make a pair of helper functions.
+            // Also usually only those with pair of enable and disable codes are supported widely.
+            inline Super_String Enable_SGR_Feature(std::string command) {
+                Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature);
+
+                Result.Add(ESC_CODE);
+                Result.Add(command);
+                Result.Add(END_COMMAND);
+
+                return Result;
+            }
+
+            // SGR constants
+            inline std::string RESET_SGR = "0";                                  // Removes all SGR features. 
+            inline std::string BOLD = "1";                                       // Not widely supported!
+            inline std::string FAINT = "2";                                      // Not widely supported!
+            inline std::string ITALIC = "3";                                     // Not widely supported! (Can also be same as blink)
+            inline std::string UNDERLINE = "4";              
+            inline std::string SLOW_BLINK = "5";                                 // ~150 BPM
+            inline std::string RAPID_BLINK = "6";                                // Not widely supported!
+            inline std::string INVERT_FOREGROUND_WITH_BACKGROUND = "7";          // Not widely supported!
+            inline std::string CONCEAL = "8";                                    // Not widely supported!
+            inline std::string CROSSED_OUT = "9";                                // Not widely supported!
+            inline std::string PRIMARY_FONT = "10";                              // Sets the default font.
+            inline std::string ALTERNATIVE_FONT_1 = "11";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_2 = "12";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_3 = "13";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_4 = "14";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_5 = "15";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_6 = "16";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_7 = "17";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_8 = "18";                        // Custom font slot.
+            inline std::string ALTERNATIVE_FONT_9 = "19";                        // Custom font slot.
+            inline std::string FRAKTUR = "20";                                   // Not widely supported! (But cool font)
+            inline std::string NOT_BOLD = "21";                                  // Removes the BOLD feature
+            inline std::string NORMAL_INTENSITY = "22";                          // Removes BOLD and ITALIC and other affixes.
+            inline std::string NOT_UNDERLINE = "23";                             // Removes UNDERLINE.
+            inline std::string NOT_BLINK = "24";                                 // Removes BLINK.
+            inline std::string INVERT_INVERT_FOREGROUND_WITH_BACKGROUND = "27";  // Inverts the INVERT_FOREGROUND_WITH_BACKGROUND.
+            inline std::string TEXT_COLOR = "38";                               // Sets the foreground color.
+            inline std::string DEFAULT_TEXT_COLOR = "39";                       // Sets the default color.
+            inline std::string BACKGROUND_COLOR = "48";                         // Sets the background color.
+            inline std::string DEFAULT_BACKGROUND_COLOR = "49";                 // Sets the default color.
+
+            // Private SGR codes
+            inline std::string REPORT_MOUSE_HIGHLIGHTS = "1000";
+            inline std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
+            inline std::string REPORT_MOUSE_ALL_EVENTS = "1003";
+
+            inline std::string MOUSE_CURSOR = "25";
+            inline std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
+            inline std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
+            // End of enable settings for ANSI
+
+            // ACC (ASCII Control Characters)
+            inline char NONE = 0;
+            inline char START_OF_HEADING = 1;
+            inline char START_OF_TEXT = 2;
+            inline char END_OF_TEXT = 3;
+            inline char END_OF_TRANSMISSION = 4;
+            inline char ENQUIRY = 5;
+            inline char ACKNOWLEDGE = 6;
+            inline char BELL = 7;
+            inline char BACKSPACE = 8;
+            inline char HORIZONTAL_TAB = 9;
+            inline char LINE_FEED = 10;             // Also known as newline
+            inline char VERTICAL_TAB = 11;
+            inline char FORM_FEED = 12;
+            inline char CARRIAGE_RETURN = 13;
+            inline char SHIFT_OUT = 14;
+            inline char SHIFT_IN = 15;
+            inline char DATA_LINK_ESCAPE = 16;
+            inline char DEVICE_CONTROL_1 = 17;
+            inline char DEVICE_CONTROL_2 = 18;
+            inline char DEVICE_CONTROL_3 = 19;
+            inline char DEVICE_CONTROL_4 = 20;
+            inline char NEGATIVE_ACKNOWLEDGE = 21;
+            inline char SYNCHRONOUS_IDLE = 22;
+            inline char END_OF_TRANSMISSION_BLOCK = 23;
+            inline char CANCEL = 24;
+            inline char END_OF_MEDIUM = 25;
+            inline char SUBSTITUTE = 26;
+            inline char ESCAPE = 27;
+            inline char FILE_SEPARATOR = 28;
+            inline char GROUP_SEPARATOR = 29;
+            inline char RECORD_SEPARATOR = 30;
+            inline char UNIT_SEPARATOR = 31;
         }
 
-        // SGR constants
-        inline std::string RESET_SGR = "0";                                  // Removes all SGR features. 
-        inline std::string BOLD = "1";                                       // Not widely supported!
-        inline std::string FAINT = "2";                                      // Not widely supported!
-        inline std::string ITALIC = "3";                                     // Not widely supported! (Can also be same as blink)
-        inline std::string UNDERLINE = "4";              
-        inline std::string SLOW_BLINK = "5";                                 // ~150 BPM
-        inline std::string RAPID_BLINK = "6";                                // Not widely supported!
-        inline std::string INVERT_FOREGROUND_WITH_BACKGROUND = "7";          // Not widely supported!
-        inline std::string CONCEAL = "8";                                    // Not widely supported!
-        inline std::string CROSSED_OUT = "9";                                // Not widely supported!
-        inline std::string PRIMARY_FONT = "10";                              // Sets the default font.
-        inline std::string ALTERNATIVE_FONT_1 = "11";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_2 = "12";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_3 = "13";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_4 = "14";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_5 = "15";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_6 = "16";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_7 = "17";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_8 = "18";                        // Custom font slot.
-        inline std::string ALTERNATIVE_FONT_9 = "19";                        // Custom font slot.
-        inline std::string FRAKTUR = "20";                                   // Not widely supported! (But cool font)
-        inline std::string NOT_BOLD = "21";                                  // Removes the BOLD feature
-        inline std::string NORMAL_INTENSITY = "22";                          // Removes BOLD and ITALIC and other affixes.
-        inline std::string NOT_UNDERLINE = "23";                             // Removes UNDERLINE.
-        inline std::string NOT_BLINK = "24";                                 // Removes BLINK.
-        inline std::string INVERT_INVERT_FOREGROUND_WITH_BACKGROUND = "27";  // Inverts the INVERT_FOREGROUND_WITH_BACKGROUND.
-        inline std::string TEXT_COLOR = "38";                               // Sets the foreground color.
-        inline std::string DEFAULT_TEXT_COLOR = "39";                       // Sets the default color.
-        inline std::string BACKGROUND_COLOR = "48";                         // Sets the background color.
-        inline std::string DEFAULT_BACKGROUND_COLOR = "49";                 // Sets the default color.
-
-        // Private SGR codes
-        inline std::string REPORT_MOUSE_HIGHLIGHTS = "1000";
-        inline std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
-        inline std::string REPORT_MOUSE_ALL_EVENTS = "1003";
-
-        inline std::string MOUSE_CURSOR = "25";
-        inline std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
-        inline std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
-        // End of enable settings for ANSI
-
-        inline unsigned long long NON = (unsigned long long)1 << 0;
+        inline unsigned long long NONE = (unsigned long long)1 << 0;
         inline unsigned long long ENTER = (unsigned long long)1 << 1;
         inline unsigned long long ESCAPE = (unsigned long long)1 << 2;
         inline unsigned long long BACKSPACE = (unsigned long long)1 << 3;
@@ -571,28 +608,28 @@ namespace GGUI{
     
         std::string Get_Over_Head(bool Is_Text_Color = true) const{
             if(Is_Text_Color){
-                return Constants::ESC_CODE + Constants::TEXT_COLOR + Constants::SEPARATE + Constants::USE_RGB + Constants::SEPARATE;
+                return Constants::ANSI::ESC_CODE + Constants::ANSI::TEXT_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
             }
             else{
-                return Constants::ESC_CODE + Constants::BACKGROUND_COLOR + Constants::SEPARATE + Constants::USE_RGB + Constants::SEPARATE;
+                return Constants::ANSI::ESC_CODE + Constants::ANSI::BACKGROUND_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
             }
         }
 
         // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Over_Head
         void Get_Over_Head_As_Super_String(Super_String* Result, bool Is_Text_Color = true) const{
             if (Is_Text_Color){
-                Result->Add(Constants::ESC_CODE);
-                Result->Add(Constants::TEXT_COLOR);
-                Result->Add(Constants::SEPARATE);
-                Result->Add(Constants::USE_RGB);
-                Result->Add(Constants::SEPARATE);
+                Result->Add(Constants::ANSI::ESC_CODE);
+                Result->Add(Constants::ANSI::TEXT_COLOR);
+                Result->Add(Constants::ANSI::SEPARATE);
+                Result->Add(Constants::ANSI::USE_RGB);
+                Result->Add(Constants::ANSI::SEPARATE);
             }
             else{
-                Result->Add(Constants::ESC_CODE);
-                Result->Add(Constants::BACKGROUND_COLOR);
-                Result->Add(Constants::SEPARATE);
-                Result->Add(Constants::USE_RGB);
-                Result->Add(Constants::SEPARATE);
+                Result->Add(Constants::ANSI::ESC_CODE);
+                Result->Add(Constants::ANSI::BACKGROUND_COLOR);
+                Result->Add(Constants::ANSI::SEPARATE);
+                Result->Add(Constants::ANSI::USE_RGB);
+                Result->Add(Constants::ANSI::SEPARATE);
             }
         }
     

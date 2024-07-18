@@ -269,15 +269,15 @@ namespace GGUI{
         RGB(){}
 
         std::string Get_Colour() const{
-            return std::to_string(Red) + Constants::SEPARATE + std::to_string(Green) + Constants::SEPARATE + std::to_string(Blue);
+            return std::to_string(Red) + Constants::ANSI::SEPARATE + std::to_string(Green) + Constants::ANSI::SEPARATE + std::to_string(Blue);
         }
     
         std::string Get_Over_Head(bool Is_Text_Color = true) const{
             if(Is_Text_Color){
-                return Constants::ESC_CODE + Constants::TEXT_COLOR + Constants::SEPARATE + Constants::USE_RGB + Constants::SEPARATE;
+                return Constants::ANSI::ESC_CODE + Constants::ANSI::TEXT_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
             }
             else{
-                return Constants::ESC_CODE + Constants::BACKGROUND_COLOR + Constants::SEPARATE + Constants::USE_RGB + Constants::SEPARATE;
+                return Constants::ANSI::ESC_CODE + Constants::ANSI::BACKGROUND_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
             }
         }
     

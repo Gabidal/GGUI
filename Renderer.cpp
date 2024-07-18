@@ -578,9 +578,9 @@ namespace GGUI{
             File_Handle.second->~FILE_STREAM();
         }
 
-        std::cout << Constants::Enable_Private_SGR_Feature(Constants::MOUSE_CURSOR).To_String();
-        std::cout << Constants::Enable_Private_SGR_Feature(Constants::REPORT_MOUSE_ALL_EVENTS).To_String();
-        std::cout << Constants::Enable_Private_SGR_Feature(Constants::SCREEN_CAPTURE).To_String();  // restores the screen.
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
         std::cout << std::flush;
 
         fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
@@ -609,7 +609,7 @@ namespace GGUI{
     void Render_Frame() {
         // Move cursor to top-left corner
         // Previously used: Constants::CLEAR_SCROLLBAR + As a prefix to clear the history, when it was accumulating, but lately tests point this to be useless.
-        printf((Constants::SET_CURSOR_TO_START).c_str());
+        printf((Constants::ANSI::SET_CURSOR_TO_START).c_str());
 
         // Flush the output to ensure it's written immediately
         fflush(stdout);
@@ -653,8 +653,10 @@ namespace GGUI{
     std::vector<char> Input_Buffer;
 
     namespace Constants{
-        constexpr char START_OF_CTRL = 1;
-        constexpr char END_OF_CTRL = 26;
+        namespace ANSI{
+            constexpr char START_OF_CTRL = 1;
+            constexpr char END_OF_CTRL = 26;
+        }
     };
 
     // Takes in an buffer with hex and octal values and transforms them into printable strings
@@ -688,6 +690,9 @@ namespace GGUI{
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
 
+        // Since in linux, unlike in Windows we wont be getting an indication per Key information, whether it was pressed in or out.
+        KEYBOARD_STATES.clear();
+
         // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
         // haha code go brrrr -- 2024 gab here, nice joke, although who asked? 
         for (unsigned int i = 0; i < Bytes_Read; i++){
@@ -697,22 +702,24 @@ namespace GGUI{
                 // SHIFT key is pressed
                 KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
             }
+
             // We now can also check if the letter has been shifted down by CTRL key
-            else if (Buffer[i] >= Constants::START_OF_CTRL && Buffer[i] <= Constants::END_OF_CTRL){
+            else if (Buffer[i] >= Constants::ANSI::START_OF_CTRL && Buffer[i] <= Constants::ANSI::END_OF_CTRL){
                 // This is a CTRL key
 
                 // The CTRL domain contains multiple useful keys to check for
-                if (Buffer[i] == Constants::BACKSPACE){
+                if (Buffer[i] == Constants::ANSI::BACKSPACE){
                     // This is a backspace key
                     Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
                     KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
                 }
-                else if (Buffer[i] == Constants::TAB){
+                else if (Buffer[i] == Constants::ANSI::HORIZONTAL_TAB){
                     // This is a tab key
                     Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
                     KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
+                    Handle_Tabulator();
                 }
-                else if (Buffer[i] == Constants::ENTER){
+                else if (Buffer[i] == Constants::ANSI::LINE_FEED){
                     // This is an enter key
                     Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
                     KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
@@ -724,12 +731,13 @@ namespace GGUI{
                 KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
             }
 
-            if (Buffer[i] == Constants::ESC_CODE[0]){
+            if (Buffer[i] == Constants::ANSI::ESC_CODE[0]){
                 // check if there are stuff after this escape code
                 if (i + 1 >= Bytes_Read){
                     // Clearly the escape key was invoked
                     Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
                     KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
+                    Handle_Escape();
                     continue;
                 }
 
@@ -738,7 +746,7 @@ namespace GGUI{
 
 
                 // The current data can either be an ALT key initiative or an escape sequence followed by '['
-                if (Buffer[i] == Constants::ESC_CODE[1]){
+                if (Buffer[i] == Constants::ANSI::ESC_CODE[1]){
                     // Escape sequence codes:
 
                     // UP, DOWN LEFT, RIGHT keys
@@ -766,24 +774,55 @@ namespace GGUI{
                     if (Buffer[i + 1] == 'M'){  // Decode Mouse handling
                         // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
                         char Bit_Mask = Buffer[i+2]; 
-                        char X = Buffer[i+3];
-                        char Y = Buffer[i+4];
 
-                        Mouse.X = X;
-                        Mouse.Y = Y;
+                        // Check if the bit 2'rd has been set, is so then the SHIFT has been pressed
+                        if (Bit_Mask & 4){
+                            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+                            // also remove the bit from the bitmask
+                            Bit_Mask &= ~4;
+                        }
 
-                        // Bit_Mask & ~32 removes the 32'th bit, (Bit_Mask &= ~32, 0) removes the bit from the Bit_Mask variable and returns the number 0 for the OR.
-                        KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(Bit_Mask & ~32 | (Bit_Mask &= ~32, 0));
+                        // Check if the 3'th bit has been set, is so then the SUPER has been pressed
+                        if (Bit_Mask & 8){
+                            KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(true);
+                            // also remove the bit from the bitmask
+                            Bit_Mask &= ~8;
+                        }
 
-                        if (Bit_Mask == 0){
+                        // Check if the 4'th bit has been set, is so then the CTRL has been pressed
+                        if (Bit_Mask & 16){
+                            KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
+                            // also remove the bit from the bitmask
+                            Bit_Mask &= ~16;
+                        }
+
+                        // Bit 5'th is not widely supported so remove it in case.
+                        Bit_Mask &= ~32;
+
+                        // Check if the 6'th bit has been set, is so then there is a movement event.
+                        if (Bit_Mask & 64){
+                            char X = Buffer[i+3];
+                            char Y = Buffer[i+4];
+
+                            Mouse.X = X;
+                            Mouse.Y = Y;
+
+                            Bit_Mask &= ~64;
+                        }
+
+                        // Bits 7'th are not widely supported. But clear this bit just in case
+                        Bit_Mask &= ~(128);
+
+
+                        if (Bit_Mask == 1){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
-                        else if (Bit_Mask == 1){
+                        else if (Bit_Mask == 2){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
-                        else if (Bit_Mask == 2){
+                        else if (Bit_Mask == 3){
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
@@ -808,9 +847,9 @@ namespace GGUI{
     }
 
     void Init_Platform_Stuff(){
-        std::cout << Constants::Enable_Private_SGR_Feature(Constants::REPORT_MOUSE_ALL_EVENTS).To_String();
-        std::cout << Constants::Enable_Private_SGR_Feature(Constants::MOUSE_CURSOR).To_String();
-        std::cout << Constants::Enable_Private_SGR_Feature(Constants::SCREEN_CAPTURE).To_String();   // for on exit to restore
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String();
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE).To_String();   // for on exit to restore
         // std::cout << Constants::RESET_CONSOLE;
         // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
         std::cout << std::flush;
@@ -1102,13 +1141,13 @@ namespace GGUI{
     }
 
     GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
-        Super_String Result(Width * Height * Constants::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
+        Super_String Result(Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
 
-        Super_String tmp_container(Constants::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
-        Super_String Text_Overhead(Constants::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        Super_String Background_Overhead(Constants::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        Super_String Text_Colour(Constants::Maximum_Needed_Pre_Allocation_For_Color);
-        Super_String Background_Colour(Constants::Maximum_Needed_Pre_Allocation_For_Color);
+        Super_String tmp_container(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
+        Super_String Text_Overhead(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        Super_String Background_Overhead(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        Super_String Text_Colour(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
+        Super_String Background_Colour(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
 
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
