@@ -13,7 +13,7 @@ namespace GGUI{
     std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
     
     // THEAD SYSTEM --
-    bool Pause_Render = false;                                  // if true, the render will not be updated, good for window creation.
+    bool Pause_Render_Thread = false;                           // if true, the render will not be updated, good for window creation.
     bool Pause_Event_Thread = false;                            // if true, the event handler will pause.
 
     std::mutex Atomic_Mutex;                                    // Gives ownership of boolean for single thread at a time.
@@ -243,6 +243,10 @@ namespace GGUI{
 
     CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info();
 
+    // This is here out from the Query_Inputs, so that we can differentiate querying and translation of said input.
+    INPUT_RECORD Raw_Input[UINT16_MAX];
+    int Raw_Input_Size = 0;
+
     void Render_Frame(){
         unsigned long long tmp = 0;
         SetConsoleCursorPosition(GLOBAL_STD_OUTPUT_HANDLE, {0, 0});
@@ -280,70 +284,81 @@ namespace GGUI{
         return keybind_value;
     }
 
+    // Awaits for user input, will not translate, use Translate_Inputs for that.
     void Query_Inputs(){
-        INPUT_RECORD Input[UINT8_MAX];
+        // For appending to already existing buffered input which has not yet been processed, we can use the previous Raw_Input_Size to deduce the new starting point.
+        INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
 
-        int Buffer_Size = 0;
+        // Ceil the value so that negative numbers wont create overflows.
+        unsigned int Current_Usable_Capacity = Max(UINT16_MAX - Raw_Input_Size, UINT16_MAX);
 
+        ReadConsoleInput(
+            GLOBAL_STD_INPUT_HANDLE,
+            Current_Starting_Address,
+            Current_Usable_Capacity,
+            (LPDWORD)&Raw_Input_Size
+        );
+    }
+
+    // Continuation of Query_Input, while differentiate the execute timings.
+    void Translate_Inputs(){
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
 
-        ReadConsoleInput(GLOBAL_STD_INPUT_HANDLE, Input, UINT8_MAX, (LPDWORD)&Buffer_Size);
+        for (int i = 0; i < Raw_Input_Size; i++){
+            if (Raw_Input[i].EventType == KEY_EVENT){
 
-        for (int i = 0; i < Buffer_Size; i++){
-            if (Input[i].EventType == KEY_EVENT){
+                bool Pressed = Raw_Input[i].Event.KeyEvent.bKeyDown;
 
-                bool Pressed = Input[i].Event.KeyEvent.bKeyDown;
-
-                if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
+                if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
                     Inputs.push_back(new GGUI::Input(0, Constants::UP));
                     KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
                     Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
                     KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
                     Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
                     KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
                     Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
                     KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
                     Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
                     KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
                     Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                     KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
                     Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
                     KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
                     Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
                     KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(Pressed);
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
                     Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
                     KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(Pressed);
                     Handle_Escape();
                 }
-                else if (Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
+                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
                     Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
                     KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(Pressed);
                     Handle_Tabulator();
                 }
-                else if (Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
-                    char Result = Reverse_Engineer_Keybinds(Input[i].Event.KeyEvent.uChar.AsciiChar);
+                else if (Raw_Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
+                    char Result = Reverse_Engineer_Keybinds(Raw_Input[i].Event.KeyEvent.uChar.AsciiChar);
 
                     Inputs.push_back(new GGUI::Input(Result, Constants::KEY_PRESS));
                 }
             }
-            else if (Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
+            else if (Raw_Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
 
                 Update_Max_Width_And_Height();
 
@@ -351,10 +366,10 @@ namespace GGUI{
                 if (Main)
                     Main->Set_Dimensions(Max_Width, Max_Height);
             }
-            else if (Input[i].EventType == MOUSE_EVENT && Mouse_Movement_Enabled){
-                if (Input[i].Event.MouseEvent.dwEventFlags == MOUSE_MOVED){
+            else if (Raw_Input[i].EventType == MOUSE_EVENT && Mouse_Movement_Enabled){
+                if (Raw_Input[i].Event.MouseEvent.dwEventFlags == MOUSE_MOVED){
                     // Get mouse coordinates
-                    COORD mousePos = Input[i].Event.MouseEvent.dwMousePosition;
+                    COORD mousePos = Raw_Input[i].Event.MouseEvent.dwMousePosition;
                     // Handle cursor movement
                     Mouse.X = mousePos.X;
                     Mouse.Y = mousePos.Y;
@@ -362,30 +377,30 @@ namespace GGUI{
                 // Handle mouse clicks
                 // TODO: Windows doesn't give release events.
                 // Yes it does you fucking moron!
-                if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
+                if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
                     //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
-                else if ((Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
+                else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
                     //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
                 }
 
-                if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
+                if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
                     //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = true;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                 }
-                else if ((Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
+                else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
                     //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
                     KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
                 }
             
                 // mouse scroll up
-                if (Input[i].Event.MouseEvent.dwEventFlags == MOUSE_WHEELED){
+                if (Raw_Input[i].Event.MouseEvent.dwEventFlags == MOUSE_WHEELED){
                     // check if it has been wheeled up or down
-                    int Scroll_Direction = GET_WHEEL_DELTA_WPARAM(Input[i].Event.MouseEvent.dwButtonState);
+                    int Scroll_Direction = GET_WHEEL_DELTA_WPARAM(Raw_Input[i].Event.MouseEvent.dwButtonState);
 
                     if (Scroll_Direction > 0){
                         KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State = true;
@@ -402,6 +417,10 @@ namespace GGUI{
                 }
             }
         }
+   
+        // We can assume that the Raw_Input buffer will be fully translated by this point, if not, then something is wrong!!!
+        // We can now also restart the Raw_Input_Size.
+        Raw_Input_Size = 0;
     }
 
     namespace Constants{
@@ -1208,11 +1227,11 @@ namespace GGUI{
     }
 
     void Update_Frame(){
-        if (Pause_Render)
+        if (Pause_Render_Thread)
             return;
 
         bool Previous_Event_Thread = Pause_Event_Thread;
-        bool Previous_Render = Pause_Render;
+        bool Previous_Render = Pause_Render_Thread;
 
         Pause_GGUI();
 
@@ -1237,20 +1256,20 @@ namespace GGUI{
         Render_Frame();
         //Unlock the event handler.
         Pause_Event_Thread = Previous_Event_Thread;
-        Pause_Render = Previous_Render;
+        Pause_Render_Thread = Previous_Render;
 
         if (!Pause_Event_Thread)
             Atomic_Condition.notify_one();
     }
 
     void Pause_GGUI(){
-        Pause_Render = true;
+        Pause_Render_Thread = true;
         Pause_Event_Thread = true;
     }
 
     void Resume_GGUI(){
         // Dont give any chance of restarting the event thread, first un-pause Main thread and update, then continue.
-        Pause_Render = false;
+        Pause_Render_Thread = false;
 
         Update_Frame();
 
@@ -1634,7 +1653,7 @@ namespace GGUI{
         }
 
         //Save the state before the init
-        bool Default_Render_State = Pause_Render;
+        bool Default_Render_State = Pause_Render_Thread;
         bool Default_Event_Thread_State = Pause_Event_Thread;
 
         Current_Time = std::chrono::high_resolution_clock::now();
@@ -1700,10 +1719,16 @@ namespace GGUI{
 
         std::thread Inquire_Scheduler([&](){
             while (true){
+                // do {
+                // Will accumulate user inputs while the inputs cannot be yet processed or translated into GGUI framework.
+                Query_Inputs();
+                // } while (Pause_Event_Thread);
+
                 // Now if needed we can start reacting to the user input if given.
                 Pause_GGUI([](){
+                    // Translate the Queried inputs.
+                    Translate_Inputs();
                     // First await for the user input outside the pause_renderer, so that awaiting for the user wont affect other processes.
-                    Query_Inputs();
                     SCROLL_API();
                     MOUSE_API();
                     // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
@@ -1715,7 +1740,7 @@ namespace GGUI{
         Passive_Scheduler.detach();
         Inquire_Scheduler.detach();
 
-        Pause_Render = Default_Render_State;
+        Pause_Render_Thread = Default_Render_State;
         Pause_Event_Thread = Default_Event_Thread_State;
 
         if (!Pause_Event_Thread)
@@ -1947,15 +1972,15 @@ namespace GGUI{
     }
 
     void Pause_GGUI(std::function<void()> f){
-        bool Original_Value = Pause_Render;
+        bool Original_Value = Pause_Render_Thread;
 
         Pause_GGUI();
 
         f();
 
         // If another thread has been pausing this at the same time, then we need to check for it if it has already unpaused it.
-        if (!Pause_Render && !Original_Value){
-            Pause_Render = false;
+        if (!Pause_Render_Thread && !Original_Value){
+            Pause_Render_Thread = false;
             Original_Value = false;
         }
 
