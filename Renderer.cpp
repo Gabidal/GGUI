@@ -593,6 +593,11 @@ namespace GGUI{
 
     int Previus_Flags = 0;
     struct termios Previus_Raw;
+
+    // Stored globally, so that translation and inquiry can be separate proccess.
+    char Raw_Input[UINT16_MAX];
+    int Raw_Input_Size = 0;
+
     void De_Initialize(){
         // Also handles STD_COUT capture restorations.
         for (auto File_Handle : File_Streamer_Handles){
@@ -625,7 +630,6 @@ namespace GGUI{
         while(nanosleep(&req, &req) == -1)
             continue;
     }
-
 
     void Render_Frame() {
         // Move cursor to top-left corner
@@ -671,7 +675,7 @@ namespace GGUI{
     }
 
     // this global variable is only meant for unix use, since unix has ability to return non finished input events, so we need to store the first half for later use.
-    std::vector<char> Input_Buffer;
+    // std::vector<char> Input_Buffer;
 
     namespace Constants{
         namespace ANSI{
@@ -716,47 +720,56 @@ namespace GGUI{
         return keybind_value;
     }
 
-    //Is called as soon as possible and gets stuck awaiting for the user input.
+    // Is called as soon as possible and gets stuck awaiting for the user input.
     void Query_Inputs(){
-        // The code gets stuck here waiting for the user input, only proceed after required from user the input.
-        // Since capturing an longer stream in an un-supervised situation might halt, we need to just choply take each character one by one and determining the rest ourselves smh.
-        char Buffer[256];
-        int Bytes_Read = read(STDIN_FILENO, Buffer, sizeof(Buffer));
+        // Add the previous input size into the current offset for cumulative reading.
+        char* Current_Input_Buffer_Location = Raw_Input + Raw_Input_Size;
 
+        // Ceil the result, so that negative numbers wont start overflow.
+        int Current_Input_Buffer_Capacity = Max(UINT16_MAX - Raw_Input_Size, UINT16_MAX);
+
+        Raw_Input_Size = read(
+            STDIN_FILENO,
+            Current_Input_Buffer_Location,
+            Current_Input_Buffer_Capacity
+        );
+    }
+
+    void Translate_Inputs(){
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
 
-        // Since in linux, unlike in Windows we wont be getting an indication per Key information, whether it was pressed in or out.
+        // Unlike in Windows we wont be getting an indication per Key information, whether it was pressed in or out.
         KEYBOARD_STATES.clear();
 
         // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
         // haha code go brrrr -- 2024 gab here, nice joke, although who asked? 
-        for (unsigned int i = 0; i < Bytes_Read; i++){
+        for (unsigned int i = 0; i < Raw_Input_Size; i++){
 
             // Check if SHIFT has been modifying the keys
-            if ((Buffer[i] >= 'A' && Buffer[i] <= 'Z') || (Buffer[i] >= '!' && Buffer[i] <= '/')){
+            if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')){
                 // SHIFT key is pressed
                 Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                 KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
             }
 
             // We now can also check if the letter has been shifted down by CTRL key
-            else if (Buffer[i] >= Constants::ANSI::START_OF_CTRL && Buffer[i] <= Constants::ANSI::END_OF_CTRL){
+            else if (Raw_Input[i] >= Constants::ANSI::START_OF_CTRL && Raw_Input[i] <= Constants::ANSI::END_OF_CTRL){
                 // This is a CTRL key
 
                 // The CTRL domain contains multiple useful keys to check for
-                if (Buffer[i] == Constants::ANSI::BACKSPACE){
+                if (Raw_Input[i] == Constants::ANSI::BACKSPACE){
                     // This is a backspace key
                     Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
                     KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
                 }
-                else if (Buffer[i] == Constants::ANSI::HORIZONTAL_TAB){
+                else if (Raw_Input[i] == Constants::ANSI::HORIZONTAL_TAB){
                     // This is a tab key
                     Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
                     KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
                     Handle_Tabulator();
                 }
-                else if (Buffer[i] == Constants::ANSI::LINE_FEED){
+                else if (Raw_Input[i] == Constants::ANSI::LINE_FEED){
                     // This is an enter key
                     Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
                     KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
@@ -764,13 +777,13 @@ namespace GGUI{
 
                 // Shift the key back up
                 char Offset = 'a' -1; // We remove one since the CTRL characters started from 1 and not 0
-                Buffer[i] = Buffer[i] + Offset;
+                Raw_Input[i] = Raw_Input[i] + Offset;
                 KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
             }
 
-            if (Buffer[i] == Constants::ANSI::ESC_CODE[0]){
+            if (Raw_Input[i] == Constants::ANSI::ESC_CODE[0]){
                 // check if there are stuff after this escape code
-                if (i + 1 >= Bytes_Read){
+                if (i + 1 >= Raw_Input_Size){
                     // Clearly the escape key was invoked
                     Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
                     KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
@@ -782,33 +795,33 @@ namespace GGUI{
                 i++;
 
                 // The current data can either be an ALT key initiative or an escape sequence followed by '['
-                if (Buffer[i] == Constants::ANSI::ESC_CODE[1]){
+                if (Raw_Input[i] == Constants::ANSI::ESC_CODE[1]){
                     // Escape sequence codes:
 
                     // UP, DOWN LEFT, RIGHT keys
-                    if (Buffer[i + 1] == 'A'){
+                    if (Raw_Input[i + 1] == 'A'){
                         Inputs.push_back(new GGUI::Input(0, Constants::UP));
                         KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Buffer[i + 1] == 'B'){
+                    else if (Raw_Input[i + 1] == 'B'){
                         Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
                         KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Buffer[i + 1] == 'C'){
+                    else if (Raw_Input[i + 1] == 'C'){
                         Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
                         KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Buffer[i + 1] == 'D'){
+                    else if (Raw_Input[i + 1] == 'D'){
                         Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
                         KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Buffer[i + 1] == 'M'){  // Decode Mouse handling
+                    else if (Raw_Input[i + 1] == 'M'){  // Decode Mouse handling
                         // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
-                        char Bit_Mask = Buffer[i+2]; 
+                        char Bit_Mask = Raw_Input[i+2]; 
 
                         // Check if the bit 2'rd has been set, is so then the SHIFT has been pressed
                         if (Bit_Mask & 4){
@@ -839,8 +852,8 @@ namespace GGUI{
 
                         // Check if the 6'th bit has been set, is so then there is a movement event.
                         if (Bit_Mask & 64){
-                            char X = Buffer[i+3];
-                            char Y = Buffer[i+4];
+                            char X = Raw_Input[i+3];
+                            char Y = Raw_Input[i+4];
 
                             // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
                             Mouse.X = X - 32;
@@ -872,7 +885,7 @@ namespace GGUI{
 
                         i += 4;
                     }
-                    else if (Buffer[i + 1] == 'Z'){
+                    else if (Raw_Input[i + 1] == 'Z'){
                         // SHIFT + TAB => Z
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                         Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
@@ -888,16 +901,19 @@ namespace GGUI{
                 }
                 else{
                     // This is an ALT key
-                    Inputs.push_back(new GGUI::Input(Buffer[i], Constants::ALT));
+                    Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::ALT));
                     KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
                 }
             }
             else{
                 // Normal character data
-                Inputs.push_back(new GGUI::Input(Buffer[i], Constants::KEY_PRESS));
+                Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::KEY_PRESS));
             }
 
         }
+    
+        // We can assume that at the end of user input translation, all buffered inputs are hereby translate and no need to store, so reset offset.
+        Raw_Input_Size = 0;
     }
 
     void Init_Platform_Stuff(){
