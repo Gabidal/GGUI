@@ -27,6 +27,6 @@ int main()
         GGUI::Main->Add_Child(tem);
     });
 
-    GGUI::SLEEP(UINT32_MAX);
+    GGUI::SLEEP(100);
     GGUI::Exit();
 }

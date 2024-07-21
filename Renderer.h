@@ -26,8 +26,8 @@ namespace GGUI{
     
     extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
-    extern int Max_Width;
-    extern int Max_Height;
+    extern unsigned int Max_Width;
+    extern unsigned int Max_Height;
 
     extern std::vector<Memory> Remember;
 

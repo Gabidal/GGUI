@@ -22,8 +22,8 @@ namespace GGUI{
 
     std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
-    int Max_Width = 0;
-    int Max_Height = 0;
+    unsigned int Max_Width = 0;
+    unsigned int Max_Height = 0;
 
     std::vector<Memory> Remember;
 
@@ -244,7 +244,8 @@ namespace GGUI{
     CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info();
 
     // This is here out from the Query_Inputs, so that we can differentiate querying and translation of said input.
-    INPUT_RECORD Raw_Input[UINT16_MAX];
+    const unsigned int Raw_Input_Capacity = UINT8_MAX * 10;
+    INPUT_RECORD Raw_Input[Raw_Input_Capacity];
     int Raw_Input_Size = 0;
 
     void Render_Frame(){
@@ -290,7 +291,7 @@ namespace GGUI{
         INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
 
         // Ceil the value so that negative numbers wont create overflows.
-        unsigned int Current_Usable_Capacity = Max(UINT16_MAX - Raw_Input_Size, UINT16_MAX);
+        unsigned int Current_Usable_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
 
         ReadConsoleInput(
             GLOBAL_STD_INPUT_HANDLE,
@@ -595,8 +596,9 @@ namespace GGUI{
     struct termios Previus_Raw;
 
     // Stored globally, so that translation and inquiry can be separate proccess.
-    char Raw_Input[UINT16_MAX];
-    int Raw_Input_Size = 0;
+    const unsigned int Raw_Input_Capacity = UINT8_MAX * 2;
+    unsigned char Raw_Input[Raw_Input_Capacity];
+    unsigned int Raw_Input_Size = 0;
 
     void De_Initialize(){
         // Also handles STD_COUT capture restorations.
@@ -622,7 +624,7 @@ namespace GGUI{
 
     void SLEEP(unsigned int mm){
         // use nanosleep
-        struct timespec req = {0};
+        struct timespec req = {0, 0};
         time_t sec = (int)(mm / 1000);
         mm = mm - (sec * 1000);
         req.tv_sec = sec;
@@ -631,16 +633,16 @@ namespace GGUI{
             continue;
     }
 
+    // Renders contents of Frame_Buffer into the STDOUT.
     void Render_Frame() {
         // Move cursor to top-left corner
         // Previously used: Constants::CLEAR_SCROLLBAR + As a prefix to clear the history, when it was accumulating, but lately tests point this to be useless.
-        printf((Constants::ANSI::SET_CURSOR_TO_START).c_str());
+        printf("%s", Constants::ANSI::SET_CURSOR_TO_START.c_str());
 
         // Flush the output to ensure it's written immediately
         fflush(stdout);
 
-        int printed = 0;
-        printed = write(1, Frame_Buffer.data(), Frame_Buffer.size());
+        write(STDOUT_FILENO, Frame_Buffer.data(), Frame_Buffer.size());
     }
 
     void Update_Max_Width_And_Height(){
@@ -660,7 +662,7 @@ namespace GGUI{
         struct sigaction Handler;
         
         // Setup the function handler with a lambda
-        Handler.sa_handler = [](int signum){
+        Handler.sa_handler = []([[maybe_unused]] int signum){
             Update_Max_Width_And_Height();
         };
 
@@ -673,9 +675,6 @@ namespace GGUI{
         // Now set this handler up.
         sigaction(SIGWINCH, &Handler, nullptr);
     }
-
-    // this global variable is only meant for unix use, since unix has ability to return non finished input events, so we need to store the first half for later use.
-    // std::vector<char> Input_Buffer;
 
     namespace Constants{
         namespace ANSI{
@@ -723,10 +722,10 @@ namespace GGUI{
     // Is called as soon as possible and gets stuck awaiting for the user input.
     void Query_Inputs(){
         // Add the previous input size into the current offset for cumulative reading.
-        char* Current_Input_Buffer_Location = Raw_Input + Raw_Input_Size;
+        unsigned char* Current_Input_Buffer_Location = Raw_Input + Raw_Input_Size;
 
         // Ceil the result, so that negative numbers wont start overflow.
-        int Current_Input_Buffer_Capacity = Max(UINT16_MAX - Raw_Input_Size, UINT16_MAX);
+        int Current_Input_Buffer_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
 
         Raw_Input_Size = read(
             STDIN_FILENO,
@@ -992,47 +991,51 @@ namespace GGUI{
     }
 
     void Report_Stack(std::string Problem){
-        int Stack_Trace_Depth = 10;
-        void *Ptr_Table[Stack_Trace_Depth];
+        // This is required for GGUI to work in Android, since Androids own STD is primitive in terms of stack tracing.
+        // TODO: use Evie to dismantle the running exec stack with name table.
+        #ifndef __ANDROID__
+            const int Stack_Trace_Depth = 10;
+            size_t *Ptr_Table[Stack_Trace_Depth];
 
-        // Declare a pointer to an array of strings. This will hold the symbol names of the stack trace
-        char **Name_Table;
+            // Declare a pointer to an array of strings. This will hold the symbol names of the stack trace
+            char **Name_Table;
 
-        // Get the stack trace and store it in the array. The return value is the number of stack frames obtained
-        size_t Usable_Depth = backtrace(Ptr_Table, Stack_Trace_Depth);
+            // Get the stack trace and store it in the array. The return value is the number of stack frames obtained
+            size_t Usable_Depth = backtrace(reinterpret_cast<void**>(Ptr_Table), Stack_Trace_Depth);
 
-        // Convert the addresses in the stack trace into an array of strings that describe the addresses symbolically
-        Name_Table = backtrace_symbols(Ptr_Table, Usable_Depth);
+            // Convert the addresses in the stack trace into an array of strings that describe the addresses symbolically
+            Name_Table = backtrace_symbols(reinterpret_cast<void**>(Ptr_Table), Usable_Depth);
 
-        if (Max_Width == 0){
-            Update_Max_Width_And_Height();
-        }
+            if (Max_Width == 0){
+                Update_Max_Width_And_Height();
+            }
 
-        // Now that we have the stack frame label names in the Name_Table list, we can construct an visually apleasing stack trace information:
-        std::string Result = "Stack Trace:\n";
+            // Now that we have the stack frame label names in the Name_Table list, we can construct an visually apleasing stack trace information:
+            std::string Result = "Stack Trace:\n";
 
-        bool Use_Indent = Usable_Depth < (Max_Width / 2);
-        for (int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
-            std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
+            bool Use_Indent = Usable_Depth < (Max_Width / 2);
+            for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
+                std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
 
-            // For last branch use different branch start symbol
-            if (Stack_Index == Usable_Depth - 1)
-                Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
+                // For last branch use different branch start symbol
+                if (Stack_Index == Usable_Depth - 1)
+                    Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
 
-            // now add indentation by the amount of index:
-            std::string Indent = "";
+                // now add indentation by the amount of index:
+                std::string Indent = "";
 
-            for (int i = 0; i < Stack_Index && Use_Indent; i++)
-                Indent += SYMBOLS::HORIZONTAL_LINE;
+                for (unsigned int i = 0; i < Stack_Index && Use_Indent; i++)
+                    Indent += SYMBOLS::HORIZONTAL_LINE;
 
-            Result += Branch_Start + Indent + Name_Table[Stack_Index] + "\n";
-        }
+                Result += Branch_Start + Indent + Name_Table[Stack_Index] + "\n";
+            }
 
-        // Free the memory allocated for the string array
-        free(Name_Table);
+            // Free the memory allocated for the string array
+            free(Name_Table);
 
-        // now add the problem into the message
-        Result += "Problem: " + Problem;
+            // now add the problem into the message
+            Result += "Problem: " + Problem;
+        #endif
 
         Report(Result);
     }
@@ -1138,7 +1141,7 @@ namespace GGUI{
 
         // If there has not been anything selected then then skip this phase and default to zero.
         if (Current)
-            for (;Current_Index < Event_Handlers.size(); Current_Index++){
+            for (;(unsigned int)Current_Index < Event_Handlers.size(); Current_Index++){
                 if (Event_Handlers[Current_Index]->Host == Current)
                     break;
             }
@@ -1149,7 +1152,7 @@ namespace GGUI{
         if (Current_Index < 0){
             Current_Index = Event_Handlers.size() - 1;
         }
-        else if (Current_Index >= Event_Handlers.size()){
+        else if ((unsigned int)Current_Index >= Event_Handlers.size()){
             Current_Index = 0;
         }
 

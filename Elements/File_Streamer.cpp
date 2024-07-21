@@ -211,17 +211,17 @@ namespace GGUI{
         std::string CMD::Run(std::string Command){
             if (fork() == 0) {
                 // Child process
-                dup2(File_Descriptor.Out, STDOUT_FILENO);
+                dup2(File_Descriptor.Way.Out, STDOUT_FILENO);
                 system(Command.c_str());
                 exit(0);
             } else {
                 // Parent process
-                close(File_Descriptor.Out);
+                close(File_Descriptor.Way.Out);
 
                 char buffer[256];
                 std::string output = "";
 
-                while (read(File_Descriptor.In, buffer, sizeof(buffer)) > 0) {
+                while (read(File_Descriptor.Way.In, buffer, sizeof(buffer)) > 0) {
 
                     output += buffer;
                     memset(buffer, 0, sizeof(buffer));

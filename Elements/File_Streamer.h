@@ -159,11 +159,11 @@ namespace GGUI{
     #else
         class CMD{  // Unix implementation:
         private:
-            union FileDescriptor {
-                struct {
+            union __INTERNAL_CMD_FILE_DESCRIPTOR__ {
+                struct __INTERNAL_CMD_WAY__ {
                     int In;
                     int Out;
-                };
+                } Way;
                 int FDS[2];
             } File_Descriptor;
         public:
