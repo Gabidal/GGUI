@@ -1219,28 +1219,29 @@ namespace GGUI{
     }
 
     namespace INTERNAL{
-        static Super_String LIQUIFY_UTF_TEXT_RESULT_CACHE(0);
+        static Super_String LIQUIFY_UTF_TEXT_RESULT_CACHE;
     }
 
     // Returns an indirect pointer to the local INTERNAL cache, which is only made so for pure optimization.
     GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
-        if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Data.capacity() == 0){
-            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE = Super_String((Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1)));
+        const int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
+        if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Data.capacity() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
+            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE = Super_String(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
         }
 
-        Super_String& Result = INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        Super_String* Result = &INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE;
 
         Super_String tmp_container(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
         Super_String Text_Overhead(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
         Super_String Background_Overhead(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
         Super_String Text_Colour(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
         Super_String Background_Colour(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
-
+ 
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
                 Text[y * Width + x].To_Encoded_Super_String(&tmp_container, &Text_Overhead, &Background_Overhead, &Text_Colour, &Background_Colour);
                 
-                Result.Add(tmp_container, true);
+                Result->Add(tmp_container, true);
 
                 // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
                 tmp_container.Clear();
@@ -1252,11 +1253,11 @@ namespace GGUI{
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
             if (!SETTINGS::Word_Wrapping){
-                Result.Add('\n');   // the system is word wrapped.
+                Result->Add('\n');   // the system is word wrapped.
             }
         }
 
-        return &Result;
+        return Result;
     }
 
     void Update_Frame(){

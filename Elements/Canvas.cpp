@@ -114,12 +114,13 @@ namespace GGUI{
         Element::~Element();
     }
 
-    void Terminal_Canvas::Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush){
+    void Terminal_Canvas::Set(unsigned int x, unsigned int y, Sprite& sprite, bool Flush){
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
 
-        if (sprite.Frames.size() > 1 && Multi_Frame_Canvas.find(this) == Multi_Frame_Canvas.end()){
+        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && Multi_Frame_Canvas.find(this) == Multi_Frame_Canvas.end()){
             Multi_Frame_Canvas[this] = true;
+            Multi_Frame = true;
         }
 
         Buffer[Actual_X + Actual_Y * Width] = sprite;
@@ -130,7 +131,7 @@ namespace GGUI{
             Update_Frame();
     }
 
-    void Terminal_Canvas::Set(unsigned int x, unsigned int y, UTF sprite, bool Flush){
+    void Terminal_Canvas::Set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
 
@@ -281,7 +282,9 @@ namespace GGUI{
                 if (custom_border.find(Current_Masks) == custom_border.end())
                     continue;
 
-                Set(X, Y, UTF(custom_border[Current_Masks]), false);
+                UTF tmp(custom_border[Current_Masks]);
+
+                Set(X, Y, tmp, false);
             }
         }
 

@@ -79,14 +79,17 @@ namespace GGUI{
         std::vector<Sprite> Buffer;
 
         unsigned char Current_Animation_Frame = 0;
+
+        // For speeding up sprite sets, to avoid redundant checks in unordered_maps.
+        bool Multi_Frame = false;
     public:
         Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
         
         ~Terminal_Canvas() override;
 
-        void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
+        void Set(unsigned int x, unsigned int y, Sprite& sprite, bool Flush = true);
 
-        void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
+        void Set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);
         
         void Flush(bool Force_Flush = false);
         
@@ -95,6 +98,8 @@ namespace GGUI{
         void Group_Heuristics();
 
         void Group(unsigned int Start_Index, int length);
+
+        bool Is_Multi_Frame(){ return Multi_Frame; }
 
         Element* Safe_Move() override {
             Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
