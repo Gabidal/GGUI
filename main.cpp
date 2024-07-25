@@ -28,5 +28,5 @@ int main()
     });
 
     GGUI::SLEEP(100);
-    GGUI::Exit();
+    GGUI::Exit(); 
 }
