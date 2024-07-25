@@ -1326,7 +1326,7 @@ namespace GGUI{
         std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
         // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
-        size_t Shortest_Time = std::numeric_limits<size_t>::max();
+        size_t Shortest_Time = (size_t)-1;
 
         // Prolong prolongable memories.
         for (unsigned int i = 0; i < Remember.size(); i++){
