@@ -17,7 +17,7 @@ int main()
                         {"b", {GGUI::RGB(y, x, 255), GGUI::RGB(y, x, 255)}}, 
                     },
                     0,
-                    1
+                    2
                 );
 
                 tem->Set(x, y, s);
@@ -27,6 +27,6 @@ int main()
         GGUI::Main->Add_Child(tem);
     });
 
-    GGUI::SLEEP(100000);
+    GGUI::SLEEP(100);
     GGUI::Exit();
 }

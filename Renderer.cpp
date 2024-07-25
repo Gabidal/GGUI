@@ -9,7 +9,8 @@
 #include <mutex>
 
 namespace GGUI{
-    std::vector<UTF> Abstract_Frame_Buffer;                     // 2D clean vector without bold nor color
+    std::vector<UTF> SAFE_MIRROR;                               // Only used for references to be initalized to point at.
+    std::vector<UTF>& Abstract_Frame_Buffer = SAFE_MIRROR;      // 2D clean vector without bold nor color
     std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
     
     // THEAD SYSTEM --
@@ -1213,7 +1214,7 @@ namespace GGUI{
         }
     }
 
-    GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height){
+    GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
         Super_String Result(Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
 
         Super_String tmp_container(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
@@ -1255,7 +1256,8 @@ namespace GGUI{
         Pause_GGUI();
 
         if (Main){
-            Abstract_Frame_Buffer = Main->Render();
+            Main->Render();
+            Abstract_Frame_Buffer = Main->Get_Render_Buffer();
 
             // ENCODE for optimize
             Encode_Buffer(Abstract_Frame_Buffer);
@@ -1326,7 +1328,7 @@ namespace GGUI{
         std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
         // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
-        size_t Shortest_Time = (size_t)-1;
+        size_t Shortest_Time = std::numeric_limits<size_t>::max();
 
         // Prolong prolongable memories.
         for (unsigned int i = 0; i < Remember.size(); i++){
@@ -1689,7 +1691,9 @@ namespace GGUI{
         Main = new Window("", Max_Width, Max_Height);
 
         if (!Pause_Event_Thread){
-            Abstract_Frame_Buffer = Main->Render();
+            Main->Render();
+
+            Abstract_Frame_Buffer = Main->Get_Render_Buffer();
 
             Encode_Buffer(Abstract_Frame_Buffer);
 
@@ -1720,8 +1724,6 @@ namespace GGUI{
 
                 Current_Time = std::chrono::high_resolution_clock::now();
 
-                Atomic_Condition.notify_one();
-
                 // Calculate the delta time.
                 Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
@@ -1738,19 +1740,19 @@ namespace GGUI{
 
         std::thread Inquire_Scheduler([&](){
             while (true){
-                // do {
-                // Will accumulate user inputs while the inputs cannot be yet processed or translated into GGUI framework.
+                // Wait for user input.
                 Query_Inputs();
-                // } while (Pause_Event_Thread);
 
                 // Now if needed we can start reacting to the user input if given.
                 Pause_GGUI([](){
                     // Translate the Queried inputs.
                     Translate_Inputs();
-                    // First await for the user input outside the pause_renderer, so that awaiting for the user wont affect other processes.
+
+                    // Translate the movements thingies to better usable for user.
                     SCROLL_API();
                     MOUSE_API();
-                    // Since the user input queries are expected to stop and await for the user input, we dont need sleep functions here.
+
+                    // Now call upon event handlers which may react to the parsed input.
                     Event_Handler();
                 });
             }

@@ -1034,9 +1034,9 @@ void GGUI::Element::Compute_Dynamic_Size(){
     return;
 }
 
-//Returns nested buffer of AST window's
-std::vector<GGUI::UTF> GGUI::Element::Render(){
-    std::vector<GGUI::UTF> Result = Render_Buffer;
+// Draws into the this.Render_Buffer nested buffer of AST window's
+void GGUI::Element::Render(){
+    std::vector<GGUI::UTF>& Result = Render_Buffer;
 
     //if inned children have changed without this changing, then this will trigger.
     if (Children_Changed() || Has_Transparent_Children()){
@@ -1048,7 +1048,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
     Compute_Dynamic_Size();
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
-        return Result;
+        return;
 
     if (Dirty.is(STAIN_TYPE::CLASS)){
         Parse_Classes();
@@ -1094,7 +1094,12 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
             
             c->Render();
 
-            Nest_Element(this, c, Result, c->Postprocess());
+            std::vector<UTF>& tmp = c->Get_Render_Buffer();
+
+            if (c->Has_Postprocessing_To_Do())
+                tmp = c->Postprocess();
+
+            Nest_Element(this, c, Result, tmp);
         }
     }
 
@@ -1122,9 +1127,7 @@ std::vector<GGUI::UTF> GGUI::Element::Render(){
         }
     }
 
-    Render_Buffer = Result;
-
-    return Result;
+    return;
 }
 
 
@@ -1224,7 +1227,7 @@ std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned in
     return {{Negative_Offset_X, Negative_Offset_Y}, {{Child_Start_X, Child_Start_Y}, {Child_End_X, Child_End_Y}} };
 }
 
-void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF> Child_Buffer){
+void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF>& Child_Buffer){
     std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Limits = Get_Fitting_Area(Parent, Child);
 
     // This is to combat child elements which are located halfway outside the parent area.
@@ -1572,6 +1575,14 @@ std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, G
 
     return Result;
 
+}
+
+bool GGUI::Element::Has_Postprocessing_To_Do(){
+    bool Has_Shadow_Processing = Style->Shadow.Enabled;
+
+    bool Has_Opacity_Processing = Is_Transparent();
+
+    return Has_Shadow_Processing | Has_Opacity_Processing;
 }
 
 void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){

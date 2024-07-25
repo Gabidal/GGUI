@@ -19,7 +19,7 @@ namespace GGUI{
         class BUFFER_CAPTURE;
     }
 
-    extern std::vector<UTF> Abstract_Frame_Buffer;                  //2D clean vector whitout bold nor color
+    extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
     extern bool Pause_Render_Thread;                                       //if true, the render will not be updated, good for window creation.
     extern bool Pause_Event_Thread;                                 //Main window
@@ -108,7 +108,7 @@ namespace GGUI{
     //Returns a char if given ASCII, or a short if given UNICODE
     extern GGUI::UTF* Get(GGUI::Coordinates Abselute_Position);
 
-    extern GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF> Text, int Width, int Height);
+    extern GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
 
     extern void Update_Frame();
     

@@ -10,7 +10,7 @@ namespace GGUI{
         float Progress = 0; // 0.0 - 1.0
 
         void Add_Horizontal_Lines(std::vector<UTF>& buffer);
-        std::vector<UTF> Render() override;
+        void Render() override;
         void Apply_Colors(Element* w, std::vector<UTF>& Result) override;
     public:
         void Set_Progress(float New_Progress);

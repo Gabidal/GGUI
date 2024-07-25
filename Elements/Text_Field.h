@@ -37,7 +37,7 @@ namespace GGUI{
             return Text;
         }
 
-        std::vector<UTF> Render() override;
+        void Render() override;
 
         void Align_Text_Left(std::vector<UTF>& Result);
         void Align_Text_Right(std::vector<UTF>& Result);

@@ -633,10 +633,6 @@ namespace GGUI{
             }
         }
     
-        virtual unsigned int Get_Hexadecimal_Value(){
-            return (Red << 16) | (Green << 8) | Blue;
-        }
-
         bool operator==(const RGB& Other) const{
             // only take the bits from the first 3 unsigned chars
             return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
@@ -671,10 +667,6 @@ namespace GGUI{
 
         constexpr float Get_Alpha() const{
             return (float)Alpha / std::numeric_limits<unsigned char>::max();
-        }
-
-        unsigned int Get_Hexadecimal_Value() override{
-            return (Red << 24) | (Green << 16) | (Blue << 8) | Alpha;
         }
 
         bool operator==(const RGBA& Other){
@@ -892,16 +884,16 @@ namespace GGUI{
         }
 
         void Set_Foreground(RGB color){
-            Foreground = {color};
+            Foreground = color;
         }
 
         void Set_Background(RGB color){
-            Background = {color};
+            Background = color;
         }
 
         void Set_Color(std::pair<RGB, RGB> primals){
-            Foreground = {primals.first};
-            Background = {primals.second};
+            Foreground = primals.first;
+            Background = primals.second;
         }
 
         void Set_Text(std::string data){
@@ -1778,7 +1770,11 @@ namespace GGUI{
 
         void Compute_Dynamic_Size();
 
-        virtual std::vector<UTF> Render();
+        std::vector<UTF>& Get_Render_Buffer(){
+            return Render_Buffer;
+        }
+
+        virtual void Render();
 
         // Used to update the parent when the child cannot update on itself, for an example on removal of an element.
         virtual void Update_Parent(Element* New_Element);
@@ -1793,7 +1789,7 @@ namespace GGUI{
 
         void Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source);
 
-        void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF> Child_Buffer);
+        void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
 
         std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(Element* e);
 
@@ -1881,6 +1877,8 @@ namespace GGUI{
 
         void On_State(State s, std::function<void()> job);
 
+        bool Has_Postprocessing_To_Do();
+
         void Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer);
 
         void Process_Opacity(std::vector<GGUI::UTF>& Current_Buffer);
@@ -1900,24 +1898,12 @@ namespace GGUI{
         return a + t * (b - a);
     }
 
-    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, int Distance, int Domain_Size = UINT8_MAX){
-        GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance) {
+        A.Red = lerp<float>(A.Red, B.Red, Distance);
+        A.Green = lerp<float>(A.Green, B.Green, Distance);
+        A.Blue = lerp<float>(A.Blue, B.Blue, Distance);
 
-        Result.Red = lerp<float>(A.Red, B.Red, (float)Distance / (float)Domain_Size);
-        Result.Green = lerp<float>(A.Green, B.Green, (float)Distance / (float)Domain_Size);
-        Result.Blue = lerp<float>(A.Blue, B.Blue, (float)Distance / (float)Domain_Size);
-
-        return Result;
-    }
-
-    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance){
-        GGUI::RGB Result = GGUI::RGB(0, 0, 0, true);
-
-        Result.Red = lerp<float>(A.Red, B.Red, Distance);
-        Result.Green = lerp<float>(A.Green, B.Green, Distance);
-        Result.Blue = lerp<float>(A.Blue, B.Blue, Distance);
-
-        return Result;
+        return A;
     }
 
 }
