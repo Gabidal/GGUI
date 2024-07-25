@@ -205,14 +205,21 @@ namespace GGUI{
 
         CMD::CMD(){ 
             // Unix implementation
-            pipe(File_Descriptor.FDS);
+            int Error = pipe(File_Descriptor.FDS);
+
+            if (Error == -1)
+                Report("Failed to create pipe for CMD!");
         }
 
         std::string CMD::Run(std::string Command){
             if (fork() == 0) {
                 // Child process
                 dup2(File_Descriptor.Way.Out, STDOUT_FILENO);
-                system(Command.c_str());
+                int Error = system(Command.c_str());
+
+                if (Error == -1)
+                    Report("Failed to run command: '" + Command + "' !");
+
                 exit(0);
             } else {
                 // Parent process

@@ -93,7 +93,7 @@ namespace GGUI{
             Data[Current_Index++] = Compact_String(data);
         }
 
-        void Add(std::string& data){
+        void Add(const std::string& data){
             Data[Current_Index++] = Compact_String(data.data(), data.size());
         }
 
@@ -153,31 +153,31 @@ namespace GGUI{
     };
 
     namespace SYMBOLS{
-        inline std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
-        inline std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
-        inline std::string TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
-        inline std::string BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
-        inline std::string VERTICAL_LINE = "│";//"\e(0\x78\e(B";
-        inline std::string HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
-        inline std::string VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
-        inline std::string VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
-        inline std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
-        inline std::string HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
-        inline std::string CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
+        static const std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
+        static const std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
+        static const std::string TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
+        static const std::string BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
+        static const std::string VERTICAL_LINE = "│";//"\e(0\x78\e(B";
+        static const std::string HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
+        static const std::string VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
+        static const std::string VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
+        static const std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        static const std::string HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
+        static const std::string CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
 
-        inline std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x71\e(B";
-        inline std::string FULL_BLOCK = "█";//"\e(0\xdb\e(B";
+        static const std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x71\e(B";
+        static const std::string FULL_BLOCK = "█";//"\e(0\xdb\e(B";
 
         inline unsigned int CONNECTS_UP = 1 << 0;
         inline unsigned int CONNECTS_DOWN = 1 << 1;
         inline unsigned int CONNECTS_LEFT = 1 << 2;
         inline unsigned int CONNECTS_RIGHT = 1 << 3;
 
-        inline std::string RADIOBUTTON_OFF = "○";
-        inline std::string RADIOBUTTON_ON = "◉";
+        static const std::string RADIOBUTTON_OFF = "○";
+        static const std::string RADIOBUTTON_ON = "◉";
 
-        inline std::string EMPTY_CHECK_BOX = "☐";
-        inline std::string CHECKED_CHECK_BOX = "☒";
+        static const std::string EMPTY_CHECK_BOX = "☐";
+        static const std::string CHECKED_CHECK_BOX = "☒";
 
         extern GGUI::UTF EMPTY_UTF;
     }
@@ -241,17 +241,17 @@ namespace GGUI{
             static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature = 1 + 1 + 1;
 
             // CSI (Control Sequence Introducer) sequences.
-            inline std::string ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
-            inline std::string SEPARATE = ";";
-            inline std::string USE_RGB = "2";
-            inline std::string END_COMMAND = "m";
-            inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
-            inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
-            inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
-            inline std::string RESET_CONSOLE = ESC_CODE + "c";
-            inline std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;  // Basically same as RESET_SGR but baked the end command into it for Super_String
+            static const std::string ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
+            static const std::string SEPARATE = ";";
+            static const std::string USE_RGB = "2";
+            static const std::string END_COMMAND = "m";
+            static const std::string CLEAR_SCREEN = ESC_CODE + "2J";
+            static const std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
+            static const std::string SET_CURSOR_TO_START = ESC_CODE + "H";
+            static const std::string RESET_CONSOLE = ESC_CODE + "c";
+            static const std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;  // Basically same as RESET_SGR but baked the end command into it for Super_String
 
-            inline Super_String Enable_Private_SGR_Feature(std::string command, bool Enable = true) { 
+            inline Super_String Enable_Private_SGR_Feature(const std::string& command, bool Enable = true) { 
                 Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature);
 
                 Result.Add(ESC_CODE);
@@ -270,7 +270,7 @@ namespace GGUI{
             
             // Since most of the SGR have the disable code after 20, we can make a pair of helper functions.
             // Also usually only those with pair of enable and disable codes are supported widely.
-            inline Super_String Enable_SGR_Feature(std::string command) {
+            inline Super_String Enable_SGR_Feature(const std::string& command) {
                 Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature);
 
                 Result.Add(ESC_CODE);
@@ -281,45 +281,45 @@ namespace GGUI{
             }
 
             // SGR constants
-            inline std::string RESET_SGR = "0";                                  // Removes all SGR features. 
-            inline std::string BOLD = "1";                                       // Not widely supported!
-            inline std::string FAINT = "2";                                      // Not widely supported!
-            inline std::string ITALIC = "3";                                     // Not widely supported! (Can also be same as blink)
-            inline std::string UNDERLINE = "4";              
-            inline std::string SLOW_BLINK = "5";                                 // ~150 BPM
-            inline std::string RAPID_BLINK = "6";                                // Not widely supported!
-            inline std::string INVERT_FOREGROUND_WITH_BACKGROUND = "7";          // Not widely supported!
-            inline std::string CONCEAL = "8";                                    // Not widely supported!
-            inline std::string CROSSED_OUT = "9";                                // Not widely supported!
-            inline std::string PRIMARY_FONT = "10";                              // Sets the default font.
-            inline std::string ALTERNATIVE_FONT_1 = "11";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_2 = "12";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_3 = "13";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_4 = "14";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_5 = "15";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_6 = "16";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_7 = "17";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_8 = "18";                        // Custom font slot.
-            inline std::string ALTERNATIVE_FONT_9 = "19";                        // Custom font slot.
-            inline std::string FRAKTUR = "20";                                   // Not widely supported! (But cool font)
-            inline std::string NOT_BOLD = "21";                                  // Removes the BOLD feature
-            inline std::string NORMAL_INTENSITY = "22";                          // Removes BOLD and ITALIC and other affixes.
-            inline std::string NOT_UNDERLINE = "23";                             // Removes UNDERLINE.
-            inline std::string NOT_BLINK = "24";                                 // Removes BLINK.
-            inline std::string INVERT_INVERT_FOREGROUND_WITH_BACKGROUND = "27";  // Inverts the INVERT_FOREGROUND_WITH_BACKGROUND.
-            inline std::string TEXT_COLOR = "38";                               // Sets the foreground color.
-            inline std::string DEFAULT_TEXT_COLOR = "39";                       // Sets the default color.
-            inline std::string BACKGROUND_COLOR = "48";                         // Sets the background color.
-            inline std::string DEFAULT_BACKGROUND_COLOR = "49";                 // Sets the default color.
+            static const std::string RESET_SGR = "0";                                  // Removes all SGR features. 
+            static const std::string BOLD = "1";                                       // Not widely supported!
+            static const std::string FAINT = "2";                                      // Not widely supported!
+            static const std::string ITALIC = "3";                                     // Not widely supported! (Can also be same as blink)
+            static const std::string UNDERLINE = "4";              
+            static const std::string SLOW_BLINK = "5";                                 // ~150 BPM
+            static const std::string RAPID_BLINK = "6";                                // Not widely supported!
+            static const std::string INVERT_FOREGROUND_WITH_BACKGROUND = "7";          // Not widely supported!
+            static const std::string CONCEAL = "8";                                    // Not widely supported!
+            static const std::string CROSSED_OUT = "9";                                // Not widely supported!
+            static const std::string PRIMARY_FONT = "10";                              // Sets the default font.
+            static const std::string ALTERNATIVE_FONT_1 = "11";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_2 = "12";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_3 = "13";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_4 = "14";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_5 = "15";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_6 = "16";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_7 = "17";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_8 = "18";                        // Custom font slot.
+            static const std::string ALTERNATIVE_FONT_9 = "19";                        // Custom font slot.
+            static const std::string FRAKTUR = "20";                                   // Not widely supported! (But cool font)
+            static const std::string NOT_BOLD = "21";                                  // Removes the BOLD feature
+            static const std::string NORMAL_INTENSITY = "22";                          // Removes BOLD and ITALIC and other affixes.
+            static const std::string NOT_UNDERLINE = "23";                             // Removes UNDERLINE.
+            static const std::string NOT_BLINK = "24";                                 // Removes BLINK.
+            static const std::string INVERT_INVERT_FOREGROUND_WITH_BACKGROUND = "27";  // Inverts the INVERT_FOREGROUND_WITH_BACKGROUND.
+            static const std::string TEXT_COLOR = "38";                               // Sets the foreground color.
+            static const std::string DEFAULT_TEXT_COLOR = "39";                       // Sets the default color.
+            static const std::string BACKGROUND_COLOR = "48";                         // Sets the background color.
+            static const std::string DEFAULT_BACKGROUND_COLOR = "49";                 // Sets the default color.
 
             // Private SGR codes
-            inline std::string REPORT_MOUSE_HIGHLIGHTS = "1000";
-            inline std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
-            inline std::string REPORT_MOUSE_ALL_EVENTS = "1003";
+            static const std::string REPORT_MOUSE_HIGHLIGHTS = "1000";
+            static const std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
+            static const std::string REPORT_MOUSE_ALL_EVENTS = "1003";
 
-            inline std::string MOUSE_CURSOR = "25";
-            inline std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
-            inline std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
+            static const std::string MOUSE_CURSOR = "25";
+            static const std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
+            static const std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
             // End of enable settings for ANSI
 
             // ACC (ASCII Control Characters)
@@ -445,7 +445,7 @@ namespace GGUI{
             "250", "251", "252", "253", "254", "255"
         };
 
-        const Compact_String To_Compact[256] = {
+        static const Compact_String To_Compact[256] = {
             Compact_String("0", 1), Compact_String("1", 1), Compact_String("2", 1), Compact_String("3", 1), Compact_String("4", 1), Compact_String("5", 1), Compact_String("6", 1), Compact_String("7", 1), Compact_String("8", 1), Compact_String("9", 1),
             Compact_String("10", 2), Compact_String("11", 2), Compact_String("12", 2), Compact_String("13", 2), Compact_String("14", 2), Compact_String("15", 2), Compact_String("16", 2), Compact_String("17", 2), Compact_String("18", 2), Compact_String("19", 2),
             Compact_String("20", 2), Compact_String("21", 2), Compact_String("22", 2), Compact_String("23", 2), Compact_String("24", 2), Compact_String("25", 2), Compact_String("26", 2), Compact_String("27", 2), Compact_String("28", 2), Compact_String("29", 2),
@@ -476,52 +476,52 @@ namespace GGUI{
     }
     
     namespace BUTTON_STATES{
-        inline std::string ESC = "ECS";
-        inline std::string F1 = "F1";
-        inline std::string F2 = "F2";
-        inline std::string F3 = "F3";
-        inline std::string F4 = "F4";
-        inline std::string F5 = "F5";
-        inline std::string F6 = "F6";
-        inline std::string F7 = "F7";
-        inline std::string F8 = "F8";
-        inline std::string F9 = "F9";
-        inline std::string F10 = "F10";
-        inline std::string F11 = "F11";
-        inline std::string F12 = "F12";
-        inline std::string PRTSC = "PRTSC";
-        inline std::string SCROLL_LOCK = "SCROLL_LOCK";
-        inline std::string PAUSE = "PAUSE";
-        inline std::string SECTION = "SECTION";
-        inline std::string BACKSPACE = "BACKSPACE";
-        inline std::string TAB = "TAB";
-        inline std::string ENTER = "ENTER";
-        inline std::string CAPS = "CAPS";
-        inline std::string SHIFT = "SHIFT";
-        inline std::string CONTROL = "CTRL";
-        inline std::string SUPER = "SUPER";
-        inline std::string ALT = "ALT";
-        inline std::string SPACE = "SPACE";
-        inline std::string ALTGR = "ALTGR";
-        inline std::string FN = "FN";
-        inline std::string INS = "INS";
-        inline std::string HOME = "HOME";
-        inline std::string PAGE_UP = "PAGE_UP";
-        inline std::string DELETE = "DELETE";
-        inline std::string INSERT = "INSERT";
-        inline std::string END = "END";
-        inline std::string PAGE_DOWN = "PAGE_DOWN";
+        static const std::string ESC = "ECS";
+        static const std::string F1 = "F1";
+        static const std::string F2 = "F2";
+        static const std::string F3 = "F3";
+        static const std::string F4 = "F4";
+        static const std::string F5 = "F5";
+        static const std::string F6 = "F6";
+        static const std::string F7 = "F7";
+        static const std::string F8 = "F8";
+        static const std::string F9 = "F9";
+        static const std::string F10 = "F10";
+        static const std::string F11 = "F11";
+        static const std::string F12 = "F12";
+        static const std::string PRTSC = "PRTSC";
+        static const std::string SCROLL_LOCK = "SCROLL_LOCK";
+        static const std::string PAUSE = "PAUSE";
+        static const std::string SECTION = "SECTION";
+        static const std::string BACKSPACE = "BACKSPACE";
+        static const std::string TAB = "TAB";
+        static const std::string ENTER = "ENTER";
+        static const std::string CAPS = "CAPS";
+        static const std::string SHIFT = "SHIFT";
+        static const std::string CONTROL = "CTRL";
+        static const std::string SUPER = "SUPER";
+        static const std::string ALT = "ALT";
+        static const std::string SPACE = "SPACE";
+        static const std::string ALTGR = "ALTGR";
+        static const std::string FN = "FN";
+        static const std::string INS = "INS";
+        static const std::string HOME = "HOME";
+        static const std::string PAGE_UP = "PAGE_UP";
+        static const std::string DELETE = "DELETE";
+        static const std::string INSERT = "INSERT";
+        static const std::string END = "END";
+        static const std::string PAGE_DOWN = "PAGE_DOWN";
 
-        inline std::string UP = "UP";
-        inline std::string DOWN = "DOWN";
-        inline std::string LEFT = "LEFT";
-        inline std::string RIGHT = "RIGHT";
+        static const std::string UP = "UP";
+        static const std::string DOWN = "DOWN";
+        static const std::string LEFT = "LEFT";
+        static const std::string RIGHT = "RIGHT";
 
-        inline std::string MOUSE_LEFT = "MOUSE_LEFT";
-        inline std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
-        inline std::string MOUSE_RIGHT = "MOUSE_RIGHT";
-        inline std::string MOUSE_SCROLL_UP = "MOUSE_SCROLL_UP";
-        inline std::string MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
+        static const std::string MOUSE_LEFT = "MOUSE_LEFT";
+        static const std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
+        static const std::string MOUSE_RIGHT = "MOUSE_RIGHT";
+        static const std::string MOUSE_SCROLL_UP = "MOUSE_SCROLL_UP";
+        static const std::string MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
     };
 
     inline std::unordered_map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
@@ -865,7 +865,7 @@ namespace GGUI{
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
-        UTF(std::string& data, std::pair<RGB, RGB> color = {{}, {}}){
+        UTF(const std::string& data, std::pair<RGB, RGB> color = {{}, {}}){
             Unicode = data.data();
             Unicode_Length = data.size() - 1;
             
@@ -933,7 +933,7 @@ namespace GGUI{
             Set_Text(text);
         }
 
-        void operator=(std::string text){
+        void operator=(const std::string& text){
             Set_Text(text);
         }
 

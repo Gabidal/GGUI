@@ -643,7 +643,11 @@ namespace GGUI{
         // Flush the output to ensure it's written immediately
         fflush(stdout);
 
-        write(STDOUT_FILENO, Frame_Buffer.data(), Frame_Buffer.size());
+        int Error = write(STDOUT_FILENO, Frame_Buffer.data(), Frame_Buffer.size());
+
+        if (Error != (signed)Frame_Buffer.size()){
+            Report("Failed to write to STDOUT: " + std::to_string(Error));
+        }
     }
 
     void Update_Max_Width_And_Height(){
@@ -1214,8 +1218,17 @@ namespace GGUI{
         }
     }
 
-    GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
-        Super_String Result(Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
+    namespace INTERNAL{
+        static Super_String LIQUIFY_UTF_TEXT_RESULT_CACHE(0);
+    }
+
+    // Returns an indirect pointer to the local INTERNAL cache, which is only made so for pure optimization.
+    GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
+        if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Data.capacity() == 0){
+            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE = Super_String((Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1)));
+        }
+
+        Super_String& Result = INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE;
 
         Super_String tmp_container(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
         Super_String Text_Overhead(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
@@ -1239,11 +1252,11 @@ namespace GGUI{
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
             if (!SETTINGS::Word_Wrapping){
-                Result.Add("\n");   // the system is word wrapped.
+                Result.Add('\n');   // the system is word wrapped.
             }
         }
 
-        return Result;
+        return &Result;
     }
 
     void Update_Frame(){
@@ -1262,7 +1275,7 @@ namespace GGUI{
             // ENCODE for optimize
             Encode_Buffer(Abstract_Frame_Buffer);
 
-            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
+            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height())->To_String();
         }
         else{
             // Use OUTBOX rendering method.
@@ -1697,7 +1710,7 @@ namespace GGUI{
 
             Encode_Buffer(Abstract_Frame_Buffer);
 
-            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height()).To_String();
+            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height())->To_String();
         }
 
         Init_Inspect_Tool();

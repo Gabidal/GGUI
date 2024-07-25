@@ -108,7 +108,7 @@ namespace GGUI{
     //Returns a char if given ASCII, or a short if given UNICODE
     extern GGUI::UTF* Get(GGUI::Coordinates Abselute_Position);
 
-    extern GGUI::Super_String Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
+    extern GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
 
     extern void Update_Frame();
     
