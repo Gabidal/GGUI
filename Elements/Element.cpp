@@ -1094,12 +1094,12 @@ void GGUI::Element::Render(){
             
             c->Render();
 
-            std::vector<UTF>& tmp = c->Get_Render_Buffer();
+            std::vector<UTF>* tmp = &c->Get_Render_Buffer();
 
             if (c->Has_Postprocessing_To_Do())
-                tmp = c->Postprocess();
+                tmp = &c->Postprocess();
 
-            Nest_Element(this, c, Result, tmp);
+            Nest_Element(this, c, Result, *tmp);
         }
     }
 
