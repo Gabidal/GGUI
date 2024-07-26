@@ -1220,35 +1220,50 @@ namespace GGUI{
 
     namespace INTERNAL{
         static Super_String LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        static Super_String LIQUIFY_UTF_TEXT_TMP_CONTAINER(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);
+        static Super_String LIQUIFY_UTF_TEXT_TEXT_OVERHEAD(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        static Super_String LIQUIFY_UTF_TEXT_TEXT_COLOUR(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
+        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
     }
 
     // Returns an indirect pointer to the local INTERNAL cache, which is only made so for pure optimization.
     GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
         const int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
+        
+        // Since they are located as globals we need to remember to restart the starting offset.
+        INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.Clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.Clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_TEXT_COLOUR.Clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.Clear();
+        
+        // We need to dynamically resize this, since the window size will be potentially re-sized.
         if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Data.capacity() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
             INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE = Super_String(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
         }
 
         Super_String* Result = &INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE;
-
-        Super_String tmp_container(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);  // We can expect the maximum size each can omit.
-        Super_String Text_Overhead(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        Super_String Background_Overhead(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        Super_String Text_Colour(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
-        Super_String Background_Colour(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
  
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
-                Text[y * Width + x].To_Encoded_Super_String(&tmp_container, &Text_Overhead, &Background_Overhead, &Text_Colour, &Background_Colour);
+                Text[y * Width + x].To_Encoded_Super_String(
+                    &INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER,
+                    &INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD,
+                    &INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD,
+                    &INTERNAL::LIQUIFY_UTF_TEXT_TEXT_COLOUR,
+                    &INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR
+                );
                 
-                Result->Add(tmp_container, true);
+                Result->Add(INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER, true);
 
                 // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
-                tmp_container.Clear();
-                Text_Overhead.Clear();
-                Background_Overhead.Clear();   
-                Text_Colour.Clear();
-                Background_Colour.Clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.Clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.Clear();   
+                INTERNAL::LIQUIFY_UTF_TEXT_TEXT_COLOUR.Clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.Clear();
             }
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
@@ -1342,7 +1357,7 @@ namespace GGUI{
         std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
         // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
-        size_t Shortest_Time = std::numeric_limits<size_t>::max();
+        size_t Shortest_Time = (unsigned)-1;
 
         // Prolong prolongable memories.
         for (unsigned int i = 0; i < Remember.size(); i++){

@@ -65,7 +65,7 @@ namespace GGUI{
         // Make sure the last line is added
         if (current_line.Size > 0){
 
-            bool Last_Line_Exceeds_Width_With_Current_Line = current_line.Size + (Text_Cache.size() > 0 && Text_Cache.back().Size >= Width);
+            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= Width;
 
             // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
             if (
