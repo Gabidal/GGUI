@@ -21,7 +21,7 @@ namespace GGUI{
         
         void Flush();
 
-        void Render() override;
+        std::vector<GGUI::UTF>&  Render() override;
 
         Element* Safe_Move() override {
             Canvas* new_Canvas = new Canvas();
@@ -93,7 +93,7 @@ namespace GGUI{
         
         void Flush(bool Force_Flush = false);
         
-        void Render() override;
+        std::vector<GGUI::UTF>&  Render() override;
         
         void Group_Heuristics();
 

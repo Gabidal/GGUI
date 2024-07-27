@@ -76,7 +76,7 @@ namespace GGUI{
         std::vector<Compact_String> Data;
         unsigned int Current_Index = 0;
 
-        Super_String(int Final_Size = 1){
+        Super_String(unsigned int Final_Size = 1){
             Data.resize(Final_Size);
             Current_Index = 0;
         }
@@ -1532,6 +1532,7 @@ namespace GGUI{
         bool Show = true;
         
         std::vector<UTF> Render_Buffer;
+        std::vector<UTF> Post_Process_Buffer;
         STAIN Dirty;
         
         std::vector<int> Classes;
@@ -1770,11 +1771,7 @@ namespace GGUI{
 
         void Compute_Dynamic_Size();
 
-        std::vector<UTF>& Get_Render_Buffer(){
-            return Render_Buffer;
-        }
-
-        virtual void Render();
+        virtual std::vector<GGUI::UTF>& Render();
 
         // Used to update the parent when the child cannot update on itself, for an example on removal of an element.
         virtual void Update_Parent(Element* New_Element);
@@ -1883,7 +1880,7 @@ namespace GGUI{
 
         void Process_Opacity(std::vector<GGUI::UTF>& Current_Buffer);
 
-        virtual std::vector<GGUI::UTF> Postprocess();
+        virtual std::vector<GGUI::UTF>& Postprocess();
 
         // Uses the post_processed widths and height values
         bool Child_Is_Shown(Element* other);

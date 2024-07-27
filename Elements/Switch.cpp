@@ -42,11 +42,11 @@ namespace GGUI{
         });
     }
 
-    void Switch::Render(){
+    std::vector<GGUI::UTF>& Switch::Render(){
         std::vector<GGUI::UTF>& Result = Render_Buffer;
         
         if (Dirty.is(STAIN_TYPE::CLEAN))
-            return;
+            return Result;
 
         if (Dirty.is(STAIN_TYPE::CLASS)){
             Parse_Classes();
@@ -70,9 +70,7 @@ namespace GGUI{
 
         //Check if the text has been changed.
         if (Dirty.is(STAIN_TYPE::DEEP)){
-            Text.Render();
-
-            Nest_Element(this, &Text, Result, Text.Get_Render_Buffer());
+            Nest_Element(this, &Text, Result, Text.Render());
 
             //Clean text update notice and state change notice.
             //NOTE: Cleaning STATE flag without checking it's existence might lead to unexpected results.
@@ -99,7 +97,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::EDGE))
             Add_Overhead(this, Result);
 
-        return;
+        return Result;
     }
 
 }

@@ -103,11 +103,11 @@ namespace GGUI{
         }
     }
 
-    void Text_Field::Render(){
+    std::vector<GGUI::UTF>&  Text_Field::Render(){
         std::vector<GGUI::UTF>& Result = Render_Buffer;
 
         if (Dirty.is(STAIN_TYPE::CLEAN))
-            return;
+            return Result;
 
         if (Dirty.is(STAIN_TYPE::CLASS)){
             Parse_Classes();
@@ -150,7 +150,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::EDGE))
             Add_Overhead(this, Result);
 
-        return;
+        return Result;
     }
 
     void Text_Field::Set_Size_To_Fill_Parent(){

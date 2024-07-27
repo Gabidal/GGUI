@@ -21,7 +21,7 @@ namespace GGUI{
     public:
         Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){});
 
-        void Render() override;
+        std::vector<GGUI::UTF>& Render() override;
 
         void Toggle(){
             State = !State;

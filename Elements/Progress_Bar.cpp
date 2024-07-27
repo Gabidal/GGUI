@@ -8,7 +8,7 @@ using namespace std;
 
 namespace GGUI{
 
-    void Progress_Bar::Render(){
+    std::vector<GGUI::UTF>& Progress_Bar::Render(){
         std::vector<GGUI::UTF>& Result = Render_Buffer;
 
         //if inned children have changed whitout this changing, then this will trigger.
@@ -17,7 +17,7 @@ namespace GGUI{
         }
                 
         if (Dirty.is(STAIN_TYPE::CLEAN))
-            return;
+            return Result;
 
         if (Dirty.is(STAIN_TYPE::CLASS)){
             Parse_Classes();
@@ -60,7 +60,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::EDGE))
             Add_Overhead(this, Result);
 
-        return;
+        return Result;
     }
 
     void Progress_Bar::Apply_Colors(Element* w, std::vector<UTF>& Result){

@@ -38,11 +38,11 @@ namespace GGUI{
         Update_Frame();
     }
 
-    void Canvas::Render(){
+    std::vector<GGUI::UTF>& Canvas::Render(){
         std::vector<GGUI::UTF>& Result = Render_Buffer;
                 
         if (Dirty.is(STAIN_TYPE::CLEAN))
-            return;
+            return Result;
 
         if (Dirty.is(STAIN_TYPE::CLASS)){
             Parse_Classes();
@@ -84,7 +84,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::EDGE))
             Add_Overhead(this, Result);
 
-        return;
+        return Result;
     }
 
     Sprite::Sprite(std::vector<GGUI::UTF> frames, int offset, int speed) : Frames(frames), Offset(offset), Speed(speed) {
@@ -151,13 +151,13 @@ namespace GGUI{
         Update_Frame();
     }
 
-    void Terminal_Canvas::Render(){
+    std::vector<GGUI::UTF>& Terminal_Canvas::Render(){
         std::vector<GGUI::UTF>& Result = Render_Buffer;
                 
         Current_Animation_Frame++;
 
         if (Dirty.is(STAIN_TYPE::CLEAN))
-            return;
+            return Result;
 
         if (Dirty.is(STAIN_TYPE::CLASS)){
             Parse_Classes();
@@ -202,7 +202,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::EDGE))
             Add_Overhead(this, Result);
 
-        return;
+        return Result;
     }
 
     UTF Sprite::Render(unsigned char Current_Frame){

@@ -1229,7 +1229,7 @@ namespace GGUI{
 
     // Returns an indirect pointer to the local INTERNAL cache, which is only made so for pure optimization.
     GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
-        const int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
+        const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
         
         // Since they are located as globals we need to remember to restart the starting offset.
         INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Clear();
@@ -1285,8 +1285,7 @@ namespace GGUI{
         Pause_GGUI();
 
         if (Main){
-            Main->Render();
-            Abstract_Frame_Buffer = Main->Get_Render_Buffer();
+            Abstract_Frame_Buffer = Main->Render();
 
             // ENCODE for optimize
             Encode_Buffer(Abstract_Frame_Buffer);
@@ -1720,9 +1719,7 @@ namespace GGUI{
         Main = new Window("", Max_Width, Max_Height);
 
         if (!Pause_Event_Thread){
-            Main->Render();
-
-            Abstract_Frame_Buffer = Main->Get_Render_Buffer();
+            Abstract_Frame_Buffer = Main->Render();
 
             Encode_Buffer(Abstract_Frame_Buffer);
 

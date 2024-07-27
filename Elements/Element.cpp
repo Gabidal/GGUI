@@ -1035,7 +1035,7 @@ void GGUI::Element::Compute_Dynamic_Size(){
 }
 
 // Draws into the this.Render_Buffer nested buffer of AST window's
-void GGUI::Element::Render(){
+std::vector<GGUI::UTF>& GGUI::Element::Render(){
     std::vector<GGUI::UTF>& Result = Render_Buffer;
 
     //if inned children have changed without this changing, then this will trigger.
@@ -1048,7 +1048,7 @@ void GGUI::Element::Render(){
     Compute_Dynamic_Size();
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
-        return;
+        return Result;
 
     if (Dirty.is(STAIN_TYPE::CLASS)){
         Parse_Classes();
@@ -1091,10 +1091,8 @@ void GGUI::Element::Render(){
 
             if (c->Has_Border())
                 Childs_With_Borders++;
-            
-            c->Render();
 
-            std::vector<UTF>* tmp = &c->Get_Render_Buffer();
+            std::vector<UTF>* tmp = &c->Render();
 
             if (c->Has_Postprocessing_To_Do())
                 tmp = &c->Postprocess();
@@ -1127,7 +1125,7 @@ void GGUI::Element::Render(){
         }
     }
 
-    return;
+    return Result;
 }
 
 
@@ -1717,17 +1715,17 @@ void GGUI::Element::Process_Opacity(std::vector<GGUI::UTF>& Current_Buffer){
     }
 }
 
-std::vector<GGUI::UTF> GGUI::Element::Postprocess(){
-    std::vector<UTF> Result = Render_Buffer;
+std::vector<GGUI::UTF>& GGUI::Element::Postprocess(){
+    Post_Process_Buffer = Render_Buffer;
 
-    Process_Shadow(Result);
+    Process_Shadow(Post_Process_Buffer);
     //...
 
     // One of the last postprocessing for total control of when not to display.
-    Process_Opacity(Result);
+    Process_Opacity(Post_Process_Buffer);
 
     //Render_Buffer = Result;
-    return Result;
+    return Post_Process_Buffer;
 }
 
 bool GGUI::Element::Child_Is_Shown(Element* other){
