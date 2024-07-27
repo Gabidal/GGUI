@@ -165,8 +165,8 @@ namespace GGUI{
         static const std::string HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
         static const std::string CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
 
-        static const std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x71\e(B";
-        static const std::string FULL_BLOCK = "█";//"\e(0\xdb\e(B";
+        static const std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
+        static const std::string FULL_BLOCK = "█";//"\e(0\x2588\e(B";
 
         inline unsigned int CONNECTS_UP = 1 << 0;
         inline unsigned int CONNECTS_DOWN = 1 << 1;
@@ -872,6 +872,22 @@ namespace GGUI{
             Foreground = {color.first};
             Background = {color.second};
             FLAGS = UTF_FLAG::IS_UNICODE;
+        }
+
+        UTF(const Compact_String CS, std::pair<RGB, RGB> color = {{}, {}}){
+            if (CS.Size == 1){
+                Ascii = CS.Data.Ascii_Data;
+                Foreground = {color.first};
+                Background = {color.second};
+                FLAGS = UTF_FLAG::IS_ASCII;
+            }
+            else{
+                Unicode = CS.Data.Unicode_Data;
+                Unicode_Length = CS.Size;
+                Foreground = {color.first};
+                Background = {color.second};
+                FLAGS = UTF_FLAG::IS_UNICODE;
+            }
         }
 
         bool Is(unsigned char utf_flag){
