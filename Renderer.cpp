@@ -1755,6 +1755,7 @@ namespace GGUI{
 
                 CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
 
+                // If ya want uncapped FPS, disable this sleep code:
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(
                         CURRENT_UPDATE_SPEED - Delta_Time, 
@@ -1781,6 +1782,11 @@ namespace GGUI{
                     // Now call upon event handlers which may react to the parsed input.
                     Event_Handler();
                 });
+
+                // If ya want uncapped FPS, disable this sleep code:
+                std::this_thread::sleep_for(std::chrono::milliseconds(
+                    MIN_UPDATE_SPEED
+                ));
             }
         });
 
