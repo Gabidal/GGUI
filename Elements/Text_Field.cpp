@@ -275,4 +275,66 @@ namespace GGUI{
     }
 
 
+    void Text_Field::Input(std::function<void(char)> Then){
+        Action* addr = new Action(
+            Constants::KEY_PRESS,
+            [=](GGUI::Event* e){
+                if (Focused){
+                    //We know the event was gifted as Input*
+                    GGUI::Input* input = (GGUI::Input*)e;
+
+                    //First 
+                    Then(input->Data);
+                    Update_Frame();
+
+                    return true;
+                }
+                //action failed.
+                return false;
+            },
+            this
+        );
+        GGUI::Event_Handlers.push_back(addr);
+
+        Action* enter = new Action(
+            Constants::ENTER,
+            [=](GGUI::Event* e){
+                if (Focused){
+                    //We know the event was gifted as Input*
+                    GGUI::Input* input = (GGUI::Input*)e;
+
+                    //First 
+                    Then(input->Data);
+                    Update_Frame();
+
+                    return true;
+                }
+                //action failed.
+                return false;
+            },
+            this
+        );
+        GGUI::Event_Handlers.push_back(enter);
+
+        Action* back_space = new Action(
+            Constants::BACKSPACE,
+            [=](GGUI::Event* e){
+                if (Focused){
+                    
+                    if (Text.size() > 0){
+                        Text.pop_back();
+                        Dirty.Dirty(STAIN_TYPE::DEEP);
+                        Update_Frame();
+                    }
+
+                    return true;
+                }
+                //action failed.
+                return false;
+            },
+            this
+        );
+        GGUI::Event_Handlers.push_back(back_space);
+    }
+
 }

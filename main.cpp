@@ -1,32 +1,36 @@
 #include "ggui.h"
 
-#include <math.h>
+#include <vector>
 
-using namespace GGUI;
+using namespace std;
 
-int main()
-{
-    GGUI::GGUI([&](){
-        GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(GGUI::Max_Width, GGUI::Max_Height, {0, 0});
+void progress(){
+    for (auto i : GGUI::Main->Get_Elements<GGUI::Progress_Bar>()){
+        while (i->Get_Progress() < 1.0){
+            i->Set_Progress(i->Get_Progress() + 0.01);
 
-        for (int x = 0; x < tem->Get_Width(); x++){
-            for (int y = 0; y < tem->Get_Height(); y++){
-                GGUI::Sprite s(
-                    {
-                        {"a", {GGUI::RGB(x, y, 0), GGUI::RGB(x, y, 0)}}, 
-                        {"b", {GGUI::RGB(y, x, 255), GGUI::RGB(y, x, 255)}}, 
-                    },
-                    0,
-                    2
-                );
-
-                tem->Set(x, y, s);
-            }
+            GGUI::SLEEP(16);
         }
+    }
+}
 
-        GGUI::Main->Add_Child(tem);
+int main(int Argument_Count, char** Arguments){
+    GGUI::GGUI([=](){
+
+        GGUI::Progress_Bar* bar = new GGUI::Progress_Bar(
+            GGUI::COLOR::CYAN,
+            GGUI::COLOR::DARK_BLUE,
+            GGUI::Main->Get_Width() - 2
+        );
+        
+        // bar->Show_Border(true);
+        GGUI::Main->Add_Child(bar);
     });
 
-    GGUI::SLEEP(1000000);
-    GGUI::Exit(); 
+    progress();
+
+    GGUI::SLEEP(INT64_MAX);
+    
+    // Then exit properly
+    GGUI::Exit();
 }

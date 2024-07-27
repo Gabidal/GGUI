@@ -4,6 +4,11 @@
 using namespace GGUI;
 using namespace std;
 
+/*
+
+OUTBOX Not supported ATM!!!
+
+*/
 
 int main() 
 {

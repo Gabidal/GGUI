@@ -15,7 +15,7 @@ namespace GGUI{
         if (Children_Changed()){
             Dirty.Dirty(STAIN_TYPE::DEEP);
         }
-                
+
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
@@ -39,8 +39,6 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
         }
 
-        bool Connect_Borders_With_Parent = Has_Border();
-
         //This is for the bar content
         if (Dirty.is(STAIN_TYPE::DEEP)){
             Dirty.Clean(STAIN_TYPE::DEEP);
@@ -51,10 +49,6 @@ namespace GGUI{
         //Apply the color to the progress bar content.
         if (Dirty.is(STAIN_TYPE::COLOR))
             Apply_Colors(this, Result);
-
-
-        if (Connect_Borders_With_Parent)
-            Dirty.Dirty(STAIN_TYPE::EDGE);
 
         //This will add the borders if nessesary.
         if (Dirty.is(STAIN_TYPE::EDGE))
@@ -96,7 +90,6 @@ namespace GGUI{
 
     }
 
-
     void Progress_Bar::Add_Horizontal_Lines(std::vector<UTF>& buffer){
         int Start_X = Has_Border();
         int Start_Y = Has_Border();
@@ -119,7 +112,6 @@ namespace GGUI{
         }
 
     }
-
 
     void Progress_Bar::Set_Progress(float New_Progress){
         if (New_Progress > 1.00){
@@ -144,7 +136,6 @@ namespace GGUI{
         Progress = 0;
     }
 
-    
     Progress_Bar::Progress_Bar(RGB Fill_Color, RGB Empty_Color) : Element(){
         Progress = 0;
         Pause_GGUI([=](){
@@ -153,7 +144,6 @@ namespace GGUI{
         });
     }
 
-    
     Progress_Bar::Progress_Bar(RGB Fill_Color, RGB Empty_Color, unsigned int Width, unsigned int Height) : Element(Width, Height){
         Progress = 0;
         Pause_GGUI([=](){

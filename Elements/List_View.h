@@ -87,7 +87,6 @@ namespace GGUI{
 
             return new_List_View;
         }
-
     };
 
     class Scroll_View : public Element{

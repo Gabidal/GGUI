@@ -16,7 +16,7 @@ namespace GGUI{
         void Set_Progress(float New_Progress);
         float Get_Progress();
 
-        void Show_Border(bool state);
+        void Show_Border(bool state) override;
 
         void Set_Fill_Color(RGB value);
         void Set_Empty_Color(RGB value);

@@ -839,8 +839,8 @@ namespace GGUI{
         const char* Unicode = " ";
         int Unicode_Length = 1; // Does not include the null terminator.
 
-        RGBA Foreground = {0, 0, 0}; 
-        RGBA Background = {0, 0, 0};
+        RGBA Foreground; 
+        RGBA Background;
 
         UTF(){}
 

@@ -43,6 +43,8 @@ namespace GGUI{
         void Align_Text_Right(std::vector<UTF>& Result);
         void Align_Text_Center(std::vector<UTF>& Result);
 
+        // For custom input handling:
+        void Input(std::function<void(char)> Then);
     };
 }
 

@@ -365,17 +365,6 @@ std::pair<GGUI::RGB, GGUI::RGB>  GGUI::Element::Compose_All_Text_RGB_Values(){
 }
 
 GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
-    // if (Focused){
-    //     return Style->Focus_Text_Color.Get_Over_Head(true) + 
-    //     Style->Focus_Text_Color.Get_Colour() + 
-    //     Constants::ANSI::END_COMMAND;
-    // }
-    // else{
-    //     return Style->Text_Color.Get_Over_Head(true) + 
-    //     Style->Text_Color.Get_Colour() + 
-    //     Constants::ANSI::END_COMMAND;
-    // }
-
     if (Focused){
         return Style->Focus_Text_Color.Value;
     }
@@ -385,7 +374,6 @@ GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
     else{
         return Style->Text_Color.Value;
     }
-
 }
 
 GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(){

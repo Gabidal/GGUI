@@ -1303,6 +1303,7 @@ namespace GGUI{
         }
 
         Render_Frame();
+
         //Unlock the event handler.
         Pause_Event_Thread = Previous_Event_Thread;
         Pause_Render_Thread = Previous_Render;
