@@ -57,8 +57,9 @@ int main(int Argument_Count, char** Arguments){
         if (C->Get_Position().Y <= 0 || C->Get_Position().Y + C->Get_Processed_Height() >= GGUI::Main->Get_Processed_Height())
             C_velocity.Y = -C_velocity.Y;
         
-        GGUI::Resume_GGUI();
+        // press 'CTRL + SHIFT + I' to open the inspect window. 
         GGUI::Report(to_string(A->Get_Position().X));
+        GGUI::Resume_GGUI();
         GGUI::SLEEP(16);
     }
 

@@ -14,12 +14,67 @@ namespace GGUI{
     std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
     
     // THEAD SYSTEM --
-    bool Pause_Render_Thread = false;                           // if true, the render will not be updated, good for window creation.
-    bool Pause_Event_Thread = false;                            // if true, the event handler will pause.
+    enum class UNTIL{
+        RESUMED,
+        PAUSED
+    };
 
-    std::mutex Atomic_Mutex;                                    // Gives ownership of boolean for single thread at a time.
-    std::condition_variable Atomic_Condition;                   // Will lock all other threads until the wanted boolean is true.
-    // --
+    class Atomic{
+    protected:
+        // Represents if the current Atomic lock is paused and awaiting for notify_one() relief.
+        UNTIL Status = UNTIL::RESUMED;
+
+        // Manages usually by Pause_GGUI or Resume_GGUI
+        bool Locked = false;
+
+        // Used by std::unique_lock to lock and await until it is the only thread accessing this value.
+        std::mutex Context;
+
+        // Contains the condition (lambda) which determines if the mutex should still await or not.
+        std::condition_variable Condition;
+    public:
+
+        // Awaits until it is the only thread with rights to this object..
+        UNTIL Await(UNTIL is, bool suggest = false){
+            UNTIL Previous_Status = Status;
+
+            if (suggest)
+                // Try to make the other threads already ready for this await.
+                Set(is);
+
+            // Create an locking event.
+            std::unique_lock Current_Lock(Context);
+            
+            // Await until all other threads respect.
+            Condition.wait(Current_Lock, [this, is](){ return Status == is; });
+
+            // Return now that this thread is only one.
+            return Previous_Status;
+        }
+
+        void Wakeup(){
+            Condition.notify_one();
+        }
+
+        void Set(UNTIL now){
+            // Deny access if locked.
+            if (Locked)
+                return;
+
+            Status = now;
+
+            if (now == UNTIL::RESUMED)
+                Wakeup();
+        }
+
+        // Setting this on, will ignore all Set() inputs.
+        void Lock(bool lock){
+            Locked = lock;
+        }
+    };
+
+    Atomic Render_Thread;
+    Atomic Event_Thread;
 
     std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
@@ -1276,57 +1331,31 @@ namespace GGUI{
     }
 
     void Update_Frame(){
-        if (Pause_Render_Thread)
-            return;
+        // Prime the rendering pipeline with one more round.
+        Render_Thread.Set(UNTIL::RESUMED);
 
-        bool Previous_Event_Thread = Pause_Event_Thread;
-        bool Previous_Render = Pause_Render_Thread;
-
-        Pause_GGUI();
-
-        if (Main){
-            Abstract_Frame_Buffer = Main->Render();
-
-            // ENCODE for optimize
-            Encode_Buffer(Abstract_Frame_Buffer);
-
-            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height())->To_String();
-        }
-        else{
-            // Use OUTBOX rendering method.
-            // Abstract_Frame_Buffer = Outbox.Render();
-
-            // // ENCODE for optimize
-            // Encode_Buffer(Abstract_Frame_Buffer);
-
-            // Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Outbox.Get_Width(), Outbox.Get_Height());
-        }
-
-        Render_Frame();
-
-        //Unlock the event handler.
-        Pause_Event_Thread = Previous_Event_Thread;
-        Pause_Render_Thread = Previous_Render;
-
-        if (!Pause_Event_Thread)
-            Atomic_Condition.notify_one();
+        // Call the rendering pipeline.
+        Render_Thread.Wakeup();
     }
 
     void Pause_GGUI(){
-        Pause_Render_Thread = true;
-        Pause_Event_Thread = true;
+        Render_Thread.Await(UNTIL::PAUSED, true);
+        Render_Thread.Lock(true);
+
+        Event_Thread.Await(UNTIL::PAUSED, true);
+        Event_Thread.Lock(true);
     }
 
     void Resume_GGUI(){
-        // Dont give any chance of restarting the event thread, first un-pause Main thread and update, then continue.
-        Pause_Render_Thread = false;
+        Render_Thread.Lock(false);
 
-        Update_Frame();
+        // Dont give any chance of restarting the event thread, first un-pause Main thread and update, then continue.
+        Render_Thread.Set(UNTIL::RESUMED);
+
+        Event_Thread.Lock(false);
 
         // Main thread is now complete, can continue to unlocking the secondary threads.
-        Pause_Event_Thread = false;
-
-        Atomic_Condition.notify_one();
+        Event_Thread.Set(UNTIL::RESUMED);
     }
 
     void Clear_Inputs(){
@@ -1703,14 +1732,11 @@ namespace GGUI{
         }
 
         //Save the state before the init
-        bool Default_Render_State = Pause_Render_Thread;
-        bool Default_Event_Thread_State = Pause_Event_Thread;
+        UNTIL Default_Render_State = Render_Thread.Await(UNTIL::PAUSED);
+        UNTIL Default_Event_Thread_State = Event_Thread.Await(UNTIL::PAUSED);
 
         Current_Time = std::chrono::high_resolution_clock::now();
         Previous_Time = Current_Time;
-
-        //pause the renderer
-        Pause_GGUI();
 
         Init_Platform_Stuff();
         Init_Classes();
@@ -1719,20 +1745,37 @@ namespace GGUI{
         Main = (Window*)0xFFFFFFFF;
         Main = new Window("", Max_Width, Max_Height);
 
-        if (!Pause_Event_Thread){
-            Abstract_Frame_Buffer = Main->Render();
+        std::thread Rendering_Scheduler([&](){
+            while (true){
+                Render_Thread.Await(UNTIL::RESUMED);
 
-            Encode_Buffer(Abstract_Frame_Buffer);
+                // Also await until the event thread has stopped. Also suggest it to be stopped if it hasn't already.
+                UNTIL Previous_Event_Thread_State = Event_Thread.Await(UNTIL::PAUSED, true);
 
-            Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height())->To_String();
-        }
+                if (Main){
+                    Abstract_Frame_Buffer = Main->Render();
+
+                    // ENCODE for optimize
+                    Encode_Buffer(Abstract_Frame_Buffer);
+
+                    Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height())->To_String();
+                    
+                    Render_Frame();
+                }
+
+                // Unlock the event handler to its previous glory.
+                Event_Thread.Set(Previous_Event_Thread_State);
+
+                // Now for itself set it to sleep.
+                Render_Thread.Set(UNTIL::PAUSED);
+            }
+        });
 
         Init_Inspect_Tool();
 
         std::thread Passive_Scheduler([&](){
             while (true){
-                std::unique_lock Current_Lock(Atomic_Mutex);
-                Atomic_Condition.wait(Current_Lock, [](){ return !Pause_Event_Thread; });
+                Event_Thread.Await(UNTIL::RESUMED);
 
                 // Reset the thread load counter
                 Event_Thread_Load = 0;
@@ -1783,22 +1826,15 @@ namespace GGUI{
                     // Now call upon event handlers which may react to the parsed input.
                     Event_Handler();
                 });
-
-                // If ya want uncapped FPS, disable this sleep code:
-                std::this_thread::sleep_for(std::chrono::milliseconds(
-                    MIN_UPDATE_SPEED
-                ));
             }
         });
 
+        Rendering_Scheduler.detach();
         Passive_Scheduler.detach();
         Inquire_Scheduler.detach();
 
-        Pause_Render_Thread = Default_Render_State;
-        Pause_Event_Thread = Default_Event_Thread_State;
-
-        if (!Pause_Event_Thread)
-            Atomic_Condition.notify_one();
+        Render_Thread.Set(Default_Render_State);
+        Event_Thread.Set(Default_Event_Thread_State);
 
         return Main;
     }
@@ -1815,38 +1851,96 @@ namespace GGUI{
     }
 
     void Report(std::string Problem){
-        Pause_GGUI();
+        Pause_GGUI([&](){
 
-        Problem = " " + Problem + " ";
+            Problem = " " + Problem + " ";
 
-        // Error logger structure:
-        /*
-            <Window name="_ERROR_LOGGER_">
-                <List name="_HISTORY_" type=vertical scrollable=true>
-                    <List type="horizontal">
-                        <TextField>Time</TextField>
-                        <TextField>Problem a</TextField>
-                        <TextField>[repetitions if any]</TextField>
+            // Error logger structure:
+            /*
+                <Window name="_ERROR_LOGGER_">
+                    <List name="_HISTORY_" type=vertical scrollable=true>
+                        <List type="horizontal">
+                            <TextField>Time</TextField>
+                            <TextField>Problem a</TextField>
+                            <TextField>[repetitions if any]</TextField>
+                        </List>
+                        ...
                     </List>
-                    ...
-                </List>
-            </Window>
-        */
+                </Window>
+            */
 
-        if (Main && (Max_Width != 0 && Max_Height != 0)){
-            bool Create_New_Line = true;
+            if (Main && (Max_Width != 0 && Max_Height != 0)){
+                bool Create_New_Line = true;
 
-            // First check if there already is a report log.
-            Window* Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
+                // First check if there already is a report log.
+                Window* Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
 
-            if (Error_Logger){
-                // Get the list
-                Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
+                if (Error_Logger){
+                    // Get the list
+                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
-                // This happens, when Error logger is kidnapped!
-                if (!History){
+                    // This happens, when Error logger is kidnapped!
+                    if (!History){
+                        // Now create the history lister
+                        History = new Scroll_View(
+                            Error_Logger->Get_Width() - 1,
+                            Error_Logger->Get_Height() - 1,
+                            GGUI::COLOR::RED,
+                            GGUI::COLOR::BLACK
+                        );
+                        History->Set_Growth_Direction(DIRECTION::COLUMN);
+                        History->Set_Name(HISTORY);
+
+                        Error_Logger->Add_Child(History);
+                    }
+
+                    std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
+
+                    if (Rows.size() > 0){
+                        //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
+                        Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
+                        Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
+
+                        //check if the previous problem was same problem
+                        if (Previous_Problem->Get_Text() == Problem){
+                            // increase the repetition count by one
+                            if (!Previous_Repetitions){
+                                Previous_Repetitions = new Text_Field("2");
+                                Rows.back()->Add_Child(Previous_Repetitions);
+                            }
+                            else{
+                                // translate the string to int
+                                int Repetition = std::stoi(Previous_Repetitions->Get_Text()) + 1;
+                                Previous_Repetitions->Set_Text(std::to_string(Repetition));
+                            }
+
+                            // We dont need to create a new line.
+                            Create_New_Line = false;
+                        }
+                    }
+                }
+                else{
+                    // create the error logger
+                    Error_Logger = new Window(
+                        "LOG",
+                        Main->Get_Width() / 4,
+                        Main->Get_Height() / 2,
+                        GGUI::COLOR::RED,
+                        GGUI::COLOR::BLACK,
+                        GGUI::COLOR::RED,
+                        GGUI::COLOR::BLACK
+                    );
+                    Error_Logger->Set_Name(ERROR_LOGGER);
+                    Error_Logger->Set_Position({
+                        (Max_Width - Error_Logger->Get_Width()) / 2,
+                        (Max_Height - Error_Logger->Get_Height()) / 2,
+                        INT32_MAX
+                    });
+                    Error_Logger->Show_Border(true);
+                    Error_Logger->Allow_Overflow(true);
+
                     // Now create the history lister
-                    History = new Scroll_View(
+                    Scroll_View* History = new Scroll_View(
                         Error_Logger->Get_Width() - 1,
                         Error_Logger->Get_Height() - 1,
                         GGUI::COLOR::RED,
@@ -1856,140 +1950,82 @@ namespace GGUI{
                     History->Set_Name(HISTORY);
 
                     Error_Logger->Add_Child(History);
+                    Main->Add_Child(Error_Logger);
                 }
 
-                std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
+                if (Create_New_Line){
+                    // re-find the error_logger.
+                    Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
+                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
-                if (Rows.size() > 0){
-                    //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
-                    Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
-                    Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
+                    List_View* Row = new List_View(
+                        History->Get_Width(),
+                        1,
+                        GGUI::COLOR::RED,
+                        GGUI::COLOR::BLACK
+                    );
+                    Row->Set_Parent(History);
+                    Row->Set_Flow_Direction(DIRECTION::ROW);
 
-                    //check if the previous problem was same problem
-                    if (Previous_Problem->Get_Text() == Problem){
-                        // increase the repetition count by one
-                        if (!Previous_Repetitions){
-                            Previous_Repetitions = new Text_Field("2");
-                            Rows.back()->Add_Child(Previous_Repetitions);
-                        }
-                        else{
-                            // translate the string to int
-                            int Repetition = std::stoi(Previous_Repetitions->Get_Text()) + 1;
-                            Previous_Repetitions->Set_Text(std::to_string(Repetition));
-                        }
+                    // TODO: replace the text_field into Date_Element !
+                    Text_Field* Date = new Text_Field(Now());
+                    Text_Field* Problem_Text = new Text_Field(Problem);
 
-                        // We dont need to create a new line.
-                        Create_New_Line = false;
+                    Row->Add_Child(Date);
+                    Row->Add_Child(Problem_Text);
+
+                    History->Add_Child(Row);
+
+                    // Calculate the new x position for the Error_Logger
+                    if (Error_Logger->Get_Parent() == Main)
+                        Error_Logger->Set_Position({
+                            (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
+                            (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
+                            INT32_MAX
+                        });
+
+                    // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
+                    // We can assume that the singular error is at least one tall.
+                    if (GGUI::Min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
+                        // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
+                        // Element* First_Child = History->Get_Childs()[0];
+                        // History->Remove(First_Child);
+
+                        // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
+                        History->Scroll_Down();
+                    
                     }
                 }
+
+                if (Error_Logger->Get_Parent() == Main){
+                    Error_Logger->Display(true);
+
+                    Remember.push_back(Memory(
+                        TIME::SECOND * 30,
+                        [=]([[maybe_unused]] GGUI::Event* e){
+                            //delete tmp;
+                            Error_Logger->Display(false);
+                            //job successfully done
+                            return true;
+                        },
+                        MEMORY_FLAGS::PROLONG_MEMORY,
+                        "Report Logger Clearer"
+                    ));
+                }
+
             }
             else{
-                // create the error logger
-                Error_Logger = new Window(
-                    "LOG",
-                    Main->Get_Width() / 4,
-                    Main->Get_Height() / 2,
-                    GGUI::COLOR::RED,
-                    GGUI::COLOR::BLACK,
-                    GGUI::COLOR::RED,
-                    GGUI::COLOR::BLACK
-                );
-                Error_Logger->Set_Name(ERROR_LOGGER);
-                Error_Logger->Set_Position({
-                    (Max_Width - Error_Logger->Get_Width()) / 2,
-                    (Max_Height - Error_Logger->Get_Height()) / 2,
-                    INT32_MAX
-                });
-                Error_Logger->Show_Border(true);
-                Error_Logger->Allow_Overflow(true);
-
-                // Now create the history lister
-                Scroll_View* History = new Scroll_View(
-                    Error_Logger->Get_Width() - 1,
-                    Error_Logger->Get_Height() - 1,
-                    GGUI::COLOR::RED,
-                    GGUI::COLOR::BLACK
-                );
-                History->Set_Growth_Direction(DIRECTION::COLUMN);
-                History->Set_Name(HISTORY);
-
-                Error_Logger->Add_Child(History);
-                Main->Add_Child(Error_Logger);
-            }
-
-            if (Create_New_Line){
-                // re-find the error_logger.
-                Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
-                Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
-
-                List_View* Row = new List_View(
-                    History->Get_Width(),
-                    1,
-                    GGUI::COLOR::RED,
-                    GGUI::COLOR::BLACK
-                );
-                Row->Set_Parent(History);
-                Row->Set_Flow_Direction(DIRECTION::ROW);
-
-                // TODO: replace the text_field into Date_Element !
-                Text_Field* Date = new Text_Field(Now());
-                Text_Field* Problem_Text = new Text_Field(Problem);
-
-                Row->Add_Child(Date);
-                Row->Add_Child(Problem_Text);
-
-                History->Add_Child(Row);
-
-                // Calculate the new x position for the Error_Logger
-                if (Error_Logger->Get_Parent() == Main)
-                    Error_Logger->Set_Position({
-                        (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
-                        (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
-                        INT32_MAX
-                    });
-
-                // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
-                // We can assume that the singular error is at least one tall.
-                if (GGUI::Min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
-                    // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
-                    // Element* First_Child = History->Get_Childs()[0];
-                    // History->Remove(First_Child);
-
-                    // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
-                    History->Scroll_Down();
-                
+                if (!Platform_Initialized){
+                    Init_Platform_Stuff();
                 }
+
+                // This is for the non GGUI space errors.
+                UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
+
+                std::cout << _error__tmp_.To_String() + Problem << std::endl;
             }
 
-            if (Error_Logger->Get_Parent() == Main){
-                Error_Logger->Display(true);
-
-                Remember.push_back(Memory(
-                    TIME::SECOND * 30,
-                    [=]([[maybe_unused]] GGUI::Event* e){
-                        //delete tmp;
-                        Error_Logger->Display(false);
-                        //job successfully done
-                        return true;
-                    },
-                    MEMORY_FLAGS::PROLONG_MEMORY,
-                    "Report Logger Clearer"
-                ));
-            }
-
-        }
-        else{
-            if (!Platform_Initialized){
-                Init_Platform_Stuff();
-            }
-
-            // This is for the non GGUI space errors.
-            UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
-
-            std::cout << _error__tmp_.To_String() + Problem << std::endl;
-        }
-
-        Resume_GGUI();
+        });
     }
 
     void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){
@@ -2026,20 +2062,22 @@ namespace GGUI{
     }
 
     void Pause_GGUI(std::function<void()> f){
-        bool Original_Value = Pause_Render_Thread;
+        UNTIL Previous_Render_State = Render_Thread.Await(UNTIL::PAUSED, true);
+        UNTIL Previous_Event_State = Event_Thread.Await(UNTIL::PAUSED, true);
 
-        Pause_GGUI();
+        // This will make update_frame not suggestively setting rendering pipeline into chaos.
+        Render_Thread.Lock(true);
 
         f();
 
-        // If another thread has been pausing this at the same time, then we need to check for it if it has already unpaused it.
-        if (!Pause_Render_Thread && !Original_Value){
-            Pause_Render_Thread = false;
-            Original_Value = false;
-        }
+        // Release the lock.
+        Render_Thread.Lock(false);
 
-        if (!Original_Value)
-            Resume_GGUI(); 
+        if (Previous_Render_State == UNTIL::RESUMED)
+            Render_Thread.Set(UNTIL::RESUMED);
+
+        if (Previous_Event_State == UNTIL::RESUMED)
+            Event_Thread.Set(UNTIL::RESUMED);
     }
 
     // Use this to use GGUI.

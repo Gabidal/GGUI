@@ -21,9 +21,7 @@ namespace GGUI{
 
     extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
-    extern bool Pause_Render_Thread;                                       //if true, the render will not be updated, good for window creation.
-    extern bool Pause_Event_Thread;                                 //Main window
-    
+
     extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
     extern unsigned int Max_Width;
@@ -111,7 +109,7 @@ namespace GGUI{
     extern GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
 
     extern void Update_Frame();
-    
+
     extern void Pause_GGUI();
 
     extern void Resume_GGUI();
