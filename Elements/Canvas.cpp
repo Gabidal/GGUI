@@ -153,8 +153,6 @@ namespace GGUI{
 
     std::vector<GGUI::UTF>& Terminal_Canvas::Render(){
         std::vector<GGUI::UTF>& Result = Render_Buffer;
-                
-        Current_Animation_Frame++;
 
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;

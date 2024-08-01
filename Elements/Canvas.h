@@ -87,6 +87,8 @@ namespace GGUI{
         
         ~Terminal_Canvas() override;
 
+        void Set_Next_Animation_Frame() { Current_Animation_Frame++; }
+
         void Set(unsigned int x, unsigned int y, Sprite& sprite, bool Flush = true);
 
         void Set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);

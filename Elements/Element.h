@@ -1524,10 +1524,11 @@ namespace GGUI{
 
     namespace SETTINGS{
         // How fast for a detection of hold down situation.
-        inline unsigned long long Mouse_Press_Down_Cooldown = 365;
-        inline unsigned long long Input_Clear_Time = 16;
-        inline bool Word_Wrapping = true;
-        inline unsigned int Text_Field_Minimum_Line_Count = 1;  // Tailor this to the minimum rows of text you'll be using for faster but more memory if not all rows are used.
+        static unsigned long long Mouse_Press_Down_Cooldown = 365;
+        static unsigned long long Input_Clear_Time = 16;
+        static bool Word_Wrapping = true;
+        static unsigned int Text_Field_Minimum_Line_Count = 1;  // Tailor this to the minimum rows of text you'll be using for faster but more memory if not all rows are used.
+        static std::chrono::milliseconds Thread_Timeout = std::chrono::seconds(5);
     };
 
     // For templates.
