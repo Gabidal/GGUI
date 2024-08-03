@@ -4,38 +4,26 @@
 
 using namespace std;
 
-// IDEAS:
-/*
-    Put child render nesting before the parents border rendering.
-    Take into consider if the child has also border combine it with parents own borders.
-
-*/
-
 void Main(){
-    for (auto i : GGUI::Main->Get_Elements<GGUI::Progress_Bar>()){
-        while (i->Get_Progress() < 1.0){
+    while (true)
+        for (auto i : GGUI::Main->Get_Elements<GGUI::Progress_Bar>()){
             i->Set_Progress(i->Get_Progress() + 0.01);
-
-            GGUI::SLEEP(16);
         }
-    }
 }
 
 int main(int Argument_Count, char** Arguments){
     GGUI::GGUI([=](){
 
-        GGUI::Progress_Bar* bar = new GGUI::Progress_Bar(
-            GGUI::COLOR::CYAN,
-            GGUI::COLOR::DARK_BLUE,
-            GGUI::Main->Get_Width() - 2
-        );
+        GGUI::Progress_Bar* arrow = new GGUI::Progress_Bar(GGUI::Main->Get_Width(), 1, GGUI::Progress_Bar_Styles::Arrow);
+        GGUI::Progress_Bar* slim = new GGUI::Progress_Bar(GGUI::Main->Get_Width(), 1, GGUI::Progress_Bar_Styles::Default);
+        GGUI::Progress_Bar* blocky = new GGUI::Progress_Bar(GGUI::Main->Get_Width(), 3, GGUI::Progress_Bar_Styles::Blocky);
         
-        bar->Show_Border(true);
-        GGUI::Main->Add_Child(bar);
-        GGUI::Main->Add_Child(bar->Copy());
+        slim->Set_Position({0, arrow->Get_Height()});
+        blocky->Set_Position({0, slim->Get_Height() + slim->Get_Position().Y});
 
-        bar->Set_Position({0, 3});
-        bar->Set_Height(bar->Get_Height() + 5);
+        GGUI::Main->Add_Child(arrow);
+        GGUI::Main->Add_Child(slim);
+        GGUI::Main->Add_Child(blocky);
     });
 
     Main();

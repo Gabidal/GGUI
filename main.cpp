@@ -1,31 +1,35 @@
 #include "ggui.h"
 
-#include <math.h>
+#include <vector>
 
-using namespace GGUI;
+using namespace std;
 
-int main() 
-{
+int main(int Argument_Count, char** Arguments){
+    GGUI::Scroll_View* scrollable;
+    GGUI::Element* child;
+
     GGUI::GGUI([&](){
-        GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(GGUI::Max_Width, GGUI::Max_Height, {0, 0});
+        scrollable = new GGUI::Scroll_View(GGUI::DIRECTION::ROW);
+        scrollable->Set_Background_Color(GGUI::COLOR::RED);
+        scrollable->Set_Dimensions(10, 10);
 
-        for (int x = 0; x < tem->Get_Width(); x++){
-            for (int y = 0; y < tem->Get_Height(); y++){
-                GGUI::Sprite s(
-                    {
-                        {"a", {GGUI::RGB(x, y, x), GGUI::RGB(x, y, x)}}, 
-                        {"b", {GGUI::RGB(y, x, y), GGUI::RGB(y, x, y)}}, 
-                    },
-                    0,
-                    1
-                );
+        child = new GGUI::Element(1, 1);
 
-                tem->Set(x, y, s);
-            }
+        for (int a = 0; a < 10; a++){
+            child->Set_Background_Color(GGUI::RGB(rand() % 255, rand() % 255, rand() % 255));
+            scrollable->Add_Child(child->Copy());
         }
 
-        GGUI::Main->Add_Child(tem);
-    }, UINT32_MAX);
+        GGUI::Main->Add_Child(scrollable);
+    });
 
+    // Now add the one child over the parent area.
+    child->Set_Background_Color(GGUI::COLOR::BLUE);
+
+    scrollable->Scroll_Down();
+
+    GGUI::SLEEP(INT32_MAX);
+    
+    // Then exit properly
     GGUI::Exit();
 }

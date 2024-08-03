@@ -8,26 +8,35 @@ using namespace std;
 
 namespace GGUI{
 
-    Progress_Bar::Progress_Bar(unsigned int width, unsigned int height, RGB fill_color, RGB background_color, PROGRESS_STYLE style) : Element(width, height), Progress_Style(style){
-        Set_Text_Color(fill_color);
-        Set_Background_Color(background_color);
+    namespace Progress_Bar_Styles{
+        static PROGRESS_STYLE Default = PROGRESS_STYLE();
+        static PROGRESS_STYLE Blocky = PROGRESS_STYLE(GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data());
+        static PROGRESS_STYLE Arrow = PROGRESS_STYLE(">", "=", "=");
+    }
 
-        Populate_Content();
+    Progress_Bar::Progress_Bar(unsigned int width, unsigned int height, PROGRESS_STYLE style) : Element(width, height), Progress_Style(style){
+        Content.resize(Width - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() }));
     }
 
     unsigned int Progress_Bar::Get_Index_of_Head(){
-        return floor(Progress * Width);
+        return floor(Progress * (Width - Has_Border() * 2));
     }
 
-    void Progress_Bar::Populate_Content(){
-        // Color the front and the background colors to be same.
-        Content.resize(Width, UTF(Progress_Style.Body, { Get_Background_Color(), Get_Background_Color() }));
+    void Progress_Bar::Color_Bar(){
+        // First color the empty_color
+        for (int i = 0; i < Width - Has_Border() * 2; i++)
+            Content[i] = UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() });
 
-        // Set the tail of the snake:
-        (*Content.begin()) = UTF(Progress_Style.Tail, { Get_Background_Color(), Get_Background_Color() });
+        // Now fill in the progressed part.
+        for (int i = 0; i < Get_Index_of_Head(); i++)
+            Content[i].Foreground = Progress_Style.Body_Color;
 
-        // Set the head of the snake:
-        (*(Content.begin() + Get_Index_of_Head())) = UTF(Progress_Style.Head, { Get_Background_Color(), Get_Background_Color() });
+        // now replace the head part.
+        Content[Get_Index_of_Head()] = UTF(Progress_Style.Head, { Progress_Style.Head_Color, Get_Background_Color() });
+
+        // now replace the tail part.
+        Content[0] = UTF(Progress_Style.Tail, { Progress_Style.Tail_Color, Get_Background_Color() });
+
     }
 
     // Draws into the this.Render_Buffer nested buffer of AST window's
@@ -54,7 +63,9 @@ namespace GGUI{
 
             Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
             
-            Populate_Content();
+            Content.resize(Width - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() }));
+
+            Color_Bar();
 
             Dirty.Clean(STAIN_TYPE::STRETCH);
 
@@ -77,7 +88,7 @@ namespace GGUI{
 
             for (int y = Starting_Y; y < Ending_Y; y++)
                 for (int x = Starting_X; x < Ending_X; x++)
-                    Result[y * Width + x] = Content[y - Starting_Y];
+                    Result[y * Width + x] = Content[x - Starting_X];
         }
 
         //This will add the borders if necessary and the title of the window.
@@ -90,16 +101,13 @@ namespace GGUI{
     void Progress_Bar::Set_Progress(float New_Progress){
         if (New_Progress > 1.00){
             Report(Get_Name() + " got a percentage overflow!");
+
+            return;
         }
 
         Progress = New_Progress;
 
-        // Offset by 1, since the tail if there
-        for (int i = 0; i < Get_Index_of_Head(); i++){
-
-            Content[i].Foreground = Get_Text_Color();
-
-        }
+        Color_Bar();
 
         Dirty.Dirty(STAIN_TYPE::DEEP);
 
