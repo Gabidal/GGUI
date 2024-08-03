@@ -7,6 +7,8 @@
 #include <functional>
 #include <thread>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 #include "Elements/Window.h"
 #include "Elements/Text_Field.h"
@@ -17,6 +19,19 @@ namespace GGUI{
     
     namespace INTERNAL{
         class BUFFER_CAPTURE;
+    }
+
+    namespace Atomic{
+        enum class Status{
+            RESUMED,
+            PAUSED,
+            LOCKED
+        };
+
+        extern std::mutex Mutex;
+        extern std::condition_variable Condition;
+
+        extern Status Pause_Render_Thread;
     }
 
     extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector whitout bold nor color
@@ -112,7 +127,7 @@ namespace GGUI{
 
     extern void Pause_GGUI();
 
-    extern void Resume_GGUI();
+    extern void Resume_GGUI(Atomic::Status restore_render_to = Atomic::Status::RESUMED);
 
     extern void Recall_Memories();
 

@@ -9,7 +9,6 @@ int main()
     GGUI::GGUI([&](){
         GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(GGUI::Max_Width, GGUI::Max_Height, {0, 0});
 
-
         for (int x = 0; x < tem->Get_Width(); x++){
             for (int y = 0; y < tem->Get_Height(); y++){
                 GGUI::Sprite s(

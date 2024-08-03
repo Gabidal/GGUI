@@ -5,110 +5,19 @@
 #include <cassert>
 #include <math.h>
 #include <sstream>
-#include <condition_variable>
-#include <mutex>
 
 namespace GGUI{
     std::vector<UTF> SAFE_MIRROR;                               // Only used for references to be initalized to point at.
     std::vector<UTF>& Abstract_Frame_Buffer = SAFE_MIRROR;      // 2D clean vector without bold nor color
     std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
-    
-    // THEAD SYSTEM --
-    enum class UNTIL{
-        RESUMED,  // Represents the state where the thread is allowed to run
-        PAUSED    // Represents the state where the thread is not allowed to run
-    };
 
-    class Atomic{
-    protected:
-        // Represents the current state of the Atomic lock. It is either in the RESUMED or PAUSED state.
-        UNTIL Status = UNTIL::RESUMED;
-
-        // A flag indicating whether the Atomic object is locked or not.
-        bool Locked = false;
-
-        // A mutex used to protect the Locked variable from race conditions.
-        std::mutex Lock_Guard;
-
-        // A mutex used by std::unique_lock to ensure that only one thread can access the Atomic object at a time.
-        std::mutex Context;
-
-        // A condition variable used to block the thread until a certain condition is met.
+    // For threading system
+    namespace Atomic{
+        std::mutex Mutex;
         std::condition_variable Condition;
 
-        std::unique_lock<std::mutex> Context_Lock;
-    public:
-
-        // This function blocks the current thread until it is the only one with access to the Atomic object.
-        // It returns the previous status of the Atomic object.
-        UNTIL Await(UNTIL is, bool suggest = false){
-            UNTIL Previous_Status = Status;
-
-            if (suggest)
-                // If suggest is true, try to set the status of the Atomic object to 'is'.
-                Set(is);
-            
-            // Since it is an suggestive await, we need to make sure it will become into the suggested state.
-            if (suggest){
-                // Block the current thread until the status of the Atomic object is 'is'.
-                if (!Condition.wait_for(Context_Lock, GGUI::SETTINGS::Thread_Timeout, [this, is](){ return Status == is; })){
-                    Set(is);
-                }
-            }
-            else{
-                // Here we can just wait for the rest of time
-                Condition.wait(Context_Lock, [this, is](){ return Status == is; });
-            }
-
-
-            // Return the previous status of the Atomic object.
-            return Previous_Status;
-        }
-
-        // This function wakes up one of the threads waiting on the condition variable.
-        void Wakeup(){
-            Condition.notify_one();
-        }
-        
-        // This function sets the status of the Atomic object to 'now'.
-        // If the Atomic object is locked, this function does nothing.
-        // If 'now' is RESUMED, it wakes up one of the threads waiting on the condition variable.
-        void Set(UNTIL now){
-            assert(now == UNTIL::RESUMED || now == UNTIL::PAUSED);
-
-            // Lock the Lock_Guard mutex to prevent race conditions.
-            std::lock_guard Guard(Lock_Guard);
-
-            // If the Atomic object is locked, return without doing anything.
-            if (Locked)
-                return;
-
-            // Set the status of the Atomic object to 'now'.
-            Status = now;
-
-            // If 'now' is RESUMED, wake up one of the threads waiting on the condition variable.
-            if (now == UNTIL::RESUMED)
-                Wakeup();
-        }
-
-        // This function sets the Locked variable to 'lock'.
-        // If 'lock' is true, all calls to Set() will be ignored until 'lock' is set to false.
-        void Lock(bool lock){
-            // Lock the Lock_Guard mutex to prevent race conditions.
-            std::lock_guard Guard(Lock_Guard);
-
-            // Set the Locked variable to 'lock'.
-            Locked = lock;
-        }
-    
-        Atomic(){
-            Context_Lock = std::unique_lock<std::mutex>(Context);
-        }
-    };
-
-
-    Atomic Render_Thread;
-    Atomic Event_Thread;
+        Status Pause_Render_Thread = Status::RESUMED;
+    }
 
     std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
 
@@ -1365,28 +1274,32 @@ namespace GGUI{
     }
 
     void Update_Frame(){
+        std::unique_lock lock(Atomic::Mutex);
+        if (Atomic::Pause_Render_Thread == Atomic::Status::LOCKED)
+            return;
+
         // Give the rendering thread one ticket.
-        Render_Thread.Set(UNTIL::RESUMED);
+        Atomic::Pause_Render_Thread = Atomic::Status::RESUMED;
+    
+        Atomic::Condition.notify_all();
     }
 
     void Pause_GGUI(){
-        Render_Thread.Await(UNTIL::PAUSED, true);
-        Render_Thread.Lock(true);
+        std::unique_lock lock(Atomic::Mutex);
 
-        Event_Thread.Await(UNTIL::PAUSED, true);
-        Event_Thread.Lock(true);
+        Atomic::Pause_Render_Thread = Atomic::Status::LOCKED;
+
+        Atomic::Condition.wait_for(lock, GGUI::SETTINGS::Thread_Timeout, []{
+            return Atomic::Pause_Render_Thread == Atomic::Status::LOCKED;
+        });
     }
 
-    void Resume_GGUI(){
-        Render_Thread.Lock(false);
+    void Resume_GGUI(Atomic::Status restore_render_to){
+        std::unique_lock lock(Atomic::Mutex);
 
-        // Dont give any chance of restarting the event thread, first un-pause Main thread and update, then continue.
-        Render_Thread.Set(UNTIL::RESUMED);
+        Atomic::Pause_Render_Thread = restore_render_to;
 
-        Event_Thread.Lock(false);
-
-        // Main thread is now complete, can continue to unlocking the secondary threads.
-        Event_Thread.Set(UNTIL::RESUMED);
+        Atomic::Condition.notify_all();
     }
 
     void Clear_Inputs(){
@@ -1763,9 +1676,6 @@ namespace GGUI{
         }
 
         //Save the state before the init
-        UNTIL Default_Render_State = Render_Thread.Await(UNTIL::PAUSED, true);
-        UNTIL Default_Event_Thread_State = Event_Thread.Await(UNTIL::PAUSED, true);
-
         Current_Time = std::chrono::high_resolution_clock::now();
         Previous_Time = Current_Time;
 
@@ -1777,14 +1687,13 @@ namespace GGUI{
         Main = new Window("", Max_Width, Max_Height);
 
         std::thread Rendering_Scheduler([&](){
-            UNTIL tmp;
             while (true){
-                Render_Thread.Await(UNTIL::RESUMED);
+                {
+                    std::unique_lock lock(Atomic::Mutex);
+                    Atomic::Condition.wait(lock, [&](){ return Atomic::Pause_Render_Thread == Atomic::Status::RESUMED; });
 
-                // Also await until the event thread has stopped. Also suggest it to be stopped if it hasn't already.
-                // UNTIL Previous_Event_Thread_State = Event_Thread.Await(UNTIL::PAUSED, true);
-
-                Render_Thread.Lock(true);
+                    Atomic::Pause_Render_Thread = Atomic::Status::LOCKED;
+                }
 
                 if (Main){
                     Abstract_Frame_Buffer = Main->Render();
@@ -1797,43 +1706,40 @@ namespace GGUI{
                     Render_Frame();
                 }
 
-                Render_Thread.Lock(false);
-
-                // Unlock the event handler to its previous glory.
-                // Event_Thread.Set(Previous_Event_Thread_State);
-
-                // Now for itself set it to sleep.
-                Render_Thread.Set(UNTIL::PAUSED);
+                {
+                    std::unique_lock lock(Atomic::Mutex);
+                    // Now for itself set it to sleep.
+                    Atomic::Pause_Render_Thread = Atomic::Status::PAUSED;
+                    Atomic::Condition.notify_all();
+                }
             }
         });
 
         Init_Inspect_Tool();
 
-        std::thread Passive_Scheduler([&](){
+        std::thread Event_Scheduler([&](){
             while (true){
-                Event_Thread.Await(UNTIL::RESUMED);
+                Pause_GGUI();
 
                 // Reset the thread load counter
                 Event_Thread_Load = 0;
                 Previous_Time = std::chrono::high_resolution_clock::now();
 
-                Pause_GGUI([](){
-                    // First update Main size if needed.
-                    Update_Max_Width_And_Height();
+                // First update Main size if needed.
+                Update_Max_Width_And_Height();
 
-                    // Order independent --------------
-                    Recall_Memories();
-                    Go_Through_File_Streams();
-                    Refresh_Multi_Frame_Canvas();
-                    // --------------
-                });
-
+                // Order independent --------------
+                Recall_Memories();
+                Go_Through_File_Streams();
+                Refresh_Multi_Frame_Canvas();
+                // --------------
+                
                 /* 
                     Notice: Since the Rendering thread will use its own access to render as tickets, so every time it is "RESUMED" it will after its own run set itself to PAUSED.
                     This is what Tickets are.
                     So in other words, if there is MUST use of rendering pipeline, use Update_Frame().
                 */  
-                Update_Frame(); 
+                Resume_GGUI();
 
                 Current_Time = std::chrono::high_resolution_clock::now();
 
@@ -1857,29 +1763,25 @@ namespace GGUI{
                 // Wait for user input.
                 Query_Inputs();
 
-                // Now if needed we can start reacting to the user input if given.
-                Pause_GGUI([](){
-                    // Translate the Queried inputs.
-                    Translate_Inputs();
+                Pause_GGUI();
 
-                    // Translate the movements thingies to better usable for user.
-                    SCROLL_API();
-                    MOUSE_API();
+                // Translate the Queried inputs.
+                Translate_Inputs();
 
-                    // Now call upon event handlers which may react to the parsed input.
-                    Event_Handler();
-                });
+                // Translate the movements thingies to better usable for user.
+                SCROLL_API();
+                MOUSE_API();
 
-                Update_Frame();
+                // Now call upon event handlers which may react to the parsed input.
+                Event_Handler();
+
+                Resume_GGUI();
             }
         });
 
         Rendering_Scheduler.detach();
-        Passive_Scheduler.detach();
+        Event_Scheduler.detach();
         Inquire_Scheduler.detach();
-
-        Render_Thread.Set(Default_Render_State);
-        Event_Thread.Set(Default_Event_Thread_State);
 
         return Main;
     }
@@ -2107,11 +2009,17 @@ namespace GGUI{
     }
 
     void Pause_GGUI(std::function<void()> f){
-        UNTIL Previous_Render_State = Render_Thread.Await(UNTIL::PAUSED, true);
-        UNTIL Previous_Event_State = Event_Thread.Await(UNTIL::PAUSED, true);
 
-        // This will make update_frame not suggestively setting rendering pipeline into chaos.
-        Render_Thread.Lock(true);
+        Atomic::Status Previous_Render_Status;
+
+        // Make an virtual local scope to temporary own the mutex.
+        {
+            std::unique_lock lock(Atomic::Mutex);
+
+            Previous_Render_Status = Atomic::Pause_Render_Thread;
+        }
+
+        Pause_GGUI();
 
         try{
             f();
@@ -2120,11 +2028,9 @@ namespace GGUI{
             Report_Stack("In Pause_GGUI: " + std::string(e.what()));
         }
 
-        // Release the lock.
-        Render_Thread.Lock(false);
-
-        Render_Thread.Set(Previous_Render_State);
-        Event_Thread.Set(Previous_Event_State);
+        Resume_GGUI(
+            Previous_Render_Status
+        );
     }
 
     // Use this to use GGUI.

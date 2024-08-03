@@ -1528,7 +1528,7 @@ namespace GGUI{
         static unsigned long long Input_Clear_Time = 16;
         static bool Word_Wrapping = true;
         static unsigned int Text_Field_Minimum_Line_Count = 1;  // Tailor this to the minimum rows of text you'll be using for faster but more memory if not all rows are used.
-        static std::chrono::milliseconds Thread_Timeout = std::chrono::seconds(5);
+        static std::chrono::milliseconds Thread_Timeout = std::chrono::milliseconds(256);
     };
 
     // For templates.
