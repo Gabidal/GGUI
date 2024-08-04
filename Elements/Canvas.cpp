@@ -9,7 +9,7 @@
 namespace GGUI{
 
     Canvas::Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
-        Pause_GGUI([=](){
+        Pause_GGUI([w, h, position, this](){
             Buffer.resize(w * h);
 
             Width = w;

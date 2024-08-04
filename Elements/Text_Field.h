@@ -16,7 +16,7 @@ namespace GGUI{
 
         Text_Field(std::string text, ALIGN align = ALIGN::LEFT, int width = 1, int height = 1) : Element(width, height), Text(text){
             // Reserve one row for the text if no newlines.
-            Text_Cache.reserve(SETTINGS::Text_Field_Minimum_Line_Count | height);
+            Text_Cache.reserve(height);
 
             Style->Align = align;
 

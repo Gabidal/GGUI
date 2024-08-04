@@ -1302,18 +1302,6 @@ namespace GGUI{
         Atomic::Condition.notify_all();
     }
 
-    void Clear_Inputs(){
-        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-
-        unsigned long long Delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - Last_Input_Clear_Time).count();
-
-        if (Delta > SETTINGS::Input_Clear_Time){
-            Inputs.clear();
-            
-            Last_Input_Clear_Time = now;
-        }
-    }
-
     // Custom Lerp for Thread Load calculation.
     float Lerp(int Min, int Max, int Position){
         // First calculate the possible length of which our load can represent on.
@@ -2035,7 +2023,7 @@ namespace GGUI{
 
     // Use this to use GGUI.
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
-        Pause_GGUI([=](){
+        Pause_GGUI([DOM](){
 
             Init_GGUI();
 

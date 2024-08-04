@@ -33,7 +33,7 @@ void Switch(string From, string To, GGUI::Element* parent){
     GGUI::Element* To_Element = parent->Get_Element(To);
 
     // Run these changes in safe mode.
-    GGUI::Pause_GGUI([=](){
+    GGUI::Pause_GGUI([From_Element, To_Element](){
         From_Element->Display(false);
         To_Element->Display(true);
     });

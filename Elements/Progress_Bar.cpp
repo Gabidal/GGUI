@@ -9,9 +9,9 @@ using namespace std;
 namespace GGUI{
 
     namespace Progress_Bar_Styles{
-        static PROGRESS_STYLE Default = PROGRESS_STYLE();
-        static PROGRESS_STYLE Blocky = PROGRESS_STYLE(GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data());
-        static PROGRESS_STYLE Arrow = PROGRESS_STYLE(">", "=", "=");
+        inline PROGRESS_STYLE Default = PROGRESS_STYLE();
+        inline PROGRESS_STYLE Blocky = PROGRESS_STYLE(GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data());
+        inline PROGRESS_STYLE Arrow = PROGRESS_STYLE(">", "=", "=");
     }
 
     Progress_Bar::Progress_Bar(unsigned int width, unsigned int height, PROGRESS_STYLE style) : Element(width, height), Progress_Style(style){
@@ -24,11 +24,11 @@ namespace GGUI{
 
     void Progress_Bar::Color_Bar(){
         // First color the empty_color
-        for (int i = 0; i < Width - Has_Border() * 2; i++)
+        for (unsigned int i = 0; i < Width - Has_Border() * 2; i++)
             Content[i] = UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() });
 
         // Now fill in the progressed part.
-        for (int i = 0; i < Get_Index_of_Head(); i++)
+        for (unsigned int i = 0; i < Get_Index_of_Head(); i++)
             Content[i].Foreground = Progress_Style.Body_Color;
 
         // now replace the head part.

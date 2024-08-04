@@ -278,7 +278,7 @@ namespace GGUI{
     void Text_Field::Input(std::function<void(char)> Then){
         Action* addr = new Action(
             Constants::KEY_PRESS,
-            [=](GGUI::Event* e){
+            [this, Then](GGUI::Event* e){
                 if (Focused){
                     //We know the event was gifted as Input*
                     GGUI::Input* input = (GGUI::Input*)e;
@@ -298,7 +298,7 @@ namespace GGUI{
 
         Action* enter = new Action(
             Constants::ENTER,
-            [=](GGUI::Event* e){
+            [this, Then](GGUI::Event* e){
                 if (Focused){
                     //We know the event was gifted as Input*
                     GGUI::Input* input = (GGUI::Input*)e;
@@ -318,7 +318,7 @@ namespace GGUI{
 
         Action* back_space = new Action(
             Constants::BACKSPACE,
-            [=](GGUI::Event* e){
+            [this](GGUI::Event*){
                 if (Focused){
                     
                     if (Text.size() > 0){

@@ -48,7 +48,7 @@ namespace GGUI{
     };
 
     HTML::HTML(std::string File_Name){
-        Pause_GGUI([=](){
+        Pause_GGUI([this, File_Name](){
             Handle = new FILE_STREAM(File_Name, [&](){
                 this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
             });

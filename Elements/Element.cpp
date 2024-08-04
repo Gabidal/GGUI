@@ -200,7 +200,7 @@ GGUI::Element::Element() {
 }
 
 GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
-    Pause_GGUI([=](){
+    Pause_GGUI([this, css, width, height, parent, position](){
         Add_Class("default");
         Parse_Classes();
 
@@ -233,7 +233,7 @@ GGUI::Element::Element(
     unsigned int height,
     Coordinates position
 ) : Element(){
-    Pause_GGUI([=](){
+    Pause_GGUI([this, width, height, position](){
         Set_Width(width);
         Set_Height(height);
 
@@ -246,7 +246,7 @@ GGUI::Element::Element(
     unsigned int width,
     unsigned int height
 ) : Element(){
-    Pause_GGUI([=](){
+    Pause_GGUI([this, width, height](){
         Set_Width(width);
         Set_Height(height);
     });
@@ -258,7 +258,7 @@ GGUI::Element::Element(
     RGB text_color,
     RGB background_color
 ) : Element(){
-    Pause_GGUI([=](){
+    Pause_GGUI([this, width, height, text_color, background_color](){
         Set_Width(width);
         Set_Height(height);
 
@@ -275,7 +275,7 @@ GGUI::Element::Element(
     RGB border_color,
     RGB border_background_color
 ) : Element(){
-    Pause_GGUI([=](){
+    Pause_GGUI([this, width, height, text_color, background_color, border_color, border_background_color](){
         Set_Width(width);
         Set_Height(height);
 
@@ -635,7 +635,7 @@ void GGUI::Element::Add_Child(Element* Child){
 }
 
 void GGUI::Element::Set_Childs(std::vector<Element*> childs){
-    Pause_GGUI([=](){
+    Pause_GGUI([this, childs](){
         for (auto& Child : childs){
             Add_Child(Child);
         }
