@@ -12,8 +12,8 @@ namespace GGUI{
 
     class Button : public Element{
     protected:
-        void Default_Button_Behaviour(std::function<void (Button* This)> press = []([[maybe_unused]] Button* This){}){
-            On_Click([=]([[maybe_unused]] Event* e){
+        void Default_Button_Behaviour(std::function<void (Button* This)> press = [](Button*){}){
+            On_Click([this, press](Event*){
                 // The default, on_click wont do anything.
                 press(this);
 
@@ -27,7 +27,7 @@ namespace GGUI{
         }
     public:
 
-        Button(std::string Text, std::function<void (Button* This)> press = []([[maybe_unused]] Button* This){});
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button*){});
 
         Element* Safe_Move() override {
             Button* new_Button = new Button();

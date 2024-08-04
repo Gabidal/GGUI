@@ -1003,19 +1003,19 @@ namespace GGUI{
     public:
         class Element* Host = nullptr;
 
-        std::function<bool(GGUI::Event* e)> Job;
+        std::function<bool(GGUI::Event*)> Job;
         
         std::string ID; 
     
         Action() = default;
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job, std::string id = ""){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, std::string id = ""){
             Criteria = criteria;
             Job = job;
             Host = nullptr;
             ID = id;
         }
 
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event* e)> job, class Element* host, std::string id = ""){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, class Element* host, std::string id = ""){
             Criteria = criteria;
             Job = job;
             Host = host;
@@ -1037,7 +1037,7 @@ namespace GGUI{
         unsigned char Flags = 0x0;
 
         // When the job starts, job, prolong previous similar job by this time.
-        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, unsigned char flags = 0x0, std::string id = ""){
+        Memory(size_t end, std::function<bool(GGUI::Event*)>job, unsigned char flags = 0x0, std::string id = ""){
             Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
@@ -1832,9 +1832,9 @@ namespace GGUI{
         void Remove();
 
         //Event handlers
-        void On_Click(std::function<bool(GGUI::Event* e)> action);
+        void On_Click(std::function<bool(GGUI::Event*)> action);
 
-        void On(unsigned long long criteria, std::function<bool(GGUI::Event* e)> action, bool GLOBAL = false);
+        void On(unsigned long long criteria, std::function<bool(GGUI::Event*)> action, bool GLOBAL = false);
 
         //This function returns nullptr, if the element could not be found.
         Element* Get_Element(std::string name);

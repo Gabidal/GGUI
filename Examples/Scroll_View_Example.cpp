@@ -15,7 +15,7 @@ int main(int Argument_Count, char** Arguments){
 
         for (int i = 0; i < 10; i++){
             GGUI::Element* tmp = new GGUI::Element(1, 1);
-            tmp->Set_Background_Color(GGUI::RGB(rand() % 255, rand() % 255, rand() % 255));
+            tmp->Set_Background_Color(GGUI::COLOR::BLUE);
 
             vertical->Add_Child(tmp);
             horizontal->Add_Child(tmp);

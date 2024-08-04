@@ -17,7 +17,7 @@ int main(){
         "C CC CCC CCCC CCCCC CCCCCC CCCCCCC CCCCCCCC \n"
     );
 
-    Text->On_Click([=](GGUI::Event* e){
+    Text->On_Click([](GGUI::Event* e){
         ((GGUI::Action*)e)->Host->Remove();
 
         return true;

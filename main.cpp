@@ -1,53 +1,51 @@
 #include "ggui.h"
 
-#include <vector>
+using namespace GGUI;
 
-using namespace std;
-
-int main(int Argument_Count, char** Arguments){
-
+int main() 
+{
     GGUI::GGUI([&](){
-        GGUI::Scroll_View* vertical = new GGUI::Scroll_View(GGUI::DIRECTION::ROW);
-        vertical->Set_Dimensions(1, 10);
 
-        GGUI::Scroll_View* horizontal = new GGUI::Scroll_View(GGUI::DIRECTION::COLUMN);
-        horizontal->Set_Dimensions(10, 1);
+        List_View* bar = new List_View(
+            GGUI::Main,
+            {
+                new Button("File"),
+                new Button("Edit"),
+                new Button("View"),
+                new Button("Help")
+            }
+        );
 
-        for (int i = 0; i < 10; i++){
-            GGUI::Element* tmp = new GGUI::Element(1, 1);
-            tmp->Set_Background_Color(GGUI::RGB(rand() % 255, rand() % 255, rand() % 255));
+        bar->Show_Border(true);
 
-            vertical->Add_Child(tmp);
-            horizontal->Add_Child(tmp);
-        }
+        // for (auto i : bar->Get_Childs()){
+        //     i->Show_Border(false);
+        // }
 
-        horizontal->Set_Position({1, 0});
+        Window* A = new Window("A", 20, 10, COLOR::MAGENTA, COLOR::RED);
+        Window* B = new Window("B", 20, 10, COLOR::YELLOW, COLOR::GREEN);
+        Window* C = new Window("C", 20, 10, COLOR::CYAN, COLOR::BLUE);
 
-        GGUI::Main->Add_Child(vertical);
-        GGUI::Main->Add_Child(horizontal);
+        A->Set_Opacity(0.5f);
+        B->Set_Opacity(0.5f);
+        C->Set_Opacity(0.5f);
+
+        GGUI::Main->Add_Child(A);
+        GGUI::Main->Add_Child(B);
+        GGUI::Main->Add_Child(C);
+
+        A->Set_Position({10, 10});
+        B->Set_Position({30, 10});
+        C->Set_Position({20, 15});
     });
+    
+    GGUI::Main->Set_Title("Your App UI");
+    GGUI::Main->Set_Background_Color(COLOR::WHITE);
+    GGUI::Main->Set_Text_Color(COLOR::BLACK);
+    GGUI::Main->Show_Border(true);    
 
-    GGUI::Main->Set_Background_Color(GGUI::COLOR::WHITE);
-
-    while (true){
-        for (int i = 0; i < 10; i++){
-            for (auto scrollable : GGUI::Main->Get_Elements<GGUI::Scroll_View>()){
-                scrollable->Scroll_Up();
-            }
-
-            GGUI::SLEEP(32);
-        }
-
-        for (int i = 0; i < 10; i++){
-            for (auto scrollable : GGUI::Main->Get_Elements<GGUI::Scroll_View>()){
-                scrollable->Scroll_Down();
-            }
-
-            GGUI::SLEEP(32);
-        }
-    }
-
-    GGUI::SLEEP(INT32_MAX);
+    // Your code here...
+    GGUI::SLEEP(UINT32_MAX);
     
     // Then exit properly
     GGUI::Exit();

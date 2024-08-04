@@ -561,19 +561,19 @@ namespace GGUI{
             if (symbol->Name[0] == 0)
                 continue;
 
-            std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
+            std::string Branch_Start = "|"; //SYMBOLS::VERTICAL_RIGHT_CONNECTOR;    // No UNICODE support ATM
 
             // For last branch use different branch start symbol
             if (Stack_Index == (unsigned int)Usable_Depth - 1)
-                Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
+                Branch_Start = "\\"; //SYMBOLS::BOTTOM_LEFT_CORNER;                  // No UNICODE support ATM
 
             // now add indentation by the amount of index:
             std::string Indent = "";
 
             for (int i = 0; i < Usable_Stack_Index && Use_Indent; i++)
-                Indent += SYMBOLS::HORIZONTAL_LINE;
+                Indent += "-"; //SYMBOLS::HORIZONTAL_LINE;                          // No UNICODE support ATM
 
-            Result += Branch_Start + Indent + symbol->Name + "\n";
+            Result += Branch_Start + Indent + " " + symbol->Name + "\n";
 
             Usable_Stack_Index++;
         }
@@ -665,7 +665,7 @@ namespace GGUI{
         struct sigaction Handler;
         
         // Setup the function handler with a lambda
-        Handler.sa_handler = []([[maybe_unused]] int signum){
+        Handler.sa_handler = [](int){
             Update_Max_Width_And_Height();
         };
 
@@ -1018,19 +1018,19 @@ namespace GGUI{
 
             bool Use_Indent = Usable_Depth < (Max_Width / 2);
             for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
-                std::string Branch_Start = SYMBOLS::VERTICAL_RIGHT_CONNECTOR;
+                std::string Branch_Start = "|"; //SYMBOLS::VERTICAL_RIGHT_CONNECTOR;                // No UNICODE support ATM
 
                 // For last branch use different branch start symbol
                 if (Stack_Index == Usable_Depth - 1)
-                    Branch_Start = SYMBOLS::BOTTOM_LEFT_CORNER;
+                    Branch_Start = "\\"; //SYMBOLS::BOTTOM_LEFT_CORNER;                             // No UNICODE support ATM
 
                 // now add indentation by the amount of index:
                 std::string Indent = "";
 
                 for (unsigned int i = 0; i < Stack_Index && Use_Indent; i++)
-                    Indent += SYMBOLS::HORIZONTAL_LINE;
+                    Indent += "-"; //SYMBOLS::HORIZONTAL_LINE;                                      // No UNICODE support ATM
 
-                Result += Branch_Start + Indent + Name_Table[Stack_Index] + "\n";
+                Result += Branch_Start + Indent + " " + Name_Table[Stack_Index] + "\n";
             }
 
             // Free the memory allocated for the string array
@@ -1295,11 +1295,15 @@ namespace GGUI{
     }
 
     void Resume_GGUI(Atomic::Status restore_render_to){
-        std::unique_lock lock(Atomic::Mutex);
+        {
+            // Local scope to set the new render status.
+            std::unique_lock lock(Atomic::Mutex);
+            Atomic::Pause_Render_Thread = restore_render_to;
+        }
 
-        Atomic::Pause_Render_Thread = restore_render_to;
-
-        Atomic::Condition.notify_all();
+        // Check if the rendering status is anything but locked.
+        if (restore_render_to < Atomic::Status::LOCKED)
+            Update_Frame();
     }
 
     // Custom Lerp for Thread Load calculation.
@@ -1325,7 +1329,7 @@ namespace GGUI{
             for (unsigned int j = i + 1; j < Remember.size(); j++){
                 if (Remember[i].Is(MEMORY_FLAGS::PROLONG_MEMORY) && Remember[j].Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
                     // Check if the Job at I is same as the one at J.
-                    if (Remember[i].Job.target<bool(*)(GGUI::Event* e)>() == Remember[j].Job.target<bool(*)(GGUI::Event* e)>()){
+                    if (Remember[i].Job.target<bool(*)(GGUI::Event*)>() == Remember[j].Job.target<bool(*)(GGUI::Event*)>()){
                         // Since J will always be one later than I, J will contain the prolonging memory if there is one. 
                         Remember[i].Start_Time = Remember[j].Start_Time;
 
@@ -1786,7 +1790,7 @@ namespace GGUI{
     }
 
     void Report(std::string Problem){
-        Pause_GGUI([&](){
+        Pause_GGUI([&Problem](){
 
             Problem = " " + Problem + " ";
 
@@ -1937,7 +1941,7 @@ namespace GGUI{
 
                     Remember.push_back(Memory(
                         TIME::SECOND * 30,
-                        [=]([[maybe_unused]] GGUI::Event* e){
+                        [Error_Logger](GGUI::Event*){
                             //delete tmp;
                             Error_Logger->Display(false);
                             //job successfully done
@@ -2063,7 +2067,7 @@ namespace GGUI{
         }
     }
 
-    bool Update_Stats([[maybe_unused]] GGUI::Event* e){
+    bool Update_Stats(GGUI::Event*){
         // Check if Inspect tool is displayed
         Element* Inspect_Tool = Main->Get_Element("Inspect");
 
@@ -2087,7 +2091,7 @@ namespace GGUI{
 
     void Init_Inspect_Tool(){
         GGUI::List_View* Inspect = new GGUI::List_View(
-            Main->Get_Width() / 3,
+            Main->Get_Width() / 2,
             Main->Get_Height(),
             Main->Get_Text_Color(),
             Main->Get_Background_Color()
@@ -2096,7 +2100,7 @@ namespace GGUI{
         Inspect->Set_Flow_Direction(DIRECTION::COLUMN);
         Inspect->Show_Border(false);
         Inspect->Set_Position({
-            Main->Get_Width() - (Main->Get_Width() / 3),
+            Main->Get_Width() - (Main->Get_Width() / 2),
             0,
             INT32_MAX - 1,
         });
@@ -2136,7 +2140,7 @@ namespace GGUI{
         Inspect->Add_Child(Error_Logger_Kidnapper);
         Inspect->Display(false);
 
-        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
+        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [Inspect](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;
 
             if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 

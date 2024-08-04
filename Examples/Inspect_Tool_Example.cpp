@@ -58,7 +58,7 @@ int main()
         inspect->Display(false);
         Main->Add_Child(inspect);
 
-        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [=](GGUI::Event* e){
+        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [inspect](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;
 
             if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 

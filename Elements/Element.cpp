@@ -1409,10 +1409,10 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 //End of utility functions.
 
 // Gives you an Action wrapper on the Event wrapper
-void GGUI::Element::On_Click(std::function<bool(GGUI::Event* e)> action){
+void GGUI::Element::On_Click(std::function<bool(GGUI::Event*)> action){
     Action* a = new Action(
         Constants::MOUSE_LEFT_CLICKED,
-        [=](GGUI::Event* e){
+        [this, action](GGUI::Event* e){
             if (Collides(this, Mouse)){
                 // Construct an Action from the Event obj
                 GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this);
@@ -1430,10 +1430,10 @@ void GGUI::Element::On_Click(std::function<bool(GGUI::Event* e)> action){
     GGUI::Event_Handlers.push_back(a);
 }
 
-void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Event* e)> action, bool GLOBAL){
+void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Event*)> action, bool GLOBAL){
     Action* a = new Action(
         criteria,
-        [=](GGUI::Event* e){
+        [this, action, GLOBAL](GGUI::Event* e){
             if (Collides(this, Mouse) || GLOBAL){
                 //action succesfully executed.
                 return action(e);

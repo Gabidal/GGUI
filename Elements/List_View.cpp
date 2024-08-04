@@ -487,7 +487,7 @@ void GGUI::Scroll_View::Allow_Scrolling(bool allow){
     }
 
     if (!Scroll_Up_Event_Exists){
-        this->On(Constants::MOUSE_MIDDLE_SCROLL_UP, [&]([[maybe_unused]] GGUI::Event* e){
+        this->On(Constants::MOUSE_MIDDLE_SCROLL_UP, [this](GGUI::Event*){
             this->Scroll_Up();
 
             return true;
@@ -495,7 +495,7 @@ void GGUI::Scroll_View::Allow_Scrolling(bool allow){
     }
 
     if (!Scroll_Down_Event_Exists){
-        this->On(Constants::MOUSE_MIDDLE_SCROLL_DOWN, [&]([[maybe_unused]] GGUI::Event* e){
+        this->On(Constants::MOUSE_MIDDLE_SCROLL_DOWN, [this](GGUI::Event*){
             this->Scroll_Down();
 
             return true;
