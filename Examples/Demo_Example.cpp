@@ -45,5 +45,8 @@ int main()
     GGUI::Main->Show_Border(true);    
 
     // Your code here...
-    _sleep(UINT32_MAX);
+    GGUI::SLEEP(UINT32_MAX);
+    
+    // Then exit properly
+    GGUI::Exit();
 }

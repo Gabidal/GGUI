@@ -10,33 +10,24 @@
 
 namespace GGUI{
 
-    class Button : public Text_Field{
+    class Button : public Element{
     protected:
-        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
-            On_Click([=](Event* e){
+        void Default_Button_Behaviour(std::function<void (Button* This)> press = [](Button*){}){
+            On_Click([this, press](Event*){
                 // The default, on_click wont do anything.
                 press(this);
 
                 return true;
             });
         }
-    
-        void Default_Button_Text_Align(){
-            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
-        }
 
         // DONT USE AS USER!!
-        Button(){}
+        Button() : Element(){
+            Childs.push_back(new Text_Field());
+        }
     public:
 
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
-            Defualt_Button_Behaviour(press);
-            Default_Button_Text_Align();
-            Enable_Input_Overflow();
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-            Show_Border(true);
-            Set_Name(Text);
-        }
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button*){});
 
         Element* Safe_Move() override {
             Button* new_Button = new Button();

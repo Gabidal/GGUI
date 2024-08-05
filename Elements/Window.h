@@ -1,9 +1,6 @@
 #ifndef _WINDOW_H_
 #define _WINDOW_H_
 
-#include <string>
-#include <vector>
-
 #include "Element.h"
 
 //GGUI uses the ANSI escape code
@@ -16,13 +13,15 @@ namespace GGUI{
         RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
         bool Has_Hidden_Borders = false;
     public:
-        Window() : Element() {}
+        Window() : Element() {
+            Update_Hidden_Border_Colors();
+        }
 
         Window(std::string title, std::vector<std::string> classes = {});
 
-        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        Window(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
         
-        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        Window(std::string title, Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
 
         //These next constructors are mainly for users to more easily create elements.
         Window(
@@ -65,7 +64,14 @@ namespace GGUI{
             std::vector<Element*> Tree 
         );
 
+        ~Window() override{
+            // call the base destructor.
+            Element::~Element();
+        }
+
         //End of user constructors.
+
+        void Update_Hidden_Border_Colors();
 
         void Set_Title(std::string t);
 
@@ -78,6 +84,14 @@ namespace GGUI{
         void Show_Border(bool state) override;
 
         void Show_Border(bool state, bool previus_state) override;
+
+        void Set_Background_Color(RGB color) override;
+
+        void Set_Text_Color(RGB color) override;
+
+        void Set_Border_Background_Color(RGB color) override;
+
+        void Set_Border_Color(RGB color) override;
 
         Element* Safe_Move() override {
             Window* new_Window = new Window();

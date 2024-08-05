@@ -3,11 +3,18 @@
 
 #include "Element.h"
 
-#include <string>
 #include <fstream>
 #include <functional>
 #include <unordered_map>
-#include <vector>
+#include <stdio.h>
+#include <deque>
+#include <fcntl.h>
+
+#if _WIN32
+    #include <io.h>
+#else
+    #include <unistd.h>
+#endif
 
 namespace GGUI{
 
@@ -25,18 +32,79 @@ namespace GGUI{
 
     extern std::string Get_Current_Location();
 
+    // Requires the TTY to be disabled and this exe is being piped.
+    extern std::string Pull_STDIN();
+    
+    extern bool Has_Started_As_TTY();
+
+    namespace INTERNAL{
+        // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
+        // These black boxes work like Stack Frames, where the data collected will be deleted when the current "Frame" capturer is destructed.
+        class BUFFER_CAPTURE : public std::streambuf{
+        private:
+            std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
+            std::string Current_Line = "";
+            std::deque<std::string> Console_History;
+
+            // Multiple handlers.
+            std::vector<std::function<void()>> On_Change = {};
+
+            // For speeding up.
+            std::unordered_map<BUFFER_CAPTURE*, bool> Synced;
+
+            std::string Name = "";
+        public:
+            // We could just search it from the global listing, but that would be slow.
+            // Stuck into the constructed position.
+            const bool Is_Global = false;
+
+            BUFFER_CAPTURE(std::function<void()> on_change, std::string Name = "", bool Global = false);
+
+            BUFFER_CAPTURE() = default;
+
+            ~BUFFER_CAPTURE(){
+                Close();
+            }
+
+            // Called from streambuf base class.
+            int overflow(int c) override;
+
+            // Safe close of std buffer hijack.
+            void Close();
+
+            std::string Read();
+
+            void Add_On_Change_Handler(std::function<void()> on_change){                
+                On_Change.push_back(on_change);
+            }
+
+            bool Sync(BUFFER_CAPTURE* Informer);
+
+            std::string Get_Name();
+
+            void Set_Name(std::string Name){
+                this->Name = Name;
+            }
+        };
+
+    }
+
     class FILE_STREAM{
     private:
-        std::ifstream Handle;
+        INTERNAL::BUFFER_CAPTURE* Buffer_Capture = nullptr;
+        std::fstream Handle;
         std::vector<std::function<void()>> On_Change = {};
         std::string Previous_Content = "";
         unsigned long long Previous_Hash = 0;
     public:
         std::string Name = "";
 
-        FILE_STREAM(std::string File_Name, std::function<void()> on_change);
+        FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout = false);
 
         ~FILE_STREAM(){
+            if (Buffer_Capture)
+                Buffer_Capture->Close();
+
             Handle.close();
         }
 
@@ -47,7 +115,14 @@ namespace GGUI{
         void Changed();
 
         void Add_On_Change_Handler(std::function<void()> on_change){
-            On_Change.push_back(on_change);
+            if (Buffer_Capture)
+                Buffer_Capture->Add_On_Change_Handler(on_change);
+            else
+                On_Change.push_back(on_change);
+        }
+
+        bool Is_Cout_Stream(){
+            return Buffer_Capture != nullptr;
         }
     };
 
@@ -69,6 +144,36 @@ namespace GGUI{
             return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
         }
     };
+
+    #if _WIN32
+        class CMD{
+        private:
+            void* In;
+            void* Out;
+        public:
+            CMD();
+            ~CMD() = default;
+
+            std::string Run(std::string command);
+        };
+    #else
+        class CMD{  // Unix implementation:
+        private:
+            union __INTERNAL_CMD_FILE_DESCRIPTOR__ {
+                struct __INTERNAL_CMD_WAY__ {
+                    int In;
+                    int Out;
+                } Way;
+                int FDS[2];
+            } File_Descriptor;
+        public:
+
+            CMD();
+            ~CMD() = default;
+
+            std::string Run(std::string command);
+        };
+    #endif
 }
 
 #endif

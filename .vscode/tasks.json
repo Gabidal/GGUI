@@ -13,7 +13,10 @@
                 "cwd": "${workspaceFolder}"
             },
             "problemMatcher": "$gcc",
-            "group": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "detail": "Buildarna"
         }
     ],

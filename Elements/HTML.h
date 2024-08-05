@@ -15,6 +15,15 @@ namespace GGUI{
     public:
         HTML(std::string File_Name);
 
+        ~HTML() override{
+            if (Handle != nullptr){
+                delete Handle;
+            }
+
+            // call the base destructor.
+            Element::~Element();
+        }
+
         Element* Safe_Move() override {
             HTML* new_HTML = new HTML();
             *new_HTML = *(HTML*)this;

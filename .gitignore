@@ -1,4 +1,9 @@
 *.exe
 *.o
 *.lib
+*.out
 Build/
+callgrind.*
+*.backup
+*.txt
+/Export/GGUI.h

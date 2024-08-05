@@ -22,7 +22,7 @@ GGUI::Canvas* Map_Canvas;
 
 void Input_Handler(string input){
 
-    Output->Set_Data(Output->Get_Data() + "\n" + input);
+    Output->Set_Text(Output->Get_Text() + "\n" + input);
 
 }
 
@@ -33,7 +33,7 @@ void Switch(string From, string To, GGUI::Element* parent){
     GGUI::Element* To_Element = parent->Get_Element(To);
 
     // Run these changes in safe mode.
-    GGUI::Pause_Renderer([=](){
+    GGUI::Pause_GGUI([From_Element, To_Element](){
         From_Element->Display(false);
         To_Element->Display(true);
     });
@@ -63,7 +63,7 @@ void Menu(){
             Campaing_Button,
             Exit_Button
         },
-        GGUI::Grow_Direction::COLUMN
+        GGUI::DIRECTION::COLUMN
     );
 
     menu->Set_Name(MENU_NAME);
@@ -99,32 +99,32 @@ void Campaing(){
 
     // The user input field is on the bottom left corner.
     User_Input = new GGUI::Text_Field();
-    User_Input->Set_Width(Screen_Division_Width-1);
-    User_Input->Set_Height(1);
+    User_Input->Set_Width(Screen_Division_Width);
+    User_Input->Set_Height(3);  // one row for text and two for the borders
     User_Input->Set_Name(TEXT_INPUT_NAME);
     User_Input->Show_Border(true);
     User_Input->Set_Position({0, Screen_Division_Height * 2 - User_Input->Get_Height() + 1});
-    User_Input->Enable_Input_Overflow();
+    User_Input->Allow_Overflow(true);
 
     User_Input->Input(
         [=](char input){
             if (input == '\n'){
-                string text = User_Input->Get_Data();
-                User_Input->Set_Data("");
+                string text = User_Input->Get_Text();
+                User_Input->Set_Text("");
                 Input_Handler(text);
             }   
             else{
-                User_Input->Set_Data(User_Input->Get_Data() + input);
+                User_Input->Set_Text(User_Input->Get_Text() + input);
             }
         }
     ); 
 
     Output = new GGUI::Text_Field();
     Output->Set_Width(Screen_Division_Width);
-    Output->Set_Height(Screen_Division_Height * 2 - User_Input->Get_Height());
+    Output->Set_Height(Screen_Division_Height * 2 - User_Input->Get_Height() + 2);
     Output->Set_Position({0, 0});
     Output->Show_Border(true);
-    Output->Enable_Input_Overflow();
+    Output->Allow_Overflow(true);
 
     GGUI::Window* Action_Bar = new GGUI::Window();
     Action_Bar->Set_Width(Screen_Division_Width);
@@ -150,5 +150,7 @@ int main(int Argument_Count, char** Arguments){
         Menu();
         Campaing();
     }, INT32_MAX);
-    return 0;
+    
+    // Then exit properly
+    GGUI::Exit();
 }

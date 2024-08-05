@@ -20,14 +20,16 @@ int main(int Argument_Count, char** Arguments){
         GGUI::Main->Add_Child(C);
 
         A->Set_Position({10, 10});
-        B->Set_Position({30, 10});
-        C->Set_Position({20, 15});
+        B->Set_Position({20, 12});
+        C->Set_Position({15, 17});
 
         GGUI::Main->Set_Background_Color(GGUI::COLOR::WHITE);
 
-        B->Show_Shadow(GGUI::COLOR::BLUE, 1, 10.0f);
+        // B->Show_Shadow(GGUI::COLOR::BLUE, 1, 10.0f);
     });
 
     GGUI::SLEEP(INT32_MAX);
-    return 0;
+    
+    // Then exit properly
+    GGUI::Exit();
 }

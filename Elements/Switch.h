@@ -14,14 +14,14 @@ namespace GGUI{
     protected:
         bool State = false;
 
-        std::string Text = "";
         //COntains the unchecked version of the symbol and the checked version.
         std::vector<std::string> States;
 
+        Text_Field Text;
     public:
-        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = [](Element* e){});
+        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){});
 
-        std::vector<UTF> Render() override;
+        std::vector<GGUI::UTF>& Render() override;
 
         void Toggle(){
             State = !State;
@@ -29,9 +29,7 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::STATE);
         }
 
-        std::string Get_Data() { return Text; }
-
-        void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
+        void Set_Text(std::string text);
         
         Element* Safe_Move() override {
             Switch* new_Switch = new Switch();
@@ -48,6 +46,11 @@ namespace GGUI{
     class Radio_Button : public Switch{
     public:
         Radio_Button(std::string text) : Switch(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
+
+        ~Radio_Button() override{
+            // call the base destructor.
+            Element::~Element();
+        }
 
         bool Get_State(){
             return State;

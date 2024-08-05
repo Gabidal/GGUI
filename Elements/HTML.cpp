@@ -1,5 +1,7 @@
 #include "HTML.h"
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
+
+#include <vector>
 
 namespace GGUI{
 
@@ -46,40 +48,44 @@ namespace GGUI{
     };
 
     HTML::HTML(std::string File_Name){
-        Handle = new FILE_STREAM(File_Name, [&](){
-            this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
+        Pause_GGUI([this, File_Name](){
+            Handle = new FILE_STREAM(File_Name, [&](){
+                this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
+            });
+
+            Set_Name(File_Name);
         });
     }
 
     void Parse(std::vector<HTML_Token*>& Input){
         // First combine wrappers like: <, >, (, ), etc...
-        for (int i = 0; i < Input.size(); i++){
+        for (int i = 0; i < (signed)Input.size(); i++){
             Parse_Embedded_Bytes(i, Input);
             Parse_All_Wrappers(i, Input);
         }
 
         // Capture decimals
-        for (int i = 0; i < Input.size(); i++)
+        for (int i = 0; i < (signed)Input.size(); i++)
             Parse_Operator(i, Input, '.');
 
-        for (int i = 0; i < Input.size(); i++)
+        for (int i = 0; i < (signed)Input.size(); i++)
             Parse_Numeric_Postfix(i, Input);
 
         // Reverse PEMDAS order:
-        for (int i = 0; i < Input.size(); i++)
+        for (int i = 0; i < (signed)Input.size(); i++)
             Parse_Operator(i, Input, '+');
-        for (int i = 0; i < Input.size(); i++)
+        for (int i = 0; i < (signed)Input.size(); i++)
             Parse_Operator(i, Input, '-');
-        for (int i = 0; i < Input.size(); i++)
+        for (int i = 0; i < (signed)Input.size(); i++)
             Parse_Operator(i, Input, '*');
-        for (int i = 0; i < Input.size(); i++)
+        for (int i = 0; i < (signed)Input.size(); i++)
             Parse_Operator(i, Input, '/');
 
-        for (int i = 0; i < Input.size(); i++)
+        for (int i = 0; i < (signed)Input.size(); i++)
             Parse_Operator(i, Input, '=');
 
         // now start combining dynamic wrappers like: <html>, </html>
-        for (int i = 0; i < Input.size(); i++){
+        for (int i = 0; i < (signed)Input.size(); i++){
             // first try to find the first instance of < token.
             if (Input[i]->Data != "<" || Input[i]->Childs.size() == 0 || Input[i]->Childs[0]->Data == "!")
                 continue;
@@ -109,7 +115,7 @@ namespace GGUI{
         return Input;
     }
 
-    void Parse_Embedded_Bytes(int& i, std::vector<HTML_Token*>& Input){
+    void Parse_Embedded_Bytes([[maybe_unused]] int& i, [[maybe_unused]] std::vector<HTML_Token*>& Input){
         // This function check if the input at i contains '/' which then marks the following tokens to be skipped
         // Example "absc /" a /" "
 
@@ -131,7 +137,7 @@ namespace GGUI{
 
         int End_Index = i;
         
-        for (End_Index++; End_Index < Input.size(); End_Index++){
+        for (End_Index++; End_Index < (signed)Input.size(); End_Index++){
 
             std::string Current_Name = Input[End_Index]->Data;
             HTML_Token* Current_First_Child = nullptr;    // for </ or <TEXT  instances
@@ -207,7 +213,7 @@ namespace GGUI{
         int Nested_Count = 1;   // Remember to count the start pattern too.
         int End_Index = i;
 
-        for (End_Index++; End_Index < Input.size() && Nested_Count > 0; End_Index++){
+        for (End_Index++; End_Index < (signed)Input.size() && Nested_Count > 0; End_Index++){
 
             // Check if this is a nested version of this started pattern, but make sure that the current pattern is not already computed.
             if (Input[End_Index]->Data == start_pattern && !Input[End_Index]->Is(PARSE_BY::TOKEN_WRAPPER)){
@@ -259,7 +265,7 @@ namespace GGUI{
             "\n", " ", "\t"
         };
 
-        for (int i = 0; i < Un_Sanitized.size(); i++){
+        for (unsigned int i = 0; i < Un_Sanitized.size(); i++){
             // First check if the current token is similiar to the previous token or not.
             if (Un_Sanitized[i]->Data != Previous_Data){
                 Previous_Data = Un_Sanitized[i]->Data;
@@ -342,8 +348,8 @@ namespace GGUI{
     std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input){
         std::vector<Element*> Result;
 
-        GGUI::Pause_Renderer([=](){
-            for (int i = 0; i < Input.size(); i++){
+        GGUI::Pause_GGUI([&Input, &Result](){
+            for (unsigned int i = 0; i < Input.size(); i++){
 
                 HTML_Node* Current = Input[i];
 
@@ -368,7 +374,7 @@ namespace GGUI{
     std::vector<HTML_Node*> Parse_Lexed_Tokens(std::vector<HTML_Token*> Input){
         std::vector<HTML_Node*> Result;
 
-        for (int i = 0; i < Input.size(); i++){
+        for (unsigned int i = 0; i < Input.size(); i++){
 
             HTML_Node* tmp = Factory(Input[i]);
 
@@ -425,7 +431,7 @@ namespace GGUI{
 
         // check for the postfix
         // basically all the prefixes are text besides the %, which is an operator.
-        if (i + 1 < Input.size() && (Input[i+1]->Type == HTML_GROUP_TYPES::TEXT || Input[i+1]->Data == "%")){
+        if (i + 1 < (signed)Input.size() && (Input[i+1]->Type == HTML_GROUP_TYPES::TEXT || Input[i+1]->Data == "%")){
             Input[i]->Childs.push_back(Input[i+1]);
 
             Input[i]->Parsed_By |= PARSE_BY::NUMBER_POSTFIX_PARSER;
@@ -453,7 +459,7 @@ namespace GGUI{
         // try to check if the decimal is valid
         try{
             // now put the left side number as the main decimal value and the right side as the fraction.
-            double Decimal_Value = std::stod(STR_VALUE);
+            [[maybe_unused]] double Decimal_Value = std::stod(STR_VALUE);
         }
         catch(...){
             Report("Invalid decimal number: " + STR_VALUE, Input[i]->Position);
@@ -473,7 +479,7 @@ namespace GGUI{
     void Parse_Operator(int& i, std::vector<HTML_Token*>& Input, char operator_type){
         // left index, this, right index
         // check that there is "space" around this index.
-        if (i == 0 || i+1 >= Input.size() || Input[i]->Is(PARSE_BY::OPERATOR_PARSER))
+        if (i == 0 || i+1 >= (signed)Input.size() || Input[i]->Is(PARSE_BY::OPERATOR_PARSER))
             return;
 
         // We could use the operator type, but atm just use = support.
@@ -511,8 +517,8 @@ namespace GGUI{
         Result->Type = HTML_GROUP_TYPES::WRAPPER;
 
         // now add the attributes
-        Result->Attributes["width"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, to_string(e->Get_Width()));
-        Result->Attributes["height"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, to_string(e->Get_Height()));
+        Result->Attributes["width"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, std::to_string(e->Get_Width()));
+        Result->Attributes["height"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, std::to_string(e->Get_Height()));
 
         return Result;
     }
@@ -567,9 +573,9 @@ namespace GGUI{
         else if (postfix == "%")
             Result *= std::stod(parent->Attributes[attr_name]->Data);
         else if (postfix == "vmin")
-            Result *= max(1.0, min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
+            Result *= GGUI::Max(1.0, GGUI::Min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
         else if (postfix == "vmax")
-            Result *= max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
+            Result *= GGUI::Max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
         else
             Report("Unknown relative type: " + postfix, parent->Position);
 
@@ -578,7 +584,7 @@ namespace GGUI{
 
     void Translate_Attributes_To_Element(Element* e, HTML_Node* input){
 
-        GGUI::HTML_POSITION_TYPE Current_Position_Type = GGUI::HTML_POSITION_TYPE::STATIC;
+        [[maybe_unused]] GGUI::HTML_POSITION_TYPE Current_Position_Type = GGUI::HTML_POSITION_TYPE::STATIC;
         bool USE_FLEX = false;
 
         for (auto attr : input->Attributes){
@@ -595,9 +601,11 @@ namespace GGUI{
 
                 if (attr.first == "flex-direction"){
                     if (attr.second->Data == "column")
-                        e->At<GGUI::NUMBER_VALUE>(GGUI::STYLES::Flow_Priority)->Value = (int)GGUI::Grow_Direction::COLUMN;
+                        ((List_View*)e)->Set_Flow_Direction(GGUI::DIRECTION::COLUMN);
                     else if (attr.second->Data == "row")
-                        e->At<GGUI::NUMBER_VALUE>(GGUI::STYLES::Flow_Priority)->Value = (int)GGUI::Grow_Direction::ROW;
+                        ((List_View*)e)->Set_Flow_Direction(GGUI::DIRECTION::ROW);
+                    else
+                        GGUI::Report("Unknown flex-direction: " + attr.second->Data, input->Position);
                 }
             }
         }

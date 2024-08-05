@@ -6,72 +6,47 @@
 
 ## Hello World example
 ```C++
-#include "ggui.h"
+#include "GGUI.h"
 
 using namespace GGUI;
 
 int main() 
 {
-    Window* Main = Init_Renderer();
+    // Initialize and startup GGUI
+    Init_GGUI();
 
+    // Give the main window an title
     Main->Set_Title("Your App UI");
 
-    Text_Field* Txt = new Text_Field("Hello World!");
+    // Create an text field
+    Text_Field* txt = new Text_Field("Hello World!");
 
-    Main->Add_Child(Txt);
+    // Add the text field to the main container to be displayed
+    Main->Add_Child(txt);
 
     // Your code here...
+
+    // de-initialize console status.
+    Exit();
 }
 ```
-### For more examples see Examples folder. 
+### For more examples see `./Examples` folder. 
 
 # Features
-- **ANSI escape sequence support.**
-- **Multiplatform support.**
-- **Only one .lib and .h file**
-- **All elements have**
-    - Background colours
-    - Foreground colours
-    - Border's and border colors
-    - On focus Background & Foreground colors
-    - On Hover Background & Foreground colors
-    - Element Nesting
-    - Event handling e.g On_Click(), (for more comprehensive function use: 'On()')
-    - Alpha channel transparency support. 
-- **Window features**
-    - Title
-- **Text_Field features**
-    - Inner Text
-    - Text alignment (center, left, right)
-    - Text input
-- **List_View features**
-    - Flow direction
-- **Canvas features**
-    - Pixel per Pixel rendering
-- **Progress_Bar**
-    - Epic progress bars
-- **Switch**
-    - Radio Buttons
-    - Checkboxes
-- **Button**
-    - Button stuff.
-- **Mouse movement features**
-    - Integrated mouse support (only windows atm)
-    - Tabulator navigation, switch between elements with tabulator and shift+tabulator
-
+ - ### Scrollable horizontal and vertical lists
+ - ### Canvas with builtin cell animations
+ - ### Custom error log (CTRL+SHIFT+I)
+ - ### Text fields, with left, center and right aligning
+ - ### RGB with Transparency
+ - ### Progress bars.
+ - ### Switches with radio buttons
+ - ### Continuous command line interaction support  
+ - ### Cross platform (Windows, Linux, Android)
 
 # Developing this project further
-### This project uses 'meson' so use `meson setup Build` to setup the meson environment if you have not yet done so.
-### Use 'launch.json' and 'tasks.json' to build and debug this project if your in VSCode.
-
-# Building this project
-```bash
-cd include
-g++ ./include/Build_Script.cpp
-./a.exe
-```
-
-# Add GGUI to your project
-```
-g++ ... GGUI.lib
-```
+- ### Initialize project locally with: `Init.sh` or `Init.bat`.
+- ### Exporting this project as library is documented in `./Export/README.md`.
+- ### Add GGUI to your project
+    ```
+    g++ ... GGUI.lib
+    ```
