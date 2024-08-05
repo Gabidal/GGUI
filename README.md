@@ -44,23 +44,9 @@ int main()
  - ### Cross platform (Windows, Linux, Android)
 
 # Developing this project further
-### Initialize project locally with: 
-```shell
-meson setup Build
-```
-
-### Build project with:
-```shell
-meson compile -C Build
-```
-
-### Exporting this project as library
-```shell
-g++ ./include/Build_Script.cpp
-./a.exe
-```
-
-### Add GGUI to your project
-```
-g++ ... GGUI.lib
-```
+- ### Initialize project locally with: `Init.sh` or `Init.bat`.
+- ### Exporting this project as library is documented in `./Export/README.md`.
+- ### Add GGUI to your project
+    ```
+    g++ ... GGUI.lib
+    ```
