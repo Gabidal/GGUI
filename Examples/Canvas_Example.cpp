@@ -14,11 +14,11 @@ int main()
             for (int y = 0; y < tem->Get_Height(); y++){
                 GGUI::Sprite s(
                     {
-                        {"a", {GGUI::RGB(x, y, x), GGUI::RGB(x, y, x)}}, 
-                        {"b", {GGUI::RGB(y, x, y), GGUI::RGB(y, x, y)}}, 
+                        {"a", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::BLUE /*background color*/}}, 
+                        {"b", {GGUI::COLOR::BLUE, GGUI::COLOR::RED}}, 
                     },
-                    0,
-                    1
+                    0,  // Animation offset
+                    1   // Animation speed
                 );
 
                 tem->Set(x, y, s);
