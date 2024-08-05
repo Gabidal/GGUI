@@ -1,7 +1,7 @@
 #include "Switch.h"
 #include "List_View.h"
 
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
 
 namespace GGUI{
 

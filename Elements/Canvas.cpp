@@ -1,10 +1,10 @@
 #include "Canvas.h"
 
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
 #include <cmath>
 #include <bitset>
 
-#include "../SIMD/SIMD.h"
+#include "../Core/SIMD/SIMD.h"
 
 namespace GGUI{
 

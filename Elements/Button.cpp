@@ -1,6 +1,6 @@
 #include "Button.h"
 #include "HTML.h"
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
 
 namespace GGUI{
 

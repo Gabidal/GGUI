@@ -2,7 +2,7 @@
 #include <string>
 #include <math.h>
 #include <algorithm>
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
 
 using namespace std;
 

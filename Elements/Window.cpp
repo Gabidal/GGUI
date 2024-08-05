@@ -1,5 +1,5 @@
 #include "Window.h"
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
 
 GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Element(){
     Pause_GGUI([this, title, classes](){

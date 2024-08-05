@@ -1,7 +1,7 @@
 #include "Element.h"
 #include "HTML.h"
 
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
 
 #include <algorithm>
 #include <vector>

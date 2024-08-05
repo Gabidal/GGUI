@@ -27,7 +27,7 @@ sources = [
   'Elements/File_Streamer.cpp',
   'Elements/HTML.cpp',
 
-  'Renderer.cpp',
+  'Core/Renderer.cpp',
 
   'main.cpp',
 ]

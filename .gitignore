@@ -6,4 +6,3 @@ Build/
 callgrind.*
 *.backup
 *.txt
-version.md

@@ -1,5 +1,5 @@
 #include "HTML.h"
-#include "../Renderer.h"
+#include "../Core/Renderer.h"
 
 #include <vector>
 
