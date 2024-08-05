@@ -6,3 +6,4 @@ Build/
 callgrind.*
 *.backup
 *.txt
+/Export/GGUI.h
