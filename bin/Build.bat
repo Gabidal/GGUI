@@ -57,13 +57,6 @@ if "%CXX%"=="" (
     set "CXX=g++"
 )
 
-rem Check if there is a ./Build folder
-if exist "Build" (
-    meson setup --wipe Build
-) else (
-    meson setup Build
-)
-
 rem Now compile
 meson compile -C Build
 

@@ -50,13 +50,6 @@ if [ -z "$CXX" ]; then
     CXX=g++
 fi
 
-# Check if there is a ./Build folder
-if [ -d "./Build" ]; then
-    meson setup --wipe Build
-else
-    meson setup Build
-fi
-
 # Now compile
 meson compile -C Build
 
