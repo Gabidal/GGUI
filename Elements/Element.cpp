@@ -83,7 +83,7 @@ std::string GGUI::UTF::To_String(){
         Result.append(Unicode, Unicode_Length);
     }
     else{
-        Result + Ascii;
+        Result += Ascii;
     }
 
     return Result + Constants::ANSI::RESET_COLOR;

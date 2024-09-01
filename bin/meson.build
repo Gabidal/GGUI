@@ -40,9 +40,15 @@ SIMD_MODE = AVX
 
 cpp_args = [
   '-fpermissive', 
-  '-Wno-narrowing', 
-  SIMD_MODE
+  '-Wno-narrowing'
 ]
+
+# Check if we're on an Android environment
+if host_machine.system() == 'android'
+  message('Android environment detected: Disabling SIMD flags')
+else
+  cpp_args += [SIMD_MODE]
+endif
 
 link_args = []
 

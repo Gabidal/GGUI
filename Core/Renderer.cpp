@@ -1038,9 +1038,11 @@ namespace GGUI{
 
             // now add the problem into the message
             Result += "Problem: " + Problem;
+
+            Report(Result);
         #endif
 
-        Report(Result);
+        Report(Problem);
     }
 
     #endif
