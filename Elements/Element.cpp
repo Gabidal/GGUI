@@ -29,7 +29,7 @@ void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
     Result->Add(Constants::To_Compact[Blue]);
 }
     
-GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values, VALUE_STATE Default) : VALUE(Default){
+GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values, VALUE_STATE Default) : Style_Base(Default){
     if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
         BOTTOM_LEFT_CORNER = values[1];
