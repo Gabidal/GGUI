@@ -24,7 +24,7 @@ namespace GGUI{
     unsigned int Max_Width = 0;
     unsigned int Max_Height = 0;
 
-    std::vector<Memory> Remember;
+    Atomic::Guard<std::vector<Memory>> Remember;
 
     std::vector<Action*> Event_Handlers;
     std::vector<Input*> Inputs;
@@ -54,7 +54,7 @@ namespace GGUI{
     std::chrono::high_resolution_clock::time_point Current_Time;
     unsigned long long Delta_Time;
 
-    inline std::unordered_map<int, Styling> Classes;
+    inline Atomic::Guard<std::unordered_map<int, Styling>> Classes;
 
     inline std::unordered_map<std::string, int> Class_Names;
 
@@ -1321,61 +1321,62 @@ namespace GGUI{
     }
 
     void Recall_Memories(){
-        std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
+        Remember([](std::vector<Memory>& rememberable){
+            std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
-        // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
-        size_t Shortest_Time = MAX_UPDATE_SPEED;
+            // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
+            size_t Shortest_Time = MAX_UPDATE_SPEED;
+            // Prolong prolongable memories.
+            for (unsigned int i = 0; i < rememberable.size(); i++){
+                for (unsigned int j = i + 1; j < rememberable.size(); j++){
+                    if (rememberable[i].Is(MEMORY_FLAGS::PROLONG_MEMORY) && rememberable[j].Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
+                        // Check if the Job at I is same as the one at J.
+                        if (rememberable[i].Job.target<bool(*)(GGUI::Event*)>() == rememberable[j].Job.target<bool(*)(GGUI::Event*)>()){
+                            // Since J will always be one later than I, J will contain the prolonging memory if there is one. 
+                            rememberable[i].Start_Time = rememberable[j].Start_Time;
 
-        // Prolong prolongable memories.
-        for (unsigned int i = 0; i < Remember.size(); i++){
-            for (unsigned int j = i + 1; j < Remember.size(); j++){
-                if (Remember[i].Is(MEMORY_FLAGS::PROLONG_MEMORY) && Remember[j].Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
-                    // Check if the Job at I is same as the one at J.
-                    if (Remember[i].Job.target<bool(*)(GGUI::Event*)>() == Remember[j].Job.target<bool(*)(GGUI::Event*)>()){
-                        // Since J will always be one later than I, J will contain the prolonging memory if there is one. 
-                        Remember[i].Start_Time = Remember[j].Start_Time;
-
-                        Remember.erase(Remember.begin() + j--);
-                        break;
-                    }
-            }
-        }
-
-        for (unsigned int i = 0; i < Remember.size(); i++){
-            //first calculate the time difference between the start if the task and the end task
-            size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Remember[i].Start_Time).count();
-
-            size_t Time_Left = Remember[i].End_Time - Time_Difference;
-
-            if (Time_Left < Shortest_Time)
-                Shortest_Time = Time_Left;
-
-            //if the time difference is greater than the time limit, then delete the memory
-            if (Time_Difference > Remember[i].End_Time){
-                try{
-                    bool Success = Remember[i].Job((Event*)&Remember[i]);
-
-                    // If job is a re-trigger it will ignore whether the job was successful or not.
-                    if (Remember[i].Is(MEMORY_FLAGS::RETRIGGER)){
-
-                        // May need to change this into more accurate version of time capturing.
-                        Remember[i].Start_Time = Current_Time;
-
-                    }
-                    else if (Success){
-                        Remember.erase(Remember.begin() + i);
-
-                        i--;
-                    }
-                }
-                catch (std::exception& e){
-                    Report("In memory: '" + Remember[i].ID + "' Problem: " + std::string(e.what()));
+                            rememberable.erase(rememberable.begin() + j--);
+                            break;
+                        }
                 }
             }
 
-        }
+            for (unsigned int i = 0; i < rememberable.size(); i++){
+                //first calculate the time difference between the start if the task and the end task
+                size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - rememberable[i].Start_Time).count();
 
-        Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, Shortest_Time);
+                size_t Time_Left = rememberable[i].End_Time - Time_Difference;
+
+                if (Time_Left < Shortest_Time)
+                    Shortest_Time = Time_Left;
+
+                //if the time difference is greater than the time limit, then delete the memory
+                if (Time_Difference > rememberable[i].End_Time){
+                    try{
+                        bool Success = rememberable[i].Job((Event*)&rememberable[i]);
+
+                        // If job is a re-trigger it will ignore whether the job was successful or not.
+                        if (rememberable[i].Is(MEMORY_FLAGS::RETRIGGER)){
+
+                            // May need to change this into more accurate version of time capturing.
+                            rememberable[i].Start_Time = Current_Time;
+
+                        }
+                        else if (Success){
+                            rememberable.erase(rememberable.begin() + i);
+
+                            i--;
+                        }
+                    }
+                    catch (std::exception& e){
+                        Report("In memory: '" + rememberable[i].ID + "' Problem: " + std::string(e.what()));
+                    }
+                }
+
+            }
+
+            Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, Shortest_Time);
+        });
     }
 
     bool Is(unsigned long long f, unsigned long long Flag){
@@ -1610,9 +1611,11 @@ namespace GGUI{
     }
 
     void Add_Class(std::string name, Styling Styling){
-        int Class_ID = Get_Free_Class_ID(name);
+        Classes([name, Styling](auto& classes){
+            int Class_ID = Get_Free_Class_ID(name);
 
-        Classes[Class_ID] = Styling;
+            classes[Class_ID] = Styling;
+        }); 
     }
 
     void Init_Classes(){
@@ -1941,17 +1944,19 @@ namespace GGUI{
                 if (Error_Logger->Get_Parent() == Main){
                     Error_Logger->Display(true);
 
-                    Remember.push_back(Memory(
-                        TIME::SECOND * 30,
-                        [Error_Logger](GGUI::Event*){
-                            //delete tmp;
-                            Error_Logger->Display(false);
-                            //job successfully done
-                            return true;
-                        },
-                        MEMORY_FLAGS::PROLONG_MEMORY,
-                        "Report Logger Clearer"
-                    ));
+                    Remember([Error_Logger](std::vector<Memory>& rememberable){
+                        rememberable.push_back(Memory(
+                            TIME::SECOND * 30,
+                            [Error_Logger](GGUI::Event*){
+                                //delete tmp;
+                                Error_Logger->Display(false);
+                                //job successfully done
+                                return true;
+                            },
+                            MEMORY_FLAGS::PROLONG_MEMORY,
+                            "Report Logger Clearer"
+                        ));
+                    });
                 }
 
             }
@@ -2153,14 +2158,16 @@ namespace GGUI{
             return true;
         }, true);
         
-        Remember.push_back(
-            GGUI::Memory(
-                TIME::SECOND,
-                Update_Stats,
-                MEMORY_FLAGS::RETRIGGER,
-                "Update Stats"
-            )
-        );
+        Remember([](std::vector<Memory>& rememberable){
+            rememberable.push_back(
+                GGUI::Memory(
+                    TIME::SECOND,
+                    Update_Stats,
+                    MEMORY_FLAGS::RETRIGGER,
+                    "Update Stats"
+                )
+            );
+        });
     }
 
     void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer){

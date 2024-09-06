@@ -211,14 +211,18 @@ void GGUI::Window::Update_Hidden_Border_Colors(){
     else if (Style->Text_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Color = Style->Text_Color.Value;
     else
-        Before_Hiding_Border_Color = GGUI::Classes[GGUI::Class_Names["default"]].Border_Color.Value;
+        GGUI::Classes([this](auto& classes){
+            this->Before_Hiding_Border_Color = classes[GGUI::Class_Names["default"]].Border_Color.Value;
+        });
 
     if (Style->Border_Background_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Background_Color = Style->Border_Background_Color.Value;
     else if (Style->Background_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Background_Color = Style->Background_Color.Value;
     else
-        Before_Hiding_Border_Background_Color = GGUI::Classes[GGUI::Class_Names["default"]].Border_Background_Color.Value;            
+        GGUI::Classes([this](auto& classes){
+            this->Before_Hiding_Border_Background_Color = classes[GGUI::Class_Names["default"]].Border_Background_Color.Value;    
+        });        
 }
 
 void GGUI::Window::Set_Title(std::string t){

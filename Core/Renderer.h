@@ -21,6 +21,8 @@ namespace GGUI{
         class BUFFER_CAPTURE;
     }
 
+    extern void Report_Stack(std::string Problem);
+
     namespace Atomic{
         enum class Status{
             RESUMED,
@@ -32,6 +34,33 @@ namespace GGUI{
         extern std::condition_variable Condition;
 
         extern Status Pause_Render_Thread;
+
+        // helper to make sure all objects created by this are always treated atomically
+        template<typename T>
+        class Guard{
+        public:
+            std::mutex Shared;      // this is shared across all other threads.
+            T Data;
+
+            Guard() = default;
+
+            void operator()(std::function<void(T&)> job){
+                // check if the Shared mutex is already locked by higher/upper stack frame.
+                if (Shared.try_lock()){
+                    try{
+                        job(Data);
+                    } catch(...){
+                        Report_Stack("Failed to execute the function!");
+                    }
+
+                    Shared.unlock();
+                }
+                else{
+                    Report_Stack("Cannot double lock mutex");
+                    return;
+                }
+            }
+        };
     }
 
     extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector whitout bold nor color
@@ -42,7 +71,7 @@ namespace GGUI{
     extern unsigned int Max_Width;
     extern unsigned int Max_Height;
 
-    extern std::vector<Memory> Remember;
+    extern Atomic::Guard<std::vector<Memory>> Remember;
 
     extern std::vector<Action*> Event_Handlers;
     extern std::vector<Input*> Inputs;
@@ -63,7 +92,7 @@ namespace GGUI{
 
     extern unsigned long long Delta_Time;
 
-    extern std::unordered_map<int, Styling> Classes;
+    extern Atomic::Guard<std::unordered_map<int, Styling>> Classes;
     extern std::unordered_map<std::string, int> Class_Names;
 
     extern Window* Main;  
@@ -153,8 +182,6 @@ namespace GGUI{
     extern GGUI::Window* Init_GGUI();
 
     extern void Report(std::string Problem);
-
-    extern void Report_Stack(std::string Problem);
 
     extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 

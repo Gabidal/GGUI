@@ -493,18 +493,20 @@ void GGUI::Element::Parse_Classes(){
     bool Remember_To_Affect_Width_And_Height_Because_Of_Border = false;
     bool Previus_Border_Value = Style->Border_Enabled.Value;
 
-    //Go through all classes and their styles and accumulate them.
-    for(auto& Class : Classes){
+    GGUI::Classes([this](auto& classes){
+        //Go through all classes and their styles and accumulate them.
+        for(auto Class : Classes){
 
-        // The class wanted has not been yet constructed.
-        // Pass it for the next render iteration
-        if (GGUI::Classes.find(Class) == GGUI::Classes.end()){
-            Dirty.Dirty(STAIN_TYPE::CLASS);
+            // The class wanted has not been yet constructed.
+            // Pass it for the next render iteration
+            if (classes.find(Class) == classes.end()){
+                Dirty.Dirty(STAIN_TYPE::CLASS);
+            }
+
+            Style->Copy(new Styling(classes[Class]));
+            
         }
-
-        Style->Copy(new Styling(GGUI::Classes[Class]));
-        
-    }
+    });
 
     if (Remember_To_Affect_Width_And_Height_Because_Of_Border){
         Show_Border(Style->Border_Enabled.Value, Previus_Border_Value);
