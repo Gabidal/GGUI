@@ -52,7 +52,9 @@ namespace GGUI{
 
     std::chrono::high_resolution_clock::time_point Previous_Time;
     std::chrono::high_resolution_clock::time_point Current_Time;
-    unsigned long long Delta_Time;
+
+    unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
+    unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
 
     inline Atomic::Guard<std::unordered_map<int, Styling>> Classes;
 
@@ -1692,6 +1694,9 @@ namespace GGUI{
                     Atomic::Pause_Render_Thread = Atomic::Status::LOCKED;
                 }
 
+                // save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
+                Previous_Time = std::chrono::high_resolution_clock::now();
+
                 if (Main){
                     Abstract_Frame_Buffer = Main->Render();
 
@@ -1702,6 +1707,11 @@ namespace GGUI{
                     
                     Render_Frame();
                 }
+
+                // check the difference of the time captured before render and now after render
+                Current_Time = std::chrono::high_resolution_clock::now();
+
+                Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 {
                     std::unique_lock lock(Atomic::Mutex);
@@ -1741,14 +1751,14 @@ namespace GGUI{
                 Current_Time = std::chrono::high_resolution_clock::now();
 
                 // Calculate the delta time.
-                Delta_Time = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                Event_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
 
                 // If ya want uncapped FPS, disable this sleep code:
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(
-                        CURRENT_UPDATE_SPEED - Delta_Time, 
+                        CURRENT_UPDATE_SPEED - Event_Delay, 
                         MIN_UPDATE_SPEED
                     )
                 ));
@@ -2089,7 +2099,8 @@ namespace GGUI{
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
             "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-            "FPS: " + std::to_string(GGUI::TIME::SECOND / Max(Delta_Time, 1))
+            "Render delay: " + std::to_string(Render_Delay) + "ms\n" +
+            "Event delay: " + std::to_string(Event_Delay) + "ms"
         );
 
         // return success.
@@ -2121,10 +2132,11 @@ namespace GGUI{
             "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
             "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
             "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-            "FPS: " + std::to_string(GGUI::TIME::SECOND / Max(Delta_Time, 1)),
+            "Render delay: " + std::to_string(Render_Delay) + "ms\n" +
+            "Event delay: " + std::to_string(Event_Delay) + "ms",
             ALIGN::LEFT,
             Inspect->Get_Width(),
-            4
+            5
         );
         Stats->Set_Name("STATS");
 
