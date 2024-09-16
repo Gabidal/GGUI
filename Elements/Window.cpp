@@ -19,7 +19,7 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
     });
 }
 
-GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css){
+GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position) : Element(css){
     Pause_GGUI([this, width, height, parent, position](){
         if (width != 0)
             Width = width;
@@ -37,7 +37,7 @@ GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Eleme
     });
 }
 
-GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position) : Element(css), Title(title){
+GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position) : Element(css), Title(title){
     Pause_GGUI([this, title, css, width, height, parent, position](){
         if (width != 0)
             Width = width;
@@ -257,7 +257,7 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
     if (!w->Has_Border())
         return;
     
-    GGUI::BORDER_STYLE_VALUE* custom_border = &Style->Border_Style;
+    GGUI::styled_border* custom_border = &Style->Border_Style;
 
     for (unsigned int y = 0; y < w->Get_Height(); y++){
         for (unsigned int x = 0; x < w->Get_Width(); x++){

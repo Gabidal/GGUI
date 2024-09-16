@@ -14,7 +14,7 @@ namespace GGUI{
     protected:
         std::vector<RGB> Buffer;
     public:
-        Canvas(unsigned int w, unsigned int h, Coordinates position);
+        Canvas(unsigned int w, unsigned int h, IVector2 position);
         
         // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
         void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
@@ -83,7 +83,7 @@ namespace GGUI{
         // For speeding up sprite sets, to avoid redundant checks in unordered_maps.
         bool Multi_Frame = false;
     public:
-        Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
+        Terminal_Canvas(unsigned int w, unsigned int h, IVector2 position);
         
         ~Terminal_Canvas() override;
 
@@ -114,7 +114,7 @@ namespace GGUI{
             return "Terminal_Canvas<" + Name + ">";
         }
     
-        void Embed_Points(std::vector<bool> pixels, BORDER_STYLE_VALUE border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
+        void Embed_Points(std::vector<bool> pixels, styled_border border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
     };
 
     namespace DRAW{
@@ -122,18 +122,18 @@ namespace GGUI{
         // Expects fully initialized 2D list of booleans, which it will put the result.
         void Line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width);
 
-        std::vector<bool> Line(Vector2 Start, Vector2 End, int Buffer_Width);
+        std::vector<bool> Line(FVector2 Start, FVector2 End, int Buffer_Width);
 
         // Symmetrical circle draw helper:
         void Symmetry_Filler_For_Circle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width);
 
         void Circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width);
 
-        std::vector<bool> Circle(Vector2 Center, int Radius, int Buffer_Width);
+        std::vector<bool> Circle(FVector2 Center, int Radius, int Buffer_Width);
 
-        void Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, std::vector<bool>& pixels, int width);
+        void Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width);
         
-        std::vector<bool> Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, int Buffer_Width);
+        std::vector<bool> Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, int Buffer_Width);
 
     }
 

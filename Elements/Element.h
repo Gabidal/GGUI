@@ -131,7 +131,7 @@ namespace GGUI{
 
     class Element{
     protected:
-        Coordinates Position;
+        IVector2 Position;
 
         unsigned int Width = 1;
         unsigned int Height = 1;
@@ -164,14 +164,14 @@ namespace GGUI{
 
         Element();
 
-        Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+        Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector2 *position = nullptr);
 
-        Element(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates *position = nullptr);
+        Element(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector2 *position = nullptr);
 
         Element(
             unsigned int width,
             unsigned int height,
-            Coordinates position
+            IVector2 position
         );
 
         //These next constructors are mainly for users to more easily create elements.
@@ -265,7 +265,7 @@ namespace GGUI{
         // RGBA - Alpha channel. 0 - 255
         void Set_Opacity(unsigned char Opacity);
 
-        BORDER_STYLE_VALUE Get_Border_Style(){
+        styled_border Get_Border_Style(){
             return Style->Border_Style;
         }
 
@@ -278,7 +278,7 @@ namespace GGUI{
         unsigned int Get_Processed_Height();
 
         // Direction: Unsupported atm!!!
-        void Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
+        void Show_Shadow(FVector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         void Show_Shadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
@@ -340,19 +340,19 @@ namespace GGUI{
 
         void Set_Height(unsigned int height);
 
-        void Set_Position(Coordinates c);
+        void Set_Position(IVector2 c);
        
-        void Set_Position(Coordinates* c);
+        void Set_Position(IVector2* c);
 
-        Coordinates Get_Position();
+        IVector2 Get_Position();
 
-        Coordinates Get_Absolute_Position();
+        IVector2 Get_Absolute_Position();
 
         void Update_Absolute_Position_Cache();
 
-        void Set_Margin(MARGIN_VALUE margin);
+        void Set_Margin(margin margin);
 
-        MARGIN_VALUE Get_Margin();
+        margin Get_Margin();
 
         virtual void Set_Background_Color(RGB color);
 
@@ -402,11 +402,11 @@ namespace GGUI{
 
         std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(Element* e);
 
-        std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(GGUI::BORDER_STYLE_VALUE custom_border_style);
+        std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(GGUI::styled_border custom_border_style);
 
-        void Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style);
+        void Set_Custom_Border_Style(GGUI::styled_border style);
 
-        GGUI::BORDER_STYLE_VALUE Get_Custom_Border_Style();
+        GGUI::styled_border Get_Custom_Border_Style();
 
         void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
 

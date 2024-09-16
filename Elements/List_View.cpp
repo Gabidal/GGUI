@@ -9,7 +9,7 @@
 #undef BOOL
 #undef NUMBER
 
-GGUI::List_View::List_View(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+GGUI::List_View::List_View(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2 position) : Element(css){
     GGUI::Pause_GGUI([this, width, height, parent, position](){
         if (width != 0)
             Set_Width(width);
@@ -125,7 +125,7 @@ GGUI::Scroll_View::Scroll_View(std::vector<Element*> Childs, DIRECTION grow_dire
     });
 }
 
-GGUI::Scroll_View::Scroll_View(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates position) : Element(css){
+GGUI::Scroll_View::Scroll_View(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2 position) : Element(css){
     GGUI::Pause_GGUI([this, css, width, height, parent, position](){
         if (width != 0)
             Set_Width(width);

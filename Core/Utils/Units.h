@@ -8,75 +8,75 @@
 
 namespace GGUI{
     
-    class Vector2{
+    class FVector2{
     public:
         float X = 0;
         float Y = 0;
 
-        Vector2(float x, float y){
+        FVector2(float x, float y){
             X = x;
             Y = y;
         }
 
-        Vector2(){}
+        FVector2(){}
 
-        Vector2 operator+(float num){
-            return Vector2(X + num, Y + num);
+        FVector2 operator+(float num){
+            return FVector2(X + num, Y + num);
         }
 
-        Vector2 operator-(float num){
-            return Vector2(X - num, Y - num);
+        FVector2 operator-(float num){
+            return FVector2(X - num, Y - num);
         }
 
-        Vector2 operator*(float num){
-            return Vector2(X * num, Y * num);
+        FVector2 operator*(float num){
+            return FVector2(X * num, Y * num);
         }
     };
 
-    class Vector3 : public Vector2{
+    class FVector3 : public FVector2{
     public:
         float Z = 0;
 
-        Vector3(float x, float y, float z){
+        FVector3(float x, float y, float z){
             Z = z;
             X = x;
             Y = y;
         }
 
-        Vector3(){}
+        FVector3(){}
     };
 
-    class Coordinates{
+    class IVector2{
     public:
         int X = 0;  //Horizontal
         int Y = 0;  //Vertical
         int Z = 0;  //priority (the higher the more likely it will be at top).
 
-        Coordinates(int x = 0, int y = 0, int z = 0){
+        IVector2(int x = 0, int y = 0, int z = 0){
             X = x;
             Y = y;
             Z = z;
         }
 
-        void operator+=(Coordinates* other){
+        void operator+=(IVector2* other){
             X += other->X;
             Y += other->Y;
             Z += other->Z;
         }
 
-        void operator+=(Vector2 other){
+        void operator+=(FVector2 other){
             X += other.X;
             Y += other.Y;
         }
 
-        void operator+=(Coordinates other){
+        void operator+=(IVector2 other){
             X += other.X;
             Y += other.Y;
             Z += other.Z;
         }
     
-        Coordinates operator+(Coordinates& other){
-            return Coordinates(X + other.X, Y + other.Y, Z + other.Z);
+        IVector2 operator+(IVector2& other){
+            return IVector2(X + other.X, Y + other.Y, Z + other.Z);
         }
     
         std::string To_String(){

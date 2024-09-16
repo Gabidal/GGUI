@@ -37,7 +37,7 @@ namespace GGUI{
 
     bool Platform_Initialized = false;
 
-    Coordinates Mouse;
+    IVector2 Mouse;
     //move 1 by 1, or element by element.
     bool Mouse_Movement_Enabled = true;
 
@@ -65,7 +65,7 @@ namespace GGUI{
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
     const std::string HISTORY = "_HISTORY_";
 
-    bool Collides(GGUI::Coordinates A, GGUI::Coordinates B, int A_Width, int A_Height, int B_Width, int B_Height){
+    bool Collides(GGUI::IVector2 A, GGUI::IVector2 B, int A_Width, int A_Height, int B_Width, int B_Height){
         return (
             A.X < B.X + B_Width &&
             A.X + A_Width > B.X &&
@@ -81,11 +81,11 @@ namespace GGUI{
         return Collides(a->Get_Absolute_Position(), b->Get_Absolute_Position(), a->Get_Width(), a->Get_Height(), b->Get_Width(), b->Get_Height());
     }
 
-    bool Collides(GGUI::Element* a, GGUI::Coordinates b){
+    bool Collides(GGUI::Element* a, GGUI::IVector2 b){
         return Collides(a->Get_Absolute_Position(), b, a->Get_Width(), a->Get_Height(), 1, 1);
     }
 
-    Element* Get_Accurate_Element_From(Coordinates c, Element* Parent){
+    Element* Get_Accurate_Element_From(IVector2 c, Element* Parent){
         
         //first check if the c is in bounds of Parent.
         if (!Collides(Parent, c)){
@@ -101,7 +101,7 @@ namespace GGUI{
         return Parent;
     }
 
-    Coordinates Find_Upper_Element(){
+    IVector2 Find_Upper_Element(){
 
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
@@ -111,7 +111,7 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Get_Position();
+        IVector2 tmp_c = Current_Element->Get_Position();
 
         tmp_c.Y--;
 
@@ -124,7 +124,7 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    Coordinates Find_Lower_Element(){
+    IVector2 Find_Lower_Element(){
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -133,7 +133,7 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Get_Position();
+        IVector2 tmp_c = Current_Element->Get_Position();
 
         tmp_c.Y += Current_Element->Get_Height();
 
@@ -146,7 +146,7 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    Coordinates Find_Left_Element(){
+    IVector2 Find_Left_Element(){
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -155,7 +155,7 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Get_Position();
+        IVector2 tmp_c = Current_Element->Get_Position();
 
         tmp_c.X--;
 
@@ -168,7 +168,7 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    Coordinates Find_Right_Element(){
+    IVector2 Find_Right_Element(){
         //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -177,7 +177,7 @@ namespace GGUI{
             return false;
         }
 
-        Coordinates tmp_c = Current_Element->Get_Position();
+        IVector2 tmp_c = Current_Element->Get_Position();
 
         tmp_c.X += Current_Element->Get_Width();
 
@@ -190,7 +190,7 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    Element* Find_Closest_Absolute_Element(Coordinates start, std::vector<Element*> Candidates){
+    Element* Find_Closest_Absolute_Element(IVector2 start, std::vector<Element*> Candidates){
         // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
         // If they are, check if they collide with any element.
         // cast "rays" to each four directions, and return the lenghts of each collision between the center of the rectangles and the start point.
@@ -206,7 +206,7 @@ namespace GGUI{
             if (!candidate) 
                 continue;   // Incase of event handlers with their stupid empty hosters.
             // Calculate the distance between the candidate position and the start position
-            Coordinates CC = candidate->Get_Absolute_Position();
+            IVector2 CC = candidate->Get_Absolute_Position();
             float Distance = std::sqrt(std::pow(CC.X - start.X, 2) + std::pow(CC.Y - start.Y, 2));
 
             if (Distance < Shortest_Distance){
@@ -1205,7 +1205,7 @@ namespace GGUI{
     }
 
     //Returns a char if given ASCII, or a short if given UNICODE
-    GGUI::UTF* Get(GGUI::Coordinates Abselute_Position){
+    GGUI::UTF* Get(GGUI::IVector2 Abselute_Position){
         if (Abselute_Position.X >= Get_Max_Width() || 
             Abselute_Position.Y >= Get_Max_Height() ||
             Abselute_Position.X < 0 || 
@@ -1622,23 +1622,23 @@ namespace GGUI{
         // Add default class
         std::string DEFAULT_NAME = "default";
         Styling DEFAULT;
-        DEFAULT.Text_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Text_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Border_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Border_Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Border_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Border_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Hover_Text_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Hover_Background_Color = RGB_VALUE(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Text_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Hover_Border_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Hover_Border_Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Border_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Border_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
          
-        DEFAULT.Focus_Text_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        DEFAULT.Focus_Background_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Text_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Focus_Border_Color = RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Focus_Border_Background_Color = RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Border_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Border_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         
         Add_Class(DEFAULT_NAME, DEFAULT);
     }
@@ -1990,7 +1990,7 @@ namespace GGUI{
             );
         }
 
-        GGUI::Coordinates C = child->Get_Position();
+        GGUI::IVector2 C = child->Get_Position();
 
         int i = 0;
         for (int Parent_Y = 0; Parent_Y < (signed)Parent->Get_Height(); Parent_Y++){

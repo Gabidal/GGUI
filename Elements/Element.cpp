@@ -29,7 +29,7 @@ void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
     Result->Add(Constants::To_Compact[Blue]);
 }
     
-GGUI::BORDER_STYLE_VALUE::BORDER_STYLE_VALUE(std::vector<const char*> values, VALUE_STATE Default) : Style_Base(Default){
+GGUI::styled_border::styled_border(std::vector<const char*> values, VALUE_STATE Default) : style_base(Default){
     if(values.size() == 11){
         TOP_LEFT_CORNER = values[0];
         BOTTOM_LEFT_CORNER = values[1];
@@ -160,7 +160,7 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
     }
 }
 
-GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
+GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, IVector2* position){
     Add_Class("default");
 
     Name = std::to_string((unsigned long long)this);
@@ -199,7 +199,7 @@ GGUI::Element::Element() {
     }
 }
 
-GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, Coordinates* position){
+GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position){
     Pause_GGUI([this, css, width, height, parent, position](){
         Add_Class("default");
         Parse_Classes();
@@ -231,7 +231,7 @@ GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Ele
 GGUI::Element::Element(
     unsigned int width,
     unsigned int height,
-    Coordinates position
+    IVector2 position
 ) : Element(){
     Pause_GGUI([this, width, height, position](){
         Set_Width(width);
@@ -445,8 +445,8 @@ unsigned int GGUI::Element::Get_Processed_Height(){
     return Height;
 }
 
-void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opacity, float Length){
-    SHADOW_VALUE* properties = &Style->Shadow;
+void GGUI::Element::Show_Shadow(FVector2 Direction, RGB Shadow_Color, float Opacity, float Length){
+    shadow* properties = &Style->Shadow;
 
     properties->Color = Shadow_Color;
     properties->Direction = {Direction.X, Direction.Y, Length};
@@ -464,7 +464,7 @@ void GGUI::Element::Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opaci
 }
 
 void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
-    SHADOW_VALUE* properties = &Style->Shadow;
+    shadow* properties = &Style->Shadow;
 
     properties->Color = Shadow_Color;
     properties->Direction = {0, 0, Length};
@@ -778,7 +778,7 @@ void GGUI::Element::Set_Height(unsigned int height){
     }
 }
 
-void GGUI::Element::Set_Position(Coordinates c){
+void GGUI::Element::Set_Position(IVector2 c){
     Position = c;
 
     this->Dirty.Dirty(STAIN_TYPE::MOVE);
@@ -786,17 +786,17 @@ void GGUI::Element::Set_Position(Coordinates c){
     Update_Frame();
 }
 
-void GGUI::Element::Set_Position(Coordinates* c){
+void GGUI::Element::Set_Position(IVector2* c){
     if (c){
         Set_Position(*c);
     }
 }
 
-GGUI::Coordinates GGUI::Element::Get_Position(){
+GGUI::IVector2 GGUI::Element::Get_Position(){
     return Position;
 }
 
-GGUI::Coordinates GGUI::Element::Get_Absolute_Position(){
+GGUI::IVector2 GGUI::Element::Get_Absolute_Position(){
     return Style->Absolute_Position_Cache.Value;
 }
 
@@ -810,11 +810,11 @@ void GGUI::Element::Update_Absolute_Position_Cache(){
     Style->Absolute_Position_Cache.Value += Position;
 }
 
-void GGUI::Element::Set_Margin(MARGIN_VALUE margin){
+void GGUI::Element::Set_Margin(margin margin){
     Style->Margin = margin;
 }
 
-GGUI::MARGIN_VALUE GGUI::Element::Get_Margin(){
+GGUI::margin GGUI::Element::Get_Margin(){
     return Style->Margin;
 }
 
@@ -870,7 +870,7 @@ GGUI::Element* GGUI::Element::Copy(){
 }
 
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
-    Coordinates Current_Position = child->Get_Position();
+    IVector2 Current_Position = child->Get_Position();
 
     unsigned int Result_Width = 0;
     unsigned int Result_Height = 0;
@@ -1135,7 +1135,7 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
     if (!w->Has_Border())
         return;
 
-    GGUI::BORDER_STYLE_VALUE custom_border = Style->Border_Style;
+    GGUI::styled_border custom_border = Style->Border_Style;
 
     for (unsigned int y = 0; y < Height; y++){
         for (unsigned int x = 0; x < Width; x++){
@@ -1239,7 +1239,7 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     }
 }
 
-inline bool Is_In_Bounds(GGUI::Coordinates index, GGUI::Element* parent){
+inline bool Is_In_Bounds(GGUI::IVector2 index, GGUI::Element* parent){
     // checks if the index is out of bounds
     if (index.X < 0 || index.Y < 0 || index.X >= (signed)parent->Get_Width() || index.Y >= (signed)parent->Get_Height())
         return false;
@@ -1247,17 +1247,17 @@ inline bool Is_In_Bounds(GGUI::Coordinates index, GGUI::Element* parent){
     return true;
 }
 
-inline GGUI::UTF* From(GGUI::Coordinates index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::Element* Parent){
+inline GGUI::UTF* From(GGUI::IVector2 index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::Element* Parent){
     return &Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
 }
 
 std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_Map(GGUI::Element* e){
-    GGUI::BORDER_STYLE_VALUE custom_border_style = e->Get_Border_Style();
+    GGUI::styled_border custom_border_style = e->Get_Border_Style();
 
     return Get_Custom_Border_Map(custom_border_style);
 }
 
-std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_Map(GGUI::BORDER_STYLE_VALUE custom_border_style){
+std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_Map(GGUI::styled_border custom_border_style){
     return {
             {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style.TOP_LEFT_CORNER},
             {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style.TOP_RIGHT_CORNER},
@@ -1278,14 +1278,14 @@ std::unordered_map<unsigned int, const char*> GGUI::Element::Get_Custom_Border_M
         };
 }
 
-void GGUI::Element::Set_Custom_Border_Style(GGUI::BORDER_STYLE_VALUE style){
+void GGUI::Element::Set_Custom_Border_Style(GGUI::styled_border style){
     Style->Border_Style = style;
     Dirty.Dirty(STAIN_TYPE::EDGE);
 
     Show_Border(true);
 }
 
-GGUI::BORDER_STYLE_VALUE GGUI::Element::Get_Custom_Border_Style(){
+GGUI::styled_border GGUI::Element::Get_Custom_Border_Style(){
     return Style->Border_Style;
 }
 
@@ -1350,14 +1350,14 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
     };
 
-    std::vector<Coordinates> Crossing_Indicies;
+    std::vector<IVector2> Crossing_Indicies;
 
     // Go through singular box
     for (unsigned int Box_Index = 0; Box_Index < Horizontal_Line_Y_Cordinates.size(); Box_Index++){
         // Now just pair the indicies from the two lists.
         Crossing_Indicies.push_back(
             // First pair
-            Coordinates(
+            IVector2(
                 Vertical_Line_X_Coordinates[Box_Index],
                 Horizontal_Line_Y_Cordinates[Box_Index]
             )
@@ -1369,10 +1369,10 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
 
-        Coordinates Above = { c.X, Max((signed)c.Y - 1, 0) };
-        Coordinates Below = { c.X, c.Y + 1 };
-        Coordinates Left = { Max((signed)c.X - 1, 0), c.Y };
-        Coordinates Right = { c.X + 1, c.Y };
+        IVector2 Above = { c.X, Max((signed)c.Y - 1, 0) };
+        IVector2 Below = { c.X, c.Y + 1 };
+        IVector2 Left = { Max((signed)c.X - 1, 0), c.Y };
+        IVector2 Right = { c.X + 1, c.Y };
 
         unsigned int Current_Masks = 0;
 
@@ -1533,9 +1533,9 @@ int Get_Sign(int x){
 }
 
 // Constructs two squares one 2 steps larger on width and height, and given the differented indicies.
-std::vector<GGUI::Coordinates> Get_Surrounding_Indicies(int Width, int Height, GGUI::Coordinates start_offset, GGUI::Vector2 Offset){
+std::vector<GGUI::IVector2> Get_Surrounding_Indicies(int Width, int Height, GGUI::IVector2 start_offset, GGUI::FVector2 Offset){
 
-    std::vector<GGUI::Coordinates> Result;
+    std::vector<GGUI::IVector2> Result;
 
     // First construct the first square.
     int Bigger_Square_Start_X = start_offset.X - 1;
@@ -1577,7 +1577,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     if (!Style->Shadow.Enabled)
         return;
 
-    SHADOW_VALUE& properties = Style->Shadow;
+    shadow& properties = Style->Shadow;
 
 
     // First calculate the new buffer size.
@@ -1604,7 +1604,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     int Current_Shadow_Height = Height;
 
     for (int i = 0; i < Shadow_Length; i++){
-        std::vector<Coordinates> Shadow_Indicies = Get_Surrounding_Indicies(
+        std::vector<IVector2> Shadow_Indicies = Get_Surrounding_Indicies(
             Current_Shadow_Width,
             Current_Shadow_Height,
             { 
@@ -1637,22 +1637,22 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
 
     Current_Buffer.resize(Offset_Box_Width * Offset_Box_Height);
 
-    Coordinates Shadow_Box_Start = {
+    IVector2 Shadow_Box_Start = {
         GGUI::Max(0, (int)properties.Direction.X),
         GGUI::Max(0, (int)properties.Direction.Y)
     };
 
-    Coordinates Original_Box_Start = {
+    IVector2 Original_Box_Start = {
         Shadow_Box_Start.X - properties.Direction.X + Shadow_Length,
         Shadow_Box_Start.Y - properties.Direction.Y + Shadow_Length
     };
 
-    Coordinates Original_Box_End = {
+    IVector2 Original_Box_End = {
         Original_Box_Start.X + Width,
         Original_Box_Start.Y + Height
     };
 
-    Coordinates Shadow_Box_End = {
+    IVector2 Shadow_Box_End = {
         Shadow_Box_Start.X + Shadow_Box_Width,
         Shadow_Box_Start.Y + Shadow_Box_Height
     };

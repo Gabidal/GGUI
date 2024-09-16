@@ -26,7 +26,7 @@ namespace GGUI{
             Criteria = t;
         }
 
-        Input(Coordinates c, unsigned long long t, int s = 1){
+        Input(IVector2 c, unsigned long long t, int s = 1){
             X = c.X;
             Y = c.Y;
             Criteria = t;

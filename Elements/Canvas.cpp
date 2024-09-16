@@ -8,7 +8,7 @@
 
 namespace GGUI{
 
-    Canvas::Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
+    Canvas::Canvas(unsigned int w, unsigned int h, IVector2 position) : Element(){
         Pause_GGUI([w, h, position, this](){
             Buffer.resize(w * h);
 
@@ -95,7 +95,7 @@ namespace GGUI{
         Frame_Distance = ((float)UINT8_MAX + 1) / (float)Frames.size();
     }
 
-    Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position) : Element(){
+    Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, IVector2 position) : Element(){
         Buffer.resize(w * h);
 
         Width = w;
@@ -248,7 +248,7 @@ namespace GGUI{
         return Result;
     }
 
-    void GGUI::Terminal_Canvas::Embed_Points(std::vector<bool> pixels, BORDER_STYLE_VALUE border_style, bool flush){
+    void GGUI::Terminal_Canvas::Embed_Points(std::vector<bool> pixels, styled_border border_style, bool flush){
 
         unsigned int Usable_Width = Width - 2 * Has_Border();
         unsigned int Usable_Height = Height - 2 * Has_Border();
@@ -319,7 +319,7 @@ namespace GGUI{
         }
 
         // Helper function for the above
-        std::vector<bool> Line(Vector2 Start, Vector2 End, int Buffer_Width){
+        std::vector<bool> Line(FVector2 Start, FVector2 End, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
             Line(Start.X, Start.Y, End.X, End.Y, Result, Buffer_Width);
@@ -354,7 +354,7 @@ namespace GGUI{
             }
         }
 
-        std::vector<bool> Circle(Vector2 Center, int Radius, int Buffer_Width){
+        std::vector<bool> Circle(FVector2 Center, int Radius, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
             Circle(Center.X, Center.Y, Radius, Result, Buffer_Width);
@@ -362,13 +362,13 @@ namespace GGUI{
             return Result;
         }
 
-        void Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, std::vector<bool>& pixels, int width){
+        void Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width){
             for (double t = 0.0; t <= 1.0; t += 0.001) {
                 double u = 1 - t;
                 double tt = t*t, uu = u*u;
                 double uuu = uu * u, ttt = tt * t;
 
-                Vector2 P;
+                FVector2 P;
                 P.X = uuu * P0.X; //influence of P0
                 P.Y = uuu * P0.Y; 
 
@@ -385,7 +385,7 @@ namespace GGUI{
             }
         }
 
-        std::vector<bool> Cubic_Bezier_Curve(Vector2 P0, Vector2 P1, Vector2 P2, Vector2 P3, int Buffer_Width){
+        std::vector<bool> Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
             Cubic_Bezier_Curve(P0, P1, P2, P3, Result, Buffer_Width);
