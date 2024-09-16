@@ -90,7 +90,8 @@ namespace GGUI{
     extern int Inputs_Per_Second;
     extern int Inputs_Per_Query;
 
-    extern unsigned long long Delta_Time;
+    extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
+    extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
 
     extern Atomic::Guard<std::unordered_map<int, Styling>> Classes;
     extern std::unordered_map<std::string, int> Class_Names;

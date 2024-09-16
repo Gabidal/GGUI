@@ -1178,6 +1178,7 @@ void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
 
     // Color the Destination UTF by the Source UTF background color.
     Dest.Background += Source.Background;
+    Dest.Foreground += Source.Background;
 
     // Check if source has text
     if (!Source.Has_Default_Text()){
