@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace GGUI{
-        // And lighter-weight version of the UTF class. [Probably after making the RGBA use unsigned char instead of float, and thus making the overall size into 32 bits, replace this class with UTF.]
+    // And lighter-weight version of the UTF class. [Probably after making the RGBA use unsigned char instead of float, and thus making the overall size into 32 bits, replace this class with UTF.]
     class Compact_String{
     public:
         union{

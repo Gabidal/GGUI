@@ -62,6 +62,9 @@ namespace GGUI{
 
     std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
+    // Only covers elements with any attributes related to screen space.
+    std::vector<GGUI::Element*> Dynamic_Screen_Space_Dependent_Attribute_Elements;
+
     Window* Main = nullptr;
     
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
@@ -264,6 +267,8 @@ namespace GGUI{
         if (Max_Width == 0 || Max_Height == 0){
             Report("Failed to get console info!");
         }
+
+        Notify_Dynamic_Screen_Space_Dependent_Attributes();
     }
 
     void Update_Frame(bool Lock_Event_Thread);
@@ -656,10 +661,16 @@ namespace GGUI{
 
         Max_Width = w.ws_col;
         Max_Height = w.ws_row - 1;
+        
+        if (Max_Width == 0 || Max_Height == 0){
+            Report("Failed to get console info!");
+        }
 
         // Convenience sake :)
         if (Main)
             Main->Set_Dimensions(Max_Width, Max_Height);
+
+        Notify_Dynamic_Attributes();
     }
 
     void Add_Automatic_Terminal_Size_Update_Handler(){
@@ -1733,7 +1744,7 @@ namespace GGUI{
                 Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // First update Main size if needed.
-                Update_Max_Width_And_Height();
+                // Update_Max_Width_And_Height();
 
                 // Order independent --------------
                 Recall_Memories();
@@ -2197,6 +2208,13 @@ namespace GGUI{
             }
 
         }
+
+    }
+
+    void Notify_Dynamic_Screen_Space_Dependent_Attributes(){
+        // Reads from 'Dynamic_Screen_Space_Dependent_Attribute_Elements'
+
+        
 
     }
 

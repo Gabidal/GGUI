@@ -15,6 +15,8 @@ PROFILE = 3
 TYPE = DEBUG
 
 sources = [
+  '../Core/Utils/Style.cpp',
+
   '../Elements/Element.cpp',
   '../Elements/Window.cpp',
   '../Elements/List_View.cpp',

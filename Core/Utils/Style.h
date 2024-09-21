@@ -4,6 +4,10 @@
 #include "Units.h"
 
 namespace GGUI{
+    // Externies
+    class Element;
+    extern void Report_Stack(std::string Problem);
+
     enum class ALIGN{
         UP,
         DOWN,
@@ -23,6 +27,104 @@ namespace GGUI{
         COLUMN
     };
 
+    enum class EVALUATION_TYPE{
+        DEFAULT,        // no further evaluation needed, just return the value
+        PIXELS,         // the value is multiplied by 1:1
+        PERCENTAGE,     // the value is a percentage of the parent attribute
+        EM,             // the value is a multiple of the font size
+        REM,            // the value is a multiple of the root font size
+        VW,             // the value is a percentage of the viewport width
+        VH,             // the value is a percentage of the viewport height
+        CH,             // the value is a relative to the width of the "0" (zero) character in the element’s font.
+        VMIN,           // the value is a percentage of the viewport’s smaller dimension
+        VMAX,           // the value is a percentage of the viewport’s larger dimension
+        EX,             // the value is a multiple of the x-height of the element’s font
+        FRACTION,       // the value is a fraction of the parent attribute
+
+        // PHYSICAL MEASUREMENTS
+        CM,             // the value is in centimeters defaults to 1:1 in terminal mode
+        MM,             // the value is in millimeters defaults to 1:1 in terminal mode
+        IN,             // the value is in inches defaults to 1:1 in terminal mode
+        PT,             // the value is in points defaults to 1:1 in terminal mode
+        PC,             // the value is in picas defaults to 1:1 in terminal mode
+    };
+
+    template<typename T>
+    class value{
+    protected:
+        union variations{
+            T           normal;             // Representing the default variation
+            float       percentage;         // Representing the value as an percentage 
+        } data;
+
+        EVALUATION_TYPE evaluation_type = EVALUATION_TYPE::DEFAULT;
+    public:
+        constexpr value(T value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr){
+            data.normal = value;
+            evaluation_type = type;
+        }
+        
+        constexpr value(float value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr){
+            data.percentage = value;
+            evaluation_type = type;
+        }
+
+        value(T value, EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT){
+            data.normal = value;
+            evaluation_type = type;
+        }
+
+        value(float value, EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE){
+            data.percentage = value;
+            evaluation_type = type;
+        }
+
+        // set operators as constexpr
+        constexpr value& operator=(const value& other){
+            data = other.data;
+            evaluation_type = other.evaluation_type;
+            return *this;
+        }
+
+        constexpr value& operator=(T initialization_data){
+            data.normal = initialization_data;
+            evaluation_type = EVALUATION_TYPE::DEFAULT;
+            return *this;
+        }
+
+        constexpr value& operator=(float initialization_data){
+            data.percentage = initialization_data;
+            evaluation_type = EVALUATION_TYPE::PERCENTAGE;
+            return *this;
+        }
+
+        // constexpr copy constructor
+        constexpr value(const GGUI::value<T>& other) : data(other.data), evaluation_type(other.evaluation_type){}
+
+        T Evaluate(T parental_value){
+            switch (evaluation_type)
+            {
+            case EVALUATION_TYPE::DEFAULT:
+                return data.normal;
+                break;
+            
+            case EVALUATION_TYPE::PERCENTAGE:
+                data.normal = (T)((float)parental_value * data.percentage);
+                return data.normal;
+                break;
+
+            default:
+                Report_Stack("Evaluation type not supported!");
+                return data.normal;     // if the evaluation type is not supported, then just return the default
+                break;
+            }
+        }
+    
+        T Get(){
+            return data.normal;
+        }
+    };
+
     class style_base{
     public:
         VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
@@ -39,17 +141,12 @@ namespace GGUI{
 
     class margin : public style_base{
     public:
-        unsigned int Top = 0;
-        unsigned int Bottom = 0;
-        unsigned int Left = 0;
-        unsigned int Right = 0;
+        value<unsigned int> Top = (unsigned)0;
+        value<unsigned int> Bottom = (unsigned)0;
+        value<unsigned int> Left = (unsigned)0;
+        value<unsigned int> Right = (unsigned)0;
 
-        margin(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
-            Top = top;
-            Bottom = bottom;
-            Left = left;
-            Right = right;
-        }
+        margin(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Top(top), Bottom(bottom), Left(left), Right(right){}
 
         // operator overload for copy operator
         margin& operator=(const margin& other){
@@ -65,12 +162,12 @@ namespace GGUI{
             return *this;
         }
 
-        constexpr margin(const GGUI::margin& other) : style_base(other.Status, true){
-            Top = other.Top;
-            Bottom = other.Bottom;
-            Left = other.Left;
-            Right = other.Right;
-        }
+        constexpr margin(const GGUI::margin& other) : style_base(other.Status, true), Top(other.Top), Bottom(other.Bottom), Left(other.Left), Right(other.Right){}
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        margin Evaluate(Element* owner);
     };
 
     class location : public style_base{

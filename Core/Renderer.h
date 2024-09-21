@@ -63,7 +63,7 @@ namespace GGUI{
         };
     }
 
-    extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector whitout bold nor color
+    extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
     extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
 
     extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
@@ -100,6 +100,8 @@ namespace GGUI{
 
     extern std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
+    extern std::vector<GGUI::Element*> Dynamic_Screen_Space_Dependent_Attribute_Elements;
+
     void SLEEP(unsigned int milliseconds);
 
     extern bool Collides(GGUI::IVector2 A, GGUI::IVector2 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
@@ -122,6 +124,8 @@ namespace GGUI{
     extern signed long long Min(signed long long a, signed long long b);
 
     extern signed long long Max(signed long long a, signed long long b);
+
+    extern void Notify_Dynamic_Screen_Space_Dependent_Attributes();    // For a collection of different type of dynamic attribute scalers, like FLEX containers or anchors, or screen-space relative attributes.
 
     extern void ClearScreen();
 
