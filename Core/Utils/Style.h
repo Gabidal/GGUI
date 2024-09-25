@@ -109,6 +109,7 @@ namespace GGUI{
                 break;
             
             case EVALUATION_TYPE::PERCENTAGE:
+                // This will assume that the data type T has an operator* handled
                 data.normal = (T)((float)parental_value * data.percentage);
                 return data.normal;
                 break;
@@ -202,8 +203,8 @@ namespace GGUI{
 
     class shadow : public style_base{
     public:
-        FVector3 Direction = {0, 0, 0.5};
-        RGB Color = {};
+        value<FVector3> Direction = FVector3{0, 0, 0.5};
+        value<RGB> Color = RGB{};
         float Opacity = 1;
         bool Enabled = false;
 
@@ -230,6 +231,11 @@ namespace GGUI{
         }
     
         constexpr shadow(const GGUI::shadow& other) : style_base(other.Status, true), Direction(other.Direction), Color(other.Color), Opacity(other.Opacity), Enabled(other.Enabled){}
+    
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        shadow Evaluate(Element* owner);
     };
 
     class styled_border : public style_base{

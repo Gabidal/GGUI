@@ -13,4 +13,16 @@ namespace GGUI{
         );
     }
 
+    shadow shadow::Evaluate(Element* owner){
+        shadow parents_shadow = owner->Get_Style().Shadow;
+
+        return shadow(
+            Direction.Evaluate(parents_shadow.Direction.Get()),
+            Color.Evaluate(parents_shadow.Color.Get()),
+            Opacity,
+            Enabled,
+            Status
+        );
+    }
+
 }
