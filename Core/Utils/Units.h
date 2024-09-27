@@ -8,27 +8,40 @@
 
 namespace GGUI{
     
+    // Literal type
     class FVector2{
     public:
         float X = 0;
         float Y = 0;
 
-        FVector2(float x, float y){
-            X = x;
-            Y = y;
-        }
+        // Default constructor
+        constexpr FVector2(float x = 0.0f, float y = 0.0f) noexcept
+            : X(x), Y(y) {}
 
-        FVector2(){}
+        // Copy constructor
+        constexpr FVector2(const FVector2& other) noexcept = default;
 
-        FVector2 operator+(float num){
+        // Move constructor
+        constexpr FVector2(FVector2&& other) noexcept = default;
+
+        // Copy assignment operator
+        constexpr FVector2& operator=(const FVector2& other) noexcept = default;
+
+        // Move assignment operator
+        constexpr FVector2& operator=(FVector2&& other) noexcept = default;
+
+        // + operator with a float
+        constexpr FVector2 operator+(float num) const noexcept {
             return FVector2(X + num, Y + num);
         }
 
-        FVector2 operator-(float num){
+        // - operator with a float
+        constexpr FVector2 operator-(float num) const noexcept {
             return FVector2(X - num, Y - num);
         }
 
-        FVector2 operator*(float num){
+        // * operator with a float
+        constexpr FVector2 operator*(float num) const noexcept {
             return FVector2(X * num, Y * num);
         }
     };
@@ -52,34 +65,53 @@ namespace GGUI{
         int Y = 0;  //Vertical
         int Z = 0;  //priority (the higher the more likely it will be at top).
 
-        IVector2(int x = 0, int y = 0, int z = 0){
-            X = x;
-            Y = y;
-            Z = z;
-        }
+        // Default constructor
+        constexpr IVector2(int x = 0, int y = 0, int z = 0) noexcept
+            : X(x), Y(y), Z(z) {}
 
-        void operator+=(IVector2* other){
+        // Copy constructor
+        constexpr IVector2(const IVector2& other) noexcept = default;
+
+        // Move constructor
+        constexpr IVector2(IVector2&& other) noexcept = default;
+
+        // Copy assignment operator
+        constexpr IVector2& operator=(const IVector2& other) noexcept = default;
+
+        // Move assignment operator
+        constexpr IVector2& operator=(IVector2&& other) noexcept = default;
+
+        // += operator for IVector2 pointer
+        constexpr void operator+=(IVector2* other) noexcept {
             X += other->X;
             Y += other->Y;
             Z += other->Z;
         }
 
-        void operator+=(FVector2 other){
+        // += operator for FVector2
+        constexpr void operator+=(FVector2 other) noexcept {
             X += other.X;
             Y += other.Y;
         }
 
-        void operator+=(IVector2 other){
+        // += operator for IVector2
+        constexpr void operator+=(IVector2 other) noexcept {
             X += other.X;
             Y += other.Y;
             Z += other.Z;
         }
-    
-        IVector2 operator+(IVector2& other){
+
+        // + operator for IVector2
+        constexpr IVector2 operator+(const IVector2& other) const noexcept {
             return IVector2(X + other.X, Y + other.Y, Z + other.Z);
         }
-    
+
         std::string To_String(){
+            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
+        }
+    
+        // To_String function (cannot be constexpr due to std::string)
+        std::string To_String() const {
             return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
         }
     };

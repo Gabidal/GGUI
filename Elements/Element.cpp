@@ -204,14 +204,14 @@ GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Ele
         Add_Class("default");
         Parse_Classes();
 
-        bool Previus_Border_State = Has_Border();
+        bool Previous_Border_State = Has_Border();
 
         Style = new Styling(css);
 
         Fully_Stain();
 
         //Check if the css changed the border state, if so we need to increment or decrement the width & height.
-        Show_Border(Has_Border(), Previus_Border_State);
+        Show_Border(Has_Border(), Previous_Border_State);
 
         if (width != 0)
             Set_Width(width);
@@ -354,49 +354,49 @@ void GGUI::Element::Inherit_States_From(Element* abstract){
 
 std::pair<GGUI::RGB, GGUI::RGB>  GGUI::Element::Compose_All_Text_RGB_Values(){
     if (Focused){
-        return {Style->Focus_Text_Color.Value, Style->Focus_Background_Color.Value};
+        return {Style->Focus_Text_Color.Value.Get(), Style->Focus_Background_Color.Value.Get()};
     }
     else if (Hovered){
-        return {Style->Hover_Text_Color.Value, Style->Hover_Background_Color.Value};
+        return {Style->Hover_Text_Color.Value.Get(), Style->Hover_Background_Color.Value.Get()};
     }
     else{
-        return {Style->Text_Color.Value, Style->Background_Color.Value};
+        return {Style->Text_Color.Value.Get(), Style->Background_Color.Value.Get()};
     }
 }
 
 GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
     if (Focused){
-        return Style->Focus_Text_Color.Value;
+        return Style->Focus_Text_Color.Value.Get();
     }
     else if (Hovered){
-        return Style->Hover_Text_Color.Value;
+        return Style->Hover_Text_Color.Value.Get();
     }
     else{
-        return Style->Text_Color.Value;
+        return Style->Text_Color.Value.Get();
     }
 }
 
 GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(){
     if (Focused){
-        return Style->Focus_Background_Color.Value;
+        return Style->Focus_Background_Color.Value.Get();
     }
     else if (Hovered){
-        return Style->Hover_Background_Color.Value;
+        return Style->Hover_Background_Color.Value.Get();
     }
     else{
-        return Style->Background_Color.Value;
+        return Style->Background_Color.Value.Get();
     }
 }
 
 std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
     if (Focused){
-        return {Style->Focus_Border_Color.Value, Style->Focus_Border_Background_Color.Value};
+        return {Style->Focus_Border_Color.Value.Get(), Style->Focus_Border_Background_Color.Value.Get()};
     }
     else if (Hovered){
-        return {Style->Hover_Border_Color.Value, Style->Hover_Border_Background_Color.Value};
+        return {Style->Hover_Border_Color.Value.Get(), Style->Hover_Border_Background_Color.Value.Get()};
     }
     else{
-        return {Style->Border_Color.Value, Style->Border_Background_Color.Value};
+        return {Style->Border_Color.Value.Get(), Style->Border_Background_Color.Value.Get()};
     }
 }
 
@@ -479,6 +479,13 @@ void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
     Update_Frame();
 }
 
+void GGUI::Element::Set_Shadow(shadow s){
+    Style->Shadow = s;
+
+    Dirty.Dirty(STAIN_TYPE::STRETCH);
+    Update_Frame();
+}
+
 void GGUI::Element::Set_Parent(Element* parent){
     if (parent){
         Parent = parent;
@@ -491,7 +498,7 @@ void GGUI::Element::Parse_Classes(){
     }
 
     bool Remember_To_Affect_Width_And_Height_Because_Of_Border = false;
-    bool Previus_Border_Value = Style->Border_Enabled.Value;
+    bool Previous_Border_Value = Style->Border_Enabled.Value;
 
     GGUI::Classes([this](auto& classes){
         //Go through all classes and their styles and accumulate them.
@@ -509,7 +516,7 @@ void GGUI::Element::Parse_Classes(){
     });
 
     if (Remember_To_Affect_Width_And_Height_Because_Of_Border){
-        Show_Border(Style->Border_Enabled.Value, Previus_Border_Value);
+        Show_Border(Style->Border_Enabled.Value, Previous_Border_Value);
     }
 }
 
@@ -577,8 +584,8 @@ void GGUI::Element::Show_Border(bool b){
     }
 }
 
-void GGUI::Element::Show_Border(bool b, bool Previus_State){
-    if (b != Previus_State){
+void GGUI::Element::Show_Border(bool b, bool Previous_State){
+    if (b != Previous_State){
         Style->Border_Enabled = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         Update_Frame();
@@ -595,16 +602,16 @@ void GGUI::Element::Add_Child(Element* Child){
     bool This_Has_Border = Has_Border();
     bool Child_Has_Border = Child->Has_Border();
 
-    int Border_Offsetter = (This_Has_Border - Child_Has_Border) * This_Has_Border;
+    int Border_Offset = (This_Has_Border - Child_Has_Border) * This_Has_Border;
 
     if (
-        Child->Position.X + Child->Width > (Width - Border_Offsetter) || 
-        Child->Position.Y + Child->Height > (Height - Border_Offsetter)
+        Child->Position.X + Child->Width > (Width - Border_Offset) || 
+        Child->Position.Y + Child->Height > (Height - Border_Offset)
     ){
         if (Style->Allow_Dynamic_Size.Value){
-            //Add the border offsetter to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = GGUI::Max(Child->Position.X + Child->Width + Border_Offsetter*2, Width);
-            unsigned int New_Height = GGUI::Max(Child->Position.Y + Child->Height + Border_Offsetter*2, Height);
+            //Add the border offset to the width and the height to count for the border collision and evade it. 
+            unsigned int New_Width = GGUI::Max(Child->Position.X + Child->Width + Border_Offset*2, Width);
+            unsigned int New_Height = GGUI::Max(Child->Position.Y + Child->Height + Border_Offset*2, Height);
 
             //TODO: Maybe check the parent of this element to check?
             Height = New_Height;
@@ -613,7 +620,7 @@ void GGUI::Element::Add_Child(Element* Child){
         else if (Child->Resize_To(this) == false){
 
             GGUI::Report(
-                "Window exeeded static bounds\n "
+                "Window exceeded static bounds\n "
                 "Starts at: {" + std::to_string(Child->Position.X) + ", " + std::to_string(Child->Position.Y) + "}\n "
                 "Ends at: {" + std::to_string(Child->Position.X + Child->Width) + ", " + std::to_string(Child->Position.Y + Child->Height) + "}\n "
                 "Max is at: {" + std::to_string(Width) + ", " + std::to_string(Height) + "}\n "
@@ -687,7 +694,7 @@ void GGUI::Element::Check(State s){
 }
 
 void GGUI::Element::Display(bool f){
-    // Check if the to be displayed is true and the element wasnt already displayed.
+    // Check if the to be displayed is true and the element wasn't already displayed.
     if (f != Show){
         Dirty.Dirty(STAIN_TYPE::STATE);
         Show = f;
@@ -933,7 +940,7 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
 
 void GGUI::Element::Set_Background_Color(RGB color){
     Style->Background_Color = color;
-    if (Style->Border_Background_Color.Value == Style->Background_Color.Value)
+    if (Style->Border_Background_Color.Value.Get() == Style->Background_Color.Value.Get())
         Style->Border_Background_Color = color;
         
     Dirty.Dirty(STAIN_TYPE::COLOR);
@@ -942,7 +949,7 @@ void GGUI::Element::Set_Background_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Background_Color(){
-    return Style->Background_Color.Value;
+    return Style->Background_Color.Value.Get();
 }
 
 void GGUI::Element::Set_Border_Color(RGB color){
@@ -952,7 +959,7 @@ void GGUI::Element::Set_Border_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Color(){
-    return Style->Border_Color.Value;
+    return Style->Border_Color.Value.Get();
 }
 
 void GGUI::Element::Set_Border_Background_Color(RGB color){
@@ -962,7 +969,7 @@ void GGUI::Element::Set_Border_Background_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Background_Color(){
-    return Style->Border_Background_Color.Value;
+    return Style->Border_Background_Color.Value.Get();
 }
 
 void GGUI::Element::Set_Text_Color(RGB color){
@@ -990,7 +997,7 @@ bool GGUI::Element::Is_Overflow_Allowed(){
 }
 
 GGUI::RGB GGUI::Element::Get_Text_Color(){
-    return Style->Text_Color.Value;
+    return Style->Text_Color.Value.Get();
 }
 
 void GGUI::Element::Compute_Dynamic_Size(){
@@ -1006,11 +1013,11 @@ void GGUI::Element::Compute_Dynamic_Size(){
             // Check the child first if it has to stretch before this can even know if it needs to stretch.
             c->Compute_Dynamic_Size();
 
-            int Border_Offsetter = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
+            int Border_Offset = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
 
-            // Add the border offsetter to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = (unsigned int)GGUI::Max(c->Position.X + (signed int)c->Width + Border_Offsetter, (signed int)Width);
-            unsigned int New_Height = (unsigned int)GGUI::Max(c->Position.Y + (signed int)c->Height + Border_Offsetter, (signed int)Height);
+            // Add the border offset to the width and the height to count for the border collision and evade it. 
+            unsigned int New_Width = (unsigned int)GGUI::Max(c->Position.X + (signed int)c->Width + Border_Offset, (signed int)Width);
+            unsigned int New_Height = (unsigned int)GGUI::Max(c->Position.Y + (signed int)c->Height + Border_Offset, (signed int)Height);
 
             // but only update those who actually allow dynamic sizing.
             if (Style->Allow_Dynamic_Size.Value && (New_Width != Width || New_Height != Height)){
@@ -1317,7 +1324,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
         return;
 
 
-    // Now that we are here it means the both boxes interlace eachother.
+    // Now that we are here it means the both boxes interlace each other.
     // We will calculate the hitting points by drawing segments from corner to corner and then comparing one segments x to other segments y, and so forth.
 
     // two nested loops rotating the x and y usages.
@@ -1337,7 +1344,7 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
     };
 
-    std::vector<int> Horizontal_Line_Y_Cordinates = {
+    std::vector<int> Horizontal_Line_Y_Coordinates = {
         
         A->Position.Y,
         B->Position.Y + (int)B->Height - 1,
@@ -1354,13 +1361,13 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
     std::vector<IVector2> Crossing_Indicies;
 
     // Go through singular box
-    for (unsigned int Box_Index = 0; Box_Index < Horizontal_Line_Y_Cordinates.size(); Box_Index++){
+    for (unsigned int Box_Index = 0; Box_Index < Horizontal_Line_Y_Coordinates.size(); Box_Index++){
         // Now just pair the indicies from the two lists.
         Crossing_Indicies.push_back(
             // First pair
             IVector2(
                 Vertical_Line_X_Coordinates[Box_Index],
-                Horizontal_Line_Y_Cordinates[Box_Index]
+                Horizontal_Line_Y_Coordinates[Box_Index]
             )
         );
     }
@@ -1422,7 +1429,7 @@ void GGUI::Element::On_Click(std::function<bool(GGUI::Event*)> action){
 
                 action(wrapper);
 
-                //action succesfully executed.
+                //action successfully executed.
                 return true;
             }
             //action failed.
@@ -1438,7 +1445,7 @@ void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Eve
         criteria,
         [this, action, GLOBAL](GGUI::Event* e){
             if (Collides(this, Mouse) || GLOBAL){
-                //action succesfully executed.
+                //action successfully executed.
                 return action(e);
             }
             //action failed.
@@ -1533,7 +1540,7 @@ int Get_Sign(int x){
     return Is_Signed(x) ? -1 : 1;
 }
 
-// Constructs two squares one 2 steps larger on width and height, and given the differented indicies.
+// Constructs two squares one 2 steps larger on width and height, and given the different indicies.
 std::vector<GGUI::IVector2> Get_Surrounding_Indicies(int Width, int Height, GGUI::IVector2 start_offset, GGUI::FVector2 Offset){
 
     std::vector<GGUI::IVector2> Result;
@@ -1588,7 +1595,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     // -a * x + o = 0
     // x = o / a
 
-    int Shadow_Length = properties.Direction.Z * properties.Opacity;
+    int Shadow_Length = properties.Direction.Get().Z * properties.Opacity;
 
     unsigned int Shadow_Box_Width = Width + (Shadow_Length * 2);
     unsigned int Shadow_Box_Height = Height + (Shadow_Length * 2);
@@ -1597,7 +1604,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     Shadow_Box.resize(Shadow_Box_Width * Shadow_Box_Height);
 
     unsigned char Current_Alpha = properties.Opacity * std::numeric_limits<unsigned char>::max();;
-    float previus_opacity = properties.Opacity;
+    float previous_opacity = properties.Opacity;
     int Current_Box_Start_X = Shadow_Length;
     int Current_Box_Start_Y = Shadow_Length;
 
@@ -1612,40 +1619,40 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
                 Current_Box_Start_X--,
                 Current_Box_Start_Y--
             },
-            properties.Direction
+            properties.Direction.Get()
         );
 
         Current_Shadow_Width += 2;
         Current_Shadow_Height += 2;
 
         UTF shadow_pixel;
-        shadow_pixel.Background = properties.Color;
+        shadow_pixel.Background = properties.Color.Get();
         shadow_pixel.Background.Alpha = Current_Alpha;
 
         for (auto& index : Shadow_Indicies){
             Shadow_Box[index.Y * Shadow_Box_Width + index.X] = shadow_pixel;
         }
 
-        previus_opacity *= GGUI::Min(0.9f, (float)properties.Direction.Z);
-        Current_Alpha = previus_opacity * std::numeric_limits<unsigned char>::max();;
+        previous_opacity *= GGUI::Min(0.9f, (float)properties.Direction.Get().Z);
+        Current_Alpha = previous_opacity * std::numeric_limits<unsigned char>::max();;
     }
 
     // Now offset the shadow box buffer by the direction.
-    int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.X);
-    int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Y);
+    int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.Get().X);
+    int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Get().Y);
 
     std::vector<GGUI::UTF> Swapped_Buffer = Current_Buffer;
 
     Current_Buffer.resize(Offset_Box_Width * Offset_Box_Height);
 
     IVector2 Shadow_Box_Start = {
-        GGUI::Max(0, (int)properties.Direction.X),
-        GGUI::Max(0, (int)properties.Direction.Y)
+        GGUI::Max(0, (int)properties.Direction.Get().X),
+        GGUI::Max(0, (int)properties.Direction.Get().Y)
     };
 
     IVector2 Original_Box_Start = {
-        Shadow_Box_Start.X - properties.Direction.X + Shadow_Length,
-        Shadow_Box_Start.Y - properties.Direction.Y + Shadow_Length
+        Shadow_Box_Start.X - properties.Direction.Get().X + Shadow_Length,
+        Shadow_Box_Start.Y - properties.Direction.Get().Y + Shadow_Length
     };
 
     IVector2 Original_Box_End = {

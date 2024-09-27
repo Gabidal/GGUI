@@ -3,6 +3,38 @@
 
 namespace GGUI{
 
+    void position::Embed_Value(Element* host){
+        host->Set_Position(Value.Get());
+    }
+
+    void text_color::Embed_Value(Element* host){
+        host->Set_Text_Color(Value.Get());
+    }
+
+    void background_color::Embed_Value(Element* host){
+        host->Set_Background_Color(Value.Get());
+    }
+
+    void border_color::Embed_Value(Element* host){
+        host->Set_Border_Color(Value.Get());
+    }
+
+    void border_background_color::Embed_Value(Element* host){
+        host->Set_Border_Background_Color(Value.Get());
+    }
+
+    void styled_border::Embed_Value(Element* host){
+        host->Set_Custom_Border_Style(*this);
+    }
+
+    void margin::Embed_Value(Element* host){
+        host->Set_Margin(*this);
+    }
+
+    void shadow::Embed_Value(Element* host){
+        host->Set_Shadow(*this);
+    }
+
     margin margin::Evaluate(Element* owner){
         return margin(
             Top.Evaluate(owner->Get_Margin().Top.Get()),
@@ -23,6 +55,10 @@ namespace GGUI{
             Enabled,
             Status
         );
+    }
+
+    void Styling::Evaluate_Dynamic_Attribute_Values(){
+
     }
 
 }

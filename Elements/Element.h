@@ -131,11 +131,6 @@ namespace GGUI{
 
     class Element{
     protected:
-        IVector2 Position;
-
-        unsigned int Width = 1;
-        unsigned int Height = 1;
-
         unsigned int Post_Process_Width = 0;
         unsigned int Post_Process_Height = 0;
 
@@ -221,7 +216,7 @@ namespace GGUI{
 
         virtual void Fully_Stain();
 
-        // If you want to make a representing element* that isnt the same as the Abstract one.
+        // If you want to make a representing element* that isn't the same as the Abstract one.
         // Then Remember to USE THIS!
         void Inherit_States_From(Element* abstract);
 
@@ -277,10 +272,11 @@ namespace GGUI{
         unsigned int Get_Processed_Width();
         unsigned int Get_Processed_Height();
 
-        // Direction: Unsupported atm!!!
         void Show_Shadow(FVector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         void Show_Shadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
+
+        void Set_Shadow(shadow s);
 
         Element* Get_Parent(){
             return Parent;
@@ -307,7 +303,7 @@ namespace GGUI{
 
         virtual void Show_Border(bool b);
 
-        virtual void Show_Border(bool b, bool Previus_state);
+        virtual void Show_Border(bool b, bool Previous_state);
 
         bool Has_Border();
 
@@ -443,7 +439,7 @@ namespace GGUI{
         template<typename T>
         std::vector<T*> Get_Elements(){
 
-            //go throgh the child AST, and check if the element in question is same type as the template T.
+            //go through the child AST, and check if the element in question is same type as the template T.
             std::vector<T*> result;
 
             if (typeid(*this) == typeid(T)){
