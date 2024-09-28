@@ -22,8 +22,8 @@ namespace GGUI{
                 return true;
             });
 
-            Width = Text.Get_Width();
-            Height = Text.Get_Height();
+            Set_Width(Text.Get_Width());
+            Set_Height(Text.Get_Height());
 
             Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STATE);
         });
@@ -62,7 +62,7 @@ namespace GGUI{
 
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
-            Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
+            Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);
             
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
@@ -83,7 +83,7 @@ namespace GGUI{
             int State_Location_X = Has_Border();
             int State_Location_Y = Has_Border();
 
-            Result[State_Location_Y * Width + State_Location_X] = States[State];
+            Result[State_Location_Y * Get_Width() + State_Location_X] = States[State];
 
             Dirty.Clean(STAIN_TYPE::STATE);
             Dirty.Dirty(STAIN_TYPE::COLOR);

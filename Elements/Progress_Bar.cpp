@@ -15,16 +15,16 @@ namespace GGUI{
     }
 
     Progress_Bar::Progress_Bar(unsigned int width, unsigned int height, PROGRESS_STYLE style) : Element(width, height), Progress_Style(style){
-        Content.resize(Width - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() }));
+        Content.resize(Get_Width() - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() }));
     }
 
     unsigned int Progress_Bar::Get_Index_of_Head(){
-        return floor(Progress * (Width - Has_Border() * 2));
+        return floor(Progress * (Get_Width() - Has_Border() * 2));
     }
 
     void Progress_Bar::Color_Bar(){
         // First color the empty_color
-        for (unsigned int i = 0; i < Width - Has_Border() * 2; i++)
+        for (unsigned int i = 0; i < Get_Width() - Has_Border() * 2; i++)
             Content[i] = UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() });
 
         // Now fill in the progressed part.
@@ -61,9 +61,9 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
 
-            Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
+            Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             
-            Content.resize(Width - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() }));
+            Content.resize(Get_Width() - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() }));
 
             Color_Bar();
 
@@ -83,12 +83,12 @@ namespace GGUI{
             int Starting_Y = Has_Border();
             int Starting_X = Has_Border();
 
-            int Ending_Y = Height - Has_Border();
-            int Ending_X = Width - Has_Border();
+            int Ending_Y = Get_Height() - Has_Border();
+            int Ending_X = Get_Width() - Has_Border();
 
             for (int y = Starting_Y; y < Ending_Y; y++)
                 for (int x = Starting_X; x < Ending_X; x++)
-                    Result[y * Width + x] = Content[x - Starting_X];
+                    Result[y * Get_Width() + x] = Content[x - Starting_X];
         }
 
         //This will add the borders if necessary and the title of the window.
@@ -122,8 +122,8 @@ namespace GGUI{
         if (b != Style->Border_Enabled.Value){
             Style->Border_Enabled = b;
 
-            if (b) Height += 2;
-            else Height -= 2;
+            if (b) Style->Width.Value.Direct() += 2;
+            else Style->Height.Value.Direct() -= 2;
 
             Dirty.Dirty(STAIN_TYPE::EDGE);
             Update_Frame();

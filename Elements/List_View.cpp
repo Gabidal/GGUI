@@ -259,12 +259,12 @@ void GGUI::List_View::Add_Child(Element* e){
 
                 // Check if the parent has the capability to allow to stretch in the direction if this list elements.
                 if (!Parent->Is_Dynamic_Size_Allowed() && !Parent->Is_Overflow_Allowed()){
-                    Height = Min(max_height, Proposed_Height);
-                    Width = Min(max_width, Proposed_Width);
+                    Set_Height(Min(max_height, Proposed_Height));
+                    Set_Width(Min(max_width, Proposed_Width));
                 }
                 else{
-                    Width = Proposed_Width;
-                    Height = Proposed_Height;
+                    Set_Width(Proposed_Width);
+                    Set_Height(Proposed_Height);
 
                     Dirty.Dirty(STAIN_TYPE::STRETCH);
                 }
@@ -285,12 +285,12 @@ void GGUI::List_View::Add_Child(Element* e){
 
                 // Check if the parent has the capability to allow to stretch in the direction if this list elements.
                 if (!Parent->Is_Dynamic_Size_Allowed() && !Parent->Is_Overflow_Allowed()){
-                    Width = Min(max_width, Proposed_Width);
-                    Height = Min(max_height, Proposed_Height);
+                    Set_Width(Min(max_width, Proposed_Width));
+                    Set_Height(Min(max_height, Proposed_Height));
                 }
                 else{
-                    Width = Proposed_Width;
-                    Height = Proposed_Height;
+                    Set_Width(Proposed_Width);
+                    Set_Height(Proposed_Height);
                     
                     Dirty.Dirty(STAIN_TYPE::STRETCH);
                 }

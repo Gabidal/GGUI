@@ -278,7 +278,7 @@ namespace GGUI{
             constexpr ENUM_VALUE(const GGUI::STYLING_INTERNAL::ENUM_VALUE<T>& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value(Element* host) override {};
+            void Embed_Value([[maybe_unused]] Element* host) override {};
         };
         
         class Vector : public style_base{

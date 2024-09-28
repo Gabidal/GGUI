@@ -12,8 +12,8 @@ namespace GGUI{
         Pause_GGUI([w, h, position, this](){
             Buffer.resize(w * h);
 
-            Width = w;
-            Height = h;
+            Set_Width(w);
+            Set_Height(h);
 
             Set_Position(position);
 
@@ -26,7 +26,7 @@ namespace GGUI{
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
 
-        Buffer[Actual_X + Actual_Y * Width] = color;
+        Buffer[Actual_X + Actual_Y * Get_Width()] = color;
 
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
@@ -52,7 +52,7 @@ namespace GGUI{
 
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
-            Result.resize(Width * Height);
+            Result.resize(Get_Width() * Get_Height());
             Dirty.Clean(STAIN_TYPE::STRETCH);
 
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
@@ -66,16 +66,16 @@ namespace GGUI{
             unsigned int Start_X = Has_Border();
             unsigned int Start_Y = Has_Border();
 
-            unsigned int End_X = Width - Has_Border();
-            unsigned int End_Y = Height - Has_Border();
+            unsigned int End_X = Get_Width() - Has_Border();
+            unsigned int End_Y = Get_Height() - Has_Border();
 
             for (unsigned int y = Start_Y; y < End_Y; y++){
                 for (unsigned int x = Start_X; x < End_X; x++){
                     UTF Current_Pixel;
 
-                    Current_Pixel.Set_Background(Buffer[x + y * Width]);
+                    Current_Pixel.Set_Background(Buffer[x + y * Get_Width()]);
 
-                    Result[x + y * Width] = Current_Pixel;
+                    Result[x + y * Get_Width()] = Current_Pixel;
                 }
             }
         }
@@ -98,8 +98,8 @@ namespace GGUI{
     Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, IVector2 position) : Element(){
         Buffer.resize(w * h);
 
-        Width = w;
-        Height = h;
+        Set_Width(w);
+        Set_Height(h);
 
         Set_Position(position);
     }
@@ -123,7 +123,7 @@ namespace GGUI{
             Multi_Frame = true;
         }
 
-        Buffer[Actual_X + Actual_Y * Width] = sprite;
+        Buffer[Actual_X + Actual_Y * Get_Width()] = sprite;
 
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
@@ -135,7 +135,7 @@ namespace GGUI{
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
 
-        Buffer[Actual_X + Actual_Y * Width].Frames.push_back(sprite);
+        Buffer[Actual_X + Actual_Y * Get_Width()].Frames.push_back(sprite);
 
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
@@ -171,7 +171,7 @@ namespace GGUI{
 
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
-            Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
+            Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);
 
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
@@ -185,13 +185,13 @@ namespace GGUI{
             unsigned int Start_X = Has_Border();
             unsigned int Start_Y = Has_Border();
 
-            unsigned int End_X = Width - Has_Border();
-            unsigned int End_Y = Height - Has_Border();
+            unsigned int End_X = Get_Width() - Has_Border();
+            unsigned int End_Y = Get_Height() - Has_Border();
 
             unsigned int Pixel_Index = 0;
             for (unsigned int y = Start_Y; y < End_Y; y++){
                 for (unsigned int x = Start_X; x < End_X; x++){
-                    Result[x + y * Width] = Buffer[Pixel_Index++].Render(Current_Animation_Frame);
+                    Result[x + y * Get_Width()] = Buffer[Pixel_Index++].Render(Current_Animation_Frame);
                 }
             }
         }
@@ -250,12 +250,12 @@ namespace GGUI{
 
     void GGUI::Terminal_Canvas::Embed_Points(std::vector<bool> pixels, styled_border border_style, bool flush){
 
-        unsigned int Usable_Width = Width - 2 * Has_Border();
-        unsigned int Usable_Height = Height - 2 * Has_Border();
+        unsigned int Usable_Width = Get_Width() - 2 * Has_Border();
+        unsigned int Usable_Height = Get_Height() - 2 * Has_Border();
 
         // first check that the embed-able vector is within the usable area.
         if (pixels.size() != Usable_Width * Usable_Height){
-            Report_Stack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((Width - 2 * Has_Border()) * (Height - 2 * Has_Border())) + " Got: " + std::to_string(pixels.size()));
+            Report_Stack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((Get_Width() - 2 * Has_Border()) * (Get_Height() - 2 * Has_Border())) + " Got: " + std::to_string(pixels.size()));
         }
 
         std::unordered_map<unsigned int, const char*> custom_border = Get_Custom_Border_Map(border_style);

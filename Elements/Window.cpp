@@ -22,9 +22,9 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
 GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position) : Element(css){
     Pause_GGUI([this, width, height, parent, position](){
         if (width != 0)
-            Width = width;
+            Set_Width(width);
         if (height != 0)
-            Height = height;
+            Set_Height(height);
 
         if (parent){
             Set_Parent(parent);
@@ -40,9 +40,9 @@ GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Eleme
 GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position) : Element(css), Title(title){
     Pause_GGUI([this, title, css, width, height, parent, position](){
         if (width != 0)
-            Width = width;
+            Set_Width(width);
         if (height != 0)
-            Height = height;
+            Set_Height(height);
 
         if (parent){
             Set_Parent(parent);
@@ -66,8 +66,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_GGUI([this, title, width, height](){
         Title = title;
-        Width = width;
-        Height = height;
+        Set_Width(width);
+        Set_Height(height);
 
         //Because the Title will not be displayed until the border is, we will create a invisible border.
         if (Title.size() > 0){
@@ -94,8 +94,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_GGUI([this, title, width, height, text_color, background_color](){
         Title = title;
-        Width = width;
-        Height = height;
+        Set_Width(width);
+        Set_Height(height);
 
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
@@ -127,8 +127,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_GGUI([this, title, width, height, text_color, background_color, border_color](){
         Title = title;
-        Width = width;
-        Height = height;
+        Set_Width(width);
+        Set_Height(height);
 
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
@@ -154,8 +154,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_GGUI([this, title, width, height, text_color, background_color, border_color, border_background_color](){
         Title = title;
-        Width = width;
-        Height = height;
+        Set_Width(width);
+        Set_Height(height);
 
         Set_Text_Color(text_color);
         Set_Background_Color(background_color);
@@ -179,8 +179,8 @@ GGUI::Window::Window(
 ) : Element(){
     Pause_GGUI([this, title, width, height, Tree](){
         Title = title;
-        Width = width;
-        Height = height;
+        Set_Width(width);
+        Set_Height(height);
 
         //Because the Title will not be displayed until the border is, we will create a invisible border.
         if (Title.size() > 0){
@@ -207,21 +207,21 @@ GGUI::Window::Window(
 void GGUI::Window::Update_Hidden_Border_Colors(){
     // prioritizes the border variants if they are available
     if (Style->Border_Color.Status >= VALUE_STATE::INITIALIZED)
-        Before_Hiding_Border_Color = Style->Border_Color.Value;
+        Before_Hiding_Border_Color = Style->Border_Color.Value.Get();
     else if (Style->Text_Color.Status >= VALUE_STATE::INITIALIZED)
-        Before_Hiding_Border_Color = Style->Text_Color.Value;
+        Before_Hiding_Border_Color = Style->Text_Color.Value.Get();
     else
         GGUI::Classes([this](auto& classes){
-            this->Before_Hiding_Border_Color = classes[GGUI::Class_Names["default"]].Border_Color.Value;
+            this->Before_Hiding_Border_Color = classes[GGUI::Class_Names["default"]].Border_Color.Value.Get();
         });
 
     if (Style->Border_Background_Color.Status >= VALUE_STATE::INITIALIZED)
-        Before_Hiding_Border_Background_Color = Style->Border_Background_Color.Value;
+        Before_Hiding_Border_Background_Color = Style->Border_Background_Color.Value.Get();
     else if (Style->Background_Color.Status >= VALUE_STATE::INITIALIZED)
-        Before_Hiding_Border_Background_Color = Style->Background_Color.Value;
+        Before_Hiding_Border_Background_Color = Style->Background_Color.Value.Get();
     else
         GGUI::Classes([this](auto& classes){
-            this->Before_Hiding_Border_Background_Color = classes[GGUI::Class_Names["default"]].Border_Background_Color.Value;    
+            this->Before_Hiding_Border_Background_Color = classes[GGUI::Class_Names["default"]].Border_Background_Color.Value.Get();    
         });        
 }
 
