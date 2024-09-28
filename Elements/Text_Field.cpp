@@ -43,7 +43,7 @@ namespace GGUI{
                 // For this we first need to know how long is this next word if there is any
                 int New_Word_Length = Text.find_first_of(' ', i + 1) - i;
 
-                if (New_Word_Length + current_line.Size >= Width){
+                if (New_Word_Length + current_line.Size >= Get_Width()){
                     flush_row = true;
                     Previous_Line_Reason = Line_Reason::WORDWRAP;
                 }
@@ -65,7 +65,7 @@ namespace GGUI{
         // Make sure the last line is added
         if (current_line.Size > 0){
 
-            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= Width;
+            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= Get_Width();
 
             // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
             if (
@@ -98,8 +98,8 @@ namespace GGUI{
         // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
         if (Style->Allow_Dynamic_Size.Value){
             // Set the new size
-            Width = Max(Longest_Line, Width);
-            Height = Max(Text_Cache.size(), Height);
+            Set_Width(Max(Longest_Line, Get_Width()));
+            Set_Height(Max(Text_Cache.size(), Get_Height()));
         }
     }
 
@@ -123,7 +123,7 @@ namespace GGUI{
 
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
-            Result.resize(Width * Height, SYMBOLS::EMPTY_UTF);
+            Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);
 
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
@@ -165,9 +165,9 @@ namespace GGUI{
             New_Height = 1;
         }
         else{
-            New_Width = Min(Parent->Get_Width() - Position.X, Text.size());
+            New_Width = Min(Parent->Get_Width() - Get_Position().X, Text.size());
             Update_Text_Cache();    // re-calculate the new height with the new suggested width.
-            New_Height = Min(Parent->Get_Height() - Position.Y, Text_Cache.size());
+            New_Height = Min(Parent->Get_Height() - Get_Position().Y, Text_Cache.size());
         }
         
         Set_Dimensions(New_Width, New_Height);
@@ -188,17 +188,17 @@ namespace GGUI{
         for (Compact_String line : Text_Cache){
             unsigned int Row_Index = 0;
 
-            if (Line_Index >= Height)
+            if (Line_Index >= Get_Height())
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < Height; Y++){
-                for (unsigned int X = 0; X < Width; X++){
+            for (unsigned int Y = 0; Y < Get_Height(); Y++){
+                for (unsigned int X = 0; X < Get_Width(); X++){
 
-                    if (Y * Width + X >= line.Size)
+                    if (Y * Get_Width() + X >= line.Size)
                         goto Next_Line;
 
                     // write to the Result
-                    Result[(Y + Line_Index) * Width + X] = line[Row_Index++];
+                    Result[(Y + Line_Index) * Get_Width() + X] = line[Row_Index++];
                 }
 
                 // If current line has ended and the text is not word wrapped
@@ -218,17 +218,17 @@ namespace GGUI{
         for (Compact_String line : Text_Cache){
             int Row_Index = line.Size - 1;  // Start from the end of the line
 
-            if (Line_Index >= Height)
+            if (Line_Index >= Get_Height())
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < Height; Y++){
-                for (int X = (signed)Width - 1; X >= 0; X--){
+            for (unsigned int Y = 0; Y < Get_Height(); Y++){
+                for (int X = (signed)Get_Width() - 1; X >= 0; X--){
 
                     if (Row_Index < 0)  // If there are no more characters in the line
                         goto Next_Line;
 
                     // write to the Result
-                    Result[(Y + Line_Index) * Width + (unsigned)X] = line[Row_Index--];  // Decrement Line_Index
+                    Result[(Y + Line_Index) * Get_Width() + (unsigned)X] = line[Row_Index--];  // Decrement Line_Index
                 }
 
                 // If current line has ended and the text is not word wrapped
@@ -246,22 +246,22 @@ namespace GGUI{
 
         for (Compact_String line : Text_Cache){
             unsigned int Row_Index = 0;  // Start from the beginning of the line
-            unsigned int Start_Pos = (Width - line.Size) / 2;  // Calculate the starting position
+            unsigned int Start_Pos = (Get_Width() - line.Size) / 2;  // Calculate the starting position
 
-            if (Line_Index >= Height)
+            if (Line_Index >= Get_Height())
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < Height; Y++){
-                for (unsigned int X = 0; X < Width; X++){
+            for (unsigned int Y = 0; Y < Get_Height(); Y++){
+                for (unsigned int X = 0; X < Get_Width(); X++){
 
                     if (X < Start_Pos || X > Start_Pos + line.Size)
                         continue;
 
-                    if (Y * Width + X >= line.Size)
+                    if (Y * Get_Width() + X >= line.Size)
                         goto Next_Line;
 
                     // write to the Result
-                    Result[(Y + Line_Index) * Width + X] = line[Row_Index++];
+                    Result[(Y + Line_Index) * Get_Width() + X] = line[Row_Index++];
                 }
 
                 // If current line has ended and the text is not word wrapped

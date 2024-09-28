@@ -257,8 +257,8 @@ namespace GGUI{
         // Takes 0.0f to 1.0f
         void Set_Opacity(float Opacity);
 
-        // RGBA - Alpha channel. 0 - 255
-        void Set_Opacity(unsigned char Opacity);
+        // Alpha channel. 0 to 100
+        void Set_Opacity(int Opacity);
 
         styled_border Get_Border_Style(){
             return Style->Border_Style;

@@ -45,19 +45,59 @@ namespace GGUI{
             return FVector2(X * num, Y * num);
         }
     };
-
-    class FVector3 : public FVector2{
+    
+    // Literal type
+    class FVector3 : public FVector2 {
     public:
         float Z = 0;
 
-        FVector3(float x, float y, float z){
-            Z = z;
-            X = x;
-            Y = y;
+        // Default constructor
+        constexpr FVector3(float x = 0.0f, float y = 0.0f, float z = 0.0f) noexcept
+            : FVector2(x, y), Z(z) {}
+
+        // Copy constructor
+        constexpr FVector3(const FVector3& other) noexcept = default;
+
+        // Move constructor
+        constexpr FVector3(FVector3&& other) noexcept = default;
+
+        // Copy assignment operator
+        constexpr FVector3& operator=(const FVector3& other) noexcept = default;
+
+        // Move assignment operator
+        constexpr FVector3& operator=(FVector3&& other) noexcept = default;
+
+        // + operator with a float
+        constexpr FVector3 operator+(float num) const noexcept {
+            return FVector3(X + num, Y + num, Z + num);
         }
 
-        FVector3(){}
+        // - operator with a float
+        constexpr FVector3 operator-(float num) const noexcept {
+            return FVector3(X - num, Y - num, Z - num);
+        }
+
+        // * operator with a float
+        constexpr FVector3 operator*(float num) const noexcept {
+            return FVector3(X * num, Y * num, Z * num);
+        }
+
+        // + operator with another FVector3
+        constexpr FVector3 operator+(const FVector3& other) const noexcept {
+            return FVector3(X + other.X, Y + other.Y, Z + other.Z);
+        }
+
+        // - operator with another FVector3
+        constexpr FVector3 operator-(const FVector3& other) const noexcept {
+            return FVector3(X - other.X, Y - other.Y, Z - other.Z);
+        }
+
+        // * operator with another FVector3 (component-wise multiplication)
+        constexpr FVector3 operator*(const FVector3& other) const noexcept {
+            return FVector3(X * other.X, Y * other.Y, Z * other.Z);
+        }
     };
+
 
     class IVector2{
     public:

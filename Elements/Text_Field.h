@@ -20,7 +20,7 @@ namespace GGUI{
 
             Style->Align = align;
 
-            if (Width == 1 && Height == 1){
+            if (Get_Width() == 1 && Get_Height() == 1){
                 Allow_Dynamic_Size(true);
             }
 

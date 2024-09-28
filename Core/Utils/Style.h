@@ -2,6 +2,7 @@
 #define _STYLE_H_
 
 #include "Units.h"
+#include <variant>
 
 namespace GGUI{
     // Externies
@@ -52,83 +53,75 @@ namespace GGUI{
     // This namespace is an wrapper for the user not to see these !!
     namespace STYLING_INTERNAL{
         template<typename T>
-        class value{
+        class value {
         protected:
-            union variations{
-                T           normal;             // Representing the default variation
-                float       percentage;         // Representing the value as an percentage 
-            } data;
-
+            std::variant<T, float> data;  // Can hold either normal value or percentage
             EVALUATION_TYPE evaluation_type = EVALUATION_TYPE::DEFAULT;
+
         public:
-            constexpr value(T value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr){
-                data.normal = value;
-                evaluation_type = type;
-            }
-            
-            constexpr value(float value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr){
-                data.percentage = value;
-                evaluation_type = type;
-            }
+            constexpr value(T value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr)
+                : data(value), evaluation_type(type) {}
 
-            value(T value, EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT){
-                data.normal = value;
-                evaluation_type = type;
-            }
+            constexpr value(float value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr)
+                : data(value), evaluation_type(type) {}
 
-            value(float value, EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE){
-                data.percentage = value;
-                evaluation_type = type;
-            }
+            value(T value, EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT)
+                : data(value), evaluation_type(type) {}
 
-            // set operators as constexpr
-            constexpr value& operator=(const value& other){
+            value(float value, EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE)
+                : data(value), evaluation_type(type) {}
+
+            // Copy constructor
+            constexpr value(const value<T>& other)
+                : data(other.data), evaluation_type(other.evaluation_type) {}
+
+            // Assignment operators
+            constexpr value& operator=(const value& other) {
                 data = other.data;
                 evaluation_type = other.evaluation_type;
                 return *this;
             }
 
-            constexpr value& operator=(T initialization_data){
-                data.normal = initialization_data;
+            constexpr value& operator=(T initialization_data) {
+                data = initialization_data;
                 evaluation_type = EVALUATION_TYPE::DEFAULT;
                 return *this;
             }
 
-            constexpr value& operator=(float initialization_data){
-                data.percentage = initialization_data;
+            constexpr value& operator=(float initialization_data) {
+                data = initialization_data;
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
                 return *this;
             }
 
-            // constexpr copy constructor
-            constexpr value(const GGUI::value<T>& other) : data(other.data), evaluation_type(other.evaluation_type){}
-
-            T Evaluate(T parental_value){
-                switch (evaluation_type)
-                {
-                case EVALUATION_TYPE::DEFAULT:
-                    return data.normal;
-                    break;
-                
-                case EVALUATION_TYPE::PERCENTAGE:
-                    // This will assume that the data type T has an operator* handled
-                    data.normal = (T)((float)parental_value * data.percentage);
-                    return data.normal;
-                    break;
-
-                default:
-                    Report_Stack("Evaluation type not supported!");
-                    return data.normal;     // if the evaluation type is not supported, then just return the default
-                    break;
+            // Evaluate function
+            T Evaluate(T parental_value) {
+                switch (evaluation_type) {
+                    case EVALUATION_TYPE::DEFAULT:
+                        return std::get<T>(data);
+                    case EVALUATION_TYPE::PERCENTAGE:
+                        return static_cast<T>(static_cast<T>(parental_value) * std::get<float>(data));
+                    default:
+                        Report_Stack("Evaluation type not supported!");
+                        return std::get<T>(data);
                 }
             }
-        
-            inline T Get(){
-                return data.normal;
+
+            // Getter methods
+            inline T Get() { return std::get<T>(data); }
+
+            constexpr T Get() const { return std::get<T>(data); }
+
+            T& Direct() { return std::get<T>(data); }
+
+            inline void Set(T value) {
+                data = value;
+                evaluation_type = EVALUATION_TYPE::DEFAULT;
             }
 
-            inline T Get() const{
-                return data.normal;
+            inline void Set(float value){
+                data = value;
+                evaluation_type = EVALUATION_TYPE::PERCENTAGE;
             }
         };
 
@@ -157,7 +150,7 @@ namespace GGUI{
                 Value = value;
             }
 
-            constexpr RGB_VALUE(const GGUI::RGB value, VALUE_STATE Default, bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
+            constexpr RGB_VALUE(const GGUI::RGB value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
             RGB_VALUE() = default;
 
@@ -181,7 +174,7 @@ namespace GGUI{
             constexpr RGB_VALUE(const GGUI::STYLING_INTERNAL::RGB_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
 
             // The basic style types do not have imprint methods.
-            void Embed_Value(Element* host) override {};
+            void Embed_Value([[maybe_unused]] Element* host) override {};
         };
 
         class BOOL_VALUE : public style_base{
@@ -214,16 +207,20 @@ namespace GGUI{
             constexpr BOOL_VALUE(const GGUI::STYLING_INTERNAL::BOOL_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value(Element* host) override {};
+            void Embed_Value([[maybe_unused]] Element* host) override {};
         };
         
         class NUMBER_VALUE : public style_base{
         public:
-            int Value = 0;
+            value<int> Value = 0;
 
             NUMBER_VALUE(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
                 Value = value;
             }
+
+            NUMBER_VALUE(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE){}
+
+            constexpr NUMBER_VALUE(int value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
             NUMBER_VALUE() = default;
 
@@ -247,7 +244,7 @@ namespace GGUI{
             constexpr NUMBER_VALUE(const GGUI::STYLING_INTERNAL::NUMBER_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value(Element* host) override {};
+            void Embed_Value([[maybe_unused]] Element* host) override {};
         };
 
         template<typename T>
@@ -292,7 +289,7 @@ namespace GGUI{
                 Value = value;
             }
 
-            constexpr Vector(const GGUI::IVector2 value, VALUE_STATE Default, bool use_constexpr) : style_base(Default, true), Value(value){}
+            constexpr Vector(const GGUI::IVector2 value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
             Vector() = default;
 
@@ -316,7 +313,16 @@ namespace GGUI{
             constexpr Vector(const GGUI::STYLING_INTERNAL::Vector& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value(Element* host) override {};
+            void Embed_Value([[maybe_unused]] Element* host) override {};
+
+            IVector2 Get() { return Value.Get(); }
+
+            void Set(IVector2 value){
+                Value = value;
+                Status = VALUE_STATE::VALUE;
+            }
+
+            IVector2& Direct() { return Value.Direct(); }
         };
     }
 
@@ -326,9 +332,45 @@ namespace GGUI{
 
         position() = default;
 
-        constexpr position(const GGUI::position& other) : Vector(other.Value, other.Status, true){}
+        constexpr position(const GGUI::position& other) : Vector(other.Value.Get(), other.Status, true){}
 
         void Embed_Value(Element* host) override;
+    };
+
+    class width : public STYLING_INTERNAL::NUMBER_VALUE{
+    public:
+        width(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+
+        width() = default;
+
+        constexpr width(const GGUI::width& other) : NUMBER_VALUE(other.Value.Get(), other.Status, true){}
+
+        void Embed_Value(Element* host) override;
+
+        int Get() { return Value.Get(); }
+
+        void Set(int value){
+            Value = value;
+            Status = VALUE_STATE::VALUE;
+        }
+    };
+
+    class height : public STYLING_INTERNAL::NUMBER_VALUE{
+    public:
+        height(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+
+        height() = default;
+
+        constexpr height(const GGUI::height& other) : NUMBER_VALUE(other.Value.Get(), other.Status, true){}
+
+        void Embed_Value(Element* host) override;
+
+        int Get() { return Value.Get(); }
+
+        void Set(int value){
+            Value = value;
+            Status = VALUE_STATE::VALUE;
+        }
     };
 
     class text_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -447,6 +489,26 @@ namespace GGUI{
         void Embed_Value(Element* host) override;
     };
 
+    class opacity : public STYLING_INTERNAL::NUMBER_VALUE{
+    public:
+        opacity(int value, VALUE_STATE state) : NUMBER_VALUE(value, state){}
+
+        opacity(float value, VALUE_STATE state) : NUMBER_VALUE(value, state){}
+
+        opacity() = default;
+
+        constexpr opacity(const GGUI::opacity& other) : NUMBER_VALUE(other.Value.Get(), other.Status, true){}
+
+        void Embed_Value(Element* host) override;
+
+        int Get() { return Value.Get(); }
+
+        void Set(int value){
+            Value = value;
+            Status = VALUE_STATE::VALUE;
+        }
+    };
+
     class styled_border : public STYLING_INTERNAL::style_base{
     public:
         const char* TOP_LEFT_CORNER             = "┌";//"\e(0\x6c\e(B";
@@ -504,10 +566,10 @@ namespace GGUI{
 
     class Styling{
     public:
-        IVector2 Position;
+        position Position;
 
-        unsigned int Width = 1;
-        unsigned int Height = 1;
+        width Width = 1;
+        width Height = 1;
 
         STYLING_INTERNAL::BOOL_VALUE Border_Enabled = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
         text_color                  Text_Color;
@@ -535,7 +597,7 @@ namespace GGUI{
         margin Margin;
 
         shadow Shadow;
-        STYLING_INTERNAL::NUMBER_VALUE Opacity = STYLING_INTERNAL::NUMBER_VALUE(100, VALUE_STATE::INITIALIZED);  // 100%
+        opacity Opacity = opacity(100.0f, VALUE_STATE::INITIALIZED);  // 100%
 
         STYLING_INTERNAL::BOOL_VALUE Allow_Scrolling = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
 

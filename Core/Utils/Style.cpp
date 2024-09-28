@@ -7,6 +7,14 @@ namespace GGUI{
         host->Set_Position(Value.Get());
     }
 
+    void width::Embed_Value(Element* host){
+        host->Set_Width(Value.Get());
+    }
+
+    void height::Embed_Value(Element* host){
+        host->Set_Height(Value.Get());
+    }
+
     void text_color::Embed_Value(Element* host){
         host->Set_Text_Color(Value.Get());
     }
@@ -33,6 +41,10 @@ namespace GGUI{
 
     void shadow::Embed_Value(Element* host){
         host->Set_Shadow(*this);
+    }
+
+    void opacity::Embed_Value(Element* host){
+        host->Set_Opacity(Value.Get());
     }
 
     margin margin::Evaluate(Element* owner){

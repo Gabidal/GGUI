@@ -77,6 +77,10 @@ namespace GGUI{
             return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
         }
 
+        RGB operator*(const float Scalar) const{
+            return RGB((unsigned char)((float)Red * Scalar), (unsigned char)((float)Green * Scalar), (unsigned char)((float)Blue * Scalar));
+        }
+
     };
 
     class RGBA : public RGB{
