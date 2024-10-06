@@ -146,6 +146,10 @@ namespace GGUI{
             return IVector2(X + other.X, Y + other.Y, Z + other.Z);
         }
 
+        constexpr IVector2 operator*(float num) const noexcept {
+            return IVector2(X * num, Y * num, Z * num);
+        }
+
         std::string To_String(){
             return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
         }

@@ -122,6 +122,9 @@ namespace GGUI{
         }
 
         if (Dirty.is(STAIN_TYPE::STRETCH)){
+            // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
+            Style->Evaluate_Dynamic_Attribute_Values(this);
+            
             Result.clear();
             Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);

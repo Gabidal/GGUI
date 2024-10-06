@@ -61,8 +61,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = STAIN_TYPE::CLEAN; //(STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
-
+        STAIN_TYPE Type = STAIN_TYPE::CLEAN;
 
         bool is(STAIN_TYPE f){
             if (f == STAIN_TYPE::CLEAN){
@@ -86,10 +85,6 @@ namespace GGUI{
         void Dirty(unsigned int f){
             Type = (STAIN_TYPE)((unsigned int)Type | f);
         }
-
-        // void Stain_All(){
-        //     Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
-        // }
 
     };
 
@@ -133,6 +128,9 @@ namespace GGUI{
     protected:
         unsigned int Post_Process_Width = 0;
         unsigned int Post_Process_Height = 0;
+
+        // Only fetch one parent UP, and own position +, then child repeat.
+        IVector2 Absolute_Position_Cache;
 
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
@@ -364,6 +362,52 @@ namespace GGUI{
         
         virtual void Set_Text_Color(RGB color);
 
+        RGB Get_Text_Color();
+
+        void Set_Hover_Border_Color(RGB color);
+
+        RGB Get_Hover_Border_Color();
+
+        void Set_Hover_Background_Color(RGB color);
+
+        RGB Get_Hover_Background_Color();
+
+        void Set_Hover_Text_Color(RGB color);
+
+        RGB Get_Hover_Text_Color();
+
+        void Set_Hover_Border_Background_Color(RGB color);
+
+        RGB Get_Hover_Border_Background_Color();
+
+        void Set_Focus_Border_Color(RGB color);
+
+        RGB Get_Focus_Border_Color();
+
+        void Set_Focus_Background_Color(RGB color);
+
+        RGB Get_Focus_Background_Color();
+
+        void Set_Focus_Text_Color(RGB color);
+
+        RGB Get_Focus_Text_Color();
+
+        void Set_Focus_Border_Background_Color(RGB color);
+
+        RGB Get_Focus_Border_Background_Color();
+
+        void Set_Align(ALIGN a);
+
+        ALIGN Get_Align();
+
+        void Set_Flow_Priority(DIRECTION d);
+
+        DIRECTION Get_Flow_Priority();
+
+        void Set_Wrap(bool w);
+
+        bool Get_Wrap();
+
         void Allow_Dynamic_Size(bool True);
 
         bool Is_Dynamic_Size_Allowed();
@@ -373,10 +417,10 @@ namespace GGUI{
 
         bool Is_Overflow_Allowed();
         
-        RGB Get_Text_Color();
 
         static std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
 
+        // This takes care if the parent is to resize on demand of its contents size, for an example an vertical list will grow if the contents inside the list are to be stretched.
         void Compute_Dynamic_Size();
 
         virtual std::vector<GGUI::UTF>& Render();

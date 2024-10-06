@@ -1641,17 +1641,17 @@ namespace GGUI{
         DEFAULT.Border_Color = border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
         DEFAULT.Border_Background_Color = border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Hover_Text_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Hover_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Text_Color = hover_text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Background_Color = hover_background_color(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Hover_Border_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Hover_Border_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Border_Color = hover_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Hover_Border_Background_Color = hover_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
          
-        DEFAULT.Focus_Text_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        DEFAULT.Focus_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Text_Color = focus_text_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Background_Color = focus_background_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
 
-        DEFAULT.Focus_Border_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Focus_Border_Background_Color = STYLING_INTERNAL::RGB_VALUE(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Border_Color = focus_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        DEFAULT.Focus_Border_Background_Color = focus_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         
         Add_Class(DEFAULT_NAME, DEFAULT);
     }

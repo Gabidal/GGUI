@@ -805,17 +805,17 @@ GGUI::IVector2 GGUI::Element::Get_Position(){
 }
 
 GGUI::IVector2 GGUI::Element::Get_Absolute_Position(){
-    return Style->Absolute_Position_Cache.Value.Get<IVector2>();
+    return Absolute_Position_Cache;
 }
 
 void GGUI::Element::Update_Absolute_Position_Cache(){
-    Style->Absolute_Position_Cache = {0, 0, 0};
+    Absolute_Position_Cache = {0, 0, 0};
 
     if (Parent){
-        Style->Absolute_Position_Cache = Parent->Get_Position();
+        Absolute_Position_Cache = Parent->Get_Position();
     }
 
-    Style->Absolute_Position_Cache.Direct() += Get_Position();
+    Absolute_Position_Cache += Get_Position();
 }
 
 void GGUI::Element::Set_Margin(margin margin){
@@ -1001,6 +1001,110 @@ GGUI::RGB GGUI::Element::Get_Text_Color(){
     return Style->Text_Color.Value.Get<RGB>();
 }
 
+void GGUI::Element::Set_Hover_Border_Color(RGB color){
+    Style->Hover_Border_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Hover_Border_Color(){
+    return Style->Hover_Border_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Hover_Background_Color(RGB color){
+    Style->Hover_Background_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Hover_Background_Color(){
+    return Style->Hover_Background_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Hover_Text_Color(RGB color){
+    Style->Hover_Text_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Hover_Text_Color(){
+    return Style->Hover_Text_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Hover_Border_Background_Color(RGB color){
+    Style->Hover_Border_Background_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Hover_Border_Background_Color(){
+    return Style->Hover_Border_Background_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Focus_Border_Color(RGB color){
+    Style->Focus_Border_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Focus_Border_Color(){
+    return Style->Focus_Border_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Focus_Background_Color(RGB color){
+    Style->Focus_Background_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Focus_Background_Color(){
+    return Style->Focus_Background_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Focus_Text_Color(RGB color){
+    Style->Focus_Text_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Focus_Text_Color(){
+    return Style->Focus_Text_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Focus_Border_Background_Color(RGB color){
+    Style->Focus_Border_Background_Color = color;
+    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Update_Frame();
+}
+
+GGUI::RGB GGUI::Element::Get_Focus_Border_Background_Color(){
+    return Style->Focus_Border_Background_Color.Value.Get<RGB>();
+}
+
+void GGUI::Element::Set_Align(GGUI::ALIGN Align){
+    Style->Align = Align;
+}
+
+GGUI::ALIGN GGUI::Element::Get_Align(){
+    return Style->Align.Value;
+}
+
+void GGUI::Element::Set_Flow_Priority(GGUI::DIRECTION Priority){
+    Style->Flow_Priority = Priority;
+}
+
+GGUI::DIRECTION GGUI::Element::Get_Flow_Priority(){
+    return Style->Flow_Priority.Value;
+}
+
+void GGUI::Element::Set_Wrap(bool Wrap){
+    Style->Wrap = Wrap;
+}
+
+bool GGUI::Element::Get_Wrap(){
+    return Style->Wrap.Value;
+}
+
 void GGUI::Element::Compute_Dynamic_Size(){
     // Go through all elements displayed.
     if (!Is_Displayed())
@@ -1061,6 +1165,9 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
     }
 
     if (Dirty.is(STAIN_TYPE::STRETCH)){
+        // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
+        Style->Evaluate_Dynamic_Attribute_Values(this);
+
         Result.clear();
         Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
         Dirty.Clean(STAIN_TYPE::STRETCH);
@@ -1125,8 +1232,6 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
 
     return Result;
 }
-
-
 
 //These are just utility functions for internal purposes, dont need to sed Dirty.
 void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){

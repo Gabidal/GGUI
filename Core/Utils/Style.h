@@ -171,6 +171,8 @@ namespace GGUI{
 
             // This function is for the single style classes to be able to imprint their own identity into the Element object which hosts these styles.
             virtual void Embed_Value(Element* host) = 0;
+
+            virtual void Evaluate(Element* owner) = 0;
         };
 
         class RGB_VALUE : public style_base{
@@ -206,6 +208,8 @@ namespace GGUI{
 
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
+
+            void Evaluate(Element* owner) override = 0;
         };
 
         class BOOL_VALUE : public style_base{
@@ -215,6 +219,8 @@ namespace GGUI{
             BOOL_VALUE(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
                 Value = value;
             }
+
+            constexpr BOOL_VALUE(bool value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value){}
 
             BOOL_VALUE() = default;
 
@@ -239,6 +245,8 @@ namespace GGUI{
             
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
+            
+            void Evaluate([[maybe_unused]] Element* owner) override {};
         };
         
         class NUMBER_VALUE : public style_base{
@@ -276,6 +284,8 @@ namespace GGUI{
             
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
+            
+            void Evaluate(Element* owner) override = 0;
 
             int& Direct() { return Value.Direct<int>(); }
         };
@@ -288,6 +298,8 @@ namespace GGUI{
             ENUM_VALUE(T value, VALUE_STATE Default = VALUE_STATE::INITIALIZED) : style_base(Default){
                 Value = value;
             }
+
+            constexpr ENUM_VALUE(T value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value){}
 
             ENUM_VALUE() = default;
 
@@ -312,6 +324,8 @@ namespace GGUI{
             
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
+            
+            void Evaluate([[maybe_unused]] Element* owner) override {};
         };
         
         class Vector : public style_base{
@@ -348,6 +362,8 @@ namespace GGUI{
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
 
+            void Evaluate(Element* owner) override = 0;
+
             IVector2 Get() { return Value.Get<IVector2>(); }
             constexpr IVector2 Get() const { return Value.Get<IVector2>(); }
 
@@ -364,11 +380,18 @@ namespace GGUI{
     public:
         position(IVector2 value, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
 
+        position(int x, int y, int z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(IVector2(x, y, z), Default){}
+
         position() = default;
 
         constexpr position(const GGUI::position& other) : Vector(((const Vector&)other).Get(), other.Status, true){}
 
         position& operator=(const position& other) = default;
+
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
     };
@@ -382,6 +405,11 @@ namespace GGUI{
         constexpr width(const GGUI::width& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status, true){}
 
         width& operator=(const width& other) = default;
+
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner);
 
         void Embed_Value(Element* host) override;
 
@@ -402,6 +430,11 @@ namespace GGUI{
         constexpr height(const GGUI::height& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status, true){}
 
         height& operator=(const height& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
 
@@ -413,6 +446,24 @@ namespace GGUI{
         }
     };
 
+    class border_enabled : public STYLING_INTERNAL::BOOL_VALUE{
+    public:
+        border_enabled(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        border_enabled() = default;
+
+        constexpr border_enabled(const GGUI::border_enabled& other) : BOOL_VALUE(other.Value, other.Status, true){}
+
+        border_enabled& operator=(const border_enabled& other) = default;
+
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
+    };
+
     class text_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
         text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
@@ -422,6 +473,11 @@ namespace GGUI{
         constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
 
         text_color& operator=(const text_color& other) = default;
+
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
     };
@@ -436,6 +492,11 @@ namespace GGUI{
 
         background_color& operator=(const background_color& other) = default;
 
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
         void Embed_Value(Element* host) override;
     };
 
@@ -449,6 +510,11 @@ namespace GGUI{
 
         border_color& operator=(const border_color& other) = default;
 
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
         void Embed_Value(Element* host) override;
     };
 
@@ -461,110 +527,157 @@ namespace GGUI{
         constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
 
         border_background_color& operator=(const border_background_color& other) = default;
-
-        void Embed_Value(Element* host) override;
-    };
-
-    class margin : public STYLING_INTERNAL::style_base{
-    public:
-        STYLING_INTERNAL::value<unsigned int> Top = (unsigned)0;
-        STYLING_INTERNAL::value<unsigned int> Bottom = (unsigned)0;
-        STYLING_INTERNAL::value<unsigned int> Left = (unsigned)0;
-        STYLING_INTERNAL::value<unsigned int> Right = (unsigned)0;
-
-        margin(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Top(top), Bottom(bottom), Left(left), Right(right){}
-
-        // operator overload for copy operator
-        margin& operator=(const margin& other){
-            // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
-                Top = other.Top;
-                Bottom = other.Bottom;
-                Left = other.Left;
-                Right = other.Right;
-
-                Status = other.Status;
-            }
-            return *this;
-        }
-
-        constexpr margin(const GGUI::margin& other) : style_base(other.Status, true), Top(other.Top), Bottom(other.Bottom), Left(other.Left), Right(other.Right){}
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        margin Evaluate(Element* owner);
+        void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
     };
 
-    class shadow : public STYLING_INTERNAL::style_base{
+    class hover_border_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
-        STYLING_INTERNAL::value<FVector3> Direction = FVector3{0, 0, 0.5};
-        STYLING_INTERNAL::value<RGB> Color = RGB{};
-        float Opacity = 1;
-        bool Enabled = false;
+        hover_border_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
-        shadow(FVector3 direction, RGB color, float opacity, bool enabled, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
-            Direction = direction;
-            Color = color;
-            Opacity = opacity;
-            Enabled = enabled;
-        }
+        hover_border_color() = default;
 
-        shadow() : style_base(){}
+        constexpr hover_border_color(const GGUI::hover_border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
 
-        shadow& operator=(const shadow& other){
-            // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
-                Direction = other.Direction;
-                Color = other.Color;
-                Opacity = other.Opacity;
-                Enabled = other.Enabled;
-
-                Status = other.Status;
-            }
-            return *this;
-        }
-    
-        constexpr shadow(const GGUI::shadow& other) : style_base(other.Status, true), Direction(other.Direction), Color(other.Color), Opacity(other.Opacity), Enabled(other.Enabled){}
-    
+        hover_border_color& operator=(const hover_border_color& other) = default;
+        
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        shadow Evaluate(Element* owner);
+        void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
     };
 
-    class opacity : public STYLING_INTERNAL::style_base{
-    protected:
-        float Value;
+    class hover_text_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
-        opacity(float value, VALUE_STATE state) : style_base(state), Value(value){}
+        hover_text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
-        opacity() = default;
+        hover_text_color() = default;
 
-        opacity& operator=(const opacity& other){
-            // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
-                Value = other.Value;
+        constexpr hover_text_color(const GGUI::hover_text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
 
-                Status = other.Status;
-            }
-            return *this;
-        }
-
-        constexpr opacity(const GGUI::opacity& other) : style_base(other.Status, true), Value(other.Value){}
+        hover_text_color& operator=(const hover_text_color& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+    };
 
-        inline float Get() { return Value; }
+    class hover_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    public:
+        hover_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
-        void Set(float value){
-            Value = value;
-            Status = VALUE_STATE::VALUE;
-        }
+        hover_background_color() = default;
+
+        constexpr hover_background_color(const GGUI::hover_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        hover_background_color& operator=(const hover_background_color& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class hover_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    public:
+        hover_border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        hover_border_background_color() = default;
+
+        constexpr hover_border_background_color(const GGUI::hover_border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        hover_border_background_color& operator=(const hover_border_background_color& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class focus_border_color : public STYLING_INTERNAL::RGB_VALUE{
+    public:
+        focus_border_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        focus_border_color() = default;
+
+        constexpr focus_border_color(const GGUI::focus_border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        focus_border_color& operator=(const focus_border_color& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class focus_text_color : public STYLING_INTERNAL::RGB_VALUE{
+    public:
+        focus_text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        focus_text_color() = default;
+
+        constexpr focus_text_color(const GGUI::focus_text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        focus_text_color& operator=(const focus_text_color& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class focus_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    public:
+        focus_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        focus_background_color() = default;
+
+        constexpr focus_background_color(const GGUI::focus_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        focus_background_color& operator=(const focus_background_color& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class focus_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    public:
+        focus_border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        focus_border_background_color() = default;
+
+        constexpr focus_border_background_color(const GGUI::focus_border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        focus_border_background_color& operator=(const focus_border_background_color& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
     };
 
     class styled_border : public STYLING_INTERNAL::style_base{
@@ -620,6 +733,221 @@ namespace GGUI{
         }
 
         void Embed_Value(Element* host) override;
+        
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+    };
+
+    class flow_priority : public STYLING_INTERNAL::ENUM_VALUE<DIRECTION>{
+    public:
+        flow_priority(DIRECTION value, VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
+
+        flow_priority() = default;
+
+        constexpr flow_priority(const GGUI::flow_priority& other) : ENUM_VALUE(other.Value, other.Status, true){}
+
+        flow_priority& operator=(const flow_priority& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class wrap : public STYLING_INTERNAL::BOOL_VALUE{
+    public:
+        wrap(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        wrap() = default;
+
+        constexpr wrap(const GGUI::wrap& other) : BOOL_VALUE(other.Value, other.Status, true){}
+
+        wrap& operator=(const wrap& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class allow_overflow : public STYLING_INTERNAL::BOOL_VALUE{
+    public:
+        allow_overflow(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        allow_overflow() = default;
+
+        constexpr allow_overflow(const GGUI::allow_overflow& other) : BOOL_VALUE(other.Value, other.Status, true){}
+
+        allow_overflow& operator=(const allow_overflow& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class allow_dynamic_size : public STYLING_INTERNAL::BOOL_VALUE{
+    public:
+        allow_dynamic_size(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        allow_dynamic_size() = default;
+
+        constexpr allow_dynamic_size(const GGUI::allow_dynamic_size& other) : BOOL_VALUE(other.Value, other.Status, true){}
+
+        allow_dynamic_size& operator=(const allow_dynamic_size& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class margin : public STYLING_INTERNAL::style_base{
+    public:
+        STYLING_INTERNAL::value<unsigned int> Top = (unsigned)0;
+        STYLING_INTERNAL::value<unsigned int> Bottom = (unsigned)0;
+        STYLING_INTERNAL::value<unsigned int> Left = (unsigned)0;
+        STYLING_INTERNAL::value<unsigned int> Right = (unsigned)0;
+
+        margin(unsigned int top = 0, unsigned int bottom = 0, unsigned int left = 0, unsigned int right = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Top(top), Bottom(bottom), Left(left), Right(right){}
+
+        // operator overload for copy operator
+        margin& operator=(const margin& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Top = other.Top;
+                Bottom = other.Bottom;
+                Left = other.Left;
+                Right = other.Right;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        constexpr margin(const GGUI::margin& other) : style_base(other.Status, true), Top(other.Top), Bottom(other.Bottom), Left(other.Left), Right(other.Right){}
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class shadow : public STYLING_INTERNAL::style_base{
+    public:
+        STYLING_INTERNAL::value<FVector3> Direction = FVector3{0, 0, 0.5};
+        STYLING_INTERNAL::value<RGB> Color = RGB{};
+        float Opacity = 1;
+        bool Enabled = false;
+
+        shadow(FVector3 direction, RGB color, float opacity, bool enabled, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
+            Direction = direction;
+            Color = color;
+            Opacity = opacity;
+            Enabled = enabled;
+        }
+
+        shadow() : style_base(){}
+
+        shadow& operator=(const shadow& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Direction = other.Direction;
+                Color = other.Color;
+                Opacity = other.Opacity;
+                Enabled = other.Enabled;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+    
+        constexpr shadow(const GGUI::shadow& other) : style_base(other.Status, true), Direction(other.Direction), Color(other.Color), Opacity(other.Opacity), Enabled(other.Enabled){}
+    
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate(Element* owner) override;
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class opacity : public STYLING_INTERNAL::style_base{
+    protected:
+        float Value;
+    public:
+        opacity(float value, VALUE_STATE state) : style_base(state), Value(value){}
+
+        opacity() = default;
+
+        opacity& operator=(const opacity& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        constexpr opacity(const GGUI::opacity& other) : style_base(other.Status, true), Value(other.Value){}
+
+        void Embed_Value(Element* host) override;
+        
+        // Since opacity always represents an percentile of its self being displayed on top of its parent.
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        inline float Get() { return Value; }
+
+        void Set(float value){
+            Value = value;
+            Status = VALUE_STATE::VALUE;
+        }
+    };
+
+    class allow_scrolling : public STYLING_INTERNAL::BOOL_VALUE{
+    public:
+        allow_scrolling(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        allow_scrolling() = default;
+
+        constexpr allow_scrolling(const GGUI::allow_scrolling& other) : BOOL_VALUE(other.Value, other.Status, true){}
+
+        allow_scrolling& operator=(const allow_scrolling& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
+    };
+
+    class align : public STYLING_INTERNAL::ENUM_VALUE<ALIGN>{
+    public:
+        align(ALIGN value, VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
+
+        align() = default;
+
+        constexpr align(const GGUI::align& other) : ENUM_VALUE(other.Value, other.Status, true){}
+
+        align& operator=(const align& other) = default;
+        
+        // for dynamically computable values like percentage depended
+        // currently covers:
+        // - screen space
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
     };
 
     class Styling{
@@ -629,40 +957,37 @@ namespace GGUI{
         width Width = 1;
         width Height = 1;
 
-        STYLING_INTERNAL::BOOL_VALUE Border_Enabled = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+        border_enabled Border_Enabled = border_enabled(false, VALUE_STATE::INITIALIZED);
         text_color                  Text_Color;
         background_color            Background_Color;
         border_color                Border_Color;
         border_background_color     Border_Background_Color;
         
-        STYLING_INTERNAL::RGB_VALUE Hover_Border_Color;
-        STYLING_INTERNAL::RGB_VALUE Hover_Text_Color;
-        STYLING_INTERNAL::RGB_VALUE Hover_Background_Color;
-        STYLING_INTERNAL::RGB_VALUE Hover_Border_Background_Color;
+        hover_border_color Hover_Border_Color;
+        hover_text_color Hover_Text_Color;
+        hover_background_color Hover_Background_Color;
+        hover_border_background_color Hover_Border_Background_Color;
 
-        STYLING_INTERNAL::RGB_VALUE Focus_Border_Color;
-        STYLING_INTERNAL::RGB_VALUE Focus_Text_Color;
-        STYLING_INTERNAL::RGB_VALUE Focus_Background_Color;
-        STYLING_INTERNAL::RGB_VALUE Focus_Border_Background_Color;
+        focus_border_color Focus_Border_Color;
+        focus_text_color Focus_Text_Color;
+        focus_background_color Focus_Background_Color;
+        focus_border_background_color Focus_Border_Background_Color;
 
         styled_border Border_Style;
         
-        STYLING_INTERNAL::ENUM_VALUE<DIRECTION> Flow_Priority = STYLING_INTERNAL::ENUM_VALUE<DIRECTION>(DIRECTION::ROW, VALUE_STATE::INITIALIZED);
-        STYLING_INTERNAL::BOOL_VALUE Wrap = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+        flow_priority Flow_Priority = flow_priority(DIRECTION::ROW, VALUE_STATE::INITIALIZED);
+        wrap Wrap = wrap(false, VALUE_STATE::INITIALIZED);
 
-        STYLING_INTERNAL::BOOL_VALUE Allow_Overflow = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
-        STYLING_INTERNAL::BOOL_VALUE Allow_Dynamic_Size = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+        allow_overflow Allow_Overflow = allow_overflow(false, VALUE_STATE::INITIALIZED);
+        allow_dynamic_size Allow_Dynamic_Size = allow_dynamic_size(false, VALUE_STATE::INITIALIZED);
         margin Margin;
 
         shadow Shadow;
         opacity Opacity = opacity(1.0f, VALUE_STATE::INITIALIZED);  // 100%
 
-        STYLING_INTERNAL::BOOL_VALUE Allow_Scrolling = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
+        allow_scrolling Allow_Scrolling = allow_scrolling(false, VALUE_STATE::INITIALIZED);
 
-        // Only fetch one parent UP, and own position +, then child repeat.
-        STYLING_INTERNAL::Vector Absolute_Position_Cache;
-
-        STYLING_INTERNAL::ENUM_VALUE<ALIGN> Align = STYLING_INTERNAL::ENUM_VALUE<ALIGN>(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
+        align Align = align(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
 
         Styling() = default;
 
@@ -674,8 +999,8 @@ namespace GGUI{
         }
     
         // This acts like the Render() overload for elements, where the function will go through flagged states and checks what needs to be updated.
-        // It is also highly recommended to call this right after assessing which stylings an element has.
-        void Evaluate_Dynamic_Attribute_Values();
+        // Called within the STAIN::STRETCH handling, since this is about dynamic size attributes, and they need to be checked when the current element has been resized or its parent has.
+        void Evaluate_Dynamic_Attribute_Values(Element* owner);
     };
 
     namespace STYLES{
