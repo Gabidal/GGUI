@@ -354,49 +354,49 @@ void GGUI::Element::Inherit_States_From(Element* abstract){
 
 std::pair<GGUI::RGB, GGUI::RGB>  GGUI::Element::Compose_All_Text_RGB_Values(){
     if (Focused){
-        return {Style->Focus_Text_Color.Value.Get(), Style->Focus_Background_Color.Value.Get()};
+        return {Style->Focus_Text_Color.Value.Get<RGB>(), Style->Focus_Background_Color.Value.Get<RGB>()};
     }
     else if (Hovered){
-        return {Style->Hover_Text_Color.Value.Get(), Style->Hover_Background_Color.Value.Get()};
+        return {Style->Hover_Text_Color.Value.Get<RGB>(), Style->Hover_Background_Color.Value.Get<RGB>()};
     }
     else{
-        return {Style->Text_Color.Value.Get(), Style->Background_Color.Value.Get()};
+        return {Style->Text_Color.Value.Get<RGB>(), Style->Background_Color.Value.Get<RGB>()};
     }
 }
 
 GGUI::RGB GGUI::Element::Compose_Text_RGB_Values(){
     if (Focused){
-        return Style->Focus_Text_Color.Value.Get();
+        return Style->Focus_Text_Color.Value.Get<RGB>();
     }
     else if (Hovered){
-        return Style->Hover_Text_Color.Value.Get();
+        return Style->Hover_Text_Color.Value.Get<RGB>();
     }
     else{
-        return Style->Text_Color.Value.Get();
+        return Style->Text_Color.Value.Get<RGB>();
     }
 }
 
 GGUI::RGB GGUI::Element::Compose_Background_RGB_Values(){
     if (Focused){
-        return Style->Focus_Background_Color.Value.Get();
+        return Style->Focus_Background_Color.Value.Get<RGB>();
     }
     else if (Hovered){
-        return Style->Hover_Background_Color.Value.Get();
+        return Style->Hover_Background_Color.Value.Get<RGB>();
     }
     else{
-        return Style->Background_Color.Value.Get();
+        return Style->Background_Color.Value.Get<RGB>();
     }
 }
 
 std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
     if (Focused){
-        return {Style->Focus_Border_Color.Value.Get(), Style->Focus_Border_Background_Color.Value.Get()};
+        return {Style->Focus_Border_Color.Value.Get<RGB>(), Style->Focus_Border_Background_Color.Value.Get<RGB>()};
     }
     else if (Hovered){
-        return {Style->Hover_Border_Color.Value.Get(), Style->Hover_Border_Background_Color.Value.Get()};
+        return {Style->Hover_Border_Color.Value.Get<RGB>(), Style->Hover_Border_Background_Color.Value.Get<RGB>()};
     }
     else{
-        return {Style->Border_Color.Value.Get(), Style->Border_Background_Color.Value.Get()};
+        return {Style->Border_Color.Value.Get<RGB>(), Style->Border_Background_Color.Value.Get<RGB>()};
     }
 }
 
@@ -404,30 +404,32 @@ std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
 
 // Takes 0.0f to 1.0f
 void GGUI::Element::Set_Opacity(float Opacity){
-    // Normalize the float of 0.0 - 1.0 to 0 - 100 int value
-    Opacity *= 100;
+    if (Opacity > 1.0f)
+        Report_Stack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + Get_Name());
+
     Style->Opacity.Set(Opacity);
 
     Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 }
 
-void GGUI::Element::Set_Opacity(int Opacity){
-    Style->Opacity.Set(Opacity);
+void GGUI::Element::Set_Opacity(unsigned int Opacity){
+    if (Opacity > 100)
+        Report_Stack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + Get_Name());
+
+    Style->Opacity.Set((float)Opacity / 100.f);
 
     Dirty.Dirty(STAIN_TYPE::STRETCH);
     Update_Frame();
 }
 
 // returns int as 0 - 100
-int GGUI::Element::Get_Opacity(){
+float GGUI::Element::Get_Opacity(){
     return Style->Opacity.Get();
 }
 
 bool GGUI::Element::Is_Transparent(){
-    int FULL_OPACITY = 100;
-
-    return Get_Opacity() < FULL_OPACITY;
+    return Get_Opacity() != 1.0f;
 }
 
 unsigned int GGUI::Element::Get_Processed_Width(){
@@ -436,6 +438,7 @@ unsigned int GGUI::Element::Get_Processed_Width(){
     }
     return Get_Width();
 }
+
 unsigned int GGUI::Element::Get_Processed_Height(){
     if (Post_Process_Height != 0){
         return Post_Process_Height;
@@ -802,7 +805,7 @@ GGUI::IVector2 GGUI::Element::Get_Position(){
 }
 
 GGUI::IVector2 GGUI::Element::Get_Absolute_Position(){
-    return Style->Absolute_Position_Cache.Value.Get();
+    return Style->Absolute_Position_Cache.Value.Get<IVector2>();
 }
 
 void GGUI::Element::Update_Absolute_Position_Cache(){
@@ -938,7 +941,7 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
 
 void GGUI::Element::Set_Background_Color(RGB color){
     Style->Background_Color = color;
-    if (Style->Border_Background_Color.Value.Get() == Style->Background_Color.Value.Get())
+    if (Style->Border_Background_Color.Value.Get<RGB>() == Style->Background_Color.Value.Get<RGB>())
         Style->Border_Background_Color = color;
         
     Dirty.Dirty(STAIN_TYPE::COLOR);
@@ -947,7 +950,7 @@ void GGUI::Element::Set_Background_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Background_Color(){
-    return Style->Background_Color.Value.Get();
+    return Style->Background_Color.Value.Get<RGB>();
 }
 
 void GGUI::Element::Set_Border_Color(RGB color){
@@ -957,7 +960,7 @@ void GGUI::Element::Set_Border_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Color(){
-    return Style->Border_Color.Value.Get();
+    return Style->Border_Color.Value.Get<RGB>();
 }
 
 void GGUI::Element::Set_Border_Background_Color(RGB color){
@@ -967,7 +970,7 @@ void GGUI::Element::Set_Border_Background_Color(RGB color){
 }
 
 GGUI::RGB GGUI::Element::Get_Border_Background_Color(){
-    return Style->Border_Background_Color.Value.Get();
+    return Style->Border_Background_Color.Value.Get<RGB>();
 }
 
 void GGUI::Element::Set_Text_Color(RGB color){
@@ -995,7 +998,7 @@ bool GGUI::Element::Is_Overflow_Allowed(){
 }
 
 GGUI::RGB GGUI::Element::Get_Text_Color(){
-    return Style->Text_Color.Value.Get();
+    return Style->Text_Color.Value.Get<RGB>();
 }
 
 void GGUI::Element::Compute_Dynamic_Size(){
@@ -1593,7 +1596,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     // -a * x + o = 0
     // x = o / a
 
-    int Shadow_Length = properties.Direction.Get().Z * properties.Opacity;
+    int Shadow_Length = properties.Direction.Get<FVector3>().Z * properties.Opacity;
 
     unsigned int Shadow_Box_Width = Get_Width() + (Shadow_Length * 2);
     unsigned int Shadow_Box_Height = Get_Height() + (Shadow_Length * 2);
@@ -1617,40 +1620,40 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
                 Current_Box_Start_X--,
                 Current_Box_Start_Y--
             },
-            properties.Direction.Get()
+            properties.Direction.Get<FVector3>()
         );
 
         Current_Shadow_Width += 2;
         Current_Shadow_Height += 2;
 
         UTF shadow_pixel;
-        shadow_pixel.Background = properties.Color.Get();
+        shadow_pixel.Background = properties.Color.Get<RGB>();
         shadow_pixel.Background.Alpha = Current_Alpha;
 
         for (auto& index : Shadow_Indicies){
             Shadow_Box[index.Y * Shadow_Box_Width + index.X] = shadow_pixel;
         }
 
-        previous_opacity *= GGUI::Min(0.9f, (float)properties.Direction.Get().Z);
+        previous_opacity *= GGUI::Min(0.9f, (float)properties.Direction.Get<FVector3>().Z);
         Current_Alpha = previous_opacity * std::numeric_limits<unsigned char>::max();;
     }
 
     // Now offset the shadow box buffer by the direction.
-    int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.Get().X);
-    int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Get().Y);
+    int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.Get<FVector3>().X);
+    int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Get<FVector3>().Y);
 
     std::vector<GGUI::UTF> Swapped_Buffer = Current_Buffer;
 
     Current_Buffer.resize(Offset_Box_Width * Offset_Box_Height);
 
     IVector2 Shadow_Box_Start = {
-        GGUI::Max(0, (int)properties.Direction.Get().X),
-        GGUI::Max(0, (int)properties.Direction.Get().Y)
+        GGUI::Max(0, (int)properties.Direction.Get<FVector3>().X),
+        GGUI::Max(0, (int)properties.Direction.Get<FVector3>().Y)
     };
 
     IVector2 Original_Box_Start = {
-        Shadow_Box_Start.X - properties.Direction.Get().X + Shadow_Length,
-        Shadow_Box_Start.Y - properties.Direction.Get().Y + Shadow_Length
+        Shadow_Box_Start.X - properties.Direction.Get<FVector3>().X + Shadow_Length,
+        Shadow_Box_Start.Y - properties.Direction.Get<FVector3>().Y + Shadow_Length
     };
 
     IVector2 Original_Box_End = {
@@ -1698,15 +1701,15 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
 void GGUI::Element::Process_Opacity(std::vector<GGUI::UTF>& Current_Buffer){
     if (!Is_Transparent())
         return;
-
-    float As_Float = (float)Style->Opacity.Get() / 100.0f;
+    
+    float fast_opacity = Style->Opacity.Get();
 
     for (unsigned int Y = 0; Y < Get_Processed_Height(); Y++){
         for (unsigned int X = 0; X < Get_Processed_Width(); X++){
             UTF& tmp = Current_Buffer[Y * Get_Processed_Width() + X];
 
-            tmp.Background.Alpha = tmp.Background.Alpha * As_Float;
-            tmp.Foreground.Alpha = tmp.Foreground.Alpha * As_Float;
+            tmp.Background.Alpha = tmp.Background.Alpha * fast_opacity;
+            tmp.Foreground.Alpha = tmp.Foreground.Alpha * fast_opacity;
         }
     }
 }

@@ -122,8 +122,8 @@ namespace GGUI{
         if (b != Style->Border_Enabled.Value){
             Style->Border_Enabled = b;
 
-            if (b) Style->Width.Value.Direct() += 2;
-            else Style->Height.Value.Direct() -= 2;
+            if (b) Style->Width.Direct() += 2;
+            else Style->Height.Direct() -= 2;
 
             Dirty.Dirty(STAIN_TYPE::EDGE);
             Update_Frame();

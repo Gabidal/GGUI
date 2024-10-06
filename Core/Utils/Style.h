@@ -107,12 +107,43 @@ namespace GGUI{
                 }
             }
 
+            template<typename P>
+            constexpr P Get() const {
+                // check at compile time if the compiler is compiling with debug or release flags, if debug then enable data type check
+                #ifdef _DEBUG
+                if (!std::holds_alternative<P>(data)) {
+                    Report_Stack("Value is not of the requested type!");
+                    throw std::bad_variant_access();  // Exception if the requested type doesn't match
+                }
+                #endif
+                return std::get<P>(data);  // In release mode, or after the check passes in debug mode
+            }
+
             // Getter methods
-            inline T Get() { return std::get<T>(data); }
+            template<typename P>
+            inline P Get() {                
+                // check at compile time if the compiler is compiling with debug or release flags, if debug then enable data type check
+                #ifdef _DEBUG
+                if (!std::holds_alternative<P>(data)) {
+                    Report_Stack("Value is not of the requested type!");
+                    throw std::bad_variant_access();  // Exception if the requested type doesn't match
+                }
+                #endif
+                return std::get<P>(data);  // In release mode, or after the check passes in debug mode
+            }
 
-            constexpr T Get() const { return std::get<T>(data); }
-
-            T& Direct() { return std::get<T>(data); }
+            // This is an exclusive Dev function, with serious repercussions for misuse.
+            template<typename P>
+            P& Direct() { 
+                // check at compile time if the compiler is compiling with debug or release flags, if debug then enable data type check
+                #ifdef _DEBUG
+                if (!std::holds_alternative<P>(data)) {
+                    Report_Stack("Value is not of the requested type!");
+                    throw std::bad_variant_access();  // Exception if the requested type doesn't match
+                }
+                #endif
+                return std::get<P>(data);  // In release mode, or after the check passes in debug mode
+            }
 
             inline void Set(T value) {
                 data = value;
@@ -245,6 +276,8 @@ namespace GGUI{
             
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
+
+            int& Direct() { return Value.Direct<int>(); }
         };
 
         template<typename T>
@@ -315,14 +348,15 @@ namespace GGUI{
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
 
-            IVector2 Get() { return Value.Get(); }
+            IVector2 Get() { return Value.Get<IVector2>(); }
+            constexpr IVector2 Get() const { return Value.Get<IVector2>(); }
 
             void Set(IVector2 value){
                 Value = value;
                 Status = VALUE_STATE::VALUE;
             }
 
-            IVector2& Direct() { return Value.Direct(); }
+            IVector2& Direct() { return Value.Direct<IVector2>(); }
         };
     }
 
@@ -332,7 +366,9 @@ namespace GGUI{
 
         position() = default;
 
-        constexpr position(const GGUI::position& other) : Vector(other.Value.Get(), other.Status, true){}
+        constexpr position(const GGUI::position& other) : Vector(((const Vector&)other).Get(), other.Status, true){}
+
+        position& operator=(const position& other) = default;
 
         void Embed_Value(Element* host) override;
     };
@@ -343,11 +379,13 @@ namespace GGUI{
 
         width() = default;
 
-        constexpr width(const GGUI::width& other) : NUMBER_VALUE(other.Value.Get(), other.Status, true){}
+        constexpr width(const GGUI::width& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status, true){}
+
+        width& operator=(const width& other) = default;
 
         void Embed_Value(Element* host) override;
 
-        int Get() { return Value.Get(); }
+        int Get() { return Value.Get<int>(); }
 
         void Set(int value){
             Value = value;
@@ -361,11 +399,13 @@ namespace GGUI{
 
         height() = default;
 
-        constexpr height(const GGUI::height& other) : NUMBER_VALUE(other.Value.Get(), other.Status, true){}
+        constexpr height(const GGUI::height& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status, true){}
+
+        height& operator=(const height& other) = default;
 
         void Embed_Value(Element* host) override;
 
-        int Get() { return Value.Get(); }
+        int Get() { return Value.Get<int>(); }
 
         void Set(int value){
             Value = value;
@@ -379,7 +419,9 @@ namespace GGUI{
 
         text_color() = default;
 
-        constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other.Value.Get(), other.Status, true){}
+        constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        text_color& operator=(const text_color& other) = default;
 
         void Embed_Value(Element* host) override;
     };
@@ -390,7 +432,9 @@ namespace GGUI{
 
         background_color() = default;
 
-        constexpr background_color(const GGUI::background_color& other) : RGB_VALUE(other.Value.Get(), other.Status, true){}
+        constexpr background_color(const GGUI::background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        background_color& operator=(const background_color& other) = default;
 
         void Embed_Value(Element* host) override;
     };
@@ -401,7 +445,9 @@ namespace GGUI{
 
         border_color() = default;
 
-        constexpr border_color(const GGUI::border_color& other) : RGB_VALUE(other.Value.Get(), other.Status, true){}
+        constexpr border_color(const GGUI::border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        border_color& operator=(const border_color& other) = default;
 
         void Embed_Value(Element* host) override;
     };
@@ -412,7 +458,9 @@ namespace GGUI{
 
         border_background_color() = default;
 
-        constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other.Value.Get(), other.Status, true){}
+        constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status, true){}
+
+        border_background_color& operator=(const border_background_color& other) = default;
 
         void Embed_Value(Element* host) override;
     };
@@ -489,21 +537,31 @@ namespace GGUI{
         void Embed_Value(Element* host) override;
     };
 
-    class opacity : public STYLING_INTERNAL::NUMBER_VALUE{
+    class opacity : public STYLING_INTERNAL::style_base{
+    protected:
+        float Value;
     public:
-        opacity(int value, VALUE_STATE state) : NUMBER_VALUE(value, state){}
-
-        opacity(float value, VALUE_STATE state) : NUMBER_VALUE(value, state){}
+        opacity(float value, VALUE_STATE state) : style_base(state), Value(value){}
 
         opacity() = default;
 
-        constexpr opacity(const GGUI::opacity& other) : NUMBER_VALUE(other.Value.Get(), other.Status, true){}
+        opacity& operator=(const opacity& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        constexpr opacity(const GGUI::opacity& other) : style_base(other.Status, true), Value(other.Value){}
 
         void Embed_Value(Element* host) override;
 
-        int Get() { return Value.Get(); }
+        inline float Get() { return Value; }
 
-        void Set(int value){
+        void Set(float value){
             Value = value;
             Status = VALUE_STATE::VALUE;
         }
@@ -597,7 +655,7 @@ namespace GGUI{
         margin Margin;
 
         shadow Shadow;
-        opacity Opacity = opacity(100.0f, VALUE_STATE::INITIALIZED);  // 100%
+        opacity Opacity = opacity(1.0f, VALUE_STATE::INITIALIZED);  // 100%
 
         STYLING_INTERNAL::BOOL_VALUE Allow_Scrolling = STYLING_INTERNAL::BOOL_VALUE(false, VALUE_STATE::INITIALIZED);
 

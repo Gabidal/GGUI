@@ -258,14 +258,14 @@ namespace GGUI{
         void Set_Opacity(float Opacity);
 
         // Alpha channel. 0 to 100
-        void Set_Opacity(int Opacity);
+        void Set_Opacity(unsigned int Opacity);
 
         styled_border Get_Border_Style(){
             return Style->Border_Style;
         }
 
-        // return int as 0 - 100
-        int Get_Opacity(); 
+        // return int as 0.f - 1.f
+        float Get_Opacity(); 
 
         bool Is_Transparent();
 
