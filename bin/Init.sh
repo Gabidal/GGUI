@@ -60,4 +60,8 @@ fi
 # Now compile
 meson compile -C Build
 
+# Also set the Build.sh, Benchmark.sh into chmod 755
+chmod 755 Build.sh
+chmod 755 Benchmark.sh
+
 echo "Done!"

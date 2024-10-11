@@ -166,6 +166,8 @@ namespace GGUI{
 
             style_base() = default;
 
+            virtual ~style_base() = default;
+
             // Normally style base doesn't do anything.
             // virtual Style_Base* operator|(Style_Base* other) = 0;
 

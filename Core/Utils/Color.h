@@ -85,9 +85,9 @@ namespace GGUI{
 
     class RGBA : public RGB{
     public:
-        unsigned char Alpha = std::numeric_limits<unsigned char>::max();
+        unsigned char Alpha = UINT8_MAX;
 
-        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = std::numeric_limits<unsigned char>::max()) : RGB(r, g, b){
+        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = UINT8_MAX) : RGB(r, g, b){
             Alpha = a;
         }
 
@@ -101,11 +101,11 @@ namespace GGUI{
     
         // For float API's
         constexpr void Set_Alpha(float a){
-            Alpha = (unsigned char)(a * std::numeric_limits<unsigned char>::max());
+            Alpha = (unsigned char)(a * UINT8_MAX);
         }
 
         constexpr float Get_Alpha() const{
-            return (float)Alpha / std::numeric_limits<unsigned char>::max();
+            return (float)Alpha / UINT8_MAX;
         }
 
         bool operator==(const RGBA& Other){

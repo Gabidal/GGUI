@@ -1282,7 +1282,7 @@ void GGUI::Element::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Resul
 
 void GGUI::Element::Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source){
     // If the Source element has full opacity, then the destination gets fully rewritten over.
-    if (Source.Background.Alpha == std::numeric_limits<unsigned char>::max()){
+    if (Source.Background.Alpha == UINT8_MAX){
         Dest = Source;
         return;
     }
@@ -1709,7 +1709,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     std::vector<GGUI::UTF> Shadow_Box;
     Shadow_Box.resize(Shadow_Box_Width * Shadow_Box_Height);
 
-    unsigned char Current_Alpha = properties.Opacity * std::numeric_limits<unsigned char>::max();;
+    unsigned char Current_Alpha = properties.Opacity * UINT8_MAX;;
     float previous_opacity = properties.Opacity;
     int Current_Box_Start_X = Shadow_Length;
     int Current_Box_Start_Y = Shadow_Length;
@@ -1740,7 +1740,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
         }
 
         previous_opacity *= GGUI::Min(0.9f, (float)properties.Direction.Get<FVector3>().Z);
-        Current_Alpha = previous_opacity * std::numeric_limits<unsigned char>::max();;
+        Current_Alpha = previous_opacity * UINT8_MAX;;
     }
 
     // Now offset the shadow box buffer by the direction.
