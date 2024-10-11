@@ -115,12 +115,6 @@ namespace GGUI{
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
-        if (Dirty.is(STAIN_TYPE::MOVE)){
-            Dirty.Clean(STAIN_TYPE::MOVE);
-            
-            Update_Absolute_Position_Cache();
-        }
-
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
             Style->Evaluate_Dynamic_Attribute_Values(this);
@@ -132,6 +126,12 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
         }
 
+        if (Dirty.is(STAIN_TYPE::MOVE)){
+            Dirty.Clean(STAIN_TYPE::MOVE);
+            
+            Update_Absolute_Position_Cache();
+        }
+        
         //Apply the color system to the resized result list
         if (Dirty.is(STAIN_TYPE::COLOR))
             Apply_Colors(this, Result);

@@ -1142,7 +1142,7 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
 
     //if inned children have changed without this changing, then this will trigger.
     if (Children_Changed() || Has_Transparent_Children()){
-        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
+        Dirty.Dirty(STAIN_TYPE::DEEP);
     }
 
     Calculate_Childs_Hitboxes();    // Normally elements will NOT oder their content by hitbox system.
@@ -1158,12 +1158,6 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
         Dirty.Clean(STAIN_TYPE::CLASS);
     }
 
-    if (Dirty.is(STAIN_TYPE::MOVE)){
-        Dirty.Clean(STAIN_TYPE::MOVE);
-        
-        Update_Absolute_Position_Cache();
-    }
-
     if (Dirty.is(STAIN_TYPE::STRETCH)){
         // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
         Style->Evaluate_Dynamic_Attribute_Values(this);
@@ -1173,6 +1167,12 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
         Dirty.Clean(STAIN_TYPE::STRETCH);
 
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+    }
+
+    if (Dirty.is(STAIN_TYPE::MOVE)){
+        Dirty.Clean(STAIN_TYPE::MOVE);
+        
+        Update_Absolute_Position_Cache();
     }
 
     //Apply the color system to the resized result list

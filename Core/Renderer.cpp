@@ -62,13 +62,18 @@ namespace GGUI{
 
     std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
-    // Only covers elements with any attributes related to screen space.
-    std::vector<GGUI::Element*> Dynamic_Screen_Space_Dependent_Attribute_Elements;
-
     Window* Main = nullptr;
     
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
     const std::string HISTORY = "_HISTORY_";
+
+    // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
+    class Carry{
+    public:
+        bool Resize = false;
+    };
+
+    Atomic::Guard<Carry> Carry_Flags; 
 
     bool Collides(GGUI::IVector2 A, GGUI::IVector2 B, int A_Width, int A_Height, int B_Width, int B_Height){
         return (
@@ -267,8 +272,10 @@ namespace GGUI{
         if (Max_Width == 0 || Max_Height == 0){
             Report("Failed to get console info!");
         }
-
-        Notify_Dynamic_Screen_Space_Dependent_Attributes();
+        
+        // Check that Outbox is not active.
+        if (Main)
+            Main->Set_Dimensions(Max_Width, Max_Height);
     }
 
     void Update_Frame(bool Lock_Event_Thread);
@@ -366,12 +373,9 @@ namespace GGUI{
                 }
             }
             else if (Raw_Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
-
-                Update_Max_Width_And_Height();
-
-                // For outbox use.
-                if (Main)
-                    Main->Set_Dimensions(Max_Width, Max_Height);
+                Carry_Flags([](GGUI::Carry& current_carry){
+                    current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
+                });
             }
             else if (Raw_Input[i].EventType == MOUSE_EVENT && Mouse_Movement_Enabled){
                 if (Raw_Input[i].Event.MouseEvent.dwEventFlags == MOUSE_MOVED){
@@ -669,8 +673,6 @@ namespace GGUI{
         // Convenience sake :)
         if (Main)
             Main->Set_Dimensions(Max_Width, Max_Height);
-
-        Notify_Dynamic_Attributes();
     }
 
     void Add_Automatic_Terminal_Size_Update_Handler(){
@@ -679,7 +681,9 @@ namespace GGUI{
         
         // Setup the function handler with a lambda
         Handler.sa_handler = [](int){
-            Update_Max_Width_And_Height();
+            Carry_Flags([](GGUI::Carry& current_carry){
+                current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
+            });
         };
 
         // Clears any other handler which could potentially hinder this handler.
@@ -1203,7 +1207,9 @@ namespace GGUI{
 
     int Get_Max_Width(){
         if (Max_Width == 0 && Max_Height == 0){
-            Update_Max_Width_And_Height();
+            Carry_Flags([](GGUI::Carry& current_carry){
+                current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
+            });
         }
         
         return Max_Width;
@@ -1211,7 +1217,9 @@ namespace GGUI{
 
     int Get_Max_Height(){
         if (Max_Width == 0 && Max_Height == 0){
-            Update_Max_Width_And_Height();
+            Carry_Flags([](GGUI::Carry& current_carry){
+                current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
+            });
         }
 
         return Max_Height;
@@ -1709,6 +1717,17 @@ namespace GGUI{
                 Previous_Time = std::chrono::high_resolution_clock::now();
 
                 if (Main){
+
+                    // Process the previous carry flags
+                    Carry_Flags([](GGUI::Carry& previous_carry){
+                        if (previous_carry.Resize){
+                            // Clear the previous carry flag
+                            previous_carry.Resize = false;
+
+                            Update_Max_Width_And_Height();
+                        }
+                    });
+
                     Abstract_Frame_Buffer = Main->Render();
 
                     // ENCODE for optimize
@@ -1742,9 +1761,6 @@ namespace GGUI{
                 // Reset the thread load counter
                 Event_Thread_Load = 0;
                 Previous_Time = std::chrono::high_resolution_clock::now();
-
-                // First update Main size if needed.
-                // Update_Max_Width_And_Height();
 
                 // Order independent --------------
                 Recall_Memories();
@@ -2208,13 +2224,6 @@ namespace GGUI{
             }
 
         }
-
-    }
-
-    void Notify_Dynamic_Screen_Space_Dependent_Attributes(){
-        // Reads from 'Dynamic_Screen_Space_Dependent_Attribute_Elements'
-
-        
 
     }
 

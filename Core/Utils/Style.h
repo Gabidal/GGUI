@@ -955,7 +955,7 @@ namespace GGUI{
         position Position;
 
         width Width = 1;
-        width Height = 1;
+        height Height = 1;
 
         border_enabled Border_Enabled = border_enabled(false, VALUE_STATE::INITIALIZED);
         text_color                  Text_Color;
