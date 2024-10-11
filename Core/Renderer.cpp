@@ -203,7 +203,7 @@ namespace GGUI{
     Element* Find_Closest_Absolute_Element(IVector2 start, std::vector<Element*> Candidates){
         // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
         // If they are, check if they collide with any element.
-        // cast "rays" to each four directions, and return the lenghts of each collision between the center of the rectangles and the start point.
+        // cast "rays" to each four directions, and return the lengths of each collision between the center of the rectangles and the start point.
         // return the smallest one.
         if (Candidates.size() == 0){
             Report("Missing Candidates!");
@@ -214,7 +214,7 @@ namespace GGUI{
 
         for (auto& candidate : Candidates){
             if (!candidate) 
-                continue;   // Incase of event handlers with their stupid empty hosters.
+                continue;   // Incase of event handlers with their stupid empty host.
             // Calculate the distance between the candidate position and the start position
             IVector2 CC = candidate->Get_Absolute_Position();
             float Distance = std::sqrt(std::pow(CC.X - start.X, 2) + std::pow(CC.Y - start.Y, 2));
@@ -488,7 +488,7 @@ namespace GGUI{
 
         // The area to read:
         SMALL_RECT rect {0,0, Info.dwSize.X-1, Info.dwSize.Y} ; // the console screen (buffer) region to read from (120x4)
-        ReadConsoleOutput( GLOBAL_STD_OUTPUT_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size colsxrows*/, {0,0} /*buffer top,left*/, &rect );
+        ReadConsoleOutput( GLOBAL_STD_OUTPUT_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size cols x rows*/, {0,0} /*buffer top,left*/, &rect );
 
         // now transform all the data from CHAR_INFO to char
         for (unsigned int i = 0; i < Fake_Buffer.size(); i++){
@@ -602,8 +602,8 @@ namespace GGUI{
     #include <termios.h>
     #include <execinfo.h>
 
-    int Previus_Flags = 0;
-    struct termios Previus_Raw;
+    int Previous_Flags = 0;
+    struct termios Previous_Raw;
 
     // Stored globally, so that translation and inquiry can be separate proccess.
     const unsigned int Raw_Input_Capacity = UINT8_MAX * 2;
@@ -621,8 +621,8 @@ namespace GGUI{
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
         std::cout << std::flush;
 
-        fcntl(STDIN_FILENO, F_SETFL, Previus_Flags); // set non-blocking flag
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previus_Raw);
+        fcntl(STDIN_FILENO, F_SETFL, Previous_Flags); // set non-blocking flag
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
     }
 
     void Exit(int signum){
@@ -944,14 +944,14 @@ namespace GGUI{
         std::cout << std::flush;
 
         // Setup the new flags and take an snapshot of the flags before GGUI
-        Previus_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+        Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
         int flags = O_RDONLY | O_CLOEXEC;
         fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
 
         struct termios Term_Handle;
         tcgetattr(STDIN_FILENO, &Term_Handle);
 
-        Previus_Raw = Term_Handle;
+        Previous_Raw = Term_Handle;
 
         Term_Handle.c_lflag &= ~(ECHO | ICANON);
         Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
@@ -1030,7 +1030,7 @@ namespace GGUI{
                 Update_Max_Width_And_Height();
             }
 
-            // Now that we have the stack frame label names in the Name_Table list, we can construct an visually apleasing stack trace information:
+            // Now that we have the stack frame label names in the Name_Table list, we can construct an visually appeasing stack trace information:
             std::string Result = "Stack Trace:\n";
 
             bool Use_Indent = Usable_Depth < (Max_Width / 2);
@@ -1187,7 +1187,7 @@ namespace GGUI{
         return ((val) & (1<<(i)));
     }
 
-    //Returns 1 if it is not a unocode character.
+    //Returns 1 if it is not a unicode character.
     int Get_Unicode_Length(char first_char){
         //0xxxxxxx
         if (!Has_Bit_At(first_char, 7))
@@ -1226,16 +1226,16 @@ namespace GGUI{
     }
 
     //Returns a char if given ASCII, or a short if given UNICODE
-    GGUI::UTF* Get(GGUI::IVector2 Abselute_Position){
-        if (Abselute_Position.X >= Get_Max_Width() || 
-            Abselute_Position.Y >= Get_Max_Height() ||
-            Abselute_Position.X < 0 || 
-            Abselute_Position.Y < 0)
+    GGUI::UTF* Get(GGUI::IVector2 Absolute_Position){
+        if (Absolute_Position.X >= Get_Max_Width() || 
+            Absolute_Position.Y >= Get_Max_Height() ||
+            Absolute_Position.X < 0 || 
+            Absolute_Position.Y < 0)
         {
             return nullptr; //Later on make a 
         }
         else{
-            return &Abstract_Frame_Buffer[Abselute_Position.Y * Get_Max_Width() + Abselute_Position.X];
+            return &Abstract_Frame_Buffer[Absolute_Position.Y * Get_Max_Width() + Absolute_Position.X];
         }
     }
 
@@ -1408,8 +1408,8 @@ namespace GGUI{
         return (f & flag) != 0;
     }
 
-    bool Contains(unsigned long long big, unsigned long long smoll){
-        return (smoll & big) == smoll;
+    bool Contains(unsigned long long big, unsigned long long Small){
+        return (Small & big) == Small;
     }
 
     // Recursive's are made for instances like buttons where the default styling of borders does not change on focus nor on hover and the content is filled by text.
@@ -1480,7 +1480,7 @@ namespace GGUI{
         if (Focused_On == new_candidate || new_candidate == Main)
             return;
 
-        //put the previus focused candidate into not-focus
+        //put the previous focused candidate into not-focus
         if (Focused_On){
             Un_Focus_Element();
         }
@@ -1498,7 +1498,7 @@ namespace GGUI{
         if (Hovered_On == new_candidate || new_candidate == Main)
             return;
 
-        //put the previus focused candidate into not-focus
+        //put the previous focused candidate into not-focus
         if (Hovered_On){
             Un_Hover_Element();
         }
@@ -1566,7 +1566,7 @@ namespace GGUI{
                     }
                 }
             }
-            // Unhosted branches
+            // Un-hosted branches
             else{
 
                 // some code...
@@ -1603,7 +1603,7 @@ namespace GGUI{
                     }
                 }
 
-                //check if this job could be runned succesfully.
+                //check if this job could be run successfully.
                 if (e->Job(Best_Candidate)){
                     // Now remove the candidates from the input
                     for (unsigned int i = 0; i < Inputs.size(); i++){

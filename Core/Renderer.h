@@ -149,7 +149,7 @@ namespace GGUI{
     extern int Get_Max_Height();
 
     //Returns a char if given ASCII, or a short if given UNICODE
-    extern GGUI::UTF* Get(GGUI::IVector2 Abselute_Position);
+    extern GGUI::UTF* Get(GGUI::IVector2 Absolute_Position);
 
     extern GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
 

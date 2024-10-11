@@ -83,7 +83,7 @@ namespace GGUI{
             }
         }
 
-        //This will add the borders if nessesary and the title of the window.
+        //This will add the borders if necessary and the title of the window.
         if (Dirty.is(STAIN_TYPE::EDGE))
             Add_Overhead(this, Result);
 
@@ -108,7 +108,7 @@ namespace GGUI{
     }
 
     Terminal_Canvas::~Terminal_Canvas(){
-        // Check if this is added to the multiframe list and if so then remove it from there.
+        // Check if this is added to the multi-frame list and if so then remove it from there.
         if (Multi_Frame_Canvas.find(this) != Multi_Frame_Canvas.end()){
             Multi_Frame_Canvas.erase(this);
         }
@@ -169,7 +169,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
             Style->Evaluate_Dynamic_Attribute_Values(this);
-            
+
             Result.clear();
             Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);
