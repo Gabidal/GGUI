@@ -1639,31 +1639,6 @@ namespace GGUI{
         }); 
     }
 
-    void Init_Classes(){
-        // Add default class
-        std::string DEFAULT_NAME = "default";
-        Styling DEFAULT;
-        DEFAULT.Text_Color = text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Background_Color = background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-
-        DEFAULT.Border_Color = border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Border_Background_Color = border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-
-        DEFAULT.Hover_Text_Color = hover_text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Hover_Background_Color = hover_background_color(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
-
-        DEFAULT.Hover_Border_Color = hover_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Hover_Border_Background_Color = hover_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-         
-        DEFAULT.Focus_Text_Color = focus_text_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        DEFAULT.Focus_Background_Color = focus_background_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-
-        DEFAULT.Focus_Border_Color = focus_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        DEFAULT.Focus_Border_Background_Color = focus_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        
-        Add_Class(DEFAULT_NAME, DEFAULT);
-    }
-
     void Go_Through_File_Streams(){
         for (auto& File_Handle : File_Streamer_Handles){
             if (!File_Handle.second->Is_Cout_Stream())  // Cout handlers get called whenever a new line is inserted.
@@ -1698,7 +1673,6 @@ namespace GGUI{
         Previous_Time = Current_Time;
 
         Init_Platform_Stuff();
-        Init_Classes();
 
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
         Main = (Window*)0xFFFFFFFF;

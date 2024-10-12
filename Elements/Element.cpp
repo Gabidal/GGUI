@@ -161,8 +161,6 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
 }
 
 GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, IVector2* position){
-    Add_Class("default");
-
     Name = std::to_string((unsigned long long)this);
 
     Fully_Stain();
@@ -184,7 +182,6 @@ GGUI::Element::Element(std::string Class, unsigned int width, unsigned int heigh
 }
 
 GGUI::Element::Element() {
-    Add_Class("default");
     Name = std::to_string((unsigned long long)this);
     Parse_Classes();
 
@@ -201,7 +198,6 @@ GGUI::Element::Element() {
 
 GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position){
     Pause_GGUI([this, css, width, height, parent, position](){
-        Add_Class("default");
         Parse_Classes();
 
         bool Previous_Border_State = Has_Border();

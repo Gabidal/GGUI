@@ -26,7 +26,7 @@ int main()
         }
 
         GGUI::Main->Add_Child(tem);
-    }, 100);
+    }, INT32_MAX);
 
     GGUI::Exit();
 }

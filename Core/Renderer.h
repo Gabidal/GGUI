@@ -177,8 +177,6 @@ namespace GGUI{
 
     extern void Add_Class(std::string name, Styling Styling);
 
-    extern void Init_Classes();
-
     //Inits GGUI and returns the main window.
     extern GGUI::Window* Init_GGUI();
 

@@ -7,6 +7,7 @@
 namespace GGUI{
     // Externies
     class Element;
+    class Styling;
     extern void Report_Stack(std::string Problem);
 
     enum class ALIGN{
@@ -158,21 +159,30 @@ namespace GGUI{
 
         class style_base{
         public:
+            // This is used to prevent accidental overwrites.
             VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
 
-            constexpr style_base(VALUE_STATE status, [[maybe_unused]] bool use_constexpr) : Status(status){}
+            // This is used to store all appended style_bases through the operator|.
+            style_base* Other = nullptr;
+
+            constexpr style_base(VALUE_STATE status, [[maybe_unused]] bool use_constexpr) : Status(status), Other(nullptr){}
             
-            style_base(VALUE_STATE status) : Status(status){}
+            style_base(VALUE_STATE status) : Status(status), Other(nullptr){}
 
             style_base() = default;
 
             virtual ~style_base() = default;
 
-            // Normally style base doesn't do anything.
-            // virtual Style_Base* operator|(Style_Base* other) = 0;
+            style_base* operator|(style_base* other){
+                Other = other;
+
+                return this;
+            }
 
             // This function is for the single style classes to be able to imprint their own identity into the Element object which hosts these styles.
             virtual void Embed_Value(Element* host) = 0;
+
+            virtual void Embed_Value(Styling* host) = 0;
 
             virtual void Evaluate(Element* owner) = 0;
         };
@@ -211,6 +221,8 @@ namespace GGUI{
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
 
+            void Embed_Value([[maybe_unused]] Styling* host) override {};
+
             void Evaluate(Element* owner) override = 0;
         };
 
@@ -248,6 +260,8 @@ namespace GGUI{
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
             
+            void Embed_Value([[maybe_unused]] Styling* host) override {};
+
             void Evaluate([[maybe_unused]] Element* owner) override {};
         };
         
@@ -286,6 +300,8 @@ namespace GGUI{
             
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
+            
+            void Embed_Value([[maybe_unused]] Styling* host) override {};
             
             void Evaluate(Element* owner) override = 0;
 
@@ -327,6 +343,8 @@ namespace GGUI{
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
             
+            void Embed_Value([[maybe_unused]] Styling* host) override {};
+            
             void Evaluate([[maybe_unused]] Element* owner) override {};
         };
         
@@ -364,6 +382,8 @@ namespace GGUI{
             // The basic style types do not have imprint methods.
             void Embed_Value([[maybe_unused]] Element* host) override {};
 
+            void Embed_Value([[maybe_unused]] Styling* host) override {};
+            
             void Evaluate(Element* owner) override = 0;
 
             IVector2 Get() { return Value.Get<IVector2>(); }
@@ -396,6 +416,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+
+        void Embed_Value(Styling* host) override;
     };
 
     class width : public STYLING_INTERNAL::NUMBER_VALUE{
@@ -414,6 +436,8 @@ namespace GGUI{
         void Evaluate(Element* owner);
 
         void Embed_Value(Element* host) override;
+
+        void Embed_Value(Styling* host) override;
 
         int Get() { return Value.Get<int>(); }
 
@@ -439,6 +463,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
 
         int Get() { return Value.Get<int>(); }
 
@@ -464,6 +490,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] Element* owner) override {};
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class text_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -482,6 +510,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class background_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -500,6 +530,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class border_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -518,6 +550,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class border_background_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -536,6 +570,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class hover_border_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -554,6 +590,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class hover_text_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -572,6 +610,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class hover_background_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -590,6 +630,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class hover_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -608,6 +650,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class focus_border_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -626,6 +670,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class focus_text_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -644,6 +690,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class focus_background_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -662,6 +710,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class focus_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
@@ -680,6 +730,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class styled_border : public STYLING_INTERNAL::style_base{
@@ -734,9 +786,11 @@ namespace GGUI{
             CROSS_CONNECTOR = other.CROSS_CONNECTOR;
         }
 
+        void Evaluate([[maybe_unused]] Element* owner) override {};
+
         void Embed_Value(Element* host) override;
         
-        void Evaluate([[maybe_unused]] Element* owner) override {};
+        void Embed_Value(Styling* host) override;
     };
 
     class flow_priority : public STYLING_INTERNAL::ENUM_VALUE<DIRECTION>{
@@ -755,6 +809,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] Element* owner) override {};
 
         void Embed_Value(Element* host) override;
+
+        void Embed_Value(Styling* host) override;
     };
 
     class wrap : public STYLING_INTERNAL::BOOL_VALUE{
@@ -773,6 +829,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] Element* owner) override {};
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class allow_overflow : public STYLING_INTERNAL::BOOL_VALUE{
@@ -791,6 +849,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] Element* owner) override {};
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class allow_dynamic_size : public STYLING_INTERNAL::BOOL_VALUE{
@@ -809,6 +869,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] Element* owner) override {};
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class margin : public STYLING_INTERNAL::style_base{
@@ -842,6 +904,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class shadow : public STYLING_INTERNAL::style_base{
@@ -881,6 +945,8 @@ namespace GGUI{
         void Evaluate(Element* owner) override;
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class opacity : public STYLING_INTERNAL::style_base{
@@ -903,10 +969,12 @@ namespace GGUI{
 
         constexpr opacity(const GGUI::opacity& other) : style_base(other.Status, true), Value(other.Value){}
 
-        void Embed_Value(Element* host) override;
-        
         // Since opacity always represents an percentile of its self being displayed on top of its parent.
         void Evaluate([[maybe_unused]] Element* owner) override {};
+
+        void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
 
         inline float Get() { return Value; }
 
@@ -932,6 +1000,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] Element* owner) override {};
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class align : public STYLING_INTERNAL::ENUM_VALUE<ALIGN>{
@@ -950,6 +1020,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] Element* owner) override {};
 
         void Embed_Value(Element* host) override;
+        
+        void Embed_Value(Styling* host) override;
     };
 
     class Styling{
@@ -959,21 +1031,21 @@ namespace GGUI{
         width Width = 1;
         height Height = 1;
 
-        border_enabled Border_Enabled = border_enabled(false, VALUE_STATE::INITIALIZED);
-        text_color                  Text_Color;
-        background_color            Background_Color;
-        border_color                Border_Color;
-        border_background_color     Border_Background_Color;
+        border_enabled                  Border_Enabled = border_enabled(false, VALUE_STATE::INITIALIZED);
+        text_color                      Text_Color = text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        background_color                Background_Color = background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        border_color                    Border_Color = border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        border_background_color         Border_Background_Color = border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         
-        hover_border_color Hover_Border_Color;
-        hover_text_color Hover_Text_Color;
-        hover_background_color Hover_Background_Color;
-        hover_border_background_color Hover_Border_Background_Color;
+        hover_border_color              Hover_Border_Color = hover_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        hover_text_color                Hover_Text_Color = hover_text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        hover_background_color          Hover_Background_Color = hover_background_color(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
+        hover_border_background_color   Hover_Border_Background_Color = hover_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        focus_border_color Focus_Border_Color;
-        focus_text_color Focus_Text_Color;
-        focus_background_color Focus_Background_Color;
-        focus_border_background_color Focus_Border_Background_Color;
+        focus_border_color              Focus_Border_Color = focus_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        focus_text_color                Focus_Text_Color = focus_text_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        focus_background_color          Focus_Background_Color = focus_background_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        focus_border_background_color   Focus_Border_Background_Color = focus_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
         styled_border Border_Style;
         
@@ -992,6 +1064,20 @@ namespace GGUI{
         align Align = align(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
 
         Styling() = default;
+
+        Styling(STYLING_INTERNAL::style_base* attributes){
+            STYLING_INTERNAL::style_base* current_attribute = attributes;
+
+            // Loop until no further nested attributes.
+            while (current_attribute){
+
+                // First embed the current attribute
+                current_attribute->Embed_Value(this);
+
+                // Then set the current_attribute into the nested one
+                current_attribute = current_attribute->Other;
+            }
+        }
 
         void Copy(const Styling& other);
 
@@ -1027,6 +1113,10 @@ namespace GGUI{
                 "/", "\\", "\\", "/", "|", "-", "|", "|", "-", "-", "+"
             };
             
+        }
+
+        namespace CONSTANTS{
+            inline Styling Default;
         }
     };
 
