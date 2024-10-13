@@ -142,8 +142,6 @@ namespace GGUI{
         
         std::vector<int> Classes;
 
-        std::vector<Element*> Childs;
-
         bool Focused = false;
         bool Hovered = false;
 
@@ -490,7 +488,7 @@ namespace GGUI{
                 result.push_back((T*)this);
             }
 
-            for (auto e : Childs){
+            for (auto e : Style->Childs){
                 std::vector<T*> child_result = e->Get_Elements<T>();
                 result.insert(result.end(), child_result.begin(), child_result.end());
             }
@@ -506,7 +504,7 @@ namespace GGUI{
             
             result.push_back(this);
 
-            for (auto e : Childs){
+            for (auto e : Get_Childs()){
                 std::vector<Element*> child_result = e->Get_All_Nested_Elements(Show_Hidden);
                 result.insert(result.end(), child_result.begin(), child_result.end());
             }

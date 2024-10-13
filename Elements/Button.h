@@ -23,7 +23,7 @@ namespace GGUI{
 
         // DONT USE AS USER!!
         Button() : Element(){
-            Childs.push_back(new Text_Field());
+            Style->Childs.push_back(new Text_Field());
         }
     public:
 

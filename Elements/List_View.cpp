@@ -306,26 +306,26 @@ void GGUI::List_View::Add_Child(Element* e){
             Last_Child->Show_Border(e->Has_Border());
             Dirty.Dirty(STAIN_TYPE::DEEP);
             Element_Names.insert({e->Get_Name(), e});
-            Childs.push_back(e);
+            Style->Childs.push_back(e);
         }
     });
 }
 
 void GGUI::List_View::Calculate_Childs_Hitboxes(unsigned int Starting_Offset){
     // If the childs are already clean then there is nothing to do here
-    if (Dirty.Type == STAIN_TYPE::CLEAN || Childs.size() == 0)
+    if (Dirty.Type == STAIN_TYPE::CLEAN || Style->Childs.size() == 0)
         return;
 
     // Out mission is quite similar to the Remove(Element* c) like behaviour.
     // Since there are two different flow directions we need to slice the code into 2 separate algorithms.
-    Element* Current = Childs[Starting_Offset];
+    Element* Current = Style->Childs[Starting_Offset];
     unsigned int Max_Width = Current->Get_Width();
     unsigned int Max_Height = Current->Get_Height();
 
     if (Style->Flow_Priority.Value == DIRECTION::ROW){
 
-        for (unsigned int i = Starting_Offset + 1; i < Childs.size(); i++){
-            Element* Next = Childs[i];
+        for (unsigned int i = Starting_Offset + 1; i < Style->Childs.size(); i++){
+            Element* Next = Style->Childs[i];
 
             // Affect minimum width needed, when current child has borders as well as the previous one.
             signed int Width_Modifier = Next->Has_Border() & Current->Has_Border();
@@ -339,8 +339,8 @@ void GGUI::List_View::Calculate_Childs_Hitboxes(unsigned int Starting_Offset){
         }
     }
     else{
-        for (unsigned int i = Starting_Offset + 1; i < Childs.size(); i++){
-            Element* Next = Childs[i];
+        for (unsigned int i = Starting_Offset + 1; i < Style->Childs.size(); i++){
+            Element* Next = Style->Childs[i];
 
             // Affect minimum height needed, when current child has borders as well as the previous one.
             signed int Height_Modifier = Next->Has_Border() & Current->Has_Border();
@@ -368,10 +368,10 @@ bool GGUI::List_View::Remove(Element* remove){
         unsigned int Index = 0;
 
         //first find the removable element index.
-        for (;Index < Childs.size() && Childs[Index] != remove; Index++);
+        for (;Index < Style->Childs.size() && Style->Childs[Index] != remove; Index++);
         
         // Check if there was no element by that ptr value.
-        if (Index == Childs.size()){
+        if (Index == Style->Childs.size()){
             Report("Internal: no element with ptr value: " + remove->Get_Name() + " was found in the list view: " + Get_Name());
             
             // Since this removal action failed report to starter, that this failed sadge.
@@ -399,14 +399,14 @@ bool GGUI::List_View::Remove(Element* remove){
             unsigned int New_Stretched_Height = 0;
 
             // all elements after the index, need to be removed from their x position the gap value.
-            for (unsigned int i = Index + 1; i < Childs.size(); i++){
+            for (unsigned int i = Index + 1; i < Style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                Childs[i]->Set_Position({Childs[i]->Get_Position().X - Gap, Childs[i]->Get_Position().Y});
+                Style->Childs[i]->Set_Position({Style->Childs[i]->Get_Position().X - Gap, Style->Childs[i]->Get_Position().Y});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
-                if (Is_Stretcher && Childs[i]->Get_Height() > New_Stretched_Height)
-                    New_Stretched_Height = Childs[i]->Get_Height();
+                if (Is_Stretcher && Style->Childs[i]->Get_Height() > New_Stretched_Height)
+                    New_Stretched_Height = Style->Childs[i]->Get_Height();
             }
 
             if (Is_Stretcher)
@@ -423,14 +423,14 @@ bool GGUI::List_View::Remove(Element* remove){
             unsigned int New_Stretched_Width = 0;
 
             // all elements after the index, need to be removed from their y position the gap value.
-            for (unsigned int i = Index + 1; i < Childs.size(); i++){
+            for (unsigned int i = Index + 1; i < Style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                Childs[i]->Set_Position({Childs[i]->Get_Position().X, Childs[i]->Get_Position().Y - Gap});
+                Style->Childs[i]->Set_Position({Style->Childs[i]->Get_Position().X, Style->Childs[i]->Get_Position().Y - Gap});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
-                if (Is_Stretcher && Childs[i]->Get_Width() > New_Stretched_Width)
-                    New_Stretched_Width = Childs[i]->Get_Width();
+                if (Is_Stretcher && Style->Childs[i]->Get_Width() > New_Stretched_Width)
+                    New_Stretched_Width = Style->Childs[i]->Get_Width();
             }
 
             if (Is_Stretcher)
@@ -444,8 +444,8 @@ bool GGUI::List_View::Remove(Element* remove){
         delete remove;
 
         // NOTE: Last_Child is NOT an ptr to the latest child added !!!
-        if (Childs.size() > 0){
-            Element* tmp = Childs[Childs.size() - 1];
+        if (Style->Childs.size() > 0){
+            Element* tmp = Style->Childs[Style->Childs.size() - 1];
 
             Last_Child->Set_Position({Last_Child->Get_Position().X - tmp->Get_Width(), Last_Child->Get_Position().Y - tmp->Get_Height()});
 

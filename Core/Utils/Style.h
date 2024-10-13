@@ -179,12 +179,10 @@ namespace GGUI{
                 return this;
             }
 
-            // This function is for the single style classes to be able to imprint their own identity into the Element object which hosts these styles.
-            virtual void Embed_Value(Element* host) = 0;
-
+            // This function is for the single style classes to be able to imprint their own identity into the Styling class
             virtual void Embed_Value(Styling* host) = 0;
 
-            virtual void Evaluate(Element* owner) = 0;
+            virtual void Evaluate(Styling* host) = 0;
         };
 
         class RGB_VALUE : public style_base{
@@ -219,11 +217,9 @@ namespace GGUI{
             constexpr RGB_VALUE(const GGUI::STYLING_INTERNAL::RGB_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
 
             // The basic style types do not have imprint methods.
-            void Embed_Value([[maybe_unused]] Element* host) override {};
-
             void Embed_Value([[maybe_unused]] Styling* host) override {};
 
-            void Evaluate(Element* owner) override = 0;
+            void Evaluate(Styling* owner) override = 0;
         };
 
         class BOOL_VALUE : public style_base{
@@ -258,11 +254,9 @@ namespace GGUI{
             constexpr BOOL_VALUE(const GGUI::STYLING_INTERNAL::BOOL_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value([[maybe_unused]] Element* host) override {};
-            
             void Embed_Value([[maybe_unused]] Styling* host) override {};
 
-            void Evaluate([[maybe_unused]] Element* owner) override {};
+            void Evaluate([[maybe_unused]] Styling* owner) override {};
         };
         
         class NUMBER_VALUE : public style_base{
@@ -299,11 +293,9 @@ namespace GGUI{
             constexpr NUMBER_VALUE(const GGUI::STYLING_INTERNAL::NUMBER_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value([[maybe_unused]] Element* host) override {};
-            
             void Embed_Value([[maybe_unused]] Styling* host) override {};
             
-            void Evaluate(Element* owner) override = 0;
+            void Evaluate(Styling* owner) override = 0;
 
             int& Direct() { return Value.Direct<int>(); }
         };
@@ -341,11 +333,9 @@ namespace GGUI{
             constexpr ENUM_VALUE(const GGUI::STYLING_INTERNAL::ENUM_VALUE<T>& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value([[maybe_unused]] Element* host) override {};
-            
             void Embed_Value([[maybe_unused]] Styling* host) override {};
             
-            void Evaluate([[maybe_unused]] Element* owner) override {};
+            void Evaluate([[maybe_unused]] Styling* owner) override {};
         };
         
         class Vector : public style_base{
@@ -380,11 +370,9 @@ namespace GGUI{
             constexpr Vector(const GGUI::STYLING_INTERNAL::Vector& other) : style_base(other.Status, true), Value(other.Value){}
             
             // The basic style types do not have imprint methods.
-            void Embed_Value([[maybe_unused]] Element* host) override {};
-
             void Embed_Value([[maybe_unused]] Styling* host) override {};
             
-            void Evaluate(Element* owner) override = 0;
+            void Evaluate(Styling* owner) override = 0;
 
             IVector2 Get() { return Value.Get<IVector2>(); }
             constexpr IVector2 Get() const { return Value.Get<IVector2>(); }
@@ -413,9 +401,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
 
         void Embed_Value(Styling* host) override;
     };
@@ -433,9 +419,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner);
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
 
         void Embed_Value(Styling* host) override;
 
@@ -460,9 +444,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
 
@@ -487,9 +469,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
         void Embed_Value(Styling* host) override;
     };
@@ -507,9 +487,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -527,9 +505,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -547,9 +523,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -567,9 +541,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -587,9 +559,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -607,9 +577,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -627,9 +595,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -647,9 +613,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -667,9 +631,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -687,9 +649,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -707,9 +667,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -727,9 +685,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -786,9 +742,7 @@ namespace GGUI{
             CROSS_CONNECTOR = other.CROSS_CONNECTOR;
         }
 
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
         void Embed_Value(Styling* host) override;
     };
@@ -806,9 +760,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
 
         void Embed_Value(Styling* host) override;
     };
@@ -826,9 +778,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
         void Embed_Value(Styling* host) override;
     };
@@ -846,9 +796,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
         void Embed_Value(Styling* host) override;
     };
@@ -866,9 +814,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
         void Embed_Value(Styling* host) override;
     };
@@ -901,9 +847,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -942,9 +886,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(Element* owner) override;
-
-        void Embed_Value(Element* host) override;
+        void Evaluate(Styling* owner) override;
         
         void Embed_Value(Styling* host) override;
     };
@@ -970,9 +912,7 @@ namespace GGUI{
         constexpr opacity(const GGUI::opacity& other) : style_base(other.Status, true), Value(other.Value){}
 
         // Since opacity always represents an percentile of its self being displayed on top of its parent.
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
         void Embed_Value(Styling* host) override;
 
@@ -997,9 +937,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
         void Embed_Value(Styling* host) override;
     };
@@ -1017,10 +955,33 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate([[maybe_unused]] Element* owner) override {};
-
-        void Embed_Value(Element* host) override;
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
         
+        void Embed_Value(Styling* host) override;
+    };
+
+    class node : public STYLING_INTERNAL::style_base{
+    public:
+        Element* Value;
+
+        node(Element* value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        node() = default;
+        
+        constexpr node(const GGUI::node& other) : style_base(other.Status, true), Value(other.Value){}
+
+        node& operator=(const node& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
         void Embed_Value(Styling* host) override;
     };
 
@@ -1063,6 +1024,8 @@ namespace GGUI{
 
         align Align = align(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
 
+        std::vector<Element*> Childs;
+
         Styling() = default;
 
         Styling(STYLING_INTERNAL::style_base* attributes){
@@ -1089,6 +1052,8 @@ namespace GGUI{
         // This acts like the Render() overload for elements, where the function will go through flagged states and checks what needs to be updated.
         // Called within the STAIN::STRETCH handling, since this is about dynamic size attributes, and they need to be checked when the current element has been resized or its parent has.
         void Evaluate_Dynamic_Attribute_Values(Element* owner);
+    
+
     };
 
     namespace STYLES{

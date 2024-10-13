@@ -299,9 +299,9 @@ GGUI::Element::~Element(){
 
     // Make sure this element is not listed in the parent element.
     // And if it does, then remove it from the parent element.
-    for (unsigned int i = 0; Parent && i < Parent->Childs.size(); i++)
-        if (Parent->Childs[i] == this){
-            Parent->Childs.erase(Parent->Childs.begin() + i);
+    for (unsigned int i = 0; Parent && i < Parent->Style->Childs.size(); i++)
+        if (Parent->Style->Childs[i] == this){
+            Parent->Style->Childs.erase(Parent->Style->Childs.begin() + i);
 
             // This may not be enough for the parent to know where to resample the buffer where this child used to be.
             Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
@@ -310,9 +310,9 @@ GGUI::Element::~Element(){
         }
 
     // Fire all the childs.
-    for (int i = (signed)Childs.size() -1; i >= 0; i--)
-        if (Childs[i]->Parent == this) 
-            delete Childs[i];
+    for (int i = (signed)Style->Childs.size() -1; i >= 0; i--)
+        if (Style->Childs[i]->Parent == this) 
+            delete Style->Childs[i];
 
     // Delete all the styles.
     delete Style;
@@ -632,7 +632,7 @@ void GGUI::Element::Add_Child(Element* Child){
 
     Element_Names.insert({Child->Name, Child});
 
-    Childs.push_back(Child);
+    Style->Childs.push_back(Child);
 
     // Make sure that elements with higher Z, are rendered later, making them visible as on top.
     Re_Order_Childs();
@@ -649,15 +649,15 @@ void GGUI::Element::Set_Childs(std::vector<Element*> childs){
 }
 
 std::vector<GGUI::Element*>& GGUI::Element::Get_Childs(){
-    return Childs;
+    return Style->Childs;
 }
 
 bool GGUI::Element::Remove(Element* handle){
-    for (unsigned int i = 0; i < Childs.size(); i++){
-        if (Childs[i] == handle){
+    for (unsigned int i = 0; i < Style->Childs.size(); i++){
+        if (Style->Childs[i] == handle){
             //If the mouse if focused on this about to be deleted element, change mouse position into it's parent Position.
-            if (Focused_On == Childs[i]){
-                Mouse = Childs[i]->Parent->Style->Position.Get();
+            if (Focused_On == Style->Childs[i]){
+                Mouse = Style->Childs[i]->Parent->Style->Position.Get();
             }
 
             delete handle;
@@ -705,7 +705,7 @@ void GGUI::Element::Display(bool f){
 
         // now also update all children, this is for the sake of events, since they do not obey AST structure where parental hidden would stop going deeper into AST events are linear list.
         GGUI::Pause_GGUI([this, f](){
-            for (Element* c : Childs){
+            for (Element* c : Style->Childs){
                 c->Display(f);
             }
         });
@@ -717,10 +717,10 @@ bool GGUI::Element::Is_Displayed(){
 }
 
 bool GGUI::Element::Remove(unsigned int index){
-    if (index > Childs.size() - 1){
+    if (index > Style->Childs.size() - 1){
         return false;
     }
-    Element* tmp = Childs[index];
+    Element* tmp = Style->Childs[index];
 
     //If the mouse if focused on this about to be deleted element, change mouse position into it's parent Position.
     if (Focused_On == tmp){
@@ -842,8 +842,8 @@ GGUI::Element* GGUI::Element::Copy(){
     new_element->Parent = nullptr;
 
     // copy the childs over.
-    for (unsigned int i = 0; i < this->Get_Childs().size(); i++){
-        new_element->Childs[i] = this->Get_Childs()[i]->Copy();
+    for (unsigned int i = 0; i < this->Style->Childs.size(); i++){
+        new_element->Style->Childs[i] = this->Style->Childs[i]->Copy();
     }
 
     // copy the styles over.
@@ -882,7 +882,7 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
     int Border_Offset = (Has_Border() - child->Has_Border()) * Has_Border() * 2;
 
     // if there are only zero child or one and it is same as this child then give max.
-    if (Childs.size() == 0 || Childs.back() == child){
+    if (Style->Childs.size() == 0 || Style->Childs.back() == child){
         return {Get_Width() - Border_Offset, Get_Height() - Border_Offset};
     }
 
@@ -898,7 +898,7 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Elem
             break;
         }
         
-        for (auto c : Childs){
+        for (auto c : Style->Childs){
             // Use local positioning since this is a civil dispute :)
             if (child != c && Collides(c->Get_Position(), Current_Position, c->Get_Width(), c->Get_Height(), Result_Width, Result_Height)){
                 //there are already other childs occupying this area so we can stop here.
@@ -1107,7 +1107,7 @@ void GGUI::Element::Compute_Dynamic_Size(){
         return;
 
     if (Children_Changed()){
-        for (auto c : Childs){
+        for (auto c : Style->Childs){
             if (!c->Is_Displayed())
                 continue;
 
@@ -1182,7 +1182,7 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
     if (Dirty.is(STAIN_TYPE::DEEP)){
         Dirty.Clean(STAIN_TYPE::DEEP);
 
-        for (auto c : this->Get_Childs()){
+        for (auto c : this->Style->Childs){
             if (!c->Is_Displayed())
                 continue;
 
@@ -1211,8 +1211,8 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
 
     // This will calculate the connecting borders.
     if (Childs_With_Borders > 0){
-        for (auto A : this->Get_Childs()){
-            for (auto B : this->Get_Childs()){
+        for (auto A : this->Style->Childs){
+            for (auto B : this->Style->Childs){
                 if (A == B)
                     continue;
 
@@ -1576,7 +1576,7 @@ bool GGUI::Element::Children_Changed(){
     }
 
     // recursion
-    for (auto e : Childs){
+    for (auto e : Style->Childs){
         if (e->Children_Changed())
             return true;
     }
@@ -1592,7 +1592,7 @@ bool GGUI::Element::Has_Transparent_Children(){
     if (Is_Transparent() && Dirty.Type != STAIN_TYPE::CLEAN)
         return true;
     
-    for (auto e : Childs){
+    for (auto e : Style->Childs){
         if (e->Has_Transparent_Children())
             return true;
     }
@@ -1618,7 +1618,7 @@ GGUI::Element* GGUI::Element::Get_Element(std::string name){
 
 // Rre orders the childs by the z position, where the biggest z, goes last.
 void GGUI::Element::Re_Order_Childs(){
-    std::sort(Childs.begin(), Childs.end(), [](Element* a, Element* b){
+    std::sort(Style->Childs.begin(), Style->Childs.end(), [](Element* a, Element* b){
         return a->Get_Position().Z <= b->Get_Position().Z;
     });
 }

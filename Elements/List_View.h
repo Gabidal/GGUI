@@ -38,7 +38,7 @@ namespace GGUI{
         List_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction = DIRECTION::ROW);
 
         ~List_View() override{
-            for (Element* e : Childs){
+            for (Element* e : Style->Childs){
                 delete e;
             }
 
@@ -72,13 +72,13 @@ namespace GGUI{
 
         template<typename  T>
         T* Get(int index){
-            if (index > (signed)Childs.size() - 1)
+            if (index > (signed)Style->Childs.size() - 1)
                 return nullptr;
 
             if (index < 0)
-                index = (signed)Childs.size() + index - 1;
+                index = (signed)Style->Childs.size() + index - 1;
 
-            return (T*)this->Childs[index];
+            return (T*)this->Style->Childs[index];
         }
 
         Element* Safe_Move() override {
@@ -147,20 +147,20 @@ namespace GGUI{
         std::string Get_Name() const override;
 
         void Set_Growth_Direction(DIRECTION gd){
-            ((List_View*)Childs[0])->Set_Flow_Direction(gd);
+            ((List_View*)Style->Childs[0])->Set_Flow_Direction(gd);
         }
 
         DIRECTION Get_Growth_Direction(){
-            return ((List_View*)Childs[0])->Get_Flow_Direction();
+            return ((List_View*)Style->Childs[0])->Get_Flow_Direction();
         }
 
         template<typename  T>
         T* Get(int index){
-            return ((List_View*)Childs[0])->Get<T>(index);
+            return ((List_View*)Style->Childs[0])->Get<T>(index);
         }
 
         List_View* Get_Container(){
-            return (List_View*)Childs[0];
+            return (List_View*)Style->Childs[0];
         }
     
     };
