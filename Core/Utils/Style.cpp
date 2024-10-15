@@ -81,112 +81,113 @@ namespace GGUI{
 
     // Embeds
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-    void position::Embed_Value(Styling* host){
+    void position::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Position = *this;
     }
 
-    void width::Embed_Value(Styling* host){
+    void width::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Width = *this;
     }
 
-    void height::Embed_Value(Styling* host){
+    void height::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Height = *this;
     }
 
-    void border_enabled::Embed_Value(Styling* host){
+    void border_enabled::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Enabled = *this;
     }
 
-    void text_color::Embed_Value(Styling* host){
+    void text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Text_Color = *this;
     }
 
-    void background_color::Embed_Value(Styling* host){
+    void background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Background_Color = *this;
     }
 
-    void border_color::Embed_Value(Styling* host){
+    void border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Color = *this;
     }
 
-    void border_background_color::Embed_Value(Styling* host){
+    void border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Background_Color = *this;
     }
 
-    void hover_border_color::Embed_Value(Styling* host){
+    void hover_border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Border_Color = *this;
     }
 
-    void hover_text_color::Embed_Value(Styling* host){
+    void hover_text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Text_Color = *this;
     }
 
-    void hover_background_color::Embed_Value(Styling* host){
+    void hover_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Background_Color = *this;
     }
 
-    void hover_border_background_color::Embed_Value(Styling* host){
+    void hover_border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Border_Background_Color = *this;
     }
 
-    void focus_border_color::Embed_Value(Styling* host){
+    void focus_border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Border_Color = *this;
     }
 
-    void focus_text_color::Embed_Value(Styling* host){
+    void focus_text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Text_Color = *this;
     }
 
-    void focus_background_color::Embed_Value(Styling* host){
+    void focus_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Background_Color = *this;
     }
 
-    void focus_border_background_color::Embed_Value(Styling* host){
+    void focus_border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Border_Background_Color = *this;
     }
 
-    void styled_border::Embed_Value(Styling* host){
+    void styled_border::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Style = *this;
     }
 
-    void flow_priority::Embed_Value(Styling* host){
+    void flow_priority::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Flow_Priority = *this;
     }
 
-    void wrap::Embed_Value(Styling* host){
+    void wrap::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Wrap = *this;
     }
 
-    void allow_overflow::Embed_Value(Styling* host){
+    void allow_overflow::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Allow_Overflow = *this;
     }
 
-    void allow_dynamic_size::Embed_Value(Styling* host){
+    void allow_dynamic_size::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Allow_Dynamic_Size = *this;
     }
 
-    void margin::Embed_Value(Styling* host){
+    void margin::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Margin = *this;
     }
 
-    void shadow::Embed_Value(Styling* host){
+    void shadow::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Shadow = *this;
     }
 
-    void opacity::Embed_Value(Styling* host){
+    void opacity::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Opacity = *this;
     }
 
-    void allow_scrolling::Embed_Value(Styling* host){
+    void allow_scrolling::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Allow_Scrolling = *this;
     }
 
-    void align::Embed_Value(Styling* host){
+    void align::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Align = *this;
     }
 
-    void node::Embed_Value(Styling* host){
-        host->Childs.push_back(Value);
+    void node::Embed_Value(Styling* host, Element* owner){
+        // Since we need to put the value adding through the owner elements own custom process.
+        owner->Add_Child(Value); 
     }
 
     void Styling::Evaluate_Dynamic_Attribute_Values(Element* owner){
