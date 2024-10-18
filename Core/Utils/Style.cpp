@@ -81,113 +81,176 @@ namespace GGUI{
 
     // Embeds
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-    void position::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+
+    STAIN_TYPE STYLING_INTERNAL::RGB_VALUE::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
+
+    STAIN_TYPE STYLING_INTERNAL::BOOL_VALUE::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
+
+    STAIN_TYPE STYLING_INTERNAL::NUMBER_VALUE::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
+
+    STAIN_TYPE STYLING_INTERNAL::Vector::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
+
+    STAIN_TYPE position::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Position = *this;
+
+        return STAIN_TYPE::MOVE;
     }
 
-    void width::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE width::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Width = *this;
+
+        return STAIN_TYPE::STRETCH;
     }
 
-    void height::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE height::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Height = *this;
+        
+        return STAIN_TYPE::STRETCH;
     }
 
-    void border_enabled::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE border_enabled::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Enabled = *this;
+
+        return STAIN_TYPE::EDGE;
     }
 
-    void text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Text_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Background_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Background_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void hover_border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE hover_border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Border_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void hover_text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE hover_text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Text_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void hover_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE hover_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Background_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void hover_border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE hover_border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Hover_Border_Background_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void focus_border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE focus_border_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Border_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void focus_text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE focus_text_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Text_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void focus_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE focus_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Background_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void focus_border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE focus_border_background_color::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Focus_Border_Background_Color = *this;
+
+        return STAIN_TYPE::COLOR;
     }
 
-    void styled_border::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE styled_border::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Style = *this;
+
+        return STAIN_TYPE::EDGE;
     }
 
-    void flow_priority::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE flow_priority::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Flow_Priority = *this;
+
+        return STAIN_TYPE::DEEP;
     }
 
-    void wrap::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE wrap::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Wrap = *this;
+
+        return STAIN_TYPE::DEEP;
     }
 
-    void allow_overflow::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE allow_overflow::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Allow_Overflow = *this;
+
+        return STAIN_TYPE::CLEAN;
     }
 
-    void allow_dynamic_size::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE allow_dynamic_size::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Allow_Dynamic_Size = *this;
+
+        return STAIN_TYPE::CLEAN;
     }
 
-    void margin::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE margin::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Margin = *this;
+
+        return STAIN_TYPE::CLEAN;
     }
 
-    void shadow::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE shadow::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Shadow = *this;
+
+        return STAIN_TYPE::EDGE;
     }
 
-    void opacity::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE opacity::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Opacity = *this;
+
+        return STAIN_TYPE::STRETCH;
     }
 
-    void allow_scrolling::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE allow_scrolling::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Allow_Scrolling = *this;
+
+        return STAIN_TYPE::CLEAN;
     }
 
-    void align::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE align::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Align = *this;
+
+        return STAIN_TYPE::CLEAN;
     }
 
-    void node::Embed_Value(Styling* host, Element* owner){
+    STAIN_TYPE node::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         owner->Add_Child(Value); 
+
+        return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
 
     void Styling::Evaluate_Dynamic_Attribute_Values(Element* owner){
@@ -223,6 +286,24 @@ namespace GGUI{
         Opacity.Evaluate(&reference_style);
         Allow_Scrolling.Evaluate(&reference_style);
         Align.Evaluate(&reference_style);
+    }
+
+    void Styling::Embed_Styles(Element* owner){
+        STYLING_INTERNAL::style_base* current_attribute = un_parsed_styles;
+
+        STAIN changes;
+
+        // Loop until no further nested attributes.
+        while (current_attribute){
+
+            // First embed the current attribute
+            changes.Dirty(current_attribute->Embed_Value(this, owner));
+
+            // Then set the current_attribute into the nested one
+            current_attribute = current_attribute->Other;
+        }
+
+        owner->Add_Stain(changes.Type);
     }
 
 }

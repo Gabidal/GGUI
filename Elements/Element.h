@@ -532,6 +532,12 @@ namespace GGUI{
 
         virtual std::vector<GGUI::UTF>& Postprocess();
 
+        // Customization helper function
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+        void Add_Stain(STAIN_TYPE s){
+            Dirty.Dirty(s);
+        }
+
         // Uses the post_processed widths and height values
         bool Child_Is_Shown(Element* other);
     };
