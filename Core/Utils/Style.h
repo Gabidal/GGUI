@@ -179,11 +179,14 @@ namespace GGUI{
 
                 return this;
             }
+            
+            // for dynamically computable values like percentage depended
+            // currently covers:
+            // - screen space
+            virtual void Evaluate(Styling* host) = 0;
 
             // This function is for the single style classes to be able to imprint their own identity into the Styling class
             virtual STAIN_TYPE Embed_Value(Styling* host, Element* owner) = 0;
-
-            virtual void Evaluate(Styling* host) = 0;
         };
 
         class RGB_VALUE : public style_base{
@@ -254,10 +257,13 @@ namespace GGUI{
         
             constexpr BOOL_VALUE(const GGUI::STYLING_INTERNAL::BOOL_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
             
+            // for dynamically computable values like percentage depended
+            // currently covers:
+            // - screen space
+            void Evaluate([[maybe_unused]] Styling* owner) override {};
+
             // The basic style types do not have imprint methods.
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host,  Element* owner) override;
-
-            void Evaluate([[maybe_unused]] Styling* owner) override {};
         };
         
         class NUMBER_VALUE : public style_base{
@@ -332,22 +338,25 @@ namespace GGUI{
             }
         
             constexpr ENUM_VALUE(const GGUI::STYLING_INTERNAL::ENUM_VALUE<T>& other) : style_base(other.Status, true), Value(other.Value){}
-            
+                        
+            // for dynamically computable values like percentage depended
+            // currently covers:
+            // - screen space
+            void Evaluate([[maybe_unused]] Styling* owner) override {};
+
             // The basic style types do not have imprint methods.
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) override { return (STAIN_TYPE)0; };
-            
-            void Evaluate([[maybe_unused]] Styling* owner) override {};
         };
         
         class Vector : public style_base{
         public:
-            value<IVector2> Value = IVector2();
+            value<IVector3> Value = IVector3();
 
-            Vector(IVector2 value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
+            Vector(IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
                 Value = value;
             }
 
-            constexpr Vector(const GGUI::IVector2 value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
+            constexpr Vector(const GGUI::IVector3 value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
             Vector() = default;
 
@@ -362,7 +371,7 @@ namespace GGUI{
                 return *this;
             }
 
-            Vector& operator=(const GGUI::IVector2 other){
+            Vector& operator=(const GGUI::IVector3 other){
                 Value = other;
                 Status = VALUE_STATE::VALUE;
                 return *this;
@@ -370,28 +379,31 @@ namespace GGUI{
 
             constexpr Vector(const GGUI::STYLING_INTERNAL::Vector& other) : style_base(other.Status, true), Value(other.Value){}
             
-            // The basic style types do not have imprint methods.
-            STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, Element* owner) override;
-            
-            void Evaluate(Styling* owner) override = 0;
+            IVector3 Get() { return Value.Get<IVector3>(); }
+            constexpr IVector3 Get() const { return Value.Get<IVector3>(); }
 
-            IVector2 Get() { return Value.Get<IVector2>(); }
-            constexpr IVector2 Get() const { return Value.Get<IVector2>(); }
-
-            void Set(IVector2 value){
+            void Set(IVector3 value){
                 Value = value;
                 Status = VALUE_STATE::VALUE;
             }
 
-            IVector2& Direct() { return Value.Direct<IVector2>(); }
+            IVector3& Direct() { return Value.Direct<IVector3>(); }
+        
+            // for dynamically computable values like percentage depended
+            // currently covers:
+            // - screen space
+            void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+            // The basic style types do not have imprint methods.
+            STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host,  Element* owner) override;
         };
     }
 
     class position : public STYLING_INTERNAL::Vector{
     public:
-        position(IVector2 value, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
+        position(IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
 
-        position(int x, int y, int z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(IVector2(x, y, z), Default){}
+        position(int x, int y, int z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(IVector3(x, y, z), Default){}
 
         position() = default;
 

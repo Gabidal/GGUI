@@ -160,7 +160,7 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
     }
 }
 
-GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, IVector2* position){
+GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, IVector3* position){
     Name = std::to_string((unsigned long long)this);
 
     Fully_Stain();
@@ -196,7 +196,7 @@ GGUI::Element::Element() {
     }
 }
 
-GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position){
+GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, IVector3* position){
     Pause_GGUI([this, css, width, height, parent, position](){
         Parse_Classes();
 
@@ -227,7 +227,7 @@ GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Ele
 GGUI::Element::Element(
     unsigned int width,
     unsigned int height,
-    IVector2 position
+    IVector3 position
 ) : Element(){
     Pause_GGUI([this, width, height, position](){
         Set_Width(width);
@@ -782,7 +782,7 @@ void GGUI::Element::Set_Height(unsigned int height){
     }
 }
 
-void GGUI::Element::Set_Position(IVector2 c){
+void GGUI::Element::Set_Position(IVector3 c){
     Style->Position.Set(c);
 
     this->Dirty.Dirty(STAIN_TYPE::MOVE);
@@ -790,17 +790,17 @@ void GGUI::Element::Set_Position(IVector2 c){
     Update_Frame();
 }
 
-void GGUI::Element::Set_Position(IVector2* c){
+void GGUI::Element::Set_Position(IVector3* c){
     if (c){
         Set_Position(*c);
     }
 }
 
-GGUI::IVector2 GGUI::Element::Get_Position(){
+GGUI::IVector3 GGUI::Element::Get_Position(){
     return Style->Position.Get();
 }
 
-GGUI::IVector2 GGUI::Element::Get_Absolute_Position(){
+GGUI::IVector3 GGUI::Element::Get_Absolute_Position(){
     return Absolute_Position_Cache;
 }
 
@@ -874,7 +874,7 @@ GGUI::Element* GGUI::Element::Copy(){
 }
 
 std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
-    IVector2 Current_Position = child->Get_Position();
+    IVector3 Current_Position = child->Get_Position();
 
     unsigned int Result_Width = 0;
     unsigned int Result_Height = 0;
@@ -1349,7 +1349,7 @@ void GGUI::Element::Nest_Element(GGUI::Element* Parent, GGUI::Element* Child, st
     }
 }
 
-inline bool Is_In_Bounds(GGUI::IVector2 index, GGUI::Element* parent){
+inline bool Is_In_Bounds(GGUI::IVector3 index, GGUI::Element* parent){
     // checks if the index is out of bounds
     if (index.X < 0 || index.Y < 0 || index.X >= (signed)parent->Get_Width() || index.Y >= (signed)parent->Get_Height())
         return false;
@@ -1357,7 +1357,7 @@ inline bool Is_In_Bounds(GGUI::IVector2 index, GGUI::Element* parent){
     return true;
 }
 
-inline GGUI::UTF* From(GGUI::IVector2 index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::Element* Parent){
+inline GGUI::UTF* From(GGUI::IVector3 index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::Element* Parent){
     return &Parent_Buffer[index.Y * Parent->Get_Width() + index.X];
 }
 
@@ -1460,14 +1460,14 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
     };
 
-    std::vector<IVector2> Crossing_Indicies;
+    std::vector<IVector3> Crossing_Indicies;
 
     // Go through singular box
     for (unsigned int Box_Index = 0; Box_Index < Horizontal_Line_Y_Coordinates.size(); Box_Index++){
         // Now just pair the indicies from the two lists.
         Crossing_Indicies.push_back(
             // First pair
-            IVector2(
+            IVector3(
                 Vertical_Line_X_Coordinates[Box_Index],
                 Horizontal_Line_Y_Coordinates[Box_Index]
             )
@@ -1479,10 +1479,10 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
 
-        IVector2 Above = { c.X, Max((signed)c.Y - 1, 0) };
-        IVector2 Below = { c.X, c.Y + 1 };
-        IVector2 Left = { Max((signed)c.X - 1, 0), c.Y };
-        IVector2 Right = { c.X + 1, c.Y };
+        IVector3 Above = { c.X, Max((signed)c.Y - 1, 0) };
+        IVector3 Below = { c.X, c.Y + 1 };
+        IVector3 Left = { Max((signed)c.X - 1, 0), c.Y };
+        IVector3 Right = { c.X + 1, c.Y };
 
         unsigned int Current_Masks = 0;
 
@@ -1643,9 +1643,9 @@ int Get_Sign(int x){
 }
 
 // Constructs two squares one 2 steps larger on width and height, and given the different indicies.
-std::vector<GGUI::IVector2> Get_Surrounding_Indicies(int Width, int Height, GGUI::IVector2 start_offset, GGUI::FVector2 Offset){
+std::vector<GGUI::IVector3> Get_Surrounding_Indicies(int Width, int Height, GGUI::IVector3 start_offset, GGUI::FVector2 Offset){
 
-    std::vector<GGUI::IVector2> Result;
+    std::vector<GGUI::IVector3> Result;
 
     // First construct the first square.
     int Bigger_Square_Start_X = start_offset.X - 1;
@@ -1714,7 +1714,7 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
     int Current_Shadow_Height = Get_Height();
 
     for (int i = 0; i < Shadow_Length; i++){
-        std::vector<IVector2> Shadow_Indicies = Get_Surrounding_Indicies(
+        std::vector<IVector3> Shadow_Indicies = Get_Surrounding_Indicies(
             Current_Shadow_Width,
             Current_Shadow_Height,
             { 
@@ -1747,22 +1747,22 @@ void GGUI::Element::Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer){
 
     Current_Buffer.resize(Offset_Box_Width * Offset_Box_Height);
 
-    IVector2 Shadow_Box_Start = {
+    IVector3 Shadow_Box_Start = {
         GGUI::Max(0, (int)properties.Direction.Get<FVector3>().X),
         GGUI::Max(0, (int)properties.Direction.Get<FVector3>().Y)
     };
 
-    IVector2 Original_Box_Start = {
+    IVector3 Original_Box_Start = {
         Shadow_Box_Start.X - properties.Direction.Get<FVector3>().X + Shadow_Length,
         Shadow_Box_Start.Y - properties.Direction.Get<FVector3>().Y + Shadow_Length
     };
 
-    IVector2 Original_Box_End = {
+    IVector3 Original_Box_End = {
         Original_Box_Start.X + Get_Width(),
         Original_Box_Start.Y + Get_Height()
     };
 
-    IVector2 Shadow_Box_End = {
+    IVector3 Shadow_Box_End = {
         Shadow_Box_Start.X + Shadow_Box_Width,
         Shadow_Box_Start.Y + Shadow_Box_Height
     };

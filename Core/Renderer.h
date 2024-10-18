@@ -63,6 +63,18 @@ namespace GGUI{
         };
     }
 
+    // Inits with 'NOW()' when created
+    class BUTTON_STATE{
+    public:
+        bool State = false;
+        std::chrono::high_resolution_clock::time_point Capture_Time;
+
+        BUTTON_STATE(bool state = false){
+            Capture_Time = std::chrono::high_resolution_clock::now();
+            State = state;
+        }
+    };
+
     extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
     extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
 
@@ -81,7 +93,7 @@ namespace GGUI{
     extern Element* Focused_On;
     extern Element* Hovered_On;
 
-    extern IVector2 Mouse;    
+    extern IVector3 Mouse;    
     extern bool Mouse_Movement_Enabled;
 
     extern std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
@@ -102,22 +114,22 @@ namespace GGUI{
 
     void SLEEP(unsigned int milliseconds);
 
-    extern bool Collides(GGUI::IVector2 A, GGUI::IVector2 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
+    extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
 
     // If both given elements are the same will return Identity
     extern bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity = true);
 
-    extern bool Collides(GGUI::Element* a, GGUI::IVector2 b);
+    extern bool Collides(GGUI::Element* a, GGUI::IVector3 b);
 
-    extern Element* Get_Accurate_Element_From(IVector2 c, Element* Parent);
+    extern Element* Get_Accurate_Element_From(IVector3 c, Element* Parent);
 
-    extern IVector2 Find_Upper_Element();
+    extern IVector3 Find_Upper_Element();
 
-    extern IVector2 Find_Lower_Element();
+    extern IVector3 Find_Lower_Element();
 
-    extern IVector2 Find_Left_Element();
+    extern IVector3 Find_Left_Element();
 
-    extern IVector2 Find_Right_Element();
+    extern IVector3 Find_Right_Element();
 
     extern signed long long Min(signed long long a, signed long long b);
 
@@ -149,7 +161,7 @@ namespace GGUI{
     extern int Get_Max_Height();
 
     //Returns a char if given ASCII, or a short if given UNICODE
-    extern GGUI::UTF* Get(GGUI::IVector2 Absolute_Position);
+    extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
 
     extern GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
 

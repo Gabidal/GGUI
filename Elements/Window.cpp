@@ -19,7 +19,7 @@ GGUI::Window::Window(std::string title, std::vector<std::string> classes) : Elem
     });
 }
 
-GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position) : Element(css){
+GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Element* parent, IVector3* position) : Element(css){
     Pause_GGUI([this, width, height, parent, position](){
         if (width != 0)
             Set_Width(width);
@@ -37,7 +37,7 @@ GGUI::Window::Window(Styling css, unsigned int width, unsigned int height, Eleme
     });
 }
 
-GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, IVector2* position) : Element(css), Title(title){
+GGUI::Window::Window(std::string title, Styling css, unsigned int width, unsigned int height, Element* parent, IVector3* position) : Element(css), Title(title){
     Pause_GGUI([this, title, css, width, height, parent, position](){
         if (width != 0)
             Set_Width(width);

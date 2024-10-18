@@ -11,7 +11,7 @@ namespace GGUI{
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
-        List_View(Styling css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector2 position = {0, 0, 0});
+        List_View(Styling css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 position = {0, 0, 0});
 
         //These next constructors are mainly for users to more easily create elements.
         List_View(
@@ -102,7 +102,7 @@ namespace GGUI{
 
         Scroll_View(std::vector<Element*> Childs, DIRECTION grow_direction = DIRECTION::ROW);
 
-        Scroll_View(Styling css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector2 position = {0, 0, 0});
+        Scroll_View(Styling css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 position = {0, 0, 0});
 
         //These next constructors are mainly for users to more easily create elements.
         Scroll_View(

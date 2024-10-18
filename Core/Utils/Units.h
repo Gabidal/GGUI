@@ -98,31 +98,30 @@ namespace GGUI{
         }
     };
 
-
-    class IVector2{
+    class IVector3{
     public:
         int X = 0;  //Horizontal
         int Y = 0;  //Vertical
         int Z = 0;  //priority (the higher the more likely it will be at top).
 
         // Default constructor
-        constexpr IVector2(int x = 0, int y = 0, int z = 0) noexcept
+        constexpr IVector3(int x = 0, int y = 0, int z = 0) noexcept
             : X(x), Y(y), Z(z) {}
 
         // Copy constructor
-        constexpr IVector2(const IVector2& other) noexcept = default;
+        constexpr IVector3(const IVector3& other) noexcept = default;
 
         // Move constructor
-        constexpr IVector2(IVector2&& other) noexcept = default;
+        constexpr IVector3(IVector3&& other) noexcept = default;
 
         // Copy assignment operator
-        constexpr IVector2& operator=(const IVector2& other) noexcept = default;
+        constexpr IVector3& operator=(const IVector3& other) noexcept = default;
 
         // Move assignment operator
-        constexpr IVector2& operator=(IVector2&& other) noexcept = default;
+        constexpr IVector3& operator=(IVector3&& other) noexcept = default;
 
         // += operator for IVector2 pointer
-        constexpr void operator+=(IVector2* other) noexcept {
+        constexpr void operator+=(IVector3* other) noexcept {
             X += other->X;
             Y += other->Y;
             Z += other->Z;
@@ -135,19 +134,19 @@ namespace GGUI{
         }
 
         // += operator for IVector2
-        constexpr void operator+=(IVector2 other) noexcept {
+        constexpr void operator+=(IVector3 other) noexcept {
             X += other.X;
             Y += other.Y;
             Z += other.Z;
         }
 
         // + operator for IVector2
-        constexpr IVector2 operator+(const IVector2& other) const noexcept {
-            return IVector2(X + other.X, Y + other.Y, Z + other.Z);
+        constexpr IVector3 operator+(const IVector3& other) const noexcept {
+            return IVector3(X + other.X, Y + other.Y, Z + other.Z);
         }
 
-        constexpr IVector2 operator*(float num) const noexcept {
-            return IVector2(X * num, Y * num, Z * num);
+        constexpr IVector3 operator*(float num) const noexcept {
+            return IVector3(X * num, Y * num, Z * num);
         }
 
         std::string To_String(){
@@ -299,6 +298,91 @@ namespace GGUI{
             else
                 return Unicode[0] == ' ';
         }
+
+    };
+
+    enum class STAIN_TYPE{
+        CLEAN = 0,              // No change
+        COLOR = 1 << 0,         // BG and other color related changes
+        EDGE = 1 << 1,          // Title and border changes.
+        DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
+        STRETCH = 1 << 3,       // Width and or height changes.
+        CLASS = 1 << 5,         // This is used to tell the renderer that there are still un_parsed classes.
+        STATE = 1 << 6,         // This is for Switches that based on their state display one symbol differently. And also for state handlers.
+        MOVE = 1 << 7,          // Enabled, to signal absolute position caching.
+    };
+ 
+    inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
+        return (unsigned int)a | (unsigned int)b;
+    }
+
+    inline unsigned int operator|(STAIN_TYPE a, unsigned int b){
+        return (unsigned int)a | b;
+    }
+
+    inline unsigned int operator|(unsigned int a, STAIN_TYPE b){
+        return a | (unsigned int)b;
+    }
+
+    class STAIN{
+    public:
+        STAIN_TYPE Type = STAIN_TYPE::CLEAN;
+
+        bool is(STAIN_TYPE f){
+            if (f == STAIN_TYPE::CLEAN){
+                return Type <= f;
+            }
+            return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
+        }
+
+        void Clean(STAIN_TYPE f){
+            Type = (STAIN_TYPE)((unsigned int)Type & ~(unsigned int)f);
+        }
+
+        void Clean(unsigned int f){
+            Type = (STAIN_TYPE)((unsigned int)Type & ~f);
+        }
+
+        void Dirty(STAIN_TYPE f){
+            Type = (STAIN_TYPE)((unsigned int)Type | (unsigned int)f);
+        }
+
+        void Dirty(unsigned int f){
+            Type = (STAIN_TYPE)((unsigned int)Type | f);
+        }
+
+    };
+
+    enum class Flags{
+        Empty = 0,
+        Border = 1 << 0,
+        Text_Input = 1 << 1,
+        Overflow = 1 << 2,
+        Dynamic = 1 << 3,
+        Horizontal = 1 << 4,
+        Vertical = 1 << 5,
+        Align_Left = 1 << 6,
+        Align_Right = 1 << 7,
+        Align_Center = 1 << 8,
+    };
+    
+    inline Flags operator|(Flags a, Flags b){
+        return static_cast<Flags>(static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    inline bool Is(Flags a, Flags b){
+        return ((int)a & (int)b) == (int)b;
+    }
+
+    inline bool Has(Flags a, Flags b){
+        return ((int)a & (int)b) != 0;
+    }
+
+    enum class State{
+        UNKNOWN,
+
+        RENDERED,
+        HIDDEN
 
     };
 

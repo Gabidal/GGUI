@@ -24,113 +24,13 @@ namespace GGUI{
     //GGUI uses the ANSI escape code
     //https://en.wikipedia.org/wiki/ANSI_escape_code
 
-    // Inits with 'NOW()' when created
-    class BUTTON_STATE{
-    public:
-        bool State = false;
-        std::chrono::high_resolution_clock::time_point Capture_Time;
-
-        BUTTON_STATE(bool state = false){
-            Capture_Time = std::chrono::high_resolution_clock::now();
-            State = state;
-        }
-    };
-
-    enum class STAIN_TYPE{
-        CLEAN = 0,              // No change
-        COLOR = 1 << 0,         // BG and other color related changes
-        EDGE = 1 << 1,          // Title and border changes.
-        DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
-        STRETCH = 1 << 3,       // Width and or height changes.
-        CLASS = 1 << 5,         // This is used to tell the renderer that there are still un_parsed classes.
-        STATE = 1 << 6,         // This is for Switches that based on their state display one symbol differently. And also for state handlers.
-        MOVE = 1 << 7,          // Enabled, to signal absolute position caching.
-    };
- 
-    inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
-        return (unsigned int)a | (unsigned int)b;
-    }
-
-    inline unsigned int operator|(STAIN_TYPE a, unsigned int b){
-        return (unsigned int)a | b;
-    }
-
-    inline unsigned int operator|(unsigned int a, STAIN_TYPE b){
-        return a | (unsigned int)b;
-    }
-
-    class STAIN{
-    public:
-        STAIN_TYPE Type = STAIN_TYPE::CLEAN;
-
-        bool is(STAIN_TYPE f){
-            if (f == STAIN_TYPE::CLEAN){
-                return Type <= f;
-            }
-            return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
-        }
-
-        void Clean(STAIN_TYPE f){
-            Type = (STAIN_TYPE)((unsigned int)Type & ~(unsigned int)f);
-        }
-
-        void Clean(unsigned int f){
-            Type = (STAIN_TYPE)((unsigned int)Type & ~f);
-        }
-
-        void Dirty(STAIN_TYPE f){
-            Type = (STAIN_TYPE)((unsigned int)Type | (unsigned int)f);
-        }
-
-        void Dirty(unsigned int f){
-            Type = (STAIN_TYPE)((unsigned int)Type | f);
-        }
-
-    };
-
-    enum class Flags{
-        Empty = 0,
-        Border = 1 << 0,
-        Text_Input = 1 << 1,
-        Overflow = 1 << 2,
-        Dynamic = 1 << 3,
-        Horizontal = 1 << 4,
-        Vertical = 1 << 5,
-        Align_Left = 1 << 6,
-        Align_Right = 1 << 7,
-        Align_Center = 1 << 8,
-    };
-    
-    inline Flags operator|(Flags a, Flags b){
-        return static_cast<Flags>(static_cast<int>(a) | static_cast<int>(b));
-    }
-
-    inline bool Is(Flags a, Flags b){
-        return ((int)a & (int)b) == (int)b;
-    }
-
-    inline bool Has(Flags a, Flags b){
-        return ((int)a & (int)b) != 0;
-    }
-
-    enum class State{
-        UNKNOWN,
-
-        RENDERED,
-        HIDDEN
-
-    };
-
-    // For templates.
-    extern std::vector<Action*> Event_Handlers;
-
     class Element{
     protected:
         unsigned int Post_Process_Width = 0;
         unsigned int Post_Process_Height = 0;
 
         // Only fetch one parent UP, and own position +, then child repeat.
-        IVector2 Absolute_Position_Cache;
+        IVector3 Absolute_Position_Cache;
 
         //INTERNAL FLAGS
         class Element* Parent = nullptr;
@@ -155,14 +55,14 @@ namespace GGUI{
 
         Element();
 
-        Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector2 *position = nullptr);
+        Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 *position = nullptr);
 
-        Element(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector2 *position = nullptr);
+        Element(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 *position = nullptr);
 
         Element(
             unsigned int width,
             unsigned int height,
-            IVector2 position
+            IVector3 position
         );
 
         //These next constructors are mainly for users to more easily create elements.
@@ -332,13 +232,13 @@ namespace GGUI{
 
         void Set_Height(unsigned int height);
 
-        void Set_Position(IVector2 c);
+        void Set_Position(IVector3 c);
        
-        void Set_Position(IVector2* c);
+        void Set_Position(IVector3* c);
 
-        IVector2 Get_Position();
+        IVector3 Get_Position();
 
-        IVector2 Get_Absolute_Position();
+        IVector3 Get_Absolute_Position();
 
         void Update_Absolute_Position_Cache();
 

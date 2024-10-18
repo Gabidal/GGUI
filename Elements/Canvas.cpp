@@ -8,7 +8,7 @@
 
 namespace GGUI{
 
-    Canvas::Canvas(unsigned int w, unsigned int h, IVector2 position) : Element(){
+    Canvas::Canvas(unsigned int w, unsigned int h, IVector3 position) : Element(){
         Pause_GGUI([w, h, position, this](){
             Buffer.resize(w * h);
 
@@ -98,7 +98,7 @@ namespace GGUI{
         Frame_Distance = ((float)UINT8_MAX + 1) / (float)Frames.size();
     }
 
-    Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, IVector2 position) : Element(){
+    Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, IVector3 position) : Element(){
         Buffer.resize(w * h);
 
         Set_Width(w);
