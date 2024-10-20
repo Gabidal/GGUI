@@ -160,27 +160,6 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
     }
 }
 
-GGUI::Element::Element(std::string Class, unsigned int width, unsigned int height, Element* parent, IVector3* position){
-    Name = std::to_string((unsigned long long)this);
-
-    Fully_Stain();
-
-    if (width != 0)
-        Set_Width(width);
-    if (height != 0)
-        Set_Height(height);
-
-    if (parent){
-        Set_Parent(parent);
-
-        Set_Position(position);
-    }
-
-    Add_Class(Class);
-
-    Parse_Classes();
-}
-
 GGUI::Element::Element() {
     Name = std::to_string((unsigned long long)this);
     Parse_Classes();
@@ -196,92 +175,10 @@ GGUI::Element::Element() {
     }
 }
 
-GGUI::Element::Element(Styling css, unsigned int width, unsigned int height, Element* parent, IVector3* position){
-    Pause_GGUI([this, css, width, height, parent, position](){
-        Parse_Classes();
+GGUI::Element::Element(Styling s) : Element(){
+    Style = new Styling(s);
 
-        bool Previous_Border_State = Has_Border();
-
-        Style = new Styling(css);
-
-        Fully_Stain();
-
-        //Check if the css changed the border state, if so we need to increment or decrement the width & height.
-        Show_Border(Has_Border(), Previous_Border_State);
-
-        if (width != 0)
-            Set_Width(width);
-        if (height != 0)
-            Set_Height(height);
-
-        if (parent){
-            Set_Parent(parent);
-
-            Set_Position(position);
-        }
-
-        Name = std::to_string((unsigned long long)this);
-    });
-}
-
-GGUI::Element::Element(
-    unsigned int width,
-    unsigned int height,
-    IVector3 position
-) : Element(){
-    Pause_GGUI([this, width, height, position](){
-        Set_Width(width);
-        Set_Height(height);
-
-        Set_Position(position);
-    });
-}
-
-//These next constructors are mainly for users to more easily create elements.
-GGUI::Element::Element(
-    unsigned int width,
-    unsigned int height
-) : Element(){
-    Pause_GGUI([this, width, height](){
-        Set_Width(width);
-        Set_Height(height);
-    });
-}
-
-GGUI::Element::Element(
-    unsigned int width,
-    unsigned int height,
-    RGB text_color,
-    RGB background_color
-) : Element(){
-    Pause_GGUI([this, width, height, text_color, background_color](){
-        Set_Width(width);
-        Set_Height(height);
-
-        Set_Text_Color(text_color);
-        Set_Background_Color(background_color);
-    });
-}
-
-GGUI::Element::Element(
-    unsigned int width,
-    unsigned int height,
-    RGB text_color,
-    RGB background_color,
-    RGB border_color,
-    RGB border_background_color
-) : Element(){
-    Pause_GGUI([this, width, height, text_color, background_color, border_color, border_background_color](){
-        Set_Width(width);
-        Set_Height(height);
-
-        Set_Text_Color(text_color);
-        Set_Background_Color(background_color);
-        Set_Border_Color(border_color);
-        Set_Border_Background_Color(border_background_color);
-
-        Show_Border(true);
-    });
+    Style->Embed_Styles(this);
 }
 
 GGUI::Element::Element(const Element& copyable){

@@ -13,56 +13,11 @@ namespace GGUI{
         RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
         bool Has_Hidden_Borders = false;
     public:
-        Window() : Element() {
+        Window(std::string title = "", Styling s = STYLES::CONSTANTS::Default) : Element(s) {
             Update_Hidden_Border_Colors();
+
+            Title = title;
         }
-
-        Window(std::string title, std::vector<std::string> classes = {});
-
-        Window(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3* position = nullptr);
-        
-        Window(std::string title, Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3* position = nullptr);
-
-        //These next constructors are mainly for users to more easily create elements.
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color
-        );
-
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
-
-        Window(
-            std::string title,
-            unsigned int width,
-            unsigned int height,
-            std::vector<Element*> Tree 
-        );
 
         ~Window() override{
             // call the base destructor.

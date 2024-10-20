@@ -7,35 +7,13 @@ namespace GGUI{
     class List_View : public Element{
     public:
         //We can always assume that the list starts from the upper left corner, right?
-        Element* Last_Child = new Element(0, 0, {0, 0});
+        Element* Last_Child = new Element(Styling(position(0, 0) | width(0) | height(0)));
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
 
-        List_View(Styling css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 position = {0, 0, 0});
+        List_View() : Element(){}
 
-        //These next constructors are mainly for users to more easily create elements.
-        List_View(
-            RGB text_color,
-            RGB background_color
-        );
-
-        List_View(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color
-        );
-
-        List_View(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
-
-        List_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction = DIRECTION::ROW);
+        List_View(Styling s) : Element(s){}
 
         ~List_View() override{
             for (Element* e : Style->Childs){
@@ -96,37 +74,9 @@ namespace GGUI{
 
         // Constructors:
         // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-        Scroll_View(DIRECTION grow_direction = DIRECTION::ROW);
+        Scroll_View(Styling s) : Element(s){}
 
         Scroll_View(List_View& container);
-
-        Scroll_View(std::vector<Element*> Childs, DIRECTION grow_direction = DIRECTION::ROW);
-
-        Scroll_View(Styling css = {}, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 position = {0, 0, 0});
-
-        //These next constructors are mainly for users to more easily create elements.
-        Scroll_View(
-            RGB text_color,
-            RGB background_color
-        );
-
-        Scroll_View(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color
-        );
-
-        Scroll_View(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
-
-        Scroll_View(Element* parent, std::vector<Element*> Tree, DIRECTION grow_direction = DIRECTION::ROW);
 
         // Re-pipeline functions:
         // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_

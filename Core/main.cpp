@@ -7,7 +7,11 @@ using namespace GGUI;
 int main() 
 {
     GGUI::GGUI([&](){
-        GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(GGUI::Max_Width, GGUI::Max_Height, {0, 0});
+        GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(
+            Styling(
+                width(GGUI::Max_Width) | height(GGUI::Max_Height)
+            )
+        );
 
 
         for (int x = 0; x < tem->Get_Width(); x++){

@@ -14,7 +14,7 @@ namespace GGUI{
     protected:
         std::vector<RGB> Buffer;
     public:
-        Canvas(unsigned int w, unsigned int h, IVector3 position);
+        Canvas(Styling s) : Element(s){}
         
         // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
         void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
@@ -83,7 +83,7 @@ namespace GGUI{
         // For speeding up sprite sets, to avoid redundant checks in unordered_maps.
         bool Multi_Frame = false;
     public:
-        Terminal_Canvas(unsigned int w, unsigned int h, IVector3 position);
+        Terminal_Canvas(Styling s) : Element(s){}
         
         ~Terminal_Canvas() override;
 

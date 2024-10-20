@@ -172,12 +172,24 @@ namespace GGUI{
 
             style_base() = default;
 
-            virtual ~style_base() = default;
+            virtual ~style_base();
 
             style_base* operator|(style_base* other){
                 Other = other;
 
                 return this;
+            }
+
+            style_base& operator|(style_base& other){
+                Other = &other;
+
+                return *this;
+            }
+
+            style_base& operator|(style_base&& other){
+                Other = &other;
+
+                return *this;
             }
             
             // for dynamically computable values like percentage depended
@@ -200,6 +212,8 @@ namespace GGUI{
             constexpr RGB_VALUE(const GGUI::RGB value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
             RGB_VALUE() = default;
+
+            ~RGB_VALUE() override { style_base::~style_base(); }
 
             // operator overload for copy operator
             RGB_VALUE& operator=(const RGB_VALUE& other){
@@ -237,6 +251,8 @@ namespace GGUI{
             constexpr BOOL_VALUE(bool value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value){}
 
             BOOL_VALUE() = default;
+            
+            ~BOOL_VALUE() override { style_base::~style_base(); }
 
             // operator overload for copy operator
             BOOL_VALUE& operator=(const BOOL_VALUE& other){
@@ -280,6 +296,8 @@ namespace GGUI{
 
             NUMBER_VALUE() = default;
 
+            ~NUMBER_VALUE() override { style_base::~style_base(); }
+
             // operator overload for copy operator
             NUMBER_VALUE& operator=(const NUMBER_VALUE& other){
                 // Only copy the information if the other is enabled.
@@ -320,6 +338,8 @@ namespace GGUI{
 
             ENUM_VALUE() = default;
 
+            ~ENUM_VALUE() override { style_base::~style_base(); }
+
             // operator overload for copy operator
             ENUM_VALUE& operator=(const ENUM_VALUE& other){
                 // Only copy the information if the other is enabled.
@@ -359,6 +379,8 @@ namespace GGUI{
             constexpr Vector(const GGUI::IVector3 value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
             Vector() = default;
+            
+            ~Vector() override { style_base::~style_base(); }
 
             // operator overload for copy operator
             Vector& operator=(const Vector& other){
@@ -397,6 +419,7 @@ namespace GGUI{
             // The basic style types do not have imprint methods.
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host,  Element* owner) override;
         };
+    
     }
 
     class position : public STYLING_INTERNAL::Vector{
@@ -998,6 +1021,31 @@ namespace GGUI{
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
     };
 
+    class childs : public STYLING_INTERNAL::style_base{
+    public:
+        std::initializer_list<Element*> Value;
+
+        childs(std::initializer_list<Element*> value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        
+        childs() = default;
+
+        constexpr childs(const GGUI::childs& other) : style_base(other.Status, true), Value(other.Value){}
+
+        childs& operator=(const childs& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
     class Styling{
     public:
         position Position;
@@ -1048,6 +1096,15 @@ namespace GGUI{
             un_parsed_styles = attributes;
         }
 
+        Styling(STYLING_INTERNAL::style_base& attributes){
+            un_parsed_styles = &attributes;
+        }
+
+        Styling(STYLING_INTERNAL::style_base&& attributes){
+            un_parsed_styles = &attributes;
+        }
+
+        // This function will expect that listed elements are given as recursive style_base inheritants. Nested AST or tree based nodes are thus always captured by their preceding element nodes, which will capture all that is given to it.
         void Embed_Styles(Element* owner);
 
         void Copy(const Styling& other);

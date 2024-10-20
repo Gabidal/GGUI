@@ -21,9 +21,6 @@
 #include "../Core/Utils/Style.h"
 
 namespace GGUI{
-    //GGUI uses the ANSI escape code
-    //https://en.wikipedia.org/wiki/ANSI_escape_code
-
     class Element{
     protected:
         unsigned int Post_Process_Width = 0;
@@ -55,37 +52,7 @@ namespace GGUI{
 
         Element();
 
-        Element(std::string Class, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 *position = nullptr);
-
-        Element(Styling css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, IVector3 *position = nullptr);
-
-        Element(
-            unsigned int width,
-            unsigned int height,
-            IVector3 position
-        );
-
-        //These next constructors are mainly for users to more easily create elements.
-        Element(
-            unsigned int width,
-            unsigned int height
-        );
-
-        Element(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color
-        );
-
-        Element(
-            unsigned int width,
-            unsigned int height,
-            RGB text_color,
-            RGB background_color,
-            RGB border_color,
-            RGB border_background_color
-        );
+        Element(Styling s);
 
         // Disable Copy constructor
         Element(const Element&);

@@ -15,8 +15,10 @@
 #include "../Elements/List_View.h"
 #include "../Elements/Canvas.h"
 
+//GGUI uses the ANSI escape code
+//https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
-    
+
     namespace INTERNAL{
         class BUFFER_CAPTURE;
     }
@@ -213,6 +215,9 @@ namespace GGUI{
     extern void Init_Inspect_Tool();
 
     extern void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer);
+
+    // Note this function expects that the ptr value which might be a stack is from the main process.
+    extern bool Is_Stack_Pointer(void* ptr);
 }
 
 #endif

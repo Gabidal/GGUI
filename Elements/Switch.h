@@ -19,7 +19,7 @@ namespace GGUI{
 
         Text_Field Text;
     public:
-        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){});
+        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){}, Styling s = STYLES::CONSTANTS::Default);
 
         std::vector<GGUI::UTF>& Render() override;
 

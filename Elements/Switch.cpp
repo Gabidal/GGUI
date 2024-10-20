@@ -5,7 +5,7 @@
 
 namespace GGUI{
 
-    Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event) : Element(){
+    Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event, Styling s) : Element(s){
         Pause_GGUI([this, text, states, event](){
             States = states;
             

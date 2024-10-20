@@ -29,6 +29,7 @@ sources = [
   '../Elements/File_Streamer.cpp',
   '../Elements/HTML.cpp',
 
+  '../Core/utils/No_Inline.cpp',
   '../Core/Renderer.cpp',
 
   '../Core/main.cpp',

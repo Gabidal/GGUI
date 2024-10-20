@@ -62,6 +62,9 @@ namespace GGUI{
 
     std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
+    void* Stack_Start_Address = 0;
+    void* Heap_Start_Address = 0;
+
     Window* Main = nullptr;
     
     const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
@@ -1659,8 +1662,13 @@ namespace GGUI{
         }
     }
 
+    // Made extern to force to not to inline
+    extern void Init_Start_Addresses();
+
     //Inits GGUI and returns the main window.
     GGUI::Window* Init_GGUI(){
+        Init_Start_Addresses();
+
         Update_Max_Width_And_Height();
         
         if (Max_Height == 0 || Max_Width == 0){
@@ -1676,7 +1684,7 @@ namespace GGUI{
 
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
         Main = (Window*)0xFFFFFFFF;
-        Main = new Window("", Max_Width, Max_Height);
+        Main = new Window("", Styling(width(Max_Width) | height(Max_Height)));
 
         std::thread Rendering_Scheduler([&](){
             while (true){
@@ -1837,12 +1845,10 @@ namespace GGUI{
                     // This happens, when Error logger is kidnapped!
                     if (!History){
                         // Now create the history lister
-                        History = new Scroll_View(
-                            Error_Logger->Get_Width() - 1,
-                            Error_Logger->Get_Height() - 1,
-                            GGUI::COLOR::RED,
-                            GGUI::COLOR::BLACK
-                        );
+                        History = new Scroll_View(Styling(
+                            width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
+                            text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK)
+                        ));
                         History->Set_Growth_Direction(DIRECTION::COLUMN);
                         History->Set_Name(HISTORY);
 
@@ -1878,12 +1884,11 @@ namespace GGUI{
                     // create the error logger
                     Error_Logger = new Window(
                         "LOG",
-                        Main->Get_Width() / 4,
-                        Main->Get_Height() / 2,
-                        GGUI::COLOR::RED,
-                        GGUI::COLOR::BLACK,
-                        GGUI::COLOR::RED,
-                        GGUI::COLOR::BLACK
+                        Styling(
+                            width(Main->Get_Width() / 4) | height(Main->Get_Height() / 2) |
+                            text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
+                            border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK)
+                        )
                     );
                     Error_Logger->Set_Name(ERROR_LOGGER);
                     Error_Logger->Set_Position({
@@ -1895,12 +1900,10 @@ namespace GGUI{
                     Error_Logger->Allow_Overflow(true);
 
                     // Now create the history lister
-                    Scroll_View* History = new Scroll_View(
-                        Error_Logger->Get_Width() - 1,
-                        Error_Logger->Get_Height() - 1,
-                        GGUI::COLOR::RED,
-                        GGUI::COLOR::BLACK
-                    );
+                    Scroll_View* History = new Scroll_View(Styling(
+                        width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
+                        text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK)
+                    ));
                     History->Set_Growth_Direction(DIRECTION::COLUMN);
                     History->Set_Name(HISTORY);
 
@@ -1913,12 +1916,9 @@ namespace GGUI{
                     Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
                     Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
-                    List_View* Row = new List_View(
-                        History->Get_Width(),
-                        1,
-                        GGUI::COLOR::RED,
-                        GGUI::COLOR::BLACK
-                    );
+                    List_View* Row = new List_View(Styling(
+                        width(History->Get_Width() - 1) | height(1) | text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK)
+                    ));
                     Row->Set_Parent(History);
                     Row->Set_Flow_Direction(DIRECTION::ROW);
 
@@ -2045,8 +2045,9 @@ namespace GGUI{
 
     // Use this to use GGUI.
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
-        Pause_GGUI([DOM](){
+        Init_Start_Addresses();
 
+        Pause_GGUI([DOM](){
             Init_GGUI();
 
             DOM();
@@ -2109,12 +2110,10 @@ namespace GGUI{
     }
 
     void Init_Inspect_Tool(){
-        GGUI::List_View* Inspect = new GGUI::List_View(
-            Main->Get_Width() / 2,
-            Main->Get_Height(),
-            Main->Get_Text_Color(),
-            Main->Get_Background_Color()
-        );
+        GGUI::List_View* Inspect = new GGUI::List_View(Styling(
+            width(Main->Get_Width() / 2) | height(Main->Get_Height()) | 
+            text_color(Main->Get_Text_Color()) | background_color(Main->Get_Background_Color()) 
+        ));
 
         Inspect->Set_Flow_Direction(DIRECTION::COLUMN);
         Inspect->Show_Border(false);
@@ -2135,9 +2134,9 @@ namespace GGUI{
             "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
             "Render delay: " + std::to_string(Render_Delay) + "ms\n" +
             "Event delay: " + std::to_string(Event_Delay) + "ms",
-            ALIGN::LEFT,
-            Inspect->Get_Width(),
-            5
+            Styling(
+                align(ALIGN::LEFT) | width(Inspect->Get_Width()) | height(5)
+            )
         );
         Stats->Set_Name("STATS");
 
@@ -2146,12 +2145,11 @@ namespace GGUI{
         // Add the error logger kidnapper:
         Window* Error_Logger_Kidnapper = new Window(
             "LOG: ",
-            Inspect->Get_Width(),
-            Inspect->Get_Height() / 2,
-            GGUI::COLOR::RED,
-            GGUI::COLOR::BLACK,
-            GGUI::COLOR::RED,
-            GGUI::COLOR::BLACK
+            Styling(
+                width(Inspect->Get_Width()) | height(Inspect->Get_Height() / 2) |
+                text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
+                border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK)
+            )
         );
 
         Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
@@ -2199,6 +2197,45 @@ namespace GGUI{
 
         }
 
+    }
+
+    // Function to check if a pointer likely belongs to the stack
+    bool Is_Stack_Pointer(void* ptr) {
+        if (ptr == nullptr) {
+            return false;  // Null pointer can't be valid
+        }
+
+        // Check if ptr is smaller than the stack start address
+        bool Lower_Than_Stack = (uintptr_t)ptr < (uintptr_t)Stack_Start_Address;
+
+        // Try to allocate memory on the heap for comparison
+        void* new_heap = new(std::nothrow) int;
+        if (new_heap == nullptr) {
+            Report_Stack("Failed to allocate new heap for stack pointer check!");
+            exit(1);  // FATAL
+        }
+
+        // Check if the new heap is below the stack address
+        bool Heap_Is_Lower_Than_Stack = (uintptr_t)new_heap < (uintptr_t)Stack_Start_Address;
+
+        // Calculate distance to the stack start
+        uintptr_t ptr_distance_to_stack = (uintptr_t)Stack_Start_Address - (uintptr_t)ptr;
+
+        // Calculate distance to the heap (use min in case heap grows in both directions)
+        uintptr_t heap_min_address = Min((uintptr_t)new_heap, (uintptr_t)Heap_Start_Address);
+        uintptr_t ptr_distance_to_heap = heap_min_address - (uintptr_t)ptr;
+
+        // Ensure pointer is smaller than the stack start address and closer to the stack
+        bool Stack_Is_Closer = ptr_distance_to_stack < ptr_distance_to_heap && Lower_Than_Stack;
+
+        // Clean up the heap allocation
+        delete new_heap;
+
+        // Weigh the two possibilities and determine if it's more likely a stack pointer
+        int Points_To_Stack = Lower_Than_Stack + Stack_Is_Closer;
+        int Points_To_Heap = !Lower_Than_Stack + !Stack_Is_Closer + Heap_Is_Lower_Than_Stack;
+
+        return Points_To_Stack > Points_To_Heap;
     }
 
 }

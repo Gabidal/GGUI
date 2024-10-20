@@ -14,11 +14,9 @@ namespace GGUI{
         void Update_Text_Cache();
     public:
 
-        Text_Field(std::string text, ALIGN align = ALIGN::LEFT, int width = 1, int height = 1) : Element(width, height), Text(text){
+        Text_Field(std::string text, Styling s = STYLES::CONSTANTS::Default) : Element(s), Text(text){
             // Reserve one row for the text if no newlines.
-            Text_Cache.reserve(height);
-
-            Style->Align = align;
+            Text_Cache.reserve(Get_Height());
 
             if (Get_Width() == 1 && Get_Height() == 1){
                 Allow_Dynamic_Size(true);

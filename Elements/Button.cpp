@@ -11,7 +11,7 @@ namespace GGUI{
         Allow_Dynamic_Size(true);
         Show_Border(true);
 
-        Add_Child(new Text_Field(text, ALIGN::CENTER));
+        Add_Child(new Text_Field(text, Styling(align(ALIGN::CENTER))));
     }
 
 }

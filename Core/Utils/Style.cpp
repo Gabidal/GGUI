@@ -1,8 +1,17 @@
 #include "Style.h"
 #include "../Elements/Element.h"
 #include "../Elements/List_View.h"
+#include "../Renderer.h"
 
 namespace GGUI{
+
+    STYLING_INTERNAL::style_base::~style_base(){
+        if (Other){
+            // Check if the other is closer to an stack_starting address or to heap
+            if (!Is_Stack_Pointer(Other))
+                delete Other;
+        }
+    }
 
     // EVALs
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -253,6 +262,14 @@ namespace GGUI{
         return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
 
+    STAIN_TYPE childs::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        for (auto* c : Value){
+            owner->Add_Child(c);
+        }
+
+        return STAIN_TYPE::DEEP;
+    }
+
     void Styling::Evaluate_Dynamic_Attribute_Values(Element* owner){
 
         Element* point_of_interest = owner;
@@ -305,5 +322,4 @@ namespace GGUI{
 
         owner->Add_Stain(changes.Type);
     }
-
 }

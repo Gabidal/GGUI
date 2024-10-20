@@ -14,10 +14,6 @@ namespace GGUI{
         inline PROGRESS_STYLE Arrow = PROGRESS_STYLE(">", "=", "=");
     }
 
-    Progress_Bar::Progress_Bar(unsigned int width, unsigned int height, PROGRESS_STYLE style) : Element(width, height), Progress_Style(style){
-        Content.resize(Get_Width() - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color , Get_Background_Color() }));
-    }
-
     unsigned int Progress_Bar::Get_Index_of_Head(){
         return floor(Progress * (Get_Width() - Has_Border() * 2));
     }

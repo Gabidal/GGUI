@@ -7,20 +7,6 @@
 #include "../Core/SIMD/SIMD.h"
 
 namespace GGUI{
-
-    Canvas::Canvas(unsigned int w, unsigned int h, IVector3 position) : Element(){
-        Pause_GGUI([w, h, position, this](){
-            Buffer.resize(w * h);
-
-            Set_Width(w);
-            Set_Height(h);
-
-            Set_Position(position);
-
-            //We dont need any other than the color.
-            Dirty.Clean(STAIN_TYPE::DEEP);
-        });
-    }
     
     void Canvas::Set(unsigned int x, unsigned int y, RGB color, bool Flush){
         unsigned int Actual_X = x + Has_Border();
@@ -96,15 +82,6 @@ namespace GGUI{
             Is_Power_Of_Two = true;
 
         Frame_Distance = ((float)UINT8_MAX + 1) / (float)Frames.size();
-    }
-
-    Terminal_Canvas::Terminal_Canvas(unsigned int w, unsigned int h, IVector3 position) : Element(){
-        Buffer.resize(w * h);
-
-        Set_Width(w);
-        Set_Height(h);
-
-        Set_Position(position);
     }
 
     Terminal_Canvas::~Terminal_Canvas(){

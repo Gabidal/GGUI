@@ -78,7 +78,9 @@ namespace GGUI{
 
         std::vector<UTF> Content;
     public:
-        Progress_Bar(unsigned int width, unsigned int height, PROGRESS_STYLE style = PROGRESS_STYLE());
+
+        Progress_Bar(Styling s) : Element(s){}
+
         Progress_Bar() = default;
 
         Progress_Bar& operator=(const Progress_Bar& other){
