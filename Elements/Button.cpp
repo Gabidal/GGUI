@@ -4,7 +4,7 @@
 
 namespace GGUI{
 
-    Button::Button(std::string text, std::function<void (Button* This)> press) : Element(){
+    Button::Button(std::string text, std::function<void (Button* This)> press, Styling s) : Element(s){
         Default_Button_Behaviour(press);
         Set_Name(text);
 

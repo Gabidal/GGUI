@@ -27,7 +27,7 @@ namespace GGUI{
         }
     public:
 
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button*){});
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button*){}, Styling s = STYLES::CONSTANTS::Default);
 
         Element* Safe_Move() override {
             Button* new_Button = new Button();

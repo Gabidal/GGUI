@@ -98,12 +98,19 @@ namespace GGUI{
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
 
+        unsigned int Location = Actual_X + Actual_Y * Get_Width();
+
+        // Since 0.1.8 The styling constructor will not initialize the buffer with the actual width x height of the canvas.
+        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= Get_Width() * Get_Height())){
+            Buffer.resize(Get_Width() * Get_Height());
+        }
+
         if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && Multi_Frame_Canvas.find(this) == Multi_Frame_Canvas.end()){
             Multi_Frame_Canvas[this] = true;
             Multi_Frame = true;
         }
 
-        Buffer[Actual_X + Actual_Y * Get_Width()] = sprite;
+        Buffer[Location] = sprite;
 
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
@@ -114,8 +121,15 @@ namespace GGUI{
     void Terminal_Canvas::Set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
         unsigned int Actual_X = x + Has_Border();
         unsigned int Actual_Y = y + Has_Border();
+    
+        unsigned int Location = Actual_X + Actual_Y * Get_Width();
 
-        Buffer[Actual_X + Actual_Y * Get_Width()].Frames.push_back(sprite);
+        // Since 0.1.8 The styling constructor will not initialize the buffer with the actual width x height of the canvas.
+        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= Get_Width() * Get_Height())){
+            Buffer.resize(Get_Width() * Get_Height());
+        }
+
+        Buffer[Location].Frames.push_back(sprite);
 
         Dirty.Dirty(STAIN_TYPE::COLOR);
 

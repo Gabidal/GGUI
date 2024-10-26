@@ -2057,6 +2057,20 @@ namespace GGUI{
         // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
     }
 
+    void GGUI(std::vector<Element*> DOM, unsigned long long Sleep_For){
+        Init_Start_Addresses();
+
+        Pause_GGUI([DOM](){
+            Init_GGUI();
+
+            for (auto* e : DOM){
+                Main->Add_Child(e);
+            }
+        });
+
+        SLEEP(Sleep_For);
+    }
+
     void Encode_Buffer(std::vector<GGUI::UTF>& Buffer){
 
         // There are three different encoded types: Start, Middle and End.
@@ -2156,7 +2170,7 @@ namespace GGUI{
         Error_Logger_Kidnapper->Allow_Overflow(true);
 
         Inspect->Add_Child(Error_Logger_Kidnapper);
-        Inspect->Display(false);
+        Inspect->Display(true);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [Inspect](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;

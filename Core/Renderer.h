@@ -203,6 +203,8 @@ namespace GGUI{
     // Use this to access GGUI.
     extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
 
+    extern void GGUI(std::vector<Element*> DOM, unsigned long long Sleep_For = 0);
+
     extern void Exit(int Signum = 0);
 
     // Also handles shift tabs!

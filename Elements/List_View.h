@@ -9,11 +9,9 @@ namespace GGUI{
         //We can always assume that the list starts from the upper left corner, right?
         Element* Last_Child = new Element(Styling(position(0, 0) | width(0) | height(0)));
 
-        std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
+        List_View() : Element(){ Allow_Dynamic_Size(true); }
 
-        List_View() : Element(){}
-
-        List_View(Styling s) : Element(s){}
+        List_View(Styling s) : Element(s){ Allow_Dynamic_Size(true); }
 
         ~List_View() override{
             for (Element* e : Style->Childs){
