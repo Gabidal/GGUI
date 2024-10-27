@@ -13,11 +13,7 @@ namespace GGUI{
         RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
         bool Has_Hidden_Borders = false;
     public:
-        Window(std::string title = "", Styling s = STYLES::CONSTANTS::Default) : Element(s) {
-            Update_Hidden_Border_Colors();
-
-            Title = title;
-        }
+        Window(std::string title = "", Styling s = STYLES::CONSTANTS::Default);
 
         ~Window() override{
             // call the base destructor.

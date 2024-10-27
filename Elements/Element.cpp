@@ -391,9 +391,6 @@ void GGUI::Element::Parse_Classes(){
         Style = new Styling();
     }
 
-    bool Remember_To_Affect_Width_And_Height_Because_Of_Border = false;
-    bool Previous_Border_Value = Style->Border_Enabled.Value;
-
     GGUI::Classes([this](auto& classes){
         //Go through all classes and their styles and accumulate them.
         for(auto Class : Classes){
@@ -408,10 +405,6 @@ void GGUI::Element::Parse_Classes(){
             
         }
     });
-
-    if (Remember_To_Affect_Width_And_Height_Because_Of_Border){
-        Show_Border(Style->Border_Enabled.Value, Previous_Border_Value);
-    }
 }
 
 void GGUI::Element::Set_Focus(bool f){

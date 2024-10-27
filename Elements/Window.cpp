@@ -3,6 +3,14 @@
 
 //End of user constructors.
 
+GGUI::Window::Window(std::string title, Styling s) : Element(s) {
+    Pause_GGUI([this, title](){
+        Update_Hidden_Border_Colors();
+
+        Set_Title(title);
+    });
+}
+
 void GGUI::Window::Update_Hidden_Border_Colors(){
     // prioritizes the border variants if they are available
     if (Style->Border_Color.Status >= VALUE_STATE::INITIALIZED)

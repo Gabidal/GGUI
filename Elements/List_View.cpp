@@ -74,7 +74,7 @@ void GGUI::List_View::Add_Child(Element* e){
                 Last_Child->Set_Dimensions(e->Get_Width(), e->Get_Height());
             }
             else{
-                // Affect minimum height needed, when current child has borders as well as the previus one.
+                // Affect minimum height needed, when current child has borders as well as the previous one.
                 signed int Height_Modifier = e->Has_Border() & Last_Child->Has_Border();
 
                 unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, Get_Width());

@@ -15,7 +15,8 @@ namespace GGUI{
     public:
 
         Text_Field(std::string text, Styling s = STYLES::CONSTANTS::Default) : Element(s), Text(text){
-            // Reserve one row for the text if no newlines.
+
+            // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
             Text_Cache.reserve(Get_Height());
 
             if (Get_Width() == 1 && Get_Height() == 1){

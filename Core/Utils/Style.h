@@ -186,12 +186,14 @@ namespace GGUI{
                 return *this;
             }
 
+            // Since operators for "a | b | c" will re-write the previous the "a | b" when at c with "ab | c", will produce "ac" and not "abc".
+            // Which is why we return the secondary so that: "a | b | c" -> "b(a) | c" -> "c(b(a))"
             style_base& operator|(style_base&& other){
-                Other = &other;
+                other.Other = this;
 
-                return *this;
+                return other;
             }
-            
+
             // for dynamically computable values like percentage depended
             // currently covers:
             // - screen space
@@ -492,15 +494,15 @@ namespace GGUI{
         }
     };
 
-    class border_enabled : public STYLING_INTERNAL::BOOL_VALUE{
+    class enable_border : public STYLING_INTERNAL::BOOL_VALUE{
     public:
-        border_enabled(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+        enable_border(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
 
-        border_enabled() = default;
+        enable_border() = default;
 
-        constexpr border_enabled(const GGUI::border_enabled& other) : BOOL_VALUE(other.Value, other.Status, true){}
+        constexpr enable_border(const GGUI::enable_border& other) : BOOL_VALUE(other.Value, other.Status, true){}
 
-        border_enabled& operator=(const border_enabled& other) = default;
+        enable_border& operator=(const enable_border& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1053,7 +1055,7 @@ namespace GGUI{
         width Width = 1;
         height Height = 1;
 
-        border_enabled                  Border_Enabled = border_enabled(false, VALUE_STATE::INITIALIZED);
+        enable_border                   Border_Enabled = enable_border(false, VALUE_STATE::INITIALIZED);
         text_color                      Text_Color = text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
         background_color                Background_Color = background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         border_color                    Border_Color = border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
@@ -1146,6 +1148,8 @@ namespace GGUI{
         namespace CONSTANTS{
             inline Styling Default;
         }
+    
+        inline enable_border border = enable_border(true, VALUE_STATE::INITIALIZED);
     };
 
 }

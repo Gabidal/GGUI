@@ -219,7 +219,7 @@ namespace GGUI{
     extern void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer);
 
     // Note this function expects that the ptr value which might be a stack is from the main process.
-    extern bool Is_Stack_Pointer(void* ptr);
+    extern bool Is_Deletable(void* ptr);
 }
 
 #endif

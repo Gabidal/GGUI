@@ -8,7 +8,7 @@ namespace GGUI{
     STYLING_INTERNAL::style_base::~style_base(){
         if (Other){
             // Check if the other is closer to an stack_starting address or to heap
-            if (!Is_Stack_Pointer(Other))
+            if (Is_Deletable(Other))
                 delete Other;
         }
     }
@@ -117,7 +117,7 @@ namespace GGUI{
         return STAIN_TYPE::STRETCH;
     }
 
-    STAIN_TYPE border_enabled::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
+    STAIN_TYPE enable_border::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
         host->Border_Enabled = *this;
 
         return STAIN_TYPE::EDGE;

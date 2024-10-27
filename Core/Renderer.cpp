@@ -2162,7 +2162,8 @@ namespace GGUI{
             Styling(
                 width(Inspect->Get_Width()) | height(Inspect->Get_Height() / 2) |
                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK)
+                border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
+                STYLES::border
             )
         );
 
@@ -2170,7 +2171,7 @@ namespace GGUI{
         Error_Logger_Kidnapper->Allow_Overflow(true);
 
         Inspect->Add_Child(Error_Logger_Kidnapper);
-        Inspect->Display(true);
+        Inspect->Display(false);
 
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [Inspect](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;
@@ -2214,16 +2215,26 @@ namespace GGUI{
     }
 
     // Function to check if a pointer likely belongs to the stack
-    bool Is_Stack_Pointer(void* ptr) {
+    bool Is_Deletable(void* ptr) {
         if (ptr == nullptr) {
             return false;  // Null pointer can't be valid
         }
+
+        static void* Start_Of_BSS = nullptr;  // Since all non-values/zeroed will be put into bss.
+        
+        constexpr int MiB = 0x100000;
+        static signed long long Somewhere_In_DATA = 100 * MiB;    // This will just reside somewhere in the data section, and we'll have to check if the ptr is far enough from this and its range value.
+
+        // Check if ptr is above bss, if so then it could be in data section.
+        bool Ptr_Is_Above_BSS = ptr >= Start_Of_BSS;
+
+        bool Ptr_Is_In_Range_Of_DATA_Section = ((signed long long)ptr - (signed long long)&Somewhere_In_DATA) <= Somewhere_In_DATA;
 
         // Check if ptr is smaller than the stack start address
         bool Lower_Than_Stack = (uintptr_t)ptr < (uintptr_t)Stack_Start_Address;
 
         // Try to allocate memory on the heap for comparison
-        void* new_heap = new(std::nothrow) int;
+        size_t* new_heap = new(std::nothrow) size_t;
         if (new_heap == nullptr) {
             Report_Stack("Failed to allocate new heap for stack pointer check!");
             exit(1);  // FATAL
@@ -2246,10 +2257,11 @@ namespace GGUI{
         delete new_heap;
 
         // Weigh the two possibilities and determine if it's more likely a stack pointer
-        int Points_To_Stack = Lower_Than_Stack + Stack_Is_Closer;
-        int Points_To_Heap = !Lower_Than_Stack + !Stack_Is_Closer + Heap_Is_Lower_Than_Stack;
+        int Points_To_DATA_Section = Ptr_Is_Above_BSS + Ptr_Is_In_Range_Of_DATA_Section;                                // 2pts
+        int Points_To_Stack = Lower_Than_Stack + Stack_Is_Closer;                                                       // 2pts
+        int Points_To_Heap = !Lower_Than_Stack + !Stack_Is_Closer + Heap_Is_Lower_Than_Stack - Points_To_DATA_Section;  // 3pts
 
-        return Points_To_Stack > Points_To_Heap;
+        return Points_To_Heap > Points_To_Stack && Points_To_Heap > Points_To_DATA_Section;
     }
 
 }
