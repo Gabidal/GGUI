@@ -3,6 +3,12 @@
 
 //End of user constructors.
 
+/**
+ * @brief A window element that wraps a console window.
+ * This element is capable of modifying the window's title, border visibility, and colors.
+ * @param title The title string to be displayed in the window's title bar.
+ * @param s The Styling object to be used for the window.
+ */
 GGUI::Window::Window(std::string title, Styling s) : Element(s) {
     Pause_GGUI([this, title](){
         Update_Hidden_Border_Colors();
@@ -11,41 +17,64 @@ GGUI::Window::Window(std::string title, Styling s) : Element(s) {
     });
 }
 
-void GGUI::Window::Update_Hidden_Border_Colors(){
-    // prioritizes the border variants if they are available
+/**
+ * @brief Updates the colors of the hidden borders for the window.
+ * This function prioritizes border color variants if they are available;
+ * otherwise, it falls back to text colors or default values.
+ */
+void GGUI::Window::Update_Hidden_Border_Colors() {
+    // Check if a custom border color is initialized and set it as the before hiding color
     if (Style->Border_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Color = Style->Border_Color.Value.Get<RGB>();
+    // If not, check if a custom text color is initialized and use it instead
     else if (Style->Text_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Color = Style->Text_Color.Value.Get<RGB>();
+    // If neither is initialized, use the default border color
     else
-        this->Before_Hiding_Border_Color = STYLES::CONSTANTS::Default.Border_Color.Value.Get<RGB>();
+        Before_Hiding_Border_Color = STYLES::CONSTANTS::Default.Border_Color.Value.Get<RGB>();
 
+    // Check if a custom border background color is initialized and set it as the before hiding background color
     if (Style->Border_Background_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Background_Color = Style->Border_Background_Color.Value.Get<RGB>();
+    // If not, check if a custom background color is initialized and use it instead
     else if (Style->Background_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Background_Color = Style->Background_Color.Value.Get<RGB>();
+    // If neither is initialized, use the default border background color
     else
-        this->Before_Hiding_Border_Background_Color = STYLES::CONSTANTS::Default.Border_Background_Color.Value.Get<RGB>();
+        Before_Hiding_Border_Background_Color = STYLES::CONSTANTS::Default.Border_Background_Color.Value.Get<RGB>();
 }
 
-void GGUI::Window::Set_Title(std::string t){
-    Pause_GGUI([this, t](){
+/**
+ * @brief Sets the title of the window and updates border visibility and colors accordingly.
+ * 
+ * This function sets the window's title and ensures that the border is shown if the title is not empty.
+ * If the window previously had hidden borders, it updates the border colors based on the background color.
+ * 
+ * @param t The new title for the window.
+ */
+void GGUI::Window::Set_Title(std::string t) {
+    Pause_GGUI([this, t]() {
+        // Set the window title
         Title = t;
 
-        if (!Has_Border() && t.size() > 0){
+        // If the window has no border and the title is not empty, show the border
+        if (!Has_Border() && t.size() > 0) {
             Show_Border(true);
-            
+
+            // Mark that the window previously had hidden borders
             Has_Hidden_Borders = true;
 
+            // Set the border colors to the current background color
             Before_Hiding_Border_Color = Get_Background_Color();
             Before_Hiding_Border_Background_Color = Get_Background_Color();
-            
             Set_Border_Color(Get_Background_Color());
             Set_Border_Background_Color(Get_Background_Color());
         }
 
+        // Set the window name to the new title
         Set_Name(t);
 
+        // Mark the edge as dirty to trigger a frame update
         Dirty.Dirty(STAIN_TYPE::EDGE);
     });
 }

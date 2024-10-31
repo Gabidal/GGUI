@@ -66,15 +66,12 @@ namespace GGUI{
     }
 
     // Inits with 'NOW()' when created
-    class BUTTON_STATE{
+    class BUTTON_STATE {
     public:
-        bool State = false;
+        bool State;
         std::chrono::high_resolution_clock::time_point Capture_Time;
 
-        BUTTON_STATE(bool state = false){
-            Capture_Time = std::chrono::high_resolution_clock::now();
-            State = state;
-        }
+        BUTTON_STATE(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
     };
 
     extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color

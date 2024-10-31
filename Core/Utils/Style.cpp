@@ -270,18 +270,33 @@ namespace GGUI{
         return STAIN_TYPE::DEEP;
     }
 
-    void Styling::Evaluate_Dynamic_Attribute_Values(Element* owner){
+    /**
+     * @brief Evaluates dynamic attribute values for the given element.
+     *
+     * This function evaluates the dynamic attribute values of the styling associated
+     * with the specified element. It determines the point of interest, which is
+     * either the element's parent or the element itself if no parent exists,
+     * and uses its style as a reference for evaluation.
+     *
+     * @param owner The element whose dynamic attributes are to be evaluated.
+     */
+    void Styling::Evaluate_Dynamic_Attribute_Values(Element* owner) {
 
+        // Determine the point of interest for style evaluation
         Element* point_of_interest = owner;
 
-        if (owner->Get_Parent()){
+        // If the element has a parent, use the parent's style for evaluation
+        if (owner->Get_Parent()) {
             point_of_interest = owner->Get_Parent();
         }
 
+        // Get the style of the point of interest
         Styling tmp = point_of_interest->Get_Style();
 
+        // Use the retrieved style as a reference for evaluation
         Styling& reference_style = tmp;
 
+        // Evaluate each dynamic attribute against the reference style
         Position.Evaluate(&reference_style);
         Width.Evaluate(&reference_style);
         Height.Evaluate(&reference_style);
@@ -305,6 +320,18 @@ namespace GGUI{
         Align.Evaluate(&reference_style);
     }
 
+    /**
+     * Embeds the styles of the current styling object into the element.
+     * 
+     * This function is used to embed the styles of the current styling object into the element.
+     * It takes the element as a parameter and embeds the styles into it.
+     * The styles are embedded by looping through the un_parsed_styles list and calling the Embed_Value function on each attribute.
+     * The Embed_Value function is responsible for embedding the attribute into the element.
+     * The changes to the element are recorded in the changes variable, which is of type STAIN.
+     * The type of the changes is then added to the element's stains list.
+     * The function returns nothing.
+     * @param owner The element to which the styles will be embedded.
+     */
     void Styling::Embed_Styles(Element* owner){
         STYLING_INTERNAL::style_base* current_attribute = un_parsed_styles;
 

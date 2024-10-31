@@ -105,13 +105,26 @@ namespace GGUI{
             static const std::string RESET_CONSOLE = ESC_CODE + "c";
             static const std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;  // Basically same as RESET_SGR but baked the end command into it for Super_String
 
+            /**
+             * @brief Enable or disable a private SGR feature
+             * 
+             * @param command The SGR command to enable or disable
+             * @param Enable If true, enable the feature. Otherwise, disable it.
+             * @return A Super_String object with the correct escape sequence to enable or disable the feature
+             */
             inline Super_String Enable_Private_SGR_Feature(const std::string& command, bool Enable = true) { 
                 Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature);
 
+                // Add the escape code
                 Result.Add(ESC_CODE);
+
+                // Add the private SGR telltale '?'
                 Result.Add('?');
+
+                // Add the command to enable or disable
                 Result.Add(command);
 
+                // Finally, add the enable or disable code
                 if (Enable)
                     Result.Add('h');
                 else
@@ -120,15 +133,25 @@ namespace GGUI{
                 return Result;
             }
 
+
             // SGR (Select Graphic Rendition)
             
-            // Since most of the SGR have the disable code after 20, we can make a pair of helper functions.
-            // Also usually only those with pair of enable and disable codes are supported widely.
+            /**
+             * @brief Enable a SGR feature
+             * 
+             * @param command The command to enable
+             * @return A Super_String object with the correct escape sequence to enable the feature
+             */
             inline Super_String Enable_SGR_Feature(const std::string& command) {
                 Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature);
 
+                // Add the escape code
                 Result.Add(ESC_CODE);
+
+                // Add the command to enable
                 Result.Add(command);
+
+                // Add the end command
                 Result.Add(END_COMMAND);
 
                 return Result;

@@ -366,17 +366,47 @@ namespace GGUI{
         Align_Center = 1 << 8,
     };
     
+    /**
+     * @brief Operator to combine two flags.
+     * @details
+     * This function takes two flags and returns a new flag that is the result of a
+     * binary OR operation on the two input flags.
+     * @param[in] a The first flag.
+     * @param[in] b The second flag.
+     * @return The result of the binary OR operation on the two input flags.
+     */
     inline Flags operator|(Flags a, Flags b){
         return static_cast<Flags>(static_cast<int>(a) | static_cast<int>(b));
     }
 
+
+    /**
+     * @brief Checks if all the flags in 'b' are set in 'a'.
+     * @details
+     * This function takes two flags and returns true if all the flags in 'b'
+     * are set in 'a'. Otherwise, it returns false.
+     * @param[in] a The first flag.
+     * @param[in] b The second flag.
+     * @return True if all the flags in 'b' are set in 'a', false otherwise.
+     */
     inline bool Is(Flags a, Flags b){
         return ((int)a & (int)b) == (int)b;
     }
 
+
+    /**
+     * @brief Checks if any of the flags in 'b' are set in 'a'.
+     * @details
+     * This function takes two flags and returns true if any of the flags in 'b'
+     * are set in 'a'. Otherwise, it returns false.
+     * @param[in] a The first flag.
+     * @param[in] b The second flag.
+     * @return True if any of the flags in 'b' are set in 'a', false otherwise.
+     */
     inline bool Has(Flags a, Flags b){
         return ((int)a & (int)b) != 0;
     }
+
 
     enum class State{
         UNKNOWN,

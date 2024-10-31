@@ -41,25 +41,41 @@ namespace GGUI{
         // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Color
         void Get_Colour_As_Super_String(Super_String* Result) const;
     
-        std::string Get_Over_Head(bool Is_Text_Color = true) const{
-            if(Is_Text_Color){
+        /**
+         * @brief Generates an ANSI escape code for setting text or background color using RGB values.
+         * 
+         * @param Is_Text_Color Determines whether the escape code is for text color (true) or background color (false).
+         * @return A string containing the ANSI escape code for the specified color type.
+         */
+        std::string Get_Over_Head(bool Is_Text_Color = true) const {
+            if (Is_Text_Color) {
+                // Return escape code for text color
                 return Constants::ANSI::ESC_CODE + Constants::ANSI::TEXT_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
-            }
-            else{
+            } else {
+                // Return escape code for background color
                 return Constants::ANSI::ESC_CODE + Constants::ANSI::BACKGROUND_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
             }
         }
 
-        // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Over_Head
-        void Get_Over_Head_As_Super_String(Super_String* Result, bool Is_Text_Color = true) const{
-            if (Is_Text_Color){
+        /**
+         * @brief Populates a Super_String with ANSI escape codes for text or background color.
+         * 
+         * This function adds the escape codes for either text or background color to the provided Super_String.
+         * Ensure that the Result has been initialized with at least Maximum_Needed_Pre_Allocation_For_Over_Head.
+         * 
+         * @param Result A pointer to the Super_String to populate with escape codes.
+         * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
+         */
+        void Get_Over_Head_As_Super_String(Super_String* Result, bool Is_Text_Color = true) const {
+            if (Is_Text_Color) {
+                // Add escape codes for text color
                 Result->Add(Constants::ANSI::ESC_CODE);
                 Result->Add(Constants::ANSI::TEXT_COLOR);
                 Result->Add(Constants::ANSI::SEPARATE);
                 Result->Add(Constants::ANSI::USE_RGB);
                 Result->Add(Constants::ANSI::SEPARATE);
-            }
-            else{
+            } else {
+                // Add escape codes for background color
                 Result->Add(Constants::ANSI::ESC_CODE);
                 Result->Add(Constants::ANSI::BACKGROUND_COLOR);
                 Result->Add(Constants::ANSI::SEPARATE);
@@ -194,37 +210,61 @@ namespace GGUI{
         static constexpr RGB DARK_GRAY = RGB(64, 64, 64, true);
     }
 
-    // Linear interpolation function
+    /**
+     * Linear interpolation function
+     * @param a The start value
+     * @param b The end value
+     * @param t The interpolation value, between 0 and 1
+     * @return The interpolated value
+     */
     template<typename T>
     constexpr T lerp(T a, T b, T t) {
         // Clamp t between a and b
         return a + t * (b - a);
     }
 
-    // Gamma corrected Lerp
+    /**
+     * @brief Performs gamma-corrected linear interpolation between two values.
+     * 
+     * @tparam T The type of the input values.
+     * @tparam P The type of the interpolation factor.
+     * @param a The start value.
+     * @param b The end value.
+     * @param t The interpolation factor, typically between 0 and 1.
+     * @return The interpolated value, gamma-corrected and cast back to type T.
+     */
     template<typename T, typename P>
-    constexpr T Interpolate(T a, T b, P t){
-        // Define gamma
+    constexpr T Interpolate(T a, T b, P t) {
+        // Define gamma value for correction
         constexpr float gamma = 2.2F;
 
-        // Setup the gamma correction
+        // Apply gamma correction to input values
         const float a_f = std::pow(static_cast<float>(a), gamma);
         const float b_f = std::pow(static_cast<float>(b), gamma);
 
-        // Interpolate the values
+        // Perform linear interpolation on gamma-corrected values
         const float c_f = lerp<float>(a_f, b_f, t);
 
-        // Return the float back into the original type
+        // Reverse gamma correction and cast back to original type
         return static_cast<T>(std::pow(c_f, 1.F / gamma));
     }
 
+    /**
+     * @brief Interpolates between two RGB colors using linear interpolation.
+     * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
+     * @param A The start RGB color.
+     * @param B The end RGB color.
+     * @param Distance The interpolation factor, typically between 0 and 1.
+     * @return The interpolated RGB color.
+     */
     constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance) {
-        if (SETTINGS::ENABLE_GAMMA_CORRECTION){
+        if (SETTINGS::ENABLE_GAMMA_CORRECTION) {
+            // Apply gamma correction to input values
             A.Red = Interpolate(A.Red, B.Red, Distance);
             A.Green = Interpolate(A.Green, B.Green, Distance);
             A.Blue = Interpolate(A.Blue, B.Blue, Distance);
-        }
-        else{
+        } else {
+            // Perform linear interpolation on input values
             A.Red = lerp<unsigned char>(A.Red, B.Red, Distance);
             A.Green = lerp<unsigned char>(A.Green, B.Green, Distance);
             A.Blue = lerp<unsigned char>(A.Blue, B.Blue, Distance);

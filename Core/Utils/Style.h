@@ -96,22 +96,40 @@ namespace GGUI{
                 return *this;
             }
 
-            // Evaluate function
+            /**
+             * Evaluate function
+             * @param parental_value The value to be multiplied by. Only used if the evaluation type is PERCENTAGE.
+             * @return The evaluated value.
+             * @throws std::bad_variant_access If the evaluation type doesn't match the type of the data.
+             * @throws std::invalid_argument If the evaluation type is not supported.
+             */
             T Evaluate(T parental_value) {
                 switch (evaluation_type) {
                     case EVALUATION_TYPE::DEFAULT:
+                        // If the evaluation type is DEFAULT then just return the data without any modification
                         return std::get<T>(data);
                     case EVALUATION_TYPE::PERCENTAGE:
+                        // If the evaluation type is PERCENTAGE then multiply the parental value by the data and return the result
                         return static_cast<T>(static_cast<T>(parental_value) * std::get<float>(data));
                     default:
                         Report_Stack("Evaluation type not supported!");
+                        // If the evaluation type is not supported then just return the data without any modification
                         return std::get<T>(data);
                 }
             }
 
+            /**
+             * Get the value of the variant.
+             * @tparam P The type to cast the variant to.
+             * @return The value of the variant as the requested type.
+             * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
+             */
             template<typename P>
             constexpr P Get() const {
-                // check at compile time if the compiler is compiling with debug or release flags, if debug then enable data type check
+                /**
+                 * In debug mode, check if the requested type matches the type of the data.
+                 * If it doesn't, throw an exception.
+                 */
                 #ifdef _DEBUG
                 if (!std::holds_alternative<P>(data)) {
                     Report_Stack("Value is not of the requested type!");
@@ -121,10 +139,18 @@ namespace GGUI{
                 return std::get<P>(data);  // In release mode, or after the check passes in debug mode
             }
 
-            // Getter methods
+            /**
+             * Getter methods
+             * @tparam P The type to cast the variant to.
+             * @return The value of the variant as the requested type.
+             * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
+             */
             template<typename P>
             inline P Get() {                
-                // check at compile time if the compiler is compiling with debug or release flags, if debug then enable data type check
+                /**
+                 * In debug mode, check if the requested type matches the type of the data.
+                 * If it doesn't, throw an exception.
+                 */
                 #ifdef _DEBUG
                 if (!std::holds_alternative<P>(data)) {
                     Report_Stack("Value is not of the requested type!");
@@ -174,6 +200,11 @@ namespace GGUI{
 
             virtual ~style_base();
 
+            /**
+             * Overload the | operator to allow for appending of style_bases.
+             * @param other The style_base to append.
+             * @return A pointer to the style_base that was appended to.
+             */
             style_base* operator|(style_base* other){
                 Other = other;
 

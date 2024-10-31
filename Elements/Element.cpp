@@ -1718,21 +1718,29 @@ std::vector<GGUI::UTF>& GGUI::Element::Postprocess(){
     return Post_Process_Buffer;
 }
 
+/**
+ * @brief
+ * This function determines if the given element is a direct child of this element (in the DOM tree),
+ * and if it is visible on the screen (does not go out of bounds of the parent element).
+ * @param other Child element to check
+ * @return True if the child element is visible within the bounds of the parent.
+ */
 bool GGUI::Element::Child_Is_Shown(Element* other){
 
+    // Check if the element has a border
     bool Border_Modifier = (Has_Border() - other->Has_Border()) && Has_Border();
 
-    // Check if the child element is atleast above the {0, 0} 
+    // Calculate the minimum and maximum coordinates of the child element
     int Minimum_X = other->Style->Position.Get().X + other->Get_Processed_Width();
     int Minimum_Y = other->Style->Position.Get().Y + other->Get_Processed_Height();
-
-    // Check even if the child position is way beyond the parent width and height, if only the shadow for an example is still shown.
     int Maximum_X = other->Style->Position.Get().X - (other->Get_Width() - other->Get_Processed_Width());
     int Maximum_Y = other->Style->Position.Get().Y - (other->Get_Height() - other->Get_Processed_Height());
 
+    // Check if the child element is visible within the bounds of the parent
     bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < (signed)Get_Width() - Border_Modifier;
     bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < (signed)Get_Height() - Border_Modifier;
 
+    // Return true if the child element is visible within the bounds of the parent
     return X_Is_Inside && Y_Is_Inside;
 }
 

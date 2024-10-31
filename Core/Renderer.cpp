@@ -78,45 +78,73 @@ namespace GGUI{
 
     Atomic::Guard<Carry> Carry_Flags; 
 
-    bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width, int A_Height, int B_Width, int B_Height){
+    /// @brief Checks if two rectangular areas, defined by their positions and dimensions, collide.
+    /// @param A The top-left corner position of the first rectangle.
+    /// @param B The top-left corner position of the second rectangle.
+    /// @param A_Width Width of the first rectangle.
+    /// @param A_Height Height of the first rectangle.
+    /// @param B_Width Width of the second rectangle.
+    /// @param B_Height Height of the second rectangle.
+    /// @return True if the rectangles collide, false otherwise.
+    bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width, int A_Height, int B_Width, int B_Height) {
+        // Check if the rectangles overlap in the x-axis and y-axis
         return (
-            A.X < B.X + B_Width &&
-            A.X + A_Width > B.X &&
-            A.Y < B.Y + B_Height &&
-            A.Y + A_Height > B.Y
+            A.X < B.X + B_Width &&   // A's right edge is beyond B's left edge
+            A.X + A_Width > B.X &&   // A's left edge is before B's right edge
+            A.Y < B.Y + B_Height &&  // A's bottom edge is below B's top edge
+            A.Y + A_Height > B.Y     // A's top edge is above B's bottom edge
         );
     }
 
-    bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity){
+    /// @brief Checks if two rectangular areas, defined by their positions and dimensions, collide.
+    /// @param a The first element.
+    /// @param b The second element.
+    /// @param Identity If a is the same as b, return this flag. Defaults into true.
+    /// @return True if the rectangles collide, false otherwise.
+    bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity = true) {
         if (a == b)
             return Identity;    // For custom purposes, defaults into true
-            
-        return Collides(a->Get_Absolute_Position(), b->Get_Absolute_Position(), a->Get_Width(), a->Get_Height(), b->Get_Width(), b->Get_Height());
+
+        return Collides(
+            a->Get_Absolute_Position(), b->Get_Absolute_Position(),
+            a->Get_Width(), a->Get_Height(), b->Get_Width(), b->Get_Height()
+        );
     }
 
-    bool Collides(GGUI::Element* a, GGUI::IVector3 b){
+    /// @brief Checks if a rectangular area, defined by an element's position and dimensions, collides with a point.
+    /// @param a The element.
+    /// @param b The point represented as a 3D vector.
+    /// @return True if the element's area collides with the point, false otherwise.
+    bool Collides(GGUI::Element* a, GGUI::IVector3 b) {
+        // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
         return Collides(a->Get_Absolute_Position(), b, a->Get_Width(), a->Get_Height(), 1, 1);
     }
 
+    /// @brief Recursively searches for an element at a given position.
+    /// @param c The position to search for.
+    /// @param Parent The parent element to search in.
+    /// @return The element at the given position, or nullptr if none was found.
     Element* Get_Accurate_Element_From(IVector3 c, Element* Parent){
-        
         //first check if the c is in bounds of Parent.
         if (!Collides(Parent, c)){
             return nullptr;
         }
 
+        // Check all the child elements of the parent.
         for (auto child : Parent->Get_Childs()){
             if (Collides(child, c)){
+                // If a child element contains the position, search in the child element.
                 return Get_Accurate_Element_From(c, child);
             }
         }
 
+        // If no child element contains the position, return the parent element.
         return Parent;
     }
 
+    /// @brief Finds the element directly above the current element the mouse is hovering over.
+    /// @return The position of the upper element, or the position of the current element if none is found.
     IVector3 Find_Upper_Element(){
-
-        //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
@@ -126,7 +154,7 @@ namespace GGUI{
 
         IVector3 tmp_c = Current_Element->Get_Position();
 
-        tmp_c.Y--;
+        tmp_c.Y--;  // Move one pixel up
 
         Element* Upper_Element = Get_Accurate_Element_From(tmp_c, Main);
 
@@ -137,8 +165,9 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
+    /// @brief Finds the element directly below the current element the mouse is hovering over.
+    /// @return The position of the lower element, or the position of the current element if none is found.
     IVector3 Find_Lower_Element(){
-        //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
@@ -159,8 +188,9 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
+    /// @brief Finds the element directly left of the current element the mouse is hovering over.
+    /// @return The position of the left element, or the position of the current element if none is found.
     IVector3 Find_Left_Element(){
-        //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
@@ -170,19 +200,23 @@ namespace GGUI{
 
         IVector3 tmp_c = Current_Element->Get_Position();
 
+        // Move one pixel to the left
         tmp_c.X--;
 
         Element* Left_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Left_Element && Left_Element != (Element*)&Main){
+            // If a left element is found, return its position
             return Left_Element->Get_Position();
         }
 
+        // If no left element is found, return the current element's position
         return Current_Element->Get_Position();
     }
 
+    /// @brief Finds the element directly right of the current element the mouse is hovering over.
+    /// @return The position of the right element, or the position of the current element if none is found.
     IVector3 Find_Right_Element(){
-        //finds what element is upper relative to this element that the mouse is hovering on top of.
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
 
@@ -192,17 +226,24 @@ namespace GGUI{
 
         IVector3 tmp_c = Current_Element->Get_Position();
 
+        // Move one pixel to the right
         tmp_c.X += Current_Element->Get_Width();
 
         Element* Right_Element = Get_Accurate_Element_From(tmp_c, Main);
 
         if (Right_Element && Right_Element != (Element*)&Main){
+            // If a right element is found, return its position
             return Right_Element->Get_Position();
         }
 
+        // If no right element is found, return the current element's position
         return Current_Element->Get_Position();
     }
 
+    /// @brief Finds the closest element to the given position from the given candidates.
+    /// @param start The position to start from.
+    /// @param Candidates The list of elements to check from.
+    /// @return The closest element to the given position.
     Element* Find_Closest_Absolute_Element(IVector3 start, std::vector<Element*> Candidates){
         // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
         // If they are, check if they collide with any element.
@@ -214,12 +255,14 @@ namespace GGUI{
 
         Element* Best_Candidate = nullptr;
         float Shortest_Distance = std::numeric_limits<float>::max();
+        IVector3 CC; // Center of Candidate
 
         for (auto& candidate : Candidates){
             if (!candidate) 
                 continue;   // Incase of event handlers with their stupid empty host.
+
             // Calculate the distance between the candidate position and the start position
-            IVector3 CC = candidate->Get_Absolute_Position();
+            CC = candidate->Get_Absolute_Position();
             float Distance = std::sqrt(std::pow(CC.X - start.X, 2) + std::pow(CC.Y - start.Y, 2));
 
             if (Distance < Shortest_Distance){
@@ -231,10 +274,18 @@ namespace GGUI{
         return Best_Candidate;
     }
 
+    /// @brief Calculates the minimum of two signed long long integers.
+    /// @param a The first value to compare.
+    /// @param b The second value to compare.
+    /// @return The minimum of the two values.
     signed long long Min(signed long long a, signed long long b){
         return a < b ? a : b;
     }
 
+    /// @brief Calculates the maximum of two signed long long integers.
+    /// @param a The first value to compare.
+    /// @param b The second value to compare.
+    /// @return The maximum of the two values.
     signed long long Max(signed long long a, signed long long b){
         return a > b ? a : b;
     }
@@ -243,7 +294,13 @@ namespace GGUI{
     #include <windows.h>
     #include <DbgHelp.h>
 
+    /// @brief A platform-specific sleep function.
+    /// @param mm The number of milliseconds to sleep for.
+    /// @details This function is used to pause the execution of the program for a specified amount of time.
+    ///          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
+    ///          while on Linux and macOS it calls the usleep function.
     void SLEEP(unsigned int mm){
+        /// Sleep for the specified amount of milliseconds.
         Sleep(mm);
     }
 
@@ -260,23 +317,35 @@ namespace GGUI{
     INPUT_RECORD Raw_Input[Raw_Input_Capacity];
     int Raw_Input_Size = 0;
 
+    /// @brief A function to render a frame.
+    /// @details This function is called from the event loop. It renders the frame by writing the Frame_Buffer data to the console.
+    ///          It also moves the cursor to the top left corner of the screen.
     void Render_Frame(){
+        // The number of bytes written to the console, not used anywhere else.
         unsigned long long tmp = 0;
+        // Move the cursor to the top left corner of the screen.
         SetConsoleCursorPosition(GLOBAL_STD_OUTPUT_HANDLE, {0, 0});
+        // Write the Frame_Buffer data to the console.
         WriteFile(GLOBAL_STD_OUTPUT_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
     }
 
+    /// @brief Updates the maximum width and height of the console.
+    /// @details This function is used to get the maximum width and height of the console.
+    ///          It is called from the Query_Inputs function.
     void Update_Max_Width_And_Height(){
+        // Get the console information.
         CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
 
+        // Update the maximum width and height.
         Max_Width = info.srWindow.Right - info.srWindow.Left + 1;
-        Max_Height = info.srWindow.Bottom - info.srWindow.Top + 1;  // this doesn't take into consideration of politics
+        Max_Height = info.srWindow.Bottom - info.srWindow.Top + 1;
 
+        // Check if we got the console information correctly.
         if (Max_Width == 0 || Max_Height == 0){
             Report("Failed to get console info!");
         }
-        
-        // Check that Outbox is not active.
+
+        // Check that the main window is not active and if so, set its dimensions.
         if (Main)
             Main->Set_Dimensions(Max_Width, Max_Height);
     }
@@ -284,11 +353,17 @@ namespace GGUI{
     void Update_Frame(bool Lock_Event_Thread);
     //Is called on every cycle.
 
+    /// @brief A function to reverse-engineer keybinds.
+    /// @param keybind_value The value of the key to reverse-engineer.
+    /// @return The reversed keybind value.
+    /// @details This function is used to reverse-engineer keybinds. It checks if the keybind is in the known keybinding table.
+    ///          If it is, it returns the reversed keybind value. If not, it returns the normal value.
     char Reverse_Engineer_Keybinds(char keybind_value){
         // The current known keybinding table:
+
         /*
             CTRL+SHIFT+I => TAB
-
+            // TODO: Add more keybinds to the table
         */
 
         if (KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && KEYBOARD_STATES[BUTTON_STATES::SHIFT].State){
@@ -301,7 +376,9 @@ namespace GGUI{
         return keybind_value;
     }
 
-    // Awaits for user input, will not translate, use Translate_Inputs for that.
+    /// @brief Waits for user input, will not translate, use Translate_Inputs for that.
+    /// @details This function waits for user input and stores it in the Raw_Input array.
+    ///          It is called from the event loop.
     void Query_Inputs(){
         // For appending to already existing buffered input which has not yet been processed, we can use the previous Raw_Input_Size to deduce the new starting point.
         INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
@@ -309,6 +386,7 @@ namespace GGUI{
         // Ceil the value so that negative numbers wont create overflows.
         unsigned int Current_Usable_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
 
+        // Read the console input and store it in Raw_Input.
         ReadConsoleInput(
             GLOBAL_STD_INPUT_HANDLE,
             Current_Starting_Address,
@@ -318,6 +396,8 @@ namespace GGUI{
     }
 
     // Continuation of Query_Input, while differentiate the execute timings.
+    /// @brief Translate the input events stored in Raw_Input into Input objects.
+    /// @details This function is used to translate the input events stored in Raw_Input into Input objects. It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. Finally, it resets the Raw_Input_Size to 0.
     void Translate_Inputs(){
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
@@ -437,33 +517,49 @@ namespace GGUI{
         Raw_Input_Size = 0;
     }
 
+
     namespace Constants{
         namespace ANSI{
             inline int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
         }
     }
 
+    /// @brief Initializes platform-specific settings for console handling.
+    /// @details This function sets up the console handles and modes required for input and output operations.
+    ///          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
+    ///          handling specific ANSI features.
     void Init_Platform_Stuff(){
         // Save the STD handles to prevent excess calls.
         GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
         GLOBAL_STD_INPUT_HANDLE = GetStdHandle(STD_INPUT_HANDLE);
 
+        // Retrieve and store previous console modes for restoration upon exit.
         GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &PREVIOUS_CONSOLE_OUTPUT_STATE);
         GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
 
+        // Set new console modes with extended flags, mouse, and window input enabled.
         SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, -1);
-        SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
+        SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT);
 
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String() + Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
+        // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String() 
+                  << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
         std::cout.flush();
 
+        // Set the console output code page to UTF-8 mode.
         SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
 
+        // Mark the platform as initialized.
         Platform_Initialized = true;
     }
 
-    CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info(){
-        if (GLOBAL_STD_OUTPUT_HANDLE == 0){
+    /// @brief Retrieves the console screen buffer information.
+    /// @details This function retrieves the console screen buffer information using the GetConsoleScreenBufferInfo function.
+    ///          It first checks if the GLOBAL_STD_OUTPUT_HANDLE has been set, and if not, it sets it by calling GetStdHandle.
+    ///          It then calls GetConsoleScreenBufferInfo and if the call fails, it will report the error.
+    /// @return The console screen buffer information.
+    CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info() {
+        if (GLOBAL_STD_OUTPUT_HANDLE == 0) {
             GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
         }
 
@@ -471,7 +567,6 @@ namespace GGUI{
 
         // first get the size of the file
         if (!GetConsoleScreenBufferInfo(GLOBAL_STD_OUTPUT_HANDLE, &Result)){
-
             int Last_Error = GetLastError();
 
             Report("Failed to get console info: " + std::to_string(Last_Error));
@@ -480,20 +575,29 @@ namespace GGUI{
         return Result;
     }
 
+    /// @brief Reads the entire console screen buffer.
+    /// @details This function reads the entire console screen buffer and returns it as a vector of characters.
+    ///          It first gets the console screen buffer information using GetConsoleScreenBufferInfo.
+    ///          It then allocates a vector of CHAR_INFO structures with the same size as the screen buffer.
+    ///          It then calls ReadConsoleOutput to read the console screen buffer into the vector of CHAR_INFO structures.
+    ///          Finally, it loops through the vector of CHAR_INFO structures and copies the AsciiChar member of each structure
+    ///          into the corresponding position in the output vector.
+    /// @return The entire console screen buffer as a vector of characters.
     std::vector<char> Read_Console(){
-        std::vector<char> Buffer;
-        std::vector<CHAR_INFO> Fake_Buffer;
-
+        // Get the console screen buffer information
         CONSOLE_SCREEN_BUFFER_INFO Info = Get_Console_Info();
 
-        Buffer.resize(Info.dwSize.X * Info.dwSize.Y);
-        Fake_Buffer.resize(Info.dwSize.X * Info.dwSize.Y);
+        // Allocate a vector of CHAR_INFO structures with the same size as the screen buffer
+        std::vector<char> Buffer(Info.dwSize.X * Info.dwSize.Y);
+        std::vector<CHAR_INFO> Fake_Buffer(Info.dwSize.X * Info.dwSize.Y);
 
-        // The area to read:
+        // The area to read
         SMALL_RECT rect {0,0, Info.dwSize.X-1, Info.dwSize.Y} ; // the console screen (buffer) region to read from (120x4)
+
+        // Read the console screen buffer into the vector of CHAR_INFO structures
         ReadConsoleOutput( GLOBAL_STD_OUTPUT_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size cols x rows*/, {0,0} /*buffer top,left*/, &rect );
 
-        // now transform all the data from CHAR_INFO to char
+        // Copy the AsciiChar member of each CHAR_INFO structure into the corresponding position in the output vector
         for (unsigned int i = 0; i < Fake_Buffer.size(); i++){
             Buffer[i] = Fake_Buffer[i].Char.AsciiChar;
         }
@@ -501,33 +605,54 @@ namespace GGUI{
         return Buffer;
     }
 
+    /// @brief De-initializes platform-specific settings and resources.
+    /// @details This function restores console modes to their previous states, cleans up file stream handles,
+    ///          and disables specific ANSI features. It ensures that any platform-specific settings are reset
+    ///          before the application exits.
     void De_Initialize(){
-        // Also handles STD_COUT capture restorations.
+        // Clean up file stream handles
         for (auto File_Handle : File_Streamer_Handles){
-            File_Handle.second->~FILE_STREAM();
+            File_Handle.second->~FILE_STREAM(); // Manually call destructor to release resources
         }
 
+        // Restore previous console modes
         SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
         SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
 
+        // Disable specific ANSI features and restore screen
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
-        std::cout << std::flush;
+        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();
+        std::cout << std::flush; // Ensure all output is flushed to console
     }
 
+    /// @brief Cleanly exits the GGUI library.
+    /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.
+    ///          It ensures that any platform-specific settings are reset before the application exits.
+    /// @param signum The exit code to return to the operating system.
     void Exit(int signum){
+        // Clean up platform-specific resources and settings
         De_Initialize();
 
+        // Exit the application with the specified exit code
         exit(signum);
     }
 
-    // For getting all font files:
+
+    /// @brief Retrieves a list of font files from the Windows registry.
+    /// @details This function retrieves a list of font files from the Windows registry.
+    ///          It first opens the "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" key in the registry,
+    ///          and then enumerates all the values in the key.
+    ///          Each value is a string containing the path to a font file.
+    ///          The function returns a vector of strings containing all the font files found in the registry.
     std::vector<std::string> Get_List_Of_Font_Files() {
         std::vector<std::string> Result;
+
+        // Open the "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" key in the registry
         HKEY hKey;
         if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
             DWORD cValues; 
+            // Get the number of values in the key
             RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL, &cValues, NULL, NULL, NULL, NULL);
             for (DWORD i = 0; i < cValues; i++) {
                 char valueName[1024];
@@ -535,67 +660,85 @@ namespace GGUI{
                 BYTE valueData[1024];
                 DWORD valueDataSize = 1024;
                 DWORD valueType;
+                // Enumerate the values in the key
                 if (RegEnumValue(hKey, i, valueName, &valueNameSize, NULL, &valueType, valueData, &valueDataSize) == ERROR_SUCCESS) {
-                    // add the file to the Result list.
+                    // Add the file to the Result list
                     Result.push_back((char*)valueData);
                 }
             }
+            // Close the key
             RegCloseKey(hKey);
         }
 
         return Result;
     }
 
-    void Report_Stack(std::string Problem){
+    /// @brief Reports the current stack trace along with a specified problem description.
+    /// @details This function captures the call stack, symbolically resolves the addresses, and formats the stack trace.
+    ///          The resulting formatted trace is then reported along with the provided problem description.
+    /// @param Problem A description of the problem to be reported with the stack trace.
+    void Report_Stack(std::string Problem) {
         const int Stack_Trace_Depth = 10;
         void* Ptr_Table[Stack_Trace_Depth];
         unsigned short Usable_Depth;
         SYMBOL_INFO* symbol;
         HANDLE process;
 
+        // Get the current process handle
         process = GetCurrentProcess();
 
+        // Initialize the symbol handler for the process
         SymInitialize(process, NULL, TRUE);
+
+        // Capture the stack backtrace
         Usable_Depth = CaptureStackBackTrace(0, Stack_Trace_Depth, Ptr_Table, NULL);
+
+        // Allocate memory for a SYMBOL_INFO structure with space for a name
         symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
         symbol->MaxNameLen = 255;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
-        if (Max_Width == 0){
+        // Update maximum width and height if not already set
+        if (Max_Width == 0) {
             Update_Max_Width_And_Height();
         }
 
+        // Initialize result string with a header
         std::string Result = "Stack Trace:\n";
         int Usable_Stack_Index = 0;
         bool Use_Indent = Usable_Depth < (Max_Width / 2);
-        for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
+
+        // Iterate over the captured stack frames
+        for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++) {
+            // Resolve the symbol from the address
             SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol);
 
-            // check if the symbol->name is empty, if so then skip
+            // Skip empty symbol names
             if (symbol->Name[0] == 0)
                 continue;
 
-            std::string Branch_Start = "|"; //SYMBOLS::VERTICAL_RIGHT_CONNECTOR;    // No UNICODE support ATM
-
-            // For last branch use different branch start symbol
+            // Determine the branch start symbol
+            std::string Branch_Start = "|";
             if (Stack_Index == (unsigned int)Usable_Depth - 1)
-                Branch_Start = "\\"; //SYMBOLS::BOTTOM_LEFT_CORNER;                  // No UNICODE support ATM
+                Branch_Start = "\\";
 
-            // now add indentation by the amount of index:
+            // Create indentation for the current stack level
             std::string Indent = "";
-
             for (int i = 0; i < Usable_Stack_Index && Use_Indent; i++)
-                Indent += "-"; //SYMBOLS::HORIZONTAL_LINE;                          // No UNICODE support ATM
+                Indent += "-";
 
+            // Append the formatted stack frame info to the result
             Result += Branch_Start + Indent + " " + symbol->Name + "\n";
-
             Usable_Stack_Index++;
         }
 
+        // Free allocated memory for symbol
         free(symbol);
 
+        // Append the problem description to the result
         Result += "Problem: " + Problem;
 
+        // Report the final result
         Report(Result);
     }
 
@@ -613,77 +756,125 @@ namespace GGUI{
     unsigned char Raw_Input[Raw_Input_Capacity];
     unsigned int Raw_Input_Size = 0;
 
+    /**
+     * @brief De-initializes platform-specific settings and resources.
+     * @details This function restores console modes to their previous states, cleans up file stream handles,
+     *          and disables specific ANSI features. It ensures that any platform-specific settings are reset
+     *          before the application exits.
+     */
     void De_Initialize(){
-        // Also handles STD_COUT capture restorations.
+        // Restore previous console modes
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
         }
 
+        // Restore default cursor visibility
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
+
+        // Disable mouse event reporting
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+
+        // Disable screen capture
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
         std::cout << std::flush;
 
+        // Restore previous file descriptor flags
         fcntl(STDIN_FILENO, F_SETFL, Previous_Flags); // set non-blocking flag
+
+        // Restore previous terminal attributes
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
     }
 
+    /**
+     * @brief De-initializes platform-specific settings and resources and exits the application.
+     * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
+     *          It ensures that any platform-specific settings are reset before the application exits.
+     * @param signum The exit code for the application.
+     */
     void Exit(int signum){
 
         De_Initialize();
 
+        // Exit the application with the specified exit code
         exit(signum);
     }
 
+    /// @brief A cross-platform sleep function using nanosleep.
+    /// @param mm The number of milliseconds to sleep for.
+    /// @details This function pauses the execution of the program for a specified amount of time using nanosleep.
+    ///          It breaks down the milliseconds into seconds and nanoseconds for the timespec structure and handles
+    ///          any interruptions by retrying the nanosleep with the remaining time.
     void SLEEP(unsigned int mm){
-        // use nanosleep
+        // Define timespec structure for the required sleep duration
         struct timespec req = {0, 0};
+        // Calculate seconds from milliseconds
         time_t sec = (int)(mm / 1000);
+        // Calculate remaining milliseconds
         mm = mm - (sec * 1000);
+        // Set the seconds and nanoseconds in the timespec structure
         req.tv_sec = sec;
         req.tv_nsec = mm * 1000000L;
+        // Repeatedly call nanosleep until the sleep duration is fully elapsed
         while(nanosleep(&req, &req) == -1)
             continue;
     }
 
-    // Renders contents of Frame_Buffer into the STDOUT.
+    /**
+     * @brief Renders the contents of the Frame_Buffer to the standard output (STDOUT).
+     * @details This function moves the cursor to the top-left corner of the terminal, flushes the output
+     *          buffer to ensure immediate writing, and writes the contents of the Frame_Buffer to STDOUT.
+     *          If the write operation fails or writes fewer bytes than expected, an error message is reported.
+     */
     void Render_Frame() {
-        // Move cursor to top-left corner
-        // Previously used: Constants::CLEAR_SCROLLBAR + As a prefix to clear the history, when it was accumulating, but lately tests point this to be useless.
+        // Move the cursor to the top-left corner of the terminal
         printf("%s", Constants::ANSI::SET_CURSOR_TO_START.c_str());
 
-        // Flush the output to ensure it's written immediately
+        // Flush the output buffer to ensure it's written immediately
         fflush(stdout);
 
+        // Write the contents of Frame_Buffer to STDOUT
         int Error = write(STDOUT_FILENO, Frame_Buffer.data(), Frame_Buffer.size());
 
-        if (Error != (signed)Frame_Buffer.size()){
+        // Check for write errors or incomplete writes
+        if (Error != (signed)Frame_Buffer.size()) {
             Report("Failed to write to STDOUT: " + std::to_string(Error));
         }
     }
 
+    /**
+     * @brief Updates the maximum width and height of the terminal.
+     * @details This function updates the Max_Width and Max_Height variables by calling ioctl to get the current
+     *          width and height of the terminal. If the call fails, a report message is sent.
+     * @note The height is reduced by 1 to account for the one line of console space taken by the GGUI status bar.
+     */
     void Update_Max_Width_And_Height(){
         struct winsize w;
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1){
+            Report("Failed to get console info!");
+            return;
+        }
 
         Max_Width = w.ws_col;
         Max_Height = w.ws_row - 1;
-        
-        if (Max_Width == 0 || Max_Height == 0){
-            Report("Failed to get console info!");
-        }
 
         // Convenience sake :)
         if (Main)
             Main->Set_Dimensions(Max_Width, Max_Height);
     }
 
+    /**
+     * @brief Adds a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
+     * @details This function sets up a signal handler to detect when the terminal size changes and updates the
+     *          Carry_Flags to indicate that a resize is needed. This is necessary because the render thread needs
+     *          to update the maximum width and height of the terminal whenever a resize occurs.
+     */
     void Add_Automatic_Terminal_Size_Update_Handler(){
         // To automatically update GGUI max dimensions, we need to make an WINCH Signal handler.
         struct sigaction Handler;
         
         // Setup the function handler with a lambda
-        Handler.sa_handler = [](int){
+        Handler.sa_handler = [](int signum){
+            // When the signal is received, update the carry flags to indicate that a resize is needed
             Carry_Flags([](GGUI::Carry& current_carry){
                 current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
             });
@@ -706,7 +897,18 @@ namespace GGUI{
         }
     };
 
-    // Takes in an buffer with hex and octal values and transforms them into printable strings
+    /**
+     * @brief Takes in an buffer with hex and octal values and transforms them into printable strings
+     * @details This function takes in a buffer with hex and octal values and transforms them into printable strings
+     *          for better visualization of the buffer contents.
+     *
+     * @param buffer The buffer to transform into a printable string
+     * @param length The length of the buffer
+     * @param Obfuscate A boolean flag to control whether the buffer contents should be obfuscated or not. If set to true,
+     *                  any non-printable characters in the buffer will be replaced with a space.
+     *
+     * @return A string containing the transformed buffer contents
+     */
     std::string To_String(char* buffer, int length, bool Obfuscate = false){
         std::string Result = "";
 
@@ -727,22 +929,36 @@ namespace GGUI{
         return Result;
     }
 
-    // Contains termios raw terminal keybinds, reverse engineering.
+
+    /**
+     * @brief Reverse-engineers termios raw terminal keybinds.
+     * @param keybind_value The value of the key to reverse-engineer.
+     * @return The reversed keybind value.
+     * @details This function is used to reverse-engineer termios raw terminal keybinds. It checks if the keybind is in the known keybinding table.
+     *          If it is, it returns the reversed keybind value. If not, it returns the normal value.
+     */
     char Reverse_Engineer_Keybinds(char keybind_value){
 
         // SHIFT + TAB => \e[Z
         if (keybind_value == 'Z'){
+            // Set the shift key state to true
             KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+            // Set the tab key state to true
             KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
 
+            // Set the keybind value to 0, to indicate that it has been reversed
             keybind_value = 0;
         }
-
 
         return keybind_value;
     }
 
-    // Is called as soon as possible and gets stuck awaiting for the user input.
+
+    /**
+     * @brief Waits for user input and stores it in the Raw_Input array.
+     * @details This function waits for user input and stores it in the Raw_Input array. It is called from the event loop.
+     *          It is also the function that is called as soon as possible and gets stuck awaiting for the user input.
+     */
     void Query_Inputs(){
         // Add the previous input size into the current offset for cumulative reading.
         unsigned char* Current_Input_Buffer_Location = Raw_Input + Raw_Input_Size;
@@ -757,6 +973,10 @@ namespace GGUI{
         );
     }
 
+    /**
+     * @brief Translate the input events stored in Raw_Input into Input objects.
+     * @details This function is used to translate the input events stored in Raw_Input into Input objects. It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. Finally, it resets the Raw_Input_Size to 0.
+     */
     void Translate_Inputs(){
         // Clean the keyboard states.
         PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
@@ -766,46 +986,46 @@ namespace GGUI{
 
         // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
         // haha code go brrrr -- 2024 gab here, nice joke, although who asked? 
-        for (unsigned int i = 0; i < Raw_Input_Size; i++){
+        for (unsigned int i = 0; i < Raw_Input_Size; i++) {
 
             // Check if SHIFT has been modifying the keys
-            if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')){
+            if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')) {
                 // SHIFT key is pressed
                 Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                 KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
             }
 
             // We now can also check if the letter has been shifted down by CTRL key
-            else if (Raw_Input[i] >= Constants::ANSI::START_OF_CTRL && Raw_Input[i] <= Constants::ANSI::END_OF_CTRL){
+            else if (Raw_Input[i] >= Constants::ANSI::START_OF_CTRL && Raw_Input[i] <= Constants::ANSI::END_OF_CTRL) {
                 // This is a CTRL key
 
                 // The CTRL domain contains multiple useful keys to check for
-                if (Raw_Input[i] == Constants::ANSI::BACKSPACE){
+                if (Raw_Input[i] == Constants::ANSI::BACKSPACE) {
                     // This is a backspace key
                     Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
                     KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
                 }
-                else if (Raw_Input[i] == Constants::ANSI::HORIZONTAL_TAB){
+                else if (Raw_Input[i] == Constants::ANSI::HORIZONTAL_TAB) {
                     // This is a tab key
                     Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
                     KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
                     Handle_Tabulator();
                 }
-                else if (Raw_Input[i] == Constants::ANSI::LINE_FEED){
+                else if (Raw_Input[i] == Constants::ANSI::LINE_FEED) {
                     // This is an enter key
                     Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
                     KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
                 }
 
                 // Shift the key back up
-                char Offset = 'a' -1; // We remove one since the CTRL characters started from 1 and not 0
+                char Offset = 'a' - 1; // We remove one since the CTRL characters started from 1 and not 0
                 Raw_Input[i] = Raw_Input[i] + Offset;
                 KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
             }
 
-            if (Raw_Input[i] == Constants::ANSI::ESC_CODE[0]){
+            if (Raw_Input[i] == Constants::ANSI::ESC_CODE[0]) {
                 // check if there are stuff after this escape code
-                if (i + 1 >= Raw_Input_Size){
+                if (i + 1 >= Raw_Input_Size) {
                     // Clearly the escape key was invoked
                     Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
                     KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
@@ -817,36 +1037,36 @@ namespace GGUI{
                 i++;
 
                 // The current data can either be an ALT key initiative or an escape sequence followed by '['
-                if (Raw_Input[i] == Constants::ANSI::ESC_CODE[1]){
+                if (Raw_Input[i] == Constants::ANSI::ESC_CODE[1]) {
                     // Escape sequence codes:
 
                     // UP, DOWN LEFT, RIGHT keys
-                    if (Raw_Input[i + 1] == 'A'){
+                    if (Raw_Input[i + 1] == 'A') {
                         Inputs.push_back(new GGUI::Input(0, Constants::UP));
                         KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Raw_Input[i + 1] == 'B'){
+                    else if (Raw_Input[i + 1] == 'B') {
                         Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
                         KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Raw_Input[i + 1] == 'C'){
+                    else if (Raw_Input[i + 1] == 'C') {
                         Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
                         KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Raw_Input[i + 1] == 'D'){
+                    else if (Raw_Input[i + 1] == 'D') {
                         Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
                         KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
                         i++;
                     }
-                    else if (Raw_Input[i + 1] == 'M'){  // Decode Mouse handling
+                    else if (Raw_Input[i + 1] == 'M') {  // Decode Mouse handling
                         // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
-                        char Bit_Mask = Raw_Input[i+2]; 
+                        char Bit_Mask = Raw_Input[i + 2];
 
                         // Check if the bit 2'rd has been set, is so then the SHIFT has been pressed
-                        if (Bit_Mask & 4){
+                        if (Bit_Mask & 4) {
                             Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                             KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
                             // also remove the bit from the bitmask
@@ -854,7 +1074,7 @@ namespace GGUI{
                         }
 
                         // Check if the 3'th bit has been set, is so then the SUPER has been pressed
-                        if (Bit_Mask & 8){
+                        if (Bit_Mask & 8) {
                             Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
                             KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(true);
                             // also remove the bit from the bitmask
@@ -862,7 +1082,7 @@ namespace GGUI{
                         }
 
                         // Check if the 4'th bit has been set, is so then the CTRL has been pressed
-                        if (Bit_Mask & 16){
+                        if (Bit_Mask & 16) {
                             Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
                             KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
                             // also remove the bit from the bitmask
@@ -873,9 +1093,9 @@ namespace GGUI{
                         Bit_Mask &= ~32;
 
                         // Check if the 6'th bit has been set, is so then there is a movement event.
-                        if (Bit_Mask & 64){
-                            char X = Raw_Input[i+3];
-                            char Y = Raw_Input[i+4];
+                        if (Bit_Mask & 64) {
+                            char X = Raw_Input[i + 3];
+                            char Y = Raw_Input[i + 4];
 
                             // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
                             Mouse.X = X - 32;
@@ -887,19 +1107,19 @@ namespace GGUI{
                         // Bits 7'th are not widely supported. But clear this bit just in case
                         Bit_Mask &= ~(128);
 
-                        if (Bit_Mask == 0){
+                        if (Bit_Mask == 0) {
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
-                        else if (Bit_Mask == 1){
+                        else if (Bit_Mask == 1) {
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
-                        else if (Bit_Mask == 2){
+                        else if (Bit_Mask == 2) {
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                         }
-                        else if (Bit_Mask == 3){
+                        else if (Bit_Mask == 3) {
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = false;
                             KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
@@ -907,7 +1127,7 @@ namespace GGUI{
 
                         i += 4;
                     }
-                    else if (Raw_Input[i + 1] == 'Z'){
+                    else if (Raw_Input[i + 1] == 'Z') {
                         // SHIFT + TAB => Z
                         Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
                         Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
@@ -919,26 +1139,33 @@ namespace GGUI{
 
                         i++;
                     }
-                
+
                 }
-                else{
+                else {
                     // This is an ALT key
                     Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::ALT));
                     KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
                 }
             }
-            else{
+            else {
                 // Normal character data
                 Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::KEY_PRESS));
             }
 
         }
-    
+
         // We can assume that at the end of user input translation, all buffered inputs are hereby translate and no need to store, so reset offset.
         Raw_Input_Size = 0;
     }
 
+    /**
+     * @brief Initializes platform-specific settings for console handling.
+     * @details This function sets up the console handles and modes required for input and output operations.
+     *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
+     *          handling specific ANSI features.
+     */
     void Init_Platform_Stuff(){
+        // Initialize the console for mouse and window input, and set UTF-8 mode for output.
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String();
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE).To_String();   // for on exit to restore
@@ -946,16 +1173,20 @@ namespace GGUI{
         // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
         std::cout << std::flush;
 
-        // Setup the new flags and take an snapshot of the flags before GGUI
+        // Save the current flags and take an snapshot of the flags before GGUI
         Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-        int flags = O_RDONLY | O_CLOEXEC;
-        fcntl(STDIN_FILENO, F_SETFL, flags); // set non-blocking flag
 
+        // Set non-blocking flag
+        int flags = O_RDONLY | O_CLOEXEC;
+        fcntl(STDIN_FILENO, F_SETFL, flags);
+
+        // Save the current terminal settings
         struct termios Term_Handle;
         tcgetattr(STDIN_FILENO, &Term_Handle);
 
         Previous_Raw = Term_Handle;
 
+        // Set the terminal to raw mode
         Term_Handle.c_lflag &= ~(ECHO | ICANON);
         Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
         Term_Handle.c_cc[VTIME] = 0;    // Suppress automatic returning, since we want the Input_Query() to await until the user has given an input.  
@@ -970,6 +1201,7 @@ namespace GGUI{
         SIGTERM
         */
 
+        // Register the exit handler for the following signals
         struct sigaction* wrapper = new struct sigaction();
         wrapper->sa_handler = Exit;
         sigemptyset(&wrapper->sa_mask);
@@ -987,13 +1219,21 @@ namespace GGUI{
             sigaction(i, wrapper, NULL);
         }
     
+        // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
         Add_Automatic_Terminal_Size_Update_Handler();
     }
 
-    std::vector<std::string> Get_List_Of_Font_Files(){
+
+    /**
+     * @brief Get a list of all font files in the system.
+     *        This function uses the "fc-list" command to get a list of all font files in the system.
+     *        The output is then processed to extract the file names and return them as a vector.
+     * @return A vector of strings containing all the font file names.
+     */
+    std::vector<std::string> Get_List_Of_Font_Files() {
         CMD Handle;
 
-        // we will run the command and it will return us a list of all font file names.
+        // Run the command and store the output in Raw_Result
         std::string Raw_Result = Handle.Run("fc-list -v | grep file");
 
         std::vector<std::string> File_Names;
@@ -1001,11 +1241,11 @@ namespace GGUI{
         std::string temp;
 
         // Process the output line by line
-        while(std::getline(ss, temp, '\n')) {
+        while (std::getline(ss, temp, '\n')) {
             // Extract the file name from each line and add it to the vector
             std::size_t pos = temp.find(": ");
-            if(pos != std::string::npos) {
-                std::string file_name = temp.substr(pos+2);
+            if (pos != std::string::npos) {
+                std::string file_name = temp.substr(pos + 2);
                 File_Names.push_back(file_name);
             }
         }
@@ -1013,12 +1253,19 @@ namespace GGUI{
         return File_Names;
     }
 
-    void Report_Stack(std::string Problem){
+    /**
+     * @brief Reports the current stack trace along with a specified problem description.
+     *        This function captures the call stack, symbolically resolves the addresses, and formats the stack trace.
+     *        The resulting formatted trace is then reported along with the provided problem description.
+     * @param Problem A description of the problem to be reported with the stack trace.
+     */
+    void Report_Stack(std::string Problem) {
         // This is required for GGUI to work in Android, since Androids own STD is primitive in terms of stack tracing.
         // TODO: use Evie to dismantle the running exec stack with name table.
         #ifndef __ANDROID__
             const int Stack_Trace_Depth = 10;
             size_t *Ptr_Table[Stack_Trace_Depth];
+
 
             // Declare a pointer to an array of strings. This will hold the symbol names of the stack trace
             char **Name_Table;
@@ -1029,7 +1276,7 @@ namespace GGUI{
             // Convert the addresses in the stack trace into an array of strings that describe the addresses symbolically
             Name_Table = backtrace_symbols(reinterpret_cast<void**>(Ptr_Table), Usable_Depth);
 
-            if (Max_Width == 0){
+            if (Max_Width == 0) {
                 Update_Max_Width_And_Height();
             }
 
@@ -1037,7 +1284,7 @@ namespace GGUI{
             std::string Result = "Stack Trace:\n";
 
             bool Use_Indent = Usable_Depth < (Max_Width / 2);
-            for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++){
+            for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++) {
                 std::string Branch_Start = "|"; //SYMBOLS::VERTICAL_RIGHT_CONNECTOR;                // No UNICODE support ATM
 
                 // For last branch use different branch start symbol
@@ -1067,104 +1314,157 @@ namespace GGUI{
 
     #endif
 
-    // Since the query inputs wont populate the same inputs on every cycle we need to go through the key states and create new inputs for them :)
-    void Populate_Inputs_For_Held_Down_Keys(){
-        for (auto Key : KEYBOARD_STATES){
+    /**
+     * @brief Populate inputs for keys that are held down.
+     * @details This function iterates over the current keyboard states and creates new input objects
+     *          for keys that are held down and not already present in the inputs list. It skips mouse button keys.
+     */
+    void Populate_Inputs_For_Held_Down_Keys() {
+        for (auto Key : KEYBOARD_STATES) {
 
             // Check if the key is activated
-            if (Key.second.State){
+            if (Key.second.State) {
 
+                // Skip mouse button keys
                 if (BUTTON_STATES::MOUSE_LEFT == Key.first || BUTTON_STATES::MOUSE_RIGHT == Key.first || BUTTON_STATES::MOUSE_MIDDLE == Key.first)
                     continue;
 
-                //Go through the already existing inputs and make sure that it doesn't already exist
+                // Get the constant associated with the key
                 unsigned long long Constant_Key = BUTTON_STATES_TO_CONSTANTS_BRIDGE.at(Key.first);
 
+                // Check if the input already exists
                 bool Found = false;
-                for (auto input : Inputs){
-                    if (input->Criteria == Constant_Key){
+                for (auto input : Inputs) {
+                    if (input->Criteria == Constant_Key) {
                         Found = true;
                         break;
                     }
                 }
 
+                // If not found, create a new input
                 if (!Found)
                     Inputs.push_back(new Input((char)0, Constant_Key));
             }
         }
     }
 
-    void MOUSE_API(){
-        unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
+    /**
+ * @brief Processes mouse input events and updates the input list.
+ * @details This function checks the state of mouse buttons (left, right, and middle)
+ *          and determines if they have been pressed or clicked. It compares the current
+ *          state with the previous state and the duration the button has been pressed.
+ *          Based on these checks, it creates corresponding input objects and adds them
+ *          to the Inputs list.
+ */
+void MOUSE_API() {
+    // Get the duration the left mouse button has been pressed
+    unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+        abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
 
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
-        }
-        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State){
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
-        }
-
-        unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
-
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
-        }
-        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State){
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
-        }
-
-        unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
-
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown){
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
-        }
-        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State){
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
-        }   
+    // Check if the left mouse button is pressed and for how long
+    if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
+    } 
+    // Check if the left mouse button was previously pressed and now released
+    else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State) {
+        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
     }
 
+    // Get the duration the right mouse button has been pressed
+    unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+        abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
+
+    // Check if the right mouse button is pressed and for how long
+    if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
+    }
+    // Check if the right mouse button was previously pressed and now released
+    else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State) {
+        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
+    }
+
+    // Get the duration the middle mouse button has been pressed
+    unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+        abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
+
+    // Check if the middle mouse button is pressed and for how long
+    if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
+    }
+    // Check if the middle mouse button was previously pressed and now released
+    else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State) {
+        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
+    }
+}
+
+    /**
+     * @brief Handles mouse scroll events.
+     * @details This function checks if the mouse scroll up or down button has been pressed and if the focused element is not null.
+     *          If the focused element is not null, it calls the scroll up or down function on the focused element.
+     */
     void SCROLL_API(){
+        // Check if the mouse scroll up button has been pressed
         if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State){
 
+            // If the focused element is not null, call the scroll up function
             if (Focused_On)
                 Focused_On->Scroll_Up();
         }
+        // Check if the mouse scroll down button has been pressed
         else if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State){
 
+            // If the focused element is not null, call the scroll down function
             if (Focused_On)
                 Focused_On->Scroll_Down();
         }
     }
 
+    /**
+     * @brief Handles escape key press events.
+     * @details This function checks if the escape key has been pressed and if the focused element is not null.
+     *          If the focused element is not null, it calls the Un_Focus_Element function to remove the focus.
+     *          If the focused element is null but the hovered element is not null, it calls the Un_Hover_Element
+     *          function to remove the hover.
+     */
     void Handle_Escape(){
+        // Check if the escape key has been pressed
         if (!KEYBOARD_STATES[BUTTON_STATES::ESC].State)
             return;
 
+        // If the focused element is not null, remove the focus
         if (Focused_On){
             Hovered_On = Focused_On;
             Un_Focus_Element();
         }
+        // If the focused element is null but the hovered element is not null, remove the hover
         else if (Hovered_On){
             Un_Hover_Element();
         }
     }
 
-    // Will select the new tabbed element as Selected and NOT Hovered!
+    /**
+     * @brief Handles the pressing of the tab key.
+     * @details This function selects the next tabbed element as focused and not hovered.
+     *          If the shift key is pressed, it goes backwards in the list of tabbed elements.
+     */
     void Handle_Tabulator(){
+        // Check if the tab key has been pressed
         if (!KEYBOARD_STATES[BUTTON_STATES::TAB].State)
             return;
 
+        // Check if the shift key is pressed
         bool Shift_Is_Pressed = KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
 
-        // Get the current element from the selected element 
+        // Get the current element from the selected element
         Element* Current = Focused_On;
 
+        // If there has not been anything selected then then skip this phase and default to zero.
         if (!Current)
             Current = Hovered_On;
 
         int Current_Index = 0;
 
-        // If there has not been anything selected then then skip this phase and default to zero.
+        // Find the index of the current element in the list of event handlers
         if (Current)
             for (;(unsigned int)Current_Index < Event_Handlers.size(); Current_Index++){
                 if (Event_Handlers[Current_Index]->Host == Current)
@@ -1174,6 +1474,7 @@ namespace GGUI{
         // Generalize index hopping, if shift is pressed then go backwards.
         Current_Index += 1 + (-2 * Shift_Is_Pressed);
 
+        // If the index is out of bounds, wrap it around to the other side of the list
         if (Current_Index < 0){
             Current_Index = Event_Handlers.size() - 1;
         }
@@ -1181,33 +1482,56 @@ namespace GGUI{
             Current_Index = 0;
         }
 
-        // now incorporate the index into its corresponding element
+        // Now update the focused element with the new index
         Un_Hover_Element();
         Update_Focused_Element(Event_Handlers[Current_Index]->Host);
     }
 
+    /**
+     * @brief Checks if a bit is set in a char.
+     * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
+     *          It returns true if the bit is set and false if it is not.
+     *
+     * @param val The char to check the bit in.
+     * @param i The index of the bit to check.
+     *
+     * @return True if the bit is set, false if it is not.
+     */
     bool Has_Bit_At(char val, int i){
-        return ((val) & (1<<(i)));
+        // Shift the bit to the right i times and then check if the bit is set.
+        return ((val) & (1<<(i))) != 0;
     }
 
-    //Returns 1 if it is not a unicode character.
-    int Get_Unicode_Length(char first_char){
-        //0xxxxxxx
-        if (!Has_Bit_At(first_char, 7))
+    // Returns the length of a Unicode character based on the first byte.
+    // @param first_char The first byte of the character.
+    // @return The length of the character in bytes. Returns 1 if it is not a Unicode character.
+    int Get_Unicode_Length(char first_char) {
+        // Check if the character is an ASCII character (0xxxxxxx)
+        if (!Has_Bit_At(first_char, 7)) // ASCII characters have the most significant bit as 0
             return 1;
-        //110xxxxx
+
+        // Check if the character is a 2-byte Unicode character (110xxxxx)
         if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && !Has_Bit_At(first_char, 5))
             return 2;
-        //1110xxxx
+
+        // Check if the character is a 3-byte Unicode character (1110xxxx)
         if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && Has_Bit_At(first_char, 5) && !Has_Bit_At(first_char, 4))
             return 3;
-        //11110xxx
+
+        // Check if the character is a 4-byte Unicode character (11110xxx)
         if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && Has_Bit_At(first_char, 5) && Has_Bit_At(first_char, 4) && !Has_Bit_At(first_char, 3))
             return 4;
-        
+
+        // Default case: return 1 for invalid or unexpected byte patterns
         return 1;
     }
 
+    /**
+     * @brief Gets the current maximum width of the terminal.
+     * @details This function returns the current maximum width of the terminal. If the width is 0, it will set the carry flag to indicate that a resize is needed to be performed.
+     *
+     * @return The current maximum width of the terminal.
+     */
     int Get_Max_Width(){
         if (Max_Width == 0 && Max_Height == 0){
             Carry_Flags([](GGUI::Carry& current_carry){
@@ -1218,6 +1542,13 @@ namespace GGUI{
         return Max_Width;
     }
 
+
+    /**
+     * @brief Gets the current maximum height of the terminal.
+     * @details This function returns the current maximum height of the terminal. If the height is 0, it will set the carry flag to indicate that a resize is needed to be performed.
+     *
+     * @return The current maximum height of the terminal.
+     */
     int Get_Max_Height(){
         if (Max_Width == 0 && Max_Height == 0){
             Carry_Flags([](GGUI::Carry& current_carry){
@@ -1228,16 +1559,23 @@ namespace GGUI{
         return Max_Height;
     }
 
-    //Returns a char if given ASCII, or a short if given UNICODE
+    /**
+     * @brief Gets the contents of a given position in the buffer.
+     * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
+     * @param Absolute_Position The position to get the contents of.
+     * @return The contents of the given position, or nullptr if the position is out of bounds.
+     */
     GGUI::UTF* Get(GGUI::IVector3 Absolute_Position){
         if (Absolute_Position.X >= Get_Max_Width() || 
             Absolute_Position.Y >= Get_Max_Height() ||
             Absolute_Position.X < 0 || 
             Absolute_Position.Y < 0)
         {
-            return nullptr; //Later on make a 
+            // The position is out of bounds, return nullptr
+            return nullptr;
         }
         else{
+            // The position is in bounds, return the contents of that position
             return &Abstract_Frame_Buffer[Absolute_Position.Y * Get_Max_Width() + Absolute_Position.X];
         }
     }
@@ -1251,7 +1589,14 @@ namespace GGUI{
         static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
     }
 
-    // Returns an indirect pointer to the local INTERNAL cache, which is only made so for pure optimization.
+    /**
+     * @brief Converts a vector of UTFs into a Super_String.
+     * @details This function takes a vector of UTFs, and converts it into a Super_String. The resulting Super_String is stored in a cache, and the cache is resized if the window size has changed.
+     * @param Text The vector of UTFs to convert.
+     * @param Width The width of the window.
+     * @param Height The height of the window.
+     * @return A pointer to the resulting Super_String.
+     */
     GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
         const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
         
@@ -1299,40 +1644,69 @@ namespace GGUI{
         return Result;
     }
 
+    /**
+     * @brief Updates the frame.
+     * @details This function updates the frame. It's the main entry point for the rendering thread.
+     * @note This function will return immediately if the rendering thread is paused.
+     */
     void Update_Frame(){
         std::unique_lock lock(Atomic::Mutex);
+
+        // Check if the rendering thread is paused.
         if (Atomic::Pause_Render_Thread == Atomic::Status::LOCKED)
             return;
 
         // Give the rendering thread one ticket.
         Atomic::Pause_Render_Thread = Atomic::Status::RESUMED;
-    
+
+        // Notify all waiting threads that the frame has been updated.
         Atomic::Condition.notify_all();
     }
 
+    /**
+     * @brief Pauses the rendering thread.
+     * @details This function pauses the rendering thread. The thread will wait until the rendering thread is resumed.
+     */
     void Pause_GGUI(){
         std::unique_lock lock(Atomic::Mutex);
 
+        // Set the render status to locked.
         Atomic::Pause_Render_Thread = Atomic::Status::LOCKED;
 
+        // Wait for the rendering thread to become available.
         Atomic::Condition.wait_for(lock, GGUI::SETTINGS::Thread_Timeout, []{
+            // If the rendering thread is not locked, then the wait is over.
             return Atomic::Pause_Render_Thread == Atomic::Status::LOCKED;
         });
     }
 
+    /**
+     * @brief Resumes the rendering thread.
+     * @details This function resumes the rendering thread after it has been paused.
+     * @param restore_render_to The status to restore the rendering thread to.
+     */
     void Resume_GGUI(Atomic::Status restore_render_to){
         {
             // Local scope to set the new render status.
             std::unique_lock lock(Atomic::Mutex);
+            // Set the render status to the given status.
             Atomic::Pause_Render_Thread = restore_render_to;
         }
 
         // Check if the rendering status is anything but locked.
-        if (restore_render_to < Atomic::Status::LOCKED)
+        if (restore_render_to < Atomic::Status::LOCKED){
+            // If it's not locked, then update the frame.
             Update_Frame();
+        }
     }
 
-    // Custom Lerp for Thread Load calculation.
+    /**
+     * @brief Calculates the current load of the GGUI thread based on the given current position.
+     * @param Min The minimum value the load can have.
+     * @param Max The maximum value the load can have.
+     * @param Position The current position of the load.
+     * @return The current load of the GGUI thread from 0 to 1.
+     */
     float Lerp(int Min, int Max, int Position){
         // First calculate the possible length of which our load can represent on.
         float Length_Of_Possible_Values = Max - Min;
@@ -1340,10 +1714,15 @@ namespace GGUI{
         // Get the offset of which the wanted target fps deviates from the minimum value
         float Offset_Of_Our_Load = GGUI::Max(Position - Min, 0);
 
-        // calculate the simple probability.
+        // Calculate the simple probability.
         return 1 - Offset_Of_Our_Load / Length_Of_Possible_Values;
     }
 
+    /**
+     * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
+     * @details This function is a lambda function that is used by the Atomic::Guard class to prolong or delete memories in the smart memory system.
+     *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
+     */
     void Recall_Memories(){
         Remember([](std::vector<Memory>& rememberable){
             std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
@@ -1403,23 +1782,59 @@ namespace GGUI{
         });
     }
 
+
+    /**
+     * @brief Checks if the given flag is set in the given flags.
+     * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+     *
+     * @param f The flags to check.
+     * @param Flag The flag to check for.
+     * @return True if the flag is set, otherwise false.
+     */
     bool Is(unsigned long long f, unsigned long long Flag){
         return (f & Flag) == Flag;
     }
 
+    /**
+     * @brief Checks if a flag is set in a set of flags.
+     * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+     *
+     * @param f The flags to check.
+     * @param flag The flag to check for.
+     * @return True if the flag is set, otherwise false.
+     */
     bool Has(unsigned long long f, unsigned long long flag){
         return (f & flag) != 0;
     }
 
-    bool Contains(unsigned long long big, unsigned long long Small){
+
+    /**
+     * @brief Checks if all flags in small are set in big.
+     * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
+     *
+     * @param big The flags to check against.
+     * @param small The flags to check.
+     * @return True if all flags in small are set in big, otherwise false.
+     */
+    bool Contains(unsigned long long big, unsigned long long Small) {
         return (Small & big) == Small;
     }
 
-    // Recursive's are made for instances like buttons where the default styling of borders does not change on focus nor on hover and the content is filled by text.
+
+    /**
+     * @brief Recursively applies or removes focus on an element and its children.
+     * @details This function checks if the current element is an event handler.
+     *          If not, it sets the focus state on the element and recurses on its children.
+     *          Focus is only applied if the element's current focus state differs from the desired state.
+     * 
+     * @param current The current element to apply or remove focus.
+     * @param Focus The desired focus state.
+     */
     void Recursively_Apply_Focus(Element* current, bool Focus){
-        // check if the current element is one of the Event handlers, if not, then apply the focus buff.
+        // Flag to determine if the current element is an event handler
         bool Is_An_Event_handler = false;
 
+        // Check if the current element is an event handler
         for (auto i : Event_Handlers){
             if (i->Host == current){
                 Is_An_Event_handler = true;
@@ -1427,17 +1842,28 @@ namespace GGUI{
             }
         } 
 
+        // If the element is an event handler and the focus state is unchanged, return
         if (Is_An_Event_handler && current->Is_Focused() != Focus)
             return;
 
+        // Set the focus state on the current element
         current->Set_Focus(Focus);
 
+        // Recurse on all child elements
         for (auto c : current->Get_Childs()){
             Recursively_Apply_Focus(c, Focus);
         }
     }
 
-    // Recursive's are made for instances like buttons where the default styling of borders does not change on focus nor on hover and the content is filled by text.
+    /**
+     * @brief Recursively applies or removes hover state on an element and its children.
+     * @details This function checks if the current element is an event handler.
+     *          If not, it sets the hover state on the element and recurses on its children.
+     *          Hover is only applied if the element's current hover state differs from the desired state.
+     * 
+     * @param current The current element to apply or remove hover.
+     * @param Hover The desired hover state.
+     */
     void Recursively_Apply_Hover(Element* current, bool Hover){
         // check if the current element is one of the Event handlers, if not, then apply the focus buff.
         bool Is_An_Event_handler = false;
@@ -1454,68 +1880,110 @@ namespace GGUI{
 
         current->Set_Hover_State(Hover);
 
+        // Recurse on all child elements
         for (auto c : current->Get_Childs()){
             Recursively_Apply_Hover(c, Hover);
         }
     }
 
+    /**
+     * @brief Removes focus from the currently focused element and its children.
+     * @details This function checks if there is a currently focused element.
+     *          If there is, it sets the focus state on the element and its children to false.
+     *          Focus is only removed if the element's current focus state differs from the desired state.
+     */
     void Un_Focus_Element(){
         if (!Focused_On)
             return;
+
         Focused_On->Set_Focus(false);
 
+        // Recursively remove focus from all child elements
         Recursively_Apply_Focus(Focused_On, false);
 
         Focused_On = nullptr;
     }
 
+    /**
+     * @brief Removes the hover state from the currently hovered element and its children.
+     * @details This function checks if there is a currently hovered element.
+     *          If there is, it sets the hover state on the element and its children to false.
+     *          Hover is only removed if the element's current hover state differs from the desired state.
+     */
     void Un_Hover_Element(){
         if (!Hovered_On)
             return;
+
+        // Set the hover state to false on the currently hovered element
         Hovered_On->Set_Hover_State(false);
 
+        // Recursively remove the hover state from all child elements
         Recursively_Apply_Hover(Hovered_On, false);
 
+        // Set the hovered element to nullptr to indicate there is no currently hovered element
         Hovered_On = nullptr;
     }
 
+
+    /**
+     * @brief Updates the currently focused element to a new candidate.
+     * @details This function checks if the new candidate is the same as the current focused element.
+     *          If not, it removes the focus from the current element and all its children.
+     *          Then, it sets the focus on the new candidate element and all its children.
+     * @param new_candidate The new element to focus on.
+     */
     void Update_Focused_Element(GGUI::Element* new_candidate){
         if (Focused_On == new_candidate || new_candidate == Main)
             return;
 
-        //put the previous focused candidate into not-focus
+        // Unfocus the previous focused element and its children
         if (Focused_On){
             Un_Focus_Element();
         }
 
-        //switch the candidate
+        // Set the focus on the new element and all its children
         Focused_On = new_candidate;
-        
-        //set the new candidate to focused.
+
+        // Set the focus state on the new element to true
         Focused_On->Set_Focus(true);
 
+        // Recursively set the focus state on all child elements to true
         Recursively_Apply_Focus(Focused_On, true);
     }
 
+    /**
+     * @brief Updates the currently hovered element to a new candidate.
+     * @details This function checks if the new candidate is the same as the current hovered element.
+     *          If not, it removes the hover state from the current element and all its children.
+     *          Then, it sets the hover state on the new candidate element and all its children.
+     * @param new_candidate The new element to hover on.
+     */
     void Update_Hovered_Element(GGUI::Element* new_candidate){
         if (Hovered_On == new_candidate || new_candidate == Main)
             return;
 
-        //put the previous focused candidate into not-focus
+        // Remove the hover state from the previous hovered element and its children
         if (Hovered_On){
             Un_Hover_Element();
         }
 
-        //switch the candidate
+        // Set the hover state on the new element and all its children
         Hovered_On = new_candidate;
-        
-        //set the new candidate to focused.
+
+        // Set the hover state on the new element to true
         Hovered_On->Set_Hover_State(true);
 
+        // Recursively set the hover state on all child elements to true
         Recursively_Apply_Hover(Hovered_On, true);
     }
 
-    // Events
+    /**
+     * @brief Handles all events in the system.
+     * @details This function goes through all event handlers and checks if the event criteria matches any of the inputs.
+     *          If a match is found, it calls the event handler job with the input as an argument.
+     *          If the job is successful, it removes the input from the list of inputs.
+     *          If the job is unsuccessful, it reports an error.
+     */
     void Event_Handler(){
         // Disable hovered element if the mouse isn't on top of it anymore.
         if (Hovered_On && !Collides(Hovered_On, GGUI::Mouse)){
@@ -1524,7 +1992,6 @@ namespace GGUI{
 
         // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
         Populate_Inputs_For_Held_Down_Keys();
-
 
         for (auto& e : Event_Handlers){
 
@@ -1623,49 +2090,106 @@ namespace GGUI{
         Inputs.clear();
     }
 
+    /**
+     * Get the ID of a class by name, assigning a new ID if it doesn't exist.
+     * 
+     * @param n The name of the class.
+     * @return The ID of the class.
+     */
     int Get_Free_Class_ID(std::string n){
+        // Check if the class name is already in the map
         if (Class_Names.find(n) != Class_Names.end()){
+            // Return the existing class ID
             return Class_Names[n];
         }
         else{
+            // Assign a new class ID as the current size of the map
             Class_Names[n] = Class_Names.size();
 
+            // Return the newly assigned class ID
             return Class_Names[n];
         }
     }
 
+    /**
+     * @brief Adds a new class with the specified name and styling.
+     * @details This function retrieves a unique class ID for the given name.
+     *          It then associates the provided styling with this class ID 
+     *          in the `Classes` map.
+     * 
+     * @param name The name of the class.
+     * @param Styling The styling to be associated with the class.
+     */
     void Add_Class(std::string name, Styling Styling){
         Classes([name, Styling](auto& classes){
+            // Obtain a unique class ID for the given class name
             int Class_ID = Get_Free_Class_ID(name);
 
+            // Associate the styling with the obtained class ID
             classes[Class_ID] = Styling;
         }); 
     }
 
+    /**
+     * @brief Iterates through all file stream handles and triggers change events.
+     * @details This function goes through each file stream handle in the `File_Streamer_Handles` map.
+     *          It checks if the handle is not a standard output stream, and if so, calls the `Changed` method
+     *          on the file stream to trigger any associated change events.
+     */
     void Go_Through_File_Streams(){
         for (auto& File_Handle : File_Streamer_Handles){
-            if (!File_Handle.second->Is_Cout_Stream())  // Cout handlers get called whenever a new line is inserted.
+            // Check if the file handle is not a standard output stream
+            if (!File_Handle.second->Is_Cout_Stream()) {
+                // Trigger change event for the file stream
                 File_Handle.second->Changed();
+            }
         }
     }
 
-    void Refresh_Multi_Frame_Canvas(){
-        // Go through all animation needing elements (currently only for multi-frame canvases)
-        for (auto i : Multi_Frame_Canvas){
+    /// @brief Refreshes all multi-frame canvases by updating their animation frames.
+    /// @details This function iterates over all registered multi-frame canvases,
+    ///          advances their animation to the next frame, and flushes their state.
+    ///          Additionally, it adjusts the event thread load based on the number
+    ///          of canvases that require updates.
+    void Refresh_Multi_Frame_Canvas() {
+        // Iterate over each multi-frame canvas
+        for (auto i : Multi_Frame_Canvas) {
+            // Advance the animation to the next frame
             i.first->Set_Next_Animation_Frame();
 
+            // Flush the updated state of the canvas
             i.first->Flush(true);
         }
 
-        if (Multi_Frame_Canvas.size() > 0){
+        // Adjust the event thread load if there are canvases to update
+        if (Multi_Frame_Canvas.size() > 0) {
             Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
         }
     }
 
-    // Made extern to force to not to inline
+    /**
+     * @brief Initializes the start addresses for stack and heap.
+     * 
+     * This function is made extern to prevent inlining. It is responsible
+     * for capturing and initializing the nearest stack and heap addresses 
+     * and assigning them to the respective global variables.
+     */
     extern void Init_Start_Addresses();
 
-    //Inits GGUI and returns the main window.
+    /**
+     * @brief Initializes the start addresses for stack and heap.
+     * 
+     * This function is made extern to prevent inlining. It is responsible
+     * for capturing and initializing the nearest stack and heap addresses 
+     * and assigning them to the respective global variables.
+     */
+    extern void Init_Start_Addresses();
+
+    /**
+     * @brief Initializes the GGUI system and returns the main window.
+     * 
+     * @return The main window of the GGUI system.
+     */
     GGUI::Window* Init_GGUI(){
         Init_Start_Addresses();
 
@@ -1676,7 +2200,7 @@ namespace GGUI{
             return nullptr;
         }
 
-        //Save the state before the init
+        // Save the state before the init
         Current_Time = std::chrono::high_resolution_clock::now();
         Previous_Time = Current_Time;
 
@@ -1695,7 +2219,7 @@ namespace GGUI{
                     Atomic::Pause_Render_Thread = Atomic::Status::LOCKED;
                 }
 
-                // save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
+                // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
                 Previous_Time = std::chrono::high_resolution_clock::now();
 
                 if (Main){
@@ -1720,7 +2244,7 @@ namespace GGUI{
                     Render_Frame();
                 }
 
-                // check the difference of the time captured before render and now after render
+                // Check the difference of the time captured before render and now after render
                 Current_Time = std::chrono::high_resolution_clock::now();
 
                 Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
@@ -1802,20 +2326,30 @@ namespace GGUI{
         return Main;
     }
 
-    // NOTE: This is only a temporary function to be replaced when Date_Element is made.
+    /**
+     * @brief Temporary function to return the current date and time in a string.
+     * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
+     * @note This function will be replaced when the Date_Element is implemented.
+     */
     std::string Now(){
-        //This function takes the current time and returns a string of the time.
+        // This function takes the current time and returns a string of the time.
         // Format: DD.MM.YYYY: SS.MM.HH
         std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
         std::string Result = std::ctime(&now);
 
+        // Remove the newline at the end of the string
         return Result.substr(0, Result.size() - 1);
     }
 
+    /**
+     * @brief Reports an error to the user.
+     * @param Problem The error message to display.
+     * @note If the main window is not created yet, the error will be printed to the console.
+     * @note This function is thread safe.
+     */
     void Report(std::string Problem){
-        Pause_GGUI([&Problem](){
-
+        Pause_GGUI([&Problem]{
             Problem = " " + Problem + " ";
 
             // Error logger structure:
@@ -1985,13 +2519,24 @@ namespace GGUI{
         });
     }
 
-    void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer){
-        if (Parent == child){
+    /**
+     * @brief Nests a text buffer into a parent buffer while considering the childs position and size.
+     * 
+     * @param Parent The parent element which the text is being nested into.
+     * @param child The child element which's text is being nested.
+     * @param Text The text buffer to be nested.
+     * @param Parent_Buffer The parent buffer which the text is being nested into.
+     */
+    void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer)
+    {
+        if (Parent == child)
+        {
             std::string R = 
                 std::string("Cannot nest element to it self\n") +
                 std::string("Element name: ") + Parent->Get_Name();
 
-            if (Parent->Get_Parent()){
+            if (Parent->Get_Parent())
+            {
                 R += std::string("\n") + 
                 std::string("Inside of: ") + Parent->Get_Parent()->Get_Name();
             }
@@ -2001,11 +2546,15 @@ namespace GGUI{
             );
         }
 
+        // Get the position of the child element in the parent buffer.
         GGUI::IVector3 C = child->Get_Position();
 
         int i = 0;
-        for (int Parent_Y = 0; Parent_Y < (signed)Parent->Get_Height(); Parent_Y++){
-            for (int Parent_X = 0; Parent_X < (signed)Parent->Get_Width(); Parent_X++){
+        // Iterate over the parent buffer and copy the text buffer into the parent buffer at the correct position.
+        for (int Parent_Y = 0; Parent_Y < (signed)Parent->Get_Height(); Parent_Y++)
+        {
+            for (int Parent_X = 0; Parent_X < (signed)Parent->Get_Width(); Parent_X++)
+            {
                 if (
                     Parent_Y >= C.Y && Parent_X >= C.X &&
                     Parent_Y <= C.Y + (signed)child->Get_Height() &&
@@ -2018,32 +2567,48 @@ namespace GGUI{
         }
     }
 
+    /**
+     * @brief Pauses all other GGUI internal threads and calls the given function.
+     * @details This function will pause all other GGUI internal threads and call the given function.
+     * @param f The function to call.
+     */
     void Pause_GGUI(std::function<void()> f){
 
+        // Save the current render status.
         Atomic::Status Previous_Render_Status;
 
         // Make an virtual local scope to temporary own the mutex.
         {
+            // Lock the mutex to make sure we are the only one that can change the render status.
             std::unique_lock lock(Atomic::Mutex);
 
+            // Save the current render status.
             Previous_Render_Status = Atomic::Pause_Render_Thread;
         }
 
         Pause_GGUI();
 
         try{
+            // Call the given function.
             f();
         }
         catch(std::exception& e){
+            // If an exception is thrown, report the stack trace and the exception message.
             Report_Stack("In Pause_GGUI: " + std::string(e.what()));
         }
 
+        // Resume the render thread with the previous render status.
         Resume_GGUI(
             Previous_Render_Status
         );
     }
 
-    // Use this to use GGUI.
+    /**
+     * @brief Use GGUI in a simple way.
+     * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, call the given function, sleep for the given amount of milliseconds, and then exit GGUI.
+     * @param DOM The function that will add all the elements to the root window.
+     * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
+     */
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
         Init_Start_Addresses();
 
@@ -2057,57 +2622,81 @@ namespace GGUI{
         // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
     }
 
+    /**
+     * @brief Use GGUI in a simple way.
+     * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, add all the elements to the root window, sleep for the given amount of milliseconds, and then exit GGUI.
+     * @param DOM The elements to add to the root window.
+     * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
+     */
     void GGUI(std::vector<Element*> DOM, unsigned long long Sleep_For){
         Init_Start_Addresses();
 
         Pause_GGUI([DOM](){
             Init_GGUI();
 
+            // Add all the elements to the root window.
             for (auto* e : DOM){
                 Main->Add_Child(e);
             }
         });
 
+        // Sleep for the given amount of milliseconds.
         SLEEP(Sleep_For);
     }
 
-    void Encode_Buffer(std::vector<GGUI::UTF>& Buffer){
-
-        // There are three different encoded types: Start, Middle and End.
-
+    /**
+     * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
+     * 
+     * @param Buffer A vector of UTF elements to be encoded.
+     * @details The function marks the beginning and end of color strips within the buffer. 
+     *          It checks each UTF element's foreground and background colors with its adjacent elements
+     *          to determine where encoding strips start and end.
+     */
+    void Encode_Buffer(std::vector<GGUI::UTF>& Buffer) {
+        
+        // Initialize the first and last elements with start and end flags respectively.
         Buffer[0].Set_Flag(UTF_FLAG::ENCODE_START);
         Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_END);
 
-        for (unsigned int Index = 1; Index < Buffer.size() - 1; Index++){
+        // Iterate through the buffer to determine encoding strip positions.
+        for (unsigned int Index = 1; Index < Buffer.size() - 1; Index++) {
 
-            bool Same_Colours_As_Previous = Buffer[Index].Background == Buffer[Index - 1].Background && Buffer[Index].Foreground == Buffer[Index - 1].Foreground;
-            bool Same_Colours_As_Next = Buffer[Index].Background == Buffer[Index + 1].Background && Buffer[Index].Foreground == Buffer[Index + 1].Foreground;
+            bool Same_Colours_As_Previous = Buffer[Index].Background == Buffer[Index - 1].Background &&
+                                            Buffer[Index].Foreground == Buffer[Index - 1].Foreground;
+            bool Same_Colours_As_Next = Buffer[Index].Background == Buffer[Index + 1].Background &&
+                                        Buffer[Index].Foreground == Buffer[Index + 1].Foreground;
 
-            // if the current colours are same as the previous but not the next then the current is a end of a encode strip.
-            if (!Same_Colours_As_Next){
+            // Set end flag if current colors differ from the next.
+            if (!Same_Colours_As_Next) {
                 Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_END);
             }
 
-            // if the current colours are not the same as the previous but the same as the next then the current is a start of a encode strip.
-            if (!Same_Colours_As_Previous){
+            // Set start flag if current colors differ from the previous.
+            if (!Same_Colours_As_Previous) {
                 Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_START);
             }
         }
 
-        // Check if the second to last was also an ending node, if so then add the last node the start tag
-        if (Buffer[Buffer.size() - 2].Is(UTF_FLAG::ENCODE_END)){
+        // Ensure the last element is marked correctly if the second to last was an ending node.
+        if (Buffer[Buffer.size() - 2].Is(UTF_FLAG::ENCODE_END)) {
             Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_START | UTF_FLAG::ENCODE_END);
         }
     }
 
-    bool Update_Stats(GGUI::Event*){
-        // Check if Inspect tool is displayed
+    /**
+     * @brief Updates the stats panel with the number of elements, render time, and event time.
+     * @param Event The event that triggered the update.
+     * @return True if the update was successful, false otherwise.
+     * @details This function should be called by the main event loop to update the stats panel.
+     */
+    bool Update_Stats(GGUI::Event* Event){
+        // Check if the inspect tool is displayed
         Element* Inspect_Tool = Main->Get_Element("Inspect");
 
         if (!Inspect_Tool || !Inspect_Tool->Is_Displayed())
             return false;
 
-        // find stats
+        // find the stats element
         Text_Field* Stats = (Text_Field*)Main->Get_Element("STATS");
 
         // Update the stats
@@ -2119,26 +2708,38 @@ namespace GGUI{
             "Event delay: " + std::to_string(Event_Delay) + "ms"
         );
 
-        // return success.
+        // return success
         return true;
     }
 
+    /**
+     * @brief Initializes the inspect tool.
+     * @details This function initializes the inspect tool which is a debug tool that displays the number of elements, render time, and event time.
+     * @see GGUI::Update_Stats
+     */
     void Init_Inspect_Tool(){
+        // Create a list view that will contain the inspect tool elements
         GGUI::List_View* Inspect = new GGUI::List_View(Styling(
             width(Main->Get_Width() / 2) | height(Main->Get_Height()) | 
             text_color(Main->Get_Text_Color()) | background_color(Main->Get_Background_Color()) 
         ));
 
+        // Set the flow direction to column so the elements stack vertically
         Inspect->Set_Flow_Direction(DIRECTION::COLUMN);
+        // Hide the border of the list view
         Inspect->Show_Border(false);
+        // Set the position of the list view to the right side of the main window
         Inspect->Set_Position({
             Main->Get_Width() - (Main->Get_Width() / 2),
             0,
             INT32_MAX - 1,
         });
+        // Set the opacity of the list view to 0.8
         Inspect->Set_Opacity(0.8f);
+        // Set the name of the list view to "Inspect"
         Inspect->Set_Name("Inspect");
 
+        // Add the list view to the main window
         Main->Add_Child(Inspect);
         
         // Add a count for how many UTF are being streamed.
@@ -2152,8 +2753,10 @@ namespace GGUI{
                 align(ALIGN::LEFT) | width(Inspect->Get_Width()) | height(5)
             )
         );
+        // Set the name of the text field to "STATS"
         Stats->Set_Name("STATS");
 
+        // Add the text field to the list view
         Inspect->Add_Child(Stats);
 
         // Add the error logger kidnapper:
@@ -2167,23 +2770,32 @@ namespace GGUI{
             )
         );
 
+        // Set the name of the window to "LOG"
         Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
+        // Allow the window to overflow, so that the text can be seen even if it is longer than the window
         Error_Logger_Kidnapper->Allow_Overflow(true);
 
+        // Add the window to the list view
         Inspect->Add_Child(Error_Logger_Kidnapper);
+        // Hide the inspect tool by default
         Inspect->Display(false);
 
+        // Register an event handler to toggle the inspect tool on and off
         GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [Inspect](GGUI::Event* e){
             GGUI::Input* input = (GGUI::Input*)e;
 
+            // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
             if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
                 return false;
 
+            // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
             Inspect->Display(!Inspect->Is_Displayed());
 
+            // Return true to indicate that the event was handled
             return true;
         }, true);
         
+        // Remember the inspect tool, so it will be updated every second
         Remember([](std::vector<Memory>& rememberable){
             rememberable.push_back(
                 GGUI::Memory(
@@ -2196,8 +2808,17 @@ namespace GGUI{
         });
     }
 
+    /**
+     * @brief Notifies all global buffer capturers about the latest data to be captured.
+     *
+     * This function is used to inform all global buffer capturers about the latest data to be captured.
+     * It iterates over all global buffer capturers and calls their Sync() method to update their data.
+     *
+     * @param informer Pointer to the buffer capturer with the latest data.
+     */
     void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer){
 
+        // Iterate over all global buffer capturers
         for (auto* capturer : Global_Buffer_Captures){
             if (!capturer->Is_Global)
                 continue;
@@ -2215,19 +2836,29 @@ namespace GGUI{
     }
 
     // Function to check if a pointer likely belongs to the stack
+    /**
+     * @brief Determines if a given pointer is likely deletable (heap-allocated).
+     *
+     * This function assesses whether a pointer may belong to the heap by comparing its
+     * position relative to known memory sections such as the stack, heap, and data segments.
+     *
+     * @param ptr Pointer to be evaluated.
+     * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
+     */
     bool Is_Deletable(void* ptr) {
         if (ptr == nullptr) {
             return false;  // Null pointer can't be valid
         }
 
-        static void* Start_Of_BSS = nullptr;  // Since all non-values/zeroed will be put into bss.
-        
-        constexpr int MiB = 0x100000;
-        static signed long long Somewhere_In_DATA = 100 * MiB;    // This will just reside somewhere in the data section, and we'll have to check if the ptr is far enough from this and its range value.
+        static void* Start_Of_BSS = nullptr;  // Placeholder for BSS segment start
 
-        // Check if ptr is above bss, if so then it could be in data section.
+        constexpr int MiB = 0x100000;
+        static signed long long Somewhere_In_DATA = 100 * MiB;  // Arbitrary location in the data section
+
+        // Check if ptr is above BSS, indicating potential data section location
         bool Ptr_Is_Above_BSS = ptr >= Start_Of_BSS;
 
+        // Calculate if ptr is within range of the data section
         bool Ptr_Is_In_Range_Of_DATA_Section = ((signed long long)ptr - (signed long long)&Somewhere_In_DATA) <= Somewhere_In_DATA;
 
         // Check if ptr is smaller than the stack start address
@@ -2237,30 +2868,31 @@ namespace GGUI{
         size_t* new_heap = new(std::nothrow) size_t;
         if (new_heap == nullptr) {
             Report_Stack("Failed to allocate new heap for stack pointer check!");
-            exit(1);  // FATAL
+            exit(1);  // FATAL error if heap allocation fails
         }
 
-        // Check if the new heap is below the stack address
+        // Check if the new heap address is below the stack start address
         bool Heap_Is_Lower_Than_Stack = (uintptr_t)new_heap < (uintptr_t)Stack_Start_Address;
 
-        // Calculate distance to the stack start
+        // Calculate distance from ptr to the stack start address
         uintptr_t ptr_distance_to_stack = (uintptr_t)Stack_Start_Address - (uintptr_t)ptr;
 
-        // Calculate distance to the heap (use min in case heap grows in both directions)
+        // Calculate distance from ptr to the closest heap address
         uintptr_t heap_min_address = Min((uintptr_t)new_heap, (uintptr_t)Heap_Start_Address);
         uintptr_t ptr_distance_to_heap = heap_min_address - (uintptr_t)ptr;
 
-        // Ensure pointer is smaller than the stack start address and closer to the stack
+        // Determine if ptr is closer to the stack than the heap and below the stack start
         bool Stack_Is_Closer = ptr_distance_to_stack < ptr_distance_to_heap && Lower_Than_Stack;
 
         // Clean up the heap allocation
         delete new_heap;
 
-        // Weigh the two possibilities and determine if it's more likely a stack pointer
-        int Points_To_DATA_Section = Ptr_Is_Above_BSS + Ptr_Is_In_Range_Of_DATA_Section;                                // 2pts
-        int Points_To_Stack = Lower_Than_Stack + Stack_Is_Closer;                                                       // 2pts
-        int Points_To_Heap = !Lower_Than_Stack + !Stack_Is_Closer + Heap_Is_Lower_Than_Stack - Points_To_DATA_Section;  // 3pts
+        // Assess likelihood of pointer being in heap, stack, or data section
+        int Points_To_DATA_Section = Ptr_Is_Above_BSS + Ptr_Is_In_Range_Of_DATA_Section;  // 2pts for data section
+        int Points_To_Stack = Lower_Than_Stack + Stack_Is_Closer;  // 2pts for stack
+        int Points_To_Heap = !Lower_Than_Stack + !Stack_Is_Closer + Heap_Is_Lower_Than_Stack - Points_To_DATA_Section;  // 3pts for heap
 
+        // Return true if pointer is more likely heap-allocated
         return Points_To_Heap > Points_To_Stack && Points_To_Heap > Points_To_DATA_Section;
     }
 
