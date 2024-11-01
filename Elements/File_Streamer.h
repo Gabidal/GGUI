@@ -3,6 +3,13 @@
 
 #include "Element.h"
 
+#include "../Core/Utils/Super_String.h"
+#include "../Core/Utils/Constants.h"
+#include "../Core/Utils/Color.h"
+#include "../Core/Utils/Units.h"
+#include "../Core/Utils/Event.h"
+#include "../Core/Utils/Style.h"
+
 #include <fstream>
 #include <functional>
 #include <unordered_map>

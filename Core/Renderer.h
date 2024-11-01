@@ -15,6 +15,13 @@
 #include "../Elements/List_View.h"
 #include "../Elements/Canvas.h"
 
+#include "../Core/Utils/Super_String.h"
+#include "../Core/Utils/Constants.h"
+#include "../Core/Utils/Color.h"
+#include "../Core/Utils/Units.h"
+#include "../Core/Utils/Event.h"
+#include "../Core/Utils/Style.h"
+
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
