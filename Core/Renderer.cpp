@@ -78,14 +78,6 @@ namespace GGUI{
 
     Atomic::Guard<Carry> Carry_Flags; 
 
-    /// @brief Checks if two rectangular areas, defined by their positions and dimensions, collide.
-    /// @param A The top-left corner position of the first rectangle.
-    /// @param B The top-left corner position of the second rectangle.
-    /// @param A_Width Width of the first rectangle.
-    /// @param A_Height Height of the first rectangle.
-    /// @param B_Width Width of the second rectangle.
-    /// @param B_Height Height of the second rectangle.
-    /// @return True if the rectangles collide, false otherwise.
     bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width, int A_Height, int B_Width, int B_Height) {
         // Check if the rectangles overlap in the x-axis and y-axis
         return (
@@ -96,11 +88,6 @@ namespace GGUI{
         );
     }
 
-    /// @brief Checks if two rectangular areas, defined by their positions and dimensions, collide.
-    /// @param a The first element.
-    /// @param b The second element.
-    /// @param Identity If a is the same as b, return this flag. Defaults into true.
-    /// @return True if the rectangles collide, false otherwise.
     bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity = true) {
         if (a == b)
             return Identity;    // For custom purposes, defaults into true
@@ -111,19 +98,11 @@ namespace GGUI{
         );
     }
 
-    /// @brief Checks if a rectangular area, defined by an element's position and dimensions, collides with a point.
-    /// @param a The element.
-    /// @param b The point represented as a 3D vector.
-    /// @return True if the element's area collides with the point, false otherwise.
     bool Collides(GGUI::Element* a, GGUI::IVector3 b) {
         // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
         return Collides(a->Get_Absolute_Position(), b, a->Get_Width(), a->Get_Height(), 1, 1);
     }
 
-    /// @brief Recursively searches for an element at a given position.
-    /// @param c The position to search for.
-    /// @param Parent The parent element to search in.
-    /// @return The element at the given position, or nullptr if none was found.
     Element* Get_Accurate_Element_From(IVector3 c, Element* Parent){
         //first check if the c is in bounds of Parent.
         if (!Collides(Parent, c)){
@@ -142,8 +121,6 @@ namespace GGUI{
         return Parent;
     }
 
-    /// @brief Finds the element directly above the current element the mouse is hovering over.
-    /// @return The position of the upper element, or the position of the current element if none is found.
     IVector3 Find_Upper_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -165,8 +142,6 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    /// @brief Finds the element directly below the current element the mouse is hovering over.
-    /// @return The position of the lower element, or the position of the current element if none is found.
     IVector3 Find_Lower_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -188,8 +163,6 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    /// @brief Finds the element directly left of the current element the mouse is hovering over.
-    /// @return The position of the left element, or the position of the current element if none is found.
     IVector3 Find_Left_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -214,8 +187,6 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    /// @brief Finds the element directly right of the current element the mouse is hovering over.
-    /// @return The position of the right element, or the position of the current element if none is found.
     IVector3 Find_Right_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
@@ -274,18 +245,10 @@ namespace GGUI{
         return Best_Candidate;
     }
 
-    /// @brief Calculates the minimum of two signed long long integers.
-    /// @param a The first value to compare.
-    /// @param b The second value to compare.
-    /// @return The minimum of the two values.
     signed long long Min(signed long long a, signed long long b){
         return a < b ? a : b;
     }
 
-    /// @brief Calculates the maximum of two signed long long integers.
-    /// @param a The first value to compare.
-    /// @param b The second value to compare.
-    /// @return The maximum of the two values.
     signed long long Max(signed long long a, signed long long b){
         return a > b ? a : b;
     }
@@ -294,11 +257,6 @@ namespace GGUI{
     #include <windows.h>
     #include <DbgHelp.h>
 
-    /// @brief A platform-specific sleep function.
-    /// @param mm The number of milliseconds to sleep for.
-    /// @details This function is used to pause the execution of the program for a specified amount of time.
-    ///          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
-    ///          while on Linux and macOS it calls the usleep function.
     void SLEEP(unsigned int mm){
         /// Sleep for the specified amount of milliseconds.
         Sleep(mm);
@@ -2835,7 +2793,6 @@ void MOUSE_API() {
 
     }
 
-    // Function to check if a pointer likely belongs to the stack
     /**
      * @brief Determines if a given pointer is likely deletable (heap-allocated).
      *

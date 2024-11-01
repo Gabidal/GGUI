@@ -3,7 +3,10 @@
 
 namespace GGUI{
 
-    // Called when text_field has a deep stain
+    /**
+     * @brief Updates the text cache of the text field when the text field has a deep stain.
+     * @details This function is called when the text field has a deep stain, and it will update the text cache of the text field. The text cache is a list of compact strings, where each compact string is a line of text. The text cache is used to store the text of the text field, and it is used to determine the size of the text field. The text cache is updated by splitting the text into lines based on the newline character, and then adding each line to the text cache. The text cache is also updated to remove any empty lines at the end of the text cache.
+     */
     void Text_Field::Update_Text_Cache(){
 
         Text_Cache.clear();
@@ -103,41 +106,47 @@ namespace GGUI{
         }
     }
 
-    std::vector<GGUI::UTF>&  Text_Field::Render(){
+    /**
+     * @brief Renders the text field into the Render_Buffer.
+     * @details This function processes the text field to generate a vector of UTF objects representing the current state.
+     * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
+     * @return A vector of UTF objects representing the rendered text field.
+     */
+    std::vector<GGUI::UTF>& Text_Field::Render() {
+        // Get reference to the render buffer
         std::vector<GGUI::UTF>& Result = Render_Buffer;
 
+        // If the text field is clean, return the current render buffer
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
-        if (Dirty.is(STAIN_TYPE::CLASS)){
+        // Parse classes if the CLASS stain is detected
+        if (Dirty.is(STAIN_TYPE::CLASS)) {
             Parse_Classes();
-
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
-        if (Dirty.is(STAIN_TYPE::STRETCH)){
-            // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
+        // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
+        if (Dirty.is(STAIN_TYPE::STRETCH)) {
             Style->Evaluate_Dynamic_Attribute_Values(this);
-            
             Result.clear();
             Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);
-
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
         }
 
-        if (Dirty.is(STAIN_TYPE::MOVE)){
+        // Update the absolute position cache if the MOVE stain is detected
+        if (Dirty.is(STAIN_TYPE::MOVE)) {
             Dirty.Clean(STAIN_TYPE::MOVE);
-            
             Update_Absolute_Position_Cache();
         }
-        
-        //Apply the color system to the resized result list
+
+        // Apply the color system if the COLOR stain is detected
         if (Dirty.is(STAIN_TYPE::COLOR))
             Apply_Colors(this, Result);
 
-        //This will add the child windows to the Result buffer
-        if (Dirty.is(STAIN_TYPE::DEEP)){
+        // Align text and add child windows to the Result buffer if the DEEP stain is detected
+        if (Dirty.is(STAIN_TYPE::DEEP)) {
             Dirty.Clean(STAIN_TYPE::DEEP);
 
             if (Style->Align.Value == ALIGN::LEFT)
@@ -146,16 +155,24 @@ namespace GGUI{
                 Align_Text_Right(Result);
             else if (Style->Align.Value == ALIGN::CENTER)
                 Align_Text_Center(Result);
-
         }
 
-        //This will add the borders if necessary and the title of the window.
+        // Add borders and titles if the EDGE stain is detected
         if (Dirty.is(STAIN_TYPE::EDGE))
             Add_Overhead(this, Result);
 
         return Result;
     }
 
+    /**
+     * @brief Sets the size of the text field to fill its parent element.
+     * @details The function first checks if dynamic sizing is allowed for
+     *          the text field and its parent. It then calculates the new
+     *          width and height based on the parent's dimensions and the
+     *          text size. If the parent allows dynamic sizing, it stretches
+     *          to accommodate the text; otherwise, it constrains the size
+     *          within the parent's boundaries.
+     */
     void Text_Field::Set_Size_To_Fill_Parent(){
         if (!Is_Dynamic_Size_Allowed())
             return;
@@ -163,19 +180,26 @@ namespace GGUI{
         int New_Width, New_Height;
 
         if (Parent->Is_Dynamic_Size_Allowed()){
-            // Since the parent can just stretch we can set the max size.
+            // If the parent can stretch, set the maximum width and a height of 1.
             New_Width = Text.size();
             New_Height = 1;
         }
         else{
+            // Constrain the size within the parent's dimensions.
             New_Width = Min(Parent->Get_Width() - Get_Position().X, Text.size());
-            Update_Text_Cache();    // re-calculate the new height with the new suggested width.
+            Update_Text_Cache();    // Recalculate the height based on the new width.
             New_Height = Min(Parent->Get_Height() - Get_Position().Y, Text_Cache.size());
         }
         
+        // Apply the calculated dimensions to the text field.
         Set_Dimensions(New_Width, New_Height);
     }
 
+    /**
+     * @brief Sets the text of the text field.
+     * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
+     * @param text The new text for the text field.
+     */
     void Text_Field::Set_Text(std::string text){
         Text = text;
         Update_Text_Cache();
@@ -185,47 +209,61 @@ namespace GGUI{
         Update_Frame();
     }
 
-    void Text_Field::Align_Text_Left(std::vector<UTF>& Result){
-        unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
+    /**
+     * @brief Aligns text to the left within the text field.
+     * @param Result A vector of UTF objects to store the aligned text.
+     * @details This function iterates over each line in the Text_Cache and aligns them to the left side 
+     *          of the text field. The function respects the maximum height and width of the text field 
+     *          and handles overflow according to the Style settings.
+     */
+    void Text_Field::Align_Text_Left(std::vector<UTF>& Result) {
+        unsigned int Line_Index = 0;  // To keep track of the inter-line positioning.
 
-        for (Compact_String line : Text_Cache){
-            unsigned int Row_Index = 0;
+        for (Compact_String line : Text_Cache) {
+            unsigned int Row_Index = 0;  // To track characters within the line.
 
             if (Line_Index >= Get_Height())
-                break;  // All possible usable lines filled.
+                break;  // Stop if all available lines are filled.
 
-            for (unsigned int Y = 0; Y < Get_Height(); Y++){
-                for (unsigned int X = 0; X < Get_Width(); X++){
+            for (unsigned int Y = 0; Y < Get_Height(); Y++) {
+                for (unsigned int X = 0; X < Get_Width(); X++) {
 
+                    // Stop if the end of the current line is reached.
                     if (Y * Get_Width() + X >= line.Size)
                         goto Next_Line;
 
-                    // write to the Result
+                    // Write the current character to the Result buffer.
                     Result[(Y + Line_Index) * Get_Width() + X] = line[Row_Index++];
                 }
 
-                // If current line has ended and the text is not word wrapped
+                // Handle line overflow based on the style settings.
                 if (Style->Allow_Overflow.Value)
-                    goto Next_Line; // An break would suffice but use goto for more readability
-
+                    goto Next_Line;
             }
 
             Next_Line:;
-            Line_Index++;
+            Line_Index++;  // Move to the next line.
         }
     }
 
-    void Text_Field::Align_Text_Right(std::vector<UTF>& Result){        
+    /**
+     * @brief Aligns text to the right within the text field.
+     * @param Result A vector of UTF objects to store the aligned text.
+     * @details This function iterates over each line in the Text_Cache and aligns them to the right side
+     *          of the text field. The function respects the maximum height and width of the text field
+     *          and handles overflow according to the Style settings.
+     */
+    void Text_Field::Align_Text_Right(std::vector<UTF>& Result) {
         unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
 
-        for (Compact_String line : Text_Cache){
+        for (Compact_String line : Text_Cache) {
             int Row_Index = line.Size - 1;  // Start from the end of the line
 
             if (Line_Index >= Get_Height())
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < Get_Height(); Y++){
-                for (int X = (signed)Get_Width() - 1; X >= 0; X--){
+            for (unsigned int Y = 0; Y < Get_Height(); Y++) {
+                for (int X = (signed)Get_Width() - 1; X >= 0; X--) {
 
                     if (Row_Index < 0)  // If there are no more characters in the line
                         goto Next_Line;
@@ -244,19 +282,26 @@ namespace GGUI{
         }
     }
 
-    void Text_Field::Align_Text_Center(std::vector<UTF>& Result){
+    /**
+     * @brief Aligns text to the center within the text field.
+     * @param Result A vector of UTF objects to store the aligned text.
+     * @details This function iterates over each line in the Text_Cache and aligns them to the center of the text field. The function respects the maximum height and width of the text field
+     *          and handles overflow according to the Style settings.
+     */
+    void Text_Field::Align_Text_Center(std::vector<UTF>& Result) {
         unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
 
-        for (Compact_String line : Text_Cache){
+        for (Compact_String line : Text_Cache) {
             unsigned int Row_Index = 0;  // Start from the beginning of the line
             unsigned int Start_Pos = (Get_Width() - line.Size) / 2;  // Calculate the starting position
 
             if (Line_Index >= Get_Height())
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < Get_Height(); Y++){
-                for (unsigned int X = 0; X < Get_Width(); X++){
+            for (unsigned int Y = 0; Y < Get_Height(); Y++) {
+                for (unsigned int X = 0; X < Get_Width(); X++) {
 
+                    // If the current character is outside the line's range, skip it
                     if (X < Start_Pos || X > Start_Pos + line.Size)
                         continue;
 
@@ -277,16 +322,22 @@ namespace GGUI{
         }
     }
 
-
-    void Text_Field::Input(std::function<void(char)> Then){
-        Action* addr = new Action(
+    /**
+     * @brief Listens for input and calls a function when user presses any key.
+     * @param Then A function that takes a character as input and does something with it.
+     * @details This function creates three actions (for key press, enter, and backspace) that listen for input when the text field is focused. If the event is a key press or enter, it
+     *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
+     *          dirty and updates the frame.
+     */
+    void Text_Field::Input(std::function<void(char)> Then) {
+        Action* key_press = new Action(
             Constants::KEY_PRESS,
-            [this, Then](GGUI::Event* e){
-                if (Focused){
+            [this, Then](GGUI::Event* e) {
+                if (Focused) {
                     //We know the event was gifted as Input*
                     GGUI::Input* input = (GGUI::Input*)e;
 
-                    //First 
+                    //First call the function with the user's input
                     Then(input->Data);
                     Update_Frame();
 
@@ -297,16 +348,16 @@ namespace GGUI{
             },
             this
         );
-        GGUI::Event_Handlers.push_back(addr);
+        GGUI::Event_Handlers.push_back(key_press);
 
         Action* enter = new Action(
             Constants::ENTER,
-            [this, Then](GGUI::Event* e){
-                if (Focused){
+            [this, Then](GGUI::Event* e) {
+                if (Focused) {
                     //We know the event was gifted as Input*
                     GGUI::Input* input = (GGUI::Input*)e;
 
-                    //First 
+                    //First call the function with the user's input
                     Then(input->Data);
                     Update_Frame();
 
@@ -321,10 +372,10 @@ namespace GGUI{
 
         Action* back_space = new Action(
             Constants::BACKSPACE,
-            [this](GGUI::Event*){
-                if (Focused){
-                    
-                    if (Text.size() > 0){
+            [this](GGUI::Event*) {
+                if (Focused) {
+                    //If the text field is empty, there is nothing to do
+                    if (Text.size() > 0) {
                         Text.pop_back();
                         Dirty.Dirty(STAIN_TYPE::DEEP);
                         Update_Frame();

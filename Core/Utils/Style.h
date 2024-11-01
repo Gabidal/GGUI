@@ -772,7 +772,25 @@ namespace GGUI{
         const char* HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
         const char* HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
         const char* CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
-
+    
+        /**
+         * @brief A structure to hold the border style of a widget.
+         *
+         * The style is represented as a vector of strings, each string being a character
+         * that will be used to draw the border of the widget. The vector must have the
+         * following size and order:
+         * - 0: Top left corner
+         * - 1: Bottom left corner
+         * - 2: Top right corner
+         * - 3: Bottom right corner
+         * - 4: Vertical line
+         * - 5: Horizontal line
+         * - 6: Vertical right connector
+         * - 7: Vertical left connector
+         * - 8: Horizontal bottom connector
+         * - 9: Horizontal top connector
+         * - 10: Cross connector
+         */
         styled_border(std::vector<const char*> values, VALUE_STATE Default = VALUE_STATE::VALUE);
 
         // Re-import defaults:
@@ -1140,6 +1158,13 @@ namespace GGUI{
         // This function will expect that listed elements are given as recursive style_base inheritants. Nested AST or tree based nodes are thus always captured by their preceding element nodes, which will capture all that is given to it.
         void Embed_Styles(Element* owner);
 
+        /**
+         * @brief Copies the values of the given Styling object to the current object.
+         *
+         * This will copy all the values of the given Styling object to the current object.
+         *
+         * @param other The Styling object to copy from.
+         */
         void Copy(const Styling& other);
 
         void Copy(const Styling* other){

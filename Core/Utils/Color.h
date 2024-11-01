@@ -35,10 +35,19 @@ namespace GGUI{
         }
 
         RGB(){}
-
+        
+        /**
+         * @brief Gets the colour as a string.
+         *
+         * @return The colour as a string. Format is: "X;Y;Z" where X, Y, Z are the values of red, green, blue respectively.
+         */
         std::string Get_Colour() const;
 
-        // Needs the Result to be initialized with atleast Maximum_Needed_Pre_Allocation_For_Color
+        /**
+         * @brief Converts the RGB colour to a string.
+         *
+         * @param Result The result string.
+         */
         void Get_Colour_As_Super_String(Super_String* Result) const;
     
         /**

@@ -264,13 +264,54 @@ namespace GGUI{
             FLAGS = other.FLAGS;
         }
 
+        /**
+         * @brief Converts the UTF character to a string.
+         *
+         * This function converts the UTF character to a string by combining the foreground and background colour
+         * strings with the character itself.
+         *
+         * @return The string representation of the UTF character.
+         */
         std::string To_String();
-        std::string To_Encoded_String();    // For UTF Strip Encoding.
+        
+        /**
+         * @brief Converts the UTF character to an encoded string.
+         *
+         * This function converts the UTF character to an encoded string by applying
+         * encoding flags and combining the foreground and background colour strings
+         * with the character itself.
+         *
+         * @return The encoded string representation of the UTF character.
+         */
+        std::string To_Encoded_String();
 
-        // Needs Result to be initalized with Maximum_Needed_Pre_Allocation_For_Super_String at max.
+        /**
+         * @brief Converts the UTF character to a string.
+         *
+         * This function converts the UTF character to a string by combining the foreground and background colour
+         * strings with the character itself.
+         *
+         * @param Result The result string.
+         * @param Text_Overhead The foreground colour and style as a string.
+         * @param Background_Overhead The background colour and style as a string.
+         * @param Text_Colour The foreground colour as a string.
+         * @param Background_Colour The background colour as a string.
+         */
         void To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
         
-        // Needs Result to be initalized with Maximum_Needed_Pre_Allocation_For_Super_String at max.
+        /**
+         * @brief Converts the UTF character to an encoded Super_String.
+         *
+         * This function converts the UTF character to an encoded Super_String by applying
+         * encoding flags and combining the foreground and background colour strings
+         * with the character itself.
+         *
+         * @param Result The Super_String to which the encoded string will be added.
+         * @param Text_Overhead The Super_String where the foreground colour overhead will be stored.
+         * @param Background_Overhead The Super_String where the background colour overhead will be stored.
+         * @param Text_Colour The Super_String where the foreground colour will be stored.
+         * @param Background_Colour The Super_String where the background colour will be stored.
+         */
         void To_Encoded_Super_String(Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
 
         void operator=(char text){

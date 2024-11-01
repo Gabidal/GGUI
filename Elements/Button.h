@@ -37,6 +37,12 @@ namespace GGUI{
         }
     public:
 
+        /**
+         * @brief Constructs a Button element with specified text, action, and styling.
+         * @param text The text to display on the button.
+         * @param press The function to call when the button is pressed.
+         * @param s The styling for the button.
+         */
         Button(std::string Text, std::function<void (Button* This)> press = [](Button*){}, Styling s = STYLES::CONSTANTS::Default);
 
         /**
