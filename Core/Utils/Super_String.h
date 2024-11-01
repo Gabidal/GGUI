@@ -16,7 +16,8 @@ namespace GGUI{
 
         unsigned int Size = 0;
 
-        // Only for resize!!!
+        /// Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
+        /// @warning Do not use this constructor directly, as it will not initialize the Data property.
         Compact_String() = default;
 
         /// Construct a Compact_String from a null-terminated string.

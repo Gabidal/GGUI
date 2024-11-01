@@ -61,38 +61,110 @@ namespace GGUI{
             EVALUATION_TYPE evaluation_type = EVALUATION_TYPE::DEFAULT;
 
         public:
+            /**
+             * Constructor for value class
+             * @param value The value to be stored in the variant
+             * @param type The type of the value
+             * @param use_constexpr Whether to use constexpr or not
+             */
             constexpr value(T value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr)
                 : data(value), evaluation_type(type) {}
 
+            /**
+             * Constructor for value class
+             * @param value The value to be stored in the variant
+             * @param type The type of the value
+             * @param use_constexpr Whether to use constexpr or not
+             *
+             * This constructor is used when the value is a float and the type is
+             * specified. The constexpr parameter is used to determine whether to
+             * use a constexpr constructor or not.
+             */
             constexpr value(float value, EVALUATION_TYPE type, [[maybe_unused]] bool use_constexpr)
                 : data(value), evaluation_type(type) {}
 
+
+            /**
+             * Constructor for value class
+             * @param value The value to be stored in the variant
+             * @param type The type of the value
+             *
+             * This constructor is used to create a value with a type specified.
+             * The default type is DEFAULT.
+             */
             value(T value, EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT)
                 : data(value), evaluation_type(type) {}
 
+            /**
+             * Constructor for value class
+             * @param value The value to be stored in the variant
+             * @param type The type of the value
+             *
+             * This constructor is used when the value is a float and the type is
+             * specified. If the type is not specified, the default type is
+             * PERCENTAGE.
+             */
             value(float value, EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE)
                 : data(value), evaluation_type(type) {}
 
-            // Copy constructor
+            /**
+             * Copy constructor
+             * @param other The object to be copied from
+             *
+             * This constructor is used to create a copy of the value object.
+             * The data and the evaluation type are copied from the other object.
+             */
             constexpr value(const value<T>& other)
                 : data(other.data), evaluation_type(other.evaluation_type) {}
 
-            // Assignment operators
+
+            /**
+             * Assignment operator
+             * @param other The object to be assigned from
+             * @return The object itself, for chaining
+             *
+             * This operator is used to assign the data and the evaluation type
+             * from another object of the same type.
+             */
             constexpr value& operator=(const value& other) {
+                // Copy the data and the evaluation type from the other object
                 data = other.data;
                 evaluation_type = other.evaluation_type;
+                // Return the object itself, for chaining
                 return *this;
             }
 
+            /**
+             * Assignment operator
+             * @param initialization_data The value to be assigned to the data member
+             * @return The object itself, for chaining
+             *
+             * This operator is used to assign a value of type T to the data member.
+             * The type of the value is set to DEFAULT.
+             */
             constexpr value& operator=(T initialization_data) {
+                // Set the data to the value passed in
                 data = initialization_data;
+                // Set the evaluation type to DEFAULT
                 evaluation_type = EVALUATION_TYPE::DEFAULT;
+                // Return the object itself, for chaining
                 return *this;
             }
 
+            /**
+             * Assignment operator for float type
+             * @param initialization_data The float value to be assigned to the data member
+             * @return The object itself, for chaining
+             *
+             * This operator is used to assign a float value to the data member.
+             * The type of the value is set to PERCENTAGE.
+             */
             constexpr value& operator=(float initialization_data) {
+                // Set the data to the float value passed in
                 data = initialization_data;
+                // Set the evaluation type to PERCENTAGE
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
+                // Return the object itself, for chaining
                 return *this;
             }
 
@@ -160,10 +232,19 @@ namespace GGUI{
                 return std::get<P>(data);  // In release mode, or after the check passes in debug mode
             }
 
-            // This is an exclusive Dev function, with serious repercussions for misuse.
+            /**
+             * @brief Direct access to the underlying data of the variant.
+             *        This is an exclusive Dev function, with serious repercussions for misuse.
+             * @tparam P The type to cast the variant to.
+             * @return A reference to the underlying data of the variant.
+             * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
+             */
             template<typename P>
             P& Direct() { 
-                // check at compile time if the compiler is compiling with debug or release flags, if debug then enable data type check
+                /**
+                 * In debug mode, check if the requested type matches the type of the data.
+                 * If it doesn't, throw an exception.
+                 */
                 #ifdef _DEBUG
                 if (!std::holds_alternative<P>(data)) {
                     Report_Stack("Value is not of the requested type!");
@@ -173,11 +254,22 @@ namespace GGUI{
                 return std::get<P>(data);  // In release mode, or after the check passes in debug mode
             }
 
+            /**
+             * @brief Set the value of the variant.
+             * @param value The value to set the variant to.
+             * @details This sets the value of the variant to the provided value.
+             *          The evaluation type is set to EVALUATION_TYPE::DEFAULT.
+             */
             inline void Set(T value) {
                 data = value;
                 evaluation_type = EVALUATION_TYPE::DEFAULT;
             }
 
+            /**
+             * @brief Set the value of the variant to a percentage.
+             * @param value The value to set the variant to.
+             * @details This sets the value of the variant to the provided value, and sets the evaluation type to EVALUATION_TYPE::PERCENTAGE.
+             */
             inline void Set(float value){
                 data = value;
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
@@ -192,18 +284,41 @@ namespace GGUI{
             // This is used to store all appended style_bases through the operator|.
             style_base* Other = nullptr;
 
+            /**
+             * @brief Construct a new constexpr style_base object.
+             * @param status The status to initialize the style_base with.
+             * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
+             */
             constexpr style_base(VALUE_STATE status, [[maybe_unused]] bool use_constexpr) : Status(status), Other(nullptr){}
             
+            /**
+             * @brief Construct a new style_base object.
+             * @param status The status to initialize the style_base with.
+             */
             style_base(VALUE_STATE status) : Status(status), Other(nullptr){}
 
+            /**
+             * @brief Default constructor for style_base.
+             * @details This constructor does nothing and is only provided to make the class default constructible.
+             */
             style_base() = default;
 
+            /**
+             * @brief Destructor of the style_base class.
+             *
+             * This destructor takes care of deleting the "Other" pointer if it is a heap-allocated object.
+             * It does this by calling the Is_Deletable() function to check if the pointer is likely to be
+             * a heap-allocated object. If it is, it deletes the object using the delete keyword.
+             */
             virtual ~style_base();
 
             /**
-             * Overload the | operator to allow for appending of style_bases.
+             * @brief Overload the | operator to allow for appending of style_bases.
              * @param other The style_base to append.
              * @return A pointer to the style_base that was appended to.
+             * @details This function is used to append a style_base to another style_base. It does this by
+             *          setting the Other pointer of the current object to the address of the other object.
+             *          Then it returns a pointer to the current object.
              */
             style_base* operator|(style_base* other){
                 Other = other;
@@ -211,26 +326,56 @@ namespace GGUI{
                 return this;
             }
 
+            /**
+             * @brief Overload the | operator to allow for appending of style_bases.
+             * @param other The style_base to append.
+             * @return A reference to the style_base that was appended to.
+             * @details This function is used to append a style_base to another style_base. It does this by
+             *          setting the Other pointer of the current object to the address of the other object.
+             *          Then it returns a reference to the current object.
+             */
             style_base& operator|(style_base& other){
                 Other = &other;
 
                 return *this;
             }
 
-            // Since operators for "a | b | c" will re-write the previous the "a | b" when at c with "ab | c", will produce "ac" and not "abc".
-            // Which is why we return the secondary so that: "a | b | c" -> "b(a) | c" -> "c(b(a))"
+            /**
+             * @brief Overload the | operator to allow for appending of style_bases using move semantics.
+             * @param other The style_base to append.
+             * @return A reference to the style_base that was appended to.
+             * @details This function is used to append a style_base to another style_base using move semantics.
+             *          It sets the Other pointer of the moved object to the current object. Then it returns
+             *          a reference to the moved object to ensure proper chaining of operations.
+             * @note Since operators for "a | b | c" will re-write the previous "a | b" when at c with "ab | c",
+             *       it will produce "ac" and not "abc". Thus, we return the secondary object so that: 
+             *       "a | b | c" -> "b(a) | c" -> "c(b(a))".
+             */
             style_base& operator|(style_base&& other){
                 other.Other = this;
 
                 return other;
             }
 
-            // for dynamically computable values like percentage depended
-            // currently covers:
-            // - screen space
+            /**
+             * @brief Evaluates the style value based on a given Styling object.
+             * @param host The Styling object to evaluate the style value with.
+             * @details This function is used to evaluate the style value based on a given Styling object.
+             *          It is called by the Styling class when the style value needs to be evaluated.
+             *          The function is responsible for setting the Status variable to the evaluated status.
+             *          The function is also responsible for setting the Value variable to the evaluated value.
+             *          The function should be implemented by the derived classes to perform the evaluation.
+             */
             virtual void Evaluate(Styling* host) = 0;
 
-            // This function is for the single style classes to be able to imprint their own identity into the Styling class
+            /**
+             * @brief Imprints the style's identity into the Styling object.
+             * @param host The Styling object to imprint the style into.
+             * @param owner The Element that owns the style.
+             * @return The type of stain this style will leave.
+             * @details This function allows single style classes to incorporate their unique characteristics into a Styling object. 
+             *          It should be implemented by derived classes to define how the style affects the Styling and Element objects.
+             */
             virtual STAIN_TYPE Embed_Value(Styling* host, Element* owner) = 0;
         };
 
@@ -238,17 +383,41 @@ namespace GGUI{
         public:
             value<RGB> Value = RGB(0, 0, 0);
 
+            /**
+             * @brief Construct a new RGB_VALUE object.
+             * @param value The initial value of the RGB_VALUE object.
+             * @param Default The default status of the RGB_VALUE object.
+             * @details This constructor initializes the RGB_VALUE object with the specified value and default status.
+             */
             RGB_VALUE(RGB value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
                 Value = value;
             }
 
-            constexpr RGB_VALUE(const GGUI::RGB value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
-
+            /**
+             * @brief Construct a new RGB_VALUE object using constexpr.
+             * @param value The RGB value to set.
+             * @param Default The default value state.
+             * @param use_constexpr Flag indicating whether to use constexpr.
+             * @details This constructor initializes an RGB_VALUE object with the given parameters,
+             *          using constexpr for compile-time evaluation.
+             */
+            constexpr RGB_VALUE(const GGUI::RGB value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) 
+                : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true) {}
             RGB_VALUE() = default;
 
+            /**
+             * @brief Destructor for the RGB_VALUE class.
+             * @details This destructor is necessary to ensure that the base class destructor is called.
+             */
             ~RGB_VALUE() override { style_base::~style_base(); }
 
-            // operator overload for copy operator
+            /**
+             * @brief Overload the assignment operator for RGB_VALUE.
+             * @param other The other RGB_VALUE object to assign from.
+             * @return A reference to this RGB_VALUE object.
+             * @details This function assigns the value and status of the other RGB_VALUE object to this one.
+             *          It only copies the information if the other object is enabled.
+             */
             RGB_VALUE& operator=(const RGB_VALUE& other){
                 // Only copy the information if the other is enabled.
                 if (other.Status >= Status){
@@ -259,17 +428,42 @@ namespace GGUI{
                 return *this;
             }
 
+            /**
+             * @brief Overload the assignment operator for RGB_VALUE.
+             * @param other The other RGB_VALUE object to assign from.
+             * @return A reference to this RGB_VALUE object.
+             * @details This function assigns the RGB value of the other RGB_VALUE object to this one.
+             *          It sets the status of the object to VALUE_STATE::VALUE after the assignment.
+             */
             RGB_VALUE& operator=(const GGUI::RGB other){
                 Value = other;
                 Status = VALUE_STATE::VALUE;
                 return *this;
             }
         
+            /**
+             * @brief Copy constructor for RGB_VALUE.
+             * @param other The RGB_VALUE object to copy from.
+             * @details This constructor creates a new RGB_VALUE object that is a copy of the other one.
+             *          It copies the value and status of the other object, and sets the status to VALUE_STATE::VALUE.
+             */
             constexpr RGB_VALUE(const GGUI::STYLING_INTERNAL::RGB_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
 
-            // The basic style types do not have imprint methods.
+
+            /**
+             * @brief Embeds the value of an RGB_VALUE object into a Styling object.
+             * @param host The Styling object to embed the value into.
+             * @param owner The Element that owns the Styling object.
+             * @return A STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+             */
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, Element* owner) override;
 
+            /**
+             * @brief Evaluate the RGB_VALUE.
+             * @param owner The styling owner to evaluate against.
+             * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
+             */
             void Evaluate(Styling* owner) override = 0;
         };
 
@@ -277,41 +471,91 @@ namespace GGUI{
         public:
             bool Value = false;
 
+            /**
+             * @brief Constructor for a BOOL_VALUE object.
+             * @param value The value to set the BOOL_VALUE to.
+             * @param Default The default value state to use if the value is not set.
+             * @details This constructor creates a new BOOL_VALUE object with the given value and default value state.
+             */
             BOOL_VALUE(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
                 Value = value;
             }
 
-            constexpr BOOL_VALUE(bool value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value){}
+            /**
+             * @brief Construct a new constexpr BOOL_VALUE object.
+             * @param value The boolean value to set.
+             * @param Default The default value state to use.
+             * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
+             */
+            constexpr BOOL_VALUE(bool value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) 
+                : style_base(Default, true), Value(value) {}
 
+            /**
+             * @brief Default constructor for BOOL_VALUE.
+             * @details This constructor is provided to ensure that BOOL_VALUE is default constructible.
+             */
             BOOL_VALUE() = default;
             
+            /**
+             * @brief Destructor for the BOOL_VALUE class.
+             * @details This destructor is responsible for properly deallocating all the memory
+             * allocated by the BOOL_VALUE object, including its parent class resources.
+             */
             ~BOOL_VALUE() override { style_base::~style_base(); }
 
-            // operator overload for copy operator
+            /**
+             * @brief Overload the assignment operator for BOOL_VALUE.
+             * @param other The other BOOL_VALUE object to assign from.
+             * @return A reference to this BOOL_VALUE object.
+             * @details This function assigns the value and status of the other BOOL_VALUE object to this one.
+             *          It only copies the information if the other object is enabled.
+             */
             BOOL_VALUE& operator=(const BOOL_VALUE& other){
                 // Only copy the information if the other is enabled.
                 if (other.Status >= Status){
-                    Value = other.Value;
-
-                    Status = other.Status;
+                    Value = other.Value; // Copy the value from the other object
+                    
+                    Status = other.Status; // Update the status to the other object's status
                 }
-                return *this;
+                return *this; // Return a reference to this object
             }
 
+            /**
+             * @brief Overload the assignment operator for BOOL_VALUE.
+             * @param other The boolean value to assign to this BOOL_VALUE.
+             * @return A reference to this BOOL_VALUE object.
+             * @details This function assigns the boolean value to the BOOL_VALUE object,
+             *          setting the status to VALUE_STATE::VALUE.
+             */
             BOOL_VALUE& operator=(const bool other){
-                Value = other;
-                Status = VALUE_STATE::VALUE;
-                return *this;
+                Value = other; // Assign the boolean value to the Value member
+                Status = VALUE_STATE::VALUE; // Set the status to indicate a valid value
+                return *this; // Return a reference to this object
             }
         
-            constexpr BOOL_VALUE(const GGUI::STYLING_INTERNAL::BOOL_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
+            /**
+             * @brief Copy constructor for BOOL_VALUE.
+             * @param other The BOOL_VALUE object to copy from.
+             * @details This constructor creates a new BOOL_VALUE object that is a copy of the other one.
+             *          It copies the value and status of the other object.
+             */
+            constexpr BOOL_VALUE(const GGUI::STYLING_INTERNAL::BOOL_VALUE& other) 
+                : style_base(other.Status, true), Value(other.Value) {}
             
-            // for dynamically computable values like percentage depended
-            // currently covers:
-            // - screen space
+            /**
+             * @brief Evaluate the BOOL_VALUE.
+             * @param owner The styling owner to evaluate against.
+             * @details This function is a no-op for BOOL_VALUE, as it does not have any dynamically computable values.
+             */
             void Evaluate([[maybe_unused]] Styling* owner) override {};
-
-            // The basic style types do not have imprint methods.
+            
+            /**
+             * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
+             * @param host The Styling object to embed the value into.
+             * @param owner The Element that owns the Styling object.
+             * @return A STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+             */
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host,  Element* owner) override;
         };
         
@@ -319,19 +563,56 @@ namespace GGUI{
         public:
             value<int> Value = 0;
 
-            NUMBER_VALUE(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
-                Value = value;
+            /**
+             * @brief Construct a new NUMBER_VALUE object.
+             * @param value The integer value to initialize the NUMBER_VALUE with.
+             * @param Default The default value state of the NUMBER_VALUE.
+             * @details This constructor initializes the NUMBER_VALUE with the provided integer value and default state.
+             */
+            NUMBER_VALUE(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default) {
+                Value = value; // Initialize the Value member with the provided integer value
             }
 
+            /**
+             * @brief Construct a new NUMBER_VALUE object from a float.
+             * @param value The floating point value to initialize the NUMBER_VALUE with.
+             * @param Default The default value state of the NUMBER_VALUE.
+             * @details This constructor initializes the NUMBER_VALUE with the provided float value and default state.
+             *          The value is converted to a percentage (multiplying by 0.01) and stored as a float in the Value member.
+             */
             NUMBER_VALUE(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE){}
 
+            /**
+             * @brief Construct a new NUMBER_VALUE object from an integer using constexpr.
+             * @param value The integer value to initialize the NUMBER_VALUE with.
+             * @param Default The default value state of the NUMBER_VALUE.
+             * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
+             * @details This constructor initializes a NUMBER_VALUE object with the provided integer value and default state,
+             *          using constexpr for compile-time evaluation.
+             */
             constexpr NUMBER_VALUE(int value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
+            /**
+             * @brief Default constructor for NUMBER_VALUE.
+             * @details This constructor is provided to ensure that NUMBER_VALUE is default constructible.
+             *          It does not initialize any values and leaves the object in an undefined state.
+             */
             NUMBER_VALUE() = default;
 
+            /**
+             * @brief Destructor for NUMBER_VALUE.
+             * @details This destructor is responsible for cleaning up the resources allocated by the NUMBER_VALUE object.
+             *          It is marked as `override` to ensure that it is called when the object is destroyed.
+             */
             ~NUMBER_VALUE() override { style_base::~style_base(); }
 
-            // operator overload for copy operator
+            /**
+             * @brief Overload the assignment operator for NUMBER_VALUE.
+             * @param other The other NUMBER_VALUE object to assign from.
+             * @return A reference to this NUMBER_VALUE object.
+             * @details This function assigns the value and status of the other NUMBER_VALUE object to this one.
+             *          It only copies the information if the other object is enabled.
+             */
             NUMBER_VALUE& operator=(const NUMBER_VALUE& other){
                 // Only copy the information if the other is enabled.
                 if (other.Status >= Status){
@@ -342,19 +623,49 @@ namespace GGUI{
                 return *this;
             }
 
+            /**
+             * @brief Overload the assignment operator for NUMBER_VALUE.
+             * @param other The other number to assign from.
+             * @return A reference to this NUMBER_VALUE object.
+             * @details This function assigns the value of the other number to this NUMBER_VALUE object.
+             *          It sets the status to VALUE_STATE::VALUE and returns the modified object.
+             */
             NUMBER_VALUE& operator=(const int other){
                 Value = other;
                 Status = VALUE_STATE::VALUE;
                 return *this;
             }
         
+            /**
+             * @brief Construct a new NUMBER_VALUE object from another NUMBER_VALUE object using constexpr.
+             * @param other The other NUMBER_VALUE object to construct from.
+             * @details This constructor initializes a new NUMBER_VALUE object with the same value and status as the given object.
+             */
             constexpr NUMBER_VALUE(const GGUI::STYLING_INTERNAL::NUMBER_VALUE& other) : style_base(other.Status, true), Value(other.Value){}
             
-            // The basic style types do not have imprint methods.
+
+            /**
+             * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
+             * @param host The Styling object to embed the value into.
+             * @param owner The Element that owns the Styling object.
+             * @return A STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+             */
             STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
             
+            /**
+             * @brief Evaluate the RGB_VALUE.
+             * @param owner The styling owner to evaluate against.
+             * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
+             *          When called, the function should evaluate the RGB value based on the owner object and set the Value property accordingly.
+             */
             void Evaluate(Styling* owner) override = 0;
 
+            /**
+             * @brief Directly access the value of this NUMBER_VALUE object.
+             * @return A reference to the value of this NUMBER_VALUE object.
+             * @details This function returns a reference to the value of this NUMBER_VALUE object, allowing it to be directly accessed and modified.
+             */
             int& Direct() { return Value.Direct<int>(); }
         };
 
@@ -363,17 +674,48 @@ namespace GGUI{
         public:
             T Value;
 
-            ENUM_VALUE(T value, VALUE_STATE Default = VALUE_STATE::INITIALIZED) : style_base(Default){
+            /**
+             * @brief Construct a new ENUM_VALUE object.
+             * @param value The initial value of the ENUM_VALUE object.
+             * @param Default The default value state to initialize the ENUM_VALUE object with.
+             * @details This constructor initializes the ENUM_VALUE object with the provided value
+             *          and default value state, inheriting from the style_base class.
+             */
+            ENUM_VALUE(T value, VALUE_STATE Default = VALUE_STATE::INITIALIZED) : style_base(Default) {
                 Value = value;
             }
 
+            /**
+             * @brief Construct a new ENUM_VALUE object using constexpr.
+             * @param value The enum value to set.
+             * @param Default The default value state.
+             * @param use_constexpr Flag indicating whether to use constexpr.
+             * @details This constructor initializes an ENUM_VALUE object with the given enum value and default state,
+             *          using constexpr for compile-time evaluation.
+             */
             constexpr ENUM_VALUE(T value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value){}
 
+            /**
+             * @brief Default constructor for ENUM_VALUE.
+             * @details This constructor is declared as default, allowing the compiler to generate a default
+             *          implementation for the constructor.
+             */
             ENUM_VALUE() = default;
 
+            /**
+             * @brief Destructor for ENUM_VALUE.
+             * @details This destructor is responsible for cleaning up the resources allocated by the ENUM_VALUE object.
+             *          It is marked as `override` to ensure that it is called when the object is destroyed.
+             */
             ~ENUM_VALUE() override { style_base::~style_base(); }
 
-            // operator overload for copy operator
+            /**
+             * @brief Overload the assignment operator for ENUM_VALUE.
+             * @param other The other ENUM_VALUE object to assign from.
+             * @return A reference to this ENUM_VALUE object.
+             * @details This function assigns the value and status of the other ENUM_VALUE object to this one.
+             *          It only copies the information if the other object is enabled.
+             */
             ENUM_VALUE& operator=(const ENUM_VALUE& other){
                 // Only copy the information if the other is enabled.
                 if (other.Status >= Status){
@@ -384,38 +726,99 @@ namespace GGUI{
                 return *this;
             }
 
+            /**
+             * @brief Overload the assignment operator for ENUM_VALUE.
+             * @param other The other value to assign from.
+             * @return A reference to this ENUM_VALUE object.
+             * @details This function assigns the value and status of the other ENUM_VALUE object to this one.
+             *          It only copies the information if the other object is enabled.
+             */
             ENUM_VALUE& operator=(const T other){
                 Value = other;
                 Status = VALUE_STATE::VALUE;
                 return *this;
             }
+
         
-            constexpr ENUM_VALUE(const GGUI::STYLING_INTERNAL::ENUM_VALUE<T>& other) : style_base(other.Status, true), Value(other.Value){}
+            /**
+             * @brief Copy constructor for ENUM_VALUE.
+             * @param other The ENUM_VALUE object to copy from.
+             * @details This constructor creates a new ENUM_VALUE object that is a copy of the other one.
+             *          It copies the value and status of the other object.
+             */
+            constexpr ENUM_VALUE(const GGUI::STYLING_INTERNAL::ENUM_VALUE<T>& other) 
+                : style_base(other.Status, true), Value(other.Value) {}
                         
-            // for dynamically computable values like percentage depended
-            // currently covers:
-            // - screen space
+            /**
+             * @brief Evaluate the style.
+             * @param owner The Styling object that owns this style.
+             * @details This function is used to evaluate the style with the given Styling object.
+             *          It is used to support dynamic values like percentage depended values.
+             *          The function does not do anything as of now.
+             */
             void Evaluate([[maybe_unused]] Styling* owner) override {};
 
-            // The basic style types do not have imprint methods.
+
+            /**
+             * @brief Embed the value of this style into the given Styling object.
+             * @param host The Styling object to embed the value into.
+             * @param owner The Element that owns the Styling object.
+             * @return The type of stain that this style embeds.
+             * @details This function embeds the value of this style into the given Styling object.
+             *          The value is not evaluated or modified in any way.
+             *          It is used to support dynamic values like percentage depended values.
+             *          The function does not do anything as of now.
+             */
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) override { return (STAIN_TYPE)0; };
+
         };
         
         class Vector : public style_base{
         public:
             value<IVector3> Value = IVector3();
 
+            /**
+             * @brief Construct a new Vector object.
+             * @param value The initial value of the Vector object.
+             * @param Default The default value state to initialize the Vector object with.
+             * @details This constructor initializes the Vector object with the provided value
+             *          and default value state, inheriting from the style_base class.
+             */
             Vector(IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
                 Value = value;
             }
 
+            /**
+             * @brief Construct a new Vector object using constexpr.
+             * @param value The value to set.
+             * @param Default The default value state.
+             * @param use_constexpr Flag indicating whether to use constexpr.
+             * @details This constructor initializes a Vector object with the given parameters,
+             *          using constexpr for compile-time evaluation.
+             */
             constexpr Vector(const GGUI::IVector3 value, VALUE_STATE Default, [[maybe_unused]] bool use_constexpr) : style_base(Default, true), Value(value, EVALUATION_TYPE::DEFAULT, true){}
 
+            /**
+             * @brief Default constructor for Vector.
+             * @details This constructor does not perform any initialization of the Vector object.
+             */
             Vector() = default;
             
+            /**
+             * @brief Destructor for Vector.
+             * @details This destructor is responsible for cleaning up all resources allocated by the Vector object.
+             *          It calls the base class destructor (style_base::~style_base()) to ensure all parent class resources
+             *          are properly cleaned up.
+             */
             ~Vector() override { style_base::~style_base(); }
 
-            // operator overload for copy operator
+            /**
+             * @brief Overload the assignment operator for Vector.
+             * @param other The other Vector object to assign from.
+             * @return A reference to this Vector object.
+             * @details This function assigns the value and status of the other Vector object to this one.
+             *          It only copies the information if the other object is enabled.
+             */
             Vector& operator=(const Vector& other){
                 // Only copy the information if the other is enabled.
                 if (other.Status >= Status){
@@ -426,30 +829,81 @@ namespace GGUI{
                 return *this;
             }
 
+            /**
+             * @brief Overload the assignment operator for Vector.
+             * @param other The IVector3 object to assign from.
+             * @return A reference to this Vector object.
+             * @details This function assigns the value and status of the other IVector3 object to this one.
+             *          It sets the status to VALUE_STATE::VALUE and the value to the given IVector3 object.
+             */
             Vector& operator=(const GGUI::IVector3 other){
                 Value = other;
                 Status = VALUE_STATE::VALUE;
                 return *this;
             }
 
-            constexpr Vector(const GGUI::STYLING_INTERNAL::Vector& other) : style_base(other.Status, true), Value(other.Value){}
+            /**
+             * @brief Construct a new constexpr Vector object from another Vector.
+             * @param other The Vector to copy from.
+             * @details This constructor initializes a Vector object using the status and value from another Vector object,
+             *          utilizing constexpr for compile-time evaluation.
+             */
+            constexpr Vector(const GGUI::STYLING_INTERNAL::Vector& other) 
+                : style_base(other.Status, true), Value(other.Value) {}
             
-            IVector3 Get() { return Value.Get<IVector3>(); }
+            /**
+             * @brief Get the current value of the Vector.
+             * @return The current IVector3 value.
+             * @details This function returns the current value stored in the Vector.
+             */
+            IVector3 Get() { 
+                return Value.Get<IVector3>(); 
+            }
+
+            /**
+             * @brief Get the current value of the Vector.
+             * @return The current IVector3 value.
+             * @details This function returns the current value stored in the Vector.
+             *          This value can be used to get the current value of the Vector as an IVector3 object.
+             */
             constexpr IVector3 Get() const { return Value.Get<IVector3>(); }
 
+            /**
+             * @brief Set the current value of the Vector.
+             * @param value The new value to set the Vector to.
+             * @details This function sets the current value of the Vector to the given IVector3 object.
+             *          It also sets the Status of the Vector to VALUE_STATE::VALUE.
+             */
             void Set(IVector3 value){
                 Value = value;
                 Status = VALUE_STATE::VALUE;
             }
 
+            /**
+             * @brief Get a direct reference to the value stored in the Vector.
+             * @return A reference to the IVector3 object stored in the Vector.
+             * @details This function returns a direct reference to the IVector3 object stored in the Vector.
+             *          This can be used to directly manipulate the value of the Vector.
+             */
             IVector3& Direct() { return Value.Direct<IVector3>(); }
         
-            // for dynamically computable values like percentage depended
-            // currently covers:
-            // - screen space
+            /**
+             * @brief Evaluate the Vector value.
+             * @param owner The Styling object that the Vector is a part of.
+             * @details This function evaluates the Vector value.
+             *          For dynamically computable values like percentage depended this function is overridden.
+             *          Currently it covers:
+             *          - screen space
+             */
             void Evaluate([[maybe_unused]] Styling* owner) override {};
-
-            // The basic style types do not have imprint methods.
+            
+            /**
+             * @brief Embeds the value of a Vector object into a Styling object.
+             * @param host The Styling object to embed the value into.
+             * @param owner The Element that owns the Styling object.
+             * @return A STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+             */
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host,  Element* owner) override;
         };
     
@@ -1141,6 +1595,9 @@ namespace GGUI{
         // The construction time given styles are first put here, before embedding them into this class.
         STYLING_INTERNAL::style_base* un_parsed_styles;
 
+        /// Default constructor for Styling, initializes all values to their defaults.
+        /// 
+        /// This constructor is the default constructor for the Styling class. It will initialize all the values to their defaults.
         Styling() = default;
 
         Styling(STYLING_INTERNAL::style_base* attributes){

@@ -5,6 +5,13 @@
 
 namespace GGUI{
 
+    /**
+     * @brief Destructor of the style_base class.
+     *
+     * This destructor takes care of deleting the "Other" pointer if it is a heap-allocated object.
+     * It does this by calling the Is_Deletable() function to check if the pointer is likely to be
+     * a heap-allocated object. If it is, it deletes the object using the delete keyword.
+     */
     STYLING_INTERNAL::style_base::~style_base(){
         if (Other){
             // Check if the other is closer to an stack_starting address or to heap
@@ -12,6 +19,7 @@ namespace GGUI{
                 delete Other;
         }
     }
+
 
     // EVALs
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -91,12 +99,40 @@ namespace GGUI{
     // Embeds
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
+    /**
+     * @brief Embeds the value of an RGB_VALUE object into a Styling object.
+     * @param host The Styling object to embed the value into.
+     * @param owner The Element that owns the Styling object.
+     * @return A STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     */
     STAIN_TYPE STYLING_INTERNAL::RGB_VALUE::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
 
+    /**
+     * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
+     * @param host The Styling object to embed the value into.
+     * @param owner The Element that owns the Styling object.
+     * @return A STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     */
     STAIN_TYPE STYLING_INTERNAL::BOOL_VALUE::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
 
+    /**
+     * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
+     * @param host The Styling object to embed the value into.
+     * @param owner The Element that owns the Styling object.
+     * @return A STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     */
     STAIN_TYPE STYLING_INTERNAL::NUMBER_VALUE::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
 
+    /**
+     * @brief Embeds the value of a Vector object into a Styling object.
+     * @param host The Styling object to embed the value into.
+     * @param owner The Element that owns the Styling object.
+     * @return A STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     */
     STAIN_TYPE STYLING_INTERNAL::Vector::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
 
     STAIN_TYPE position::Embed_Value(Styling* host, [[maybe_unused]] Element* owner){
