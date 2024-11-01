@@ -54,13 +54,6 @@ namespace GGUI{
         void Set_Size_To_Fill_Parent();
 
         /**
-         * @brief Default constructor for the Text_Field class.
-         * @details This constructor initializes the Text_Field object with default values.
-         *          It does not perform any specific operations or initializations.
-         */
-        Text_Field() = default;
-
-        /**
          * @brief Sets the text of the text field.
          * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
          * @param text The new text for the text field.
