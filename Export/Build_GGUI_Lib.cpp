@@ -44,7 +44,7 @@ void Compile_Headers(){
     // Order the files before combination in the including order so that the files which are included the most are at the top. 
 
     std::string Destination_File_Name = "./GGUI.h";
-    std::vector<std::string> Header_Source_Folders = {"../Elements/", "../Core/", "../Core/SIMD/"};
+    std::vector<std::string> Header_Source_Folders = {"../Core/Utils/", "../Elements/", "../Core/", "../Core/SIMD/"};
 
     std::unordered_map<std::string, Header_File> Header_Files;
 
@@ -71,7 +71,7 @@ void Compile_Headers(){
     }
 
     // now on each Header_Files instance we need to use regex to find the lines with local includes like: `#include "localheaderfile.h"`
-    std::regex include_regex(R"(#include \"(.*)\")");
+    std::regex include_regex("#include\\s+\"([^\"]+/)*([^\"/]+\\.h)\"");
 
     // matches[1] is the file name which is included and matches[0] is the whole line.
     for(auto& Header : Header_Files){
@@ -81,7 +81,7 @@ void Compile_Headers(){
             // now that we have a match we need to do two things:
             // First increase the count of the header file which is named in the matches[1]
             // Secondly remove this include line from the File.Data
-            std::string Include_File_Name = matches[1].str();
+            std::string Include_File_Name = matches[2].str();
 
             // increase the count of the header file
             if(Header_Files.find(Include_File_Name) != Header_Files.end()){
