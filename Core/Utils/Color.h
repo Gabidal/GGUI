@@ -15,26 +15,9 @@ namespace GGUI{
         unsigned char Green = 0;
         unsigned char Blue = 0;
 
-        constexpr RGB(unsigned char r, unsigned char g, unsigned char b, [[maybe_unused]] bool Use_Const){
-            Red = r;
-            Green = g;
-            Blue = b;
-        }
-        
-        RGB(unsigned char r, unsigned char g, unsigned char b){
-            Red = r;
-            Green = g;
-            Blue = b;
-        }
+        constexpr RGB(unsigned char r, unsigned char g, unsigned char b) : Red(r), Green(g), Blue(b) {}
 
-        // Takes in a Hexadecimal representation of the RGB value, where 0xFFFFFF is White and 0x000000 is Black  
-        RGB(unsigned short hex){
-            Red = (hex >> 16) & 0xFF;
-            Green = (hex >> 8) & 0xFF;
-            Blue = hex & 0xFF;
-        }
-
-        RGB(){}
+        constexpr RGB() = default;
         
         /**
          * @brief Gets the colour as a string.
@@ -93,16 +76,17 @@ namespace GGUI{
             }
         }
     
-        bool operator==(const RGB& Other) const{
+        constexpr bool operator==(const RGB& Other) const{
             // only take the bits from the first 3 unsigned chars
-            return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
+            //return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
+            return Red == Other.Red && Green == Other.Green && Blue == Other.Blue;
         }
     
-        RGB operator+(const RGB& Other) const{
+        constexpr RGB operator+(const RGB& Other) const{
             return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
         }
 
-        RGB operator*(const float Scalar) const{
+        constexpr RGB operator*(const float Scalar) const{
             return RGB((unsigned char)((float)Red * Scalar), (unsigned char)((float)Green * Scalar), (unsigned char)((float)Blue * Scalar));
         }
 
@@ -112,15 +96,11 @@ namespace GGUI{
     public:
         unsigned char Alpha = UINT8_MAX;
 
-        RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = UINT8_MAX) : RGB(r, g, b){
+        constexpr RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : RGB(r, g, b){
             Alpha = a;
         }
 
-        constexpr RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a, bool Use_Const) : RGB(r, g, b, Use_Const){
-            Alpha = a;
-        }
-
-        RGBA(){}
+        RGBA() = default;
 
         RGBA(RGB primal) : RGB(primal){}
     
@@ -133,13 +113,13 @@ namespace GGUI{
             return (float)Alpha / UINT8_MAX;
         }
 
-        bool operator==(const RGBA& Other){
+        constexpr bool operator==(const RGBA& Other) const{
             // only take the bits which are the 4 unsigned chars, which is same as single integer.
             // Starting from Red since Red is the first member and normally Virtual function will also allocate their own space before members.
             return *(unsigned int*)&this->Red == *(unsigned int*)&Other;
         }
 
-        RGBA operator*(const RGBA& Other){
+        constexpr RGBA operator*(const RGBA& Other) const{
             float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
             float Reverse_Alpha = 1 - Decimal_Alpha;
@@ -152,7 +132,7 @@ namespace GGUI{
             );
         }
 
-        RGBA operator+(const RGBA& Other){
+        constexpr RGBA operator+(const RGBA& Other) const{
             float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
             float Reverse_Alpha = 1 - Decimal_Alpha;
@@ -165,7 +145,7 @@ namespace GGUI{
             );
         }
 
-        RGBA operator*=(const RGBA& Other){
+        constexpr RGBA operator*=(const RGBA& Other){
             float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
             float Reverse_Alpha = 1 - Decimal_Alpha;
@@ -177,7 +157,7 @@ namespace GGUI{
             return *this;
         }
 
-        RGBA operator+=(const RGBA& Other){
+        constexpr RGBA operator+=(const RGBA& Other){
             float Decimal_Alpha = Other.Get_Alpha();
             // Make the reverse alpha
             float Reverse_Alpha = 1 - Decimal_Alpha;
@@ -192,31 +172,31 @@ namespace GGUI{
     };
 
     namespace COLOR{
-        static constexpr RGB WHITE = RGB(255, 255, 255, true);
-        static constexpr RGB BLACK = RGB(0, 0, 0, true);
-        static constexpr RGB RED = RGB(255, 0, 0, true);
-        static constexpr RGB GREEN = RGB(0, 255, 0, true);
-        static constexpr RGB BLUE = RGB(0, 0, 255, true);
-        static constexpr RGB YELLOW = RGB(255, 255, 0, true);
-        static constexpr RGB ORANGE = RGB(255, 128, 0, true);
-        static constexpr RGB CYAN = RGB(0, 255, 255, true);
-        static constexpr RGB TEAL = RGB(0, 128, 128, true);
-        static constexpr RGB MAGENTA = RGB(255, 0, 255, true);
-        static constexpr RGB GRAY = RGB(128, 128, 128, true);
-        static constexpr RGB LIGHT_RED = RGB(255, 128, 128, true);
-        static constexpr RGB LIGHT_GREEN = RGB(128, 255, 128, true);
-        static constexpr RGB LIGHT_BLUE = RGB(128, 128, 255, true);
-        static constexpr RGB LIGHT_YELLOW = RGB(255, 255, 128, true);
-        static constexpr RGB LIGHT_CYAN = RGB(128, 255, 255, true);
-        static constexpr RGB LIGHT_MAGENTA = RGB(255, 128, 255, true);
-        static constexpr RGB LIGHT_GRAY = RGB(192, 192, 192, true);
-        static constexpr RGB DARK_RED = RGB(128, 0, 0, true);
-        static constexpr RGB DARK_GREEN = RGB(0, 128, 0, true);
-        static constexpr RGB DARK_BLUE = RGB(0, 0, 128, true);
-        static constexpr RGB DARK_YELLOW = RGB(128, 128, 0, true);
-        static constexpr RGB DARK_CYAN = RGB(0, 128, 128, true);
-        static constexpr RGB DARK_MAGENTA = RGB(128, 0, 128, true);
-        static constexpr RGB DARK_GRAY = RGB(64, 64, 64, true);
+        static constexpr RGB WHITE = RGB(255, 255, 255);
+        static constexpr RGB BLACK = RGB(0, 0, 0);
+        static constexpr RGB RED = RGB(255, 0, 0);
+        static constexpr RGB GREEN = RGB(0, 255, 0);
+        static constexpr RGB BLUE = RGB(0, 0, 255);
+        static constexpr RGB YELLOW = RGB(255, 255, 0);
+        static constexpr RGB ORANGE = RGB(255, 128, 0);
+        static constexpr RGB CYAN = RGB(0, 255, 255);
+        static constexpr RGB TEAL = RGB(0, 128, 128);
+        static constexpr RGB MAGENTA = RGB(255, 0, 255);
+        static constexpr RGB GRAY = RGB(128, 128, 128);
+        static constexpr RGB LIGHT_RED = RGB(255, 128, 128);
+        static constexpr RGB LIGHT_GREEN = RGB(128, 255, 128);
+        static constexpr RGB LIGHT_BLUE = RGB(128, 128, 255);
+        static constexpr RGB LIGHT_YELLOW = RGB(255, 255, 128);
+        static constexpr RGB LIGHT_CYAN = RGB(128, 255, 255);
+        static constexpr RGB LIGHT_MAGENTA = RGB(255, 128, 255);
+        static constexpr RGB LIGHT_GRAY = RGB(192, 192, 192);
+        static constexpr RGB DARK_RED = RGB(128, 0, 0);
+        static constexpr RGB DARK_GREEN = RGB(0, 128, 0);
+        static constexpr RGB DARK_BLUE = RGB(0, 0, 128);
+        static constexpr RGB DARK_YELLOW = RGB(128, 128, 0);
+        static constexpr RGB DARK_CYAN = RGB(0, 128, 128);
+        static constexpr RGB DARK_MAGENTA = RGB(128, 0, 128);
+        static constexpr RGB DARK_GRAY = RGB(64, 64, 64);
     }
 
     /**

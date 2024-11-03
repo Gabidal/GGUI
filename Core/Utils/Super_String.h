@@ -58,7 +58,7 @@ namespace GGUI{
         /// Get the character at the specified index.
         /// @param index The index of the character.
         /// @return The character at the specified index.
-        char operator[](unsigned int index) {
+        char operator[](unsigned int index) const {
             // If the size is greater than 1, we have to index into the Unicode data.
             if (Size > 1)
                 return Data.Unicode_Data[index];
@@ -165,7 +165,7 @@ namespace GGUI{
          * 
          * @return A std::string that contains all the strings stored in the Data vector.
          */
-        std::string To_String(){
+        std::string To_String() const {
             unsigned int Overall_Size = 0;
 
             // Calculate the total size of all the strings stored in the Data vector.

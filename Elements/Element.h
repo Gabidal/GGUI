@@ -165,7 +165,7 @@ namespace GGUI{
          * @brief Returns true if the element is currently focused.
          * @return A boolean indicating whether the element is focused.
          */
-        bool Is_Focused(){
+        bool Is_Focused() const{
             return Focused;
         }
 
@@ -181,7 +181,7 @@ namespace GGUI{
          * @brief Returns true if the element is currently hovered.
          * @return A boolean indicating whether the element is hovered.
          */
-        bool Is_Hovered(){
+        bool Is_Hovered() const{
             return Hovered;
         }
 
@@ -207,7 +207,7 @@ namespace GGUI{
          *          The styling object contains various style attributes such as colors, borders, etc.
          * @return The styling object of the element.
          */
-        Styling Get_Style();
+        Styling Get_Style() const;
 
         /**
          * @brief Sets the styling information of the element.
@@ -283,7 +283,7 @@ namespace GGUI{
          *          connector, and cross connector.
          * @return The current border style of the element.
          */
-        styled_border Get_Border_Style(){
+        styled_border Get_Border_Style() const {
             return Style->Border_Style;
         }
 
@@ -294,7 +294,7 @@ namespace GGUI{
          *          and 1.0 is fully opaque.
          * @return The current opacity of the element.
          */
-        float Get_Opacity(); 
+        float Get_Opacity() const; 
 
         /**
          * @brief Checks if the element is transparent.
@@ -303,7 +303,7 @@ namespace GGUI{
          *          indicates that the element is partially or fully transparent.
          * @return True if the element is transparent; otherwise, false.
          */
-        bool Is_Transparent();
+        bool Is_Transparent() const;
 
         /**
          * @brief Gets the processed width of the element.
@@ -358,7 +358,7 @@ namespace GGUI{
          *          If the element has no parent, it will return nullptr.
          * @return A pointer to the parent element.
          */
-        Element* Get_Parent(){
+        Element* Get_Parent() const{
             return Parent;
         }
 
@@ -379,7 +379,7 @@ namespace GGUI{
          * @param s The name of the class to check.
          * @return True if the element has the class, false otherwise.
          */
-        bool Has(std::string s);
+        bool Has(std::string s) const;
 
         /**
          * @brief Checks if the element has the given class ID.
@@ -389,7 +389,7 @@ namespace GGUI{
          * @param s The ID of the class to check.
          * @return True if the element has the class, false otherwise.
          */
-        bool Has(int s){
+        bool Has(int s) const{
             // Iterate through the class list of the element
             for (auto i : Classes){
                 // If the class ID matches the given ID, return true
@@ -412,7 +412,6 @@ namespace GGUI{
          * @return A pair containing the width and height of the fitting dimensions.
          */
         std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
-
 
         /**
          * @brief Returns the maximum dimensions of the element without exceeding the parent element's dimensions.

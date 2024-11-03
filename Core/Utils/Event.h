@@ -80,11 +80,11 @@ namespace GGUI{
             ID = id;
         }
 
-        bool Is(unsigned char f){
+        bool Is(const unsigned char f) const{
             return (Flags & f) > 0;
         }
 
-        void Set(unsigned char f){
+        void Set(const unsigned char f){
             Flags |= f;
         }
     };

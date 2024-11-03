@@ -88,7 +88,7 @@ namespace GGUI{
         );
     }
 
-    bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity = true) {
+    bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity) {
         if (a == b)
             return Identity;    // For custom purposes, defaults into true
 
@@ -1307,13 +1307,13 @@ namespace GGUI{
     }
 
     /**
- * @brief Processes mouse input events and updates the input list.
- * @details This function checks the state of mouse buttons (left, right, and middle)
- *          and determines if they have been pressed or clicked. It compares the current
- *          state with the previous state and the duration the button has been pressed.
- *          Based on these checks, it creates corresponding input objects and adds them
- *          to the Inputs list.
- */
+     * @brief Processes mouse input events and updates the input list.
+     * @details This function checks the state of mouse buttons (left, right, and middle)
+     *          and determines if they have been pressed or clicked. It compares the current
+     *          state with the previous state and the duration the button has been pressed.
+     *          Based on these checks, it creates corresponding input objects and adds them
+     *          to the Inputs list.
+     */
     void MOUSE_API() {
         // Get the duration the left mouse button has been pressed
         unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1499,7 +1499,6 @@ namespace GGUI{
         
         return Max_Width;
     }
-
 
     /**
      * @brief Gets the current maximum height of the terminal.
@@ -2647,7 +2646,7 @@ namespace GGUI{
      * @return True if the update was successful, false otherwise.
      * @details This function should be called by the main event loop to update the stats panel.
      */
-    bool Update_Stats(GGUI::Event* Event){
+    bool Update_Stats([[maybe_unused]] GGUI::Event* Event){
         // Check if the inspect tool is displayed
         Element* Inspect_Tool = Main->Get_Element("Inspect");
 

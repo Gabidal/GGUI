@@ -47,43 +47,6 @@ void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
     // Add the blue value to the string
     Result->Add(Constants::To_Compact[Blue]);
 }
-    
-/**
- * @brief A structure to hold the border style of a widget.
- *
- * The style is represented as a vector of strings, each string being a character
- * that will be used to draw the border of the widget. The vector must have the
- * following size and order:
- * - 0: Top left corner
- * - 1: Bottom left corner
- * - 2: Top right corner
- * - 3: Bottom right corner
- * - 4: Vertical line
- * - 5: Horizontal line
- * - 6: Vertical right connector
- * - 7: Vertical left connector
- * - 8: Horizontal bottom connector
- * - 9: Horizontal top connector
- * - 10: Cross connector
- */
-GGUI::styled_border::styled_border(std::vector<const char*> values, VALUE_STATE Default) : style_base(Default){
-    if(values.size() == 11){
-        TOP_LEFT_CORNER = values[0];
-        BOTTOM_LEFT_CORNER = values[1];
-        TOP_RIGHT_CORNER = values[2];
-        BOTTOM_RIGHT_CORNER = values[3];
-        VERTICAL_LINE = values[4];
-        HORIZONTAL_LINE = values[5];
-        VERTICAL_RIGHT_CONNECTOR = values[6];
-        VERTICAL_LEFT_CONNECTOR = values[7];
-        HORIZONTAL_BOTTOM_CONNECTOR = values[8];
-        HORIZONTAL_TOP_CONNECTOR = values[9];
-        CROSS_CONNECTOR = values[10];
-    }
-    else{
-        Report_Stack("Internal error: Border style value has wrong number of values. Expected 11 got: '" + std::to_string(values.size()) + "'");
-    }
-}
 
 /**
  * @brief Copies the values of the given Styling object to the current object.
@@ -530,7 +493,7 @@ void GGUI::Element::Set_Opacity(unsigned int Opacity) {
  *          and 1.0 is fully opaque.
  * @return The current opacity of the element.
  */
-float GGUI::Element::Get_Opacity() {
+float GGUI::Element::Get_Opacity() const {
     return Style->Opacity.Get();
 }
 
@@ -541,7 +504,7 @@ float GGUI::Element::Get_Opacity() {
  *          indicates that the element is partially or fully transparent.
  * @return True if the element is transparent; otherwise, false.
  */
-bool GGUI::Element::Is_Transparent() {
+bool GGUI::Element::Is_Transparent() const {
     // Get the current opacity of the element and compare it with 1.0f
     return Get_Opacity() != 1.0f;
 }
@@ -553,7 +516,7 @@ bool GGUI::Element::Is_Transparent() {
  *          original width of the element is returned.
  * @return The processed width of the element.
  */
-unsigned int GGUI::Element::Get_Processed_Width(){
+unsigned int GGUI::Element::Get_Processed_Width() {
     if (Post_Process_Width != 0){
         return Post_Process_Width;
     }
@@ -567,7 +530,7 @@ unsigned int GGUI::Element::Get_Processed_Width(){
  *          original height of the element is returned.
  * @return The processed height of the element.
  */
-unsigned int GGUI::Element::Get_Processed_Height(){
+unsigned int GGUI::Element::Get_Processed_Height() {
     if (Post_Process_Height != 0){
         return Post_Process_Height;
     }
@@ -730,7 +693,7 @@ void GGUI::Element::Set_Hover_State(bool h){
  *          The styling object contains various style attributes such as colors, borders, etc.
  * @return The styling object of the element.
  */
-GGUI::Styling GGUI::Element::Get_Style() {
+GGUI::Styling GGUI::Element::Get_Style() const {
     // Return the styling object associated with this element.
     return *Style;
 }
@@ -783,7 +746,7 @@ void GGUI::Element::Add_Class(std::string class_name){
  * @param s The name of the class to check.
  * @return True if the element has the class, false otherwise.
  */
-bool GGUI::Element::Has(std::string s) {
+bool GGUI::Element::Has(std::string s) const {
     //first convert the string to the ID
     int id = Class_Names[s];
 
@@ -1315,7 +1278,7 @@ GGUI::Element* GGUI::Element::Copy(){
  * @param child The child element for which the fitting dimensions are calculated.
  * @return A pair containing the width and height of the fitting dimensions.
  */
-std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child){
+std::pair<unsigned int, unsigned int> GGUI::Element::Get_Fitting_Dimensions(Element* child) {
     IVector3 Current_Position = child->Get_Position();
 
     unsigned int Result_Width = 0;

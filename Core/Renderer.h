@@ -53,7 +53,7 @@ namespace GGUI{
 
             Guard() = default;
 
-            void operator()(std::function<void(T&)> job){
+            void operator()(std::function<void(T&)> job) {
                 // check if the Shared mutex is already locked by higher/upper stack frame.
                 if (Shared.try_lock()){
                     try{
@@ -206,24 +206,75 @@ namespace GGUI{
     ///          It is called from the event loop.
     extern void Query_Inputs();
 
+    /**
+     * @brief Processes mouse input events and updates the input list.
+     * @details This function checks the state of mouse buttons (left, right, and middle)
+     *          and determines if they have been pressed or clicked. It compares the current
+     *          state with the previous state and the duration the button has been pressed.
+     *          Based on these checks, it creates corresponding input objects and adds them
+     *          to the Inputs list.
+     */
     extern void MOUSE_API();
 
     // Handles also UP and DOWN buttons
     extern void SCROLL_API();
 
+    /**
+     * @brief Initializes platform-specific settings for console handling.
+     * @details This function sets up the console handles and modes required for input and output operations.
+     *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
+     *          handling specific ANSI features.
+     */
     extern void Init_Platform_Stuff();
 
+    /**
+     * @brief Returns the length of a Unicode character based on the first byte.
+     * @details This function takes the first byte of a Unicode character and returns its length in bytes.
+     *          If the character is not a Unicode character, it returns 1.
+     * @param first_char The first byte of the character.
+     * @return The length of the character in bytes.
+     */
     extern int Get_Unicode_Length(char first_char);
 
+    /**
+     * @brief Gets the current maximum width of the terminal.
+     * @details This function returns the current maximum width of the terminal. If the width is 0, it will set the carry flag to indicate that a resize is needed to be performed.
+     *
+     * @return The current maximum width of the terminal.
+     */
     extern int Get_Max_Width();
 
+    /**
+     * @brief Gets the current maximum height of the terminal.
+     * @details This function returns the current maximum height of the terminal. If the height is 0, it will set the carry flag to indicate that a resize is needed to be performed.
+     *
+     * @return The current maximum height of the terminal.
+     */
     extern int Get_Max_Height();
 
-    //Returns a char if given ASCII, or a short if given UNICODE
+    /**
+     * @brief Gets the contents of a given position in the buffer.
+     * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
+     * @param Absolute_Position The position to get the contents of.
+     * @return The contents of the given position, or nullptr if the position is out of bounds.
+     */
     extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
 
+    /**
+     * @brief Converts a vector of UTFs into a Super_String.
+     * @details This function takes a vector of UTFs, and converts it into a Super_String. The resulting Super_String is stored in a cache, and the cache is resized if the window size has changed.
+     * @param Text The vector of UTFs to convert.
+     * @param Width The width of the window.
+     * @param Height The height of the window.
+     * @return A pointer to the resulting Super_String.
+     */
     extern GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
 
+    /**
+     * @brief Updates the frame.
+     * @details This function updates the frame. It's the main entry point for the rendering thread.
+     * @note This function will return immediately if the rendering thread is paused.
+     */
     extern void Update_Frame();
     
     /**
