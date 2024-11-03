@@ -1314,46 +1314,46 @@ namespace GGUI{
  *          Based on these checks, it creates corresponding input objects and adds them
  *          to the Inputs list.
  */
-void MOUSE_API() {
-    // Get the duration the left mouse button has been pressed
-    unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-        abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
+    void MOUSE_API() {
+        // Get the duration the left mouse button has been pressed
+        unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+            abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
 
-    // Check if the left mouse button is pressed and for how long
-    if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
-    } 
-    // Check if the left mouse button was previously pressed and now released
-    else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State) {
-        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
-    }
+        // Check if the left mouse button is pressed and for how long
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
+        } 
+        // Check if the left mouse button was previously pressed and now released
+        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State) {
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
+        }
 
-    // Get the duration the right mouse button has been pressed
-    unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-        abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
+        // Get the duration the right mouse button has been pressed
+        unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+            abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
 
-    // Check if the right mouse button is pressed and for how long
-    if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
-    }
-    // Check if the right mouse button was previously pressed and now released
-    else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State) {
-        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
-    }
+        // Check if the right mouse button is pressed and for how long
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
+        }
+        // Check if the right mouse button was previously pressed and now released
+        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State) {
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
+        }
 
-    // Get the duration the middle mouse button has been pressed
-    unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-        abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
+        // Get the duration the middle mouse button has been pressed
+        unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
+            abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
 
-    // Check if the middle mouse button is pressed and for how long
-    if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
+        // Check if the middle mouse button is pressed and for how long
+        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
+        }
+        // Check if the middle mouse button was previously pressed and now released
+        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State) {
+            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
+        }
     }
-    // Check if the middle mouse button was previously pressed and now released
-    else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State) {
-        Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
-    }
-}
 
     /**
      * @brief Handles mouse scroll events.

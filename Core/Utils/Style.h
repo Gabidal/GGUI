@@ -321,9 +321,9 @@ namespace GGUI{
              *          Then it returns a pointer to the current object.
              */
             style_base* operator|(style_base* other){
-                Other = other;
+                other->Other = this;
 
-                return this;
+                return other;
             }
 
             /**
@@ -335,9 +335,9 @@ namespace GGUI{
              *          Then it returns a reference to the current object.
              */
             style_base& operator|(style_base& other){
-                Other = &other;
+                other.Other = this;
 
-                return *this;
+                return other;
             }
 
             /**
@@ -1662,7 +1662,7 @@ namespace GGUI{
             inline Styling Default;
         }
     
-        inline enable_border border = enable_border(true, VALUE_STATE::INITIALIZED);
+        inline enable_border border = enable_border(true, VALUE_STATE::VALUE);
     };
 
 }
