@@ -227,12 +227,8 @@ namespace GGUI{
         // Define gamma value for correction
         constexpr float gamma = 2.2F;
 
-        // Apply gamma correction to input values
-        const float a_f = std::pow(static_cast<float>(a), gamma);
-        const float b_f = std::pow(static_cast<float>(b), gamma);
-
-        // Perform linear interpolation on gamma-corrected values
-        const float c_f = lerp<float>(a_f, b_f, t);
+        // Apply gamma correction to input values and perform linear interpolation
+        const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
 
         // Reverse gamma correction and cast back to original type
         return static_cast<T>(std::pow(c_f, 1.F / gamma));
@@ -254,9 +250,9 @@ namespace GGUI{
             A.Blue = Interpolate(A.Blue, B.Blue, Distance);
         } else {
             // Perform linear interpolation on input values
-            A.Red = lerp<unsigned char>(A.Red, B.Red, Distance);
-            A.Green = lerp<unsigned char>(A.Green, B.Green, Distance);
-            A.Blue = lerp<unsigned char>(A.Blue, B.Blue, Distance);
+            A.Red = static_cast<unsigned char>(lerp<float>(A.Red, B.Red, Distance));
+            A.Green = static_cast<unsigned char>(lerp<float>(A.Green, B.Green, Distance));
+            A.Blue = static_cast<unsigned char>(lerp<float>(A.Blue, B.Blue, Distance));
         }
 
         return A;
