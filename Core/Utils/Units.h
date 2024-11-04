@@ -2,6 +2,7 @@
 #define _UNITS_H_
 
 #include <string>
+#include <variant>
 
 #include "Super_String.h"
 #include "Constants.h"
@@ -376,20 +377,19 @@ namespace GGUI{
         }
     };
 
-    class UTF{
+    class UTF {
     public:
         unsigned char FLAGS = UTF_FLAG::IS_ASCII;
 
-        char Ascii = ' ';
-        const char* Unicode = " ";
+        std::variant<char, const char*> Text;
         int Unicode_Length = 1; // Does not include the null terminator.
 
-        RGBA Foreground; 
+        RGBA Foreground;
         RGBA Background;
 
-        UTF(){}
+        UTF() {}
 
-        ~UTF(){}
+        ~UTF() {}
 
         /**
          * @brief Copy constructor for the UTF class.
@@ -399,23 +399,19 @@ namespace GGUI{
          * @param other The UTF object to copy.
          */
         constexpr UTF(const GGUI::UTF& other)
-            : FLAGS(other.FLAGS),             // Initialize FLAGS from the other object
-              Ascii(other.Ascii),             // Initialize Ascii from the other object
-              Unicode(other.Unicode),         // Initialize Unicode from the other object
-              Unicode_Length(other.Unicode_Length), // Initialize Unicode_Length from the other object
-              Foreground(other.Foreground),   // Initialize Foreground from the other object
-              Background(other.Background)    // Initialize Background from the other object
-        {}
+            : FLAGS(other.FLAGS),
+              Text(other.Text),
+              Unicode_Length(other.Unicode_Length),
+              Foreground(other.Foreground),
+              Background(other.Background) {}
 
         /**
          * @brief Constructs a new UTF object from a single character and a pair of foreground and background colors.
          * @param data The character to store in the UTF object.
          * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
-         * @details The FLAGS of the UTF object are set to UTF_FLAG::IS_ASCII, and the Ascii member is set to the provided character.
-         *          The Foreground and Background members are set to the provided colors.
          */
-        UTF(char data, std::pair<RGB, RGB> color = {{}, {}}){
-            Ascii = data;
+        UTF(char data, std::pair<RGB, RGB> color = {{}, {}}) {
+            Text = data;
             Foreground = {color.first};
             Background = {color.second};
             FLAGS = UTF_FLAG::IS_ASCII;
@@ -425,29 +421,23 @@ namespace GGUI{
          * @brief Constructs a new UTF object from a C-style string and a pair of foreground and background colors.
          * @param data The C-style string to store in the UTF object.
          * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
-         * @details The FLAGS of the UTF object are set to UTF_FLAG::IS_UNICODE, and the Unicode member is set to the provided string.
-         *          The Foreground and Background members are set to the provided colors.
          */
         UTF(const char* data, std::pair<RGB, RGB> color = {{}, {}}) {
-            Unicode = data;  // Store the C-style string in the Unicode member
-            Unicode_Length = std::strlen(data);  // Calculate and store the length of the string
-            
-            Foreground = {color.first};  // Set the foreground color
-            Background = {color.second};  // Set the background color
-            FLAGS = UTF_FLAG::IS_UNICODE;  // Set the FLAGS to indicate Unicode data
+            Text = data;
+            Unicode_Length = std::strlen(data);
+            Foreground = {color.first};
+            Background = {color.second};
+            FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
         /**
          * @brief Constructs a new UTF object from a std::string and a pair of foreground and background colors.
          * @param data The std::string to store in the UTF object.
          * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
-         * @details The FLAGS of the UTF object are set to UTF_FLAG::IS_UNICODE, and the Unicode member is set to the provided string.
-         *          The Foreground and Background members are set to the provided colors.
          */
-        UTF(const std::string& data, std::pair<RGB, RGB> color = {{}, {}}){
-            Unicode = data.data();
-            Unicode_Length = data.size() - 1;
-            
+        UTF(const std::string& data, std::pair<RGB, RGB> color = {{}, {}}) {
+            Text = data.c_str();
+            Unicode_Length = data.size();
             Foreground = {color.first};
             Background = {color.second};
             FLAGS = UTF_FLAG::IS_UNICODE;
@@ -457,67 +447,47 @@ namespace GGUI{
          * @brief Constructs a new UTF object from a Compact_String and a pair of foreground and background colors.
          * @param CS The Compact_String to store in the UTF object.
          * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
-         * @details The FLAGS of the UTF object are set depending on the size of the Compact_String.
-         *          If the size is 1, the FLAGS are set to UTF_FLAG::IS_ASCII and the Ascii member is set to the provided character.
-         *          If the size is greater than 1, the FLAGS are set to UTF_FLAG::IS_UNICODE and the Unicode member is set to the provided string.
-         *          The Foreground and Background members are set to the provided colors.
          */
-        UTF(const Compact_String CS, std::pair<RGB, RGB> color = {{}, {}}){
-            if (CS.Size == 1){
-                // If the size of the Compact_String is 1, set the FLAGS to IS_ASCII and the Ascii member to the provided character.
-                Ascii = CS.Data.Ascii_Data;
+        UTF(const Compact_String CS, std::pair<RGB, RGB> color = {{}, {}}) {
+            if (CS.Size == 1) {
+                Text = CS.Data.Ascii_Data;
                 FLAGS = UTF_FLAG::IS_ASCII;
-            }
-            else{
-                // If the size of the Compact_String is greater than 1, set the FLAGS to IS_UNICODE and the Unicode member to the provided string.
-                Unicode = CS.Data.Unicode_Data;
+            } else {
+                Text = CS.Data.Unicode_Data;
                 Unicode_Length = CS.Size;
                 FLAGS = UTF_FLAG::IS_UNICODE;
             }
-            
-            // Set the foreground and background colors.
             Foreground = {color.first};
             Background = {color.second};
         }
 
         /**
          * @brief Checks if a specific UTF flag is set.
-         * @details This function takes a UTF flag as a parameter 
-         *          and checks if it is set in the FLAGS member.
-         * 
          * @param utf_flag The UTF flag to check.
          * @return True if the flag is set, otherwise false.
          */
         bool Is(unsigned char utf_flag) {
-            // Perform bitwise AND to check if the utf_flag is set in FLAGS
             return (FLAGS & utf_flag) != 0;
         }
 
         /**
          * @brief Sets a specific UTF flag.
-         * @details This function takes a UTF flag as a parameter and sets it in the FLAGS member.
-         * 
          * @param utf_flag The UTF flag to set.
          */
-        void Set_Flag(unsigned char utf_flag){
-            // Perform bitwise OR to set the utf_flag in FLAGS
+        void Set_Flag(unsigned char utf_flag) {
             FLAGS |= utf_flag;
         }
 
         /**
          * @brief Sets the foreground color of the UTF element.
-         * @details This function takes a RGB color as a parameter and sets it as the foreground color of the UTF element.
-         * 
          * @param color The RGB color to set as the foreground color.
          */
-        void Set_Foreground(RGB color){
+        void Set_Foreground(RGB color) {
             Foreground = color;
         }
 
         /**
          * @brief Sets the background color of the UTF element.
-         * @details This function takes an RGB color as a parameter and sets it as the background color of the UTF element.
-         * 
          * @param color The RGB color to set as the background color.
          */
         void Set_Background(RGB color) {
@@ -526,97 +496,66 @@ namespace GGUI{
 
         /**
          * @brief Sets the foreground and background color of the UTF element.
-         * @details This function takes a pair of RGB colors as a parameter and sets the first element of the pair as the foreground color and the second element of the pair as the background color of the UTF element.
-         * 
-         * @param primals A pair of RGB colors. The first element of the pair is the foreground color and the second element of the pair is the background color.
+         * @param primals A pair of RGB colors. The first element is the foreground color; the second is the background color.
          */
-        void Set_Color(std::pair<RGB, RGB> primals){
+        void Set_Color(std::pair<RGB, RGB> primals) {
             Foreground = primals.first;
             Background = primals.second;
         }
 
         /**
          * @brief Sets the text of the UTF element.
-         * @details This function takes a std::string as a parameter and sets it as the text of the UTF element.
-         *          The text is stored as a pointer to the data of the std::string, and the length of the text is
-         *          stored in the Unicode_Length member variable.
-         * 
-         * @param data The std::string to set as the text of the UTF element.
+         * @param data The std::string to set as the text.
          */
-        void Set_Text(std::string data){
-            Unicode = data.data();
-            Unicode_Length = data.size() -1;
+        void Set_Text(const std::string& data) {
+            Text = data.c_str();
+            Unicode_Length = data.size();
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
         /**
          * @brief Sets the text of the UTF element to a single character.
-         * @details This function takes a char as a parameter and sets it as the text of the UTF element.
-         *          The text is stored in the Ascii member variable.
-         * 
-         * @param data The char to set as the text of the UTF element.
+         * @param data The character to set as the text.
          */
-        void Set_Text(char data){
-            Ascii = data;
+        void Set_Text(char data) {
+            Text = data;
             FLAGS = UTF_FLAG::IS_ASCII;
         }
 
         /**
          * @brief Sets the text of the UTF element to a null-terminated string.
-         * @details This function takes a pointer to a null-terminated string as a parameter and sets it as the text of the UTF element.
-         *          The text is stored in the Unicode member variable, and the length of the text is
-         *          stored in the Unicode_Length member variable.
-         *
-         * @param data The null-terminated string to set as the text of the UTF element.
+         * @param data The null-terminated string to set as the text.
          */
-        void Set_Text(const char* data){
-            Unicode = data;
+        void Set_Text(const char* data) {
+            Text = data;
             Unicode_Length = std::strlen(data);
             FLAGS = UTF_FLAG::IS_UNICODE;
         }
 
-
         /**
          * @brief Sets the text of the UTF element to that of another UTF element.
-         * @details This function takes another UTF element as a parameter and sets the text of the current UTF element to that of the other UTF element.
-         *          The text is copied from the other UTF element, and the flags are also copied.
-         *
          * @param other The other UTF element to copy the text from.
          */
-        void Set_Text(UTF other){
-            Ascii = other.Ascii;
-            Unicode = other.Unicode;
+        void Set_Text(const UTF& other) {
+            Text = other.Text;
             Unicode_Length = other.Unicode_Length;
             FLAGS = other.FLAGS;
         }
 
         /**
          * @brief Converts the UTF character to a string.
-         *
-         * This function converts the UTF character to a string by combining the foreground and background colour
-         * strings with the character itself.
-         *
          * @return The string representation of the UTF character.
          */
         std::string To_String();
-        
+
         /**
          * @brief Converts the UTF character to an encoded string.
-         *
-         * This function converts the UTF character to an encoded string by applying
-         * encoding flags and combining the foreground and background colour strings
-         * with the character itself.
-         *
          * @return The encoded string representation of the UTF character.
          */
         std::string To_Encoded_String();
 
         /**
-         * @brief Converts the UTF character to a string.
-         *
-         * This function converts the UTF character to a string by combining the foreground and background colour
-         * strings with the character itself.
-         *
+         * @brief Converts the UTF character to a Super_String.
          * @param Result The result string.
          * @param Text_Overhead The foreground colour and style as a string.
          * @param Background_Overhead The background colour and style as a string.
@@ -624,14 +563,9 @@ namespace GGUI{
          * @param Background_Colour The background colour as a string.
          */
         void To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour);
-        
+
         /**
          * @brief Converts the UTF character to an encoded Super_String.
-         *
-         * This function converts the UTF character to an encoded Super_String by applying
-         * encoding flags and combining the foreground and background colour strings
-         * with the character itself.
-         *
          * @param Result The Super_String to which the encoded string will be added.
          * @param Text_Overhead The Super_String where the foreground colour overhead will be stored.
          * @param Background_Overhead The Super_String where the background colour overhead will be stored.
@@ -642,60 +576,45 @@ namespace GGUI{
 
         /**
          * @brief Assign a character to the UTF object.
-         *
-         * This operator assigns a character to the UTF object and sets the text of the UTF object to the character.
-         * The flags are cleared, and the foreground and background colours are set to their default values.
-         *
          * @param text The character to assign.
          */
-        void operator=(char text){
+        void operator=(char text) {
             Set_Text(text);
         }
 
         /**
          * @brief Assigns a string to the UTF object.
-         * @details This operator assigns a string to the UTF object and sets the text of the UTF object to the string.
-         *          The flags are cleared, and the foreground and background colours are set to their default values.
-         *
          * @param text The string to assign.
          */
-        void operator=(const std::string& text){
+        void operator=(const std::string& text) {
             Set_Text(text);
         }
 
         /**
          * @brief Assigns a UTF object to another UTF object.
-         * @details This operator assigns a UTF object to another UTF object and sets the text, flags, foreground, and
-         *          background colours of the assigned UTF object to those of the other UTF object.
-         *
          * @param other The UTF object to assign.
          * @return The assigned UTF object.
          */
-        UTF& operator=(const UTF& other){
-            Ascii = other.Ascii;
-            Unicode = other.Unicode;
+        UTF& operator=(const UTF& other) {
+            Text = other.Text;
             Unicode_Length = other.Unicode_Length;
             FLAGS = other.FLAGS;
             Foreground = other.Foreground;
             Background = other.Background;
-
             return *this;
         }
 
         /**
          * @brief Checks if the UTF object has a default text.
-         * @details This function checks if the UTF object has a default text, which is a space character.
-         *          It returns true if the UTF object has a default text, and false if it does not.
-         *
-         * @return true if the UTF object has a default text, false if it does not.
+         * @return true if the UTF object has a default text, false otherwise.
          */
-        inline bool Has_Default_Text(){
-            if (Is(UTF_FLAG::IS_ASCII))
-                return Ascii == ' ';
-            else
-                return Unicode[0] == ' ';
+        inline bool Has_Default_Text() {
+            if (Is(UTF_FLAG::IS_ASCII)) {
+                return std::get<char>(Text) == ' ';
+            } else {
+                return std::get<const char*>(Text)[0] == ' ';
+            }
         }
-
     };
 
     enum class STAIN_TYPE{

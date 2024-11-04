@@ -456,7 +456,7 @@ namespace GGUI{
         inline unsigned long long Mouse_Press_Down_Cooldown = 365;
         inline bool Word_Wrapping = true;
         inline std::chrono::milliseconds Thread_Timeout = std::chrono::milliseconds(256);
-        inline constexpr bool ENABLE_GAMMA_CORRECTION = true;
+        inline constexpr bool ENABLE_GAMMA_CORRECTION = false;
     };
 }
 

@@ -31,7 +31,7 @@ int main()
         tem->Flush(true);
 
         GGUI::Main->Add_Child(tem);
-    }, INT32_MAX);
+    }, 1000);
 
     GGUI::Exit();
 }

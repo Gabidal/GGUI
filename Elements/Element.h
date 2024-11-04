@@ -542,14 +542,14 @@ namespace GGUI{
          * @details This function returns the width of the element.
          * @return The width of the element.
          */
-        unsigned int Get_Width();
+        constexpr unsigned int Get_Width(){ return Style->Width.Get(); }
 
         /**
          * @brief Get the height of the element.
          * @details This function returns the height of the element.
          * @return The height of the element.
          */
-        unsigned int Get_Height();
+        constexpr unsigned int Get_Height() { return Style->Height.Get(); }
 
         /**
          * @brief Set the width of the element.
@@ -592,7 +592,7 @@ namespace GGUI{
          * @details This function retrieves the position of the element from its style.
          * @return The position of the element as an IVector3 object.
          */
-        IVector3 Get_Position();
+        constexpr IVector3 Get_Position() { return Style->Position.Get(); }
 
         /**
          * @brief Get the absolute position of the element.
@@ -600,7 +600,7 @@ namespace GGUI{
          *          The absolute position is the position of the element in the context of the entire document or window.
          * @return The absolute position of the element as an IVector3 object.
          */
-        IVector3 Get_Absolute_Position();
+        constexpr IVector3 Get_Absolute_Position() { return Absolute_Position_Cache; }
 
         /**
          * @brief Update the absolute position cache of the element.
@@ -621,7 +621,7 @@ namespace GGUI{
          * @details This function retrieves the margin of the element from its style.
          * @return The margin of the element as a GGUI::margin object.
          */
-        margin Get_Margin();
+        margin Get_Margin() { return Style->Margin; }
         
         /**
          * @brief Sets the background color of the element.
@@ -643,7 +643,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's background.
          */
-        RGB Get_Background_Color();
+        constexpr RGB Get_Background_Color() { return Style->Background_Color.Value.Get<RGB>(); }
         
         /**
          * @brief Sets the border color of the element.
@@ -662,7 +662,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border.
          */
-        RGB Get_Border_Color();
+        constexpr RGB Get_Border_Color(){ return Style->Border_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the border background color of the element.
@@ -682,7 +682,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border background.
          */
-        RGB Get_Border_Background_Color();
+        constexpr RGB Get_Border_Background_Color(){ return Style->Border_Background_Color.Value.Get<RGB>(); }
         
         /**
          * @brief Sets the text color of the element.
@@ -702,7 +702,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's text.
          */
-        RGB Get_Text_Color();
+        constexpr RGB Get_Text_Color(){ return Style->Text_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover border color of the element.
@@ -723,7 +723,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border.
          */
-        RGB Get_Hover_Border_Color();
+        constexpr RGB Get_Hover_Border_Color(){ return Style->Hover_Border_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover background color of the element.
@@ -744,7 +744,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover background.
          */
-        RGB Get_Hover_Background_Color();
+        constexpr RGB Get_Hover_Background_Color(){ return Style->Hover_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover text color of the element.
@@ -765,7 +765,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover text.
          */
-        RGB Get_Hover_Text_Color();
+        constexpr RGB Get_Hover_Text_Color(){ return Style->Hover_Text_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover border background color of the element.
@@ -786,7 +786,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border background.
          */
-        RGB Get_Hover_Border_Background_Color();
+        constexpr RGB Get_Hover_Border_Background_Color(){ return Style->Hover_Border_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus border color of the element.
@@ -805,7 +805,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border.
          */
-        RGB Get_Focus_Border_Color();
+        constexpr RGB Get_Focus_Border_Color(){ return Style->Focus_Border_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus background color of the element.
@@ -824,7 +824,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus background.
          */
-        RGB Get_Focus_Background_Color();
+        constexpr RGB Get_Focus_Background_Color(){ return Style->Focus_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus text color of the element.
@@ -843,7 +843,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus text.
          */
-        RGB Get_Focus_Text_Color();
+        constexpr RGB Get_Focus_Text_Color(){ return Style->Focus_Text_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus border background color of the element.
@@ -863,7 +863,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border background.
          */
-        RGB Get_Focus_Border_Background_Color();
+        constexpr RGB Get_Focus_Border_Background_Color(){ return Style->Focus_Border_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the alignment of the element.
@@ -881,7 +881,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        ALIGN Get_Align();
+        constexpr ALIGN Get_Align(){ return Style->Align.Value; }
 
         /**
          * @brief Sets the flow priority of the element.
@@ -901,7 +901,7 @@ namespace GGUI{
          * 
          * @return The flow priority value of the element.
          */
-        DIRECTION Get_Flow_Priority();
+        constexpr DIRECTION Get_Flow_Priority(){ return Style->Flow_Priority.Value; }
 
         /**
          * @brief Sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
@@ -922,7 +922,7 @@ namespace GGUI{
          * 
          * @return True if the element will wrap its contents, false otherwise.
          */
-        bool Get_Wrap();
+        constexpr bool Get_Wrap(){ return Style->Wrap.Value; }
 
         /**
          * @brief Sets whether the element is allowed to dynamically resize.
@@ -942,7 +942,7 @@ namespace GGUI{
          * 
          * @return True if the element is allowed to dynamically resize, false otherwise.
          */
-        bool Is_Dynamic_Size_Allowed();
+        constexpr bool Is_Dynamic_Size_Allowed(){ return Style->Allow_Dynamic_Size.Value; }
 
         /**
          * @brief Sets whether the element allows overflow.
@@ -962,7 +962,7 @@ namespace GGUI{
          * 
          * @return True if the element allows overflow, false otherwise.
          */
-        bool Is_Overflow_Allowed();
+        constexpr bool Is_Overflow_Allowed(){ return Style->Allow_Overflow.Value; }
         
         /**
          * @brief Gets the fitting area for a child element in its parent.
@@ -1099,7 +1099,7 @@ namespace GGUI{
          * @brief Gets the custom border style of the element.
          * @return The custom border style of the element.
          */
-        GGUI::styled_border Get_Custom_Border_Style();
+        GGUI::styled_border Get_Custom_Border_Style(){ return Style->Border_Style; }
 
         /**
          * @brief Posts a process that handles the intersection of borders between two elements and their parent.

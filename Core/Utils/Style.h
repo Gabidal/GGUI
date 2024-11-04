@@ -195,7 +195,7 @@ namespace GGUI{
              * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
              */
             template<typename P>
-            inline P Get() {                
+            inline constexpr P Get() {                
                 /**
                  * In debug mode, check if the requested type matches the type of the data.
                  * If it doesn't, throw an exception.
@@ -217,7 +217,7 @@ namespace GGUI{
              * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
              */
             template<typename P>
-            P& Direct() { 
+            inline constexpr P& Direct() { 
                 /**
                  * In debug mode, check if the requested type matches the type of the data.
                  * If it doesn't, throw an exception.
@@ -237,7 +237,7 @@ namespace GGUI{
              * @details This sets the value of the variant to the provided value.
              *          The evaluation type is set to EVALUATION_TYPE::DEFAULT.
              */
-            inline void Set(T value) {
+            inline constexpr void Set(T value) {
                 data = value;
                 evaluation_type = EVALUATION_TYPE::DEFAULT;
             }
@@ -247,7 +247,7 @@ namespace GGUI{
              * @param value The value to set the variant to.
              * @details This sets the value of the variant to the provided value, and sets the evaluation type to EVALUATION_TYPE::PERCENTAGE.
              */
-            inline void Set(float value){
+            inline constexpr void Set(float value){
                 data = value;
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
             }
@@ -585,7 +585,7 @@ namespace GGUI{
              * @return A reference to the value of this NUMBER_VALUE object.
              * @details This function returns a reference to the value of this NUMBER_VALUE object, allowing it to be directly accessed and modified.
              */
-            int& Direct() { return Value.Direct<int>(); }
+            inline constexpr int& Direct() { return Value.Direct<int>(); }
         };
 
         template<typename T>
@@ -737,7 +737,7 @@ namespace GGUI{
              * @return The current IVector3 value.
              * @details This function returns the current value stored in the Vector.
              */
-            IVector3 Get() { 
+            inline constexpr IVector3 Get() { 
                 return Value.Get<IVector3>(); 
             }
 
@@ -747,7 +747,7 @@ namespace GGUI{
              * @details This function returns the current value stored in the Vector.
              *          This value can be used to get the current value of the Vector as an IVector3 object.
              */
-            constexpr IVector3 Get() const { return Value.Get<IVector3>(); }
+            inline constexpr IVector3 Get() const { return Value.Get<IVector3>(); }
 
             /**
              * @brief Set the current value of the Vector.
@@ -755,7 +755,7 @@ namespace GGUI{
              * @details This function sets the current value of the Vector to the given IVector3 object.
              *          It also sets the Status of the Vector to VALUE_STATE::VALUE.
              */
-            void Set(IVector3 value){
+            inline constexpr void Set(IVector3 value){
                 Value = value;
                 Status = VALUE_STATE::VALUE;
             }
@@ -766,7 +766,7 @@ namespace GGUI{
              * @details This function returns a direct reference to the IVector3 object stored in the Vector.
              *          This can be used to directly manipulate the value of the Vector.
              */
-            IVector3& Direct() { return Value.Direct<IVector3>(); }
+            inline constexpr IVector3& Direct() { return Value.Direct<IVector3>(); }
         
             /**
              * @brief Evaluate the Vector value.
@@ -823,7 +823,7 @@ namespace GGUI{
 
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
 
-        int Get() { return Value.Get<int>(); }
+        inline constexpr int Get() { return Value.Get<int>(); }
 
         void Set(int value){
             Value = value;
@@ -846,7 +846,7 @@ namespace GGUI{
         
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
 
-        int Get() { return Value.Get<int>(); }
+        inline constexpr int Get() { return Value.Get<int>(); }
 
         void Set(int value){
             Value = value;
@@ -860,7 +860,7 @@ namespace GGUI{
 
         constexpr enable_border(const GGUI::enable_border& other) : BOOL_VALUE(other.Value, other.Status){}
 
-        enable_border& operator=(const enable_border& other) = default;
+        constexpr enable_border& operator=(const enable_border& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1311,9 +1311,9 @@ namespace GGUI{
         
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
 
-        inline float Get() { return Value; }
+        inline constexpr float Get() { return Value; }
 
-        void Set(float value){
+        inline constexpr void Set(float value){
             Value = value;
             Status = VALUE_STATE::VALUE;
         }

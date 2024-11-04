@@ -81,7 +81,7 @@ namespace GGUI{
         int Offset = 0;     // This is for more beautiful mass animation systems
         int Speed = 1;      // Using decimals too slow hmmm...
 
-        int Frame_Distance = 0;
+        int Frame_Distance = 1;
 
         bool Is_Power_Of_Two = false;
 
@@ -103,7 +103,7 @@ namespace GGUI{
          * @param speed The speed of the animation playback. Default is 1.
          */
         Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) 
-            : Offset(offset), Speed(speed), Frame_Distance(UINT8_MAX) {
+            : Offset(offset), Speed(speed), Frame_Distance(1) {
             // Add the provided frame to the Frames vector.
             Frames.push_back(frame);
         }
@@ -112,7 +112,7 @@ namespace GGUI{
          * @brief Constructs a Sprite object with default values.
          * @details This constructor sets the Sprite to have a single UTF frame, which is a space character, and sets the offset and speed for animation.
          */
-        Sprite() : Frame_Distance(UINT8_MAX){
+        Sprite() : Frame_Distance(1){
             // Set the default frame to a space character.
             Frames.push_back(GGUI::UTF(' '));
             

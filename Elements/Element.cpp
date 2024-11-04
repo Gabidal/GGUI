@@ -97,10 +97,10 @@ std::string GGUI::UTF::To_String(){
 
     if(Is(UTF_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
-        Result.append(Unicode, Unicode_Length);
+        Result.append(std::get<const char*>(Text), Unicode_Length);
     }
     else{
-        Result += Ascii;
+        Result += std::get<char>(Text);
     }
 
     // Add the reset ANSI code to the end of the string
@@ -137,10 +137,10 @@ void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_O
 
     if (Is(UTF_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
-        Result->Add(Unicode, Unicode_Length);
+        Result->Add(std::get<const char*>(Text), Unicode_Length);
     }
     else{
-        Result->Add(Ascii);
+        Result->Add(std::get<char>(Text));
     }
 
     // Add the reset ANSI code to the end of the string
@@ -169,10 +169,10 @@ std::string GGUI::UTF::To_Encoded_String() {
     // Check if the character is a Unicode character
     if (Is(UTF_FLAG::IS_UNICODE)) {
         // Append the Unicode character to the result
-        Result.append(Unicode, Unicode_Length);
+        Result.append(std::get<const char*>(Text), Unicode_Length);
     } else {
         // Append the ASCII character to the result
-        Result += Ascii;
+        Result += std::get<char>(Text);
     }
 
     // Check if the end encoding flag is set
@@ -216,10 +216,10 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
 
     if (Is(UTF_FLAG::IS_UNICODE)) {
         // Append the Unicode character to the result
-        Result->Add(Unicode, Unicode_Length);
+        Result->Add(std::get<const char*>(Text), Unicode_Length);
     } else {
         // Append the ASCII character to the result
-        Result->Add(Ascii);
+        Result->Add(std::get<char>(Text));
     }
 
     if (Is(UTF_FLAG::ENCODE_END)) {
@@ -1071,25 +1071,6 @@ void GGUI::Element::Set_Dimensions(unsigned int width, unsigned int height){
 }
 
 /**
- * @brief Get the width of the element.
- * @details This function returns the width of the element.
- * @return The width of the element.
- */
-unsigned int GGUI::Element::Get_Width(){
-    return Style->Width.Get();
-}
-
-/**
- * @brief Get the height of the element.
- * @details This function returns the height of the element.
- * @return The height of the element.
- */
-unsigned int GGUI::Element::Get_Height() {
-    // Retrieve and return the height from the element's style
-    return Style->Height.Get();
-}
-
-/**
  * @brief Set the width of the element.
  * @details This function sets the width of the element to the specified value.
  *          If the width is different from the current width, then the element will be resized and the STRETCH stain is set.
@@ -1156,27 +1137,6 @@ void GGUI::Element::Set_Position(IVector3* c){
 }
 
 /**
- * @brief Get the position of the element.
- * @details This function retrieves the position of the element from its style.
- * @return The position of the element as an IVector3 object.
- */
-GGUI::IVector3 GGUI::Element::Get_Position() {
-    // Return the position of the element from the style
-    return Style->Position.Get();
-}
-
-/**
- * @brief Get the absolute position of the element.
- * @details This function returns the cached absolute position of the element.
- *          The absolute position is the position of the element in the context of the entire document or window.
- * @return The absolute position of the element as an IVector3 object.
- */
-GGUI::IVector3 GGUI::Element::Get_Absolute_Position() {
-    // Return the cached absolute position of the element
-    return Absolute_Position_Cache;
-}
-
-/**
  * @brief Update the absolute position cache of the element.
  * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
  */
@@ -1201,15 +1161,6 @@ void GGUI::Element::Update_Absolute_Position_Cache(){
 void GGUI::Element::Set_Margin(margin margin) {
     // Update the element's margin in the style
     Style->Margin = margin;
-}
-
-/**
- * @brief Get the margin of the element.
- * @details This function retrieves the margin of the element from its style.
- * @return The margin of the element as a GGUI::margin object.
- */
-GGUI::margin GGUI::Element::Get_Margin(){
-    return Style->Margin;
 }
 
 /**
@@ -1391,19 +1342,6 @@ void GGUI::Element::Set_Background_Color(RGB color) {
 }
 
 /**
- * @brief Retrieves the background color of the element.
- * 
- * This function returns the RGB value of the background color 
- * from the element's style.
- * 
- * @return The RGB color of the element's background.
- */
-GGUI::RGB GGUI::Element::Get_Background_Color() {
-    // Return the background color from the style
-    return Style->Background_Color.Value.Get<RGB>();
-}
-
-/**
  * @brief Sets the border color of the element.
  * 
  * This function sets the border color of the element to the specified RGB value. Marks the element as dirty for color updates and triggers a frame update.
@@ -1419,19 +1357,6 @@ void GGUI::Element::Set_Border_Color(RGB color){
     
     // Update the frame to reflect the new color
     Update_Frame();
-}
-
-/**
- * @brief Retrieves the border color of the element.
- * 
- * This function returns the RGB value of the border color 
- * from the element's style.
- * 
- * @return The RGB color of the element's border.
- */
-GGUI::RGB GGUI::Element::Get_Border_Color() {
-    // Return the border color from the style
-    return Style->Border_Color.Value.Get<RGB>();
 }
 
 /**
@@ -1451,19 +1376,6 @@ void GGUI::Element::Set_Border_Background_Color(RGB color) {
     
     // Update the frame to reflect the new color
     Update_Frame();
-}
-
-/**
- * @brief Retrieves the border background color of the element.
- * 
- * This function returns the RGB value of the border background color
- * from the element's style.
- * 
- * @return The RGB color of the element's border background.
- */
-GGUI::RGB GGUI::Element::Get_Border_Background_Color() {
-    // Return the border background color from the style
-    return Style->Border_Background_Color.Value.Get<RGB>();
 }
 
 /**
@@ -1497,18 +1409,6 @@ void GGUI::Element::Allow_Dynamic_Size(bool True) {
 }
 
 /**
- * @brief Checks whether the element is allowed to dynamically resize.
- * 
- * This function checks the Allow_Dynamic_Size property in the element's style
- * and returns its value.
- * 
- * @return True if the element is allowed to dynamically resize, false otherwise.
- */
-bool GGUI::Element::Is_Dynamic_Size_Allowed(){
-    return Style->Allow_Dynamic_Size.Value;
-}
-
-/**
  * @brief Sets whether the element allows overflow.
  * 
  * This function enables or disables the overflow property of the element,
@@ -1520,30 +1420,6 @@ void GGUI::Element::Allow_Overflow(bool True) {
     // Update the Allow_Overflow property in the element's style
     Style->Allow_Overflow = True; 
     // No need to update the frame, as this is used only on content change which triggers a frame update
-}
-
-/**
- * @brief Checks whether the element allows overflow.
- * 
- * This function checks the Allow_Overflow property in the element's style
- * and returns its value.
- * 
- * @return True if the element allows overflow, false otherwise.
- */
-bool GGUI::Element::Is_Overflow_Allowed(){
-    return Style->Allow_Overflow.Value;
-}
-
-/**
- * @brief Retrieves the text color of the element.
- * 
- * This function returns the RGB value of the text color
- * from the element's style.
- * 
- * @return The RGB color of the element's text.
- */
-GGUI::RGB GGUI::Element::Get_Text_Color(){
-    return Style->Text_Color.Value.Get<RGB>();
 }
 
 /**
@@ -1561,18 +1437,6 @@ void GGUI::Element::Set_Hover_Border_Color(RGB color){
     Dirty.Dirty(STAIN_TYPE::COLOR);
     // Update the frame to reflect the new color
     Update_Frame();
-}
-
-/**
- * @brief Retrieves the hover border color of the element.
- * 
- * This function returns the RGB value of the border color when the mouse hovers over the element
- * from the element's style.
- * 
- * @return The RGB color of the element's hover border.
- */
-GGUI::RGB GGUI::Element::Get_Hover_Border_Color(){
-    return Style->Hover_Border_Color.Value.Get<RGB>();
 }
 
 /**
@@ -1596,18 +1460,6 @@ void GGUI::Element::Set_Hover_Background_Color(RGB color) {
 }
 
 /**
- * @brief Retrieves the hover background color of the element.
- * 
- * This function returns the RGB value of the background color when the mouse hovers over the element
- * from the element's style.
- * 
- * @return The RGB color of the element's hover background.
- */
-GGUI::RGB GGUI::Element::Get_Hover_Background_Color(){
-    return Style->Hover_Background_Color.Value.Get<RGB>();
-}
-
-/**
  * @brief Sets the hover text color of the element.
  * 
  * This function sets the text color of the element when the mouse hovers over it
@@ -1625,18 +1477,6 @@ void GGUI::Element::Set_Hover_Text_Color(RGB color) {
     
     // Update the frame to reflect the new color
     Update_Frame();
-}
-
-/**
- * @brief Retrieves the hover text color of the element.
- * 
- * This function returns the RGB value of the text color when the mouse hovers over the element
- * from the element's style.
- * 
- * @return The RGB color of the element's hover text.
- */
-GGUI::RGB GGUI::Element::Get_Hover_Text_Color(){
-    return Style->Hover_Text_Color.Value.Get<RGB>();
 }
 
 /**
@@ -1660,18 +1500,6 @@ void GGUI::Element::Set_Hover_Border_Background_Color(RGB color) {
 }
 
 /**
- * @brief Retrieves the hover border background color of the element.
- * 
- * This function returns the RGB value of the background color of the element's border
- * when the mouse hovers over it from the element's style.
- * 
- * @return The RGB color of the element's hover border background.
- */
-GGUI::RGB GGUI::Element::Get_Hover_Border_Background_Color(){
-    return Style->Hover_Border_Background_Color.Value.Get<RGB>();
-}
-
-/**
  * @brief Sets the focus border color of the element.
  * 
  * This function sets the color of the element's border when it is focused to the specified RGB value. It marks the element as dirty for color updates and triggers a frame update.
@@ -1686,19 +1514,6 @@ void GGUI::Element::Set_Focus_Border_Color(RGB color){
     
     // Update the frame to reflect the new color
     Update_Frame();
-}
-
-/**
- * @brief Retrieves the focus border color of the element.
- * 
- * This function returns the RGB value of the border color when the element is focused
- * from the element's style.
- * 
- * @return The RGB color of the element's focus border.
- */
-GGUI::RGB GGUI::Element::Get_Focus_Border_Color() {
-    // Return the focus border color from the style
-    return Style->Focus_Border_Color.Value.Get<RGB>();
 }
 
 /**
@@ -1720,18 +1535,6 @@ void GGUI::Element::Set_Focus_Background_Color(RGB color){
 }
 
 /**
- * @brief Retrieves the focus background color of the element.
- * 
- * This function returns the RGB value of the background color when the element is focused
- * from the element's style.
- * 
- * @return The RGB color of the element's focus background.
- */
-GGUI::RGB GGUI::Element::Get_Focus_Background_Color(){
-    return Style->Focus_Background_Color.Value.Get<RGB>();
-}
-
-/**
  * @brief Sets the focus text color of the element.
  * 
  * This function sets the text color of the element when it is focused to the specified RGB value. It marks the element as dirty for color updates and triggers a frame update.
@@ -1744,18 +1547,6 @@ void GGUI::Element::Set_Focus_Text_Color(RGB color){
     Dirty.Dirty(STAIN_TYPE::COLOR);
     // Update the frame to reflect the new color
     Update_Frame();
-}
-
-/**
- * @brief Retrieves the focus text color of the element.
- * 
- * This function returns the RGB value of the text color when the element is focused
- * from the element's style.
- * 
- * @return The RGB color of the element's focus text.
- */
-GGUI::RGB GGUI::Element::Get_Focus_Text_Color(){
-    return Style->Focus_Text_Color.Value.Get<RGB>();
 }
 
 /**
@@ -1775,18 +1566,6 @@ void GGUI::Element::Set_Focus_Border_Background_Color(RGB color){
 }
 
 /**
- * @brief Retrieves the focus border background color of the element.
- * 
- * This function returns the RGB value of the focus border background color
- * from the element's style.
- * 
- * @return The RGB color of the element's focus border background.
- */
-GGUI::RGB GGUI::Element::Get_Focus_Border_Background_Color(){
-    return Style->Focus_Border_Background_Color.Value.Get<RGB>();
-}
-
-/**
  * @brief Sets the alignment of the element.
  * 
  * This function sets the alignment of the element to the specified ALIGN value.
@@ -1796,17 +1575,6 @@ GGUI::RGB GGUI::Element::Get_Focus_Border_Background_Color(){
 void GGUI::Element::Set_Align(GGUI::ALIGN Align){
     // Set the alignment in the style
     Style->Align = Align;
-}
-
-/**
- * @brief Sets the alignment of the element.
- * 
- * This function sets the alignment of the element to the specified ALIGN value.
- * 
- * @param Align The alignment value to set for the element.
- */
-GGUI::ALIGN GGUI::Element::Get_Align(){
-    return Style->Align.Value;
 }
 
 /**
@@ -1822,18 +1590,6 @@ void GGUI::Element::Set_Flow_Priority(GGUI::DIRECTION Priority){
 }
 
 /**
- * @brief Retrieves the flow priority of the element.
- * 
- * This function returns the DIRECTION value that was previously set with Set_Flow_Priority.
- * The flow priority determines how the element will be aligned in its parent when the parent is a flow layout.
- * 
- * @return The flow priority value of the element.
- */
-GGUI::DIRECTION GGUI::Element::Get_Flow_Priority(){
-    return Style->Flow_Priority.Value;
-}
-
-/**
  * @brief Sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
  * 
  * This function sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
@@ -1844,19 +1600,6 @@ GGUI::DIRECTION GGUI::Element::Get_Flow_Priority(){
  */
 void GGUI::Element::Set_Wrap(bool Wrap){
     Style->Wrap = Wrap;
-}
-
-/**
- * @brief Retrieves the wrap setting of the element.
- * 
- * This function returns whether the element will wrap its contents to the next line
- * when it reaches the edge of the screen.
- * 
- * @return True if the element will wrap its contents, false otherwise.
- */
-bool GGUI::Element::Get_Wrap() {
-    // Return the wrap value from the styling object
-    return Style->Wrap.Value;
 }
 
 /**
@@ -2257,14 +2000,6 @@ void GGUI::Element::Set_Custom_Border_Style(GGUI::styled_border style) {
 }
 
 /**
- * @brief Gets the custom border style of the element.
- * @return The custom border style of the element.
- */
-GGUI::styled_border GGUI::Element::Get_Custom_Border_Style(){
-    return Style->Border_Style;
-}
-
-/**
  * @brief Posts a process that handles the intersection of borders between two elements and their parent.
  * @details This function posts a process that handles the intersection of borders between two elements and their parent.
  *          The process calculates the intersection points of the borders and then constructs a bit mask that portraits the connections the middle point has.
@@ -2361,26 +2096,26 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
         // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
         if (Is_In_Bounds(Above, this) && (
-            From(Above, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().VERTICAL_LINE ||
-            From(Above, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().VERTICAL_LINE
+            std::get<const char*>(From(Above, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().VERTICAL_LINE ||
+            std::get<const char*>(From(Above, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().VERTICAL_LINE
         ))
             Current_Masks |= SYMBOLS::CONNECTS_UP;
 
         if (Is_In_Bounds(Below, this) && (
-            From(Below, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().VERTICAL_LINE ||
-            From(Below, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().VERTICAL_LINE
+            std::get<const char*>(From(Below, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().VERTICAL_LINE ||
+            std::get<const char*>(From(Below, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().VERTICAL_LINE
         ))
             Current_Masks |= SYMBOLS::CONNECTS_DOWN;
 
         if (Is_In_Bounds(Left, this) && (
-            From(Left, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
-            From(Left, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().HORIZONTAL_LINE
+            std::get<const char*>(From(Left, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
+            std::get<const char*>(From(Left, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().HORIZONTAL_LINE
         ))
             Current_Masks |= SYMBOLS::CONNECTS_LEFT;
 
         if (Is_In_Bounds(Right, this) && (
-            From(Right, Parent_Buffer, this)->Unicode == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
-            From(Right, Parent_Buffer, this)->Unicode == B->Get_Custom_Border_Style().HORIZONTAL_LINE
+            std::get<const char*>(From(Right, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
+            std::get<const char*>(From(Right, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().HORIZONTAL_LINE
         ))
             Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
 
