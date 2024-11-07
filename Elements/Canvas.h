@@ -21,7 +21,13 @@ namespace GGUI{
     protected:
         std::vector<RGB> Buffer;
     public:
-        Canvas(Styling s) : Element(s){}
+        /**
+         * @brief Constructor for the Canvas class.
+         * @details This constructor initializes a Canvas object with the specified styling.
+         * @param s The styling to be applied to the Canvas.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the canvas's style. Only use if you know what you're doing!!!
+         */
+        Canvas(Styling s, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct){}
            
         /**
          * @brief Set the value of a pixel on the canvas.

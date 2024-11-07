@@ -130,8 +130,9 @@ namespace GGUI{
          * initializes the Progress_Bar object with default values.
          *
          * @param s The style for the Progress_Bar.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Progress_Bar's style. Only use if you know what you're doing!!!
          */
-        Progress_Bar(Styling s) : Element(s){
+        Progress_Bar(Styling s, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct){
             Progress = 0.0f;
             Progress_Style = Progress_Bar_Styles::Default;
         }

@@ -12,7 +12,7 @@ namespace GGUI{
      * @param event The function to call when the switch is toggled.
      * @param s The styling for the switch.
      */
-    Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event, Styling s) : Element(s) {
+    Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event, Styling s, bool Embed_Styles_On_Construct) : Element(s, Embed_Styles_On_Construct) {
         Pause_GGUI([this, text, states, event](){
             // Initialize the states for the switch
             States = states;

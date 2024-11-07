@@ -412,10 +412,10 @@ namespace GGUI{
     /**
      * @brief Use GGUI in a simple way.
      * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, add all the elements to the root window, sleep for the given amount of milliseconds, and then exit GGUI.
-     * @param DOM The elements to add to the root window.
+     * @param App The whole GGUI Application that GGUI holds.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    extern void GGUI(std::vector<Element*> DOM, unsigned long long Sleep_For = 0);
+    extern void GGUI(Styling App, unsigned long long Sleep_For = 0);
 
     /// @brief Cleanly exits the GGUI library.
     /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.

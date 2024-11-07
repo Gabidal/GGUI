@@ -1441,24 +1441,52 @@ namespace GGUI{
         // The construction time given styles are first put here, before embedding them into this class.
         STYLING_INTERNAL::style_base* un_parsed_styles = nullptr;
 
-        /// Default constructor for Styling, initializes all values to their defaults.
-        /// 
-        /// This constructor is the default constructor for the Styling class. It will initialize all the values to their defaults.
+        /**
+         * @brief Default constructor for the Styling class.
+         * 
+         * This constructor initializes a new instance of the Styling class with default values.
+         */
         Styling() = default;
 
+        /**
+         * @brief Constructs a Styling object with the given style attributes.
+         * 
+         * @param attributes A pointer to a style_base object containing the style attributes.
+         */
         Styling(STYLING_INTERNAL::style_base* attributes){
             un_parsed_styles = attributes;
         }
 
+        /**
+         * @brief Constructs a Styling object with the given style attributes.
+         * 
+         * @param attributes A reference to a style_base object containing the style attributes.
+         */
         Styling(STYLING_INTERNAL::style_base& attributes){
             un_parsed_styles = &attributes;
         }
 
+        /**
+         * @brief Constructs a Styling object with the given style attributes.
+         * 
+         * @param attributes A style_base object containing the style attributes.
+         */
         Styling(STYLING_INTERNAL::style_base&& attributes){
             un_parsed_styles = &attributes;
         }
 
-        // This function will expect that listed elements are given as recursive style_base inheritants. Nested AST or tree based nodes are thus always captured by their preceding element nodes, which will capture all that is given to it.
+        /**
+         * Embeds the styles of the current styling object into the element.
+         * 
+         * This function is used to embed the styles of the current styling object into the element.
+         * It takes the element as a parameter and embeds the styles into it.
+         * The styles are embedded by looping through the un_parsed_styles list and calling the Embed_Value function on each attribute.
+         * The Embed_Value function is responsible for embedding the attribute into the element.
+         * The changes to the element are recorded in the changes variable, which is of type STAIN.
+         * The type of the changes is then added to the element's stains list.
+         * The function returns nothing.
+         * @param owner The element to which the styles will be embedded.
+         */
         void Embed_Styles(Element* owner);
 
         /**
@@ -1470,13 +1498,30 @@ namespace GGUI{
          */
         void Copy(const Styling& other);
 
+        /**
+         * @brief Copies the styling information from another Styling object.
+         * 
+         * This function copies the styling information from the provided 
+         * Styling object pointer. It internally calls the overloaded Copy 
+         * function that takes a reference to a Styling object.
+         * 
+         * @param other A pointer to the Styling object from which to copy the styling information.
+         */
         void Copy(const Styling* other){
             // use the reference one
             Copy(*other);
         }
-    
-        // This acts like the Render() overload for elements, where the function will go through flagged states and checks what needs to be updated.
-        // Called within the STAIN::STRETCH handling, since this is about dynamic size attributes, and they need to be checked when the current element has been resized or its parent has.
+        
+        /**
+         * @brief Evaluates dynamic attribute values for the given element.
+         *
+         * This function evaluates the dynamic attribute values of the styling associated
+         * with the specified element. It determines the point of interest, which is
+         * either the element's parent or the element itself if no parent exists,
+         * and uses its style as a reference for evaluation.
+         *
+         * @param owner The element whose dynamic attributes are to be evaluated.
+         */
         void Evaluate_Dynamic_Attribute_Values(Element* owner);
     };
 

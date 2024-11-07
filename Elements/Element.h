@@ -69,8 +69,9 @@ namespace GGUI{
          * automatically added to the list of root objects.
          *
          * @param s The Styling object to use for the Element.
+         * @param Embed_Styles_On_Construct A flag indicating whether to embed the styles on construction. Only use if you know what you're doing!!!
          */
-        Element(Styling s);
+        Element(Styling s, bool Embed_Styles_On_Construct = false);
 
         
         /**
@@ -95,9 +96,6 @@ namespace GGUI{
          */
         Element& operator=(const GGUI::Element&) = default;
 
-        //Start of destructors.
-        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-
         /**
          * @brief The destructor for the Element class.
          *
@@ -109,9 +107,15 @@ namespace GGUI{
          */
         virtual ~Element();
 
-        //
-        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-
+        /**
+         * @brief Safely moves the current Element object to a new memory location.
+         * 
+         * This function creates a new Element object, copies the contents of the 
+         * current Element object to the new object, and returns a pointer to the 
+         * newly created object.
+         * 
+         * @return Element* Pointer to the newly created Element object.
+         */
         virtual Element* Safe_Move(){
             Element* new_element = new Element();
             *new_element = *(Element*)this;
@@ -125,10 +129,31 @@ namespace GGUI{
          */
         Element* Copy();
 
-        // @brief Marks the Element as fully dirty by setting all stain types.
-        // 
-        // This function sets each stain type on the Dirty object, indicating
-        // that the Element needs to be reprocessed for all attributes.
+        /**
+         * @brief Embeds styles into the current element and its child elements.
+         * 
+         * This function calls the Embed_Styles method on the current element's style,
+         * passing the current element as a parameter. It then recursively calls the 
+         * Embed_Styles method on each child element's style.
+         */
+        void Embed_Styles(){ 
+            Style->Embed_Styles(this);
+
+            for (auto c : Style->Childs){
+                c->Embed_Styles();
+            }
+        }
+
+        void Add_Styling(Styling s){
+            Style->Copy(s);
+        }
+
+        /** 
+         * @brief Marks the Element as fully dirty by setting all stain types.
+         * 
+         * This function sets each stain type on the Dirty object, indicating
+         * that the Element needs to be reprocessed for all attributes.
+         */
         virtual void Fully_Stain();
 
         

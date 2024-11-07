@@ -55,6 +55,7 @@ namespace GGUI{
 
     unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
     unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+    unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
 
     inline Atomic::Guard<std::unordered_map<int, Styling>> Classes;
 
@@ -2165,7 +2166,7 @@ namespace GGUI{
 
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
         Main = (Window*)0xFFFFFFFF;
-        Main = new Window("", Styling(width(Max_Width) | height(Max_Height)));
+        Main = new Window("", Styling(width(Max_Width) | height(Max_Height)), true);
 
         std::thread Rendering_Scheduler([&](){
             while (true){
@@ -2261,6 +2262,8 @@ namespace GGUI{
                 Query_Inputs();
 
                 Pause_GGUI();
+                
+                Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Translate the Queried inputs.
                 Translate_Inputs();
@@ -2271,6 +2274,11 @@ namespace GGUI{
 
                 // Now call upon event handlers which may react to the parsed input.
                 Event_Handler();
+
+                Current_Time = std::chrono::high_resolution_clock::now();
+
+                // Calculate the delta time.
+                Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 Resume_GGUI();
             }
@@ -2585,16 +2593,17 @@ namespace GGUI{
      * @param DOM The elements to add to the root window.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    void GGUI(std::vector<Element*> DOM, unsigned long long Sleep_For){
+    void GGUI(Styling App, unsigned long long Sleep_For){
         Init_Start_Addresses();
 
-        Pause_GGUI([DOM](){
+        Pause_GGUI([App](){
             Init_GGUI();
 
-            // Add all the elements to the root window.
-            for (auto* e : DOM){
-                Main->Add_Child(e);
-            }
+            // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
+            Main->Add_Styling(App);
+
+            // Now recursively go down in the App AST nodes and Build each node.
+            Main->Embed_Styles();
         });
 
         // Sleep for the given amount of milliseconds.
@@ -2640,6 +2649,17 @@ namespace GGUI{
         }
     }
 
+    std::string Get_Stats_Text(){
+        return  "Encoded buffer: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
+                "Raw buffer: " + std::to_string(Frame_Buffer.size()) + "\n" +
+                "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
+                "Render delay: " + std::to_string(Render_Delay) + "ms\n" +
+                "Event delay: " + std::to_string(Event_Delay) + "ms\n" + 
+                "Input delay: " + std::to_string(Input_Delay) + "ms\n" + 
+                "Resolution: " + std::to_string(Max_Width) + "x" + std::to_string(Max_Height) + "\n" +
+                "Task scheduler: " + std::to_string(CURRENT_UPDATE_SPEED) + "ms\n";
+    }
+
     /**
      * @brief Updates the stats panel with the number of elements, render time, and event time.
      * @param Event The event that triggered the update.
@@ -2657,13 +2677,7 @@ namespace GGUI{
         Text_Field* Stats = (Text_Field*)Main->Get_Element("STATS");
 
         // Update the stats
-        Stats->Set_Text(
-            "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
-            "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-            "Render delay: " + std::to_string(Render_Delay) + "ms\n" +
-            "Event delay: " + std::to_string(Event_Delay) + "ms"
-        );
+        Stats->Set_Text(Get_Stats_Text());
 
         // return success
         return true;
@@ -2701,13 +2715,9 @@ namespace GGUI{
         
         // Add a count for how many UTF are being streamed.
         Text_Field* Stats = new Text_Field(
-            "Encode: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
-            "Decode: " + std::to_string(Frame_Buffer.size()) + "\n" +
-            "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-            "Render delay: " + std::to_string(Render_Delay) + "ms\n" +
-            "Event delay: " + std::to_string(Event_Delay) + "ms",
+            Get_Stats_Text(),
             Styling(
-                align(ALIGN::LEFT) | width(Inspect->Get_Width()) | height(5)
+                align(ALIGN::LEFT) | width(Inspect->Get_Width()) | height(8)
             )
         );
         // Set the name of the text field to "STATS"

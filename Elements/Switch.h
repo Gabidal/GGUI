@@ -37,8 +37,15 @@ namespace GGUI{
          * @param states A vector containing the unchecked and checked states.
          * @param event The function to call when the switch is toggled.
          * @param s The styling for the switch.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the switch's style. Only use if you know what you're doing!!!
          */
-        Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){}, Styling s = STYLES::CONSTANTS::Default);
+        Switch(
+            std::string text,
+            std::vector<std::string> states,
+            std::function<void (Element* This)> event = []([[maybe_unused]] Element* e){}, 
+            Styling s = STYLES::CONSTANTS::Default,
+            bool Embed_Styles_On_Construct = false
+        );
 
         /**
          * @brief Renders the switch element and its children into the Render_Buffer nested buffer of the window.

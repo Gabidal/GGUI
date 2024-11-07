@@ -35,8 +35,9 @@ namespace GGUI{
          *          The Styling parameter is used to set the style of the Text_Field object.
          * @param text The text to be displayed in the Text_Field object.
          * @param s The Styling object to use for the Text_Field object.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Text_Field's style. Only use if you know what you're doing!!!
          */
-        Text_Field(std::string text = "", Styling s = STYLES::CONSTANTS::Default) : Element(s), Text(text){
+        Text_Field(std::string text = "", Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct), Text(text){
 
             // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
             Text_Cache.reserve(Get_Height());

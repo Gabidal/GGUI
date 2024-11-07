@@ -10,7 +10,7 @@ namespace GGUI{
      * @param press The function to call when the button is pressed.
      * @param s The styling for the button.
      */
-    Button::Button(std::string text, std::function<void (Button* This)> press, Styling s) : Element(s) {
+    Button::Button(std::string text, std::function<void (Button* This)> press, Styling s, bool Embed_Styles_On_Construct) : Element(s, Embed_Styles_On_Construct) {
         // Set default behavior for button press
         Default_Button_Behaviour(press);
 

@@ -49,8 +49,9 @@ namespace GGUI{
          * @param text The text to display on the button.
          * @param press The function to call when the button is pressed.
          * @param s The styling for the button.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the button's style. Only use if you know what you're doing!!!
          */
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button*){}, Styling s = STYLES::CONSTANTS::Default);
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button*){}, Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
         /**
          * @brief Creates a deep copy of the Button object.

@@ -261,10 +261,11 @@ GGUI::Element::Element() {
  *
  * @param s The Styling object to use for the Element.
  */
-GGUI::Element::Element(Styling s) : Element(){
+GGUI::Element::Element(Styling s, bool Embed_Styles_On_Construct) : Element(){
     Style = new Styling(s);
 
-    Style->Embed_Styles(this);
+    if (Embed_Styles_On_Construct)
+        Style->Embed_Styles(this);
 }
 
 /**

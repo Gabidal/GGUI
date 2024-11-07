@@ -9,7 +9,7 @@
  * @param title The title string to be displayed in the window's title bar.
  * @param s The Styling object to be used for the window.
  */
-GGUI::Window::Window(std::string title, Styling s) : Element(s) {
+GGUI::Window::Window(std::string title, Styling s, bool Embed_Styles_On_Construct) : Element(s, Embed_Styles_On_Construct) {
     Pause_GGUI([this, title](){
         Update_Hidden_Border_Colors();
 

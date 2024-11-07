@@ -31,7 +31,7 @@ namespace GGUI{
          * 
          * @param s The style for the list view.
          */
-        List_View(Styling s) : Element(s){ Allow_Dynamic_Size(true); }
+        List_View(Styling s, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct){ Allow_Dynamic_Size(true); }
 
         /**
          * @brief Destructor for the List_View class.
@@ -160,8 +160,9 @@ namespace GGUI{
          * @brief Constructor for the Scroll_View class.
          * @details This constructor initializes a Scroll_View object with the specified styling.
          * @param s The styling to be applied to the Scroll_View.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
          */
-        Scroll_View(Styling s) : Element(s) {}
+        Scroll_View(Styling s, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct) {}
 
         /**
          * @brief Constructor for the Scroll_View class.
