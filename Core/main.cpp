@@ -6,32 +6,32 @@ using namespace GGUI;
 
 int main() 
 {
-    GGUI::GGUI([&](){
-        GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(
-            Styling(
-                width(GGUI::Max_Width) | height(GGUI::Max_Height)
-            )
-        );
+    GGUI::GGUI(Styling(
+        node(Terminal_Canvas(Styling(
 
-        for (int x = 0; x < tem->Get_Width(); x++){
-            for (int y = 0; y < tem->Get_Height(); y++){
-                GGUI::Sprite s(
-                    {
-                        {"a", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
-                        {"b", {GGUI::COLOR::BLUE, GGUI::COLOR::BLUE}}, 
-                    },
-                    0,  // Animation offset
-                    1   // Animation speed
-                );
+            width(1.0f) | height(1.0f) |
 
-                tem->Set(x, y, s, false);
-            }
-        }
+            on_init([](Element* raw_self){
+                Terminal_Canvas* self = (Terminal_Canvas*)raw_self;
 
-        tem->Flush(true);
+                for (int x = 0; x < self->Get_Width(); x++)
+                    for (int y = 0; y < self->Get_Height(); y++){
+                        GGUI::Sprite s(
+                            {
+                                {"a", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
+                                {"b", {GGUI::COLOR::BLUE, GGUI::COLOR::BLUE}}, 
+                            },
+                            0,  // Animation offset
+                            1   // Animation speed
+                        );
 
-        GGUI::Main->Add_Child(tem);
-    }, INT32_MAX);
+                        self->Set(x, y, s, false);
+                    }
+
+                self->Flush(true);
+            })
+        )))
+    ), INT32_MAX);
 
     GGUI::Exit();
 }

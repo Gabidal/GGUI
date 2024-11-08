@@ -49,38 +49,6 @@ void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
 }
 
 /**
- * @brief Copies the values of the given Styling object to the current object.
- *
- * This will copy all the values of the given Styling object to the current object.
- *
- * @param other The Styling object to copy from.
- */
-void GGUI::Styling::Copy(const Styling& other){
-    Border_Enabled = other.Border_Enabled;
-    Text_Color = other.Text_Color;
-    Background_Color = other.Background_Color;
-    Border_Color = other.Border_Color;
-    Border_Background_Color = other.Border_Background_Color;
-    Hover_Border_Color = other.Hover_Border_Color;
-    Hover_Text_Color = other.Hover_Text_Color;
-    Hover_Background_Color = other.Hover_Background_Color;
-    Hover_Border_Background_Color = other.Hover_Border_Background_Color;
-    Focus_Border_Color = other.Focus_Border_Color;
-    Focus_Text_Color = other.Focus_Text_Color;
-    Focus_Background_Color = other.Focus_Background_Color;
-    Focus_Border_Background_Color = other.Focus_Border_Background_Color;
-    Border_Style = other.Border_Style;
-    Flow_Priority = other.Flow_Priority;
-    Wrap = other.Wrap;
-    Allow_Overflow = other.Allow_Overflow;
-    Allow_Dynamic_Size = other.Allow_Dynamic_Size;
-    Margin = other.Margin;
-    Shadow = other.Shadow;
-    Opacity = other.Opacity;
-    Allow_Scrolling = other.Allow_Scrolling;
-}
-
-/**
  * @brief Converts the UTF character to a string.
  *
  * This function converts the UTF character to a string by combining the foreground and background colour
@@ -229,15 +197,15 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
 }
 
 /**
- * The constructor for the Element class.
+ * The constructor for the Element class that accepts a Styling object.
  *
  * This constructor is used when an Element is created without a parent.
  * In this case, the Element is created as a root object, and it will be
  * automatically added to the list of root objects.
  *
- * @param None
+ * @param s The Styling object to use for the Element.
  */
-GGUI::Element::Element() {
+GGUI::Element::Element(Styling s, bool Embed_Styles_On_Construct){
     Name = std::to_string((unsigned long long)this);
     Parse_Classes();
 
@@ -250,22 +218,17 @@ GGUI::Element::Element() {
         // Lets go with B.
         Report_Stack("OUTBOX not supported, cannot anchor: " + Get_Name());
     }
-}
 
-/**
- * The constructor for the Element class that accepts a Styling object.
- *
- * This constructor is used when an Element is created without a parent.
- * In this case, the Element is created as a root object, and it will be
- * automatically added to the list of root objects.
- *
- * @param s The Styling object to use for the Element.
- */
-GGUI::Element::Element(Styling s, bool Embed_Styles_On_Construct) : Element(){
     Style = new Styling(s);
 
-    if (Embed_Styles_On_Construct)
+    if (Embed_Styles_On_Construct){
         Style->Embed_Styles(this);
+
+        Check(STATE::INIT);
+
+        // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
+        Dirty.Clean(STAIN_TYPE::FINALIZE);
+    }
 }
 
 /**
@@ -291,6 +254,9 @@ GGUI::Element::Element(const Element& copyable) {
  * element's vector of child elements and the event handlers list.
  */
 GGUI::Element::~Element(){
+    // Call handler for on destroying moment.
+    Check(STATE::DESTROYED);
+
     // Make sure this element is not listed in the parent element.
     // And if it does, then remove it from the parent element.
     if (Parent) {
@@ -341,9 +307,12 @@ GGUI::Element::~Element(){
 void GGUI::Element::Fully_Stain() {
     // Mark the element as dirty for all possible stain types to ensure
     // complete re-evaluation and rendering.
-    this->Dirty.Dirty(STAIN_TYPE::CLASS | STAIN_TYPE::STRETCH | 
-                      STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | 
-                      STAIN_TYPE::EDGE | STAIN_TYPE::MOVE);
+    this->Dirty.Dirty(
+        STAIN_TYPE::CLASS | STAIN_TYPE::STRETCH | 
+        STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | 
+        STAIN_TYPE::EDGE | STAIN_TYPE::MOVE |
+        STAIN_TYPE::FINALIZE
+    );
 }
 
 /**
@@ -952,20 +921,6 @@ void GGUI::Element::Update_Parent(Element* New_Element){
 }
 
 /**
- * @brief Executes the handler function associated with a given state.
- * @details This function checks if there is a registered handler for the specified state.
- *          If a handler exists, it invokes the handler function.
- * @param s The state for which the handler should be executed.
- */
-void GGUI::Element::Check(State s){
-    // Check if a handler for the state 's' exists in the map
-    if (State_Handlers.find(s) != State_Handlers.end()){
-        // Invoke the handler function associated with the state 's'
-        State_Handlers[s]();
-    }
-}
-
-/**
  * @brief Displays or hides the element and all its children.
  * @details This function changes the display status of the element and all its children.
  *          If the element is displayed, all its children are also displayed. If the element is hidden,
@@ -979,10 +934,10 @@ void GGUI::Element::Display(bool f){
         Show = f;
 
         if (f){
-            Check(State::RENDERED);
+            Check(STATE::SHOWN);
         }
         else{
-            Check(State::HIDDEN);
+            Check(STATE::HIDDEN);
         }
 
         // now also update all children, this is for the sake of events, since they do not obey AST structure where parental hidden would stop going deeper into AST events are linear list.
@@ -1209,6 +1164,8 @@ GGUI::Element* GGUI::Element::Copy(){
             Event_Handlers.push_back(new_action);
         }
     }
+
+    // TODO: somehow make the Lambda functions for State Handlers to switch their self pointers.
 
     // Clear the Focused on bool
     Focused = false;
@@ -2300,10 +2257,17 @@ void GGUI::Element::Focus() {
  * @details This function takes a state and a handler function as arguments.
  *          The handler function is stored in the State_Handlers map with the given state as the key.
  * @param s The state for which the handler should be executed.
- * @param job The handler function to be executed when the given state is triggered.
+ * @param job The handler function to be executed
  */
-void GGUI::Element::On_State(State s, std::function<void()> job){
-    State_Handlers[s] = job;
+void GGUI::Element::On_State(STATE s, void (*job)(Element* self)){
+    if (s == STATE::INIT)
+        On_Init = job;
+    else if (s == STATE::DESTROYED)
+        On_Destroy = job;
+    else if (s == STATE::HIDDEN)
+        On_Hide = job;
+    else if (s == STATE::SHOWN)
+        On_Show = job;
 }
 
 bool Is_Signed(int x){

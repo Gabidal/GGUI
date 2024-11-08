@@ -23,46 +23,44 @@
 namespace GGUI{
     class Element{
     protected:
+        // Shadows and some other postprocessing effects can have an impact on the final width and height of the element.
         unsigned int Post_Process_Width = 0;
         unsigned int Post_Process_Height = 0;
 
-        // Only fetch one parent UP, and own position +, then child repeat.
+        // Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
         IVector3 Absolute_Position_Cache;
 
-        //INTERNAL FLAGS
         class Element* Parent = nullptr;
+
+        // Determines if the element is rendered or not.
         bool Show = true;
         
         std::vector<UTF> Render_Buffer;
         std::vector<UTF> Post_Process_Buffer;
+
+        // State machine for render pipeline only focus on changed aspects.
         STAIN Dirty;
         
+        // For styling to have shared styles.
         std::vector<int> Classes;
 
         bool Focused = false;
         bool Hovered = false;
 
+        // Human readable ID.
         std::string Name = "";
 
-        // NOTE: do NOT set the .VALUEs manually set each member straight with the operator= overload.
+        // For long term support made this a pointer to avoid size mismatch.
         Styling* Style = nullptr;
 
-        std::unordered_map<State, std::function<void()>> State_Handlers;
+        void (*On_Init)(Element*) = nullptr;
+        void (*On_Destroy)(Element*) = nullptr;
+        void (*On_Hide)(Element*) = nullptr;
+        void (*On_Show)(Element*) = nullptr;
     public:
 
         /**
-         * The constructor for the Element class.
-         *
-         * This constructor is used when an Element is created without a parent.
-         * In this case, the Element is created as a root object, and it will be
-         * automatically added to the list of root objects.
-         *
-         * @param None
-         */
-        Element();
-
-        /**
-         * The constructor for the Element class that accepts a Styling object.
+         * @brief The constructor for the Element class that accepts a Styling object.
          *
          * This constructor is used when an Element is created without a parent.
          * In this case, the Element is created as a root object, and it will be
@@ -71,7 +69,7 @@ namespace GGUI{
          * @param s The Styling object to use for the Element.
          * @param Embed_Styles_On_Construct A flag indicating whether to embed the styles on construction. Only use if you know what you're doing!!!
          */
-        Element(Styling s, bool Embed_Styles_On_Construct = false);
+        Element(Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
         
         /**
@@ -124,7 +122,8 @@ namespace GGUI{
         }
 
         /**
-         * Creates a deep copy of this Element, including all its children.
+         * @brief Creates a deep copy of this Element, including all its children.
+         * 
          * @return A new Element object that is a copy of this one.
          */
         Element* Copy();
@@ -141,6 +140,12 @@ namespace GGUI{
 
             for (auto c : Style->Childs){
                 c->Embed_Styles();
+            }
+            
+            if (Dirty.is(STAIN_TYPE::FINALIZE)){
+                Dirty.Clean(STAIN_TYPE::FINALIZE);
+
+                Check(STATE::INIT);
             }
         }
 
@@ -224,7 +229,20 @@ namespace GGUI{
          *          If a handler exists, it invokes the handler function.
          * @param s The state for which the handler should be executed.
          */
-        void Check(State s);
+        inline void Check(STATE s){
+            if (s == STATE::INIT && On_Init){
+                // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
+                Style->Evaluate_Dynamic_Attribute_Values(this);
+
+                On_Init(this);
+            }
+            else if (s == STATE::DESTROYED && On_Destroy)
+                On_Destroy(this);
+            else if (s == STATE::HIDDEN && On_Hide)
+                On_Hide(this);
+            else if (s == STATE::SHOWN && On_Show)
+                On_Show(this);
+        }
 
         /**
          * @brief Retrieves the styling information of the element.
@@ -354,26 +372,26 @@ namespace GGUI{
          *          and length, and applies the shadow effect to the element. It adjusts the 
          *          element's position to account for the shadow and marks the element as dirty 
          *          for a visual update.
-         * @param[in] Direction The direction vector of the shadow.
-         * @param[in] Shadow_Color The color of the shadow.
-         * @param[in] Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
-         * @param[in] Length The length of the shadow.
+         * @param Direction The direction vector of the shadow.
+         * @param Shadow_Color The color of the shadow.
+         * @param Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
+         * @param Length The length of the shadow.
          */
         void Show_Shadow(FVector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         /**
          * @brief Displays the shadow for the element.
          * @details This function sets the shadow properties such as direction, color, opacity, and length, and applies the shadow effect to the element. It adjusts the element's position to account for the shadow and marks the element as dirty for a visual update. The direction vector of the shadow is set to (0, 0) by default, which means the shadow will appear directly below the element.
-         * @param[in] Shadow_Color The color of the shadow.
-         * @param[in] Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
-         * @param[in] Length The length of the shadow.
+         * @param Shadow_Color The color of the shadow.
+         * @param Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
+         * @param Length The length of the shadow.
          */
         void Show_Shadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         /**
          * @brief Sets the shadow properties for the element.
          * @details This function sets the shadow properties such as direction, color, opacity, and length, and applies the shadow effect to the element. It also marks the element as dirty for a visual update.
-         * @param[in] s The shadow properties to set.
+         * @param s The shadow properties to set.
          */
         void Set_Shadow(shadow s);
 
@@ -392,7 +410,7 @@ namespace GGUI{
          * @details This function sets the parent of this element to the given element.
          *          If the given element is nullptr, it will clear the parent of this
          *          element.
-         * @param[in] parent The parent element to set.
+         * @param parent The parent element to set.
          */
         void Set_Parent(Element* parent);
 
@@ -1338,9 +1356,9 @@ namespace GGUI{
          * @details This function takes a state and a handler function as arguments.
          *          The handler function is stored in the State_Handlers map with the given state as the key.
          * @param s The state for which the handler should be executed.
-         * @param job The handler function to be executed when the given state is triggered.
+         * @param job The handler function to be executed
          */
-        void On_State(State s, std::function<void()> job);
+        void On_State(STATE s, void (*job)(Element* self));
 
         /**
          * @brief Checks if the element needs postprocessing.
@@ -1394,6 +1412,22 @@ namespace GGUI{
          * @return True if the child element is visible within the bounds of the parent.
          */
         bool Child_Is_Shown(Element* other);
+
+        inline void Set_On_Init(void (*func)(Element* self)){
+            On_Init = func;
+        }
+
+        inline void Set_On_Destroy(void (*func)(Element* self)){
+            On_Destroy = func;
+        }
+
+        inline void Set_On_Hide(void (*func)(Element* self)){
+            On_Hide = func;
+        }
+
+        inline void Set_On_Show(void (*func)(Element* self)){
+            On_Show = func;
+        }
     };
 }
 

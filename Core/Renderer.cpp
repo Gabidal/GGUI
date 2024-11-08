@@ -16,7 +16,7 @@ namespace GGUI{
         std::mutex Mutex;
         std::condition_variable Condition;
 
-        Status Pause_Render_Thread = Status::RESUMED;
+        Status Pause_Render_Thread = Status::NOT_INITIALIZED;
     }
 
     std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
@@ -2166,7 +2166,10 @@ namespace GGUI{
 
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
         Main = (Window*)0xFFFFFFFF;
-        Main = new Window("", Styling(width(Max_Width) | height(Max_Height)), true);
+        Main = new Window(Styling(
+            width(Max_Width) |
+            height(Max_Height)
+        ), true);
 
         std::thread Rendering_Scheduler([&](){
             while (true){
@@ -2220,24 +2223,22 @@ namespace GGUI{
 
         std::thread Event_Scheduler([&](){
             while (true){
-                Pause_GGUI();
+                Pause_GGUI([&](){
+                    // Reset the thread load counter
+                    Event_Thread_Load = 0;
+                    Previous_Time = std::chrono::high_resolution_clock::now();
 
-                // Reset the thread load counter
-                Event_Thread_Load = 0;
-                Previous_Time = std::chrono::high_resolution_clock::now();
-
-                // Order independent --------------
-                Recall_Memories();
-                Go_Through_File_Streams();
-                Refresh_Multi_Frame_Canvas();
-                // --------------
-                
+                    // Order independent --------------
+                    Recall_Memories();
+                    Go_Through_File_Streams();
+                    Refresh_Multi_Frame_Canvas();
+                });
                 /* 
                     Notice: Since the Rendering thread will use its own access to render as tickets, so every time it is "RESUMED" it will after its own run set itself to PAUSED.
                     This is what Tickets are.
                     So in other words, if there is MUST use of rendering pipeline, use Update_Frame().
                 */  
-                Resume_GGUI();
+                // Resume_GGUI();
 
                 Current_Time = std::chrono::high_resolution_clock::now();
 
@@ -2261,26 +2262,24 @@ namespace GGUI{
                 // Wait for user input.
                 Query_Inputs();
 
-                Pause_GGUI();
-                
-                Previous_Time = std::chrono::high_resolution_clock::now();
+                Pause_GGUI([&](){
+                    Previous_Time = std::chrono::high_resolution_clock::now();
 
-                // Translate the Queried inputs.
-                Translate_Inputs();
+                    // Translate the Queried inputs.
+                    Translate_Inputs();
 
-                // Translate the movements thingies to better usable for user.
-                SCROLL_API();
-                MOUSE_API();
+                    // Translate the movements thingies to better usable for user.
+                    SCROLL_API();
+                    MOUSE_API();
 
-                // Now call upon event handlers which may react to the parsed input.
-                Event_Handler();
+                    // Now call upon event handlers which may react to the parsed input.
+                    Event_Handler();
 
-                Current_Time = std::chrono::high_resolution_clock::now();
+                    Current_Time = std::chrono::high_resolution_clock::now();
 
-                // Calculate the delta time.
-                Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
-
-                Resume_GGUI();
+                    // Calculate the delta time.
+                    Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                });
             }
         });
 
@@ -2382,11 +2381,11 @@ namespace GGUI{
                 else{
                     // create the error logger
                     Error_Logger = new Window(
-                        "LOG",
                         Styling(
                             width(Main->Get_Width() / 4) | height(Main->Get_Height() / 2) |
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                            border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK)
+                            border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
+                            title("LOG")
                         )
                     );
                     Error_Logger->Set_Name(ERROR_LOGGER);
@@ -2583,6 +2582,9 @@ namespace GGUI{
             DOM();
         });
 
+        // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
+        Resume_GGUI();
+
         SLEEP(Sleep_For);
         // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
     }
@@ -2596,7 +2598,7 @@ namespace GGUI{
     void GGUI(Styling App, unsigned long long Sleep_For){
         Init_Start_Addresses();
 
-        Pause_GGUI([App](){
+        Pause_GGUI([&App](){
             Init_GGUI();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
@@ -2605,6 +2607,9 @@ namespace GGUI{
             // Now recursively go down in the App AST nodes and Build each node.
             Main->Embed_Styles();
         });
+
+        // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
+        Resume_GGUI();
 
         // Sleep for the given amount of milliseconds.
         SLEEP(Sleep_For);
@@ -2689,90 +2694,81 @@ namespace GGUI{
      * @see GGUI::Update_Stats
      */
     void Init_Inspect_Tool(){
-        // Create a list view that will contain the inspect tool elements
-        GGUI::List_View* Inspect = new GGUI::List_View(Styling(
+        Main->Add_Child(new GGUI::List_View(Styling(
             width(Main->Get_Width() / 2) | height(Main->Get_Height()) | 
-            text_color(Main->Get_Text_Color()) | background_color(Main->Get_Background_Color()) 
-        ));
+            text_color(Main->Get_Text_Color()) | background_color(Main->Get_Background_Color()) |
+            // Set the flow direction to column so the elements stack vertically
+            flow_priority(DIRECTION::COLUMN) | 
+            // Set the position of the list view to the right side of the main window
+            position(
+                Main->Get_Width() - (Main->Get_Width() / 2),
+                0,
+                INT32_MAX - 1
+            ) | 
+            // Set the opacity of the list view to 0.8
+            opacity(0.8f) |
+            // Set the name of the list view to "Inspect"
+            name("Inspect") |
 
-        // Set the flow direction to column so the elements stack vertically
-        Inspect->Set_Flow_Direction(DIRECTION::COLUMN);
-        // Hide the border of the list view
-        Inspect->Show_Border(false);
-        // Set the position of the list view to the right side of the main window
-        Inspect->Set_Position({
-            Main->Get_Width() - (Main->Get_Width() / 2),
-            0,
-            INT32_MAX - 1,
-        });
-        // Set the opacity of the list view to 0.8
-        Inspect->Set_Opacity(0.8f);
-        // Set the name of the list view to "Inspect"
-        Inspect->Set_Name("Inspect");
-
-        // Add the list view to the main window
-        Main->Add_Child(Inspect);
-        
-        // Add a count for how many UTF are being streamed.
-        Text_Field* Stats = new Text_Field(
-            Get_Stats_Text(),
-            Styling(
-                align(ALIGN::LEFT) | width(Inspect->Get_Width()) | height(8)
-            )
-        );
-        // Set the name of the text field to "STATS"
-        Stats->Set_Name("STATS");
-
-        // Add the text field to the list view
-        Inspect->Add_Child(Stats);
-
-        // Add the error logger kidnapper:
-        Window* Error_Logger_Kidnapper = new Window(
-            "LOG: ",
-            Styling(
-                width(Inspect->Get_Width()) | height(Inspect->Get_Height() / 2) |
-                text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
-                STYLES::border
-            )
-        );
-
-        // Set the name of the window to "LOG"
-        Error_Logger_Kidnapper->Set_Name(ERROR_LOGGER);
-        // Allow the window to overflow, so that the text can be seen even if it is longer than the window
-        Error_Logger_Kidnapper->Allow_Overflow(true);
-
-        // Add the window to the list view
-        Inspect->Add_Child(Error_Logger_Kidnapper);
-        // Hide the inspect tool by default
-        Inspect->Display(false);
-
-        // Register an event handler to toggle the inspect tool on and off
-        GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [Inspect](GGUI::Event* e){
-            GGUI::Input* input = (GGUI::Input*)e;
-
-            // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
-            if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
-                return false;
-
-            // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
-            Inspect->Display(!Inspect->Is_Displayed());
-
-            // Return true to indicate that the event was handled
-            return true;
-        }, true);
-        
-        // Remember the inspect tool, so it will be updated every second
-        Remember([](std::vector<Memory>& rememberable){
-            rememberable.push_back(
-                GGUI::Memory(
-                    TIME::SECOND,
-                    Update_Stats,
-                    MEMORY_FLAGS::RETRIGGER,
-                    "Update Stats"
+            // Add a count for how many UTF are being streamed.
+            node(new Text_Field(
+                Get_Stats_Text(),
+                Styling(
+                    align(ALIGN::LEFT) | 
+                    width(1.0f) |
+                    height(8) |
+                    // Set the name of the text field to "STATS"
+                    name("STATS")
                 )
-            );
-        });
+            )) | 
+
+            // Add the error logger kidnapper:
+            node(new Window(
+                Styling(
+                    width(1.0f) | height(0.5f) |
+                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
+                    border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
+                    STYLES::border | 
+                    title("LOG: ") | 
+                    // Set the name of the window to "LOG"
+                    name(ERROR_LOGGER.c_str()) | 
+                    // Allow the window to overflow, so that the text can be seen even if it is longer than the window
+                    allow_overflow(true)
+                )
+            )) | 
+
+            // Hide the inspect tool by default
+            // STYLES::hide | 
+
+            on_init([](Element* self){
+                // Register an event handler to toggle the inspect tool on and off
+                GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
+                    GGUI::Input* input = (GGUI::Input*)e;
+
+                    // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
+                    if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
+                        return false;
+
+                    // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
+                    self->Display(!self->Is_Displayed());
+
+                    // Return true to indicate that the event was handled
+                    return true;
+                }, true);
+
+                // Remember the inspect tool, so it will be updated every second
+                Remember([](std::vector<Memory>& rememberable){
+                    rememberable.push_back(
+                        GGUI::Memory(
+                            TIME::SECOND,
+                            Update_Stats,
+                            MEMORY_FLAGS::RETRIGGER,
+                            "Update Stats"
+                        )
+                    );
+                });
+            })
+        )));
     }
 
     /**

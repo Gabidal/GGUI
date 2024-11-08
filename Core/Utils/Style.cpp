@@ -293,6 +293,10 @@ namespace GGUI{
 
     STAIN_TYPE node::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
+        // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
+        if (!Is_Deletable(Value))
+            Value = Value->Copy();
+
         owner->Add_Child(Value); 
 
         return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
@@ -300,10 +304,60 @@ namespace GGUI{
 
     STAIN_TYPE childs::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
         for (auto* c : Value){
+            // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
+            if (!Is_Deletable(c))
+                c = c->Copy();
+
             owner->Add_Child(c);
         }
 
         return STAIN_TYPE::DEEP;
+    }
+
+    STAIN_TYPE on_init::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        owner->Set_On_Init(Value);
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE on_destroy::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        owner->Set_On_Destroy(Value);
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE on_hide::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        owner->Set_On_Hide(Value);
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE on_show::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        owner->Set_On_Show(Value);
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE name::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        owner->Set_Name(Value);
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE title::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        // first make sure that the element is an Window type element.
+        if (dynamic_cast<Window*>(owner))
+            ((Window*)owner)->Set_Title(Value);
+        else
+            throw std::runtime_error("The title attribute can only be used on Window type elements.");
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE display::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        owner->Display(Value);
+
+        return STAIN_TYPE::CLEAN;
     }
 
     /**
@@ -354,6 +408,46 @@ namespace GGUI{
         Opacity.Evaluate(&reference_style);
         Allow_Scrolling.Evaluate(&reference_style);
         Align.Evaluate(&reference_style);
+    }
+
+    /**
+     * @brief Copies the values of the given Styling object to the current object.
+     *
+     * This will copy all the values of the given Styling object to the current object.
+     *
+     * @param other The Styling object to copy from.
+     */
+    void GGUI::Styling::Copy(const Styling& other){
+        Position = other.Position;
+        Width = other.Width;
+        Height = other.Height;
+        Border_Enabled = other.Border_Enabled;
+        Text_Color = other.Text_Color;
+        Background_Color = other.Background_Color;
+        Border_Color = other.Border_Color;
+        Border_Background_Color = other.Border_Background_Color;
+        Hover_Border_Color = other.Hover_Border_Color;
+        Hover_Text_Color = other.Hover_Text_Color;
+        Hover_Background_Color = other.Hover_Background_Color;
+        Hover_Border_Background_Color = other.Hover_Border_Background_Color;
+        Focus_Border_Color = other.Focus_Border_Color;
+        Focus_Text_Color = other.Focus_Text_Color;
+        Focus_Background_Color = other.Focus_Background_Color;
+        Focus_Border_Background_Color = other.Focus_Border_Background_Color;
+        Border_Style = other.Border_Style;
+        Flow_Priority = other.Flow_Priority;
+        Wrap = other.Wrap;
+        Allow_Overflow = other.Allow_Overflow;
+        Allow_Dynamic_Size = other.Allow_Dynamic_Size;
+        Margin = other.Margin;
+        Shadow = other.Shadow;
+        Opacity = other.Opacity;
+        Allow_Scrolling = other.Allow_Scrolling;
+        Align = other.Align;
+        Childs = other.Childs;
+        
+        // Copy the un_parsed_styles
+        un_parsed_styles = other.un_parsed_styles;
     }
 
     /**

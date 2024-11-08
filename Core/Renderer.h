@@ -36,7 +36,8 @@ namespace GGUI{
         enum class Status{
             RESUMED,
             PAUSED,
-            LOCKED
+            LOCKED,
+            NOT_INITIALIZED
         };
 
         extern std::mutex Mutex;

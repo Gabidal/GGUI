@@ -518,6 +518,7 @@ namespace GGUI{
              *          using constexpr for compile-time evaluation.
              */
             constexpr NUMBER_VALUE(int value = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT){}
+            constexpr NUMBER_VALUE(unsigned int value = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value((signed int)value, EVALUATION_TYPE::DEFAULT){}
 
             /**
              * @brief Destructor for NUMBER_VALUE.
@@ -792,7 +793,7 @@ namespace GGUI{
 
     class position : public STYLING_INTERNAL::Vector{
     public:
-        constexpr position(IVector3 value = IVector3(), VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
+        constexpr position(IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
 
         constexpr position(int x, int y, int z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(IVector3(x, y, z), Default){}
 
@@ -811,6 +812,9 @@ namespace GGUI{
     class width : public STYLING_INTERNAL::NUMBER_VALUE{
     public:
         constexpr width(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+        constexpr width(unsigned int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+
+        constexpr width(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
         constexpr width(const GGUI::width& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status){}
 
@@ -834,6 +838,9 @@ namespace GGUI{
     class height : public STYLING_INTERNAL::NUMBER_VALUE{
     public:
         constexpr height(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+        constexpr height(unsigned int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+
+        constexpr height(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
         constexpr height(const GGUI::height& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status){}
 
@@ -1356,6 +1363,10 @@ namespace GGUI{
         Element* Value;
 
         constexpr node(Element* value = nullptr, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr node(Element& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(&value){}
+
+        constexpr node(Element&& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(&value){}
         
         constexpr node(const GGUI::node& other) : style_base(other.Status), Value(other.Value){}
 
@@ -1397,49 +1408,201 @@ namespace GGUI{
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
     };
 
+    class on_init : public STYLING_INTERNAL::style_base{
+    public:
+        void (*Value)(Element* self);
+
+        constexpr on_init(void (*value)(Element* self), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr on_init(const GGUI::on_init& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr on_init& operator=(const on_init& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class on_destroy : public STYLING_INTERNAL::style_base{
+    public:
+        void (*Value)(Element* self);
+
+        constexpr on_destroy(void (*value)(Element* self), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr on_destroy(const GGUI::on_destroy& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr on_destroy& operator=(const on_destroy& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class on_hide : public STYLING_INTERNAL::style_base{
+    public:
+        void (*Value)(Element* self);
+
+        constexpr on_hide(void (*value)(Element* self), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr on_hide(const GGUI::on_hide& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr on_hide& operator=(const on_hide& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class on_show : public STYLING_INTERNAL::style_base{
+    public:
+        void (*Value)(Element* self);
+
+        constexpr on_show(void (*value)(Element* self), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr on_show(const GGUI::on_show& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr on_show& operator=(const on_show& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class name : public STYLING_INTERNAL::style_base{
+    public:
+        const char* Value;
+
+        constexpr name(const char* value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr name(const GGUI::name& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr name& operator=(const name& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class title : public name{
+    public:
+        constexpr title(const char* value, VALUE_STATE Default = VALUE_STATE::VALUE) : name(value, Default){}
+
+        constexpr title(const GGUI::title& other) : name(other.Value, other.Status){}
+
+        constexpr title& operator=(const title& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class display : public STYLING_INTERNAL::BOOL_VALUE{
+    public:
+        constexpr display(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        constexpr display(const GGUI::display& other) : BOOL_VALUE(other.Value, other.Status){}
+
+        constexpr display& operator=(const display& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
     class Styling{
     public:
-        position Position;
+        position Position                                               = position(IVector3(0, 0, 0), VALUE_STATE::INITIALIZED);
 
-        width Width = 1;
-        height Height = 1;
+        width Width                                                     = width(1, VALUE_STATE::INITIALIZED);
+        height Height                                                   = height(1, VALUE_STATE::INITIALIZED);
 
-        enable_border                   Border_Enabled = enable_border(false, VALUE_STATE::INITIALIZED);
-        text_color                      Text_Color = text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        background_color                Background_Color = background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        border_color                    Border_Color = border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        border_background_color         Border_Background_Color = border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        enable_border                   Border_Enabled                  = enable_border(false, VALUE_STATE::INITIALIZED);
+        text_color                      Text_Color                      = text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        background_color                Background_Color                = background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        border_color                    Border_Color                    = border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        border_background_color         Border_Background_Color         = border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         
-        hover_border_color              Hover_Border_Color = hover_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        hover_text_color                Hover_Text_Color = hover_text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        hover_background_color          Hover_Background_Color = hover_background_color(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
-        hover_border_background_color   Hover_Border_Background_Color = hover_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        hover_border_color              Hover_Border_Color              = hover_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        hover_text_color                Hover_Text_Color                = hover_text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        hover_background_color          Hover_Background_Color          = hover_background_color(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
+        hover_border_background_color   Hover_Border_Background_Color   = hover_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        focus_border_color              Focus_Border_Color = focus_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        focus_text_color                Focus_Text_Color = focus_text_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        focus_background_color          Focus_Background_Color = focus_background_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        focus_border_background_color   Focus_Border_Background_Color = focus_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        focus_border_color              Focus_Border_Color              = focus_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        focus_text_color                Focus_Text_Color                = focus_text_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        focus_background_color          Focus_Background_Color          = focus_background_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        focus_border_background_color   Focus_Border_Background_Color   = focus_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        styled_border Border_Style;
+        styled_border                   Border_Style;
         
-        flow_priority Flow_Priority = flow_priority(DIRECTION::ROW, VALUE_STATE::INITIALIZED);
-        wrap Wrap = wrap(false, VALUE_STATE::INITIALIZED);
+        flow_priority                   Flow_Priority                   = flow_priority(DIRECTION::ROW, VALUE_STATE::INITIALIZED);
+        wrap                            Wrap                            = wrap(false, VALUE_STATE::INITIALIZED);
 
-        allow_overflow Allow_Overflow = allow_overflow(false, VALUE_STATE::INITIALIZED);
-        allow_dynamic_size Allow_Dynamic_Size = allow_dynamic_size(false, VALUE_STATE::INITIALIZED);
-        margin Margin;
+        allow_overflow                  Allow_Overflow                  = allow_overflow(false, VALUE_STATE::INITIALIZED);
+        allow_dynamic_size              Allow_Dynamic_Size              = allow_dynamic_size(false, VALUE_STATE::INITIALIZED);
+        margin                          Margin;
 
-        shadow Shadow;
-        opacity Opacity = opacity(1.0f, VALUE_STATE::INITIALIZED);  // 100%
+        shadow                          Shadow;
+        opacity                         Opacity                         = opacity(1.0f, VALUE_STATE::INITIALIZED);  // 100%
 
-        allow_scrolling Allow_Scrolling = allow_scrolling(false, VALUE_STATE::INITIALIZED);
+        allow_scrolling                 Allow_Scrolling                 = allow_scrolling(false, VALUE_STATE::INITIALIZED);
 
-        align Align = align(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
+        align                           Align                           = align(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
 
-        std::vector<Element*> Childs;
-
-        // The construction time given styles are first put here, before embedding them into this class.
-        STYLING_INTERNAL::style_base* un_parsed_styles = nullptr;
+        std::vector<Element*>           Childs;
 
         /**
          * @brief Default constructor for the Styling class.
@@ -1523,6 +1686,11 @@ namespace GGUI{
          * @param owner The element whose dynamic attributes are to be evaluated.
          */
         void Evaluate_Dynamic_Attribute_Values(Element* owner);
+
+    protected:
+    
+        // The construction time given styles are first put here, before embedding them into this class.
+        STYLING_INTERNAL::style_base* un_parsed_styles = nullptr;
     };
 
     namespace STYLES{
@@ -1554,6 +1722,7 @@ namespace GGUI{
         }
     
         inline enable_border border = enable_border(true, VALUE_STATE::VALUE);
+        inline display hide = display(false, VALUE_STATE::VALUE);
     };
 
 }
