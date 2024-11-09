@@ -2695,13 +2695,13 @@ namespace GGUI{
      */
     void Init_Inspect_Tool(){
         Main->Add_Child(new GGUI::List_View(Styling(
-            width(Main->Get_Width() / 2) | height(Main->Get_Height()) | 
-            text_color(Main->Get_Text_Color()) | background_color(Main->Get_Background_Color()) |
+            width(0.5f) | height(1.0f) | 
+            text_color(1.0f) | background_color(1.0f) |
             // Set the flow direction to column so the elements stack vertically
             flow_priority(DIRECTION::COLUMN) | 
             // Set the position of the list view to the right side of the main window
             position(
-                Main->Get_Width() - (Main->Get_Width() / 2),
+                0, // Main->Get_Width() - (Main->Get_Width() / 2),
                 0,
                 INT32_MAX - 1
             ) | 

@@ -786,6 +786,19 @@ bool GGUI::Element::Has_Border(){
  * @param Child The child element to add.
  */
 void GGUI::Element::Add_Child(Element* Child){
+    // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
+    if (Child->Dirty.is(STAIN_TYPE::FINALIZE)){
+        Child->Dirty.Clean(STAIN_TYPE::FINALIZE);
+        
+        // Give an early access to the parent, so that parent dependant attributes work properly.
+        Child->Parent = this;
+        
+        Child->Embed_Styles();
+
+        // This is for dynamically changing attributes.
+        Child->Style->Evaluate_Dynamic_Attribute_Values(Child);
+    }
+
     // Check if the child element exceeds the size of the parent element
     bool This_Has_Border = Has_Border();
     bool Child_Has_Border = Child->Has_Border();
@@ -821,7 +834,6 @@ void GGUI::Element::Add_Child(Element* Child){
 
     // Mark the parent element as dirty with the DEEP stain
     Dirty.Dirty(STAIN_TYPE::DEEP);
-    Child->Parent = this;
 
     // Add the child element to the parent's child list
     Element_Names.insert({Child->Name, Child});

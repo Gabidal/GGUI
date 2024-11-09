@@ -1428,6 +1428,11 @@ namespace GGUI{
         inline void Set_On_Show(void (*func)(Element* self)){
             On_Show = func;
         }
+
+        inline void Force_Style_Evaluation(){
+            if (Style)
+                Style->Evaluate_Dynamic_Attribute_Values(this);
+        }
     };
 }
 

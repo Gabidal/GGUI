@@ -356,8 +356,20 @@ namespace GGUI{
              * @details This constructor initializes an RGB_VALUE object with the given parameters,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr RGB_VALUE(const GGUI::RGB value = RGB(0, 0, 0), VALUE_STATE Default = VALUE_STATE::VALUE) 
+            constexpr RGB_VALUE(const GGUI::RGB value, VALUE_STATE Default = VALUE_STATE::VALUE) 
                 : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT) {}
+
+            /**
+             * @brief Construct a new RGB_VALUE object using constexpr.
+             * @param value The relative percentage of inherited from parent.
+             * @param Default The default value state.
+             * @param use_constexpr Flag indicating whether to use constexpr.
+             * @details This constructor initializes an RGB_VALUE object with the given parameters,
+             *          using constexpr for compile-time evaluation.
+             */
+            constexpr RGB_VALUE(const float value, VALUE_STATE Default = VALUE_STATE::VALUE) 
+                : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE) {}
+            
 
             /**
              * @brief Destructor for the RGB_VALUE class.
@@ -881,6 +893,8 @@ namespace GGUI{
     public:
         constexpr text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
+        constexpr text_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
         constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
         constexpr text_color& operator=(const text_color& other) = default;
@@ -896,6 +910,8 @@ namespace GGUI{
     class background_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
         constexpr background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        constexpr background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
         constexpr background_color(const GGUI::background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
@@ -913,6 +929,8 @@ namespace GGUI{
     public:
         constexpr border_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
+        constexpr border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
         constexpr border_color(const GGUI::border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
         constexpr border_color& operator=(const border_color& other) = default;
@@ -928,6 +946,8 @@ namespace GGUI{
     class border_background_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
         constexpr border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        constexpr border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
         constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
@@ -945,6 +965,8 @@ namespace GGUI{
     public:
         constexpr hover_border_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
+        constexpr hover_border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
         constexpr hover_border_color(const GGUI::hover_border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
         constexpr hover_border_color& operator=(const hover_border_color& other) = default;
@@ -960,6 +982,8 @@ namespace GGUI{
     class hover_text_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
         constexpr hover_text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        constexpr hover_text_color(float  relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
         constexpr hover_text_color(const GGUI::hover_text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
@@ -977,6 +1001,8 @@ namespace GGUI{
     public:
         constexpr hover_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
+        constexpr hover_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
         constexpr hover_background_color(const GGUI::hover_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
         constexpr hover_background_color& operator=(const hover_background_color& other) = default;
@@ -992,6 +1018,8 @@ namespace GGUI{
     class hover_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
         constexpr hover_border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        constexpr hover_border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
         constexpr hover_border_background_color(const GGUI::hover_border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
@@ -1009,6 +1037,8 @@ namespace GGUI{
     public:
         constexpr focus_border_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
+        constexpr focus_border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
         constexpr focus_border_color(const GGUI::focus_border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
         constexpr focus_border_color& operator=(const focus_border_color& other) = default;
@@ -1024,6 +1054,8 @@ namespace GGUI{
     class focus_text_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
         constexpr focus_text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        constexpr focus_text_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
         constexpr focus_text_color(const GGUI::focus_text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
@@ -1041,6 +1073,8 @@ namespace GGUI{
     public:
         constexpr focus_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
+        constexpr focus_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
         constexpr focus_background_color(const GGUI::focus_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 
         constexpr focus_background_color& operator=(const focus_background_color& other) = default;
@@ -1056,6 +1090,8 @@ namespace GGUI{
     class focus_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
     public:
         constexpr focus_border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+
+        constexpr focus_border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
         constexpr focus_border_background_color(const GGUI::focus_border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
 

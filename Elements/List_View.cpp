@@ -35,6 +35,20 @@ GGUI::Scroll_View::Scroll_View(List_View& container) : Element(){
  */
 void GGUI::List_View::Add_Child(Element* e) {
     Pause_GGUI([this, e]() {
+        // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
+        STAIN& dirty = e->Get_Dirty();
+        if (dirty.is(STAIN_TYPE::FINALIZE)){
+            dirty.Clean(STAIN_TYPE::FINALIZE);
+            
+            // Give an early access to the parent, so that parent dependant attributes work properly.
+            e->Set_Parent(this);
+            
+            e->Embed_Styles();
+
+            // This is for dynamically changing attributes.
+            e->Force_Style_Evaluation();
+        }
+
         // Get the maximum width and height limits for the list view.
         std::pair<unsigned int, unsigned int> limits = Get_Limit_Dimensions();
         unsigned int max_width = limits.first;
@@ -50,8 +64,6 @@ void GGUI::List_View::Add_Child(Element* e) {
             Report("Overflow wrapping is not supported!");
             return;
         }
-
-        e->Set_Parent(this);
 
         // Determine the flow direction for the list view.
         if (Style->Flow_Priority.Value == DIRECTION::ROW) {
