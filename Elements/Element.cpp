@@ -794,9 +794,6 @@ void GGUI::Element::Add_Child(Element* Child){
         Child->Parent = this;
         
         Child->Embed_Styles();
-
-        // This is for dynamically changing attributes.
-        Child->Style->Evaluate_Dynamic_Attribute_Values(Child);
     }
 
     // Check if the child element exceeds the size of the parent element

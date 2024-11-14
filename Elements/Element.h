@@ -137,10 +137,6 @@ namespace GGUI{
          */
         void Embed_Styles(){ 
             Style->Embed_Styles(this);
-
-            for (auto c : Style->Childs){
-                c->Embed_Styles();
-            }
             
             if (Dirty.is(STAIN_TYPE::FINALIZE)){
                 Dirty.Clean(STAIN_TYPE::FINALIZE);
@@ -159,8 +155,7 @@ namespace GGUI{
          * This function sets each stain type on the Dirty object, indicating
          * that the Element needs to be reprocessed for all attributes.
          */
-        virtual void Fully_Stain();
-
+        void Fully_Stain();
         
         /**
          * @brief Copies the state of the abstract element to the current element.

@@ -26,6 +26,11 @@ namespace GGUI{
         VALUE
     };
 
+    enum class EMBED_ORDER{
+        INSTANT,
+        DELAYED
+    };
+
     enum class DIRECTION{
         ROW,
         COLUMN
@@ -58,7 +63,8 @@ namespace GGUI{
         template<typename T>
         class value {
         protected:
-            std::variant<T, float> data;  // Can hold either normal value or percentage
+            T data;
+            float percentage;   // This will be changed later on into an std::variant holding different scaling types.
             EVALUATION_TYPE evaluation_type = EVALUATION_TYPE::DEFAULT;
 
         public:
@@ -82,7 +88,7 @@ namespace GGUI{
              * use a constexpr constructor or not.
              */
             constexpr value(float value, EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE)
-                : data(value), evaluation_type(type) {}
+                : percentage(value), evaluation_type(type) {}
 
             /**
              * Copy constructor
@@ -92,7 +98,7 @@ namespace GGUI{
              * The data and the evaluation type are copied from the other object.
              */
             constexpr value(const value<T>& other)
-                : data(other.data), evaluation_type(other.evaluation_type) {}
+                : data(other.data), percentage(other.percentage), evaluation_type(other.evaluation_type) {}
 
 
             /**
@@ -106,6 +112,7 @@ namespace GGUI{
             constexpr value& operator=(const value& other) {
                 // Copy the data and the evaluation type from the other object
                 data = other.data;
+                percentage = other.percentage;
                 evaluation_type = other.evaluation_type;
                 // Return the object itself, for chaining
                 return *this;
@@ -138,7 +145,7 @@ namespace GGUI{
              */
             constexpr value& operator=(float initialization_data) {
                 // Set the data to the float value passed in
-                data = initialization_data;
+                percentage = initialization_data;
                 // Set the evaluation type to PERCENTAGE
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
                 // Return the object itself, for chaining
@@ -156,14 +163,14 @@ namespace GGUI{
                 switch (evaluation_type) {
                     case EVALUATION_TYPE::DEFAULT:
                         // If the evaluation type is DEFAULT then just return the data without any modification
-                        return std::get<T>(data);
+                        return data;
                     case EVALUATION_TYPE::PERCENTAGE:
                         // If the evaluation type is PERCENTAGE then multiply the parental value by the data and return the result
-                        return static_cast<T>(static_cast<T>(parental_value) * std::get<float>(data));
+                        return static_cast<T>(static_cast<T>(parental_value) * percentage);
                     default:
                         Report_Stack("Evaluation type not supported!");
                         // If the evaluation type is not supported then just return the data without any modification
-                        return std::get<T>(data);
+                        return data;
                 }
             }
 
@@ -175,17 +182,7 @@ namespace GGUI{
              */
             template<typename P>
             constexpr P Get() const {
-                /**
-                 * In debug mode, check if the requested type matches the type of the data.
-                 * If it doesn't, throw an exception.
-                 */
-                #ifdef _DEBUG
-                if (!std::holds_alternative<P>(data)) {
-                    Report_Stack("Value is not of the requested type!");
-                    throw std::bad_variant_access();  // Exception if the requested type doesn't match
-                }
-                #endif
-                return std::get<P>(data);  // In release mode, or after the check passes in debug mode
+                return data;
             }
 
             /**
@@ -196,17 +193,7 @@ namespace GGUI{
              */
             template<typename P>
             inline constexpr P Get() {                
-                /**
-                 * In debug mode, check if the requested type matches the type of the data.
-                 * If it doesn't, throw an exception.
-                 */
-                #ifdef _DEBUG
-                if (!std::holds_alternative<P>(data)) {
-                    Report_Stack("Value is not of the requested type!");
-                    throw std::bad_variant_access();  // Exception if the requested type doesn't match
-                }
-                #endif
-                return std::get<P>(data);  // In release mode, or after the check passes in debug mode
+                return data;
             }
 
             /**
@@ -218,17 +205,7 @@ namespace GGUI{
              */
             template<typename P>
             inline constexpr P& Direct() { 
-                /**
-                 * In debug mode, check if the requested type matches the type of the data.
-                 * If it doesn't, throw an exception.
-                 */
-                #ifdef _DEBUG
-                if (!std::holds_alternative<P>(data)) {
-                    Report_Stack("Value is not of the requested type!");
-                    throw std::bad_variant_access();  // Exception if the requested type doesn't match
-                }
-                #endif
-                return std::get<P>(data);  // In release mode, or after the check passes in debug mode
+                return data;
             }
 
             /**
@@ -248,7 +225,7 @@ namespace GGUI{
              * @details This sets the value of the variant to the provided value, and sets the evaluation type to EVALUATION_TYPE::PERCENTAGE.
              */
             inline constexpr void Set(float value){
-                data = value;
+                percentage = value;
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
             }
         };
@@ -261,12 +238,15 @@ namespace GGUI{
             // This is used to store all appended style_bases through the operator|.
             style_base* Other = nullptr;
 
+            // Represents when the value is embedded.
+            EMBED_ORDER Order = EMBED_ORDER::INSTANT;
+
             /**
              * @brief Construct a new constexpr style_base object.
              * @param status The status to initialize the style_base with.
              * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
              */
-            constexpr style_base(VALUE_STATE status = VALUE_STATE::UNINITIALIZED) : Status(status), Other(nullptr){}
+            constexpr style_base(VALUE_STATE status = VALUE_STATE::UNINITIALIZED, EMBED_ORDER order = EMBED_ORDER::INSTANT) : Status(status), Other(nullptr), Order(order){}
 
             /**
              * @brief Destructor of the style_base class.
@@ -370,6 +350,7 @@ namespace GGUI{
             constexpr RGB_VALUE(const float value, VALUE_STATE Default = VALUE_STATE::VALUE) 
                 : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE) {}
             
+            constexpr RGB_VALUE() = default;
 
             /**
              * @brief Destructor for the RGB_VALUE class.
@@ -442,9 +423,11 @@ namespace GGUI{
              * @param Default The default value state to use.
              * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
              */
-            constexpr BOOL_VALUE(bool value = false, VALUE_STATE Default = VALUE_STATE::VALUE) 
+            constexpr BOOL_VALUE(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) 
                 : style_base(Default), Value(value) {}
             
+            constexpr BOOL_VALUE() = default;
+
             /**
              * @brief Destructor for the BOOL_VALUE class.
              * @details This destructor is responsible for properly deallocating all the memory
@@ -519,7 +502,7 @@ namespace GGUI{
              * @details This constructor initializes the NUMBER_VALUE with the provided float value and default state.
              *          The value is converted to a percentage (multiplying by 0.01) and stored as a float in the Value member.
              */
-            constexpr NUMBER_VALUE(float value = 1.0f, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE){}
+            constexpr NUMBER_VALUE(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE){}
 
             /**
              * @brief Construct a new NUMBER_VALUE object from an integer using constexpr.
@@ -529,8 +512,11 @@ namespace GGUI{
              * @details This constructor initializes a NUMBER_VALUE object with the provided integer value and default state,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr NUMBER_VALUE(int value = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT){}
-            constexpr NUMBER_VALUE(unsigned int value = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value((signed int)value, EVALUATION_TYPE::DEFAULT){}
+            constexpr NUMBER_VALUE(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT){}
+            
+            constexpr NUMBER_VALUE(unsigned int value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value((signed int)value, EVALUATION_TYPE::DEFAULT){}
+
+            constexpr NUMBER_VALUE() = default;
 
             /**
              * @brief Destructor for NUMBER_VALUE.
@@ -610,11 +596,12 @@ namespace GGUI{
              * @brief Construct a new ENUM_VALUE object using constexpr.
              * @param value The enum value to set.
              * @param Default The default value state.
-             * @param use_constexpr Flag indicating whether to use constexpr.
              * @details This constructor initializes an ENUM_VALUE object with the given enum value and default state,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr ENUM_VALUE(T value, VALUE_STATE Default = VALUE_STATE::INITIALIZED) : style_base(Default), Value(value){}
+            constexpr ENUM_VALUE(T value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+            constexpr ENUM_VALUE() = default;
 
             /**
              * @brief Destructor for ENUM_VALUE.
@@ -696,8 +683,10 @@ namespace GGUI{
              * @details This constructor initializes a Vector object with the given parameters,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr Vector(const GGUI::IVector3 value = IVector3(), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT){}
+            constexpr Vector(const GGUI::IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT){}
             
+            constexpr Vector() = default;
+
             /**
              * @brief Destructor for Vector.
              * @details This destructor is responsible for cleaning up all resources allocated by the Vector object.
@@ -809,7 +798,7 @@ namespace GGUI{
 
         constexpr position(int x, int y, int z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(IVector3(x, y, z), Default){}
 
-        constexpr position(const GGUI::position& other) : Vector(((const Vector&)other).Get(), other.Status){}
+        constexpr position(const GGUI::position& other) : Vector(other){}
 
         constexpr position& operator=(const position& other) = default;
 
@@ -828,7 +817,7 @@ namespace GGUI{
 
         constexpr width(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
-        constexpr width(const GGUI::width& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status){}
+        constexpr width(const GGUI::width& other) : NUMBER_VALUE(other){}
 
         constexpr width& operator=(const width& other) = default;
 
@@ -854,7 +843,7 @@ namespace GGUI{
 
         constexpr height(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
-        constexpr height(const GGUI::height& other) : NUMBER_VALUE(other.Value.Get<int>(), other.Status){}
+        constexpr height(const GGUI::height& other) : NUMBER_VALUE(other){}
 
         constexpr height& operator=(const height& other) = default;
         
@@ -895,7 +884,7 @@ namespace GGUI{
 
         constexpr text_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other){}
 
         constexpr text_color& operator=(const text_color& other) = default;
 
@@ -913,7 +902,7 @@ namespace GGUI{
 
         constexpr background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr background_color(const GGUI::background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr background_color(const GGUI::background_color& other) : RGB_VALUE(other){}
 
         constexpr background_color& operator=(const background_color& other) = default;
 
@@ -931,7 +920,7 @@ namespace GGUI{
 
         constexpr border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr border_color(const GGUI::border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr border_color(const GGUI::border_color& other) : RGB_VALUE(other){}
 
         constexpr border_color& operator=(const border_color& other) = default;
 
@@ -949,7 +938,7 @@ namespace GGUI{
 
         constexpr border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other){}
 
         constexpr border_background_color& operator=(const border_background_color& other) = default;
         
@@ -967,7 +956,7 @@ namespace GGUI{
 
         constexpr hover_border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr hover_border_color(const GGUI::hover_border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr hover_border_color(const GGUI::hover_border_color& other) : RGB_VALUE(other){}
 
         constexpr hover_border_color& operator=(const hover_border_color& other) = default;
         
@@ -985,7 +974,7 @@ namespace GGUI{
 
         constexpr hover_text_color(float  relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr hover_text_color(const GGUI::hover_text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr hover_text_color(const GGUI::hover_text_color& other) : RGB_VALUE(other){}
 
         constexpr hover_text_color& operator=(const hover_text_color& other) = default;
         
@@ -1003,7 +992,7 @@ namespace GGUI{
 
         constexpr hover_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr hover_background_color(const GGUI::hover_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr hover_background_color(const GGUI::hover_background_color& other) : RGB_VALUE(other){}
 
         constexpr hover_background_color& operator=(const hover_background_color& other) = default;
         
@@ -1021,7 +1010,7 @@ namespace GGUI{
 
         constexpr hover_border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr hover_border_background_color(const GGUI::hover_border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr hover_border_background_color(const GGUI::hover_border_background_color& other) : RGB_VALUE(other){}
 
         constexpr hover_border_background_color& operator=(const hover_border_background_color& other) = default;
         
@@ -1039,7 +1028,7 @@ namespace GGUI{
 
         constexpr focus_border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr focus_border_color(const GGUI::focus_border_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr focus_border_color(const GGUI::focus_border_color& other) : RGB_VALUE(other){}
 
         constexpr focus_border_color& operator=(const focus_border_color& other) = default;
         
@@ -1057,7 +1046,7 @@ namespace GGUI{
 
         constexpr focus_text_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr focus_text_color(const GGUI::focus_text_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr focus_text_color(const GGUI::focus_text_color& other) : RGB_VALUE(other){}
 
         constexpr focus_text_color& operator=(const focus_text_color& other) = default;
         
@@ -1075,7 +1064,7 @@ namespace GGUI{
 
         constexpr focus_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr focus_background_color(const GGUI::focus_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr focus_background_color(const GGUI::focus_background_color& other) : RGB_VALUE(other){}
 
         constexpr focus_background_color& operator=(const focus_background_color& other) = default;
         
@@ -1093,7 +1082,7 @@ namespace GGUI{
 
         constexpr focus_border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
-        constexpr focus_border_background_color(const GGUI::focus_border_background_color& other) : RGB_VALUE(other.Value.Get<RGB>(), other.Status){}
+        constexpr focus_border_background_color(const GGUI::focus_border_background_color& other) : RGB_VALUE(other){}
 
         constexpr focus_border_background_color& operator=(const focus_border_background_color& other) = default;
         
@@ -1398,13 +1387,13 @@ namespace GGUI{
     public:
         Element* Value;
 
-        constexpr node(Element* value = nullptr, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr node(Element* value = nullptr, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
 
-        constexpr node(Element& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(&value){}
+        constexpr node(Element& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(&value){}
 
-        constexpr node(Element&& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(&value){}
+        constexpr node(Element&& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(&value){}
         
-        constexpr node(const GGUI::node& other) : style_base(other.Status), Value(other.Value){}
+        constexpr node(const GGUI::node& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
         constexpr node& operator=(const node& other){
             // Only copy the information if the other is enabled.
@@ -1412,6 +1401,8 @@ namespace GGUI{
                 Value = other.Value;
 
                 Status = other.Status;
+
+                Order = other.Order;
             }
             return *this;
         }
@@ -1425,9 +1416,9 @@ namespace GGUI{
     public:
         std::initializer_list<Element*> Value;
 
-        constexpr childs(std::initializer_list<Element*> value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr childs(std::initializer_list<Element*> value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
 
-        constexpr childs(const GGUI::childs& other) : style_base(other.Status), Value(other.Value){}
+        constexpr childs(const GGUI::childs& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
         constexpr childs& operator=(const childs& other){
             // Only copy the information if the other is enabled.
@@ -1435,6 +1426,8 @@ namespace GGUI{
                 Value = other.Value;
 
                 Status = other.Status;
+
+                Order = other.Order;
             }
             return *this;
         }

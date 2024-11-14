@@ -44,9 +44,6 @@ void GGUI::List_View::Add_Child(Element* e) {
             e->Set_Parent(this);
             
             e->Embed_Styles();
-
-            // This is for dynamically changing attributes.
-            e->Force_Style_Evaluation();
         }
 
         // Get the maximum width and height limits for the list view.

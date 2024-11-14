@@ -291,24 +291,24 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE node::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+    STAIN_TYPE node::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]]  Element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
         if (!Is_Deletable(Value))
             Value = Value->Copy();
 
-        owner->Add_Child(Value); 
+        host->Childs.push_back(Value);
 
         return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
 
-    STAIN_TYPE childs::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+    STAIN_TYPE childs::Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]]  Element* owner){
         for (auto* c : Value){
             // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
             if (!Is_Deletable(c))
                 c = c->Copy();
 
-            owner->Add_Child(c);
+            host->Childs.push_back(c);
         }
 
         return STAIN_TYPE::DEEP;
@@ -467,14 +467,43 @@ namespace GGUI{
 
         STAIN changes;
 
+        // This is the first pass for the INSTANT ordered style_bases:
         // Loop until no further nested attributes.
         while (current_attribute){
 
-            // First embed the current attribute
-            changes.Dirty(current_attribute->Embed_Value(this, owner));
+            if (current_attribute->Order == EMBED_ORDER::INSTANT)
+                // First embed the current attribute
+                changes.Dirty(current_attribute->Embed_Value(this, owner));
 
             // Then set the current_attribute into the nested one
             current_attribute = current_attribute->Other;
+        }
+
+        // This is the second pass for the DELAYED ordered style_bases:
+        current_attribute = un_parsed_styles;
+        
+        // Loop until no further nested attributes.
+        while (current_attribute){
+
+            if (current_attribute->Order == EMBED_ORDER::DELAYED)
+                // First embed the current attribute
+                changes.Dirty(current_attribute->Embed_Value(this, owner));
+
+            // Then set the current_attribute into the nested one
+            current_attribute = current_attribute->Other;
+        }
+
+        // Evaluate itself
+        Evaluate_Dynamic_Attribute_Values(owner);
+
+        // now we need to first move all the childs first to an temporary list
+        std::vector<Element*> tmp_childs = Childs;
+
+        Childs.clear();
+
+        // Now we can one by one add them back via the official channel
+        for (Element* c : tmp_childs){
+            owner->Add_Child(c);
         }
 
         owner->Add_Stain(changes.Type);

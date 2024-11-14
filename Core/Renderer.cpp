@@ -2709,7 +2709,7 @@ namespace GGUI{
             opacity(0.8f) |
             // Set the name of the list view to "Inspect"
             name("Inspect") |
-
+            
             // Add a count for how many UTF are being streamed.
             node(new Text_Field(
                 Get_Stats_Text(),
