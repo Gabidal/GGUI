@@ -155,22 +155,25 @@ namespace GGUI{
             /**
              * Evaluate function
              * @param parental_value The value to be multiplied by. Only used if the evaluation type is PERCENTAGE.
-             * @return The evaluated value.
-             * @throws std::bad_variant_access If the evaluation type doesn't match the type of the data.
-             * @throws std::invalid_argument If the evaluation type is not supported.
+             * 
+             * This function is used to evaluate the value of the variant based on the evaluation type.
+             * If the evaluation type is DEFAULT, the data is returned without any modification.
+             * If the evaluation type is PERCENTAGE, the parental value is multiplied by the data and the result is returned.
+             * If the evaluation type is not supported, an error message is printed and the data is returned without any modification.
              */
-            T Evaluate(T parental_value) const {
+            void Evaluate(T parental_value) {
                 switch (evaluation_type) {
                     case EVALUATION_TYPE::DEFAULT:
                         // If the evaluation type is DEFAULT then just return the data without any modification
-                        return data;
+                        return;
                     case EVALUATION_TYPE::PERCENTAGE:
                         // If the evaluation type is PERCENTAGE then multiply the parental value by the data and return the result
-                        return static_cast<T>(static_cast<T>(parental_value) * percentage);
+                        data = static_cast<T>(static_cast<T>(parental_value) * percentage);
+                        return;
                     default:
                         Report_Stack("Evaluation type not supported!");
                         // If the evaluation type is not supported then just return the data without any modification
-                        return data;
+                        return;
                 }
             }
 

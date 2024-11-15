@@ -25,75 +25,75 @@ namespace GGUI{
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
     void position::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Position.Get());
+        Value.Evaluate(parent->Position.Get());
     }
 
     void width::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Width.Get());
+        Value.Evaluate(parent->Width.Get());
     }
 
     void height::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Height.Get());
+        Value.Evaluate(parent->Height.Get());
     }
 
     void text_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Text_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Text_Color.Value.Get<RGB>());
     }
 
     void background_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Background_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Background_Color.Value.Get<RGB>());
     }
 
     void border_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Border_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Border_Color.Value.Get<RGB>());
     }
 
     void border_background_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Border_Background_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Border_Background_Color.Value.Get<RGB>());
     }
 
     void hover_border_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Hover_Border_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Hover_Border_Color.Value.Get<RGB>());
     }
 
     void hover_text_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Hover_Text_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Hover_Text_Color.Value.Get<RGB>());
     }
 
     void hover_background_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Hover_Background_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Hover_Background_Color.Value.Get<RGB>());
     }
 
     void hover_border_background_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Hover_Border_Background_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Hover_Border_Background_Color.Value.Get<RGB>());
     }
 
     void focus_border_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Focus_Border_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Focus_Border_Color.Value.Get<RGB>());
     }
 
     void focus_text_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Focus_Text_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Focus_Text_Color.Value.Get<RGB>());
     }
 
     void focus_background_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Focus_Background_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Focus_Background_Color.Value.Get<RGB>());
     }
 
     void focus_border_background_color::Evaluate(Styling* parent){
-        Value = Value.Evaluate(parent->Focus_Border_Background_Color.Value.Get<RGB>());
+        Value.Evaluate(parent->Focus_Border_Background_Color.Value.Get<RGB>());
     }
 
     void margin::Evaluate(Styling* parent){
-        Top = Top.Evaluate(parent->Margin.Top.Get<unsigned int>());
-        Bottom = Bottom.Evaluate(parent->Margin.Bottom.Get<unsigned int>());
-        Left = Left.Evaluate(parent->Margin.Left.Get<unsigned int>());
-        Right = Right.Evaluate(parent->Margin.Right.Get<unsigned int>());
+        Top.Evaluate(parent->Margin.Top.Get<unsigned int>());
+        Bottom.Evaluate(parent->Margin.Bottom.Get<unsigned int>());
+        Left.Evaluate(parent->Margin.Left.Get<unsigned int>());
+        Right.Evaluate(parent->Margin.Right.Get<unsigned int>());
     }
 
     void shadow::Evaluate(Styling* parent){
-        Direction = Direction.Evaluate(parent->Shadow.Direction.Get<FVector3>());
-        Color = Color.Evaluate(parent->Shadow.Color.Get<RGB>());
+        Direction.Evaluate(parent->Shadow.Direction.Get<FVector3>());
+        Color.Evaluate(parent->Shadow.Color.Get<RGB>());
     }
 
     // Embeds

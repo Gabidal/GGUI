@@ -234,6 +234,10 @@ namespace GGUI{
 
             Result.clear();
             Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
+
+            Buffer.clear();
+            Buffer.resize(Get_Width() * Get_Height());
+
             Dirty.Clean(STAIN_TYPE::STRETCH);
 
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);

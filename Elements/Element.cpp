@@ -788,8 +788,7 @@ bool GGUI::Element::Has_Border(){
 void GGUI::Element::Add_Child(Element* Child){
     // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
     if (Child->Dirty.is(STAIN_TYPE::FINALIZE)){
-        Child->Dirty.Clean(STAIN_TYPE::FINALIZE);
-        
+        // Finalize flag is cleaned Style Embedding with On_Init Call.
         // Give an early access to the parent, so that parent dependant attributes work properly.
         Child->Parent = this;
         

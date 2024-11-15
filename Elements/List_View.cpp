@@ -38,8 +38,7 @@ void GGUI::List_View::Add_Child(Element* e) {
         // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
         STAIN& dirty = e->Get_Dirty();
         if (dirty.is(STAIN_TYPE::FINALIZE)){
-            dirty.Clean(STAIN_TYPE::FINALIZE);
-            
+            // Finalize flag is cleaned Style Embedding with On_Init Call.
             // Give an early access to the parent, so that parent dependant attributes work properly.
             e->Set_Parent(this);
             
