@@ -247,6 +247,8 @@ namespace GGUI{
          */
         Styling Get_Style() const;
 
+        Styling* Get_Direct_Style();
+
         /**
          * @brief Sets the styling information of the element.
          * @details This function sets the styling information of the element to the given value.

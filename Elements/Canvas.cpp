@@ -168,6 +168,40 @@ namespace GGUI{
     }
 
     /**
+     * @brief Set the sprite at the specified location on the terminal canvas.
+     * @details This function places a sprite on the canvas at the given (x, y) coordinates.
+     * The function also handles buffer resizing and multi-frame management.
+     * @param x The x coordinate of the location.
+     * @param y The y coordinate of the location.
+     * @param sprite The sprite to be placed.
+     * @param Flush Whether or not to call Update_Frame() after setting the sprite.
+     */
+    void Terminal_Canvas::Set(unsigned int x, unsigned int y, Sprite&& sprite, bool Flush){
+        unsigned int Actual_X = x + Has_Border(); // Calculate the actual x coordinate, accounting for border offset.
+        unsigned int Actual_Y = y + Has_Border(); // Calculate the actual y coordinate, accounting for border offset.
+
+        unsigned int Location = Actual_X + Actual_Y * Get_Width(); // Determine the buffer index for the sprite.
+
+        // Resize buffer if necessary to match the width x height of the canvas.
+        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= Get_Width() * Get_Height())){
+            Buffer.resize(Get_Width() * Get_Height());
+        }
+
+        // Check for multi-frame support and update the management map if needed.
+        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && Multi_Frame_Canvas.find(this) == Multi_Frame_Canvas.end()){
+            Multi_Frame_Canvas[this] = true;
+            Multi_Frame = true;
+        }
+
+        Buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
+
+        Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
+
+        if (Flush)
+            Update_Frame(); // Update the frame if Flush is true.
+    }
+
+    /**
      * @brief Set the UTF sprite at the specified location on the terminal canvas.
      * @details This function places a UTF sprite on the canvas at the given (x, y) coordinates.
      * It also handles buffer resizing when necessary.
@@ -235,8 +269,21 @@ namespace GGUI{
             Result.clear();
             Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
 
+            // Also clear and resize the sprite buffer.
             Buffer.clear();
             Buffer.resize(Get_Width() * Get_Height());
+
+            // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
+            if (On_Draw != 0) {
+                for (unsigned int y = 0; y < Get_Height(); y++) {
+                    for (unsigned int x = 0; x < Get_Width(); x++) {
+                        Set(x, y, On_Draw(x, y), false);
+                    }
+                }
+            }
+            else{
+                Report(Get_Name() + " is missing On_Draw call!");
+            }
 
             Dirty.Clean(STAIN_TYPE::STRETCH);
 

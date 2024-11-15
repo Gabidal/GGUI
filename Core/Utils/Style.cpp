@@ -360,6 +360,29 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
+    STAIN_TYPE on_draw::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        // first make sure that the element is an Terminal_Canvas element.
+        if (dynamic_cast<Terminal_Canvas*>(owner))
+            ((Terminal_Canvas*)owner)->Set_On_Draw(Value);
+        else
+            throw std::runtime_error("The on_draw attribute can only be used on Terminal_Canvas type elements.");
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    Styling* Styling::Get_Reference(Element* owner){
+        // Determine the point of interest for style evaluation
+        Element* point_of_interest = owner;
+
+        // If the element has a parent, use the parent's style for evaluation
+        if (owner->Get_Parent()) {
+            point_of_interest = owner->Get_Parent();
+        }
+
+        // Get the style of the point of interest
+        return point_of_interest->Get_Direct_Style();
+    }
+
     /**
      * @brief Evaluates dynamic attribute values for the given element.
      *
@@ -372,42 +395,63 @@ namespace GGUI{
      */
     void Styling::Evaluate_Dynamic_Attribute_Values(Element* owner) {
 
-        // Determine the point of interest for style evaluation
-        Element* point_of_interest = owner;
-
-        // If the element has a parent, use the parent's style for evaluation
-        if (owner->Get_Parent()) {
-            point_of_interest = owner->Get_Parent();
-        }
-
-        // Get the style of the point of interest
-        Styling tmp = point_of_interest->Get_Style();
-
         // Use the retrieved style as a reference for evaluation
-        Styling& reference_style = tmp;
+        Styling* reference_style = Get_Reference(owner);
 
         // Evaluate each dynamic attribute against the reference style
-        Position.Evaluate(&reference_style);
-        Width.Evaluate(&reference_style);
-        Height.Evaluate(&reference_style);
-        Border_Enabled.Evaluate(&reference_style);
-        Text_Color.Evaluate(&reference_style);
-        Background_Color.Evaluate(&reference_style);
-        Border_Color.Evaluate(&reference_style);
-        Border_Background_Color.Evaluate(&reference_style);
-        Hover_Border_Color.Evaluate(&reference_style);
-        Hover_Text_Color.Evaluate(&reference_style);
-        Hover_Background_Color.Evaluate(&reference_style);
-        Hover_Border_Background_Color.Evaluate(&reference_style);
-        Focus_Border_Color.Evaluate(&reference_style);
-        Focus_Text_Color.Evaluate(&reference_style);
-        Focus_Background_Color.Evaluate(&reference_style);
-        Focus_Border_Background_Color.Evaluate(&reference_style);
-        Margin.Evaluate(&reference_style);
-        Shadow.Evaluate(&reference_style);
-        Opacity.Evaluate(&reference_style);
-        Allow_Scrolling.Evaluate(&reference_style);
-        Align.Evaluate(&reference_style);
+        Evaluate_Dynamic_Position(owner, reference_style);
+        Evaluate_Dynamic_Dimensions(owner, reference_style);
+        Evaluate_Dynamic_Border(owner, reference_style);
+        Evaluate_Dynamic_Colors(owner, reference_style);
+        Margin.Evaluate(reference_style);
+        Shadow.Evaluate(reference_style);
+        Opacity.Evaluate(reference_style);
+        Allow_Scrolling.Evaluate(reference_style);
+        Align.Evaluate(reference_style);
+    }
+
+    void Styling::Evaluate_Dynamic_Position(Element* owner, Styling* reference){
+        if (!reference){
+            reference = Get_Reference(owner);
+        }
+
+        Position.Evaluate(reference);
+    }
+
+    void Styling::Evaluate_Dynamic_Dimensions(Element* owner, Styling* reference){
+        if (!reference){
+            reference = Get_Reference(owner);
+        }
+
+        Width.Evaluate(reference);
+        Height.Evaluate(reference);
+    }
+
+    void Styling::Evaluate_Dynamic_Border(Element* owner, Styling* reference){
+        if (!reference){
+            reference = Get_Reference(owner);
+        }
+
+        Border_Enabled.Evaluate(reference);
+    }
+
+    void Styling::Evaluate_Dynamic_Colors(Element* owner, Styling* reference){
+        if (!reference){
+            reference = Get_Reference(owner);
+        }
+
+        Text_Color.Evaluate(reference);
+        Background_Color.Evaluate(reference);
+        Border_Color.Evaluate(reference);
+        Border_Background_Color.Evaluate(reference);
+        Hover_Border_Color.Evaluate(reference);
+        Hover_Text_Color.Evaluate(reference);
+        Hover_Background_Color.Evaluate(reference);
+        Hover_Border_Background_Color.Evaluate(reference);
+        Focus_Border_Color.Evaluate(reference);
+        Focus_Text_Color.Evaluate(reference);
+        Focus_Background_Color.Evaluate(reference);
+        Focus_Border_Background_Color.Evaluate(reference);
     }
 
     /**

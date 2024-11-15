@@ -156,6 +156,8 @@ namespace GGUI{
 
         // For speeding up sprite sets, to avoid redundant checks in unordered_maps.
         bool Multi_Frame = false;
+
+        GGUI::Sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
         Terminal_Canvas(Styling s) : Element(s){}
         
@@ -164,6 +166,8 @@ namespace GGUI{
         void Set_Next_Animation_Frame() { Current_Animation_Frame++; }
 
         void Set(unsigned int x, unsigned int y, Sprite& sprite, bool Flush = true);
+
+        void Set(unsigned int x, unsigned int y, Sprite&& sprite, bool Flush = true);
 
         void Set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);
         
@@ -215,6 +219,10 @@ namespace GGUI{
          * the points are set.
          */
         void Embed_Points(std::vector<bool> pixels, styled_border border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
+
+        void Set_On_Draw(GGUI::Sprite (*On_Draw)(unsigned int x, unsigned int y)){
+            this->On_Draw = On_Draw;
+        }
     };
 
     namespace DRAW{

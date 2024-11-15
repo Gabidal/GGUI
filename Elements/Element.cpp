@@ -668,6 +668,10 @@ GGUI::Styling GGUI::Element::Get_Style() const {
     return *Style;
 }
 
+GGUI::Styling* GGUI::Element::Get_Direct_Style() {
+    return Style;
+}
+
 /**
  * @brief Sets the styling information of the element.
  * @details This function sets the styling information of the element to the given value.
@@ -1634,6 +1638,8 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
     if (Dirty.is(STAIN_TYPE::CLEAN))
         return Result;
 
+    STAIN Alert_Child_About_Dynamic_Properties;
+
     if (Dirty.is(STAIN_TYPE::CLASS)){
         Parse_Classes();
 
@@ -1642,7 +1648,9 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
 
     if (Dirty.is(STAIN_TYPE::STRETCH)){
         // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
-        Style->Evaluate_Dynamic_Attribute_Values(this);
+        Style->Evaluate_Dynamic_Dimensions(this);
+
+        Alert_Child_About_Dynamic_Properties.Dirty(STAIN_TYPE::STRETCH);
 
         Result.clear();
         Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
@@ -1654,13 +1662,23 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
     if (Dirty.is(STAIN_TYPE::MOVE)){
         Dirty.Clean(STAIN_TYPE::MOVE);
         
+        Style->Evaluate_Dynamic_Position(this);
+
+        Alert_Child_About_Dynamic_Properties.Dirty(STAIN_TYPE::MOVE);
+
         Update_Absolute_Position_Cache();
     }
 
     //Apply the color system to the resized result list
-    if (Dirty.is(STAIN_TYPE::COLOR))
-        Apply_Colors(this, Result);
+    if (Dirty.is(STAIN_TYPE::COLOR)){
+        Style->Evaluate_Dynamic_Colors(this);
 
+        Alert_Child_About_Dynamic_Properties.Dirty(STAIN_TYPE::COLOR);
+
+        Apply_Colors(this, Result);
+    }
+
+    Style->Evaluate_Dynamic_Border(this);
     bool Connect_Borders_With_Parent = Has_Border();
     unsigned int Childs_With_Borders = 0;
 
@@ -1678,6 +1696,9 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
 
             if (c->Has_Border())
                 Childs_With_Borders++;
+
+            // Give the child the Alert of dynamically changed attributes that need to be re-evaluated.
+            c->Dirty.Dirty(Alert_Child_About_Dynamic_Properties.Type);
 
             std::vector<UTF>* tmp = &c->Render();
 

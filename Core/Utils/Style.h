@@ -1595,6 +1595,30 @@ namespace GGUI{
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
     };
 
+    class Sprite;
+    class on_draw : public STYLING_INTERNAL::style_base{
+    public:
+        GGUI::Sprite (*Value)(unsigned int x, unsigned int y);
+
+        constexpr on_draw(GGUI::Sprite (*value)(unsigned int x, unsigned int y), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        
+        constexpr on_draw(const GGUI::on_draw& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr on_draw& operator=(const on_draw& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
     class Styling{
     public:
         position Position                                               = position(IVector3(0, 0, 0), VALUE_STATE::INITIALIZED);
@@ -1707,8 +1731,11 @@ namespace GGUI{
             Copy(*other);
         }
         
+        // Returns the point of interest of whom the Evaluation will reference to.
+        Styling* Get_Reference(Element* owner);
+
         /**
-         * @brief Evaluates dynamic attribute values for the given element.
+         * @brief Evaluates all dynamic attribute values for the owner element.
          *
          * This function evaluates the dynamic attribute values of the styling associated
          * with the specified element. It determines the point of interest, which is
@@ -1719,6 +1746,13 @@ namespace GGUI{
          */
         void Evaluate_Dynamic_Attribute_Values(Element* owner);
 
+        void Evaluate_Dynamic_Position(Element* owner, Styling* reference = nullptr);
+
+        void Evaluate_Dynamic_Dimensions(Element* owner, Styling* reference = nullptr);
+
+        void Evaluate_Dynamic_Border(Element* owner, Styling* reference = nullptr);
+    
+        void Evaluate_Dynamic_Colors(Element* owner, Styling* reference = nullptr);
     protected:
     
         // The construction time given styles are first put here, before embedding them into this class.
