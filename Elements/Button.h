@@ -18,30 +18,6 @@
 namespace GGUI{
 
     class Button : public Element{
-    protected:
-        /**
-         * @brief Sets default button behavior to just call the provided lambda and do nothing else.
-         * @param press The lambda to call when the button is clicked.
-         */
-        void Default_Button_Behaviour(std::function<void (Button* This)> press = [](Button*){}){
-            On_Click([this, press](Event*){
-                // The default, on_click wont do anything.
-                // It will call the provided lambda (if any) and return true (allowing the event to propagate).
-
-                press(this);
-
-                return true;
-            });
-        }
-
-        /**
-         * @brief A constructor for the Button class that should not be used by users.
-         * This constructor is for internal use only.
-         * It sets up the Button class to use a Text_Field as its child.
-         */
-        Button() : Element(){
-            Style->Childs.push_back(new Text_Field());
-        }
     public:
 
         /**
@@ -51,7 +27,7 @@ namespace GGUI{
          * @param s The styling for the button.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the button's style. Only use if you know what you're doing!!!
          */
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button*){}, Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        Button(Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
         /**
          * @brief Creates a deep copy of the Button object.
@@ -59,10 +35,7 @@ namespace GGUI{
          */
         Element* Safe_Move() override {
             // Create a new Button object and copy all the data from the current Button object to the new one.
-            Button* new_Button = new Button();
-            *new_Button = *(Button*)this;
-
-            return new_Button;
+            return new Button();
         }
 
         /**
@@ -71,6 +44,15 @@ namespace GGUI{
          */
         std::string Get_Name() const override{
             return "Button<" + Name + ">";
+        }
+
+        void Set_Text(std::string Text){
+            // There should always be an Text_Field child
+            if (Style->Childs.size() == 0){
+                Report_Stack("No Text_Field child found in Button: " + Get_Name());
+            }
+
+            ((Text_Field*)Style->Childs.back())->Set_Text(Text);
         }
     };
 }

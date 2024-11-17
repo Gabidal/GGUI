@@ -7,7 +7,7 @@ using namespace GGUI;
 int main() 
 {
     GGUI::GGUI(Styling(
-        node(Terminal_Canvas(Styling(
+        node(new Terminal_Canvas(Styling(
 
             width(1.0f) | height(1.0f) |
 

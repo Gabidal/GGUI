@@ -1,6 +1,8 @@
 #include "Style.h"
 #include "../Elements/Element.h"
 #include "../Elements/List_View.h"
+#include "../Elements/Text_Field.h"
+#include "../Elements/Button.h"
 #include "../Renderer.h"
 
 namespace GGUI{
@@ -366,6 +368,31 @@ namespace GGUI{
             ((Terminal_Canvas*)owner)->Set_On_Draw(Value);
         else
             throw std::runtime_error("The on_draw attribute can only be used on Terminal_Canvas type elements.");
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE text::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        // first make sure that the element is an Text_Field element.
+        if (dynamic_cast<Text_Field*>(owner))
+            ((Text_Field*)owner)->Set_Text(Value);
+        else if (dynamic_cast<Button*>(owner))
+            ((Button*)owner)->Set_Text(Value);
+        else
+            throw std::runtime_error("The text attribute can only be used on Text_Field type elements.");
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE on_click::Embed_Value([[maybe_unused]] Styling* host, Element* owner){
+        owner->On_Click([this, owner](Event*){
+            // The default, on_click wont do anything.
+            // It will call the provided lambda (if any) and return true (allowing the event to propagate).
+
+            this->Value(owner);
+
+            return true;
+        });
 
         return STAIN_TYPE::CLEAN;
     }

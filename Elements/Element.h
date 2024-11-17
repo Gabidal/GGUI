@@ -71,28 +71,15 @@ namespace GGUI{
          */
         Element(Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
-        
         /**
-         * @brief Copy constructor for the Element class.
-         *
-         * This constructor is disabled and should not be used.
-         * Instead, use the Copy() method to create a copy of an Element.
-         *
-         * @param copyable The Element object to be copied.
+         * @brief For correctly copying data between elements, try the Copy() function.
+         * Copying is removed, so that Slicing doesn't happen for the VTable
          */
-        Element(const Element&);
+        Element(const Element&) = delete;
+        Element& operator=(const GGUI::Element&) = delete;
 
-        /**
-         * @brief Assignment operator for the Element class.
-         *
-         * This operator is used to assign the values from one Element object
-         * to another. The default implementation is used, which performs
-         * a member-wise copy of the element's properties.
-         *
-         * @param other The Element object to assign from.
-         * @return A reference to the assigned Element object.
-         */
-        Element& operator=(const GGUI::Element&) = default;
+        Element& operator=(Element&&) = default;
+        Element(Element&&) = default;
 
         /**
          * @brief The destructor for the Element class.
@@ -115,10 +102,7 @@ namespace GGUI{
          * @return Element* Pointer to the newly created Element object.
          */
         virtual Element* Safe_Move(){
-            Element* new_element = new Element();
-            *new_element = *(Element*)this;
-
-            return new_element;
+            return new Element();
         }
 
         /**

@@ -137,14 +137,7 @@ namespace GGUI{
          * @return A pointer to the new Window object.
          */
         Element* Safe_Move() override {
-            // Allocate memory for a new Window object
-            Window* new_Window = new Window();
-
-            // Copy the data from the current Window to the new Window
-            *new_Window = *(Window*)this;
-
-            // Return a pointer to the new Window object
-            return new_Window;
+            return new Window();
         }
     };
 }

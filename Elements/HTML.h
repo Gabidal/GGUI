@@ -57,10 +57,7 @@ namespace GGUI{
          * a modified version of the current one.
          */
         Element* Safe_Move() override {
-            HTML* new_HTML = new HTML();
-            *new_HTML = *(HTML*)this;
-
-            return new_HTML;
+            return new HTML();
         }
 
         /**

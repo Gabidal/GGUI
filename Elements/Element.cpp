@@ -232,19 +232,6 @@ GGUI::Element::Element(Styling s, bool Embed_Styles_On_Construct){
 }
 
 /**
- * @brief Copy constructor for the Element class.
- *
- * This constructor is disabled and should not be used.
- * Instead, use the Copy() method to create a copy of an Element.
- *
- * @param copyable The Element object to be copied.
- */
-GGUI::Element::Element(const Element& copyable) {
-    // Emit a warning message that the copy constructor should not be used.
-    Report("Don't use copy constructor use " + copyable.Get_Name() + "->Copy() instead!!!");
-}
-
-/**
  * @brief The destructor for the Element class.
  *
  * This destructor is responsible for properly deallocating all the memory

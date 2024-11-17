@@ -1391,10 +1391,6 @@ namespace GGUI{
         Element* Value;
 
         constexpr node(Element* value = nullptr, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
-
-        constexpr node(Element& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(&value){}
-
-        constexpr node(Element&& value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(&value){}
         
         constexpr node(const GGUI::node& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
@@ -1605,6 +1601,52 @@ namespace GGUI{
         constexpr on_draw(const GGUI::on_draw& other) : style_base(other.Status), Value(other.Value){}
 
         constexpr on_draw& operator=(const on_draw& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class text : public STYLING_INTERNAL::style_base{
+    public:
+        const char* Value;
+
+        constexpr text(const char* value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr text(const GGUI::text& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr text& operator=(const text& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        void Evaluate([[maybe_unused]] Styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    };
+
+    class on_click : public STYLING_INTERNAL::style_base{
+    public:
+        void (*Value)(Element* self);
+
+        constexpr on_click(void (*value)(Element* self), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr on_click(const GGUI::on_click& other) : style_base(other.Status), Value(other.Value){}
+
+        constexpr on_click& operator=(const on_click& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
                 Value = other.Value;

@@ -82,14 +82,7 @@ namespace GGUI{
          * @return A pointer to the new Switch object.
          */
         Element* Safe_Move() override {
-            // Create a new Switch object
-            Switch* new_Switch = new Switch();
-
-            // Copy all data from the current Switch to the new Switch
-            *new_Switch = *(Switch*)this;
-
-            // Return the new Switch object
-            return new_Switch;
+            return new Switch();
         }
 
         /**

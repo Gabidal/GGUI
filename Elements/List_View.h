@@ -144,10 +144,7 @@ namespace GGUI{
          * @return A pointer to the new List_View object.
          */
         Element* Safe_Move() override {
-            List_View* new_List_View = new List_View();
-            *new_List_View = *(List_View*)this;
-
-            return new_List_View;
+            return new List_View();
         }
     };
 

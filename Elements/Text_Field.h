@@ -37,7 +37,7 @@ namespace GGUI{
          * @param s The Styling object to use for the Text_Field object.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Text_Field's style. Only use if you know what you're doing!!!
          */
-        Text_Field(std::string text = "", Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct), Text(text){
+        Text_Field(Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct){
 
             // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
             Text_Cache.reserve(Get_Height());
@@ -119,6 +119,10 @@ namespace GGUI{
          *          dirty and updates the frame.
          */
         void Input(std::function<void(char)> Then);
+
+        Element* Safe_Move() override {
+            return new Text_Field();
+        }
     };
 }
 

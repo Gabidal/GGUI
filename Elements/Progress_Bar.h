@@ -77,32 +77,21 @@ namespace GGUI{
             Empty_Color = other.Empty_Color;
         }
 
-        /**
-         * @brief Assignment operator for the PROGRESS_STYLE class.
-         * 
-         * This assignment operator copies the data from the other PROGRESS_STYLE object to this one.
-         * It first checks for self-assignment, then copies the data and colors to the current object.
-         * 
-         * @param other The other PROGRESS_STYLE object to copy from.
-         * @return A reference to the current object.
-         */
-        PROGRESS_STYLE &operator=(const GGUI::PROGRESS_STYLE & other){
-            // Check for self-assignment
-            if (this == &other)
-                return *this;
+        // Copy assignment operator
+        PROGRESS_STYLE& operator=(const PROGRESS_STYLE& other) {
+            if (this != &other) {  // Protect against self-assignment
+                // Copy data
+                Head = other.Head;
+                Body = other.Body;
+                Tail = other.Tail;
 
-            // Copy data
-            Head = other.Head;
-            Body = other.Body;
-            Tail = other.Tail;
-            
-            // Copy colors
-            Head_Color = other.Head_Color;
-            Body_Color = other.Body_Color;
-            Tail_Color = other.Tail_Color;
+                // Copy colors
+                Head_Color = other.Head_Color;
+                Body_Color = other.Body_Color;
+                Tail_Color = other.Tail_Color;
 
-            Empty_Color = other.Empty_Color;
-
+                Empty_Color = other.Empty_Color;
+            }
             return *this;
         }
 
@@ -144,27 +133,6 @@ namespace GGUI{
          * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
          */
         Progress_Bar() = default;
-
-        /**
-         * @brief Copy assignment operator for the Progress_Bar class.
-         * 
-         * This assignment operator copies the data from the other Progress_Bar object to this one.
-         * It first calls the base class's assignment operator to copy the base class members, then
-         * copies the Progress_Bar class members.
-         * 
-         * @param other The other Progress_Bar object to copy from.
-         * @return A reference to the current object.
-         */
-        Progress_Bar& operator=(const Progress_Bar& other){
-            Element::operator=(other);
-
-            // Copy Progress_Bar members
-            Progress = other.Progress;
-            Progress_Style = other.Progress_Style;
-            Content = other.Content;
-
-            return *this;
-        }
 
         /**
          * @brief Returns the index of the head of the progress bar.
@@ -234,10 +202,7 @@ namespace GGUI{
          * @return A pointer to the new Progress_Bar object.
          */
         Element* Safe_Move() override {
-            Progress_Bar* new_Progress_Bar = new Progress_Bar();
-            *new_Progress_Bar = *(Progress_Bar*)this;
-
-            return new_Progress_Bar;
+            return new Progress_Bar();
         }
 
         /**

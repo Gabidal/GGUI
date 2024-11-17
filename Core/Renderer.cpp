@@ -2364,7 +2364,7 @@ namespace GGUI{
                         if (Previous_Problem->Get_Text() == Problem){
                             // increase the repetition count by one
                             if (!Previous_Repetitions){
-                                Previous_Repetitions = new Text_Field("2");
+                                Previous_Repetitions = new Text_Field(Styling(text("2")));
                                 Rows.back()->Add_Child(Previous_Repetitions);
                             }
                             else{
@@ -2421,8 +2421,8 @@ namespace GGUI{
                     Row->Set_Flow_Direction(DIRECTION::ROW);
 
                     // TODO: replace the text_field into Date_Element !
-                    Text_Field* Date = new Text_Field(Now());
-                    Text_Field* Problem_Text = new Text_Field(Problem);
+                    Text_Field* Date = new Text_Field(Styling(text(Now().c_str())));
+                    Text_Field* Problem_Text = new Text_Field(Styling(text(Problem.c_str())));
 
                     Row->Add_Child(Date);
                     Row->Add_Child(Problem_Text);
@@ -2712,13 +2712,13 @@ namespace GGUI{
             
             // Add a count for how many UTF are being streamed.
             node(new Text_Field(
-                Get_Stats_Text(),
                 Styling(
                     align(ALIGN::LEFT) | 
                     width(1.0f) |
                     height(8) |
                     // Set the name of the text field to "STATS"
-                    name("STATS")
+                    name("STATS") | 
+                    text(Get_Stats_Text().c_str())
                 )
             )) | 
 
@@ -2738,7 +2738,7 @@ namespace GGUI{
             )) | 
 
             // Hide the inspect tool by default
-            STYLES::hide | 
+            // STYLES::hide | 
 
             on_init([](Element* self){
                 // Register an event handler to toggle the inspect tool on and off

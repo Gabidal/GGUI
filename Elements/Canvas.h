@@ -62,12 +62,7 @@ namespace GGUI{
          * @return A deep copy of the Canvas as a movable Element.
          */
         Element* Safe_Move() override {
-            // Create a new Canvas and copy the current Canvas' contents into it.
-            Canvas* new_Canvas = new Canvas();
-            *new_Canvas = *(Canvas*)this;
-
-            // Return the new Canvas as a movable Element.
-            return new_Canvas;
+            return new Canvas();
         }
 
         /**
@@ -186,12 +181,7 @@ namespace GGUI{
          * @return A deep copy of the Terminal_Canvas as a movable Element.
          */
         Element* Safe_Move() override {
-            // Create a new Terminal_Canvas and copy the current Terminal_Canvas' contents into it.
-            Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
-            *new_Terminal_Canvas = *(Terminal_Canvas*)this;
-
-            // Return the new Terminal_Canvas as a movable Element.
-            return new_Terminal_Canvas;
+            return new Terminal_Canvas();
         }
 
         /**
