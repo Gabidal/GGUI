@@ -2070,26 +2070,26 @@ void GGUI::Element::Post_Process_Borders(Element* A, Element* B, std::vector<UTF
 
         // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
         if (Is_In_Bounds(Above, this) && (
-            std::get<const char*>(From(Above, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().VERTICAL_LINE ||
-            std::get<const char*>(From(Above, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().VERTICAL_LINE
+            From(Above, Parent_Buffer, this)->Is(A->Get_Custom_Border_Style().VERTICAL_LINE) ||
+            From(Above, Parent_Buffer, this)->Is(B->Get_Custom_Border_Style().VERTICAL_LINE)
         ))
             Current_Masks |= SYMBOLS::CONNECTS_UP;
 
         if (Is_In_Bounds(Below, this) && (
-            std::get<const char*>(From(Below, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().VERTICAL_LINE ||
-            std::get<const char*>(From(Below, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().VERTICAL_LINE
+            From(Below, Parent_Buffer, this)->Is(A->Get_Custom_Border_Style().VERTICAL_LINE) ||
+            From(Below, Parent_Buffer, this)->Is(B->Get_Custom_Border_Style().VERTICAL_LINE)
         ))
             Current_Masks |= SYMBOLS::CONNECTS_DOWN;
 
         if (Is_In_Bounds(Left, this) && (
-            std::get<const char*>(From(Left, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
-            std::get<const char*>(From(Left, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().HORIZONTAL_LINE
+            From(Left, Parent_Buffer, this)->Is(A->Get_Custom_Border_Style().HORIZONTAL_LINE) ||
+            From(Left, Parent_Buffer, this)->Is(B->Get_Custom_Border_Style().HORIZONTAL_LINE)
         ))
             Current_Masks |= SYMBOLS::CONNECTS_LEFT;
 
         if (Is_In_Bounds(Right, this) && (
-            std::get<const char*>(From(Right, Parent_Buffer, this)->Text) == A->Get_Custom_Border_Style().HORIZONTAL_LINE ||
-            std::get<const char*>(From(Right, Parent_Buffer, this)->Text) == B->Get_Custom_Border_Style().HORIZONTAL_LINE
+            From(Right, Parent_Buffer, this)->Is(A->Get_Custom_Border_Style().HORIZONTAL_LINE) ||
+            From(Right, Parent_Buffer, this)->Is(B->Get_Custom_Border_Style().HORIZONTAL_LINE)
         ))
             Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
 

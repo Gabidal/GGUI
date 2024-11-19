@@ -515,7 +515,9 @@ namespace GGUI{
         Opacity = other.Opacity;
         Allow_Scrolling = other.Allow_Scrolling;
         Align = other.Align;
-        Childs = other.Childs;
+
+        // Add the new childs to the already existing ones
+        Childs.insert(Childs.end(), other.Childs.begin(), other.Childs.end());
         
         // Copy the un_parsed_styles
         un_parsed_styles = other.un_parsed_styles;

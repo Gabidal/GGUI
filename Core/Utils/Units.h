@@ -470,6 +470,24 @@ namespace GGUI{
             return (FLAGS & utf_flag) != 0;
         }
 
+        // Fast comparison of type and content
+        bool Is(const char* other){
+            if (Is(UTF_FLAG::IS_ASCII)){
+                return false;
+            } else {
+                return std::strcmp(std::get<const char*>(Text), other) == 0;
+            }
+        }
+
+        // Fast comparison of type and content
+        bool Is(char other){
+            if (Is(UTF_FLAG::IS_ASCII)){
+                return std::get<char>(Text) == other;
+            } else {
+                return false;
+            }
+        }
+
         /**
          * @brief Sets a specific UTF flag.
          * @param utf_flag The UTF flag to set.

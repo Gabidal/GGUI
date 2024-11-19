@@ -2709,18 +2709,6 @@ namespace GGUI{
             opacity(0.8f) |
             // Set the name of the list view to "Inspect"
             name("Inspect") |
-            
-            // Add a count for how many UTF are being streamed.
-            node(new Text_Field(
-                Styling(
-                    align(ALIGN::LEFT) | 
-                    width(1.0f) |
-                    height(8) |
-                    // Set the name of the text field to "STATS"
-                    name("STATS") | 
-                    text(Get_Stats_Text().c_str())
-                )
-            )) | 
 
             // Add the error logger kidnapper:
             node(new Window(
@@ -2736,9 +2724,21 @@ namespace GGUI{
                     allow_overflow(true)
                 )
             )) | 
+                        
+            // Add a count for how many UTF are being streamed.
+            node(new Text_Field(
+                Styling(
+                    align(ALIGN::LEFT) | 
+                    width(1.0f) |
+                    height(8) |
+                    // Set the name of the text field to "STATS"
+                    name("STATS") | 
+                    text(Get_Stats_Text().c_str())
+                )
+            )) | 
 
             // Hide the inspect tool by default
-            // STYLES::hide | 
+            STYLES::hide | 
 
             on_init([](Element* self){
                 // Register an event handler to toggle the inspect tool on and off
