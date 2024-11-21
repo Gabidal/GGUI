@@ -49,18 +49,6 @@ namespace GGUI{
             Element::~Element();
         }
 
-        /**
-         * @brief Handles the OR operator for List_View.
-         * @details This function is called when the OR operator is used between a List_View and another Element.
-         *          It simply adds the other element to the list view.
-         * @param other The other element to handle the OR operator with.
-         * @return The current element (i.e. the List_View).
-         */
-        Element* Handle_Or_Operator(Element* other) override{
-            Add_Child(other);
-            return this;
-        }
-
         //End of user constructors.
 
         /**

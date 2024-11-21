@@ -15,11 +15,9 @@ namespace GGUI{
      * a heap-allocated object. If it is, it deletes the object using the delete keyword.
      */
     STYLING_INTERNAL::style_base::~style_base(){
-        if (Other){
-            // Check if the other is closer to an stack_starting address or to heap
-            if (Is_Deletable(Other))
-                delete Other;
-        }
+        // Check if the other is closer to an stack_starting address or to heap
+        if (Is_Deletable(Other))
+            delete Other;
     }
 
 
@@ -419,53 +417,88 @@ namespace GGUI{
      * and uses its style as a reference for evaluation.
      *
      * @param owner The element whose dynamic attributes are to be evaluated.
+     * @return True if there wae changes in the attributes evaluated, false otherwise.
      */
-    void Styling::Evaluate_Dynamic_Attribute_Values(Element* owner) {
+    bool Styling::Evaluate_Dynamic_Attribute_Values(Element* owner) {
+
+        bool Changed_Attributes = false;
 
         // Use the retrieved style as a reference for evaluation
         Styling* reference_style = Get_Reference(owner);
 
         // Evaluate each dynamic attribute against the reference style
-        Evaluate_Dynamic_Position(owner, reference_style);
-        Evaluate_Dynamic_Dimensions(owner, reference_style);
-        Evaluate_Dynamic_Border(owner, reference_style);
-        Evaluate_Dynamic_Colors(owner, reference_style);
+        Changed_Attributes |= Evaluate_Dynamic_Position(owner, reference_style);
+        Changed_Attributes |= Evaluate_Dynamic_Dimensions(owner, reference_style);
+        Changed_Attributes |= Evaluate_Dynamic_Border(owner, reference_style);
+        Changed_Attributes |= Evaluate_Dynamic_Colors(owner, reference_style);
+
         Margin.Evaluate(reference_style);
         Shadow.Evaluate(reference_style);
         Opacity.Evaluate(reference_style);
         Allow_Scrolling.Evaluate(reference_style);
         Align.Evaluate(reference_style);
+
+        return Changed_Attributes;
     }
 
-    void Styling::Evaluate_Dynamic_Position(Element* owner, Styling* reference){
+    bool Styling::Evaluate_Dynamic_Position(Element* owner, Styling* reference){
         if (!reference){
             reference = Get_Reference(owner);
         }
+
+        position previous_value = Position;
 
         Position.Evaluate(reference);
+
+        // check if position is still the same
+        return previous_value != Position;
     }
 
-    void Styling::Evaluate_Dynamic_Dimensions(Element* owner, Styling* reference){
+    bool Styling::Evaluate_Dynamic_Dimensions(Element* owner, Styling* reference){
         if (!reference){
             reference = Get_Reference(owner);
         }
+
+        width previous_width = Width;
+        height previous_height = Height;
 
         Width.Evaluate(reference);
         Height.Evaluate(reference);
+
+        // check if width or height is still the same
+        return previous_width != Width || previous_height != Height;
     }
 
-    void Styling::Evaluate_Dynamic_Border(Element* owner, Styling* reference){
+    bool Styling::Evaluate_Dynamic_Border(Element* owner, Styling* reference){
         if (!reference){
             reference = Get_Reference(owner);
         }
+
+        enable_border previous_value = Border_Enabled;
 
         Border_Enabled.Evaluate(reference);
+
+        // check if border is still the same
+        return previous_value != Border_Enabled;
     }
 
-    void Styling::Evaluate_Dynamic_Colors(Element* owner, Styling* reference){
+    bool Styling::Evaluate_Dynamic_Colors(Element* owner, Styling* reference){
         if (!reference){
             reference = Get_Reference(owner);
         }
+
+        text_color previous_text_color = Text_Color;
+        background_color previous_background_color = Background_Color;
+        border_color previous_border_color = Border_Color;
+        border_background_color previous_border_background_color = Border_Background_Color;
+        hover_border_color previous_hover_border_color = Hover_Border_Color;
+        hover_text_color previous_hover_text_color = Hover_Text_Color;
+        hover_background_color previous_hover_background_color = Hover_Background_Color;
+        hover_border_background_color previous_hover_border_background_color = Hover_Border_Background_Color;
+        focus_border_color previous_focus_border_color = Focus_Border_Color;
+        focus_text_color previous_focus_text_color = Focus_Text_Color;
+        focus_background_color previous_focus_background_color = Focus_Background_Color;
+        focus_border_background_color previous_focus_border_background_color = Focus_Border_Background_Color;
 
         Text_Color.Evaluate(reference);
         Background_Color.Evaluate(reference);
@@ -479,6 +512,20 @@ namespace GGUI{
         Focus_Text_Color.Evaluate(reference);
         Focus_Background_Color.Evaluate(reference);
         Focus_Border_Background_Color.Evaluate(reference);
+
+        // check if any of the colors are still the same
+        return previous_text_color != Text_Color ||
+               previous_background_color != Background_Color ||
+               previous_border_color != Border_Color ||
+               previous_border_background_color != Border_Background_Color ||
+               previous_hover_border_color != Hover_Border_Color ||
+               previous_hover_text_color != Hover_Text_Color ||
+               previous_hover_background_color != Hover_Background_Color ||
+               previous_hover_border_background_color != Hover_Border_Background_Color ||
+               previous_focus_border_color != Focus_Border_Color ||
+               previous_focus_text_color != Focus_Text_Color ||
+               previous_focus_background_color != Focus_Background_Color || 
+               previous_focus_border_background_color != Focus_Border_Background_Color;
     }
 
     /**
@@ -567,7 +614,10 @@ namespace GGUI{
         }
 
         // Evaluate itself
-        Evaluate_Dynamic_Attribute_Values(owner);
+        bool Changes_After_Eval = Evaluate_Dynamic_Attribute_Values(owner);
+
+        if (Changes_After_Eval)
+            owner->Fully_Stain();
 
         // now we need to first move all the childs first to an temporary list
         std::vector<Element*> tmp_childs = Childs;

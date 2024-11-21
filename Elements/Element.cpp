@@ -211,14 +211,6 @@ GGUI::Element::Element(Styling s, bool Embed_Styles_On_Construct){
 
     Fully_Stain();
 
-    // If this is true, then the user probably:
-    // A.) Doesn't know what the fuck he is doing.
-    // B.) He is trying to use the OUTBOX feature.
-    if (GGUI::Main == nullptr){
-        // Lets go with B.
-        Report_Stack("OUTBOX not supported, cannot anchor: " + Get_Name());
-    }
-
     Style = new Styling(s);
 
     if (Embed_Styles_On_Construct){
@@ -300,19 +292,6 @@ void GGUI::Element::Fully_Stain() {
         STAIN_TYPE::EDGE | STAIN_TYPE::MOVE |
         STAIN_TYPE::FINALIZE
     );
-}
-
-/**
- * @brief Copies the state of the abstract element to the current element.
- *
- * This function will copy the state of the abstract element to the current element.
- * It will copy the following states: focused and show.
- *
- * @param abstract The abstract element to copy the state from.
- */
-void GGUI::Element::Inherit_States_From(Element* abstract) {
-    Focused = abstract->Focused;
-    Show = abstract->Show;
 }
 
 /**
@@ -1175,6 +1154,24 @@ GGUI::Element* GGUI::Element::Copy(){
     return (Element*)new_element;
 }
 
+void GGUI::Element::Embed_Styles(){ 
+    // If this is true, then the user probably:
+    // A.) Doesn't know what the fuck he is doing.
+    // B.) He is trying to use the OUTBOX feature.
+    if (GGUI::Main == nullptr){
+        // Lets go with B.
+        Report_Stack("OUTBOX not supported, cannot anchor: " + Get_Name());
+    }
+
+    Style->Embed_Styles(this);
+    
+    if (Dirty.is(STAIN_TYPE::FINALIZE)){
+        Dirty.Clean(STAIN_TYPE::FINALIZE);
+
+        Check(STATE::INIT);
+    }
+}
+
 /**
  * @brief Get the fitting dimensions for the given child element.
  *
@@ -1618,14 +1615,25 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
         Dirty.Dirty(STAIN_TYPE::DEEP);
     }
 
+    // Check for Dynamic attributes
+    if(Style->Evaluate_Dynamic_Dimensions(this))
+        Dirty.Dirty(STAIN_TYPE::STRETCH);
+
+    if (Style->Evaluate_Dynamic_Position(this))
+        Dirty.Dirty(STAIN_TYPE::MOVE);
+
+    if (Style->Evaluate_Dynamic_Colors(this))
+        Dirty.Dirty(STAIN_TYPE::COLOR);
+
+    if (Style->Evaluate_Dynamic_Border(this))
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+
     Calculate_Childs_Hitboxes();    // Normally elements will NOT oder their content by hitbox system.
 
     Compute_Dynamic_Size();
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
         return Result;
-
-    STAIN Alert_Child_About_Dynamic_Properties;
 
     if (Dirty.is(STAIN_TYPE::CLASS)){
         Parse_Classes();
@@ -1634,11 +1642,6 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
     }
 
     if (Dirty.is(STAIN_TYPE::STRETCH)){
-        // This needs to be called before the actual stretch, since the actual Width and Height have already been modified to the new state, and we need to make sure that is correct according to the percentile of the dynamic attributes that follow the parents diction.
-        Style->Evaluate_Dynamic_Dimensions(this);
-
-        Alert_Child_About_Dynamic_Properties.Dirty(STAIN_TYPE::STRETCH);
-
         Result.clear();
         Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
         Dirty.Clean(STAIN_TYPE::STRETCH);
@@ -1648,24 +1651,18 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
 
     if (Dirty.is(STAIN_TYPE::MOVE)){
         Dirty.Clean(STAIN_TYPE::MOVE);
-        
-        Style->Evaluate_Dynamic_Position(this);
-
-        Alert_Child_About_Dynamic_Properties.Dirty(STAIN_TYPE::MOVE);
 
         Update_Absolute_Position_Cache();
     }
 
-    //Apply the color system to the resized result list
+    // Apply the color system to the resized result list
     if (Dirty.is(STAIN_TYPE::COLOR)){
-        Style->Evaluate_Dynamic_Colors(this);
-
-        Alert_Child_About_Dynamic_Properties.Dirty(STAIN_TYPE::COLOR);
+        // Clean the color stain after applying the color system.
+        Dirty.Clean(STAIN_TYPE::COLOR);
 
         Apply_Colors(this, Result);
     }
 
-    Style->Evaluate_Dynamic_Border(this);
     bool Connect_Borders_With_Parent = Has_Border();
     unsigned int Childs_With_Borders = 0;
 
@@ -1683,9 +1680,6 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
 
             if (c->Has_Border())
                 Childs_With_Borders++;
-
-            // Give the child the Alert of dynamically changed attributes that need to be re-evaluated.
-            c->Dirty.Dirty(Alert_Child_About_Dynamic_Properties.Type);
 
             std::vector<UTF>* tmp = &c->Render();
 
@@ -1734,9 +1728,6 @@ std::vector<GGUI::UTF>& GGUI::Element::Render(){
  * @param Result The vector containing the rendered string.
  */
 void GGUI::Element::Apply_Colors(Element* w, std::vector<UTF>& Result){
-    // Clean the color stain after applying the color system.
-    Dirty.Clean(STAIN_TYPE::COLOR);
-
     // Loop over each UTF-8 character in the rendered string and set its color to the
     // color specified in the style.
     for (auto& utf : Result){

@@ -75,7 +75,7 @@ namespace GGUI{
              * @param use_constexpr Whether to use constexpr or not
              */
             constexpr value(T value, EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT)
-                : data(value), evaluation_type(type) {}
+                : data(value), percentage(0.0f), evaluation_type(type) {}
 
             /**
              * Constructor for value class
@@ -88,7 +88,7 @@ namespace GGUI{
              * use a constexpr constructor or not.
              */
             constexpr value(float value, EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE)
-                : percentage(value), evaluation_type(type) {}
+                : data{}, percentage(value), evaluation_type(type) {}
 
             /**
              * Copy constructor
@@ -239,7 +239,7 @@ namespace GGUI{
             VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
 
             // This is used to store all appended style_bases through the operator|.
-            style_base* Other = nullptr;
+            style_base* Other;
 
             // Represents when the value is embedded.
             EMBED_ORDER Order = EMBED_ORDER::INSTANT;
@@ -391,6 +391,26 @@ namespace GGUI{
                 return *this;
             }
         
+            /**
+             * @brief Overload the compare operator for RGB_VALUE.
+             * @param other The other RGB_VALUE object to compare against.
+             * @return A boolean indicating whether the two RGB_VALUE objects are equal.
+             * @details This function compares the value and status of the two RGB_VALUE objects.
+             */
+            constexpr bool operator==(const RGB_VALUE& other) const{
+                return Value.Get<RGB>() == other.Value.Get<RGB>();
+            }
+
+            /**
+             * @brief Overload the compare operator for RGB_VALUE.
+             * @param other The other RGB_VALUE object to compare against.
+             * @return A boolean indicating whether the two RGB_VALUE objects are not equal.
+             * @details This function compares the value and status of the two RGB_VALUE objects.
+             */
+            constexpr bool operator!=(const RGB_VALUE& other) const{
+                return !(Value.Get<RGB>() == other.Value.Get<RGB>());
+            }
+
             /**
              * @brief Copy constructor for RGB_VALUE.
              * @param other The RGB_VALUE object to copy from.
@@ -556,6 +576,26 @@ namespace GGUI{
                 Value = other;
                 Status = VALUE_STATE::VALUE;
                 return *this;
+            }
+
+            /**
+             * @brief Overload the compare operator for the NUMBER_VALUE class.
+             * @param other The other NUMBER_VALUE object to compare against.
+             * @return true if the two objects are equal; false otherwise.
+             * @details This function compares the value and status of the two NUMBER_VALUE objects.
+             */
+            constexpr bool operator==(const NUMBER_VALUE& other) const{
+                return Value.Get<int>() == other.Value.Get<int>();
+            }
+
+            /**
+             * @brief Overload the compare operator for the NUMBER_VALUE class.
+             * @param other The other NUMBER_VALUE object to compare against.
+             * @return true if the two objects are not equal; false otherwise.
+             * @details This function compares the value and status of the two NUMBER_VALUE objects.
+             */
+            constexpr bool operator!=(const NUMBER_VALUE& other) const{
+                return Value.Get<int>() != other.Value.Get<int>();
             }
         
             /**
@@ -728,6 +768,24 @@ namespace GGUI{
                 return *this;
             }
 
+            /** 
+             * @brief Overload the equals to operator for Vector.
+             * @param other The other Vector object to compare with.
+             * @return A boolean indicating whether the two Vector objects are equal.
+             */
+            constexpr bool operator==(const Vector& other) const {
+                return Value.Get<IVector3>() == other.Value.Get<IVector3>();
+            }
+
+            /** 
+             * @brief Overload the not equals to operator for Vector.
+             * @param other The other Vector object to compare with.
+             * @return A boolean indicating whether the two Vector objects are not equal.
+             */
+            constexpr bool operator!=(const Vector& other) const {
+                return Value.Get<IVector3>() != other.Value.Get<IVector3>();
+            }
+
             /**
              * @brief Construct a new constexpr Vector object from another Vector.
              * @param other The Vector to copy from.
@@ -872,6 +930,14 @@ namespace GGUI{
         constexpr enable_border(const GGUI::enable_border& other) : BOOL_VALUE(other.Value, other.Status){}
 
         constexpr enable_border& operator=(const enable_border& other) = default;
+
+        constexpr bool operator==(const enable_border& other) const{
+            return Value == other.Value;
+        }
+
+        constexpr bool operator!=(const enable_border& other) const{
+            return Value != other.Value;
+        }
 
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1785,16 +1851,17 @@ namespace GGUI{
          * and uses its style as a reference for evaluation.
          *
          * @param owner The element whose dynamic attributes are to be evaluated.
+         * @return True if there wae changes in the attributes evaluated, false otherwise.
          */
-        void Evaluate_Dynamic_Attribute_Values(Element* owner);
+        bool Evaluate_Dynamic_Attribute_Values(Element* owner);
 
-        void Evaluate_Dynamic_Position(Element* owner, Styling* reference = nullptr);
+        bool Evaluate_Dynamic_Position(Element* owner, Styling* reference = nullptr);
 
-        void Evaluate_Dynamic_Dimensions(Element* owner, Styling* reference = nullptr);
+        bool Evaluate_Dynamic_Dimensions(Element* owner, Styling* reference = nullptr);
 
-        void Evaluate_Dynamic_Border(Element* owner, Styling* reference = nullptr);
+        bool Evaluate_Dynamic_Border(Element* owner, Styling* reference = nullptr);
     
-        void Evaluate_Dynamic_Colors(Element* owner, Styling* reference = nullptr);
+        bool Evaluate_Dynamic_Colors(Element* owner, Styling* reference = nullptr);
     protected:
     
         // The construction time given styles are first put here, before embedding them into this class.

@@ -57,6 +57,19 @@ namespace GGUI{
     std::vector<UTF>& Progress_Bar::Render() {
         std::vector<UTF>& Result = Render_Buffer;
 
+        // Check for Dynamic attributes
+        if(Style->Evaluate_Dynamic_Dimensions(this))
+            Dirty.Dirty(STAIN_TYPE::STRETCH);
+
+        if (Style->Evaluate_Dynamic_Position(this))
+            Dirty.Dirty(STAIN_TYPE::MOVE);
+
+        if (Style->Evaluate_Dynamic_Colors(this))
+            Dirty.Dirty(STAIN_TYPE::COLOR);
+
+        if (Style->Evaluate_Dynamic_Border(this))
+            Dirty.Dirty(STAIN_TYPE::EDGE);
+
         // If the progress bar is clean, return the current render buffer.
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
@@ -69,7 +82,6 @@ namespace GGUI{
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
         if (Dirty.is(STAIN_TYPE::STRETCH)) {
-            Style->Evaluate_Dynamic_Attribute_Values(this);
             Result.clear();
             Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
             Content.resize(Get_Width() - Has_Border() * 2, UTF(Progress_Style.Body, { Progress_Style.Empty_Color, Get_Background_Color() }));
@@ -78,15 +90,19 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
         }
 
-        // Update the absolute position cache if the MOVE stain is detected.
         if (Dirty.is(STAIN_TYPE::MOVE)) {
             Dirty.Clean(STAIN_TYPE::MOVE);
+
             Update_Absolute_Position_Cache();
         }
 
-        // Apply the color system if the COLOR stain is detected.
-        if (Dirty.is(STAIN_TYPE::COLOR))
+        // Apply the color system to the resized result list
+        if (Dirty.is(STAIN_TYPE::COLOR)){        
+            // Clean the color stain after applying the color system.
+            Dirty.Clean(STAIN_TYPE::COLOR);
+
             Apply_Colors(this, Result);
+        }
 
         // Add child windows to the Result buffer if the DEEP stain is detected.
         if (Dirty.is(STAIN_TYPE::DEEP)) {

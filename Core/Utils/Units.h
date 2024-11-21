@@ -353,6 +353,30 @@ namespace GGUI{
         }
 
         /**
+         * @brief == operator with another IVector3
+         * 
+         * Compares the IVector3 with another IVector3.
+         * 
+         * @param other The IVector3 to compare with.
+         * @return True if the IVector3s are equal, otherwise false.
+         */
+        constexpr bool operator==(const IVector3& other) const noexcept {
+            return X == other.X && Y == other.Y && Z == other.Z; // Check if the coordinates are equal
+        }
+
+        /**
+         * @brief != operator with another IVector3
+         * 
+         * Compares the IVector3 with another IVector3.
+         * 
+         * @param other The IVector3 to compare with.
+         * @return False if the IVector3s are equal, otherwise true.
+         */
+        constexpr bool operator!=(const IVector3& other) const noexcept {
+            return X != other.X || Y != other.Y || Z != other.Z; // Check if the coordinates are not equal
+        }
+
+        /**
          * @brief Converts the IVector3 to a string.
          * 
          * This function returns a string in the format "X, Y, Z" where X, Y, and Z are the coordinates of the IVector3.

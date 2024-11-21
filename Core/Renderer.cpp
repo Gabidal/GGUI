@@ -68,8 +68,10 @@ namespace GGUI{
 
     Window* Main = nullptr;
     
-    const std::string ERROR_LOGGER = "_ERROR_LOGGER_";
-    const std::string HISTORY = "_HISTORY_";
+    const char* ERROR_LOGGER = "_ERROR_LOGGER_";
+    const char* HISTORY = "_HISTORY_";
+
+    
 
     // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
     class Carry{
@@ -2345,10 +2347,9 @@ namespace GGUI{
                         // Now create the history lister
                         History = new Scroll_View(Styling(
                             width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
-                            text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK)
+                            text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
+                            flow_priority(DIRECTION::COLUMN) | name(HISTORY)
                         ));
-                        History->Set_Growth_Direction(DIRECTION::COLUMN);
-                        History->Set_Name(HISTORY);
 
                         Error_Logger->Add_Child(History);
                     }
@@ -2382,30 +2383,29 @@ namespace GGUI{
                     // create the error logger
                     Error_Logger = new Window(
                         Styling(
-                            width(Main->Get_Width() / 4) | height(Main->Get_Height() / 2) |
+                            width(0.25f) | height(0.5f) |
+
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
                             border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
-                            title("LOG")
+
+                            title("LOG") | name(ERROR_LOGGER) | 
+                            
+                            position(
+                                (Max_Width - Error_Logger->Get_Width()) / 2,
+                                (Max_Height - Error_Logger->Get_Height()) / 2,
+                                INT32_MAX-1
+                            ) | 
+                            
+                            STYLES::border | allow_overflow(true) | 
+
+                            node(new Scroll_View(Styling(
+                                width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
+                                text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
+                                flow_priority(DIRECTION::COLUMN) | name(HISTORY)
+                            )))
                         )
                     );
-                    Error_Logger->Set_Name(ERROR_LOGGER);
-                    Error_Logger->Set_Position({
-                        (Max_Width - Error_Logger->Get_Width()) / 2,
-                        (Max_Height - Error_Logger->Get_Height()) / 2,
-                        INT32_MAX
-                    });
-                    Error_Logger->Show_Border(true);
-                    Error_Logger->Allow_Overflow(true);
 
-                    // Now create the history lister
-                    Scroll_View* History = new Scroll_View(Styling(
-                        width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
-                        text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK)
-                    ));
-                    History->Set_Growth_Direction(DIRECTION::COLUMN);
-                    History->Set_Name(HISTORY);
-
-                    Error_Logger->Add_Child(History);
                     Main->Add_Child(Error_Logger);
                 }
 
@@ -2414,20 +2414,21 @@ namespace GGUI{
                     Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
                     Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
-                    List_View* Row = new List_View(Styling(
-                        width(History->Get_Width() - 1) | height(1) | text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK)
-                    ));
-                    Row->Set_Parent(History);
-                    Row->Set_Flow_Direction(DIRECTION::ROW);
+                    History->Add_Child(new List_View(Styling(
+                        width(History->Get_Width() - 1) | height(1) | 
+                        text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
+                        flow_priority(DIRECTION::ROW) | 
 
-                    // TODO: replace the text_field into Date_Element !
-                    Text_Field* Date = new Text_Field(Styling(text(Now().c_str())));
-                    Text_Field* Problem_Text = new Text_Field(Styling(text(Problem.c_str())));
+                        // The Date field
+                        node(new Text_Field(Styling(
+                            text(Now().c_str())
+                        ))) | 
 
-                    Row->Add_Child(Date);
-                    Row->Add_Child(Problem_Text);
-
-                    History->Add_Child(Row);
+                        // The actual reported problem text
+                        node(new Text_Field(Styling(
+                            text(Problem.c_str())
+                        )))
+                    )));
 
                     // Calculate the new x position for the Error_Logger
                     if (Error_Logger->Get_Parent() == Main)
@@ -2446,10 +2447,10 @@ namespace GGUI{
 
                         // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
                         History->Scroll_Down();
-                    
                     }
                 }
 
+                // If the user has disabled the Inspect_Tool then the errors appear as an popup window ,which disappears after 30s.
                 if (Error_Logger->Get_Parent() == Main){
                     Error_Logger->Display(true);
 
@@ -2719,7 +2720,7 @@ namespace GGUI{
                     STYLES::border | 
                     title("LOG: ") | 
                     // Set the name of the window to "LOG"
-                    name(ERROR_LOGGER.c_str()) | 
+                    name(ERROR_LOGGER) | 
                     // Allow the window to overflow, so that the text can be seen even if it is longer than the window
                     allow_overflow(true)
                 )
@@ -2738,7 +2739,7 @@ namespace GGUI{
             )) | 
 
             // Hide the inspect tool by default
-            STYLES::hide | 
+            // STYLES::hide | 
 
             on_init([](Element* self){
                 // Register an event handler to toggle the inspect tool on and off

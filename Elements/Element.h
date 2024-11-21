@@ -119,15 +119,7 @@ namespace GGUI{
          * passing the current element as a parameter. It then recursively calls the 
          * Embed_Styles method on each child element's style.
          */
-        void Embed_Styles(){ 
-            Style->Embed_Styles(this);
-            
-            if (Dirty.is(STAIN_TYPE::FINALIZE)){
-                Dirty.Clean(STAIN_TYPE::FINALIZE);
-
-                Check(STATE::INIT);
-            }
-        }
+        void Embed_Styles();
 
         void Add_Styling(Styling s){
             Style->Copy(s);
@@ -140,16 +132,6 @@ namespace GGUI{
          * that the Element needs to be reprocessed for all attributes.
          */
         void Fully_Stain();
-        
-        /**
-         * @brief Copies the state of the abstract element to the current element.
-         *
-         * This function will copy the state of the abstract element to the current element.
-         * It will copy the following states: focused and show.
-         *
-         * @param abstract The abstract element to copy the state from.
-         */
-        void Inherit_States_From(Element* abstract);
 
         /**
          * @brief Accumulates all the classes and their styles.
@@ -256,20 +238,6 @@ namespace GGUI{
         virtual void Calculate_Childs_Hitboxes([[maybe_unused]] unsigned int Starting_Offset = 0) {}
 
         /**
-         * @brief Handles the OR operator for two elements.
-         * @details This function is called when the OR operator is used between two elements.
-         *          It sets the style of the current element to the style of the other element.
-         * @param other The other element to handle the OR operator with.
-         * @return The current element.
-         */
-        virtual Element* Handle_Or_Operator(Element* other){
-            // Set the style of the current element to the style of the other element.
-            Set_Style(other->Get_Style());
-
-            return this;
-        }
-
-        /**
          * @brief Adds a class to the element.
          * @details This function adds the given class to the element's class list.
          *          If the class does not exist in the global class map, a new ID is assigned to the class.
@@ -278,7 +246,6 @@ namespace GGUI{
          */
         void Add_Class(std::string class_name);
 
-        
         /**
          * @brief Sets the opacity of the element.
          * @details This function takes a float value between 0.0f and 1.0f and sets the
@@ -287,7 +254,6 @@ namespace GGUI{
          * @param[in] Opacity The opacity value to set.
          */
         void Set_Opacity(float Opacity);
-
         
         /**
          * @brief Sets the opacity of the element using an integer percentage.
@@ -1056,7 +1022,7 @@ namespace GGUI{
          * @param w The window to apply the color system to.
          * @param Result The vector containing the rendered string.
          */
-        virtual void Apply_Colors(Element* w, std::vector<UTF>& Result);
+        void Apply_Colors(Element* w, std::vector<UTF>& Result);
 
         /**
          * @brief Resizes the element to fit the size of its parent element.
