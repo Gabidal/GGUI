@@ -26,7 +26,7 @@ namespace GGUI{
                     Init();
 
                 // Get the current time as string
-                std::string now = GGUI::INTERNAL::Now();
+                std::string now = "[" + GGUI::INTERNAL::Now() + "]: ";
 
                 // When the Stack_Traced report is given we need to push all the following lines after the first line by the length of the now string.
                 for (unsigned int i = 0; i < Text.size(); i++){
@@ -38,7 +38,7 @@ namespace GGUI{
                 }
 
                 // Write the time and the text into the log file.
-                self.Append("[" + now + "]: " + Text);
+                self.Append(now + Text);
             });
         }
     }
