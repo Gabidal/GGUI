@@ -450,14 +450,6 @@ namespace GGUI{
         {BUTTON_STATES::MOUSE_SCROLL_UP, Constants::MOUSE_MIDDLE_SCROLL_UP},
         {BUTTON_STATES::MOUSE_SCROLL_DOWN, Constants::MOUSE_MIDDLE_SCROLL_DOWN},
     };
-
-        namespace SETTINGS{
-        // How fast for a detection of hold down situation.
-        inline unsigned long long Mouse_Press_Down_Cooldown = 365;
-        inline bool Word_Wrapping = true;
-        inline std::chrono::milliseconds Thread_Timeout = std::chrono::milliseconds(256);
-        inline constexpr bool ENABLE_GAMMA_CORRECTION = false;
-    };
 }
 
 #endif

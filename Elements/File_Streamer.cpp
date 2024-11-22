@@ -24,6 +24,12 @@ namespace GGUI{
      * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
      */
     std::string FILE_STREAM::Read(){
+        // make sure the Type allows for reading
+        if (Type != FILE_STREAM_TYPE::READ){
+            Report("Cannot read from a file that is not opened for reading: '" + this->Name + "' !");
+            return "";
+        }
+
         if (Buffer_Capture){
             return Buffer_Capture->Read();
         }
@@ -55,6 +61,26 @@ namespace GGUI{
         }
 
         // uuhhh.. how did we end up here?
+    }
+
+    void FILE_STREAM::Write(std::string Buffer){
+        // make sure the Type allows for writing
+        if (Type != FILE_STREAM_TYPE::WRITE){
+            Report("Cannot write to a file that is not opened for writing: '" + this->Name + "' !");
+            return;
+        }
+
+        Handle << Buffer;
+    }
+
+    void FILE_STREAM::Append(std::string Line){
+        // make sure the Type allows for writing
+        if (Type != FILE_STREAM_TYPE::WRITE){
+            Report("Cannot write to a file that is not opened for writing: '" + this->Name + "' !");
+            return;
+        }
+
+        Handle << Line << std::endl;
     }
 
     /**
@@ -103,19 +129,22 @@ namespace GGUI{
      * handlers for that file. If not, a new file handle is created and the event handler is added to the list
      * of event handlers for the new file.
      */
-    FILE_STREAM::FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout){
+    FILE_STREAM::FILE_STREAM(std::string File_Name, std::function<void()> on_change, FILE_STREAM_TYPE type){
         Name = File_Name;
+        Type = type;
+
+        int STD_Type = 0;
         
-        int Type = std::ios::in;
+        if (Type == FILE_STREAM_TYPE::READ)
+            STD_Type |= std::ios::in;
 
-        if (read_from_std_cout){
-            Type |= std::ios::out | std::ios::app;
-        }
+        if (Type == FILE_STREAM_TYPE::WRITE || Type == FILE_STREAM_TYPE::STD_CAPTURE)
+            STD_Type |= std::ios::out | std::ios::app;
 
-        Handle = std::fstream(Name.c_str(), (std::ios_base::openmode)Type);
+        Handle = std::fstream(Name.c_str(), (std::ios_base::openmode)STD_Type);
 
-        // if the read_from_std_cout is invoked, then we need to create a file where we are going to pipe the std::cout into
-        if (read_from_std_cout)
+        // if the FILE_STREAM_TYPE::STD_CAPTURE is invoked, then we need to create a file where we are going to pipe the std::cout into
+        if (Type == FILE_STREAM_TYPE::STD_CAPTURE)
             Buffer_Capture = new INTERNAL::BUFFER_CAPTURE(on_change);
         else
             On_Change.push_back(on_change);

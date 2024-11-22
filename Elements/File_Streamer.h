@@ -217,6 +217,13 @@ namespace GGUI{
 
     }
 
+    enum class FILE_STREAM_TYPE{
+        UN_INITIALIZED  = 0 << 0,
+        READ            = 1 << 0,
+        WRITE           = 1 << 1,
+        STD_CAPTURE     = 1 << 2
+    };
+
     class FILE_STREAM{
     private:
         INTERNAL::BUFFER_CAPTURE* Buffer_Capture = nullptr;
@@ -224,6 +231,7 @@ namespace GGUI{
         std::vector<std::function<void()>> On_Change = {};
         std::string Previous_Content = "";
         unsigned long long Previous_Hash = 0;
+        FILE_STREAM_TYPE Type = FILE_STREAM_TYPE::UN_INITIALIZED;
     public:
         std::string Name = "";
 
@@ -238,7 +246,18 @@ namespace GGUI{
          * handlers for that file. If not, a new file handle is created and the event handler is added to the list
          * of event handlers for the new file.
          */
-        FILE_STREAM(std::string File_Name, std::function<void()> on_change, bool read_from_std_cout = false);
+        FILE_STREAM(std::string File_Name, std::function<void()> on_change, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ);
+
+        /**
+         * @brief Intended for Logger Atomic::Guard, do not use as User!
+         */
+        FILE_STREAM() = default;
+
+        FILE_STREAM(const FILE_STREAM&) = delete;
+        FILE_STREAM& operator=(const FILE_STREAM&) = delete;
+
+        FILE_STREAM(FILE_STREAM&&) = default;  // Allow move
+        FILE_STREAM& operator=(FILE_STREAM&&) = default;
 
         /**
          * @brief Destructor for the FILE_STREAM class.
@@ -266,6 +285,18 @@ namespace GGUI{
          * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
          */
         std::string Read();
+
+        /**
+         * @brief overwrites the given buffer into the file, clearing the previous content of said file.
+         * @param Buffer The buffer to write into the file.
+         */
+        void Write(std::string Buffer);
+
+        /**
+         * @brief Append line of text to the end of the file.
+         * @param Line The line of text to append to the file.
+         */
+        void Append(std::string Line);
     
         /**
          * @brief Read the content of the file quickly without checking if the file has changed.
@@ -311,6 +342,10 @@ namespace GGUI{
          */
         bool Is_Cout_Stream(){
             return Buffer_Capture != nullptr;
+        }
+
+        FILE_STREAM_TYPE Get_type(){
+            return Type;
         }
     };
 

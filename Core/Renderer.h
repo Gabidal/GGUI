@@ -21,6 +21,7 @@
 #include "../Core/Utils/Units.h"
 #include "../Core/Utils/Event.h"
 #include "../Core/Utils/Style.h"
+#include "../Core/Utils/Guard.h"
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -28,6 +29,8 @@ namespace GGUI{
 
     namespace INTERNAL{
         class BUFFER_CAPTURE;
+
+        extern std::string Now();
     }
 
     extern void Report_Stack(std::string Problem);
@@ -44,33 +47,6 @@ namespace GGUI{
         extern std::condition_variable Condition;
 
         extern Status Pause_Render_Thread;
-
-        // helper to make sure all objects created by this are always treated atomically
-        template<typename T>
-        class Guard{
-        public:
-            std::mutex Shared;      // this is shared across all other threads.
-            T Data;
-
-            Guard() = default;
-
-            void operator()(std::function<void(T&)> job) {
-                // check if the Shared mutex is already locked by higher/upper stack frame.
-                if (Shared.try_lock()){
-                    try{
-                        job(Data);
-                    } catch(...){
-                        Report_Stack("Failed to execute the function!");
-                    }
-
-                    Shared.unlock();
-                }
-                else{
-                    Report_Stack("Cannot double lock mutex");
-                    return;
-                }
-            }
-        };
     }
 
     // Inits with 'NOW()' when created

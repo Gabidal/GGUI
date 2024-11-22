@@ -1,5 +1,7 @@
 #include "Renderer.h"
 #include "../Elements/File_Streamer.h"
+#include "Settings.h"
+#include "./Utils/Logger.h"
 
 #include <string>
 #include <cassert>
@@ -71,8 +73,6 @@ namespace GGUI{
     const char* ERROR_LOGGER = "_ERROR_LOGGER_";
     const char* HISTORY = "_HISTORY_";
 
-    
-
     // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
     class Carry{
     public:
@@ -80,6 +80,24 @@ namespace GGUI{
     };
 
     Atomic::Guard<Carry> Carry_Flags; 
+
+    namespace INTERNAL{
+        /**
+         * @brief Temporary function to return the current date and time in a string.
+         * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
+         * @note This function will be replaced when the Date_Element is implemented.
+         */
+        std::string Now(){
+            // This function takes the current time and returns a string of the time.
+            // Format: DD.MM.YYYY: SS.MM.HH
+            std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+            std::string Result = std::ctime(&now);
+
+            // Remove the newline at the end of the string
+            return Result.substr(0, Result.size() - 1);
+        }
+    }
 
     bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width, int A_Height, int B_Width, int B_Height) {
         // Check if the rectangles overlap in the x-axis and y-axis
@@ -2152,6 +2170,9 @@ namespace GGUI{
      */
     GGUI::Window* Init_GGUI(){
         Init_Start_Addresses();
+        SETTINGS::Init_Settings();
+        LOGGER::Init();
+        LOGGER::Log("Starting GGUI Core initialization...");
 
         Update_Max_Width_And_Height();
         
@@ -2289,23 +2310,9 @@ namespace GGUI{
         Event_Scheduler.detach();
         Inquire_Scheduler.detach();
 
+        LOGGER::Log("GGUI Core initialization complete.");
+
         return Main;
-    }
-
-    /**
-     * @brief Temporary function to return the current date and time in a string.
-     * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
-     * @note This function will be replaced when the Date_Element is implemented.
-     */
-    std::string Now(){
-        // This function takes the current time and returns a string of the time.
-        // Format: DD.MM.YYYY: SS.MM.HH
-        std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-
-        std::string Result = std::ctime(&now);
-
-        // Remove the newline at the end of the string
-        return Result.substr(0, Result.size() - 1);
     }
 
     /**
@@ -2316,6 +2323,8 @@ namespace GGUI{
      */
     void Report(std::string Problem){
         Pause_GGUI([&Problem]{
+            LOGGER::Log(Problem);
+
             Problem = " " + Problem + " ";
 
             // Error logger structure:
@@ -2421,7 +2430,7 @@ namespace GGUI{
 
                         // The Date field
                         node(new Text_Field(Styling(
-                            text(Now().c_str())
+                            text(INTERNAL::Now().c_str())
                         ))) | 
 
                         // The actual reported problem text

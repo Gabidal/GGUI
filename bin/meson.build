@@ -15,7 +15,9 @@ PROFILE = 3
 TYPE = DEBUG
 
 sources = [
+  '../Core/Utils/Color.cpp',
   '../Core/Utils/Style.cpp',
+  '../Core/Utils/Logger.cpp',
 
   '../Elements/Element.cpp',
   '../Elements/Window.cpp',
@@ -30,6 +32,8 @@ sources = [
   '../Elements/HTML.cpp',
 
   '../Core/Utils/No_Inline.cpp',
+
+  '../Core/Settings.cpp',
   '../Core/Renderer.cpp',
 
   '../Core/main.cpp',
