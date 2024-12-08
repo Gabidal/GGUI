@@ -560,6 +560,25 @@ namespace GGUI{
         void Set_Height(unsigned int height);
 
         /**
+         * @brief Retrieves the evaluation type of the width property.
+         * 
+         * This function returns the evaluation type of the width property
+         * from the style's width value.
+         * 
+         * @return EVALUATION_TYPE The evaluation type of the width property.
+         */
+        EVALUATION_TYPE Get_Width_Type() { return Style->Width.Value.Get_Type(); }
+
+        /**
+         * @brief Retrieves the evaluation type of the height value.
+         * 
+         * This function returns the evaluation type of the height value from the style's height property.
+         * 
+         * @return EVALUATION_TYPE The evaluation type of the height value.
+         */
+        EVALUATION_TYPE Get_Height_Type() { return Style->Height.Value.Get_Type(); }
+
+        /**
          * @brief Set the position of the element.
          * @details This function sets the position of the element to the specified coordinates.
          *          If the position changes, the element will be marked as dirty for movement

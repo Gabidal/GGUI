@@ -266,6 +266,12 @@ namespace GGUI{
             }
 
             /**
+             * Get the evaluation type of the variant.
+             * @return The evaluation type of the variant.
+             */
+            EVALUATION_TYPE Get_Type() { return evaluation_type; }
+
+            /**
              * @brief Direct access to the underlying data of the variant.
              *        This is an exclusive Dev function, with serious repercussions for misuse.
              * @tparam P The type to cast the variant to.

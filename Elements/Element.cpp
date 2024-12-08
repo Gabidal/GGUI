@@ -1594,9 +1594,21 @@ void GGUI::Element::Compute_Dynamic_Size(){
 
             int Border_Offset = (Has_Border() - c->Has_Border()) * Has_Border() * 2;
 
+            // If the width is an percentage value, then it is always smaller or equal to this's width.
+            bool Skip_Width_Modification = c->Get_Width_Type() != EVALUATION_TYPE::PERCENTAGE;  // Skip checking width if the width attribute type is an relative one
+            // Do the same for the Height attribute
+            bool Skip_Height_Modification = c->Get_Height_Type() != EVALUATION_TYPE::PERCENTAGE;
+
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = (unsigned int)GGUI::Max(c->Style->Position.Get().X + (signed int)c->Get_Width() + Border_Offset, (signed int)Get_Width());
-            unsigned int New_Height = (unsigned int)GGUI::Max(c->Style->Position.Get().Y + (signed int)c->Get_Height() + Border_Offset, (signed int)Get_Height());
+            unsigned int New_Width = (unsigned int)GGUI::Max(
+                (c->Style->Position.Get().X + (signed int)c->Get_Width() + Border_Offset) * Skip_Width_Modification,
+                (signed int)Get_Width()
+            );
+
+            unsigned int New_Height = (unsigned int)GGUI::Max(
+                (c->Style->Position.Get().Y + (signed int)c->Get_Height() + Border_Offset) * Skip_Height_Modification,
+                (signed int)Get_Height()
+            );
 
             // but only update those who actually allow dynamic sizing.
             if (Style->Allow_Dynamic_Size.Value && (New_Width != Get_Width() || New_Height != Get_Height())){
