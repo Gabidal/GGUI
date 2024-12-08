@@ -2,9 +2,10 @@
 #define _LOGGER_H_
 
 #include "Guard.h"
-#include "../../Elements/File_Streamer.h"
 
 namespace GGUI{
+
+    class FILE_STREAM;
 
     // Contains Logging utils.
     namespace LOGGER{

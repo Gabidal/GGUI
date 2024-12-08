@@ -25,7 +25,9 @@ namespace GGUI{
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
     void position::Evaluate(Styling* parent){
-        Value.Evaluate(parent->Position.Get());
+        X.Evaluate(parent->Width.Get());
+        Y.Evaluate(parent->Height.Get());
+        Z.Evaluate(parent->Position.Get().Z);
     }
 
     void width::Evaluate(Styling* parent){

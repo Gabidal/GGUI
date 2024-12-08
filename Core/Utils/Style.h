@@ -2,8 +2,12 @@
 #define _STYLE_H_
 
 #include "Units.h"
+#include "Logger.h"
+
 #include <variant>
 #include <array>
+#include <string>
+
 
 namespace GGUI{
     // Externies
@@ -11,6 +15,7 @@ namespace GGUI{
     class Styling;
     enum class STAIN_TYPE;
     extern void Report_Stack(std::string Problem);
+    extern void Exit(int signum);
 
     enum class ALIGN{
         UP,
@@ -150,6 +155,67 @@ namespace GGUI{
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
                 // Return the object itself, for chaining
                 return *this;
+            }
+
+            constexpr bool operator==(const value<T>& other) const {
+                if (evaluation_type != other.evaluation_type){
+                    Report_Stack("Cannot compare two different eval type values!");
+                    Exit(1);
+                }
+                else{
+                    switch (evaluation_type)
+                    {
+                    case EVALUATION_TYPE::DEFAULT:
+                        return data == other.data;
+                    case EVALUATION_TYPE::PERCENTAGE:
+                        return percentage == other.percentage;
+                    default:
+                        Report_Stack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        Exit(1);
+                        return false;
+                    }
+                }
+            }
+
+            constexpr value<T> operator+(const value<T>& other){
+                if (evaluation_type != other.evaluation_type){
+                    Report_Stack("Cannot add two different eval type values!");
+                    Exit(1);
+                }
+                else{
+                    switch (evaluation_type)
+                    {
+                    case EVALUATION_TYPE::DEFAULT:
+                        return value<T>(data + other.data);
+                    case EVALUATION_TYPE::PERCENTAGE:
+                        return value<T>(percentage + other.percentage);
+                    default:
+                        Report_Stack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        Exit(1);
+                        return value<T>(0);
+                    }
+                }
+            }
+
+            constexpr value<T> operator-(const value<T>& other){
+                if (evaluation_type != other.evaluation_type){
+                    // TODO: add capability to call Report_Stack in Styles.h
+                    LOGGER::Log("Cannot substract two different eval type values!");
+                    Exit(1);
+                }
+                else{
+                    switch (evaluation_type)
+                    {
+                    case EVALUATION_TYPE::DEFAULT:
+                        return value<T>(data - other.data);
+                    case EVALUATION_TYPE::PERCENTAGE:
+                        return value<T>(percentage - other.percentage);
+                    default:
+                        LOGGER::Log("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        Exit(1);
+                        return value<T>(0);
+                    }
+                }
             }
 
             /**
@@ -716,7 +782,9 @@ namespace GGUI{
         
         class Vector : public style_base{
         public:
-            value<IVector3> Value = IVector3();
+            value<int> X = 0;
+            value<int> Y = 0;
+            value<int> Z = 0;
 
             /**
              * @brief Construct a new Vector object using constexpr.
@@ -726,8 +794,11 @@ namespace GGUI{
              * @details This constructor initializes a Vector object with the given parameters,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr Vector(const GGUI::IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT){}
+            constexpr Vector(const GGUI::IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), 
+                X(value.X, EVALUATION_TYPE::DEFAULT), Y(value.Y, EVALUATION_TYPE::DEFAULT), Z(value.Z, EVALUATION_TYPE::DEFAULT){}
             
+            constexpr Vector(value<int> x, value<int> y, value<int> z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), X(x), Y(y), Z(z){}
+
             constexpr Vector() = default;
 
             /**
@@ -748,7 +819,9 @@ namespace GGUI{
             constexpr Vector& operator=(const Vector& other){
                 // Only copy the information if the other is enabled.
                 if (other.Status >= Status){
-                    Value = other.Value;
+                    X = other.X;
+                    Y = other.Y;
+                    Z = other.Z;
 
                     Status = other.Status;
                 }
@@ -763,7 +836,9 @@ namespace GGUI{
              *          It sets the status to VALUE_STATE::VALUE and the value to the given IVector3 object.
              */
             constexpr Vector& operator=(const GGUI::IVector3 other){
-                Value = other;
+                X = other.X;
+                Y = other.Y;
+                Z = other.Z;
                 Status = VALUE_STATE::VALUE;
                 return *this;
             }
@@ -774,7 +849,7 @@ namespace GGUI{
              * @return A boolean indicating whether the two Vector objects are equal.
              */
             constexpr bool operator==(const Vector& other) const {
-                return Value.Get<IVector3>() == other.Value.Get<IVector3>();
+                return X == other.X && Y == other.Y && Z == other.Z;
             }
 
             /** 
@@ -783,7 +858,7 @@ namespace GGUI{
              * @return A boolean indicating whether the two Vector objects are not equal.
              */
             constexpr bool operator!=(const Vector& other) const {
-                return Value.Get<IVector3>() != other.Value.Get<IVector3>();
+                return !(*this == other);
             }
 
             /**
@@ -793,15 +868,15 @@ namespace GGUI{
              *          utilizing constexpr for compile-time evaluation.
              */
             constexpr Vector(const GGUI::STYLING_INTERNAL::Vector& other) 
-                : style_base(other.Status), Value(other.Value) {}
+                : style_base(other.Status), X(other.X), Y(other.Y), Z(other.Z) {}
             
             /**
              * @brief Get the current value of the Vector.
              * @return The current IVector3 value.
-             * @details This function returns the current value stored in the Vector.
+             * @details Packs the values into an IVector3; Returns it.
              */
             inline constexpr IVector3 Get() { 
-                return Value.Get<IVector3>(); 
+                return IVector3(X.Get<int>(), Y.Get<int>(), Z.Get<int>());
             }
 
             /**
@@ -810,7 +885,7 @@ namespace GGUI{
              * @details This function returns the current value stored in the Vector.
              *          This value can be used to get the current value of the Vector as an IVector3 object.
              */
-            inline constexpr IVector3 Get() const { return Value.Get<IVector3>(); }
+            inline constexpr IVector3 Get() const { return IVector3(X.Get<int>(), Y.Get<int>(), Z.Get<int>()); }
 
             /**
              * @brief Set the current value of the Vector.
@@ -819,17 +894,19 @@ namespace GGUI{
              *          It also sets the Status of the Vector to VALUE_STATE::VALUE.
              */
             inline constexpr void Set(IVector3 value){
-                Value = value;
+                X = value.X;
+                Y = value.Y;
+                Z = value.Z;
                 Status = VALUE_STATE::VALUE;
             }
 
-            /**
-             * @brief Get a direct reference to the value stored in the Vector.
-             * @return A reference to the IVector3 object stored in the Vector.
-             * @details This function returns a direct reference to the IVector3 object stored in the Vector.
-             *          This can be used to directly manipulate the value of the Vector.
-             */
-            inline constexpr IVector3& Direct() { return Value.Direct<IVector3>(); }
+            Vector operator+(const Vector& other){
+                return Vector(X + other.X, Y + other.Y, Z + other.Z);
+            }
+
+            Vector operator-(const Vector& other){
+                return Vector(X - other.X, Y - other.Y, Z - other.Z);
+            }
         
             /**
              * @brief Evaluate the Vector value.
@@ -1898,6 +1975,11 @@ namespace GGUI{
     
         inline enable_border border = enable_border(true, VALUE_STATE::VALUE);
         inline display hide = display(false, VALUE_STATE::VALUE);
+        inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(0, 0.5f);
+        inline GGUI::STYLING_INTERNAL::Vector top = GGUI::STYLING_INTERNAL::Vector(0.5f, 0);
+        inline GGUI::STYLING_INTERNAL::Vector right = GGUI::STYLING_INTERNAL::Vector(1.0f, 0.5f);
+        inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0.5f, 1.0f);
+
     };
 
 }

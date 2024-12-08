@@ -7,6 +7,7 @@
 #include <cassert>
 #include <math.h>
 #include <sstream>
+#include <cstdio>
 
 namespace GGUI{
     std::vector<UTF> SAFE_MIRROR;                               // Only used for references to be initalized to point at.
@@ -97,6 +98,21 @@ namespace GGUI{
             // Remove the newline at the end of the string
             return Result.substr(0, Result.size() - 1);
         }
+    }
+
+    /**
+     * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
+     * 
+     * This function takes an unsigned long long integer and formats it as a hexadecimal string
+     * in uppercase. The resulting string does not include a "0x" prefix.
+     * 
+     * @param value The unsigned long long integer to be converted to a hexadecimal string.
+     * @return A std::string containing the uppercase hexadecimal representation of the input value.
+     */
+    std::string Hex(unsigned long long value) {
+        char buffer[17]; // Enough to hold the largest 64-bit hexadecimal value + null terminator
+        std::snprintf(buffer, sizeof(buffer), "%llX", value); // Formats the value as uppercase hex
+        return std::string(buffer);
     }
 
     bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width, int A_Height, int B_Width, int B_Height) {
@@ -616,7 +632,6 @@ namespace GGUI{
         // Exit the application with the specified exit code
         exit(signum);
     }
-
 
     /// @brief Retrieves a list of font files from the Windows registry.
     /// @details This function retrieves a list of font files from the Windows registry.
@@ -2567,8 +2582,11 @@ namespace GGUI{
             f();
         }
         catch(std::exception& e){
+
+            std::string Given_Function_Label_Location = Hex(reinterpret_cast<unsigned long long>(&f));
+
             // If an exception is thrown, report the stack trace and the exception message.
-            Report_Stack("In Pause_GGUI: " + std::string(e.what()));
+            Report_Stack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: " + std::string(e.what()));
         }
 
         // Resume the render thread with the previous render status.

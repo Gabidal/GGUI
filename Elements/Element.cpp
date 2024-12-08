@@ -492,13 +492,18 @@ void GGUI::Element::Show_Shadow(FVector2 Direction, RGB Shadow_Color, float Opac
     properties->Direction = {Direction.X, Direction.Y, Length};
     properties->Opacity = Opacity;
 
+    IVector3 tmp = Style->Position.Get();
+
     // Adjust element's position based on shadow length and opacity
-    Style->Position.Direct().X -= Length * Opacity;
-    Style->Position.Direct().Y -= Length * Opacity;
+    tmp.X -= Length * Opacity;
+    tmp.Y -= Length * Opacity;
 
     // Apply the inverse of the direction to the element's position
-    Style->Position.Direct() += Direction * -1;
+    tmp += Direction * -1;
     
+    // Set the new position of the element
+    Style->Position.Set(tmp);
+
     // Mark shadow properties as evaluated
     properties->Status = VALUE_STATE::VALUE;
 
@@ -522,9 +527,13 @@ void GGUI::Element::Show_Shadow(RGB Shadow_Color, float Opacity, float Length){
     properties->Direction = {0, 0, Length};
     properties->Opacity = Opacity;
 
+    IVector3 tmp = Style->Position.Get();
+
     // Adjust element's position based on shadow length and opacity
-    Style->Position.Direct().X -= Length * Opacity;
-    Style->Position.Direct().Y -= Length * Opacity;
+    tmp.X -= Length * Opacity;
+    tmp.Y -= Length * Opacity;
+
+    Style->Position.Set(tmp);
 
     // Mark shadow properties as evaluated
     properties->Status = VALUE_STATE::VALUE;
