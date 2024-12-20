@@ -69,7 +69,7 @@ meson compile -C Build || exit 1
 
 # Step 3: Ensure necessary scripts have the correct permissions
 echo "Setting execution permissions on build scripts..."
-chmod 755 Build.sh Benchmark.sh || exit 1
+chmod 755 Build.sh Benchmark.sh Check.sh || exit 1
 
 # Completion message
 echo "Build process completed successfully!"
