@@ -20,14 +20,13 @@ namespace GGUI{
             delete Other;
     }
 
-
     // EVALs
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
     void position::Evaluate(Styling* parent){
         X.Evaluate(parent->Width.Get());
         Y.Evaluate(parent->Height.Get());
-        Z.Evaluate(parent->Position.Get().Z);
+        // Z.Evaluate(parent->Position.Get().Z);    // Since child as always parent.Z+1, there is no world where this is useful.
     }
 
     void width::Evaluate(Styling* parent){

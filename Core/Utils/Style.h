@@ -161,6 +161,7 @@ namespace GGUI{
                 if (evaluation_type != other.evaluation_type){
                     Report_Stack("Cannot compare two different eval type values!");
                     Exit(1);
+                    return false;   // for warnings.
                 }
                 else{
                     switch (evaluation_type)
@@ -172,7 +173,7 @@ namespace GGUI{
                     default:
                         Report_Stack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
                         Exit(1);
-                        return false;
+                        return false;   // for warnings.
                     }
                 }
             }
@@ -181,6 +182,7 @@ namespace GGUI{
                 if (evaluation_type != other.evaluation_type){
                     Report_Stack("Cannot add two different eval type values!");
                     Exit(1);
+                    return false;   // for warnings.
                 }
                 else{
                     switch (evaluation_type)
@@ -202,6 +204,7 @@ namespace GGUI{
                     // TODO: add capability to call Report_Stack in Styles.h
                     LOGGER::Log("Cannot substract two different eval type values!");
                     Exit(1);
+                    return false;   // for warnings.
                 }
                 else{
                     switch (evaluation_type)
@@ -269,7 +272,7 @@ namespace GGUI{
              * Get the evaluation type of the variant.
              * @return The evaluation type of the variant.
              */
-            EVALUATION_TYPE Get_Type() { return evaluation_type; }
+            constexpr EVALUATION_TYPE Get_Type() { return evaluation_type; }
 
             /**
              * @brief Direct access to the underlying data of the variant.
@@ -940,7 +943,14 @@ namespace GGUI{
     public:
         constexpr position(IVector3 value, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
 
-        constexpr position(int x, int y, int z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(IVector3(x, y, z), Default){}
+        constexpr position(Vector&& value, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
+            Transform_Center_To_Top_Left_Origin();
+        }
+
+        constexpr position(STYLING_INTERNAL::value<int> X, STYLING_INTERNAL::value<int> Y, STYLING_INTERNAL::value<int> Z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(X, Y, Z, Default){
+            Transform_Center_To_Top_Left_Origin();
+        }
+
 
         constexpr position(const GGUI::position& other) : Vector(other){}
 
@@ -952,6 +962,24 @@ namespace GGUI{
         void Evaluate(Styling* owner) override;
 
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
+    protected:
+        /**
+         * @brief Transforms the position from center origin to top-left origin.
+         *
+         * This function adjusts the X and Y coordinates of the position by adding a 0.5f offset
+         * if their evaluation type is PERCENTAGE. This transformation is used to convert a 
+         * position that is originally centered to one that is based on the top-left corner.
+         *
+         * @note The Z coordinate is not affected by this transformation.
+         */
+        constexpr void Transform_Center_To_Top_Left_Origin(){
+            // Add 0.5f offset to the vectors
+            if (X.Get_Type() == EVALUATION_TYPE::PERCENTAGE)
+                X = X + 0.5f;
+            if (Y.Get_Type() == EVALUATION_TYPE::PERCENTAGE)
+                Y = Y + 0.5f;
+            // no need to affect Z.
+        }
     };
 
     class width : public STYLING_INTERNAL::NUMBER_VALUE{
@@ -1978,13 +2006,18 @@ namespace GGUI{
         namespace CONSTANTS{
             inline Styling Default;
         }
-    
+
         inline enable_border border = enable_border(true, VALUE_STATE::VALUE);
         inline display hide = display(false, VALUE_STATE::VALUE);
-        inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(0, 0.5f);
-        inline GGUI::STYLING_INTERNAL::Vector top = GGUI::STYLING_INTERNAL::Vector(0.5f, 0);
-        inline GGUI::STYLING_INTERNAL::Vector right = GGUI::STYLING_INTERNAL::Vector(1.0f, 0.5f);
-        inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0.5f, 1.0f);
+
+        // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
+        inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(-0.5f, 0);
+        // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
+        inline GGUI::STYLING_INTERNAL::Vector top = GGUI::STYLING_INTERNAL::Vector(0, -0.5f);
+        // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
+        inline GGUI::STYLING_INTERNAL::Vector right = GGUI::STYLING_INTERNAL::Vector(0.5f, 0);
+        // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
+        inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0, 0.5f);
 
     };
 

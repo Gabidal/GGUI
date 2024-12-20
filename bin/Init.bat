@@ -1,5 +1,9 @@
 @echo off
-rem Initializes and builds GGUI locally.
+rem ----------------------------------------------------------------------------
+rem Initializes and builds the GGUI project locally. Ensures the script is run
+rem from the project root directory, checks for required tools (meson, g++),
+rem manages the build setup and compilation process, and provides user feedback.
+rem ----------------------------------------------------------------------------
 
 rem Function to check if the script is run from the project root or a subdirectory
 :check_directory
@@ -13,7 +17,7 @@ for /f "delims=" %%i in ('git rev-parse --show-toplevel 2^>nul') do set "project
 
 rem If git is not found or the project root is not determined
 if "%project_root%"=="" (
-    echo Unable to determine the project root directory. Make sure you're in the GGUI project.
+    echo Error: Unable to determine the project root directory. Ensure you're in the GGUI project.
     exit /b 1
 )
 
@@ -22,10 +26,16 @@ for %%i in ("%project_root%") do set "project_root_name_only=%%~nxi"
 if /i "%project_root_name_only%"=="%project_root_name%" (
     if /i "%current_dir%"=="%project_root%" (
         echo In the project root directory. Changing to 'bin' directory.
-        cd /d "%project_root%\%bin_dir_name%"
+        cd /d "%project_root%\%bin_dir_name%" || (
+            echo Error: Failed to change to 'bin' directory.
+            exit /b 1
+        )
     ) else (
         echo Changing to the 'bin' directory within the project.
-        cd /d "%project_root%\%bin_dir_name%"
+        cd /d "%project_root%\%bin_dir_name%" || (
+            echo Error: Failed to change to 'bin' directory.
+            exit /b 1
+        )
     )
 )
 
@@ -40,31 +50,44 @@ call :check_directory
 rem Check if meson is installed or not
 where meson >nul 2>nul
 if errorlevel 1 (
-    echo meson could not be found. Please install meson before running this script.
+    echo Error: meson could not be found. Please install meson before running this script.
     exit /b 1
 )
 
 rem Check if g++ is installed or not
 where g++ >nul 2>nul
 if errorlevel 1 (
-    echo g++ could not be found. Please install g++ before running this script.
+    echo Error: g++ could not be found. Please install g++ before running this script.
     exit /b 1
 )
 
-rem Check if g++ is in CXX variable
+rem Ensure the CXX environment variable is set (default to 'g++' if not)
 if "%CXX%"=="" (
     rem Set CXX to the value of 'g++'
     set "CXX=g++"
+    echo CXX environment variable not set. Defaulting to 'g++'.
 )
 
-rem Check if there is a ./Build folder
+rem Step 1: Set up the Build directory (wipe existing if necessary)
+echo Setting up the Build directory...
 if exist "Build" (
-    meson setup --wipe Build
+    meson setup --wipe Build || (
+        echo Error: Failed to set up the Build directory.
+        exit /b 1
+    )
 ) else (
-    meson setup Build
+    meson setup Build || (
+        echo Error: Failed to set up the Build directory.
+        exit /b 1
+    )
 )
 
-rem Now compile
-meson compile -C Build
+rem Step 2: Compile the project using meson
+echo Compiling the project...
+meson compile -C Build || (
+    echo Error: Compilation failed.
+    exit /b 1
+)
 
-echo Done!
+rem Completion message
+echo Build process completed successfully!

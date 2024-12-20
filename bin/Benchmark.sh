@@ -1,61 +1,87 @@
 #!/bin/bash
 
-# This bash script automaticaly creates an valgrind with callgrind support, 
-# then opens it with kcachegrind and then asks the user if they want to preserve the previous kcachegrind output, 
-# if so, then the script will add an .backup at the end of the file
+# ----------------------------------------------------------------------------
+# This script automates profiling for the GGUI project using Valgrind (with 
+# Callgrind) and then opens the results in KCachegrind for analysis.
+# It provides an option to enable maximum profiling and gives the user an 
+# opportunity to preserve or delete the profiling output.
+# 
+# Usage:
+#   $0 [OPTION]
+# 
+# Options:
+#   -F, -f     Enable maximum profiling (simulates cache, collects jumps, etc.).
+#   -h, --help Display this help message.
+# ----------------------------------------------------------------------------
 
-# This script also takes one argument: -F/-f, which puts the profiling into max.
-
-# check if -help was called
-if [ "$1" = "-help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ "$1" = "--h" ]; then
-    echo "This script is used to profile the GGUI project with valgrind and callgrind."
-    echo "This script takes one argument: -F/-f, which puts the profiling into max."
+# Function to display the help message.
+show_help() {
+    echo "Usage: $0 [OPTION]"
+    echo "Profiling script for the GGUI project with Valgrind and Callgrind."
+    echo
+    echo "Options:"
+    echo "  -F, -f     Enable maximum profiling (simulates cache, collects jumps, etc.)."
+    echo "  -h, --help Display this help message."
     exit 0
+}
+
+# Function to handle errors and exit gracefully with a message.
+handle_error() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+# Display help message if requested.
+if [[ "$1" =~ ^(-help|--help|-h|--h)$ ]]; then
+    show_help
 fi
 
-# First build a new build
-echo "Building new build"
+# Step 1: Verify and build the project.
+echo "Building the project..."
 
-# get current dir
 current_dir=$(pwd)
+build_script="$current_dir/bin/Build.sh"
 
-$current_dir/bin/Build.sh
+if [[ ! -f "$build_script" ]]; then
+    handle_error "Build script '$build_script' not found."
+fi
 
-# Since the valgrind will sadly remove build logs we need to add 1-3 seconds of sleep time for the user to be able to read
-echo "Starting benchmark..."
+"$build_script" || handle_error "Build process failed."
+
+# Step 2: Allow user to read the output before starting profiling.
+echo "Starting benchmark... You have a few seconds to read the output before profiling starts."
 sleep 3
 
-# Now run the built GGUI with valgrind with callgrind enabled
-echo "Running GGUI with valgrind with callgrind enabled"
+# Step 3: Determine the appropriate Valgrind profiling settings.
+echo "Running GGUI with Valgrind and Callgrind enabled..."
 
-# default valgrind settings: 
-Default_Settings=" --tool=callgrind --dump-instr=yes -s "
+DEFAULT_SETTINGS="--tool=callgrind --dump-instr=yes -s"
+FULL_SETTINGS="--tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes"
 
-Full_Settings=" --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes "
-
-# Now detemrine if the -F/-f arg was given
-Current_Flag=""
-if [ "$1" = "-F" ] || [ "$1" = "-f" ]; then
-    Current_Flag=$Full_Settings
+# Select profiling settings based on user input.
+if [[ "$1" =~ ^(-F|-f)$ ]]; then
+    CURRENT_FLAG=$FULL_SETTINGS
 else
-    Current_Flag=$Default_Settings
+    CURRENT_FLAG=$DEFAULT_SETTINGS
 fi
 
-valgrind $Current_Flag --callgrind-out-file=callgrind.out $current_dir/bin/Build/GGUI
+# Step 4: Run the application with Valgrind profiling.
+valgrind $CURRENT_FLAG --callgrind-out-file=callgrind.out "$current_dir/bin/Build/GGUI" || handle_error "Valgrind profiling failed."
 
-# Now we need to open the newly made profile file with kcachegrind
-echo "Opening the profile file with kcachegrind"
+# Step 5: Open the profiling results in KCachegrind.
+echo "Opening the profile file with KCachegrind..."
+kcachegrind callgrind.out || handle_error "Failed to open KCachegrind."
 
-kcachegrind callgrind.out
-
-# Now we can just wait until the user closes kcachegrind, when it does, just ask if the user wants to preserve the current profile, if no then just remove it. Default 'enter' to just remove it
+# Step 6: Ask the user whether to preserve or delete the profile output.
 echo "Do you want to preserve the current profile? [Y/n]"
 read -r answer
 
-if [ "$answer" = "Y" ] || [ "$answer" = "y" ]; then
+# Default action is to delete the file if no input is provided.
+if [[ "$answer" =~ ^(Y|y)$ ]]; then
     current_date=$(date '+%Y-%m-%d_%H-%M-%S')
-    mv callgrind.out callgrind.out.$current_date.backup
+    mv callgrind.out "callgrind.out.$current_date.backup"
+    echo "Profile saved as 'callgrind.out.$current_date.backup'."
 else
-    rm callgrind.out
+    rm -f callgrind.out
+    echo "Profile deleted."
 fi
-

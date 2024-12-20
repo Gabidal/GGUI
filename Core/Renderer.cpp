@@ -2415,15 +2415,13 @@ namespace GGUI{
                             title("LOG") | name(ERROR_LOGGER) | 
                             
                             position(
-                                (Max_Width - Error_Logger->Get_Width()) / 2,
-                                (Max_Height - Error_Logger->Get_Height()) / 2,
-                                INT32_MAX-1
+                                STYLES::top + STYLES::right + STYLING_INTERNAL::Vector(0, 0, INT32_MAX-1)
                             ) | 
                             
                             STYLES::border | allow_overflow(true) | 
 
                             node(new Scroll_View(Styling(
-                                width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
+                                width(1.0f) | height(1.0f) |
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                 flow_priority(DIRECTION::COLUMN) | name(HISTORY)
                             )))
@@ -2729,9 +2727,7 @@ namespace GGUI{
             flow_priority(DIRECTION::COLUMN) | 
             // Set the position of the list view to the right side of the main window
             position(
-                0, // Main->Get_Width() - (Main->Get_Width() / 2),
-                0,
-                INT32_MAX - 1
+                STYLES::top + STYLES::right + STYLING_INTERNAL::Vector(0, 0, INT32_MAX-1)
             ) | 
             // Set the opacity of the list view to 0.8
             opacity(0.8f) |
