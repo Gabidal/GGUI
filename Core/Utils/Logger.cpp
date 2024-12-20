@@ -8,14 +8,23 @@
 #include <vector>
 
 namespace GGUI{
+    namespace SETTINGS{
+        extern void Init_Settings();
+    }
+
     namespace LOGGER{
         // File handle for logging to files for Atomic access across different threads.
         Atomic::Guard<FILE_STREAM> Handle;
 
         void Init(){
             Handle([](GGUI::FILE_STREAM& self){
-                if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED)    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
-                    self = FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE);
+                if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED){    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
+                    if (SETTINGS::LOGGER::File_Name.size() == 0){
+                        SETTINGS::Init_Settings();
+                    }
+                    // *(&self) = std::move(*(new FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE)));
+                    new (&self) FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE);
+                }
             });
         }
 

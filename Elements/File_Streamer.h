@@ -268,7 +268,7 @@ namespace GGUI{
          */
         ~FILE_STREAM() {
             // Close the BUFFER_CAPTURE if it's active
-            if (Buffer_Capture)
+            if (Buffer_Capture && Type == FILE_STREAM_TYPE::STD_CAPTURE)
                 Buffer_Capture->Close();
 
             // Close the file handle

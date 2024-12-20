@@ -668,8 +668,9 @@ namespace GGUI{
     }
 
     /// @brief Reports the current stack trace along with a specified problem description.
-    /// @details This function captures the call stack, symbolically resolves the addresses, and formats the stack trace.
-    ///          The resulting formatted trace is then reported along with the provided problem description.
+    /// @details This function captures the call stack, symbolically resolves the addresses, 
+    ///          and formats the stack trace. The resulting formatted trace is then reported 
+    ///          along with the provided problem description.
     /// @param Problem A description of the problem to be reported with the stack trace.
     void Report_Stack(std::string Problem) {
         const int Stack_Trace_Depth = 10;
@@ -682,33 +683,39 @@ namespace GGUI{
         process = GetCurrentProcess();
 
         // Initialize the symbol handler for the process
-        SymInitialize(process, NULL, TRUE);
+        if (!SymInitialize(process, NULL, TRUE)) {
+            std::cerr << "Error: Failed to initialize symbol handler." << std::endl;
+            return;
+        }
 
         // Capture the stack backtrace
         Usable_Depth = CaptureStackBackTrace(0, Stack_Trace_Depth, Ptr_Table, NULL);
 
-        // Allocate memory for a SYMBOL_INFO structure with space for a name
+        // Allocate memory for SYMBOL_INFO structure with space for a name
         symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+        if (!symbol) {
+            std::cerr << "Error: Memory allocation for SYMBOL_INFO failed." << std::endl;
+            return;
+        }
         symbol->MaxNameLen = 255;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-
-        // Update maximum width and height if not already set
-        if (Max_Width == 0) {
-            Update_Max_Width_And_Height();
-        }
 
         // Initialize result string with a header
         std::string Result = "Stack Trace:\n";
         int Usable_Stack_Index = 0;
-        bool Use_Indent = Usable_Depth < (Max_Width / 2);
+        bool Use_Indent = Usable_Depth < (Max_Width / 2);  // Assuming Max_Width is predefined
 
         // Iterate over the captured stack frames
         for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++) {
             // Resolve the symbol from the address
-            SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol);
+            bool Probable_Lambda = false;
+            if (!SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol)) {
+                LOGGER::Log("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
+                Probable_Lambda = true;
+            }
 
             // Skip empty symbol names
-            if (symbol->Name[0] == 0)
+            if (symbol->Name[0] == 0 && !Probable_Lambda)
                 continue;
 
             // Determine the branch start symbol
@@ -721,8 +728,25 @@ namespace GGUI{
             for (int i = 0; i < Usable_Stack_Index && Use_Indent; i++)
                 Indent += "-";
 
+            // Add symbol and file information
+            std::string line_info;
+            IMAGEHLP_LINE64 line;
+            line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+            DWORD dwDisplacement = 0;
+
+            // Get line number if possible
+            if (SymGetLineFromAddr64(process, (DWORD64)(Ptr_Table[Stack_Index]), &dwDisplacement, &line)) {
+                line_info = " (" + std::string(line.FileName) + ": " + std::to_string(line.LineNumber) + ")";
+            } else {
+                line_info = " (unknown file: unknown line)";
+            }
+
+            if (Probable_Lambda){
+                line_info = " (probably a lambda): " + line_info;
+            }
+
             // Append the formatted stack frame info to the result
-            Result += Branch_Start + Indent + " " + symbol->Name + "\n";
+            Result += Branch_Start + Indent + " " + symbol->Name + line_info + "\n";
             Usable_Stack_Index++;
         }
 
@@ -733,8 +757,9 @@ namespace GGUI{
         Result += "Problem: " + Problem;
 
         // Report the final result
-        Report(Result);
+        Report(Result);  // Assuming `Report()` is defined elsewhere to log the result.
     }
+
 
     #else
     #include <sys/ioctl.h>

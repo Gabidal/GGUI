@@ -150,7 +150,7 @@ namespace GGUI{
             On_Change.push_back(on_change);
         
         if (!Handle.is_open()) {
-            // GGUI::Report("Could not open file: '" + File_Name + "' !");
+            std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
         }
 
         // Check if there is already a file handle for this file name

@@ -31,6 +31,8 @@ namespace GGUI{
         class BUFFER_CAPTURE;
 
         extern std::string Now();
+
+        extern std::string Construct_Logger_File_Name();
     }
 
     extern void Report_Stack(std::string Problem);

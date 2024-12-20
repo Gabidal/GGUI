@@ -10,20 +10,19 @@
 project(
   'GGUI', 'cpp',
   version : '0.1.8',
-  # Default build options
-  default_options : [
-    'warning_level=3',           # Set warning level to 3 (most verbose)
-    'cpp_std=c++17',             # Use C++17 standard
-    'debug=true',                # Enable debugging (set to false for release builds)
-    'buildtype=debug'            # Default build type (can be changed to release or profile)
-  ]
+  #DEBUG
+  default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
+  #RELEASE
+  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=false', 'buildtype=release', 'optimization=3']
+  #PROFILE
+  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
 )
 
 # Build type options
 DEBUG = 1
 RELEASE = 2
 PROFILE = 3
-TYPE = DEBUG  # Change this to RELEASE or PROFILE for different build types
+TYPE = PROFILE  # Change this to RELEASE or PROFILE for different build types
 
 # Source files for the project
 sources = [
@@ -59,7 +58,7 @@ AVX     = '-mavx'
 AVX512  = '-mavx512f'
 
 # Default SIMD mode (can be adjusted for specific requirements)
-SIMD_MODE = AVX
+SIMD_MODE = ''
 
 # Common C++ compiler flags
 cpp_args = [
@@ -73,7 +72,9 @@ if host_machine.system() == 'android'
   message('Android environment detected: Disabling SIMD flags')
   # Disable SIMD flags on Android due to potential compatibility issues
 else
-  cpp_args += [SIMD_MODE]
+  if SIMD_MODE != ''
+    cpp_args += [SIMD_MODE]  # Only add SIMD_MODE if it's not empty
+  endif
 endif
 
 # Linker arguments (e.g., libraries)
