@@ -694,7 +694,7 @@ namespace GGUI{
         // Allocate memory for SYMBOL_INFO structure with space for a name
         symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
         if (!symbol) {
-            std::cerr << "Error: Memory allocation for SYMBOL_INFO failed." << std::endl;
+            Report("Error: Memory allocation for SYMBOL_INFO failed.");
             return;
         }
         symbol->MaxNameLen = 255;
@@ -710,7 +710,7 @@ namespace GGUI{
             // Resolve the symbol from the address
             bool Probable_Lambda = false;
             if (!SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol)) {
-                LOGGER::Log("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
+                Report("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
                 Probable_Lambda = true;
             }
 
@@ -765,7 +765,9 @@ namespace GGUI{
     #include <sys/ioctl.h>
     #include <signal.h>
     #include <termios.h>
-    #include <execinfo.h>
+    #include <execinfo.h>   // for stacktrace
+    #include <dlfcn.h>      // For stacktrace
+    #include <cxxabi.h>     // For stacktrace
 
     int Previous_Flags = 0;
     struct termios Previous_Raw;
@@ -1274,61 +1276,76 @@ namespace GGUI{
 
     /**
      * @brief Reports the current stack trace along with a specified problem description.
-     *        This function captures the call stack, symbolically resolves the addresses, and formats the stack trace.
+     *        Captures the call stack, symbolically resolves the addresses, and formats the stack trace.
      *        The resulting formatted trace is then reported along with the provided problem description.
-     * @param Problem A description of the problem to be reported with the stack trace.
+     * @param problem A description of the problem to be reported with the stack trace.
      */
-    void Report_Stack(std::string Problem) {
-        // This is required for GGUI to work in Android, since Androids own STD is primitive in terms of stack tracing.
-        // TODO: use Evie to dismantle the running exec stack with name table.
-        #ifndef __ANDROID__
-            const int Stack_Trace_Depth = 10;
-            size_t *Ptr_Table[Stack_Trace_Depth];
+    void Report_Stack(const std::string problem) {
+    #ifndef __ANDROID__
+        const int Stack_Trace_Depth = 10;
+        void* ptr_table[Stack_Trace_Depth];
 
+        // Capture the stack trace and retrieve the number of valid frames
+        int usable_depth = backtrace(ptr_table, Stack_Trace_Depth);
 
-            // Declare a pointer to an array of strings. This will hold the symbol names of the stack trace
-            char **Name_Table;
+        // Convert stack addresses to symbolic names
+        char** name_table = backtrace_symbols(ptr_table, usable_depth);
+        if (!name_table) {
+            Report("Error: Failed to retrieve stack trace symbols. Original problem: " + problem);
+            return;
+        }
 
-            // Get the stack trace and store it in the array. The return value is the number of stack frames obtained
-            size_t Usable_Depth = backtrace(reinterpret_cast<void**>(Ptr_Table), Stack_Trace_Depth);
+        // Ensure the maximum width is set for proper indentation
+        if (Max_Width == 0) {
+            Update_Max_Width_And_Height();
+        }
 
-            // Convert the addresses in the stack trace into an array of strings that describe the addresses symbolically
-            Name_Table = backtrace_symbols(reinterpret_cast<void**>(Ptr_Table), Usable_Depth);
+        // Construct the stack trace message
+        std::string result = "Stack Trace:\n";
+        bool use_indent = (unsigned)usable_depth < (Max_Width / 2);
 
-            if (Max_Width == 0) {
-                Update_Max_Width_And_Height();
+        for (int stack_index = 0; stack_index < usable_depth; ++stack_index) {
+            Dl_info info;
+            std::string branch_start = (stack_index == usable_depth - 1) ? "\\" : "|";  // Use '\' for the last entry
+            std::string indent;
+
+            // Add indentation based on stack depth if enabled
+            if (use_indent) {
+                indent = std::string(stack_index, '-');
             }
 
-            // Now that we have the stack frame label names in the Name_Table list, we can construct an visually appeasing stack trace information:
-            std::string Result = "Stack Trace:\n";
+            // Resolve symbols using dladdr
+            if (dladdr(ptr_table[stack_index], &info) && info.dli_sname) {
+                // Attempt to demangle the symbol name
+                int status = 0;
+                char* demangled_name = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
+                std::string function_name = (status == 0) ? demangled_name : info.dli_sname;
+                free(demangled_name);
 
-            bool Use_Indent = Usable_Depth < (Max_Width / 2);
-            for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++) {
-                std::string Branch_Start = "|"; //SYMBOLS::VERTICAL_RIGHT_CONNECTOR;                // No UNICODE support ATM
-
-                // For last branch use different branch start symbol
-                if (Stack_Index == Usable_Depth - 1)
-                    Branch_Start = "\\"; //SYMBOLS::BOTTOM_LEFT_CORNER;                             // No UNICODE support ATM
-
-                // now add indentation by the amount of index:
-                std::string Indent = "";
-
-                for (unsigned int i = 0; i < Stack_Index && Use_Indent; i++)
-                    Indent += "-"; //SYMBOLS::HORIZONTAL_LINE;                                      // No UNICODE support ATM
-
-                Result += Branch_Start + Indent + " " + Name_Table[Stack_Index] + "\n";
+                // Append the frame information to the result
+                result += branch_start + indent + " " + function_name;
+                if (info.dli_fname) {
+                    result += " (in " + std::string(info.dli_fname) + ")";
+                }
+                result += "\n";
+            } else {
+                // Fallback to raw name if dladdr fails
+                result += branch_start + indent + " " + name_table[stack_index] + " (unknown symbol)\n";
             }
+        }
 
-            // Free the memory allocated for the string array
-            free(Name_Table);
+        // Free allocated memory for name_table
+        free(name_table);
 
-            // now add the problem into the message
-            Result += "Problem: " + Problem;
+        // Append the problem description
+        result += "Problem: " + problem;
 
-            Report(Result);
-        #endif
-
-        Report(Problem);
+        // Send the formatted stack trace to the Report function
+        Report(result);
+    #else
+        // Fallback for unsupported platforms
+        Report(problem);
+    #endif
     }
 
     #endif

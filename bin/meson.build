@@ -15,7 +15,7 @@ project(
   #RELEASE
   #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=false', 'buildtype=release', 'optimization=3']
   #PROFILE
-  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
+  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug', 'b_ndebug=false', 'b_lto=false']
 )
 
 # Build type options
@@ -82,8 +82,8 @@ link_args = []
 
 # Profiling setup (only enabled for the PROFILE build type)
 if TYPE == PROFILE
-  cpp_args += ['-pg']           # Enable profiling flags for GCC
-  link_args += ['-pg']          # Link with profiling support
+  cpp_args += ['-pg','-rdynamic']           # Enable profiling flags for GCC
+  link_args += ['-pg']                      # Link with profiling support
 endif
 
 # Windows-specific settings (e.g., for debugging)

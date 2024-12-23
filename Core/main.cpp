@@ -22,7 +22,7 @@ int main()
                 );
             })
         )))
-    ), INT32_MAX);
+    ), 100);
 
     GGUI::Exit();
 }
