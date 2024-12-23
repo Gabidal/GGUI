@@ -7,7 +7,7 @@
 #include <variant>
 #include <array>
 #include <string>
-
+#include <cassert>
 
 namespace GGUI{
     // Externies
@@ -273,6 +273,12 @@ namespace GGUI{
              * @return The evaluation type of the variant.
              */
             constexpr EVALUATION_TYPE Get_Type() { return evaluation_type; }
+
+            /**
+             * Get the evaluation type of the variant.
+             * @return The evaluation type of the variant.
+             */
+            constexpr EVALUATION_TYPE Get_Type() const { return evaluation_type; }
 
             /**
              * @brief Direct access to the underlying data of the variant.
@@ -909,11 +915,25 @@ namespace GGUI{
                 Status = VALUE_STATE::VALUE;
             }
 
-            Vector operator+(const Vector& other){
+            Vector operator+(const Vector& other) {
+                // check if debug mode is on
+                #ifdef GGUI_DEBUG
+                assert(X.Get_Type() != other.X.Get_Type() && "two different evaluation types for X");
+                assert(Y.Get_Type() != other.Y.Get_Type() && "two different evaluation types for Y");
+                assert(Z.Get_Type() != other.Z.Get_Type() && "two different evaluation types for Z");
+                #endif
+
                 return Vector(X + other.X, Y + other.Y, Z + other.Z);
             }
 
             Vector operator-(const Vector& other){
+                // check if debug mode is on
+                #ifdef GGUI_DEBUG
+                assert(X.Get_Type() != other.X.Get_Type() && "two different evaluation types for X");
+                assert(Y.Get_Type() != other.Y.Get_Type() && "two different evaluation types for Y");
+                assert(Z.Get_Type() != other.Z.Get_Type() && "two different evaluation types for Z");
+                #endif
+
                 return Vector(X - other.X, Y - other.Y, Z - other.Z);
             }
         
@@ -2011,13 +2031,13 @@ namespace GGUI{
         inline display hide = display(false, VALUE_STATE::VALUE);
 
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(-0.5f, 0);
+        inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(-0.5f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector top = GGUI::STYLING_INTERNAL::Vector(0, -0.5f);
+        inline GGUI::STYLING_INTERNAL::Vector top = GGUI::STYLING_INTERNAL::Vector(0.0f, -0.5f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector right = GGUI::STYLING_INTERNAL::Vector(0.5f, 0);
+        inline GGUI::STYLING_INTERNAL::Vector right = GGUI::STYLING_INTERNAL::Vector(0.5f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0, 0.5f);
+        inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.5f);
 
     };
 

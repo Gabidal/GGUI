@@ -22,7 +22,7 @@ project(
 DEBUG = 1
 RELEASE = 2
 PROFILE = 3
-TYPE = PROFILE  # Change this to RELEASE or PROFILE for different build types
+TYPE = DEBUG  # Change this to RELEASE or PROFILE for different build types
 
 # Source files for the project
 sources = [
@@ -75,6 +75,15 @@ else
   if SIMD_MODE != ''
     cpp_args += [SIMD_MODE]  # Only add SIMD_MODE if it's not empty
   endif
+endif
+
+# Add custom flags based on build type
+if TYPE == DEBUG
+  cpp_args += ['-DGGUI_DEBUG']
+elif TYPE == RELEASE
+  cpp_args += ['-DGGUI_RELEASE']
+elif TYPE == PROFILE
+  cpp_args += ['-DGGUI_PROFILE', '-DGGUI_DEBUG']
 endif
 
 # Linker arguments (e.g., libraries)
