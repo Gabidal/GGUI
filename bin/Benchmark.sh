@@ -28,7 +28,7 @@ show_help() {
 # Function to handle errors and exit gracefully with a message.
 handle_error() {
     echo "Error: $1" >&2
-    exit 1
+    # exit 1
 }
 
 # Display help message if requested.
