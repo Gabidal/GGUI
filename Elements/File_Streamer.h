@@ -237,16 +237,17 @@ namespace GGUI{
 
         /**
          * @brief Constructor of the FILE_STREAM class.
-         * @param File_Name The name of the file to open.
+         * @param file_name The name of the file to open.
          * @param on_change The event handler to be called when the file is changed.
-         * @param read_from_std_cout If true, the file stream will be used to pipe the std::cout into the file.
+         * @param type describes the pipe method, READ/WRITE/STD_CAPTURE
+         * @param atomic If set will not add the file stream to the amassed file stream handle service.
          *
          * If read_from_std_cout is true, a new file is created where the std::cout is piped into.
          * If there is already a file handle for this file name, the event handler is added to the list of event
          * handlers for that file. If not, a new file handle is created and the event handler is added to the list
          * of event handlers for the new file.
          */
-        FILE_STREAM(std::string File_Name, std::function<void()> on_change, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ);
+        FILE_STREAM(std::string file_name, std::function<void()> on_change, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
 
         /**
          * @brief Intended for Logger Atomic::Guard, do not use as User!

@@ -918,9 +918,9 @@ namespace GGUI{
             Vector operator+(const Vector& other) {
                 // check if debug mode is on
                 #ifdef GGUI_DEBUG
-                assert(X.Get_Type() != other.X.Get_Type() && "two different evaluation types for X");
-                assert(Y.Get_Type() != other.Y.Get_Type() && "two different evaluation types for Y");
-                assert(Z.Get_Type() != other.Z.Get_Type() && "two different evaluation types for Z");
+                assert(X.Get_Type() == other.X.Get_Type() && "two different evaluation types for X");
+                assert(Y.Get_Type() == other.Y.Get_Type() && "two different evaluation types for Y");
+                assert(Z.Get_Type() == other.Z.Get_Type() && "two different evaluation types for Z");
                 #endif
 
                 return Vector(X + other.X, Y + other.Y, Z + other.Z);
@@ -2038,6 +2038,8 @@ namespace GGUI{
         inline GGUI::STYLING_INTERNAL::Vector right = GGUI::STYLING_INTERNAL::Vector(0.5f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
         inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.5f);
+        // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
+        inline GGUI::STYLING_INTERNAL::Vector center = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f);
 
     };
 

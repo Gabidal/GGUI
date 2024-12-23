@@ -129,8 +129,8 @@ namespace GGUI{
      * handlers for that file. If not, a new file handle is created and the event handler is added to the list
      * of event handlers for the new file.
      */
-    FILE_STREAM::FILE_STREAM(std::string File_Name, std::function<void()> on_change, FILE_STREAM_TYPE type){
-        Name = File_Name;
+    FILE_STREAM::FILE_STREAM(std::string file_name, std::function<void()> on_change, FILE_STREAM_TYPE type, bool atomic){
+        Name = file_name;
         Type = type;
 
         int STD_Type = 0;
@@ -153,16 +153,19 @@ namespace GGUI{
             std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
         }
 
-        // Check if there is already a file handle for this file name
-        auto it = File_Streamer_Handles.find(File_Name);
+        if (!atomic){
+            // Check if there is already a file handle for this file name
+            auto it = File_Streamer_Handles.find(file_name);
 
-        // If there is not, create one.
-        if (it == File_Streamer_Handles.end()){
-            File_Streamer_Handles[File_Name] = this;
-        }
-        // If there is, add the handle to the list.
-        else{
-            it->second->Add_On_Change_Handler(on_change);
+            // If there is not, create one.
+            if (it == File_Streamer_Handles.end()){
+                File_Streamer_Handles[file_name] = this;
+            }
+            // If there is, add the handle to the list.
+            else{
+                // TODO: add one method for ATOMIC::GUARDED file streams.
+                it->second->Add_On_Change_Handler(on_change);
+            }
         }
     }
 

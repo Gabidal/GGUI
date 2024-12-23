@@ -22,8 +22,7 @@ namespace GGUI{
                     if (SETTINGS::LOGGER::File_Name.size() == 0){
                         SETTINGS::Init_Settings();
                     }
-                    // *(&self) = std::move(*(new FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE)));
-                    new (&self) FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE);
+                    new (&self) FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE, true);
                 }
             });
         }
@@ -50,6 +49,13 @@ namespace GGUI{
 
                 // Write the time and the text into the log file.
                 self.Append(now + Text);
+            });
+        }
+
+        void Close(){
+            // Separately destruct the logger file handle
+            Handle([](GGUI::FILE_STREAM& self){
+                self.~FILE_STREAM();
             });
         }
     }

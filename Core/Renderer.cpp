@@ -610,6 +610,11 @@ namespace GGUI{
             File_Handle.second->~FILE_STREAM(); // Manually call destructor to release resources
         }
 
+        File_Streamer_Handles.clear();
+
+        // Separately destruct the logger file handle
+        LOGGER::Close();
+
         // Restore previous console modes
         SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
         SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
@@ -788,6 +793,11 @@ namespace GGUI{
         for (auto File_Handle : File_Streamer_Handles){
             File_Handle.second->~FILE_STREAM();
         }
+        
+        File_Streamer_Handles.clear();
+        
+        // Separately destruct the logger file handle
+        LOGGER::Close();
 
         // Restore default cursor visibility
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
@@ -2174,7 +2184,7 @@ namespace GGUI{
     void Go_Through_File_Streams(){
         for (auto& File_Handle : File_Streamer_Handles){
             // Check if the file handle is not a standard output stream
-            if (!File_Handle.second->Is_Cout_Stream()) {
+            if (File_Handle.second->Get_type() == FILE_STREAM_TYPE::READ) {
                 // Trigger change event for the file stream
                 File_Handle.second->Changed();
             }
@@ -2457,7 +2467,7 @@ namespace GGUI{
                             title("LOG") | name(ERROR_LOGGER) | 
                             
                             position(
-                                STYLES::top + STYLES::right + STYLING_INTERNAL::Vector(0, 0, INT32_MAX-1)
+                                STYLES::top + STYLES::center + STYLING_INTERNAL::Vector(0.0f, 0.0f, INT32_MAX-1)
                             ) | 
                             
                             STYLES::border | allow_overflow(true) | 
@@ -2769,7 +2779,7 @@ namespace GGUI{
             flow_priority(DIRECTION::COLUMN) | 
             // Set the position of the list view to the right side of the main window
             position(
-                STYLES::top + STYLES::right + STYLING_INTERNAL::Vector(0, 0, INT32_MAX-1)
+                STYLES::top + STYLES::center + STYLING_INTERNAL::Vector(0.0f, 0.0f, INT32_MAX-1)
             ) | 
             // Set the opacity of the list view to 0.8
             opacity(0.8f) |
