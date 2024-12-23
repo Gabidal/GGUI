@@ -15,8 +15,6 @@ namespace GGUI{
         extern void Init();
 
         extern void Log(std::string Text);
-
-        extern void Close();
     };
 }
 

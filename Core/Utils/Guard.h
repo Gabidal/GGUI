@@ -36,6 +36,14 @@ namespace GGUI{
                     return;
                 }
             }
+        
+            // TODO: enable this code when switched T into T*
+            // Automatically handle the destruction of the atomically handled object.
+            ~Guard(){
+                // (*this)([](T& self){
+                //     self.~T();
+                // });
+            }
         };   
     }
 }

@@ -78,6 +78,8 @@ namespace GGUI{
     class Carry{
     public:
         bool Resize = false;
+
+        ~Carry() = default;
     };
 
     Atomic::Guard<Carry> Carry_Flags; 
@@ -612,9 +614,6 @@ namespace GGUI{
 
         File_Streamer_Handles.clear();
 
-        // Separately destruct the logger file handle
-        LOGGER::Close();
-
         // Restore previous console modes
         SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
         SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
@@ -795,9 +794,6 @@ namespace GGUI{
         }
         
         File_Streamer_Handles.clear();
-        
-        // Separately destruct the logger file handle
-        LOGGER::Close();
 
         // Restore default cursor visibility
         std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();

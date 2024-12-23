@@ -51,12 +51,5 @@ namespace GGUI{
                 self.Append(now + Text);
             });
         }
-
-        void Close(){
-            // Separately destruct the logger file handle
-            Handle([](GGUI::FILE_STREAM& self){
-                self.~FILE_STREAM();
-            });
-        }
     }
 }
