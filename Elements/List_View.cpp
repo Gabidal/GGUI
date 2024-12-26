@@ -111,7 +111,7 @@ void GGUI::List_View::Add_Child(Element* e) {
         Dirty.Dirty(STAIN_TYPE::DEEP);
 
         // Add the child element to the internal structures.
-        Element_Names.insert({e->Get_Name(), e});
+        INTERNAL::Element_Names.insert({e->Get_Name(), e});
         Style->Childs.push_back(e);
     });
 }
@@ -320,13 +320,13 @@ void GGUI::Scroll_View::Allow_Scrolling(bool allow) {
     bool Scroll_Down_Event_Exists = false;
 
     // Check if scrolling events already exist for this Scroll_View
-    for (unsigned int i = 0; i < GGUI::Event_Handlers.size(); i++) {
-        if (GGUI::Event_Handlers[i]->Host != this)
+    for (unsigned int i = 0; i < GGUI::INTERNAL::Event_Handlers.size(); i++) {
+        if (GGUI::INTERNAL::Event_Handlers[i]->Host != this)
             continue;
 
-        if (GGUI::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_UP)
+        if (GGUI::INTERNAL::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_UP)
             Scroll_Up_Event_Exists = true;
-        else if (GGUI::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_DOWN)
+        else if (GGUI::INTERNAL::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_DOWN)
             Scroll_Down_Event_Exists = true;
     }
 

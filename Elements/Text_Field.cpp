@@ -13,7 +13,7 @@ namespace GGUI{
 
         if (Text_Cache.capacity() < 1){
             // This should not happen
-            Report_Stack("Internal error with zero capacity in: " + this->Get_Name());
+            INTERNAL::Report_Stack("Internal error with zero capacity in: " + this->Get_Name());
         }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
@@ -365,7 +365,7 @@ namespace GGUI{
             },
             this
         );
-        GGUI::Event_Handlers.push_back(key_press);
+        GGUI::INTERNAL::Event_Handlers.push_back(key_press);
 
         Action* enter = new Action(
             Constants::ENTER,
@@ -385,7 +385,7 @@ namespace GGUI{
             },
             this
         );
-        GGUI::Event_Handlers.push_back(enter);
+        GGUI::INTERNAL::Event_Handlers.push_back(enter);
 
         Action* back_space = new Action(
             Constants::BACKSPACE,
@@ -405,7 +405,7 @@ namespace GGUI{
             },
             this
         );
-        GGUI::Event_Handlers.push_back(back_space);
+        GGUI::INTERNAL::Event_Handlers.push_back(back_space);
     }
 
 }

@@ -142,9 +142,9 @@ namespace GGUI{
      */
     Terminal_Canvas::~Terminal_Canvas() {
         // Check if this Terminal_Canvas is in the multi-frame list
-        if (Multi_Frame_Canvas.find(this) != Multi_Frame_Canvas.end()) {
+        if (INTERNAL::Multi_Frame_Canvas.find(this) != INTERNAL::Multi_Frame_Canvas.end()) {
             // Remove the canvas from the multi-frame list
-            Multi_Frame_Canvas.erase(this);
+            INTERNAL::Multi_Frame_Canvas.erase(this);
         }
 
         // Call the base class destructor to clean up parent resources
@@ -172,8 +172,8 @@ namespace GGUI{
         }
 
         // Check for multi-frame support and update the management map if needed.
-        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && Multi_Frame_Canvas.find(this) == Multi_Frame_Canvas.end()){
-            Multi_Frame_Canvas[this] = true;
+        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
+            INTERNAL::Multi_Frame_Canvas[this] = true;
             Multi_Frame = true;
         }
 
@@ -206,8 +206,8 @@ namespace GGUI{
         }
 
         // Check for multi-frame support and update the management map if needed.
-        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && Multi_Frame_Canvas.find(this) == Multi_Frame_Canvas.end()){
-            Multi_Frame_Canvas[this] = true;
+        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
+            INTERNAL::Multi_Frame_Canvas[this] = true;
             Multi_Frame = true;
         }
 
@@ -421,7 +421,7 @@ namespace GGUI{
 
         // first check that the embed-able vector is within the usable area.
         if (pixels.size() != Usable_Width * Usable_Height){
-            Report_Stack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((Get_Width() - 2 * Has_Border()) * (Get_Height() - 2 * Has_Border())) + " Got: " + std::to_string(pixels.size()));
+            INTERNAL::Report_Stack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((Get_Width() - 2 * Has_Border()) * (Get_Height() - 2 * Has_Border())) + " Got: " + std::to_string(pixels.size()));
         }
 
         std::unordered_map<unsigned int, const char*> custom_border = Get_Custom_Border_Map(border_style);

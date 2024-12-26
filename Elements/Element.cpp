@@ -260,23 +260,23 @@ GGUI::Element::~Element(){
     delete Style;
 
     //now also update the event handlers.
-    for (unsigned int i = 0; i < Event_Handlers.size(); i++)
-        if (Event_Handlers[i]->Host == this){
+    for (unsigned int i = 0; i < INTERNAL::Event_Handlers.size(); i++)
+        if (INTERNAL::Event_Handlers[i]->Host == this){
             
             //delete the event
-            delete Event_Handlers[i];
+            delete INTERNAL::Event_Handlers[i];
 
             //remove the event from the list
-            Event_Handlers.erase(Event_Handlers.begin() + i);
+            INTERNAL::Event_Handlers.erase(INTERNAL::Event_Handlers.begin() + i);
         }
 
     // Now make sure that if the Focused_On element points to this element, then set it to nullptr
     if (Is_Focused())
-        GGUI::Focused_On = nullptr;
+        GGUI::INTERNAL::Focused_On = nullptr;
 
     // Now make sure that if the Hovered_On element points to this element, then set it to nullptr
     if (Is_Hovered())
-        GGUI::Hovered_On = nullptr;
+        GGUI::INTERNAL::Hovered_On = nullptr;
 }   
 
 // @brief Marks the Element as fully dirty by setting all stain types.
@@ -393,7 +393,7 @@ std::pair<GGUI::RGB, GGUI::RGB> GGUI::Element::Compose_All_Border_RGB_Values(){
  */
 void GGUI::Element::Set_Opacity(float Opacity){
     if (Opacity > 1.0f)
-        Report_Stack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + Get_Name());
+        INTERNAL::Report_Stack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + Get_Name());
 
     Style->Opacity.Set(Opacity);
 
@@ -411,7 +411,7 @@ void GGUI::Element::Set_Opacity(unsigned int Opacity) {
     // Check if the provided opacity is within valid range (0-100)
     if (Opacity > 100) {
         // Report an error if the opacity value is too high
-        Report_Stack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + Get_Name());
+        INTERNAL::Report_Stack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + Get_Name());
     }
 
     // Convert the opacity percentage to a float value between 0.0 and 1.0 and set it
@@ -581,7 +581,7 @@ void GGUI::Element::Parse_Classes(){
         Style = new Styling();
     }
 
-    GGUI::Classes([this](auto* classes){
+    GGUI::INTERNAL::Classes([this](auto* classes){
         //Go through all classes and their styles and accumulate them.
         for(auto Class : Classes){
 
@@ -674,9 +674,9 @@ void GGUI::Element::Set_Style(Styling css){
  */
 void GGUI::Element::Add_Class(std::string class_name){
     // Check if the class already exists in the global class map.
-    if (Class_Names.find(class_name) != Class_Names.end()) {
+    if (INTERNAL::Class_Names.find(class_name) != INTERNAL::Class_Names.end()) {
         // If the class already exists, add the existing ID to the element's class list.
-        Classes.push_back(Class_Names[class_name]);
+        Classes.push_back(INTERNAL::Class_Names[class_name]);
     }
     else {
         // If the class does not exist, assign a new ID to the class and add it to the element's class list.
@@ -697,7 +697,7 @@ void GGUI::Element::Add_Class(std::string class_name){
  */
 bool GGUI::Element::Has(std::string s) const {
     //first convert the string to the ID
-    int id = Class_Names[s];
+    int id = INTERNAL::Class_Names[s];
 
     //then check if the element has the class
     for (unsigned int i = 0; i < Classes.size(); i++) {
@@ -811,7 +811,7 @@ void GGUI::Element::Add_Child(Element* Child){
     Dirty.Dirty(STAIN_TYPE::DEEP);
 
     // Add the child element to the parent's child list
-    Element_Names.insert({Child->Name, Child});
+    INTERNAL::Element_Names.insert({Child->Name, Child});
 
     Style->Childs.push_back(Child);
 
@@ -863,8 +863,8 @@ bool GGUI::Element::Remove(Element* handle){
     for (unsigned int i = 0; i < Style->Childs.size(); i++){
         if (Style->Childs[i] == handle){
             // If the mouse is focused on this about to be deleted element, change mouse position into it's parent Position.
-            if (Focused_On == Style->Childs[i]){
-                Mouse = Style->Childs[i]->Parent->Style->Position.Get();
+            if (INTERNAL::Focused_On == Style->Childs[i]){
+                INTERNAL::Mouse = Style->Childs[i]->Parent->Style->Position.Get();
             }
 
             delete handle;
@@ -962,8 +962,8 @@ bool GGUI::Element::Remove(unsigned int index){
     Element* tmp = Style->Childs[index];
 
     // If the mouse is currently focused on the element that is about to be deleted, change the mouse position into the element's parent position.
-    if (Focused_On == tmp){
-        Mouse = tmp->Parent->Style->Position.Get();
+    if (INTERNAL::Focused_On == tmp){
+        INTERNAL::Mouse = tmp->Parent->Style->Position.Get();
     }
 
     // Delete the element at the specified index from the vector of child elements.
@@ -1138,7 +1138,7 @@ GGUI::Element* GGUI::Element::Copy(){
     *new_element->Style = *this->Style;
 
     //now also update the event handlers.
-    for (auto& e : Event_Handlers){
+    for (auto& e : INTERNAL::Event_Handlers){
 
         if (e->Host == this){
             //copy the event and make a new one
@@ -1148,7 +1148,7 @@ GGUI::Element* GGUI::Element::Copy(){
             new_action->Host = new_element;
 
             //add the new action to the event handlers list
-            Event_Handlers.push_back(new_action);
+            INTERNAL::Event_Handlers.push_back(new_action);
         }
     }
 
@@ -1167,9 +1167,9 @@ void GGUI::Element::Embed_Styles(){
     // If this is true, then the user probably:
     // A.) Doesn't know what the fuck he is doing.
     // B.) He is trying to use the OUTBOX feature.
-    if (GGUI::Main == nullptr){
+    if (GGUI::INTERNAL::Main == nullptr){
         // Lets go with B.
-        Report_Stack("OUTBOX not supported, cannot anchor: " + Get_Name());
+        INTERNAL::Report_Stack("OUTBOX not supported, cannot anchor: " + Get_Name());
     }
 
     Style->Embed_Styles(this);
@@ -1263,15 +1263,15 @@ std::pair<unsigned int, unsigned int> GGUI::Element::Get_Limit_Dimensions(){
     }
     else{
         // If the element does not have a parent, then get the maximum dimensions from the main window.
-        if ((Element*)this == (Element*)GGUI::Main){
+        if ((Element*)this == (Element*)GGUI::INTERNAL::Main){
             // If the element is the main window, then get the maximum dimensions directly.
-            max_width = Max_Width;
-            max_height = Max_Height;
+            max_width = INTERNAL::Max_Width;
+            max_height = INTERNAL::Max_Height;
         }
         else{
             // If the element is not the main window, then get the maximum dimensions from the main window minus 2 for the border offset.
-            max_width = GGUI::Main->Get_Width() - GGUI::Main->Has_Border() * 2;
-            max_height = GGUI::Main->Get_Height() - GGUI::Main->Has_Border() * 2;
+            max_width = GGUI::INTERNAL::Main->Get_Width() - GGUI::INTERNAL::Main->Has_Border() * 2;
+            max_height = GGUI::INTERNAL::Main->Get_Height() - GGUI::INTERNAL::Main->Has_Border() * 2;
         }
     }
 
@@ -2125,7 +2125,7 @@ void GGUI::Element::On_Click(std::function<bool(GGUI::Event*)> action){
         Constants::MOUSE_LEFT_CLICKED,
         [this, action](GGUI::Event* e){
             // If the element is under the mouse cursor when it is clicked
-            if (Collides(this, Mouse)){
+            if (Collides(this, INTERNAL::Mouse)){
                 // Construct an Action from the Event obj
                 GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this);
 
@@ -2140,7 +2140,7 @@ void GGUI::Element::On_Click(std::function<bool(GGUI::Event*)> action){
         },
         this
     );
-    GGUI::Event_Handlers.push_back(a);
+    GGUI::INTERNAL::Event_Handlers.push_back(a);
 }
 
 /**
@@ -2155,7 +2155,7 @@ void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Eve
     Action* a = new Action(
         criteria,
         [this, action, GLOBAL](GGUI::Event* e){
-            if (Collides(this, Mouse) || GLOBAL){
+            if (Collides(this, INTERNAL::Mouse) || GLOBAL){
                 // action successfully executed.
                 return action(e);
             }
@@ -2164,7 +2164,7 @@ void GGUI::Element::On(unsigned long long criteria, std::function<bool(GGUI::Eve
         },
         this
     );
-    GGUI::Event_Handlers.push_back(a);
+    GGUI::INTERNAL::Event_Handlers.push_back(a);
 }
 
 /**
@@ -2233,7 +2233,7 @@ void GGUI::Element::Set_Name(std::string name){
     Name = name;
 
     // Store the element in the global Element_Names map.
-    Element_Names[name] = this;
+    INTERNAL::Element_Names[name] = this;
 }
 
 /**
@@ -2247,9 +2247,9 @@ GGUI::Element* GGUI::Element::Get_Element(std::string name){
     Element* Result = nullptr;
 
     // Check if the element is in the global Element_Names map.
-    if (Element_Names.find(name) != Element_Names.end()){
+    if (INTERNAL::Element_Names.find(name) != INTERNAL::Element_Names.end()){
         // If the element exists, assign it to the result.
-        Result = Element_Names[name];
+        Result = INTERNAL::Element_Names[name];
     }
 
     // Return the result.
@@ -2275,7 +2275,7 @@ void GGUI::Element::Re_Order_Childs() {
  */
 void GGUI::Element::Focus() {
     // Set the mouse position to the element's position.
-    GGUI::Mouse = this->Style->Position.Get();
+    GGUI::INTERNAL::Mouse = this->Style->Position.Get();
     // Update the focused element.
     GGUI::Update_Focused_Element(this);
 }

@@ -14,8 +14,10 @@ namespace GGUI{
     class Element;
     class Styling;
     enum class STAIN_TYPE;
-    extern void Report_Stack(std::string Problem);
-    extern void Exit(int signum);
+    namespace INTERNAL{
+        extern void Report_Stack(std::string Problem);
+        extern void Exit(int signum);
+    }
 
     enum class ALIGN{
         UP,
@@ -159,8 +161,8 @@ namespace GGUI{
 
             constexpr bool operator==(const value<T>& other) const {
                 if (evaluation_type != other.evaluation_type){
-                    Report_Stack("Cannot compare two different eval type values!");
-                    Exit(1);
+                    INTERNAL::Report_Stack("Cannot compare two different eval type values!");
+                    INTERNAL::Exit(1);
                     return false;   // for warnings.
                 }
                 else{
@@ -171,8 +173,8 @@ namespace GGUI{
                     case EVALUATION_TYPE::PERCENTAGE:
                         return percentage == other.percentage;
                     default:
-                        Report_Stack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
-                        Exit(1);
+                        INTERNAL::Report_Stack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        INTERNAL::Exit(1);
                         return false;   // for warnings.
                     }
                 }
@@ -180,8 +182,8 @@ namespace GGUI{
 
             constexpr value<T> operator+(const value<T>& other){
                 if (evaluation_type != other.evaluation_type){
-                    Report_Stack("Cannot add two different eval type values!");
-                    Exit(1);
+                    INTERNAL::Report_Stack("Cannot add two different eval type values!");
+                    INTERNAL::Exit(1);
                     return false;   // for warnings.
                 }
                 else{
@@ -192,8 +194,8 @@ namespace GGUI{
                     case EVALUATION_TYPE::PERCENTAGE:
                         return value<T>(percentage + other.percentage);
                     default:
-                        Report_Stack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
-                        Exit(1);
+                        INTERNAL::Report_Stack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        INTERNAL::Exit(1);
                         return value<T>(0);
                     }
                 }
@@ -202,8 +204,8 @@ namespace GGUI{
             constexpr value<T> operator-(const value<T>& other){
                 if (evaluation_type != other.evaluation_type){
                     // TODO: add capability to call Report_Stack in Styles.h
-                    LOGGER::Log("Cannot substract two different eval type values!");
-                    Exit(1);
+                    INTERNAL::LOGGER::Log("Cannot substract two different eval type values!");
+                    INTERNAL::Exit(1);
                     return false;   // for warnings.
                 }
                 else{
@@ -214,8 +216,8 @@ namespace GGUI{
                     case EVALUATION_TYPE::PERCENTAGE:
                         return value<T>(percentage - other.percentage);
                     default:
-                        LOGGER::Log("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
-                        Exit(1);
+                        INTERNAL::LOGGER::Log("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        INTERNAL::Exit(1);
                         return value<T>(0);
                     }
                 }
@@ -240,7 +242,7 @@ namespace GGUI{
                         data = static_cast<T>(static_cast<T>(parental_value) * percentage);
                         return;
                     default:
-                        Report_Stack("Evaluation type not supported!");
+                        INTERNAL::Report_Stack("Evaluation type not supported!");
                         // If the evaluation type is not supported then just return the data without any modification
                         return;
                 }

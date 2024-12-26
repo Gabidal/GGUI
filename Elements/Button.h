@@ -49,7 +49,7 @@ namespace GGUI{
         void Set_Text(std::string Text){
             // There should always be an Text_Field child
             if (Style->Childs.size() == 0){
-                Report_Stack("No Text_Field child found in Button: " + Get_Name());
+                INTERNAL::Report_Stack("No Text_Field child found in Button: " + Get_Name());
             }
 
             ((Text_Field*)Style->Childs.back())->Set_Text(Text);

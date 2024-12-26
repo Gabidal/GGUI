@@ -35,7 +35,7 @@ namespace GGUI{
         }else if(length == 16){
             simd_division_16(dividend, divider, result);
         }else{
-            Report_Stack("Calling SIMD division with longer sequence than allowed: " + std::to_string(length) + " elements.");
+            INTERNAL::Report_Stack("Calling SIMD division with longer sequence than allowed: " + std::to_string(length) + " elements.");
         }
     }
 

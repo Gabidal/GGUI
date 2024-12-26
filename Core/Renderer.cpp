@@ -10,84 +10,85 @@
 #include <cstdio>
 
 namespace GGUI{
-    std::vector<UTF> SAFE_MIRROR;                               // Only used for references to be initalized to point at.
-    std::vector<UTF>& Abstract_Frame_Buffer = SAFE_MIRROR;      // 2D clean vector without bold nor color
-    std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
-
-    // For threading system
-    namespace Atomic{
-        std::mutex Mutex;
-        std::condition_variable Condition;
-
-        Status Pause_Render_Thread = Status::NOT_INITIALIZED;
-    }
-
-    std::vector<std::thread> Sub_Threads;
-
-    std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
-
-    unsigned int Max_Width = 0;
-    unsigned int Max_Height = 0;
-
-    Atomic::Guard<std::vector<Memory>> Remember;
-
-    std::vector<Action*> Event_Handlers;
-    std::vector<Input*> Inputs;
-    std::chrono::system_clock::time_point Last_Input_Clear_Time;
-
-    std::unordered_map<std::string, Element*> Element_Names;
-
-    Element* Focused_On = nullptr;
-    Element* Hovered_On = nullptr;
-
-    bool Platform_Initialized = false;
-
-    IVector3 Mouse;
-    //move 1 by 1, or element by element.
-    bool Mouse_Movement_Enabled = true;
-
-    std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
-    std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
-
-    // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
-    inline time_t MAX_UPDATE_SPEED = TIME::SECOND;
-    inline time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 16;    // Close approximation to 60 fps.
-    inline time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
-    inline float Event_Thread_Load = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
-
-    std::chrono::high_resolution_clock::time_point Previous_Time;
-    std::chrono::high_resolution_clock::time_point Current_Time;
-
-    unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-    unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
-    unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
-
-    inline Atomic::Guard<std::unordered_map<int, Styling>> Classes;
-
-    inline std::unordered_map<std::string, int> Class_Names;
-
-    std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
-
-    void* Stack_Start_Address = 0;
-    void* Heap_Start_Address = 0;
-
-    Window* Main = nullptr;
     
-    const char* ERROR_LOGGER = "_ERROR_LOGGER_";
-    const char* HISTORY = "_HISTORY_";
-
-    // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
-    class Carry{
-    public:
-        bool Resize = false;
-        bool Terminate = false;     // Signals the shutdown of subthreads.
-
-        ~Carry() = default;
-    };
-
-    Atomic::Guard<Carry> Carry_Flags; 
-
     namespace INTERNAL{
+        std::vector<GGUI::UTF> SAFE_MIRROR;                               // Only used for references to be initalized to point at.
+        std::vector<UTF>& Abstract_Frame_Buffer = SAFE_MIRROR;      // 2D clean vector without bold nor color
+        std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
+
+        // For threading system
+        namespace Atomic{
+            std::mutex Mutex;
+            std::condition_variable Condition;
+
+            Status Pause_Render_Thread = Status::NOT_INITIALIZED;
+        }
+
+        std::vector<std::thread> Sub_Threads;
+
+        std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
+
+        unsigned int Max_Width = 0;
+        unsigned int Max_Height = 0;
+
+        Atomic::Guard<std::vector<Memory>> Remember;
+
+        std::vector<Action*> Event_Handlers;
+        std::vector<Input*> Inputs;
+        std::chrono::system_clock::time_point Last_Input_Clear_Time;
+
+        std::unordered_map<std::string, Element*> Element_Names;
+
+        Element* Focused_On = nullptr;
+        Element* Hovered_On = nullptr;
+
+        bool Platform_Initialized = false;
+
+        IVector3 Mouse;
+        //move 1 by 1, or element by element.
+        bool Mouse_Movement_Enabled = true;
+
+        std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+        std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
+
+        // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
+        inline time_t MAX_UPDATE_SPEED = TIME::SECOND;
+        inline time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 16;    // Close approximation to 60 fps.
+        inline time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
+        inline float Event_Thread_Load = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
+
+        std::chrono::high_resolution_clock::time_point Previous_Time;
+        std::chrono::high_resolution_clock::time_point Current_Time;
+
+        unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
+        unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+        unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
+
+        inline Atomic::Guard<std::unordered_map<int, Styling>> Classes;
+
+        inline std::unordered_map<std::string, int> Class_Names;
+
+        std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
+
+        void* Stack_Start_Address = 0;
+        void* Heap_Start_Address = 0;
+
+        Window* Main = nullptr;
+        
+        const char* ERROR_LOGGER = "_ERROR_LOGGER_";
+        const char* HISTORY = "_HISTORY_";
+
+        // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
+        class Carry{
+        public:
+            bool Resize = false;
+            bool Terminate = false;     // Signals the shutdown of subthreads.
+
+            ~Carry() = default;
+        };
+
+        Atomic::Guard<Carry> Carry_Flags; 
+
         /**
          * @brief Temporary function to return the current date and time in a string.
          * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
@@ -103,6 +104,16 @@ namespace GGUI{
             // Remove the newline at the end of the string
             return Result.substr(0, Result.size() - 1);
         }
+        
+        /**
+         * @brief Initializes the start addresses for stack and heap.
+         * 
+         * This function is made extern to prevent inlining. It is responsible
+         * for capturing and initializing the nearest stack and heap addresses 
+         * and assigning them to the respective global variables.
+         */
+
+        extern void Init_Start_Addresses();
     }
 
     /**
@@ -165,7 +176,7 @@ namespace GGUI{
 
     IVector3 Find_Upper_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
+        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -175,9 +186,9 @@ namespace GGUI{
 
         tmp_c.Y--;  // Move one pixel up
 
-        Element* Upper_Element = Get_Accurate_Element_From(tmp_c, Main);
+        Element* Upper_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Upper_Element && Upper_Element != (Element*)&Main){
+        if (Upper_Element && Upper_Element != (Element*)&INTERNAL::Main){
             return Upper_Element->Get_Position();
         }
 
@@ -186,7 +197,7 @@ namespace GGUI{
 
     IVector3 Find_Lower_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
+        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -196,9 +207,9 @@ namespace GGUI{
 
         tmp_c.Y += Current_Element->Get_Height();
 
-        Element* Lower_Element = Get_Accurate_Element_From(tmp_c, Main);
+        Element* Lower_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Lower_Element && Lower_Element != (Element*)&Main){
+        if (Lower_Element && Lower_Element != (Element*)&INTERNAL::Main){
             return Lower_Element->Get_Position();
         }
 
@@ -207,7 +218,7 @@ namespace GGUI{
 
     IVector3 Find_Left_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
+        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -218,9 +229,9 @@ namespace GGUI{
         // Move one pixel to the left
         tmp_c.X--;
 
-        Element* Left_Element = Get_Accurate_Element_From(tmp_c, Main);
+        Element* Left_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Left_Element && Left_Element != (Element*)&Main){
+        if (Left_Element && Left_Element != (Element*)&INTERNAL::Main){
             // If a left element is found, return its position
             return Left_Element->Get_Position();
         }
@@ -231,7 +242,7 @@ namespace GGUI{
 
     IVector3 Find_Right_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(Mouse, Main);
+        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
@@ -242,9 +253,9 @@ namespace GGUI{
         // Move one pixel to the right
         tmp_c.X += Current_Element->Get_Width();
 
-        Element* Right_Element = Get_Accurate_Element_From(tmp_c, Main);
+        Element* Right_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Right_Element && Right_Element != (Element*)&Main){
+        if (Right_Element && Right_Element != (Element*)&INTERNAL::Main){
             // If a right element is found, return its position
             return Right_Element->Get_Position();
         }
@@ -296,1109 +307,1113 @@ namespace GGUI{
     }
 
     #if _WIN32
-    #include <windows.h>
-    #include <DbgHelp.h>
-
-    void SLEEP(unsigned int mm){
-        /// Sleep for the specified amount of milliseconds.
-        Sleep(mm);
-    }
-
-    GGUI::HANDLE GLOBAL_STD_OUTPUT_HANDLE;
-    GGUI::HANDLE GLOBAL_STD_INPUT_HANDLE;
-
-    DWORD PREVIOUS_CONSOLE_OUTPUT_STATE;
-    DWORD PREVIOUS_CONSOLE_INPUT_STATE;
-
-    CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info();
-
-    // This is here out from the Query_Inputs, so that we can differentiate querying and translation of said input.
-    const unsigned int Raw_Input_Capacity = UINT8_MAX * 10;
-    INPUT_RECORD Raw_Input[Raw_Input_Capacity];
-    int Raw_Input_Size = 0;
-
-    /// @brief A function to render a frame.
-    /// @details This function is called from the event loop. It renders the frame by writing the Frame_Buffer data to the console.
-    ///          It also moves the cursor to the top left corner of the screen.
-    void Render_Frame(){
-        // The number of bytes written to the console, not used anywhere else.
-        unsigned long long tmp = 0;
-        // Move the cursor to the top left corner of the screen.
-        SetConsoleCursorPosition(GLOBAL_STD_OUTPUT_HANDLE, {0, 0});
-        // Write the Frame_Buffer data to the console.
-        WriteFile(GLOBAL_STD_OUTPUT_HANDLE, Frame_Buffer.data(), Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
-    }
-
-    /// @brief Updates the maximum width and height of the console.
-    /// @details This function is used to get the maximum width and height of the console.
-    ///          It is called from the Query_Inputs function.
-    void Update_Max_Width_And_Height(){
-        // Get the console information.
-        CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
-
-        // Update the maximum width and height.
-        Max_Width = info.srWindow.Right - info.srWindow.Left + 1;
-        Max_Height = info.srWindow.Bottom - info.srWindow.Top + 1;
-
-        // Check if we got the console information correctly.
-        if (Max_Width == 0 || Max_Height == 0){
-            Report("Failed to get console info!");
-        }
-
-        // Check that the main window is not active and if so, set its dimensions.
-        if (Main)
-            Main->Set_Dimensions(Max_Width, Max_Height);
-    }
-
-    void Update_Frame(bool Lock_Event_Thread);
-    //Is called on every cycle.
-
-    /// @brief A function to reverse-engineer keybinds.
-    /// @param keybind_value The value of the key to reverse-engineer.
-    /// @return The reversed keybind value.
-    /// @details This function is used to reverse-engineer keybinds. It checks if the keybind is in the known keybinding table.
-    ///          If it is, it returns the reversed keybind value. If not, it returns the normal value.
-    char Reverse_Engineer_Keybinds(char keybind_value){
-        // The current known keybinding table:
-
-        /*
-            CTRL+SHIFT+I => TAB
-            // TODO: Add more keybinds to the table
-        */
-
-        if (KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && KEYBOARD_STATES[BUTTON_STATES::SHIFT].State){
-            if (keybind_value == VK_TAB){
-                return 'i';
-            }
-        }
-
-        // return the normal value, if there is no key-binds detected.
-        return keybind_value;
-    }
-
-    /// @brief Waits for user input, will not translate, use Translate_Inputs for that.
-    /// @details This function waits for user input and stores it in the Raw_Input array.
-    ///          It is called from the event loop.
-    void Query_Inputs(){
-        // For appending to already existing buffered input which has not yet been processed, we can use the previous Raw_Input_Size to deduce the new starting point.
-        INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
-
-        // Ceil the value so that negative numbers wont create overflows.
-        unsigned int Current_Usable_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
-
-        // Read the console input and store it in Raw_Input.
-        ReadConsoleInput(
-            GLOBAL_STD_INPUT_HANDLE,
-            Current_Starting_Address,
-            Current_Usable_Capacity,
-            (LPDWORD)&Raw_Input_Size
-        );
-    }
-
-    // Continuation of Query_Input, while differentiate the execute timings.
-    /// @brief Translate the input events stored in Raw_Input into Input objects.
-    /// @details This function is used to translate the input events stored in Raw_Input into Input objects. It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. Finally, it resets the Raw_Input_Size to 0.
-    void Translate_Inputs(){
-        // Clean the keyboard states.
-        PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
-
-        for (int i = 0; i < Raw_Input_Size; i++){
-            if (Raw_Input[i].EventType == KEY_EVENT){
-
-                bool Pressed = Raw_Input[i].Event.KeyEvent.bKeyDown;
-
-                if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
-                    Inputs.push_back(new GGUI::Input(0, Constants::UP));
-                    KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
-                    Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
-                    KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
-                    Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
-                    KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
-                    Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
-                    KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
-                    Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
-                    KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
-                    Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                    KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
-                    Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                    KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
-                    Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
-                    KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(Pressed);
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
-                    Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
-                    KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(Pressed);
-                    Handle_Escape();
-                }
-                else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
-                    Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
-                    KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(Pressed);
-                    Handle_Tabulator();
-                }
-                else if (Raw_Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
-                    char Result = Reverse_Engineer_Keybinds(Raw_Input[i].Event.KeyEvent.uChar.AsciiChar);
-
-                    Inputs.push_back(new GGUI::Input(Result, Constants::KEY_PRESS));
-                }
-            }
-            else if (Raw_Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
-                Carry_Flags([](GGUI::Carry* current_carry){
-                    current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
-                });
-            }
-            else if (Raw_Input[i].EventType == MOUSE_EVENT && Mouse_Movement_Enabled){
-                if (Raw_Input[i].Event.MouseEvent.dwEventFlags == MOUSE_MOVED){
-                    // Get mouse coordinates
-                    COORD mousePos = Raw_Input[i].Event.MouseEvent.dwMousePosition;
-                    // Handle cursor movement
-                    Mouse.X = mousePos.X;
-                    Mouse.Y = mousePos.Y;
-                }
-                // Handle mouse clicks
-                // TODO: Windows doesn't give release events.
-                // Yes it does you fucking moron!
-                if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
-                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
-                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;
-                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
-                }
-                else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
-                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
-                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
-                }
-
-                if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
-                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
-                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = true;
-                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
-                }
-                else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
-                    //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
-                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
-                }
-            
-                // mouse scroll up
-                if (Raw_Input[i].Event.MouseEvent.dwEventFlags == MOUSE_WHEELED){
-                    // check if it has been wheeled up or down
-                    int Scroll_Direction = GET_WHEEL_DELTA_WPARAM(Raw_Input[i].Event.MouseEvent.dwButtonState);
-
-                    if (Scroll_Direction > 0){
-                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State = true;
-                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State = false;
-
-                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].Capture_Time = std::chrono::high_resolution_clock::now();
-                    }
-                    else if (Scroll_Direction < 0){
-                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State = true;
-                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State = false;
-
-                        KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].Capture_Time = std::chrono::high_resolution_clock::now();
-                    }
-                }
-            }
-        }
-   
-        // We can assume that the Raw_Input buffer will be fully translated by this point, if not, then something is wrong!!!
-        // We can now also restart the Raw_Input_Size.
-        Raw_Input_Size = 0;
-    }
-
 
     namespace Constants{
         namespace ANSI{
             inline int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
         }
     }
+    
+    namespace INTERNAL{
+        #include <windows.h>
+        #include <DbgHelp.h>
 
-    /// @brief Initializes platform-specific settings for console handling.
-    /// @details This function sets up the console handles and modes required for input and output operations.
-    ///          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
-    ///          handling specific ANSI features.
-    void Init_Platform_Stuff(){
-        // Save the STD handles to prevent excess calls.
-        GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
-        GLOBAL_STD_INPUT_HANDLE = GetStdHandle(STD_INPUT_HANDLE);
-
-        // Retrieve and store previous console modes for restoration upon exit.
-        GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &PREVIOUS_CONSOLE_OUTPUT_STATE);
-        GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
-
-        // Set new console modes with extended flags, mouse, and window input enabled.
-        SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, -1);
-        SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT);
-
-        // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String() 
-                  << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
-        std::cout.flush();
-
-        // Set the console output code page to UTF-8 mode.
-        SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
-
-        // Mark the platform as initialized.
-        Platform_Initialized = true;
-    }
-
-    /// @brief Retrieves the console screen buffer information.
-    /// @details This function retrieves the console screen buffer information using the GetConsoleScreenBufferInfo function.
-    ///          It first checks if the GLOBAL_STD_OUTPUT_HANDLE has been set, and if not, it sets it by calling GetStdHandle.
-    ///          It then calls GetConsoleScreenBufferInfo and if the call fails, it will report the error.
-    /// @return The console screen buffer information.
-    CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info() {
-        if (GLOBAL_STD_OUTPUT_HANDLE == 0) {
-            GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+        void SLEEP(unsigned int mm){
+            /// Sleep for the specified amount of milliseconds.
+            Sleep(mm);
         }
 
-        CONSOLE_SCREEN_BUFFER_INFO Result;
+        GGUI::INTERNAL::HANDLE GLOBAL_STD_OUTPUT_HANDLE;
+        GGUI::INTERNAL::HANDLE GLOBAL_STD_INPUT_HANDLE;
 
-        // first get the size of the file
-        if (!GetConsoleScreenBufferInfo(GLOBAL_STD_OUTPUT_HANDLE, &Result)){
-            int Last_Error = GetLastError();
+        DWORD PREVIOUS_CONSOLE_OUTPUT_STATE;
+        DWORD PREVIOUS_CONSOLE_INPUT_STATE;
 
-            Report("Failed to get console info: " + std::to_string(Last_Error));
+        CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info();
+
+        // This is here out from the Query_Inputs, so that we can differentiate querying and translation of said input.
+        const unsigned int Raw_Input_Capacity = UINT8_MAX * 10;
+        INPUT_RECORD Raw_Input[Raw_Input_Capacity];
+        int Raw_Input_Size = 0;
+
+        /// @brief A function to render a frame.
+        /// @details This function is called from the event loop. It renders the frame by writing the Frame_Buffer data to the console.
+        ///          It also moves the cursor to the top left corner of the screen.
+        void Render_Frame(){
+            // The number of bytes written to the console, not used anywhere else.
+            unsigned long long tmp = 0;
+            // Move the cursor to the top left corner of the screen.
+            SetConsoleCursorPosition(GLOBAL_STD_OUTPUT_HANDLE, {0, 0});
+            // Write the Frame_Buffer data to the console.
+            WriteFile(GLOBAL_STD_OUTPUT_HANDLE, INTERNAL::Frame_Buffer.data(), INTERNAL::Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
         }
 
-        return Result;
-    }
+        /// @brief Updates the maximum width and height of the console.
+        /// @details This function is used to get the maximum width and height of the console.
+        ///          It is called from the Query_Inputs function.
+        void Update_Max_Width_And_Height(){
+            // Get the console information.
+            CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
 
-    /// @brief Reads the entire console screen buffer.
-    /// @details This function reads the entire console screen buffer and returns it as a vector of characters.
-    ///          It first gets the console screen buffer information using GetConsoleScreenBufferInfo.
-    ///          It then allocates a vector of CHAR_INFO structures with the same size as the screen buffer.
-    ///          It then calls ReadConsoleOutput to read the console screen buffer into the vector of CHAR_INFO structures.
-    ///          Finally, it loops through the vector of CHAR_INFO structures and copies the AsciiChar member of each structure
-    ///          into the corresponding position in the output vector.
-    /// @return The entire console screen buffer as a vector of characters.
-    std::vector<char> Read_Console(){
-        // Get the console screen buffer information
-        CONSOLE_SCREEN_BUFFER_INFO Info = Get_Console_Info();
+            // Update the maximum width and height.
+            INTERNAL::Max_Width = info.srWindow.Right - info.srWindow.Left + 1;
+            INTERNAL::Max_Height = info.srWindow.Bottom - info.srWindow.Top + 1;
 
-        // Allocate a vector of CHAR_INFO structures with the same size as the screen buffer
-        std::vector<char> Buffer(Info.dwSize.X * Info.dwSize.Y);
-        std::vector<CHAR_INFO> Fake_Buffer(Info.dwSize.X * Info.dwSize.Y);
-
-        // The area to read
-        SMALL_RECT rect {0,0, Info.dwSize.X-1, Info.dwSize.Y} ; // the console screen (buffer) region to read from (120x4)
-
-        // Read the console screen buffer into the vector of CHAR_INFO structures
-        ReadConsoleOutput( GLOBAL_STD_OUTPUT_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size cols x rows*/, {0,0} /*buffer top,left*/, &rect );
-
-        // Copy the AsciiChar member of each CHAR_INFO structure into the corresponding position in the output vector
-        for (unsigned int i = 0; i < Fake_Buffer.size(); i++){
-            Buffer[i] = Fake_Buffer[i].Char.AsciiChar;
-        }
-
-        return Buffer;
-    }
-
-    /// @brief De-initializes platform-specific settings and resources.
-    /// @details This function restores console modes to their previous states, cleans up file stream handles,
-    ///          and disables specific ANSI features. It ensures that any platform-specific settings are reset
-    ///          before the application exits.
-    void De_Initialize(){
-        // Clean up file stream handles
-        for (auto File_Handle : File_Streamer_Handles){
-            File_Handle.second->~FILE_STREAM(); // Manually call destructor to release resources
-        }
-
-        File_Streamer_Handles.clear();
-
-        // Restore previous console modes
-        SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
-        SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
-
-        // Disable specific ANSI features and restore screen
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();
-        std::cout << std::flush; // Ensure all output is flushed to console
-    }
-
-    /// @brief Cleanly exits the GGUI library.
-    /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.
-    ///          It ensures that any platform-specific settings are reset before the application exits.
-    /// @param signum The exit code to return to the operating system.
-    void Exit(int signum){
-        LOGGER::Log("Sending termination signals to subthreads...");
-
-        // Gracefully shutdown event and rendering threads.
-        Pause_GGUI([](){
-            Carry_Flags([](Carry* flags){
-                flags->Terminate = true;
-            });
-        });
-
-        LOGGER::Log("Subthreads terminated.");
-
-        // Join the threads
-        for (auto& thread : Sub_Threads){
-            if (thread.joinable()){
-                thread.join();
+            // Check if we got the console information correctly.
+            if (INTERNAL::Max_Width == 0 || INTERNAL::Max_Height == 0){
+                Report("Failed to get console info!");
             }
+
+            // Check that the main window is not active and if so, set its dimensions.
+            if (INTERNAL::Main)
+                INTERNAL::Main->Set_Dimensions(INTERNAL::Max_Width, INTERNAL::Max_Height);
         }
 
-        LOGGER::Log("Reverting to normal console mode...");
+        void Update_Frame(bool Lock_Event_Thread);
+        //Is called on every cycle.
 
-        // Clean up platform-specific resources and settings
-        De_Initialize();
+        /// @brief A function to reverse-engineer keybinds.
+        /// @param keybind_value The value of the key to reverse-engineer.
+        /// @return The reversed keybind value.
+        /// @details This function is used to reverse-engineer keybinds. It checks if the keybind is in the known keybinding table.
+        ///          If it is, it returns the reversed keybind value. If not, it returns the normal value.
+        char Reverse_Engineer_Keybinds(char keybind_value){
+            // The current known keybinding table:
 
-        LOGGER::Log("GGUI shutdown successful.");
+            /*
+                CTRL+SHIFT+I => TAB
+                // TODO: Add more keybinds to the table
+            */
 
-        // Exit the application with the specified exit code
-        exit(signum);
-    }
-
-    /// @brief Retrieves a list of font files from the Windows registry.
-    /// @details This function retrieves a list of font files from the Windows registry.
-    ///          It first opens the "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" key in the registry,
-    ///          and then enumerates all the values in the key.
-    ///          Each value is a string containing the path to a font file.
-    ///          The function returns a vector of strings containing all the font files found in the registry.
-    std::vector<std::string> Get_List_Of_Font_Files() {
-        std::vector<std::string> Result;
-
-        // Open the "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" key in the registry
-        HKEY hKey;
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-            DWORD cValues; 
-            // Get the number of values in the key
-            RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL, &cValues, NULL, NULL, NULL, NULL);
-            for (DWORD i = 0; i < cValues; i++) {
-                char valueName[1024];
-                DWORD valueNameSize = 1024; 
-                BYTE valueData[1024];
-                DWORD valueDataSize = 1024;
-                DWORD valueType;
-                // Enumerate the values in the key
-                if (RegEnumValue(hKey, i, valueName, &valueNameSize, NULL, &valueType, valueData, &valueDataSize) == ERROR_SUCCESS) {
-                    // Add the file to the Result list
-                    Result.push_back((char*)valueData);
+            if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State){
+                if (keybind_value == VK_TAB){
+                    return 'i';
                 }
             }
-            // Close the key
-            RegCloseKey(hKey);
+
+            // return the normal value, if there is no key-binds detected.
+            return keybind_value;
         }
 
-        return Result;
+        /// @brief Waits for user input, will not translate, use Translate_Inputs for that.
+        /// @details This function waits for user input and stores it in the Raw_Input array.
+        ///          It is called from the event loop.
+        void Query_Inputs(){
+            // For appending to already existing buffered input which has not yet been processed, we can use the previous Raw_Input_Size to deduce the new starting point.
+            INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
+
+            // Ceil the value so that negative numbers wont create overflows.
+            unsigned int Current_Usable_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
+
+            // Read the console input and store it in Raw_Input.
+            ReadConsoleInput(
+                GLOBAL_STD_INPUT_HANDLE,
+                Current_Starting_Address,
+                Current_Usable_Capacity,
+                (LPDWORD)&Raw_Input_Size
+            );
+        }
+
+        // Continuation of Query_Input, while differentiate the execute timings.
+        /// @brief Translate the input events stored in Raw_Input into Input objects.
+        /// @details This function is used to translate the input events stored in Raw_Input into Input objects. It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. Finally, it resets the Raw_Input_Size to 0.
+        void Translate_Inputs(){
+            // Clean the keyboard states.
+            INTERNAL::PREVIOUS_KEYBOARD_STATES = INTERNAL::KEYBOARD_STATES;
+
+            for (int i = 0; i < Raw_Input_Size; i++){
+                if (Raw_Input[i].EventType == KEY_EVENT){
+
+                    bool Pressed = Raw_Input[i].Event.KeyEvent.bKeyDown;
+
+                    if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::UP));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::UP] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::DOWN));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::DOWN] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::LEFT));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::LEFT] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::RIGHT));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::RIGHT] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
+                        INTERNAL::Inputs.push_back(new GGUI::Input('\n', GGUI::Constants::ENTER));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::SHIFT));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::CONTROL));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::BACKSPACE));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = INTERNAL::BUTTON_STATE(Pressed);
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::ESCAPE));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ESC] = INTERNAL::BUTTON_STATE(Pressed);
+                        Handle_Escape();
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
+                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::TAB));
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::TAB] = INTERNAL::BUTTON_STATE(Pressed);
+                        Handle_Tabulator();
+                    }
+                    else if (Raw_Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
+                        char Result = Reverse_Engineer_Keybinds(Raw_Input[i].Event.KeyEvent.uChar.AsciiChar);
+
+                        INTERNAL::Inputs.push_back(new GGUI::Input(Result, GGUI::Constants::KEY_PRESS));
+                    }
+                }
+                else if (Raw_Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
+                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* current_carry){
+                        current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
+                    });
+                }
+                else if (Raw_Input[i].EventType == MOUSE_EVENT && INTERNAL::Mouse_Movement_Enabled){
+                    if (Raw_Input[i].Event.MouseEvent.dwEventFlags == MOUSE_MOVED){
+                        // Get mouse coordinates
+                        COORD mousePos = Raw_Input[i].Event.MouseEvent.dwMousePosition;
+                        // Handle cursor movement
+                        INTERNAL::Mouse.X = mousePos.X;
+                        INTERNAL::Mouse.Y = mousePos.Y;
+                    }
+                    // Handle mouse clicks
+                    // TODO: Windows doesn't give release events.
+                    // Yes it does you fucking moron!
+                    if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
+                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
+                    }
+                    else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
+                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
+                    }
+
+                    if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
+                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = true;
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
+                    }
+                    else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
+                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
+                    }
+                
+                    // mouse scroll up
+                    if (Raw_Input[i].Event.MouseEvent.dwEventFlags == MOUSE_WHEELED){
+                        // check if it has been wheeled up or down
+                        int Scroll_Direction = GET_WHEEL_DELTA_WPARAM(Raw_Input[i].Event.MouseEvent.dwButtonState);
+
+                        if (Scroll_Direction > 0){
+                            INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State = true;
+                            INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State = false;
+
+                            INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].Capture_Time = std::chrono::high_resolution_clock::now();
+                        }
+                        else if (Scroll_Direction < 0){
+                            INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State = true;
+                            INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State = false;
+
+                            INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].Capture_Time = std::chrono::high_resolution_clock::now();
+                        }
+                    }
+                }
+            }
+    
+            // We can assume that the Raw_Input buffer will be fully translated by this point, if not, then something is wrong!!!
+            // We can now also restart the Raw_Input_Size.
+            Raw_Input_Size = 0;
+        }
+
+        /// @brief Initializes platform-specific settings for console handling.
+        /// @details This function sets up the console handles and modes required for input and output operations.
+        ///          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
+        ///          handling specific ANSI features.
+        void Init_Platform_Stuff(){
+            // Save the STD handles to prevent excess calls.
+            GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+            GLOBAL_STD_INPUT_HANDLE = GetStdHandle(STD_INPUT_HANDLE);
+
+            // Retrieve and store previous console modes for restoration upon exit.
+            GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &PREVIOUS_CONSOLE_OUTPUT_STATE);
+            GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
+
+            // Set new console modes with extended flags, mouse, and window input enabled.
+            SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, -1);
+            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT);
+
+            // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String() 
+                    << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR, false).To_String();
+            std::cout.flush();
+
+            // Set the console output code page to UTF-8 mode.
+            SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
+
+            // Mark the platform as initialized.
+            INTERNAL::Platform_Initialized = true;
+        }
+
+        /// @brief Retrieves the console screen buffer information.
+        /// @details This function retrieves the console screen buffer information using the GetConsoleScreenBufferInfo function.
+        ///          It first checks if the GLOBAL_STD_OUTPUT_HANDLE has been set, and if not, it sets it by calling GetStdHandle.
+        ///          It then calls GetConsoleScreenBufferInfo and if the call fails, it will report the error.
+        /// @return The console screen buffer information.
+        CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info() {
+            if (GLOBAL_STD_OUTPUT_HANDLE == 0) {
+                GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+            }
+
+            CONSOLE_SCREEN_BUFFER_INFO Result;
+
+            // first get the size of the file
+            if (!GetConsoleScreenBufferInfo(GLOBAL_STD_OUTPUT_HANDLE, &Result)){
+                int Last_Error = GetLastError();
+
+                Report("Failed to get console info: " + std::to_string(Last_Error));
+            }
+
+            return Result;
+        }
+
+        /// @brief Reads the entire console screen buffer.
+        /// @details This function reads the entire console screen buffer and returns it as a vector of characters.
+        ///          It first gets the console screen buffer information using GetConsoleScreenBufferInfo.
+        ///          It then allocates a vector of CHAR_INFO structures with the same size as the screen buffer.
+        ///          It then calls ReadConsoleOutput to read the console screen buffer into the vector of CHAR_INFO structures.
+        ///          Finally, it loops through the vector of CHAR_INFO structures and copies the AsciiChar member of each structure
+        ///          into the corresponding position in the output vector.
+        /// @return The entire console screen buffer as a vector of characters.
+        std::vector<char> Read_Console(){
+            // Get the console screen buffer information
+            CONSOLE_SCREEN_BUFFER_INFO Info = Get_Console_Info();
+
+            // Allocate a vector of CHAR_INFO structures with the same size as the screen buffer
+            std::vector<char> Buffer(Info.dwSize.X * Info.dwSize.Y);
+            std::vector<CHAR_INFO> Fake_Buffer(Info.dwSize.X * Info.dwSize.Y);
+
+            // The area to read
+            SMALL_RECT rect {0,0, Info.dwSize.X-1, Info.dwSize.Y} ; // the console screen (buffer) region to read from (120x4)
+
+            // Read the console screen buffer into the vector of CHAR_INFO structures
+            ReadConsoleOutput( GLOBAL_STD_OUTPUT_HANDLE, Fake_Buffer.data(), {Info.dwSize.X, Info.dwSize.Y} /*buffer size cols x rows*/, {0,0} /*buffer top,left*/, &rect );
+
+            // Copy the AsciiChar member of each CHAR_INFO structure into the corresponding position in the output vector
+            for (unsigned int i = 0; i < Fake_Buffer.size(); i++){
+                Buffer[i] = Fake_Buffer[i].Char.AsciiChar;
+            }
+
+            return Buffer;
+        }
+
+        /// @brief De-initializes platform-specific settings and resources.
+        /// @details This function restores console modes to their previous states, cleans up file stream handles,
+        ///          and disables specific ANSI features. It ensures that any platform-specific settings are reset
+        ///          before the application exits.
+        void De_Initialize(){
+            // Clean up file stream handles
+            for (auto File_Handle : File_Streamer_Handles){
+                File_Handle.second->~FILE_STREAM(); // Manually call destructor to release resources
+            }
+
+            File_Streamer_Handles.clear();
+
+            // Restore previous console modes
+            SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
+            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
+
+            // Disable specific ANSI features and restore screen
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR).To_String();
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::SCREEN_CAPTURE, false).To_String();
+            std::cout << std::flush; // Ensure all output is flushed to console
+        }
+
+        /// @brief Cleanly exits the GGUI library.
+        /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.
+        ///          It ensures that any platform-specific settings are reset before the application exits.
+        /// @param signum The exit code to return to the operating system.
+        void Exit(int signum){
+            INTERNAL::LOGGER::Log("Sending termination signals to subthreads...");
+
+            // Gracefully shutdown event and rendering threads.
+            Pause_GGUI([](){
+                INTERNAL::Carry_Flags([](INTERNAL::Carry* flags){
+                    flags->Terminate = true;
+                });
+            });
+
+            INTERNAL::LOGGER::Log("Subthreads terminated.");
+
+            // Join the threads
+            for (auto& thread : INTERNAL::Sub_Threads){
+                if (thread.joinable()){
+                    thread.join();
+                }
+            }
+
+            INTERNAL::LOGGER::Log("Reverting to normal console mode...");
+
+            // Clean up platform-specific resources and settings
+            De_Initialize();
+
+            INTERNAL::LOGGER::Log("GGUI shutdown successful.");
+
+            // Exit the application with the specified exit code
+            exit(signum);
+        }
+
+        /// @brief Retrieves a list of font files from the Windows registry.
+        /// @details This function retrieves a list of font files from the Windows registry.
+        ///          It first opens the "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" key in the registry,
+        ///          and then enumerates all the values in the key.
+        ///          Each value is a string containing the path to a font file.
+        ///          The function returns a vector of strings containing all the font files found in the registry.
+        std::vector<std::string> Get_List_Of_Font_Files() {
+            std::vector<std::string> Result;
+
+            // Open the "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" key in the registry
+            HKEY hKey;
+            if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+                DWORD cValues; 
+                // Get the number of values in the key
+                RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL, &cValues, NULL, NULL, NULL, NULL);
+                for (DWORD i = 0; i < cValues; i++) {
+                    char valueName[1024];
+                    DWORD valueNameSize = 1024; 
+                    BYTE valueData[1024];
+                    DWORD valueDataSize = 1024;
+                    DWORD valueType;
+                    // Enumerate the values in the key
+                    if (RegEnumValue(hKey, i, valueName, &valueNameSize, NULL, &valueType, valueData, &valueDataSize) == ERROR_SUCCESS) {
+                        // Add the file to the Result list
+                        Result.push_back((char*)valueData);
+                    }
+                }
+                // Close the key
+                RegCloseKey(hKey);
+            }
+
+            return Result;
+        }
+
+        /// @brief Reports the current stack trace along with a specified problem description.
+        /// @details This function captures the call stack, symbolically resolves the addresses, 
+        ///          and formats the stack trace. The resulting formatted trace is then reported 
+        ///          along with the provided problem description.
+        /// @param Problem A description of the problem to be reported with the stack trace.
+        void Report_Stack(std::string Problem) {
+            const int Stack_Trace_Depth = 10;
+            void* Ptr_Table[Stack_Trace_Depth];
+            unsigned short Usable_Depth;
+            SYMBOL_INFO* symbol;
+            HANDLE process;
+
+            // Get the current process handle
+            process = GetCurrentProcess();
+
+            // Initialize the symbol handler for the process
+            if (!SymInitialize(process, NULL, TRUE)) {
+                std::cerr << "Error: Failed to initialize symbol handler." << std::endl;
+                return;
+            }
+
+            // Capture the stack backtrace
+            Usable_Depth = CaptureStackBackTrace(0, Stack_Trace_Depth, Ptr_Table, NULL);
+
+            // Allocate memory for SYMBOL_INFO structure with space for a name
+            symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+            if (!symbol) {
+                Report("Error: Memory allocation for SYMBOL_INFO failed.");
+                return;
+            }
+            symbol->MaxNameLen = 255;
+            symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+            // Initialize result string with a header
+            std::string Result = "Stack Trace:\n";
+            int Usable_Stack_Index = 0;
+            bool Use_Indent = Usable_Depth < (INTERNAL::Max_Width / 2);  // Assuming Max_Width is predefined
+
+            // Iterate over the captured stack frames
+            for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++) {
+                // Resolve the symbol from the address
+                bool Probable_Lambda = false;
+                if (!SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol)) {
+                    Report("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
+                    Probable_Lambda = true;
+                }
+
+                // Skip empty symbol names
+                if (symbol->Name[0] == 0 && !Probable_Lambda)
+                    continue;
+
+                // Determine the branch start symbol
+                std::string Branch_Start = "|";
+                if (Stack_Index == (unsigned int)Usable_Depth - 1)
+                    Branch_Start = "\\";
+
+                // Create indentation for the current stack level
+                std::string Indent = "";
+                for (int i = 0; i < Usable_Stack_Index && Use_Indent; i++)
+                    Indent += "-";
+
+                // Add symbol and file information
+                std::string line_info;
+                IMAGEHLP_LINE64 line;
+                line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+                DWORD dwDisplacement = 0;
+
+                // Get line number if possible
+                if (SymGetLineFromAddr64(process, (DWORD64)(Ptr_Table[Stack_Index]), &dwDisplacement, &line)) {
+                    line_info = " (" + std::string(line.FileName) + ": " + std::to_string(line.LineNumber) + ")";
+                } else {
+                    line_info = " (unknown file: unknown line)";
+                }
+
+                if (Probable_Lambda){
+                    line_info = " (probably a lambda): " + line_info;
+                }
+
+                // Append the formatted stack frame info to the result
+                Result += Branch_Start + Indent + " " + symbol->Name + line_info + "\n";
+                Usable_Stack_Index++;
+            }
+
+            // Free allocated memory for symbol
+            free(symbol);
+
+            // Append the problem description to the result
+            Result += "Problem: " + Problem;
+
+            // Report the final result
+            Report(Result);  // Assuming `Report()` is defined elsewhere to log the result.
+        }
+
     }
-
-    /// @brief Reports the current stack trace along with a specified problem description.
-    /// @details This function captures the call stack, symbolically resolves the addresses, 
-    ///          and formats the stack trace. The resulting formatted trace is then reported 
-    ///          along with the provided problem description.
-    /// @param Problem A description of the problem to be reported with the stack trace.
-    void Report_Stack(std::string Problem) {
-        const int Stack_Trace_Depth = 10;
-        void* Ptr_Table[Stack_Trace_Depth];
-        unsigned short Usable_Depth;
-        SYMBOL_INFO* symbol;
-        HANDLE process;
-
-        // Get the current process handle
-        process = GetCurrentProcess();
-
-        // Initialize the symbol handler for the process
-        if (!SymInitialize(process, NULL, TRUE)) {
-            std::cerr << "Error: Failed to initialize symbol handler." << std::endl;
-            return;
-        }
-
-        // Capture the stack backtrace
-        Usable_Depth = CaptureStackBackTrace(0, Stack_Trace_Depth, Ptr_Table, NULL);
-
-        // Allocate memory for SYMBOL_INFO structure with space for a name
-        symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
-        if (!symbol) {
-            Report("Error: Memory allocation for SYMBOL_INFO failed.");
-            return;
-        }
-        symbol->MaxNameLen = 255;
-        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-
-        // Initialize result string with a header
-        std::string Result = "Stack Trace:\n";
-        int Usable_Stack_Index = 0;
-        bool Use_Indent = Usable_Depth < (Max_Width / 2);  // Assuming Max_Width is predefined
-
-        // Iterate over the captured stack frames
-        for (unsigned int Stack_Index = 0; Stack_Index < Usable_Depth; Stack_Index++) {
-            // Resolve the symbol from the address
-            bool Probable_Lambda = false;
-            if (!SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol)) {
-                Report("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
-                Probable_Lambda = true;
-            }
-
-            // Skip empty symbol names
-            if (symbol->Name[0] == 0 && !Probable_Lambda)
-                continue;
-
-            // Determine the branch start symbol
-            std::string Branch_Start = "|";
-            if (Stack_Index == (unsigned int)Usable_Depth - 1)
-                Branch_Start = "\\";
-
-            // Create indentation for the current stack level
-            std::string Indent = "";
-            for (int i = 0; i < Usable_Stack_Index && Use_Indent; i++)
-                Indent += "-";
-
-            // Add symbol and file information
-            std::string line_info;
-            IMAGEHLP_LINE64 line;
-            line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-            DWORD dwDisplacement = 0;
-
-            // Get line number if possible
-            if (SymGetLineFromAddr64(process, (DWORD64)(Ptr_Table[Stack_Index]), &dwDisplacement, &line)) {
-                line_info = " (" + std::string(line.FileName) + ": " + std::to_string(line.LineNumber) + ")";
-            } else {
-                line_info = " (unknown file: unknown line)";
-            }
-
-            if (Probable_Lambda){
-                line_info = " (probably a lambda): " + line_info;
-            }
-
-            // Append the formatted stack frame info to the result
-            Result += Branch_Start + Indent + " " + symbol->Name + line_info + "\n";
-            Usable_Stack_Index++;
-        }
-
-        // Free allocated memory for symbol
-        free(symbol);
-
-        // Append the problem description to the result
-        Result += "Problem: " + Problem;
-
-        // Report the final result
-        Report(Result);  // Assuming `Report()` is defined elsewhere to log the result.
-    }
-
 
     #else
-    #include <sys/ioctl.h>
-    #include <signal.h>
-    #include <termios.h>
-    #include <execinfo.h>   // for stacktrace
-    #include <dlfcn.h>      // For stacktrace
-    #include <cxxabi.h>     // For stacktrace
+    namespace INTERNAL{
+        #include <sys/ioctl.h>
+        #include <signal.h>
+        #include <termios.h>
+        #include <execinfo.h>   // for stacktrace
+        #include <dlfcn.h>      // For stacktrace
+        #include <cxxabi.h>     // For stacktrace
 
-    int Previous_Flags = 0;
-    struct termios Previous_Raw;
+        int Previous_Flags = 0;
+        struct termios Previous_Raw;
 
-    // Stored globally, so that translation and inquiry can be separate proccess.
-    const unsigned int Raw_Input_Capacity = UINT8_MAX * 2;
-    unsigned char Raw_Input[Raw_Input_Capacity];
-    unsigned int Raw_Input_Size = 0;
+        // Stored globally, so that translation and inquiry can be separate proccess.
+        const unsigned int Raw_Input_Capacity = UINT8_MAX * 2;
+        unsigned char Raw_Input[Raw_Input_Capacity];
+        unsigned int Raw_Input_Size = 0;
 
-    /**
-     * @brief De-initializes platform-specific settings and resources.
-     * @details This function restores console modes to their previous states, cleans up file stream handles,
-     *          and disables specific ANSI features. It ensures that any platform-specific settings are reset
-     *          before the application exits.
-     */
-    void De_Initialize(){
-        // Restore previous console modes
-        for (auto File_Handle : File_Streamer_Handles){
-            File_Handle.second->~FILE_STREAM();
+        /**
+         * @brief De-initializes platform-specific settings and resources.
+         * @details This function restores console modes to their previous states, cleans up file stream handles,
+         *          and disables specific ANSI features. It ensures that any platform-specific settings are reset
+         *          before the application exits.
+         */
+        void De_Initialize(){
+            // Restore previous console modes
+            for (auto File_Handle : File_Streamer_Handles){
+                File_Handle.second->~FILE_STREAM();
+            }
+            
+            File_Streamer_Handles.clear();
+
+            // Restore default cursor visibility
+            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
+
+            // Disable mouse event reporting
+            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+
+            // Disable screen capture
+            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
+            std::cout << std::flush;
+
+            // Restore previous file descriptor flags
+            fcntl(STDIN_FILENO, F_SETFL, Previous_Flags); // set non-blocking flag
+
+            // Restore previous terminal attributes
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
         }
-        
-        File_Streamer_Handles.clear();
 
-        // Restore default cursor visibility
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
+        /**
+         * @brief De-initializes platform-specific settings and resources and exits the application.
+         * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
+         *          It ensures that any platform-specific settings are reset before the application exits.
+         * @param signum The exit code for the application.
+         */
+        void Exit(int signum){
+            LOGGER::Log("Sending termination signals to subthreads...");
 
-        // Disable mouse event reporting
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
-
-        // Disable screen capture
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
-        std::cout << std::flush;
-
-        // Restore previous file descriptor flags
-        fcntl(STDIN_FILENO, F_SETFL, Previous_Flags); // set non-blocking flag
-
-        // Restore previous terminal attributes
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
-    }
-
-    /**
-     * @brief De-initializes platform-specific settings and resources and exits the application.
-     * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
-     *          It ensures that any platform-specific settings are reset before the application exits.
-     * @param signum The exit code for the application.
-     */
-    void Exit(int signum){
-        LOGGER::Log("Sending termination signals to subthreads...");
-
-        // Gracefully shutdown event and rendering threads.
-        Pause_GGUI([](){
-            Carry_Flags([](Carry* flags){
-                flags->Terminate = true;
+            // Gracefully shutdown event and rendering threads.
+            Pause_GGUI([](){
+                Carry_Flags([](Carry* flags){
+                    flags->Terminate = true;
+                });
             });
-        });
 
-        LOGGER::Log("Subthreads terminated.");
+            LOGGER::Log("Subthreads terminated.");
 
-        // Join the threads
-        for (auto& thread : Sub_Threads){
-            if (thread.joinable()){
-                thread.join();
+            // Join the threads
+            for (auto& thread : Sub_Threads){
+                if (thread.joinable()){
+                    thread.join();
+                }
+            }
+
+            LOGGER::Log("Reverting to normal console mode...");
+
+            // Clean up platform-specific resources and settings
+            De_Initialize();
+
+            LOGGER::Log("GGUI shutdown successful.");
+
+            // Exit the application with the specified exit code
+            exit(signum);
+        }
+
+        /// @brief A cross-platform sleep function using nanosleep.
+        /// @param mm The number of milliseconds to sleep for.
+        /// @details This function pauses the execution of the program for a specified amount of time using nanosleep.
+        ///          It breaks down the milliseconds into seconds and nanoseconds for the timespec structure and handles
+        ///          any interruptions by retrying the nanosleep with the remaining time.
+        void SLEEP(unsigned int mm){
+            // Define timespec structure for the required sleep duration
+            struct timespec req = {0, 0};
+            // Calculate seconds from milliseconds
+            time_t sec = (int)(mm / 1000);
+            // Calculate remaining milliseconds
+            mm = mm - (sec * 1000);
+            // Set the seconds and nanoseconds in the timespec structure
+            req.tv_sec = sec;
+            req.tv_nsec = mm * 1000000L;
+            // Repeatedly call nanosleep until the sleep duration is fully elapsed
+            while(nanosleep(&req, &req) == -1)
+                continue;
+        }
+
+        /**
+         * @brief Renders the contents of the Frame_Buffer to the standard output (STDOUT).
+         * @details This function moves the cursor to the top-left corner of the terminal, flushes the output
+         *          buffer to ensure immediate writing, and writes the contents of the Frame_Buffer to STDOUT.
+         *          If the write operation fails or writes fewer bytes than expected, an error message is reported.
+         */
+        void Render_Frame() {
+            // Move the cursor to the top-left corner of the terminal
+            printf("%s", Constants::ANSI::SET_CURSOR_TO_START.c_str());
+
+            // Flush the output buffer to ensure it's written immediately
+            fflush(stdout);
+
+            // Write the contents of Frame_Buffer to STDOUT
+            int Error = write(STDOUT_FILENO, Frame_Buffer.data(), Frame_Buffer.size());
+
+            // Check for write errors or incomplete writes
+            if (Error != (signed)Frame_Buffer.size()) {
+                Report("Failed to write to STDOUT: " + std::to_string(Error));
             }
         }
 
-        LOGGER::Log("Reverting to normal console mode...");
+        /**
+         * @brief Updates the maximum width and height of the terminal.
+         * @details This function updates the Max_Width and Max_Height variables by calling ioctl to get the current
+         *          width and height of the terminal. If the call fails, a report message is sent.
+         * @note The height is reduced by 1 to account for the one line of console space taken by the GGUI status bar.
+         */
+        void Update_Max_Width_And_Height(){
+            struct winsize w;
+            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1){
+                Report("Failed to get console info!");
+                return;
+            }
 
-        // Clean up platform-specific resources and settings
-        De_Initialize();
+            Max_Width = w.ws_col;
+            Max_Height = w.ws_row - 1;
 
-        LOGGER::Log("GGUI shutdown successful.");
-
-        // Exit the application with the specified exit code
-        exit(signum);
-    }
-
-    /// @brief A cross-platform sleep function using nanosleep.
-    /// @param mm The number of milliseconds to sleep for.
-    /// @details This function pauses the execution of the program for a specified amount of time using nanosleep.
-    ///          It breaks down the milliseconds into seconds and nanoseconds for the timespec structure and handles
-    ///          any interruptions by retrying the nanosleep with the remaining time.
-    void SLEEP(unsigned int mm){
-        // Define timespec structure for the required sleep duration
-        struct timespec req = {0, 0};
-        // Calculate seconds from milliseconds
-        time_t sec = (int)(mm / 1000);
-        // Calculate remaining milliseconds
-        mm = mm - (sec * 1000);
-        // Set the seconds and nanoseconds in the timespec structure
-        req.tv_sec = sec;
-        req.tv_nsec = mm * 1000000L;
-        // Repeatedly call nanosleep until the sleep duration is fully elapsed
-        while(nanosleep(&req, &req) == -1)
-            continue;
-    }
-
-    /**
-     * @brief Renders the contents of the Frame_Buffer to the standard output (STDOUT).
-     * @details This function moves the cursor to the top-left corner of the terminal, flushes the output
-     *          buffer to ensure immediate writing, and writes the contents of the Frame_Buffer to STDOUT.
-     *          If the write operation fails or writes fewer bytes than expected, an error message is reported.
-     */
-    void Render_Frame() {
-        // Move the cursor to the top-left corner of the terminal
-        printf("%s", Constants::ANSI::SET_CURSOR_TO_START.c_str());
-
-        // Flush the output buffer to ensure it's written immediately
-        fflush(stdout);
-
-        // Write the contents of Frame_Buffer to STDOUT
-        int Error = write(STDOUT_FILENO, Frame_Buffer.data(), Frame_Buffer.size());
-
-        // Check for write errors or incomplete writes
-        if (Error != (signed)Frame_Buffer.size()) {
-            Report("Failed to write to STDOUT: " + std::to_string(Error));
-        }
-    }
-
-    /**
-     * @brief Updates the maximum width and height of the terminal.
-     * @details This function updates the Max_Width and Max_Height variables by calling ioctl to get the current
-     *          width and height of the terminal. If the call fails, a report message is sent.
-     * @note The height is reduced by 1 to account for the one line of console space taken by the GGUI status bar.
-     */
-    void Update_Max_Width_And_Height(){
-        struct winsize w;
-        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1){
-            Report("Failed to get console info!");
-            return;
+            // Convenience sake :)
+            if (Main)
+                Main->Set_Dimensions(Max_Width, Max_Height);
         }
 
-        Max_Width = w.ws_col;
-        Max_Height = w.ws_row - 1;
+        /**
+         * @brief Adds a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
+         * @details This function sets up a signal handler to detect when the terminal size changes and updates the
+         *          Carry_Flags to indicate that a resize is needed. This is necessary because the render thread needs
+         *          to update the maximum width and height of the terminal whenever a resize occurs.
+         */
+        void Add_Automatic_Terminal_Size_Update_Handler(){
+            // To automatically update GGUI max dimensions, we need to make an WINCH Signal handler.
+            struct sigaction Handler;
+            
+            // Setup the function handler with a lambda
+            Handler.sa_handler = [](int signum){
+                // When the signal is received, update the carry flags to indicate that a resize is needed
+                Carry_Flags([](GGUI::Carry& current_carry){
+                    current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
+                });
+            };
 
-        // Convenience sake :)
-        if (Main)
-            Main->Set_Dimensions(Max_Width, Max_Height);
-    }
+            // Clears any other handler which could potentially hinder this handler.
+            sigemptyset(&Handler.sa_mask);
 
-    /**
-     * @brief Adds a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
-     * @details This function sets up a signal handler to detect when the terminal size changes and updates the
-     *          Carry_Flags to indicate that a resize is needed. This is necessary because the render thread needs
-     *          to update the maximum width and height of the terminal whenever a resize occurs.
-     */
-    void Add_Automatic_Terminal_Size_Update_Handler(){
-        // To automatically update GGUI max dimensions, we need to make an WINCH Signal handler.
-        struct sigaction Handler;
-        
-        // Setup the function handler with a lambda
-        Handler.sa_handler = [](int signum){
-            // When the signal is received, update the carry flags to indicate that a resize is needed
-            Carry_Flags([](GGUI::Carry& current_carry){
-                current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
-            });
+            // Since sigaction flags does not get auto constructed, we need to clean it.
+            Handler.sa_flags = 0;
+
+            // Now set this handler up.
+            sigaction(SIGWINCH, &Handler, nullptr);
+        }
+
+        namespace Constants{
+            namespace ANSI{
+                constexpr char START_OF_CTRL = 1;
+                constexpr char END_OF_CTRL = 26;
+            }
         };
 
-        // Clears any other handler which could potentially hinder this handler.
-        sigemptyset(&Handler.sa_mask);
+        /**
+         * @brief Takes in an buffer with hex and octal values and transforms them into printable strings
+         * @details This function takes in a buffer with hex and octal values and transforms them into printable strings
+         *          for better visualization of the buffer contents.
+         *
+         * @param buffer The buffer to transform into a printable string
+         * @param length The length of the buffer
+         * @param Obfuscate A boolean flag to control whether the buffer contents should be obfuscated or not. If set to true,
+         *                  any non-printable characters in the buffer will be replaced with a space.
+         *
+         * @return A string containing the transformed buffer contents
+         */
+        std::string To_String(char* buffer, int length, bool Obfuscate = false){
+            std::string Result = "";
 
-        // Since sigaction flags does not get auto constructed, we need to clean it.
-        Handler.sa_flags = 0;
+            for (int i = 0; i < length; i++){
+                // This is used as an precession to avoid accidental ANSI escape sequences to trigger from printing the buffer contents.
+                if (Obfuscate)
+                    Result += " ";
 
-        // Now set this handler up.
-        sigaction(SIGWINCH, &Handler, nullptr);
-    }
-
-    namespace Constants{
-        namespace ANSI{
-            constexpr char START_OF_CTRL = 1;
-            constexpr char END_OF_CTRL = 26;
-        }
-    };
-
-    /**
-     * @brief Takes in an buffer with hex and octal values and transforms them into printable strings
-     * @details This function takes in a buffer with hex and octal values and transforms them into printable strings
-     *          for better visualization of the buffer contents.
-     *
-     * @param buffer The buffer to transform into a printable string
-     * @param length The length of the buffer
-     * @param Obfuscate A boolean flag to control whether the buffer contents should be obfuscated or not. If set to true,
-     *                  any non-printable characters in the buffer will be replaced with a space.
-     *
-     * @return A string containing the transformed buffer contents
-     */
-    std::string To_String(char* buffer, int length, bool Obfuscate = false){
-        std::string Result = "";
-
-        for (int i = 0; i < length; i++){
-            // This is used as an precession to avoid accidental ANSI escape sequences to trigger from printing the buffer contents.
-            if (Obfuscate)
-                Result += " ";
-
-            if (isprint(buffer[i])){
-                Result += buffer[i];
-                continue;
-            }
-
-            // add base
-            Result += std::to_string((unsigned char)buffer[i]);
-        }
-
-        return Result;
-    }
-
-
-    /**
-     * @brief Reverse-engineers termios raw terminal keybinds.
-     * @param keybind_value The value of the key to reverse-engineer.
-     * @return The reversed keybind value.
-     * @details This function is used to reverse-engineer termios raw terminal keybinds. It checks if the keybind is in the known keybinding table.
-     *          If it is, it returns the reversed keybind value. If not, it returns the normal value.
-     */
-    char Reverse_Engineer_Keybinds(char keybind_value){
-
-        // SHIFT + TAB => \e[Z
-        if (keybind_value == 'Z'){
-            // Set the shift key state to true
-            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
-            // Set the tab key state to true
-            KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
-
-            // Set the keybind value to 0, to indicate that it has been reversed
-            keybind_value = 0;
-        }
-
-        return keybind_value;
-    }
-
-
-    /**
-     * @brief Waits for user input and stores it in the Raw_Input array.
-     * @details This function waits for user input and stores it in the Raw_Input array. It is called from the event loop.
-     *          It is also the function that is called as soon as possible and gets stuck awaiting for the user input.
-     */
-    void Query_Inputs(){
-        // Add the previous input size into the current offset for cumulative reading.
-        unsigned char* Current_Input_Buffer_Location = Raw_Input + Raw_Input_Size;
-
-        // Ceil the result, so that negative numbers wont start overflow.
-        int Current_Input_Buffer_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
-
-        Raw_Input_Size = read(
-            STDIN_FILENO,
-            Current_Input_Buffer_Location,
-            Current_Input_Buffer_Capacity
-        );
-    }
-
-    /**
-     * @brief Translate the input events stored in Raw_Input into Input objects.
-     * @details This function is used to translate the input events stored in Raw_Input into Input objects. It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. Finally, it resets the Raw_Input_Size to 0.
-     */
-    void Translate_Inputs(){
-        // Clean the keyboard states.
-        PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
-
-        // Unlike in Windows we wont be getting an indication per Key information, whether it was pressed in or out.
-        KEYBOARD_STATES.clear();
-
-        // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
-        // haha code go brrrr -- 2024 gab here, nice joke, although who asked? 
-        for (unsigned int i = 0; i < Raw_Input_Size; i++) {
-
-            // Check if SHIFT has been modifying the keys
-            if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')) {
-                // SHIFT key is pressed
-                Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
-            }
-
-            // We now can also check if the letter has been shifted down by CTRL key
-            else if (Raw_Input[i] >= Constants::ANSI::START_OF_CTRL && Raw_Input[i] <= Constants::ANSI::END_OF_CTRL) {
-                // This is a CTRL key
-
-                // The CTRL domain contains multiple useful keys to check for
-                if (Raw_Input[i] == Constants::ANSI::BACKSPACE) {
-                    // This is a backspace key
-                    Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
-                    KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
-                }
-                else if (Raw_Input[i] == Constants::ANSI::HORIZONTAL_TAB) {
-                    // This is a tab key
-                    Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
-                    KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
-                    Handle_Tabulator();
-                }
-                else if (Raw_Input[i] == Constants::ANSI::LINE_FEED) {
-                    // This is an enter key
-                    Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
-                    KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
-                }
-
-                // Shift the key back up
-                char Offset = 'a' - 1; // We remove one since the CTRL characters started from 1 and not 0
-                Raw_Input[i] = Raw_Input[i] + Offset;
-                KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
-            }
-
-            if (Raw_Input[i] == Constants::ANSI::ESC_CODE[0]) {
-                // check if there are stuff after this escape code
-                if (i + 1 >= Raw_Input_Size) {
-                    // Clearly the escape key was invoked
-                    Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
-                    KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
-                    Handle_Escape();
+                if (isprint(buffer[i])){
+                    Result += buffer[i];
                     continue;
                 }
 
-                // GG go next
-                i++;
+                // add base
+                Result += std::to_string((unsigned char)buffer[i]);
+            }
 
-                // The current data can either be an ALT key initiative or an escape sequence followed by '['
-                if (Raw_Input[i] == Constants::ANSI::ESC_CODE[1]) {
-                    // Escape sequence codes:
+            return Result;
+        }
 
-                    // UP, DOWN LEFT, RIGHT keys
-                    if (Raw_Input[i + 1] == 'A') {
-                        Inputs.push_back(new GGUI::Input(0, Constants::UP));
-                        KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
-                        i++;
+
+        /**
+         * @brief Reverse-engineers termios raw terminal keybinds.
+         * @param keybind_value The value of the key to reverse-engineer.
+         * @return The reversed keybind value.
+         * @details This function is used to reverse-engineer termios raw terminal keybinds. It checks if the keybind is in the known keybinding table.
+         *          If it is, it returns the reversed keybind value. If not, it returns the normal value.
+         */
+        char Reverse_Engineer_Keybinds(char keybind_value){
+
+            // SHIFT + TAB => \e[Z
+            if (keybind_value == 'Z'){
+                // Set the shift key state to true
+                KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+                // Set the tab key state to true
+                KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
+
+                // Set the keybind value to 0, to indicate that it has been reversed
+                keybind_value = 0;
+            }
+
+            return keybind_value;
+        }
+
+
+        /**
+         * @brief Waits for user input and stores it in the Raw_Input array.
+         * @details This function waits for user input and stores it in the Raw_Input array. It is called from the event loop.
+         *          It is also the function that is called as soon as possible and gets stuck awaiting for the user input.
+         */
+        void Query_Inputs(){
+            // Add the previous input size into the current offset for cumulative reading.
+            unsigned char* Current_Input_Buffer_Location = Raw_Input + Raw_Input_Size;
+
+            // Ceil the result, so that negative numbers wont start overflow.
+            int Current_Input_Buffer_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
+
+            Raw_Input_Size = read(
+                STDIN_FILENO,
+                Current_Input_Buffer_Location,
+                Current_Input_Buffer_Capacity
+            );
+        }
+
+        /**
+         * @brief Translate the input events stored in Raw_Input into Input objects.
+         * @details This function is used to translate the input events stored in Raw_Input into Input objects. It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. Finally, it resets the Raw_Input_Size to 0.
+         */
+        void Translate_Inputs(){
+            // Clean the keyboard states.
+            PREVIOUS_KEYBOARD_STATES = KEYBOARD_STATES;
+
+            // Unlike in Windows we wont be getting an indication per Key information, whether it was pressed in or out.
+            KEYBOARD_STATES.clear();
+
+            // All of the if-else statements could just make into a map, where each key of combination replaces the value of the keyboard state, but you know what?
+            // haha code go brrrr -- 2024 gab here, nice joke, although who asked? 
+            for (unsigned int i = 0; i < Raw_Input_Size; i++) {
+
+                // Check if SHIFT has been modifying the keys
+                if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')) {
+                    // SHIFT key is pressed
+                    Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                    KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+                }
+
+                // We now can also check if the letter has been shifted down by CTRL key
+                else if (Raw_Input[i] >= Constants::ANSI::START_OF_CTRL && Raw_Input[i] <= Constants::ANSI::END_OF_CTRL) {
+                    // This is a CTRL key
+
+                    // The CTRL domain contains multiple useful keys to check for
+                    if (Raw_Input[i] == Constants::ANSI::BACKSPACE) {
+                        // This is a backspace key
+                        Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
+                        KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = BUTTON_STATE(true);
                     }
-                    else if (Raw_Input[i + 1] == 'B') {
-                        Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
-                        KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
-                        i++;
-                    }
-                    else if (Raw_Input[i + 1] == 'C') {
-                        Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
-                        KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
-                        i++;
-                    }
-                    else if (Raw_Input[i + 1] == 'D') {
-                        Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
-                        KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
-                        i++;
-                    }
-                    else if (Raw_Input[i + 1] == 'M') {  // Decode Mouse handling
-                        // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
-                        char Bit_Mask = Raw_Input[i + 2];
-
-                        // Check if the bit 2'rd has been set, is so then the SHIFT has been pressed
-                        if (Bit_Mask & 4) {
-                            Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
-                            // also remove the bit from the bitmask
-                            Bit_Mask &= ~4;
-                        }
-
-                        // Check if the 3'th bit has been set, is so then the SUPER has been pressed
-                        if (Bit_Mask & 8) {
-                            Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
-                            KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(true);
-                            // also remove the bit from the bitmask
-                            Bit_Mask &= ~8;
-                        }
-
-                        // Check if the 4'th bit has been set, is so then the CTRL has been pressed
-                        if (Bit_Mask & 16) {
-                            Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                            KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
-                            // also remove the bit from the bitmask
-                            Bit_Mask &= ~16;
-                        }
-
-                        // Bit 5'th is not widely supported so remove it in case.
-                        Bit_Mask &= ~32;
-
-                        // Check if the 6'th bit has been set, is so then there is a movement event.
-                        if (Bit_Mask & 64) {
-                            char X = Raw_Input[i + 3];
-                            char Y = Raw_Input[i + 4];
-
-                            // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
-                            Mouse.X = X - 32;
-                            Mouse.Y = Y - 32;
-
-                            Bit_Mask &= ~64;
-                        }
-
-                        // Bits 7'th are not widely supported. But clear this bit just in case
-                        Bit_Mask &= ~(128);
-
-                        if (Bit_Mask == 0) {
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = BUTTON_STATE(true);
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
-                        }
-                        else if (Bit_Mask == 1) {
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = BUTTON_STATE(true);
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
-                        }
-                        else if (Bit_Mask == 2) {
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
-                        }
-                        else if (Bit_Mask == 3) {
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = false;
-                            KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
-                        }
-
-                        i += 4;
-                    }
-                    else if (Raw_Input[i + 1] == 'Z') {
-                        // SHIFT + TAB => Z
-                        Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                    else if (Raw_Input[i] == Constants::ANSI::HORIZONTAL_TAB) {
+                        // This is a tab key
                         Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
-
-                        KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
                         KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
-
                         Handle_Tabulator();
-
-                        i++;
+                    }
+                    else if (Raw_Input[i] == Constants::ANSI::LINE_FEED) {
+                        // This is an enter key
+                        Inputs.push_back(new GGUI::Input(' ', Constants::ENTER));
+                        KEYBOARD_STATES[BUTTON_STATES::ENTER] = BUTTON_STATE(true);
                     }
 
+                    // Shift the key back up
+                    char Offset = 'a' - 1; // We remove one since the CTRL characters started from 1 and not 0
+                    Raw_Input[i] = Raw_Input[i] + Offset;
+                    KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
+                }
+
+                if (Raw_Input[i] == Constants::ANSI::ESC_CODE[0]) {
+                    // check if there are stuff after this escape code
+                    if (i + 1 >= Raw_Input_Size) {
+                        // Clearly the escape key was invoked
+                        Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
+                        KEYBOARD_STATES[BUTTON_STATES::ESC] = BUTTON_STATE(true);
+                        Handle_Escape();
+                        continue;
+                    }
+
+                    // GG go next
+                    i++;
+
+                    // The current data can either be an ALT key initiative or an escape sequence followed by '['
+                    if (Raw_Input[i] == Constants::ANSI::ESC_CODE[1]) {
+                        // Escape sequence codes:
+
+                        // UP, DOWN LEFT, RIGHT keys
+                        if (Raw_Input[i + 1] == 'A') {
+                            Inputs.push_back(new GGUI::Input(0, Constants::UP));
+                            KEYBOARD_STATES[BUTTON_STATES::UP] = BUTTON_STATE(true);
+                            i++;
+                        }
+                        else if (Raw_Input[i + 1] == 'B') {
+                            Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
+                            KEYBOARD_STATES[BUTTON_STATES::DOWN] = BUTTON_STATE(true);
+                            i++;
+                        }
+                        else if (Raw_Input[i + 1] == 'C') {
+                            Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
+                            KEYBOARD_STATES[BUTTON_STATES::RIGHT] = BUTTON_STATE(true);
+                            i++;
+                        }
+                        else if (Raw_Input[i + 1] == 'D') {
+                            Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
+                            KEYBOARD_STATES[BUTTON_STATES::LEFT] = BUTTON_STATE(true);
+                            i++;
+                        }
+                        else if (Raw_Input[i + 1] == 'M') {  // Decode Mouse handling
+                            // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
+                            char Bit_Mask = Raw_Input[i + 2];
+
+                            // Check if the bit 2'rd has been set, is so then the SHIFT has been pressed
+                            if (Bit_Mask & 4) {
+                                Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                                KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+                                // also remove the bit from the bitmask
+                                Bit_Mask &= ~4;
+                            }
+
+                            // Check if the 3'th bit has been set, is so then the SUPER has been pressed
+                            if (Bit_Mask & 8) {
+                                Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
+                                KEYBOARD_STATES[BUTTON_STATES::SUPER] = BUTTON_STATE(true);
+                                // also remove the bit from the bitmask
+                                Bit_Mask &= ~8;
+                            }
+
+                            // Check if the 4'th bit has been set, is so then the CTRL has been pressed
+                            if (Bit_Mask & 16) {
+                                Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
+                                KEYBOARD_STATES[BUTTON_STATES::CONTROL] = BUTTON_STATE(true);
+                                // also remove the bit from the bitmask
+                                Bit_Mask &= ~16;
+                            }
+
+                            // Bit 5'th is not widely supported so remove it in case.
+                            Bit_Mask &= ~32;
+
+                            // Check if the 6'th bit has been set, is so then there is a movement event.
+                            if (Bit_Mask & 64) {
+                                char X = Raw_Input[i + 3];
+                                char Y = Raw_Input[i + 4];
+
+                                // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
+                                Mouse.X = X - 32;
+                                Mouse.Y = Y - 32;
+
+                                Bit_Mask &= ~64;
+                            }
+
+                            // Bits 7'th are not widely supported. But clear this bit just in case
+                            Bit_Mask &= ~(128);
+
+                            if (Bit_Mask == 0) {
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = BUTTON_STATE(true);
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
+                            }
+                            else if (Bit_Mask == 1) {
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = BUTTON_STATE(true);
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
+                            }
+                            else if (Bit_Mask == 2) {
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = BUTTON_STATE(true);
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
+                            }
+                            else if (Bit_Mask == 3) {
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = false;
+                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
+                            }
+
+                            i += 4;
+                        }
+                        else if (Raw_Input[i + 1] == 'Z') {
+                            // SHIFT + TAB => Z
+                            Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
+                            Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
+
+                            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = BUTTON_STATE(true);
+                            KEYBOARD_STATES[BUTTON_STATES::TAB] = BUTTON_STATE(true);
+
+                            Handle_Tabulator();
+
+                            i++;
+                        }
+
+                    }
+                    else {
+                        // This is an ALT key
+                        Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::ALT));
+                        KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
+                    }
                 }
                 else {
-                    // This is an ALT key
-                    Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::ALT));
-                    KEYBOARD_STATES[BUTTON_STATES::ALT] = BUTTON_STATE(true);
+                    // Normal character data
+                    Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::KEY_PRESS));
+                }
+
+            }
+
+            // We can assume that at the end of user input translation, all buffered inputs are hereby translate and no need to store, so reset offset.
+            Raw_Input_Size = 0;
+        }
+
+        /**
+         * @brief Initializes platform-specific settings for console handling.
+         * @details This function sets up the console handles and modes required for input and output operations.
+         *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
+         *          handling specific ANSI features.
+         */
+        void Init_Platform_Stuff(){
+            // Initialize the console for mouse and window input, and set UTF-8 mode for output.
+            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String();
+            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
+            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE).To_String();   // for on exit to restore
+            // std::cout << Constants::RESET_CONSOLE;
+            // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
+            std::cout << std::flush;
+
+            // Save the current flags and take an snapshot of the flags before GGUI
+            Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+
+            // Set non-blocking flag
+            int flags = O_RDONLY | O_CLOEXEC;
+            fcntl(STDIN_FILENO, F_SETFL, flags);
+
+            // Save the current terminal settings
+            struct termios Term_Handle;
+            tcgetattr(STDIN_FILENO, &Term_Handle);
+
+            Previous_Raw = Term_Handle;
+
+            // Set the terminal to raw mode
+            Term_Handle.c_lflag &= ~(ECHO | ICANON);
+            Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
+            Term_Handle.c_cc[VTIME] = 0;    // Suppress automatic returning, since we want the Input_Query() to await until the user has given an input.  
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
+
+            /*
+            SIGINT -> This is on by default, if then user makes an element to be focused with capabilities to capture this, then well remove it from the Exit codes.
+            SIGILL
+            SIGABRT
+            SIGFPE
+            SIGSEGV
+            SIGTERM
+            */
+
+            // Register the exit handler for the following signals
+            struct sigaction* wrapper = new struct sigaction();
+            wrapper->sa_handler = Exit;
+            sigemptyset(&wrapper->sa_mask);
+            wrapper->sa_flags = 0;
+
+            for (
+                auto i : {
+                    SIGINT,
+                    SIGILL,
+                    SIGABRT,
+                    SIGFPE,
+                    SIGSEGV,
+                    SIGTERM
+                }){
+                sigaction(i, wrapper, NULL);
+            }
+        
+            // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
+            Add_Automatic_Terminal_Size_Update_Handler();
+        }
+
+
+        /**
+         * @brief Get a list of all font files in the system.
+         *        This function uses the "fc-list" command to get a list of all font files in the system.
+         *        The output is then processed to extract the file names and return them as a vector.
+         * @return A vector of strings containing all the font file names.
+         */
+        std::vector<std::string> Get_List_Of_Font_Files() {
+            CMD Handle;
+
+            // Run the command and store the output in Raw_Result
+            std::string Raw_Result = Handle.Run("fc-list -v | grep file");
+
+            std::vector<std::string> File_Names;
+            std::stringstream ss(Raw_Result);
+            std::string temp;
+
+            // Process the output line by line
+            while (std::getline(ss, temp, '\n')) {
+                // Extract the file name from each line and add it to the vector
+                std::size_t pos = temp.find(": ");
+                if (pos != std::string::npos) {
+                    std::string file_name = temp.substr(pos + 2);
+                    File_Names.push_back(file_name);
                 }
             }
-            else {
-                // Normal character data
-                Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::KEY_PRESS));
+
+            return File_Names;
+        }
+
+        /**
+         * @brief Reports the current stack trace along with a specified problem description.
+         *        Captures the call stack, symbolically resolves the addresses, and formats the stack trace.
+         *        The resulting formatted trace is then reported along with the provided problem description.
+         * @param problem A description of the problem to be reported with the stack trace.
+         */
+        void Report_Stack(const std::string problem) {
+        #ifndef __ANDROID__
+            const int Stack_Trace_Depth = 10;
+            void* ptr_table[Stack_Trace_Depth];
+
+            // Capture the stack trace and retrieve the number of valid frames
+            int usable_depth = backtrace(ptr_table, Stack_Trace_Depth);
+
+            // Convert stack addresses to symbolic names
+            char** name_table = backtrace_symbols(ptr_table, usable_depth);
+            if (!name_table) {
+                Report("Error: Failed to retrieve stack trace symbols. Original problem: " + problem);
+                return;
             }
 
-        }
-
-        // We can assume that at the end of user input translation, all buffered inputs are hereby translate and no need to store, so reset offset.
-        Raw_Input_Size = 0;
-    }
-
-    /**
-     * @brief Initializes platform-specific settings for console handling.
-     * @details This function sets up the console handles and modes required for input and output operations.
-     *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
-     *          handling specific ANSI features.
-     */
-    void Init_Platform_Stuff(){
-        // Initialize the console for mouse and window input, and set UTF-8 mode for output.
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String();
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
-        std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE).To_String();   // for on exit to restore
-        // std::cout << Constants::RESET_CONSOLE;
-        // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
-        std::cout << std::flush;
-
-        // Save the current flags and take an snapshot of the flags before GGUI
-        Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-
-        // Set non-blocking flag
-        int flags = O_RDONLY | O_CLOEXEC;
-        fcntl(STDIN_FILENO, F_SETFL, flags);
-
-        // Save the current terminal settings
-        struct termios Term_Handle;
-        tcgetattr(STDIN_FILENO, &Term_Handle);
-
-        Previous_Raw = Term_Handle;
-
-        // Set the terminal to raw mode
-        Term_Handle.c_lflag &= ~(ECHO | ICANON);
-        Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
-        Term_Handle.c_cc[VTIME] = 0;    // Suppress automatic returning, since we want the Input_Query() to await until the user has given an input.  
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
-
-        /*
-        SIGINT -> This is on by default, if then user makes an element to be focused with capabilities to capture this, then well remove it from the Exit codes.
-        SIGILL
-        SIGABRT
-        SIGFPE
-        SIGSEGV
-        SIGTERM
-        */
-
-        // Register the exit handler for the following signals
-        struct sigaction* wrapper = new struct sigaction();
-        wrapper->sa_handler = Exit;
-        sigemptyset(&wrapper->sa_mask);
-        wrapper->sa_flags = 0;
-
-        for (
-            auto i : {
-                SIGINT,
-                SIGILL,
-                SIGABRT,
-                SIGFPE,
-                SIGSEGV,
-                SIGTERM
-            }){
-            sigaction(i, wrapper, NULL);
-        }
-    
-        // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
-        Add_Automatic_Terminal_Size_Update_Handler();
-    }
-
-
-    /**
-     * @brief Get a list of all font files in the system.
-     *        This function uses the "fc-list" command to get a list of all font files in the system.
-     *        The output is then processed to extract the file names and return them as a vector.
-     * @return A vector of strings containing all the font file names.
-     */
-    std::vector<std::string> Get_List_Of_Font_Files() {
-        CMD Handle;
-
-        // Run the command and store the output in Raw_Result
-        std::string Raw_Result = Handle.Run("fc-list -v | grep file");
-
-        std::vector<std::string> File_Names;
-        std::stringstream ss(Raw_Result);
-        std::string temp;
-
-        // Process the output line by line
-        while (std::getline(ss, temp, '\n')) {
-            // Extract the file name from each line and add it to the vector
-            std::size_t pos = temp.find(": ");
-            if (pos != std::string::npos) {
-                std::string file_name = temp.substr(pos + 2);
-                File_Names.push_back(file_name);
-            }
-        }
-
-        return File_Names;
-    }
-
-    /**
-     * @brief Reports the current stack trace along with a specified problem description.
-     *        Captures the call stack, symbolically resolves the addresses, and formats the stack trace.
-     *        The resulting formatted trace is then reported along with the provided problem description.
-     * @param problem A description of the problem to be reported with the stack trace.
-     */
-    void Report_Stack(const std::string problem) {
-    #ifndef __ANDROID__
-        const int Stack_Trace_Depth = 10;
-        void* ptr_table[Stack_Trace_Depth];
-
-        // Capture the stack trace and retrieve the number of valid frames
-        int usable_depth = backtrace(ptr_table, Stack_Trace_Depth);
-
-        // Convert stack addresses to symbolic names
-        char** name_table = backtrace_symbols(ptr_table, usable_depth);
-        if (!name_table) {
-            Report("Error: Failed to retrieve stack trace symbols. Original problem: " + problem);
-            return;
-        }
-
-        // Ensure the maximum width is set for proper indentation
-        if (Max_Width == 0) {
-            Update_Max_Width_And_Height();
-        }
-
-        // Construct the stack trace message
-        std::string result = "Stack Trace:\n";
-        bool use_indent = (unsigned)usable_depth < (Max_Width / 2);
-
-        for (int stack_index = 0; stack_index < usable_depth; ++stack_index) {
-            Dl_info info;
-            std::string branch_start = (stack_index == usable_depth - 1) ? "\\" : "|";  // Use '\' for the last entry
-            std::string indent;
-
-            // Add indentation based on stack depth if enabled
-            if (use_indent) {
-                indent = std::string(stack_index, '-');
+            // Ensure the maximum width is set for proper indentation
+            if (Max_Width == 0) {
+                Update_Max_Width_And_Height();
             }
 
-            // Resolve symbols using dladdr
-            if (dladdr(ptr_table[stack_index], &info) && info.dli_sname) {
-                // Attempt to demangle the symbol name
-                int status = 0;
-                char* demangled_name = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
-                std::string function_name = (status == 0) ? demangled_name : info.dli_sname;
-                free(demangled_name);
+            // Construct the stack trace message
+            std::string result = "Stack Trace:\n";
+            bool use_indent = (unsigned)usable_depth < (Max_Width / 2);
 
-                // Append the frame information to the result
-                result += branch_start + indent + " " + function_name;
-                if (info.dli_fname) {
-                    result += " (in " + std::string(info.dli_fname) + ")";
+            for (int stack_index = 0; stack_index < usable_depth; ++stack_index) {
+                Dl_info info;
+                std::string branch_start = (stack_index == usable_depth - 1) ? "\\" : "|";  // Use '\' for the last entry
+                std::string indent;
+
+                // Add indentation based on stack depth if enabled
+                if (use_indent) {
+                    indent = std::string(stack_index, '-');
                 }
-                result += "\n";
-            } else {
-                // Fallback to raw name if dladdr fails
-                result += branch_start + indent + " " + name_table[stack_index] + " (unknown symbol)\n";
+
+                // Resolve symbols using dladdr
+                if (dladdr(ptr_table[stack_index], &info) && info.dli_sname) {
+                    // Attempt to demangle the symbol name
+                    int status = 0;
+                    char* demangled_name = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
+                    std::string function_name = (status == 0) ? demangled_name : info.dli_sname;
+                    free(demangled_name);
+
+                    // Append the frame information to the result
+                    result += branch_start + indent + " " + function_name;
+                    if (info.dli_fname) {
+                        result += " (in " + std::string(info.dli_fname) + ")";
+                    }
+                    result += "\n";
+                } else {
+                    // Fallback to raw name if dladdr fails
+                    result += branch_start + indent + " " + name_table[stack_index] + " (unknown symbol)\n";
+                }
             }
+
+            // Free allocated memory for name_table
+            free(name_table);
+
+            // Append the problem description
+            result += "Problem: " + problem;
+
+            // Send the formatted stack trace to the Report function
+            Report(result);
+        #else
+            // Fallback for unsupported platforms
+            Report(problem);
+        #endif
         }
-
-        // Free allocated memory for name_table
-        free(name_table);
-
-        // Append the problem description
-        result += "Problem: " + problem;
-
-        // Send the formatted stack trace to the Report function
-        Report(result);
-    #else
-        // Fallback for unsupported platforms
-        Report(problem);
-    #endif
     }
 
     #endif
@@ -1409,7 +1424,7 @@ namespace GGUI{
      *          for keys that are held down and not already present in the inputs list. It skips mouse button keys.
      */
     void Populate_Inputs_For_Held_Down_Keys() {
-        for (auto Key : KEYBOARD_STATES) {
+        for (auto Key : INTERNAL::KEYBOARD_STATES) {
 
             // Check if the key is activated
             if (Key.second.State) {
@@ -1423,7 +1438,7 @@ namespace GGUI{
 
                 // Check if the input already exists
                 bool Found = false;
-                for (auto input : Inputs) {
+                for (auto input : INTERNAL::Inputs) {
                     if (input->Criteria == Constant_Key) {
                         Found = true;
                         break;
@@ -1432,7 +1447,7 @@ namespace GGUI{
 
                 // If not found, create a new input
                 if (!Found)
-                    Inputs.push_back(new Input((char)0, Constant_Key));
+                    INTERNAL::Inputs.push_back(new Input((char)0, Constant_Key));
             }
         }
     }
@@ -1448,41 +1463,41 @@ namespace GGUI{
     void MOUSE_API() {
         // Get the duration the left mouse button has been pressed
         unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-            abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
+            abs(INTERNAL::Current_Time - INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
 
         // Check if the left mouse button is pressed and for how long
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
+        if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
         } 
         // Check if the left mouse button was previously pressed and now released
-        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State) {
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
+        else if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && INTERNAL::PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State) {
+            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
         }
 
         // Get the duration the right mouse button has been pressed
         unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-            abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
+            abs(INTERNAL::Current_Time - INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time)).count();
 
         // Check if the right mouse button is pressed and for how long
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
+        if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
         }
         // Check if the right mouse button was previously pressed and now released
-        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State) {
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
+        else if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && INTERNAL::PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State) {
+            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
         }
 
         // Get the duration the middle mouse button has been pressed
         unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-            abs(Current_Time - KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
+            abs(INTERNAL::Current_Time - INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time)).count();
 
         // Check if the middle mouse button is pressed and for how long
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
+        if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
+            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
         }
         // Check if the middle mouse button was previously pressed and now released
-        else if (!KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State) {
-            Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
+        else if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && INTERNAL::PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State) {
+            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
         }
     }
 
@@ -1493,18 +1508,18 @@ namespace GGUI{
      */
     void SCROLL_API(){
         // Check if the mouse scroll up button has been pressed
-        if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State){
+        if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State){
 
             // If the focused element is not null, call the scroll up function
-            if (Focused_On)
-                Focused_On->Scroll_Up();
+            if (INTERNAL::Focused_On)
+                INTERNAL::Focused_On->Scroll_Up();
         }
         // Check if the mouse scroll down button has been pressed
-        else if (KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State){
+        else if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State){
 
             // If the focused element is not null, call the scroll down function
-            if (Focused_On)
-                Focused_On->Scroll_Down();
+            if (INTERNAL::Focused_On)
+                INTERNAL::Focused_On->Scroll_Down();
         }
     }
 
@@ -1517,16 +1532,16 @@ namespace GGUI{
      */
     void Handle_Escape(){
         // Check if the escape key has been pressed
-        if (!KEYBOARD_STATES[BUTTON_STATES::ESC].State)
+        if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ESC].State)
             return;
 
         // If the focused element is not null, remove the focus
-        if (Focused_On){
-            Hovered_On = Focused_On;
+        if (INTERNAL::Focused_On){
+            INTERNAL::Hovered_On = INTERNAL::Focused_On;
             Un_Focus_Element();
         }
         // If the focused element is null but the hovered element is not null, remove the hover
-        else if (Hovered_On){
+        else if (INTERNAL::Hovered_On){
             Un_Hover_Element();
         }
     }
@@ -1538,25 +1553,25 @@ namespace GGUI{
      */
     void Handle_Tabulator(){
         // Check if the tab key has been pressed
-        if (!KEYBOARD_STATES[BUTTON_STATES::TAB].State)
+        if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::TAB].State)
             return;
 
         // Check if the shift key is pressed
-        bool Shift_Is_Pressed = KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
+        bool Shift_Is_Pressed = INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
 
         // Get the current element from the selected element
-        Element* Current = Focused_On;
+        Element* Current = INTERNAL::Focused_On;
 
         // If there has not been anything selected then then skip this phase and default to zero.
         if (!Current)
-            Current = Hovered_On;
+            Current = INTERNAL::Hovered_On;
 
         int Current_Index = 0;
 
         // Find the index of the current element in the list of event handlers
         if (Current)
-            for (;(unsigned int)Current_Index < Event_Handlers.size(); Current_Index++){
-                if (Event_Handlers[Current_Index]->Host == Current)
+            for (;(unsigned int)Current_Index < INTERNAL::Event_Handlers.size(); Current_Index++){
+                if (INTERNAL::Event_Handlers[Current_Index]->Host == Current)
                     break;
             }
 
@@ -1565,15 +1580,15 @@ namespace GGUI{
 
         // If the index is out of bounds, wrap it around to the other side of the list
         if (Current_Index < 0){
-            Current_Index = Event_Handlers.size() - 1;
+            Current_Index = INTERNAL::Event_Handlers.size() - 1;
         }
-        else if ((unsigned int)Current_Index >= Event_Handlers.size()){
+        else if ((unsigned int)Current_Index >= INTERNAL::Event_Handlers.size()){
             Current_Index = 0;
         }
 
         // Now update the focused element with the new index
         Un_Hover_Element();
-        Update_Focused_Element(Event_Handlers[Current_Index]->Host);
+        Update_Focused_Element(INTERNAL::Event_Handlers[Current_Index]->Host);
     }
 
     /**
@@ -1622,13 +1637,13 @@ namespace GGUI{
      * @return The current maximum width of the terminal.
      */
     int Get_Max_Width(){
-        if (Max_Width == 0 && Max_Height == 0){
-            Carry_Flags([](GGUI::Carry* current_carry){
+        if (INTERNAL::Max_Width == 0 && INTERNAL::Max_Height == 0){
+            INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* current_carry){
                 current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
             });
         }
         
-        return Max_Width;
+        return INTERNAL::Max_Width;
     }
 
     /**
@@ -1638,13 +1653,13 @@ namespace GGUI{
      * @return The current maximum height of the terminal.
      */
     int Get_Max_Height(){
-        if (Max_Width == 0 && Max_Height == 0){
-            Carry_Flags([](GGUI::Carry* current_carry){
+        if (INTERNAL::Max_Width == 0 && INTERNAL::Max_Height == 0){
+            INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* current_carry){
                 current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
             });
         }
 
-        return Max_Height;
+        return INTERNAL::Max_Height;
     }
 
     /**
@@ -1664,17 +1679,17 @@ namespace GGUI{
         }
         else{
             // The position is in bounds, return the contents of that position
-            return &Abstract_Frame_Buffer[Absolute_Position.Y * Get_Max_Width() + Absolute_Position.X];
+            return &INTERNAL::Abstract_Frame_Buffer[Absolute_Position.Y * Get_Max_Width() + Absolute_Position.X];
         }
     }
 
     namespace INTERNAL{
         static Super_String LIQUIFY_UTF_TEXT_RESULT_CACHE;
-        static Super_String LIQUIFY_UTF_TEXT_TMP_CONTAINER(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);
-        static Super_String LIQUIFY_UTF_TEXT_TEXT_OVERHEAD(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        static Super_String LIQUIFY_UTF_TEXT_TEXT_COLOUR(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
-        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR(Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
+        static Super_String LIQUIFY_UTF_TEXT_TMP_CONTAINER(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);
+        static Super_String LIQUIFY_UTF_TEXT_TEXT_OVERHEAD(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
+        static Super_String LIQUIFY_UTF_TEXT_TEXT_COLOUR(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
+        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
     }
 
     /**
@@ -1738,17 +1753,17 @@ namespace GGUI{
      * @note This function will return immediately if the rendering thread is paused.
      */
     void Update_Frame(){
-        std::unique_lock lock(Atomic::Mutex);
+        std::unique_lock lock(INTERNAL::Atomic::Mutex);
 
         // Check if the rendering thread is paused.
-        if (Atomic::Pause_Render_Thread == Atomic::Status::LOCKED)
+        if (INTERNAL::Atomic::Pause_Render_Thread == INTERNAL::Atomic::Status::LOCKED)
             return;
 
         // Give the rendering thread one ticket.
-        Atomic::Pause_Render_Thread = Atomic::Status::RESUMED;
+        INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::RESUMED;
 
         // Notify all waiting threads that the frame has been updated.
-        Atomic::Condition.notify_all();
+        INTERNAL::Atomic::Condition.notify_all();
     }
 
     /**
@@ -1756,15 +1771,15 @@ namespace GGUI{
      * @details This function pauses the rendering thread. The thread will wait until the rendering thread is resumed.
      */
     void Pause_GGUI(){
-        std::unique_lock lock(Atomic::Mutex);
+        std::unique_lock lock(INTERNAL::Atomic::Mutex);
 
         // Set the render status to locked.
-        Atomic::Pause_Render_Thread = Atomic::Status::LOCKED;
+        INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::LOCKED;
 
         // Wait for the rendering thread to become available.
-        Atomic::Condition.wait_for(lock, GGUI::SETTINGS::Thread_Timeout, []{
+        INTERNAL::Atomic::Condition.wait_for(lock, GGUI::SETTINGS::Thread_Timeout, []{
             // If the rendering thread is not locked, then the wait is over.
-            return Atomic::Pause_Render_Thread == Atomic::Status::LOCKED;
+            return INTERNAL::Atomic::Pause_Render_Thread == INTERNAL::Atomic::Status::LOCKED;
         });
     }
 
@@ -1773,16 +1788,16 @@ namespace GGUI{
      * @details This function resumes the rendering thread after it has been paused.
      * @param restore_render_to The status to restore the rendering thread to.
      */
-    void Resume_GGUI(Atomic::Status restore_render_to){
+    void Resume_GGUI(INTERNAL::Atomic::Status restore_render_to){
         {
             // Local scope to set the new render status.
-            std::unique_lock lock(Atomic::Mutex);
+            std::unique_lock lock(INTERNAL::Atomic::Mutex);
             // Set the render status to the given status.
-            Atomic::Pause_Render_Thread = restore_render_to;
+            INTERNAL::Atomic::Pause_Render_Thread = restore_render_to;
         }
 
         // Check if the rendering status is anything but locked.
-        if (restore_render_to < Atomic::Status::LOCKED){
+        if (restore_render_to < INTERNAL::Atomic::Status::LOCKED){
             // If it's not locked, then update the frame.
             Update_Frame();
         }
@@ -1812,11 +1827,11 @@ namespace GGUI{
      *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
      */
     void Recall_Memories(){
-        Remember([](std::vector<Memory>* rememberable){
+        INTERNAL::Remember([](std::vector<Memory>* rememberable){
             std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
             // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
-            size_t Shortest_Time = MAX_UPDATE_SPEED;
+            size_t Shortest_Time = INTERNAL::MAX_UPDATE_SPEED;
             // Prolong prolongable memories.
             for (unsigned int i = 0; i < rememberable->size(); i++){
                 for (unsigned int j = i + 1; j < rememberable->size(); j++){
@@ -1866,7 +1881,7 @@ namespace GGUI{
 
             }
 
-            Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, Shortest_Time);
+            INTERNAL::Event_Thread_Load = Lerp(INTERNAL::MIN_UPDATE_SPEED, INTERNAL::MAX_UPDATE_SPEED, Shortest_Time);
         });
     }
 
@@ -1923,7 +1938,7 @@ namespace GGUI{
         bool Is_An_Event_handler = false;
 
         // Check if the current element is an event handler
-        for (auto i : Event_Handlers){
+        for (auto i : INTERNAL::Event_Handlers){
             if (i->Host == current){
                 Is_An_Event_handler = true;
                 break;
@@ -1956,7 +1971,7 @@ namespace GGUI{
         // check if the current element is one of the Event handlers, if not, then apply the focus buff.
         bool Is_An_Event_handler = false;
 
-        for (auto i : Event_Handlers){
+        for (auto i : INTERNAL::Event_Handlers){
             if (i->Host == current){
                 Is_An_Event_handler = true;
                 break;
@@ -1981,15 +1996,15 @@ namespace GGUI{
      *          Focus is only removed if the element's current focus state differs from the desired state.
      */
     void Un_Focus_Element(){
-        if (!Focused_On)
+        if (!INTERNAL::Focused_On)
             return;
 
-        Focused_On->Set_Focus(false);
+        INTERNAL::Focused_On->Set_Focus(false);
 
         // Recursively remove focus from all child elements
-        Recursively_Apply_Focus(Focused_On, false);
+        Recursively_Apply_Focus(INTERNAL::Focused_On, false);
 
-        Focused_On = nullptr;
+        INTERNAL::Focused_On = nullptr;
     }
 
     /**
@@ -1999,17 +2014,17 @@ namespace GGUI{
      *          Hover is only removed if the element's current hover state differs from the desired state.
      */
     void Un_Hover_Element(){
-        if (!Hovered_On)
+        if (!INTERNAL::Hovered_On)
             return;
 
         // Set the hover state to false on the currently hovered element
-        Hovered_On->Set_Hover_State(false);
+        INTERNAL::Hovered_On->Set_Hover_State(false);
 
         // Recursively remove the hover state from all child elements
-        Recursively_Apply_Hover(Hovered_On, false);
+        Recursively_Apply_Hover(INTERNAL::Hovered_On, false);
 
         // Set the hovered element to nullptr to indicate there is no currently hovered element
-        Hovered_On = nullptr;
+        INTERNAL::Hovered_On = nullptr;
     }
 
 
@@ -2021,22 +2036,22 @@ namespace GGUI{
      * @param new_candidate The new element to focus on.
      */
     void Update_Focused_Element(GGUI::Element* new_candidate){
-        if (Focused_On == new_candidate || new_candidate == Main)
+        if (INTERNAL::Focused_On == new_candidate || new_candidate == INTERNAL::Main)
             return;
 
         // Unfocus the previous focused element and its children
-        if (Focused_On){
+        if (INTERNAL::Focused_On){
             Un_Focus_Element();
         }
 
         // Set the focus on the new element and all its children
-        Focused_On = new_candidate;
+        INTERNAL::Focused_On = new_candidate;
 
         // Set the focus state on the new element to true
-        Focused_On->Set_Focus(true);
+        INTERNAL::Focused_On->Set_Focus(true);
 
         // Recursively set the focus state on all child elements to true
-        Recursively_Apply_Focus(Focused_On, true);
+        Recursively_Apply_Focus(INTERNAL::Focused_On, true);
     }
 
     /**
@@ -2047,22 +2062,22 @@ namespace GGUI{
      * @param new_candidate The new element to hover on.
      */
     void Update_Hovered_Element(GGUI::Element* new_candidate){
-        if (Hovered_On == new_candidate || new_candidate == Main)
+        if (INTERNAL::Hovered_On == new_candidate || new_candidate == INTERNAL::Main)
             return;
 
         // Remove the hover state from the previous hovered element and its children
-        if (Hovered_On){
+        if (INTERNAL::Hovered_On){
             Un_Hover_Element();
         }
 
         // Set the hover state on the new element and all its children
-        Hovered_On = new_candidate;
+        INTERNAL::Hovered_On = new_candidate;
 
         // Set the hover state on the new element to true
-        Hovered_On->Set_Hover_State(true);
+        INTERNAL::Hovered_On->Set_Hover_State(true);
 
         // Recursively set the hover state on all child elements to true
-        Recursively_Apply_Hover(Hovered_On, true);
+        Recursively_Apply_Hover(INTERNAL::Hovered_On, true);
     }
 
     /**
@@ -2074,32 +2089,32 @@ namespace GGUI{
      */
     void Event_Handler(){
         // Disable hovered element if the mouse isn't on top of it anymore.
-        if (Hovered_On && !Collides(Hovered_On, GGUI::Mouse)){
+        if (INTERNAL::Hovered_On && !Collides(INTERNAL::Hovered_On, GGUI::INTERNAL::Mouse)){
             Un_Hover_Element();
         }
 
         // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
         Populate_Inputs_For_Held_Down_Keys();
 
-        for (auto& e : Event_Handlers){
+        for (auto& e : INTERNAL::Event_Handlers){
 
             bool Has_Select_Event = false;
 
-            for (unsigned int i = 0; i < Inputs.size(); i++){
-                if (Has(Inputs[i]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
+            for (unsigned int i = 0; i < INTERNAL::Inputs.size(); i++){
+                if (Has(INTERNAL::Inputs[i]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
                     Has_Select_Event = true;
 
                 // Criteria must be identical for more accurate criteria listing.
-                if (e->Criteria == Inputs[i]->Criteria){
+                if (e->Criteria == INTERNAL::Inputs[i]->Criteria){
                     try{
                         // Check if this job could be run successfully.
-                        if (e->Job(Inputs[i])){
+                        if (e->Job(INTERNAL::Inputs[i])){
                             //dont let anyone else react to this event.
-                            Inputs.erase(Inputs.begin() + i);
+                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + i);
                         }
                         else{
                             // TODO: report miscarried event job.
-                            Report_Stack("Job '" + e->ID + "' failed!");
+                            INTERNAL::Report_Stack("Job '" + e->ID + "' failed!");
                         }
                     }
                     catch(std::exception& problem){
@@ -2114,7 +2129,7 @@ namespace GGUI{
                     continue;
 
                 //update the focused
-                if (Collides(e->Host, GGUI::Mouse)){
+                if (Collides(e->Host, GGUI::INTERNAL::Mouse)){
                     if (Has_Select_Event){
                         Update_Focused_Element(e->Host);
                         Un_Hover_Element();
@@ -2131,7 +2146,7 @@ namespace GGUI{
 
             }
 
-            if (Inputs.size() <= 1)
+            if (INTERNAL::Inputs.size() <= 1)
                 continue;
 
             // TODO: Do better you dum!
@@ -2140,7 +2155,7 @@ namespace GGUI{
             std::vector<GGUI::Input *> Accepted_Inputs;
 
             // if an input has flags that meet the criteria, then remove the criteria from the remaining flags and continue until the remaining flags are equal to zero.
-            for (auto& i : Inputs){
+            for (auto& i : INTERNAL::Inputs){
 
                 if (Contains(Remaining_Flags, i->Criteria)){
                     Remaining_Flags &= ~i->Criteria;
@@ -2164,9 +2179,9 @@ namespace GGUI{
                 //check if this job could be run successfully.
                 if (e->Job(Best_Candidate)){
                     // Now remove the candidates from the input
-                    for (unsigned int i = 0; i < Inputs.size(); i++){
-                        if (Inputs[i] == Best_Candidate){
-                            Inputs.erase(Inputs.begin() + i);
+                    for (unsigned int i = 0; i < INTERNAL::Inputs.size(); i++){
+                        if (INTERNAL::Inputs[i] == Best_Candidate){
+                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + i);
                             i--;
                         }
                     }
@@ -2175,7 +2190,7 @@ namespace GGUI{
 
         }
         //Clear_Inputs();
-        Inputs.clear();
+        INTERNAL::Inputs.clear();
     }
 
     /**
@@ -2186,16 +2201,16 @@ namespace GGUI{
      */
     int Get_Free_Class_ID(std::string n){
         // Check if the class name is already in the map
-        if (Class_Names.find(n) != Class_Names.end()){
+        if (INTERNAL::Class_Names.find(n) != INTERNAL::Class_Names.end()){
             // Return the existing class ID
-            return Class_Names[n];
+            return INTERNAL::Class_Names[n];
         }
         else{
             // Assign a new class ID as the current size of the map
-            Class_Names[n] = Class_Names.size();
+            INTERNAL::Class_Names[n] = INTERNAL::Class_Names.size();
 
             // Return the newly assigned class ID
-            return Class_Names[n];
+            return INTERNAL::Class_Names[n];
         }
     }
 
@@ -2209,7 +2224,7 @@ namespace GGUI{
      * @param Styling The styling to be associated with the class.
      */
     void Add_Class(std::string name, Styling Styling){
-        Classes([name, Styling](auto* classes){
+        INTERNAL::Classes([name, Styling](auto* classes){
             // Obtain a unique class ID for the given class name
             int Class_ID = Get_Free_Class_ID(name);
 
@@ -2241,7 +2256,7 @@ namespace GGUI{
     ///          of canvases that require updates.
     void Refresh_Multi_Frame_Canvas() {
         // Iterate over each multi-frame canvas
-        for (auto i : Multi_Frame_Canvas) {
+        for (auto i : INTERNAL::Multi_Frame_Canvas) {
             // Advance the animation to the next frame
             i.first->Set_Next_Animation_Frame();
 
@@ -2250,28 +2265,10 @@ namespace GGUI{
         }
 
         // Adjust the event thread load if there are canvases to update
-        if (Multi_Frame_Canvas.size() > 0) {
-            Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
+        if (INTERNAL::Multi_Frame_Canvas.size() > 0) {
+            INTERNAL::Event_Thread_Load = Lerp(INTERNAL::MIN_UPDATE_SPEED, INTERNAL::MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
         }
     }
-
-    /**
-     * @brief Initializes the start addresses for stack and heap.
-     * 
-     * This function is made extern to prevent inlining. It is responsible
-     * for capturing and initializing the nearest stack and heap addresses 
-     * and assigning them to the respective global variables.
-     */
-    extern void Init_Start_Addresses();
-
-    /**
-     * @brief Initializes the start addresses for stack and heap.
-     * 
-     * This function is made extern to prevent inlining. It is responsible
-     * for capturing and initializing the nearest stack and heap addresses 
-     * and assigning them to the respective global variables.
-     */
-    extern void Init_Start_Addresses();
 
     /**
      * @brief Initializes the GGUI system and returns the main window.
@@ -2279,80 +2276,80 @@ namespace GGUI{
      * @return The main window of the GGUI system.
      */
     GGUI::Window* Init_GGUI(){
-        Init_Start_Addresses();
+        INTERNAL::Init_Start_Addresses();
         SETTINGS::Init_Settings();
-        LOGGER::Init();
-        LOGGER::Log("Starting GGUI Core initialization...");
+        INTERNAL::LOGGER::Init();
+        INTERNAL::LOGGER::Log("Starting GGUI Core initialization...");
 
-        Update_Max_Width_And_Height();
+        INTERNAL::Update_Max_Width_And_Height();
         
-        if (Max_Height == 0 || Max_Width == 0){
+        if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
             Report("Width/Height is zero!");
             return nullptr;
         }
 
         // Save the state before the init
-        Current_Time = std::chrono::high_resolution_clock::now();
-        Previous_Time = Current_Time;
+        INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
+        INTERNAL::Previous_Time = INTERNAL::Current_Time;
 
-        Init_Platform_Stuff();
+        INTERNAL::Init_Platform_Stuff();
 
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
-        Main = (Window*)0xFFFFFFFF;
-        Main = new Window(Styling(
-            width(Max_Width) |
-            height(Max_Height)
+        INTERNAL::Main = (Window*)0xFFFFFFFF;
+        INTERNAL::Main = new Window(Styling(
+            width(INTERNAL::Max_Width) |
+            height(INTERNAL::Max_Height)
         ), true);
 
         std::thread Rendering_Scheduler([&](){
             while (true){
                 {
-                    std::unique_lock lock(Atomic::Mutex);
-                    Atomic::Condition.wait(lock, [&](){ return Atomic::Pause_Render_Thread == Atomic::Status::RESUMED; });
+                    std::unique_lock lock(INTERNAL::Atomic::Mutex);
+                    INTERNAL::Atomic::Condition.wait(lock, [&](){ return INTERNAL::Atomic::Pause_Render_Thread == INTERNAL::Atomic::Status::RESUMED; });
 
-                    Atomic::Pause_Render_Thread = Atomic::Status::LOCKED;
+                    INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::LOCKED;
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
-                Previous_Time = std::chrono::high_resolution_clock::now();
+                INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (Carry_Flags.Read()->Terminate){
+                if (INTERNAL::Carry_Flags.Read()->Terminate){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
-                if (Main){
+                if (INTERNAL::Main){
 
                     // Process the previous carry flags
-                    Carry_Flags([](GGUI::Carry* previous_carry){
+                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* previous_carry){
                         if (previous_carry->Resize){
                             // Clear the previous carry flag
                             previous_carry->Resize = false;
 
-                            Update_Max_Width_And_Height();
+                            INTERNAL::Update_Max_Width_And_Height();
                         }
                     });
 
-                    Abstract_Frame_Buffer = Main->Render();
+                    INTERNAL::Abstract_Frame_Buffer = INTERNAL::Main->Render();
 
                     // ENCODE for optimize
-                    Encode_Buffer(Abstract_Frame_Buffer);
+                    Encode_Buffer(INTERNAL::Abstract_Frame_Buffer);
 
-                    Frame_Buffer = Liquify_UTF_Text(Abstract_Frame_Buffer, Main->Get_Width(), Main->Get_Height())->To_String();
+                    INTERNAL::Frame_Buffer = Liquify_UTF_Text(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->Get_Width(), INTERNAL::Main->Get_Height())->To_String();
                     
-                    Render_Frame();
+                    INTERNAL::Render_Frame();
                 }
 
                 // Check the difference of the time captured before render and now after render
-                Current_Time = std::chrono::high_resolution_clock::now();
+                INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
 
-                Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                INTERNAL::Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
 
                 {
-                    std::unique_lock lock(Atomic::Mutex);
+                    std::unique_lock lock(INTERNAL::Atomic::Mutex);
                     // Now for itself set it to sleep.
-                    Atomic::Pause_Render_Thread = Atomic::Status::PAUSED;
-                    Atomic::Condition.notify_all();
+                    INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::PAUSED;
+                    INTERNAL::Atomic::Condition.notify_all();
                 }
             }
         });
@@ -2363,8 +2360,8 @@ namespace GGUI{
             while (true){
                 Pause_GGUI([&](){
                     // Reset the thread load counter
-                    Event_Thread_Load = 0;
-                    Previous_Time = std::chrono::high_resolution_clock::now();
+                    INTERNAL::Event_Thread_Load = 0;
+                    INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                     // Order independent --------------
                     Recall_Memories();
@@ -2373,7 +2370,7 @@ namespace GGUI{
                 });
 
                 // Check for carry signals if the event scheduler needs to be terminated.
-                if (Carry_Flags.Read()->Terminate){
+                if (INTERNAL::Carry_Flags.Read()->Terminate){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
@@ -2384,18 +2381,18 @@ namespace GGUI{
                 */  
                 // Resume_GGUI();
 
-                Current_Time = std::chrono::high_resolution_clock::now();
+                INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
 
                 // Calculate the delta time.
-                Event_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                INTERNAL::Event_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
 
-                CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
+                INTERNAL::CURRENT_UPDATE_SPEED = INTERNAL::MIN_UPDATE_SPEED + (INTERNAL::MAX_UPDATE_SPEED - INTERNAL::MIN_UPDATE_SPEED) * (1 - INTERNAL::Event_Thread_Load);
 
                 // If ya want uncapped FPS, disable this sleep code:
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(
-                        CURRENT_UPDATE_SPEED - Event_Delay, 
-                        MIN_UPDATE_SPEED
+                        INTERNAL::CURRENT_UPDATE_SPEED - INTERNAL::Event_Delay, 
+                        INTERNAL::MIN_UPDATE_SPEED
                     )
                 ));
             }
@@ -2404,13 +2401,13 @@ namespace GGUI{
         std::thread Inquire_Scheduler([&](){
             while (true){
                 // Wait for user input.
-                Query_Inputs();
+                INTERNAL::Query_Inputs();
 
                 Pause_GGUI([&](){
-                    Previous_Time = std::chrono::high_resolution_clock::now();
+                    INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                     // Translate the Queried inputs.
-                    Translate_Inputs();
+                    INTERNAL::Translate_Inputs();
 
                     // Translate the movements thingies to better usable for user.
                     SCROLL_API();
@@ -2419,23 +2416,23 @@ namespace GGUI{
                     // Now call upon event handlers which may react to the parsed input.
                     Event_Handler();
 
-                    Current_Time = std::chrono::high_resolution_clock::now();
+                    INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
 
                     // Calculate the delta time.
-                    Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                    INTERNAL::Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
                 });
             }
         });
 
-        Sub_Threads.push_back(std::move(Rendering_Scheduler));
-        Sub_Threads.push_back(std::move(Event_Scheduler));
-        Sub_Threads.push_back(std::move(Inquire_Scheduler));
+        INTERNAL::Sub_Threads.push_back(std::move(Rendering_Scheduler));
+        INTERNAL::Sub_Threads.push_back(std::move(Event_Scheduler));
+        INTERNAL::Sub_Threads.push_back(std::move(Inquire_Scheduler));
 
-        Sub_Threads.back().detach();    // the Inquire scheduler cannot never stop and thus needs to be as an separate thread.
+        INTERNAL::Sub_Threads.back().detach();    // the Inquire scheduler cannot never stop and thus needs to be as an separate thread.
 
-        LOGGER::Log("GGUI Core initialization complete.");
+        INTERNAL::LOGGER::Log("GGUI Core initialization complete.");
 
-        return Main;
+        return INTERNAL::Main;
     }
 
     /**
@@ -2446,7 +2443,7 @@ namespace GGUI{
      */
     void Report(std::string Problem){
         Pause_GGUI([&Problem]{
-            LOGGER::Log(Problem);
+            INTERNAL::LOGGER::Log(Problem);
 
             Problem = " " + Problem + " ";
 
@@ -2464,15 +2461,15 @@ namespace GGUI{
                 </Window>
             */
 
-            if (Main && (Max_Width != 0 && Max_Height != 0)){
+            if (INTERNAL::Main && (INTERNAL::Max_Width != 0 && INTERNAL::Max_Height != 0)){
                 bool Create_New_Line = true;
 
                 // First check if there already is a report log.
-                Window* Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
+                Window* Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
 
                 if (Error_Logger){
                     // Get the list
-                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
+                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
 
                     // This happens, when Error logger is kidnapped!
                     if (!History){
@@ -2480,7 +2477,7 @@ namespace GGUI{
                         History = new Scroll_View(Styling(
                             width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                            flow_priority(DIRECTION::COLUMN) | name(HISTORY)
+                            flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
                         ));
 
                         Error_Logger->Add_Child(History);
@@ -2520,7 +2517,7 @@ namespace GGUI{
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
                             border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
 
-                            title("LOG") | name(ERROR_LOGGER) | 
+                            title("LOG") | name(INTERNAL::ERROR_LOGGER) | 
                             
                             position(
                                 STYLES::top + STYLES::center + STYLING_INTERNAL::Vector(0.0f, 0.0f, INT32_MAX-1)
@@ -2531,18 +2528,18 @@ namespace GGUI{
                             node(new Scroll_View(Styling(
                                 width(1.0f) | height(1.0f) |
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                                flow_priority(DIRECTION::COLUMN) | name(HISTORY)
+                                flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
                             )))
                         )
                     );
 
-                    Main->Add_Child(Error_Logger);
+                    INTERNAL::Main->Add_Child(Error_Logger);
                 }
 
                 if (Create_New_Line){
                     // re-find the error_logger.
-                    Error_Logger = (Window*)Main->Get_Element(ERROR_LOGGER);
-                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
+                    Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
+                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
 
                     History->Add_Child(new List_View(Styling(
                         width(History->Get_Width() - 1) | height(1) | 
@@ -2561,7 +2558,7 @@ namespace GGUI{
                     )));
 
                     // Calculate the new x position for the Error_Logger
-                    if (Error_Logger->Get_Parent() == Main)
+                    if (Error_Logger->Get_Parent() == INTERNAL::Main)
                         Error_Logger->Set_Position({
                             (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
                             (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
@@ -2581,10 +2578,10 @@ namespace GGUI{
                 }
 
                 // If the user has disabled the Inspect_Tool then the errors appear as an popup window ,which disappears after 30s.
-                if (Error_Logger->Get_Parent() == Main){
+                if (Error_Logger->Get_Parent() == INTERNAL::Main){
                     Error_Logger->Display(true);
 
-                    Remember([Error_Logger](std::vector<Memory>* rememberable){
+                    INTERNAL::Remember([Error_Logger](std::vector<Memory>* rememberable){
                         rememberable->push_back(Memory(
                             TIME::SECOND * 30,
                             [Error_Logger](GGUI::Event*){
@@ -2601,8 +2598,8 @@ namespace GGUI{
 
             }
             else{
-                if (!Platform_Initialized){
-                    Init_Platform_Stuff();
+                if (!INTERNAL::Platform_Initialized){
+                    INTERNAL::Init_Platform_Stuff();
                 }
 
                 // This is for the non GGUI space errors.
@@ -2670,15 +2667,15 @@ namespace GGUI{
     void Pause_GGUI(std::function<void()> f){
 
         // Save the current render status.
-        Atomic::Status Previous_Render_Status;
+        INTERNAL::Atomic::Status Previous_Render_Status;
 
         // Make an virtual local scope to temporary own the mutex.
         {
             // Lock the mutex to make sure we are the only one that can change the render status.
-            std::unique_lock lock(Atomic::Mutex);
+            std::unique_lock lock(INTERNAL::Atomic::Mutex);
 
             // Save the current render status.
-            Previous_Render_Status = Atomic::Pause_Render_Thread;
+            Previous_Render_Status = INTERNAL::Atomic::Pause_Render_Thread;
         }
 
         Pause_GGUI();
@@ -2692,7 +2689,7 @@ namespace GGUI{
             std::string Given_Function_Label_Location = Hex(reinterpret_cast<unsigned long long>(&f));
 
             // If an exception is thrown, report the stack trace and the exception message.
-            Report_Stack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: " + std::string(e.what()));
+            INTERNAL::Report_Stack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: " + std::string(e.what()));
         }
 
         // Resume the render thread with the previous render status.
@@ -2708,7 +2705,7 @@ namespace GGUI{
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
-        Init_Start_Addresses();
+        INTERNAL::Init_Start_Addresses();
 
         Pause_GGUI([DOM](){
             Init_GGUI();
@@ -2719,7 +2716,7 @@ namespace GGUI{
         // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
         Resume_GGUI();
 
-        SLEEP(Sleep_For);
+        INTERNAL::SLEEP(Sleep_For);
         // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
     }
 
@@ -2730,23 +2727,23 @@ namespace GGUI{
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
     void GGUI(Styling App, unsigned long long Sleep_For){
-        Init_Start_Addresses();
+        INTERNAL::Init_Start_Addresses();
 
         Pause_GGUI([&App](){
             Init_GGUI();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
-            Main->Add_Styling(App);
+            INTERNAL::Main->Add_Styling(App);
 
             // Now recursively go down in the App AST nodes and Build each node.
-            Main->Embed_Styles();
+            INTERNAL::Main->Embed_Styles();
         });
 
         // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
         Resume_GGUI();
 
         // Sleep for the given amount of milliseconds.
-        SLEEP(Sleep_For);
+        INTERNAL::SLEEP(Sleep_For);
     }
 
     /**
@@ -2789,14 +2786,14 @@ namespace GGUI{
     }
 
     std::string Get_Stats_Text(){
-        return  "Encoded buffer: " + std::to_string(Abstract_Frame_Buffer.size()) + "\n" + 
-                "Raw buffer: " + std::to_string(Frame_Buffer.size()) + "\n" +
-                "Elements: " + std::to_string(Main->Get_All_Nested_Elements().size()) + "\n" +
-                "Render delay: " + std::to_string(Render_Delay) + "ms\n" +
-                "Event delay: " + std::to_string(Event_Delay) + "ms\n" + 
-                "Input delay: " + std::to_string(Input_Delay) + "ms\n" + 
-                "Resolution: " + std::to_string(Max_Width) + "x" + std::to_string(Max_Height) + "\n" +
-                "Task scheduler: " + std::to_string(CURRENT_UPDATE_SPEED) + "ms\n";
+        return  "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
+                "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
+                "Elements: " + std::to_string(INTERNAL::Main->Get_All_Nested_Elements().size()) + "\n" +
+                "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
+                "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
+                "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
+                "Resolution: " + std::to_string(INTERNAL::Max_Width) + "x" + std::to_string(INTERNAL::Max_Height) + "\n" +
+                "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n";
     }
 
     /**
@@ -2807,13 +2804,13 @@ namespace GGUI{
      */
     bool Update_Stats([[maybe_unused]] GGUI::Event* Event){
         // Check if the inspect tool is displayed
-        Element* Inspect_Tool = Main->Get_Element("Inspect");
+        Element* Inspect_Tool = INTERNAL::Main->Get_Element("Inspect");
 
         if (!Inspect_Tool || !Inspect_Tool->Is_Displayed())
             return false;
 
         // find the stats element
-        Text_Field* Stats = (Text_Field*)Main->Get_Element("STATS");
+        Text_Field* Stats = (Text_Field*)INTERNAL::Main->Get_Element("STATS");
 
         // Update the stats
         Stats->Set_Text(Get_Stats_Text());
@@ -2828,7 +2825,7 @@ namespace GGUI{
      * @see GGUI::Update_Stats
      */
     void Init_Inspect_Tool(){
-        Main->Add_Child(new GGUI::List_View(Styling(
+        INTERNAL::Main->Add_Child(new GGUI::List_View(Styling(
             width(0.5f) | height(1.0f) | 
             text_color(1.0f) | background_color(1.0f) |
             // Set the flow direction to column so the elements stack vertically
@@ -2851,7 +2848,7 @@ namespace GGUI{
                     STYLES::border | 
                     title("LOG: ") | 
                     // Set the name of the window to "LOG"
-                    name(ERROR_LOGGER) | 
+                    name(INTERNAL::ERROR_LOGGER) | 
                     // Allow the window to overflow, so that the text can be seen even if it is longer than the window
                     allow_overflow(true)
                 )
@@ -2874,11 +2871,11 @@ namespace GGUI{
 
             on_init([](Element* self){
                 // Register an event handler to toggle the inspect tool on and off
-                GGUI::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
+                GGUI::INTERNAL::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
                     GGUI::Input* input = (GGUI::Input*)e;
 
                     // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
-                    if (!KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
+                    if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
                         return false;
 
                     // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
@@ -2889,7 +2886,7 @@ namespace GGUI{
                 }, true);
 
                 // Remember the inspect tool, so it will be updated every second
-                Remember([](std::vector<Memory>* rememberable){
+                INTERNAL::Remember([](std::vector<Memory>* rememberable){
                     rememberable->push_back(
                         GGUI::Memory(
                             TIME::SECOND,
@@ -2914,7 +2911,7 @@ namespace GGUI{
     void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer){
 
         // Iterate over all global buffer capturers
-        for (auto* capturer : Global_Buffer_Captures){
+        for (auto* capturer : INTERNAL::Global_Buffer_Captures){
             if (!capturer->Is_Global)
                 continue;
 
@@ -2956,23 +2953,23 @@ namespace GGUI{
         bool Ptr_Is_In_Range_Of_DATA_Section = ((signed long long)ptr - (signed long long)&Somewhere_In_DATA) <= Somewhere_In_DATA;
 
         // Check if ptr is smaller than the stack start address
-        bool Lower_Than_Stack = (uintptr_t)ptr < (uintptr_t)Stack_Start_Address;
+        bool Lower_Than_Stack = (uintptr_t)ptr < (uintptr_t)INTERNAL::Stack_Start_Address;
 
         // Try to allocate memory on the heap for comparison
         size_t* new_heap = new(std::nothrow) size_t;
         if (new_heap == nullptr) {
-            Report_Stack("Failed to allocate new heap for stack pointer check!");
+            INTERNAL::Report_Stack("Failed to allocate new heap for stack pointer check!");
             exit(1);  // FATAL error if heap allocation fails
         }
 
         // Check if the new heap address is below the stack start address
-        bool Heap_Is_Lower_Than_Stack = (uintptr_t)new_heap < (uintptr_t)Stack_Start_Address;
+        bool Heap_Is_Lower_Than_Stack = (uintptr_t)new_heap < (uintptr_t)INTERNAL::Stack_Start_Address;
 
         // Calculate distance from ptr to the stack start address
-        uintptr_t ptr_distance_to_stack = (uintptr_t)Stack_Start_Address - (uintptr_t)ptr;
+        uintptr_t ptr_distance_to_stack = (uintptr_t)INTERNAL::Stack_Start_Address - (uintptr_t)ptr;
 
         // Calculate distance from ptr to the closest heap address
-        uintptr_t heap_min_address = Min((uintptr_t)new_heap, (uintptr_t)Heap_Start_Address);
+        uintptr_t heap_min_address = Min((uintptr_t)new_heap, (uintptr_t)INTERNAL::Heap_Start_Address);
         uintptr_t ptr_distance_to_heap = heap_min_address - (uintptr_t)ptr;
 
         // Determine if ptr is closer to the stack than the heap and below the stack start

@@ -30,79 +30,118 @@ namespace GGUI{
     namespace INTERNAL{
         class BUFFER_CAPTURE;
 
+        namespace Atomic{
+            enum class Status{
+                RESUMED,
+                PAUSED,
+                LOCKED,
+                NOT_INITIALIZED
+            };
+
+            extern std::mutex Mutex;
+            extern std::condition_variable Condition;
+
+            extern Status Pause_Render_Thread;
+        }
+
+        // Inits with 'NOW()' when created
+        class BUTTON_STATE {
+        public:
+            bool State;
+            std::chrono::high_resolution_clock::time_point Capture_Time;
+
+            BUTTON_STATE(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
+        };
+
+        extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
+        extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
+
+        extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
+
+        extern unsigned int Max_Width;
+        extern unsigned int Max_Height;
+
+        extern Atomic::Guard<std::vector<Memory>> Remember;
+
+        extern std::vector<Action*> Event_Handlers;
+        extern std::vector<Input*> Inputs;
+        
+        extern std::unordered_map<std::string, Element*> Element_Names;
+
+        extern Element* Focused_On;
+        extern Element* Hovered_On;
+
+        extern IVector3 Mouse;    
+        extern bool Mouse_Movement_Enabled;
+
+        extern std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+
+        extern time_t MAX_UPDATE_SPEED;
+        extern int Inputs_Per_Second;
+        extern int Inputs_Per_Query;
+
+        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
+        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+
+        extern Atomic::Guard<std::unordered_map<int, Styling>> Classes;
+        extern std::unordered_map<std::string, int> Class_Names;
+
+        extern Window* Main;  
+
+        extern std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
+
         extern std::string Now();
 
         extern std::string Construct_Logger_File_Name();
+
+        extern void Report_Stack(std::string Problem);
+
+        /**
+         * @brief Initializes platform-specific settings for console handling.
+         * @details This function sets up the console handles and modes required for input and output operations.
+         *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
+         *          handling specific ANSI features.
+         */
+        extern void Init_Platform_Stuff();
+        
+        /// @brief A platform-specific sleep function.
+        /// @param mm The number of milliseconds to sleep for.
+        /// @details This function is used to pause the execution of the program for a specified amount of time.
+        ///          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
+        ///          while on Linux and macOS it calls the usleep function.
+        void SLEEP(unsigned int milliseconds);
+        
+        /// @brief A function to render a frame.
+        /// @details This function is called from the event loop. It renders the frame by writing the Frame_Buffer data to the console.
+        ///          It also moves the cursor to the top left corner of the screen.
+        extern void Render_Frame();
+
+        /// @brief Updates the maximum width and height of the console.
+        /// @details This function is used to get the maximum width and height of the console.
+        ///          It is called from the Query_Inputs function.
+        extern void Update_Max_Width_And_Height();
+        
+        /**
+         * @brief Updates the frame.
+         * @details This function updates the frame. It's the main entry point for the rendering thread.
+         * @note This function will return immediately if the rendering thread is paused.
+         */
+        void Update_Frame();
+        
+        /// @brief Waits for user input, will not translate, use Translate_Inputs for that.
+        /// @details This function waits for user input and stores it in the Raw_Input array.
+        ///          It is called from the event loop.
+        extern void Query_Inputs();
+        
+        /// @brief Cleanly exits the GGUI library.
+        /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.
+        ///          It ensures that any platform-specific settings are reset before the application exits.
+        /// @param signum The exit code to return to the operating system.
+        extern void Exit(int Signum = 0);
     }
 
-    extern void Report_Stack(std::string Problem);
-
-    namespace Atomic{
-        enum class Status{
-            RESUMED,
-            PAUSED,
-            LOCKED,
-            NOT_INITIALIZED
-        };
-
-        extern std::mutex Mutex;
-        extern std::condition_variable Condition;
-
-        extern Status Pause_Render_Thread;
-    }
-
-    // Inits with 'NOW()' when created
-    class BUTTON_STATE {
-    public:
-        bool State;
-        std::chrono::high_resolution_clock::time_point Capture_Time;
-
-        BUTTON_STATE(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
-    };
-
-    extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
-    extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
-
-    extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
-
-    extern unsigned int Max_Width;
-    extern unsigned int Max_Height;
-
-    extern Atomic::Guard<std::vector<Memory>> Remember;
-
-    extern std::vector<Action*> Event_Handlers;
-    extern std::vector<Input*> Inputs;
-    
-    extern std::unordered_map<std::string, Element*> Element_Names;
-
-    extern Element* Focused_On;
-    extern Element* Hovered_On;
-
-    extern IVector3 Mouse;    
-    extern bool Mouse_Movement_Enabled;
-
-    extern std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
-
-    extern time_t MAX_UPDATE_SPEED;
-    extern int Inputs_Per_Second;
-    extern int Inputs_Per_Query;
-
-    extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-    extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
-
-    extern Atomic::Guard<std::unordered_map<int, Styling>> Classes;
-    extern std::unordered_map<std::string, int> Class_Names;
-
-    extern Window* Main;  
-
-    extern std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
-
-    /// @brief A platform-specific sleep function.
-    /// @param mm The number of milliseconds to sleep for.
-    /// @details This function is used to pause the execution of the program for a specified amount of time.
-    ///          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
-    ///          while on Linux and macOS it calls the usleep function.
-    void SLEEP(unsigned int milliseconds);
+    // Reroute to the internal namespace
+    void Exit(int Signum = 0) { INTERNAL::Exit(Signum); }
 
     /// @brief Checks if two rectangular areas, defined by their positions and dimensions, collide.
     /// @param A The top-left corner position of the first rectangle.
@@ -163,28 +202,6 @@ namespace GGUI{
 
     extern void ClearScreen();
 
-    /// @brief A function to render a frame.
-    /// @details This function is called from the event loop. It renders the frame by writing the Frame_Buffer data to the console.
-    ///          It also moves the cursor to the top left corner of the screen.
-    extern void Render_Frame();
-
-    /// @brief Updates the maximum width and height of the console.
-    /// @details This function is used to get the maximum width and height of the console.
-    ///          It is called from the Query_Inputs function.
-    extern void Update_Max_Width_And_Height();
-
-    /**
-     * @brief Updates the frame.
-     * @details This function updates the frame. It's the main entry point for the rendering thread.
-     * @note This function will return immediately if the rendering thread is paused.
-     */
-    void Update_Frame();
-
-    /// @brief Waits for user input, will not translate, use Translate_Inputs for that.
-    /// @details This function waits for user input and stores it in the Raw_Input array.
-    ///          It is called from the event loop.
-    extern void Query_Inputs();
-
     /**
      * @brief Processes mouse input events and updates the input list.
      * @details This function checks the state of mouse buttons (left, right, and middle)
@@ -197,14 +214,6 @@ namespace GGUI{
 
     // Handles also UP and DOWN buttons
     extern void SCROLL_API();
-
-    /**
-     * @brief Initializes platform-specific settings for console handling.
-     * @details This function sets up the console handles and modes required for input and output operations.
-     *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
-     *          handling specific ANSI features.
-     */
-    extern void Init_Platform_Stuff();
 
     /**
      * @brief Returns the length of a Unicode character based on the first byte.
@@ -267,7 +276,7 @@ namespace GGUI{
      * @details This function resumes the rendering thread after it has been paused.
      * @param restore_render_to The status to restore the rendering thread to.
      */
-    extern void Resume_GGUI(Atomic::Status restore_render_to = Atomic::Status::RESUMED);
+    extern void Resume_GGUI(INTERNAL::Atomic::Status restore_render_to = INTERNAL::Atomic::Status::RESUMED);
 
     /**
      * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
@@ -395,12 +404,6 @@ namespace GGUI{
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
     extern void GGUI(Styling App, unsigned long long Sleep_For = 0);
-
-    /// @brief Cleanly exits the GGUI library.
-    /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.
-    ///          It ensures that any platform-specific settings are reset before the application exits.
-    /// @param signum The exit code to return to the operating system.
-    extern void Exit(int Signum = 0);
 
     /**
      * @brief Handles the pressing of the tab key.
