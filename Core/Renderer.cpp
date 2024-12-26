@@ -131,6 +131,20 @@ namespace GGUI{
         return std::string(buffer);
     }
 
+    /**
+     * @brief Checks if two rectangles collide.
+     *
+     * This function determines whether two rectangles, defined by their top-left
+     * corners and dimensions, overlap in a 2D space.
+     *
+     * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
+     * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
+     * @param A_Width The width of the first rectangle.
+     * @param A_Height The height of the first rectangle.
+     * @param B_Width The width of the second rectangle.
+     * @param B_Height The height of the second rectangle.
+     * @return true if the rectangles overlap, false otherwise.
+     */
     bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width, int A_Height, int B_Width, int B_Height) {
         // Check if the rectangles overlap in the x-axis and y-axis
         return (
@@ -141,6 +155,18 @@ namespace GGUI{
         );
     }
 
+    /**
+     * @brief Checks if two GGUI elements collide.
+     * 
+     * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
+     * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
+     * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
+     * 
+     * @param a Pointer to the first GGUI element.
+     * @param b Pointer to the second GGUI element.
+     * @param Identity Boolean value to return if the elements are the same.
+     * @return true if the elements collide, false otherwise.
+     */
     bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity) {
         if (a == b)
             return Identity;    // For custom purposes, defaults into true
@@ -151,11 +177,35 @@ namespace GGUI{
         );
     }
 
+    /**
+     * @brief Checks if a given point collides with a specified element.
+     * 
+     * This function determines if the point `b` collides with the element `a` by 
+     * calling another `Collides` function with the element's absolute position, 
+     * width, height, and the point's assumed dimensions of 1x1.
+     * 
+     * @param a Pointer to the GGUI::Element to check for collision.
+     * @param b The point (as GGUI::IVector3) to check for collision with the element.
+     * @return true if the point collides with the element, false otherwise.
+     */
     bool Collides(GGUI::Element* a, GGUI::IVector3 b) {
         // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
         return Collides(a->Get_Absolute_Position(), b, a->Get_Width(), a->Get_Height(), 1, 1);
     }
 
+    /**
+     * @brief Recursively finds the most accurate element that contains the given position.
+     * 
+     * This function checks if the given position is within the bounds of the parent element.
+     * If it is, it then checks all the child elements of the parent to see if any of them
+     * contain the position. If a child element contains the position, the function is called
+     * recursively on that child element. If no child element contains the position, the parent
+     * element is returned.
+     * 
+     * @param c The position to check, represented as an IVector3.
+     * @param Parent The parent element to start the search from.
+     * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
+     */
     Element* Get_Accurate_Element_From(IVector3 c, Element* Parent){
         //first check if the c is in bounds of Parent.
         if (!Collides(Parent, c)){
@@ -174,6 +224,16 @@ namespace GGUI{
         return Parent;
     }
 
+    /**
+     * @brief Finds the upper element relative to the current element's position.
+     * 
+     * This function retrieves the current element based on the mouse position and 
+     * attempts to find an element directly above it by moving one pixel up. If an 
+     * upper element is found and it is not the main element, the position of the 
+     * upper element is returned. Otherwise, the position of the current element is returned.
+     * 
+     * @return IVector3 The position of the upper element if found, otherwise the position of the current element.
+     */
     IVector3 Find_Upper_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
@@ -195,6 +255,14 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
+    /**
+     * @brief Finds the lower element relative to the current element.
+     * 
+     * This function retrieves the current element based on the mouse position
+     * and then attempts to find an element that is positioned directly below it.
+     * 
+     * @return IVector3 The position of the lower element if found, otherwise the position of the current element.
+     */
     IVector3 Find_Lower_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
@@ -216,6 +284,16 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
+    /**
+     * @brief Finds the element to the left of the current element.
+     *
+     * This function retrieves the current element based on the mouse position
+     * and attempts to find an element one pixel to the left of it. If such an
+     * element is found, its position is returned. If no left element is found,
+     * the position of the current element is returned.
+     *
+     * @return IVector3 The position of the left element if found, otherwise the position of the current element.
+     */
     IVector3 Find_Left_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
@@ -240,6 +318,18 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
+    /**
+     * @brief Finds the element to the right of the current element.
+     * 
+     * This function first retrieves the current element based on the mouse position
+     * and the main internal context. If the current element is found, it calculates
+     * the position of the element to the right by moving one pixel to the right of
+     * the current element's position. It then attempts to retrieve the element at
+     * this new position.
+     * 
+     * @return IVector3 The position of the element to the right if found, otherwise
+     *                  the position of the current element.
+     */
     IVector3 Find_Right_Element(){
         //first get the current element.
         Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
@@ -264,10 +354,17 @@ namespace GGUI{
         return Current_Element->Get_Position();
     }
 
-    /// @brief Finds the closest element to the given position from the given candidates.
-    /// @param start The position to start from.
-    /// @param Candidates The list of elements to check from.
-    /// @return The closest element to the given position.
+    /**
+     * @brief Finds the closest element to the given start position from a list of candidate elements.
+     * 
+     * This function iterates through a list of candidate elements and calculates the distance 
+     * between each candidate's position and the given start position. It returns the candidate 
+     * element that is closest to the start position.
+     * 
+     * @param start The starting position as an IVector3 object.
+     * @param Candidates A vector of pointers to Element objects representing the candidate elements.
+     * @return Element* A pointer to the closest candidate element. Returns nullptr if the Candidates vector is empty.
+     */
     Element* Find_Closest_Absolute_Element(IVector3 start, std::vector<Element*> Candidates){
         // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
         // If they are, check if they collide with any element.
@@ -298,10 +395,28 @@ namespace GGUI{
         return Best_Candidate;
     }
 
+    /**
+     * @brief Returns the smaller of two signed long long integers.
+     * 
+     * This function compares two signed long long integers and returns the smaller of the two.
+     * 
+     * @param a The first signed long long integer to compare.
+     * @param b The second signed long long integer to compare.
+     * @return The smaller of the two signed long long integers.
+     */
     signed long long Min(signed long long a, signed long long b){
         return a < b ? a : b;
     }
 
+    /**
+     * @brief Returns the maximum of two signed long long integers.
+     *
+     * This function compares two signed long long integers and returns the greater of the two.
+     *
+     * @param a The first signed long long integer to compare.
+     * @param b The second signed long long integer to compare.
+     * @return The greater of the two signed long long integers.
+     */
     signed long long Max(signed long long a, signed long long b){
         return a > b ? a : b;
     }
@@ -318,8 +433,16 @@ namespace GGUI{
         #include <windows.h>
         #include <DbgHelp.h>
 
+        /**
+         * @brief Sleep for the specified amount of milliseconds.
+         * 
+         * This function pauses the execution of the current thread for the specified
+         * duration in milliseconds.
+         * 
+         * @param mm The number of milliseconds to sleep.
+         */
         void SLEEP(unsigned int mm){
-            /// Sleep for the specified amount of milliseconds.
+            // Sleep for the specified amount of milliseconds.
             Sleep(mm);
         }
 
@@ -336,9 +459,15 @@ namespace GGUI{
         INPUT_RECORD Raw_Input[Raw_Input_Capacity];
         int Raw_Input_Size = 0;
 
-        /// @brief A function to render a frame.
-        /// @details This function is called from the event loop. It renders the frame by writing the Frame_Buffer data to the console.
-        ///          It also moves the cursor to the top left corner of the screen.
+        /**
+         * @brief Renders the current frame to the console.
+         * 
+         * This function moves the console cursor to the top left corner of the screen
+         * and writes the contents of the Frame_Buffer to the console.
+         * 
+         * @note The number of bytes written to the console is stored in a temporary
+         * variable but is not used elsewhere in the function.
+         */
         void Render_Frame(){
             // The number of bytes written to the console, not used anywhere else.
             unsigned long long tmp = 0;
@@ -348,9 +477,15 @@ namespace GGUI{
             WriteFile(GLOBAL_STD_OUTPUT_HANDLE, INTERNAL::Frame_Buffer.data(), INTERNAL::Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
         }
 
-        /// @brief Updates the maximum width and height of the console.
-        /// @details This function is used to get the maximum width and height of the console.
-        ///          It is called from the Query_Inputs function.
+        /**
+         * @brief Updates the maximum width and height of the console window.
+         * 
+         * This function retrieves the current console screen buffer information and updates
+         * the maximum width and height based on the console window dimensions. If the console
+         * information is not retrieved correctly, an error message is reported. Additionally,
+         * if the main window is active, its dimensions are set to the updated maximum width
+         * and height.
+         */
         void Update_Max_Width_And_Height(){
             // Get the console information.
             CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
@@ -372,11 +507,20 @@ namespace GGUI{
         void Update_Frame(bool Lock_Event_Thread);
         //Is called on every cycle.
 
-        /// @brief A function to reverse-engineer keybinds.
-        /// @param keybind_value The value of the key to reverse-engineer.
-        /// @return The reversed keybind value.
-        /// @details This function is used to reverse-engineer keybinds. It checks if the keybind is in the known keybinding table.
-        ///          If it is, it returns the reversed keybind value. If not, it returns the normal value.
+        /**
+         * @brief Reverse engineers keybinds based on the provided keybind value.
+         *
+         * This function checks the current state of specific key combinations and returns
+         * the corresponding character if a known keybind is detected. If no keybind is detected,
+         * it returns the original keybind value.
+         *
+         * @param keybind_value The value of the keybind to be checked.
+         * @return The character corresponding to the detected keybind, or the original keybind value if no keybind is detected.
+         *
+         * @note The current known keybinding table:
+         *       CTRL+SHIFT+I => TAB
+         *       // TODO: Add more keybinds to the table
+         */
         char Reverse_Engineer_Keybinds(char keybind_value){
             // The current known keybinding table:
 
@@ -395,9 +539,19 @@ namespace GGUI{
             return keybind_value;
         }
 
-        /// @brief Waits for user input, will not translate, use Translate_Inputs for that.
-        /// @details This function waits for user input and stores it in the Raw_Input array.
-        ///          It is called from the event loop.
+        /**
+         * @brief Queries and appends new input records to the existing buffered input.
+         *
+         * This function reads input records from the console and appends them to the 
+         * existing buffered input which has not yet been processed. It uses the previous 
+         * size of the raw input buffer to determine the starting point for new input records.
+         *
+         * @note The function ensures that negative numbers do not create overflows by 
+         *       using the maximum of the remaining capacity and the total capacity.
+         *
+         * @param None
+         * @return None
+         */
         void Query_Inputs(){
             // For appending to already existing buffered input which has not yet been processed, we can use the previous Raw_Input_Size to deduce the new starting point.
             INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
@@ -414,9 +568,24 @@ namespace GGUI{
             );
         }
 
-        // Continuation of Query_Input, while differentiate the execute timings.
-        /// @brief Translate the input events stored in Raw_Input into Input objects.
-        /// @details This function is used to translate the input events stored in Raw_Input into Input objects. It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. Finally, it resets the Raw_Input_Size to 0.
+        /**
+         * @brief Translates raw input events into internal input states and actions.
+         * 
+         * This function processes raw input events, such as keyboard and mouse events, and updates the internal input states accordingly.
+         * It handles various types of input events including key presses, mouse movements, and window buffer size changes.
+         * 
+         * The function performs the following tasks:
+         * - Cleans the previous keyboard states.
+         * - Iterates through the raw input events and processes each event based on its type.
+         * - For key events, it updates the internal input states and pushes corresponding inputs to the internal input list.
+         * - For window buffer size events, it sets a flag indicating that a resize is needed.
+         * - For mouse events, it updates the mouse coordinates and handles mouse button states and scroll events.
+         * 
+         * @note This function assumes that the raw input buffer will be fully translated by the end of its execution.
+         * 
+         * @param None
+         * @return void
+         */
         void Translate_Inputs(){
             // Clean the keyboard states.
             INTERNAL::PREVIOUS_KEYBOARD_STATES = INTERNAL::KEYBOARD_STATES;
@@ -536,10 +705,17 @@ namespace GGUI{
             Raw_Input_Size = 0;
         }
 
-        /// @brief Initializes platform-specific settings for console handling.
-        /// @details This function sets up the console handles and modes required for input and output operations.
-        ///          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
-        ///          handling specific ANSI features.
+        /**
+         * @brief Initializes platform-specific settings for the console.
+         * 
+         * This function performs the following tasks:
+         * - Saves the standard input and output handles to global variables to minimize redundant calls.
+         * - Retrieves and stores the previous console modes for both input and output to allow restoration upon exit.
+         * - Sets new console modes with extended flags, enabling mouse and window input.
+         * - Enables specific ANSI features for mouse event reporting and hides the mouse cursor.
+         * - Sets the console output code page to UTF-8 mode.
+         * - Marks the platform as initialized.
+         */
         void Init_Platform_Stuff(){
             // Save the STD handles to prevent excess calls.
             GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -565,11 +741,15 @@ namespace GGUI{
             INTERNAL::Platform_Initialized = true;
         }
 
-        /// @brief Retrieves the console screen buffer information.
-        /// @details This function retrieves the console screen buffer information using the GetConsoleScreenBufferInfo function.
-        ///          It first checks if the GLOBAL_STD_OUTPUT_HANDLE has been set, and if not, it sets it by calling GetStdHandle.
-        ///          It then calls GetConsoleScreenBufferInfo and if the call fails, it will report the error.
-        /// @return The console screen buffer information.
+        /**
+         * @brief Retrieves information about the console screen buffer.
+         *
+         * This function obtains the handle to the standard output console if it is not already set.
+         * It then retrieves the console screen buffer information, including the size and cursor position.
+         * If the function fails to retrieve the information, it reports the error.
+         *
+         * @return CONSOLE_SCREEN_BUFFER_INFO structure containing the console screen buffer information.
+         */
         CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info() {
             if (GLOBAL_STD_OUTPUT_HANDLE == 0) {
                 GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -587,14 +767,16 @@ namespace GGUI{
             return Result;
         }
 
-        /// @brief Reads the entire console screen buffer.
-        /// @details This function reads the entire console screen buffer and returns it as a vector of characters.
-        ///          It first gets the console screen buffer information using GetConsoleScreenBufferInfo.
-        ///          It then allocates a vector of CHAR_INFO structures with the same size as the screen buffer.
-        ///          It then calls ReadConsoleOutput to read the console screen buffer into the vector of CHAR_INFO structures.
-        ///          Finally, it loops through the vector of CHAR_INFO structures and copies the AsciiChar member of each structure
-        ///          into the corresponding position in the output vector.
-        /// @return The entire console screen buffer as a vector of characters.
+        /**
+         * @brief Reads the current console screen buffer and returns its contents as a vector of characters.
+         * 
+         * This function retrieves the console screen buffer information, allocates a vector of CHAR_INFO structures
+         * with the same size as the screen buffer, and reads the console screen buffer into this vector. It then
+         * extracts the ASCII characters from the CHAR_INFO structures and stores them in a vector of characters,
+         * which is returned.
+         * 
+         * @return std::vector<char> A vector containing the ASCII characters from the console screen buffer.
+         */
         std::vector<char> Read_Console(){
             // Get the console screen buffer information
             CONSOLE_SCREEN_BUFFER_INFO Info = Get_Console_Info();
@@ -617,10 +799,16 @@ namespace GGUI{
             return Buffer;
         }
 
-        /// @brief De-initializes platform-specific settings and resources.
-        /// @details This function restores console modes to their previous states, cleans up file stream handles,
-        ///          and disables specific ANSI features. It ensures that any platform-specific settings are reset
-        ///          before the application exits.
+        /**
+         * @brief De-initializes the renderer by cleaning up resources and restoring console states.
+         * 
+         * This function performs the following tasks:
+         * - Cleans up file stream handles by manually calling their destructors.
+         * - Clears the list of file stream handles.
+         * - Restores the previous console modes for both standard output and input.
+         * - Disables specific ANSI features and restores the screen state.
+         * - Flushes the output to ensure all data is written to the console.
+         */
         void De_Initialize(){
             // Clean up file stream handles
             for (auto File_Handle : File_Streamer_Handles){
@@ -640,10 +828,20 @@ namespace GGUI{
             std::cout << std::flush; // Ensure all output is flushed to console
         }
 
-        /// @brief Cleanly exits the GGUI library.
-        /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.
-        ///          It ensures that any platform-specific settings are reset before the application exits.
-        /// @param signum The exit code to return to the operating system.
+        /**
+         * @brief Gracefully shuts down the application.
+         *
+         * This function performs a series of steps to gracefully shut down the application:
+         * 1. Logs the initiation of the termination process.
+         * 2. Signals subthreads to terminate.
+         * 3. Waits for all subthreads to join.
+         * 4. Reverts the console to its normal mode.
+         * 5. Cleans up platform-specific resources and settings.
+         * 6. Logs the successful shutdown of the application.
+         * 7. Exits the application with the specified exit code.
+         *
+         * @param signum The exit code to be used when terminating the application.
+         */
         void Exit(int signum){
             INTERNAL::LOGGER::Log("Sending termination signals to subthreads...");
 
@@ -674,12 +872,15 @@ namespace GGUI{
             exit(signum);
         }
 
-        /// @brief Retrieves a list of font files from the Windows registry.
-        /// @details This function retrieves a list of font files from the Windows registry.
-        ///          It first opens the "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" key in the registry,
-        ///          and then enumerates all the values in the key.
-        ///          Each value is a string containing the path to a font file.
-        ///          The function returns a vector of strings containing all the font files found in the registry.
+        /**
+         * @brief Retrieves a list of font files installed on the system.
+         * 
+         * This function opens the Windows registry key "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts"
+         * and enumerates all the values within that key. Each value represents a font file installed on the system.
+         * The function collects the file names of these fonts and returns them in a vector of strings.
+         * 
+         * @return std::vector<std::string> A vector containing the names of the font files installed on the system.
+         */
         std::vector<std::string> Get_List_Of_Font_Files() {
             std::vector<std::string> Result;
 
@@ -708,11 +909,28 @@ namespace GGUI{
             return Result;
         }
 
-        /// @brief Reports the current stack trace along with a specified problem description.
-        /// @details This function captures the call stack, symbolically resolves the addresses, 
-        ///          and formats the stack trace. The resulting formatted trace is then reported 
-        ///          along with the provided problem description.
-        /// @param Problem A description of the problem to be reported with the stack trace.
+        /**
+         * @brief Reports the current stack trace along with a given problem description.
+         *
+         * This function captures the current stack trace up to a specified depth, resolves
+         * the symbols for each stack frame, and formats the stack trace into a readable string.
+         * The formatted stack trace is then reported along with the provided problem description.
+         *
+         * @param Problem A string describing the problem to be reported along with the stack trace.
+         *
+         * The function performs the following steps:
+         * 1. Initializes the symbol handler for the current process.
+         * 2. Captures the stack backtrace up to a predefined depth.
+         * 3. Resolves the symbols for each captured stack frame.
+         * 4. Formats the stack trace into a readable string, including file names and line numbers if available.
+         * 5. Appends the provided problem description to the formatted stack trace.
+         * 6. Reports the final result using the `Report()` function.
+         *
+         * Note:
+         * - The function assumes that `Report()` is defined elsewhere to handle the logging of the result.
+         * - The function uses the Windows API for capturing and resolving stack traces.
+         * - The function allocates memory for the SYMBOL_INFO structure and frees it before returning.
+         */
         void Report_Stack(std::string Problem) {
             const int Stack_Trace_Depth = 10;
             void* Ptr_Table[Stack_Trace_Depth];
@@ -887,11 +1105,15 @@ namespace GGUI{
             exit(signum);
         }
 
-        /// @brief A cross-platform sleep function using nanosleep.
-        /// @param mm The number of milliseconds to sleep for.
-        /// @details This function pauses the execution of the program for a specified amount of time using nanosleep.
-        ///          It breaks down the milliseconds into seconds and nanoseconds for the timespec structure and handles
-        ///          any interruptions by retrying the nanosleep with the remaining time.
+        /**
+         * @brief Suspends the execution of the calling thread for a specified duration.
+         *
+         * This function uses the nanosleep system call to suspend the execution of the calling thread
+         * for the specified number of milliseconds. It repeatedly calls nanosleep until the entire
+         * sleep duration has elapsed.
+         *
+         * @param mm The number of milliseconds to sleep.
+         */
         void SLEEP(unsigned int mm){
             // Define timespec structure for the required sleep duration
             struct timespec req = {0, 0};
@@ -2249,11 +2471,12 @@ namespace GGUI{
         }
     }
 
-    /// @brief Refreshes all multi-frame canvases by updating their animation frames.
-    /// @details This function iterates over all registered multi-frame canvases,
-    ///          advances their animation to the next frame, and flushes their state.
-    ///          Additionally, it adjusts the event thread load based on the number
-    ///          of canvases that require updates.
+    /**
+     * @brief Refreshes the state of all multi-frame canvases by advancing their animations and flushing their updated states.
+     * 
+     * This function iterates over each multi-frame canvas, advances its animation to the next frame, and flushes the updated state.
+     * If there are canvases to update, it adjusts the event thread load based on the number of canvases.
+     */
     void Refresh_Multi_Frame_Canvas() {
         // Iterate over each multi-frame canvas
         for (auto i : INTERNAL::Multi_Frame_Canvas) {

@@ -16,12 +16,22 @@ namespace GGUI{
 
         unsigned int Size = 0;
 
-        /// Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
-        /// @warning Do not use this constructor directly, as it will not initialize the Data property.
+        /**
+         * @brief Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
+         * @warning Do not use this constructor directly, as it will not initialize the Data property.
+         * This constructor initializes a Compact_String object with default values.
+         */
         Compact_String() = default;
 
-        /// Construct a Compact_String from a null-terminated string.
-        /// @param data The string data.
+        /**
+         * @brief Constructs a Compact_String object from a C-style string.
+         * 
+         * This constructor initializes the Compact_String object by determining the length of the input string.
+         * If the length of the string is greater than 1, it stores the string data in Unicode_Data.
+         * If the length of the string is 1 or less, it stores the single character in Ascii_Data.
+         * 
+         * @param data A pointer to a null-terminated C-style string.
+         */
         Compact_String(const char* data){
             Size = std::strlen(data); // Get the length of the string.
 
@@ -31,17 +41,34 @@ namespace GGUI{
                 Data.Ascii_Data = data[0]; // Store the single character.
         }
 
-        /// Construct a Compact_String from a single character.
-        /// @param data The character data.
+        /**
+         * @brief Constructs a Compact_String object with a single ASCII character.
+         * 
+         * This constructor initializes the Compact_String with a single character.
+         * The character is stored in the Ascii_Data member of the Data union, and
+         * the Size is set to 1.
+         * 
+         * @param data The ASCII character to initialize the Compact_String with.
+         */
         Compact_String(char data){
             Data.Ascii_Data = data;
             Size = 1;
         }
 
-        /// Construct a Compact_String with specified size.
-        /// @param data The string data.
-        /// @param size The length of the string.
-        /// @param Force_Unicode Force the use of Unicode data storage, even if size is 1.
+        /**
+         * @brief Constructs a Compact_String object.
+         * 
+         * This constructor initializes a Compact_String object with the given data and size.
+         * It determines the storage format based on the size of the data and the Force_Unicode flag.
+         * 
+         * @param data A pointer to the character data to be stored.
+         * @param size The size of the character data.
+         * @param Force_Unicode A boolean flag indicating whether to force the data to be stored as Unicode.
+         *                       Defaults to false.
+         * 
+         * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
+         * Otherwise, the data is stored as a single ASCII character.
+         */
         Compact_String(const char* data, unsigned int size, bool Force_Unicode = false) {
             Size = size;
 
@@ -55,9 +82,16 @@ namespace GGUI{
             }
         }
 
-        /// Get the character at the specified index.
-        /// @param index The index of the character.
-        /// @return The character at the specified index.
+        /**
+         * @brief Overloaded subscript operator to access character at a given index.
+         * 
+         * This operator allows access to the character at the specified index.
+         * If the size of the string is greater than 1, it returns the character
+         * from the Unicode data. If the size is 1, it returns the ASCII data.
+         * 
+         * @param index The index of the character to access.
+         * @return char The character at the specified index.
+         */
         char operator[](unsigned int index) const {
             // If the size is greater than 1, we have to index into the Unicode data.
             if (Size > 1)
@@ -74,52 +108,89 @@ namespace GGUI{
         std::vector<Compact_String> Data;
         unsigned int Current_Index = 0;
 
-        /// Construct a Super_String with a specified final size.
-        /// @param Final_Size The size of the final string.
+        /**
+         * @brief Constructs a Super_String object with a specified final size.
+         * 
+         * This constructor initializes the Super_String object by resizing the internal
+         * data storage to the specified final size and sets the current index to 0.
+         * 
+         * @param Final_Size The final size to which the internal data storage should be resized.
+         *                   Default value is 1.
+         */
         Super_String(unsigned int Final_Size = 1) {
             Data.resize(Final_Size);
             Current_Index = 0;
         }
 
-        /// Clear the current index to the start of the data vector.
-        /// @details This allows for the same object to be used to construct multiple strings.
+        /**
+         * @brief Clears the contents of the Super_String.
+         * 
+         * This function resets the current index back to the start of the vector,
+         * effectively clearing any stored data.
+         */
         void Clear(){
-            /// Set the current index back to the start of the vector.
+            // Set the current index back to the start of the vector.
             Current_Index = 0;
         }
 
-        /// Add a new string to the data vector.
-        /// @param data The string to add.
-        /// @param size The size of the string.
+        /**
+         * @brief Adds a new string to the data vector.
+         * 
+         * This function stores the provided string in the data vector by creating a 
+         * Compact_String object from the given data and size, and then adds it to 
+         * the Data vector at the current index.
+         * 
+         * @param data Pointer to the character array containing the string to be added.
+         * @param size The size of the string to be added.
+         */
         void Add(const char* data, int size){
-            /// Store the string in the data vector.
+            // Store the string in the data vector.
             Data[Current_Index++] = Compact_String(data, size);
         }
 
-        /// Add a new single character to the data vector.
-        /// @param data The character to add.
+        /**
+         * @brief Adds a character to the Super_String.
+         * 
+         * This function stores the given character in the data vector
+         * and increments the current index.
+         * 
+         * @param data The character to be added to the Super_String.
+         */
         void Add(char data){
-            /// Store the character in the data vector.
+            // Store the character in the data vector.
             Data[Current_Index++] = Compact_String(data);
         }
 
-        /// Add a new string to the data vector.
-        /// @param data The string to add.
+        /**
+         * @brief Adds a string to the data vector.
+         * 
+         * This function stores the provided string in the data vector by compacting it
+         * and placing it at the current index. The current index is then incremented.
+         * 
+         * @param data The string to be added to the data vector.
+         */
         void Add(const std::string& data){
-            /// Store the string in the data vector.
+            // Store the string in the data vector.
             Data[Current_Index++] = Compact_String(data.data(), data.size());
         }
 
-        /// Add the contents of another Super_String to this one.
-        /// @param other The Super_String to add.
-        /// @param Expected If true, the size of the Data vector will not be changed.
-        /// @details This function is used to concatenate Super_Strings.
+        /**
+         * @brief Adds the contents of another Super_String to this Super_String.
+         *
+         * This function appends the contents of the provided Super_String to the current
+         * Super_String. If the Expected parameter is false, the function will resize the
+         * Data vector to accommodate the additional characters.
+         *
+         * @param other A pointer to the Super_String to be added.
+         * @param Expected A boolean flag indicating whether the reservation size is already
+         *                 expected to be sufficient. If false, the Data vector will be resized.
+         */
         void Add(Super_String* other, bool Expected = false){
-            /// Enlarge the reservation if necessary.
+            // Enlarge the reservation if necessary.
             if (!Expected)
                 Data.resize(Current_Index + other->Current_Index);
 
-            /// Copy the contents of the other Super_String into the Data vector.
+            // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other->Current_Index; i++){
 
                 Data[Current_Index++] = other->Data[i];

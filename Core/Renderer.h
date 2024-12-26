@@ -104,21 +104,36 @@ namespace GGUI{
          */
         extern void Init_Platform_Stuff();
         
-        /// @brief A platform-specific sleep function.
-        /// @param mm The number of milliseconds to sleep for.
-        /// @details This function is used to pause the execution of the program for a specified amount of time.
-        ///          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
-        ///          while on Linux and macOS it calls the usleep function.
+        
+        /**
+         * @brief Sleep for the specified amount of milliseconds.
+         * @details This function is used to pause the execution of the program for a specified amount of time.
+         *          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
+         *          while on Linux and macOS it calls the usleep function.
+         * @param mm The number of milliseconds to sleep.
+         */
         void SLEEP(unsigned int milliseconds);
         
-        /// @brief A function to render a frame.
-        /// @details This function is called from the event loop. It renders the frame by writing the Frame_Buffer data to the console.
-        ///          It also moves the cursor to the top left corner of the screen.
+        /**
+         * @brief Renders the current frame to the console.
+         * 
+         * This function moves the console cursor to the top left corner of the screen
+         * and writes the contents of the Frame_Buffer to the console.
+         * 
+         * @note The number of bytes written to the console is stored in a temporary
+         * variable but is not used elsewhere in the function.
+         */
         extern void Render_Frame();
 
-        /// @brief Updates the maximum width and height of the console.
-        /// @details This function is used to get the maximum width and height of the console.
-        ///          It is called from the Query_Inputs function.
+        /**
+         * @brief Updates the maximum width and height of the console window.
+         * 
+         * This function retrieves the current console screen buffer information and updates
+         * the maximum width and height based on the console window dimensions. If the console
+         * information is not retrieved correctly, an error message is reported. Additionally,
+         * if the main window is active, its dimensions are set to the updated maximum width
+         * and height.
+         */
         extern void Update_Max_Width_And_Height();
         
         /**
@@ -128,79 +143,175 @@ namespace GGUI{
          */
         void Update_Frame();
         
-        /// @brief Waits for user input, will not translate, use Translate_Inputs for that.
-        /// @details This function waits for user input and stores it in the Raw_Input array.
-        ///          It is called from the event loop.
+        /**
+         * @brief Queries and appends new input records to the existing buffered input.
+         *
+         * This function reads input records from the console and appends them to the 
+         * existing buffered input which has not yet been processed. It uses the previous 
+         * size of the raw input buffer to determine the starting point for new input records.
+         *
+         * @note The function ensures that negative numbers do not create overflows by 
+         *       using the maximum of the remaining capacity and the total capacity.
+         *
+         * @param None
+         * @return None
+         */
         extern void Query_Inputs();
         
-        /// @brief Cleanly exits the GGUI library.
-        /// @details This function is called automatically when the application exits, or can be called manually to exit the library at any time.
-        ///          It ensures that any platform-specific settings are reset before the application exits.
-        /// @param signum The exit code to return to the operating system.
+        /**
+         * @brief Gracefully shuts down the application.
+         *
+         * This function performs a series of steps to gracefully shut down the application:
+         * 1. Logs the initiation of the termination process.
+         * 2. Signals subthreads to terminate.
+         * 3. Waits for all subthreads to join.
+         * 4. Reverts the console to its normal mode.
+         * 5. Cleans up platform-specific resources and settings.
+         * 6. Logs the successful shutdown of the application.
+         * 7. Exits the application with the specified exit code.
+         *
+         * @param signum The exit code to be used when terminating the application.
+         */
         extern void Exit(int Signum = 0);
     }
 
-    // Reroute to the internal namespace
-    void Exit(int Signum = 0) { INTERNAL::Exit(Signum); }
+    /**
+     * @brief Exits the application with the given signal number.
+     * 
+     * This function calls the INTERNAL::Exit function with the provided signal number.
+     * 
+     * @param Signum The signal number to exit with. Default is 0.
+     */
+    inline void Exit(int Signum = 0) { INTERNAL::Exit(Signum); }
 
-    /// @brief Checks if two rectangular areas, defined by their positions and dimensions, collide.
-    /// @param A The top-left corner position of the first rectangle.
-    /// @param B The top-left corner position of the second rectangle.
-    /// @param A_Width Width of the first rectangle.
-    /// @param A_Height Height of the first rectangle.
-    /// @param B_Width Width of the second rectangle.
-    /// @param B_Height Height of the second rectangle.
-    /// @return True if the rectangles collide, false otherwise.
+    /**
+     * @brief Checks if two rectangles collide.
+     *
+     * This function determines whether two rectangles, defined by their top-left
+     * corners and dimensions, overlap in a 2D space.
+     *
+     * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
+     * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
+     * @param A_Width The width of the first rectangle.
+     * @param A_Height The height of the first rectangle.
+     * @param B_Width The width of the second rectangle.
+     * @param B_Height The height of the second rectangle.
+     * @return true if the rectangles overlap, false otherwise.
+     */
     extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
 
-    /// @brief Checks if two rectangular areas, defined by their positions and dimensions, collide.
-    /// @param a The first element.
-    /// @param b The second element.
-    /// @param Identity If a is the same as b, return this flag. Defaults into true.
-    /// @return True if the rectangles collide, false otherwise.
+
+    /**
+     * @brief Checks if two GGUI elements collide.
+     * 
+     * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
+     * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
+     * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
+     * 
+     * @param a Pointer to the first GGUI element.
+     * @param b Pointer to the second GGUI element.
+     * @param Identity Boolean value to return if the elements are the same.
+     * @return true if the elements collide, false otherwise.
+     */
     extern bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity = true);
 
-    /// @brief Checks if a rectangular area, defined by an element's position and dimensions, collides with a point.
-    /// @param a The element.
-    /// @param b The point represented as a 3D vector.
-    /// @return True if the element's area collides with the point, false otherwise.
+    /**
+     * @brief Checks if a given point collides with a specified element.
+     * 
+     * This function determines if the point `b` collides with the element `a` by 
+     * calling another `Collides` function with the element's absolute position, 
+     * width, height, and the point's assumed dimensions of 1x1.
+     * 
+     * @param a Pointer to the GGUI::Element to check for collision.
+     * @param b The point (as GGUI::IVector3) to check for collision with the element.
+     * @return true if the point collides with the element, false otherwise.
+     */
     extern bool Collides(GGUI::Element* a, GGUI::IVector3 b);
 
-    /// @brief Recursively searches for an element at a given position.
-    /// @param c The position to search for.
-    /// @param Parent The parent element to search in.
-    /// @return The element at the given position, or nullptr if none was found.
+    /**
+     * @brief Recursively finds the most accurate element that contains the given position.
+     * 
+     * This function checks if the given position is within the bounds of the parent element.
+     * If it is, it then checks all the child elements of the parent to see if any of them
+     * contain the position. If a child element contains the position, the function is called
+     * recursively on that child element. If no child element contains the position, the parent
+     * element is returned.
+     * 
+     * @param c The position to check, represented as an IVector3.
+     * @param Parent The parent element to start the search from.
+     * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
+     */
     extern Element* Get_Accurate_Element_From(IVector3 c, Element* Parent);
 
-    /// @brief Finds the element directly above the current element the mouse is hovering over.
-    /// @return The position of the upper element, or the position of the current element if none is found.
+    /**
+     * @brief Finds the upper element relative to the current element's position.
+     * 
+     * This function retrieves the current element based on the mouse position and 
+     * attempts to find an element directly above it by moving one pixel up. If an 
+     * upper element is found and it is not the main element, the position of the 
+     * upper element is returned. Otherwise, the position of the current element is returned.
+     * 
+     * @return IVector3 The position of the upper element if found, otherwise the position of the current element.
+     */
     extern IVector3 Find_Upper_Element();
 
-    /// @brief Finds the element directly below the current element the mouse is hovering over.
-    /// @return The position of the lower element, or the position of the current element if none is found.
+    /**
+     * @brief Finds the lower element relative to the current element.
+     * 
+     * This function retrieves the current element based on the mouse position
+     * and then attempts to find an element that is positioned directly below it.
+     * 
+     * @return IVector3 The position of the lower element if found, otherwise the position of the current element.
+     */
     extern IVector3 Find_Lower_Element();
 
-    /// @brief Finds the element directly left of the current element the mouse is hovering over.
-    /// @return The position of the left element, or the position of the current element if none is found.
+    /**
+     * @brief Finds the element to the left of the current element.
+     *
+     * This function retrieves the current element based on the mouse position
+     * and attempts to find an element one pixel to the left of it. If such an
+     * element is found, its position is returned. If no left element is found,
+     * the position of the current element is returned.
+     *
+     * @return IVector3 The position of the left element if found, otherwise the position of the current element.
+     */
     extern IVector3 Find_Left_Element();
 
-    /// @brief Finds the element directly right of the current element the mouse is hovering over.
-    /// @return The position of the right element, or the position of the current element if none is found.
+    /**
+     * @brief Finds the element to the right of the current element.
+     * 
+     * This function first retrieves the current element based on the mouse position
+     * and the main internal context. If the current element is found, it calculates
+     * the position of the element to the right by moving one pixel to the right of
+     * the current element's position. It then attempts to retrieve the element at
+     * this new position.
+     * 
+     * @return IVector3 The position of the element to the right if found, otherwise
+     *                  the position of the current element.
+     */
     extern IVector3 Find_Right_Element();
 
-    /// @brief Calculates the minimum of two signed long long integers.
-    /// @param a The first value to compare.
-    /// @param b The second value to compare.
-    /// @return The minimum of the two values.
+    /**
+     * @brief Returns the smaller of two signed long long integers.
+     * 
+     * This function compares two signed long long integers and returns the smaller of the two.
+     * 
+     * @param a The first signed long long integer to compare.
+     * @param b The second signed long long integer to compare.
+     * @return The smaller of the two signed long long integers.
+     */
     extern signed long long Min(signed long long a, signed long long b);
 
-    /// @brief Calculates the maximum of two signed long long integers.
-    /// @param a The first value to compare.
-    /// @param b The second value to compare.
-    /// @return The maximum of the two values.
+    /**
+     * @brief Returns the maximum of two signed long long integers.
+     *
+     * This function compares two signed long long integers and returns the greater of the two.
+     *
+     * @param a The first signed long long integer to compare.
+     * @param b The second signed long long integer to compare.
+     * @return The greater of the two signed long long integers.
+     */
     extern signed long long Max(signed long long a, signed long long b);
-
-    extern void ClearScreen();
 
     /**
      * @brief Processes mouse input events and updates the input list.
@@ -212,7 +323,11 @@ namespace GGUI{
      */
     extern void MOUSE_API();
 
-    // Handles also UP and DOWN buttons
+    /**
+     * @brief Handles mouse scroll events.
+     * @details This function checks if the mouse scroll up or down button has been pressed and if the focused element is not null.
+     *          If the focused element is not null, it calls the scroll up or down function on the focused element.
+     */
     extern void SCROLL_API();
 
     /**
