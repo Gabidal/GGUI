@@ -7,3 +7,6 @@ callgrind.*
 *.backup
 *.txt
 /Export/GGUI.h
+/Export/*.json
+/Export/Export_Git
+/Export/json.hpp

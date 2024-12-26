@@ -98,7 +98,9 @@
         "queue": "cpp",
         "ranges": "cpp",
         "stack": "cpp",
-        "stacktrace": "cpp"
+        "stacktrace": "cpp",
+        "netfwd": "cpp",
+        "valarray": "cpp"
     },
     "cSpell.words": [
         "Hitboxes",
