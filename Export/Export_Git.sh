@@ -1,54 +1,118 @@
-# Function to check if the script is run from the project root directory or a subdirectory.
+#!/bin/bash
+
+# This script prepares the environment and compiles a C++ project for the GGUI framework.
+
+# Function to verify and navigate to the appropriate project directory.
 check_directory() {
-    local current_dir=$(pwd)
+    local current_dir
+    local project_root
     local project_root_name="GGUI"
     local bin_dir_name="Export"
 
-    # Find the project root directory by looking for the .git directory
+    current_dir=$(pwd)
     project_root=$(git rev-parse --show-toplevel 2>/dev/null)
 
-    # If git is not found or the project root is not determined
+    # Verify if the script is executed within a Git project.
     if [ -z "$project_root" ]; then
-        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
+        echo "Error: Unable to locate the project root directory. Please ensure this script is executed within the GGUI project."
         exit 1
     fi
 
-    # If we're in the project root, change to the 'bin' directory
+    # Navigate to the 'bin' directory if required.
     if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
-        echo "Project root directory detected. Changing to the 'bin' directory."
+        echo "Detected project root. Navigating to the 'Export' directory..."
         cd "$project_root/$bin_dir_name" || exit 1
-    # Otherwise, navigate to the 'bin' directory from anywhere in the project
     elif [[ "$current_dir" != *"$project_root/$bin_dir_name"* ]]; then
-        echo "Navigating to the 'bin' directory within the project."
+        echo "Navigating to the 'Export' directory within the project..."
         cd "$project_root/$bin_dir_name" || exit 1
     fi
 }
 
-check_directory
+# Check if the required library libgit2-dev is installed.
+verify_libgit2() {
+    if [ ! -f /usr/include/git2.h ]; then
+        echo "Error: libgit2-dev is not installed. Install it with:"
+        echo "  sudo apt-get install libgit2-dev"
+        exit 1
+    fi
+}
 
-# Make sure that libgit2-dev is installed
-if [ ! -f /usr/include/git2.h ]; then
-    echo "libgit2-dev is not installed. Please install it using the following command:"
-    echo "sudo apt-get install libgit2-dev"
-    exit 1
-fi
+# Download dependencies if they are not present.
+download_dependencies() {
+    local url_json="https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp"
+    local url_cpr="https://github.com/whoshuu/cpr/archive/refs/heads/master.zip"
 
-# We need to download some dependencies for this to work:
-# URL="https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp"
+    # Ensure json.hpp is downloaded.
+    if [ ! -f json.hpp ]; then
+        echo "Downloading json.hpp..."
+        curl -L -o json.hpp "$url_json"
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to download json.hpp."
+            exit 1
+        fi
+        echo "json.hpp downloaded successfully."
+    else
+        echo "json.hpp already exists."
+    fi
 
-# # Use curl to download the file and save it in the current directory
-# curl -L -o json.hpp "$URL"
+    # Ensure CPR library is installed.
+    if [ ! -d /usr/local/include/cpr ]; then
+        echo "Downloading CPR library..."
+        curl -L -o cpr.zip "$url_cpr"
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to download CPR library."
+            exit 1
+        fi
+        echo "CPR library downloaded successfully."
 
-# # Check if the download was successful
-# if [ $? -eq 0 ]; then
-#     echo "json.hpp has been successfully downloaded."
-# else
-#     echo "Failed to download json.hpp."
-# fi
+        # Install unzip if not available.
+        if ! command -v unzip &>/dev/null; then
+            echo "Installing unzip utility..."
+            sudo apt-get install -y unzip
+        fi
 
-g++ -g -o Export_Git ./Export_Git.cpp -I/usr/include -lgit2 -std=c++11
+        # Extract and build the CPR library.
+        echo "Extracting and installing CPR library..."
+        unzip cpr.zip -d cpr
+        cd cpr/cpr-master || exit 1
+        mkdir -p build && cd build
 
-cd ..
+        # Install cmake if not available.
+        if ! command -v cmake &>/dev/null; then
+            echo "Installing CMake..."
+            sudo apt-get install -y cmake
+        fi
 
-gdb --args ./Export/Export_Git ./ Dev
-# ./Export/Export_Git ./ Dev
+        cmake ..
+        make
+        sudo make install
+        cd ../../../
+    else
+        echo "CPR library is already installed."
+    fi
+}
+
+# Compile the project.
+compile_project() {
+    echo "Compiling the project..."
+    g++ -g -o Export_Git ./Export_Git.cpp -I/usr/include -I/usr/local/include -lcpr -lgit2 -std=c++17
+}
+
+# Run the compiled program using gdb.
+run_with_gdb() {
+    cd ..   # Go back to the parent directory.
+    echo "Launching the program with gdb..."
+    # gdb --args ./Export/Export_Git ./ Dev
+    ./Export/Export_Git ./ Dev
+}
+
+# Main script execution.
+main() {
+    check_directory
+    verify_libgit2
+    download_dependencies
+    compile_project
+    run_with_gdb
+}
+
+main

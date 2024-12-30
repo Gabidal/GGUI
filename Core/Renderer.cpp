@@ -113,7 +113,7 @@ namespace GGUI{
          * and assigning them to the respective global variables.
          */
 
-        extern void Init_Start_Addresses();
+        extern void Read_Start_Addresses();
     }
 
     /**
@@ -371,7 +371,7 @@ namespace GGUI{
         // cast "rays" to each four directions, and return the lengths of each collision between the center of the rectangles and the start point.
         // return the smallest one.
         if (Candidates.size() == 0){
-            Report("Missing Candidates!");
+            INTERNAL::Report_Stack("Missing Candidates!");
         }
 
         Element* Best_Candidate = nullptr;
@@ -496,7 +496,7 @@ namespace GGUI{
 
             // Check if we got the console information correctly.
             if (INTERNAL::Max_Width == 0 || INTERNAL::Max_Height == 0){
-                Report("Failed to get console info!");
+                INTERNAL::Report_Stack("Failed to get console info!");
             }
 
             // Check that the main window is not active and if so, set its dimensions.
@@ -761,7 +761,7 @@ namespace GGUI{
             if (!GetConsoleScreenBufferInfo(GLOBAL_STD_OUTPUT_HANDLE, &Result)){
                 int Last_Error = GetLastError();
 
-                Report("Failed to get console info: " + std::to_string(Last_Error));
+                INTERNAL::Report_Stack("Failed to get console info: " + std::to_string(Last_Error));
             }
 
             return Result;
@@ -1022,6 +1022,14 @@ namespace GGUI{
     }
 
     #else
+
+    namespace Constants{
+        namespace ANSI{
+            constexpr char START_OF_CTRL = 1;
+            constexpr char END_OF_CTRL = 26;
+        }
+    };
+
     namespace INTERNAL{
         #include <sys/ioctl.h>
         #include <signal.h>
@@ -1053,13 +1061,13 @@ namespace GGUI{
             File_Streamer_Handles.clear();
 
             // Restore default cursor visibility
-            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR).To_String();
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR).To_String();
 
             // Disable mouse event reporting
-            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
 
             // Disable screen capture
-            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
             std::cout << std::flush;
 
             // Restore previous file descriptor flags
@@ -1137,7 +1145,7 @@ namespace GGUI{
          */
         void Render_Frame() {
             // Move the cursor to the top-left corner of the terminal
-            printf("%s", Constants::ANSI::SET_CURSOR_TO_START.c_str());
+            printf("%s", GGUI::Constants::ANSI::SET_CURSOR_TO_START.c_str());
 
             // Flush the output buffer to ensure it's written immediately
             fflush(stdout);
@@ -1147,7 +1155,7 @@ namespace GGUI{
 
             // Check for write errors or incomplete writes
             if (Error != (signed)Frame_Buffer.size()) {
-                Report("Failed to write to STDOUT: " + std::to_string(Error));
+                INTERNAL::Report_Stack("Failed to write to STDOUT: " + std::to_string(Error));
             }
         }
 
@@ -1160,7 +1168,7 @@ namespace GGUI{
         void Update_Max_Width_And_Height(){
             struct winsize w;
             if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1){
-                Report("Failed to get console info!");
+                INTERNAL::Report_Stack("Failed to get console info!");
                 return;
             }
 
@@ -1185,8 +1193,8 @@ namespace GGUI{
             // Setup the function handler with a lambda
             Handler.sa_handler = [](int signum){
                 // When the signal is received, update the carry flags to indicate that a resize is needed
-                Carry_Flags([](GGUI::Carry& current_carry){
-                    current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
+                Carry_Flags([](Carry* current_carry){
+                    current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
                 });
             };
 
@@ -1199,13 +1207,6 @@ namespace GGUI{
             // Now set this handler up.
             sigaction(SIGWINCH, &Handler, nullptr);
         }
-
-        namespace Constants{
-            namespace ANSI{
-                constexpr char START_OF_CTRL = 1;
-                constexpr char END_OF_CTRL = 26;
-            }
-        };
 
         /**
          * @brief Takes in an buffer with hex and octal values and transforms them into printable strings
@@ -2097,7 +2098,7 @@ namespace GGUI{
                         }
                     }
                     catch (std::exception& e){
-                        Report("In memory: '" + rememberable->at(i).ID + "' Problem: " + std::string(e.what()));
+                        INTERNAL::Report_Stack("In memory: '" + rememberable->at(i).ID + "' Problem: " + std::string(e.what()));
                     }
                 }
 
@@ -2340,7 +2341,7 @@ namespace GGUI{
                         }
                     }
                     catch(std::exception& problem){
-                        Report("In event: '" + e->ID + "' Problem: " + std::string(problem.what()));
+                        INTERNAL::Report_Stack("In event: '" + e->ID + "' Problem: " + std::string(problem.what()));
                     }
                 }
             }
@@ -2499,7 +2500,7 @@ namespace GGUI{
      * @return The main window of the GGUI system.
      */
     GGUI::Window* Init_GGUI(){
-        INTERNAL::Init_Start_Addresses();
+        INTERNAL::Read_Start_Addresses();
         SETTINGS::Init_Settings();
         INTERNAL::LOGGER::Init();
         INTERNAL::LOGGER::Log("Starting GGUI Core initialization...");
@@ -2507,7 +2508,7 @@ namespace GGUI{
         INTERNAL::Update_Max_Width_And_Height();
         
         if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
-            Report("Width/Height is zero!");
+            INTERNAL::Report_Stack("Width/Height is zero!");
             return nullptr;
         }
 
@@ -2856,7 +2857,7 @@ namespace GGUI{
                 std::string("Inside of: ") + Parent->Get_Parent()->Get_Name();
             }
 
-            Report(
+            INTERNAL::Report_Stack(
                 R
             );
         }
@@ -2928,7 +2929,7 @@ namespace GGUI{
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
-        INTERNAL::Init_Start_Addresses();
+        INTERNAL::Read_Start_Addresses();
 
         Pause_GGUI([DOM](){
             Init_GGUI();
@@ -2950,7 +2951,7 @@ namespace GGUI{
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
     void GGUI(Styling App, unsigned long long Sleep_For){
-        INTERNAL::Init_Start_Addresses();
+        INTERNAL::Read_Start_Addresses();
 
         Pause_GGUI([&App](){
             Init_GGUI();

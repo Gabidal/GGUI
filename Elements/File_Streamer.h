@@ -247,7 +247,7 @@ namespace GGUI{
          * handlers for that file. If not, a new file handle is created and the event handler is added to the list
          * of event handlers for the new file.
          */
-        FILE_STREAM(std::string file_name, std::function<void()> on_change, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
+        FILE_STREAM(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
 
         /**
          * @brief Intended for Logger Atomic::Guard, do not use as User!
@@ -267,14 +267,7 @@ namespace GGUI{
          * when a FILE_STREAM object is destroyed. It closes the associated
          * BUFFER_CAPTURE if it exists and also closes the file handle.
          */
-        ~FILE_STREAM() {
-            // Close the BUFFER_CAPTURE if it's active
-            if (Buffer_Capture && Type == FILE_STREAM_TYPE::STD_CAPTURE)
-                Buffer_Capture->Close();
-
-            // Close the file handle
-            Handle.close();
-        }
+        ~FILE_STREAM();
 
         /**
          * @brief Read the content of the file.

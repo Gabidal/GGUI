@@ -10,3 +10,5 @@ callgrind.*
 /Export/*.json
 /Export/Export_Git
 /Export/json.hpp
+*.zip
+/Export/cpr/*

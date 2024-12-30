@@ -100,7 +100,8 @@
         "stack": "cpp",
         "stacktrace": "cpp",
         "netfwd": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "future": "cpp"
     },
     "cSpell.words": [
         "Hitboxes",

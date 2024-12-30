@@ -37,26 +37,44 @@ namespace GGUI{
             // Get the length of the file.
             Handle.seekg(0, std::ios::end);
             int Length = Handle.tellg();
+            std::string Data;
 
             if (Length == 0){
                 Report("Empty file: '" + this->Name + "'");
                 return "";
             }
             else if (Length < 0){
-                Report("Failed to read file: '" + this->Name + "' !");
+                // Try to read line by line.
+                std::string Line;
+
+                while (std::getline(Handle, Line)){
+                    Data += Line + "\n";
+                }
+            }
+            else{
+                // Allocate the buffer.
+                char* Buffer = new char[Length];
+
+                // Read from top.
+                Handle.seekg(0, std::ios::beg);
+                Handle.read(Buffer, Length);
+
+                // Return the data.
+                Data = std::string(Buffer, Length);
+                delete[] Buffer;
+            }
+
+            // Error handling:
+            if (Handle.bad()){
+                Report("Failed to read file: '" + this->Name + "'");
                 return "";
             }
 
-            // Allocate the buffer.
-            char* Buffer = new char[Length];
+            if (!Handle.eof()){
+                Report("Failed to read file: '" + this->Name + "'");
+                return "";
+            }
 
-            // Read from top.
-            Handle.seekg(0, std::ios::beg);
-            Handle.read(Buffer, Length);
-
-            // Return the data.
-            std::string Data = std::string(Buffer, Length);
-            delete[] Buffer;
             return Data;
         }
 
@@ -166,6 +184,22 @@ namespace GGUI{
                 // TODO: add one method for ATOMIC::GUARDED file streams.
                 it->second->Add_On_Change_Handler(on_change);
             }
+        }
+    }
+
+    FILE_STREAM::~FILE_STREAM() {
+        // Close the BUFFER_CAPTURE if it's active
+        if (Buffer_Capture && Type == FILE_STREAM_TYPE::STD_CAPTURE)
+            Buffer_Capture->Close();
+
+        // Close the file handle
+        Handle.close();
+
+        // Find itself from the File_Streamer_Handles and if exists, there remove from there.
+        auto it = File_Streamer_Handles.find(Name);
+
+        if (it != File_Streamer_Handles.end()){
+            File_Streamer_Handles.erase(it);
         }
     }
 
