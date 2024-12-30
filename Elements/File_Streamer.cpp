@@ -36,6 +36,7 @@ namespace GGUI{
         else{
             // Get the length of the file.
             Handle.seekg(0, std::ios::end);
+
             int Length = Handle.tellg();
             std::string Data;
 
@@ -44,6 +45,9 @@ namespace GGUI{
                 return "";
             }
             else if (Length < 0){
+                // Clear any cache and go back to the beginning.
+                Handle.clear();
+                Handle.seekg(0, std::ios::beg);
                 // Try to read line by line.
                 std::string Line;
 
