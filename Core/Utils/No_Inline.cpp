@@ -14,11 +14,61 @@ namespace GGUI{
          * respectively. This only happens if the variables are not already set.
          */
         #if _WIN32
+        #include <windows.h>
+        #include <winternl.h>
+
+        // Define the structure for thread information
+        typedef struct _THREAD_BASIC_INFORMATION {
+            NTSTATUS ExitStatus;
+            PVOID TebBaseAddress;
+            CLIENT_ID ClientId;
+            PVOID AffinityMask;
+            LONG Priority;
+            LONG BasePriority;
+        } THREAD_BASIC_INFORMATION;
+
+        typedef NTSTATUS(WINAPI* NtQueryInformationThread_t)(
+            HANDLE ThreadHandle,
+            THREADINFOCLASS ThreadInformationClass,
+            PVOID ThreadInformation,
+            ULONG ThreadInformationLength,
+            PULONG ReturnLength
+        );
+
         void Read_Start_Addresses(){
             if (Stack_Start_Address == nullptr){
-                // Capture the nearest stack address
-                int nearest_address = 0;
-                Stack_Start_Address = &nearest_address;
+
+                // Load NtQueryInformationThread dynamically
+                HMODULE ntdll = LoadLibraryA("ntdll.dll");
+                if (!ntdll) {
+                    std::cerr << "Failed to load ntdll.dll" << std::endl;
+                    return;
+                }
+
+                auto NtQueryInformationThread = (NtQueryInformationThread_t)GetProcAddress(ntdll, "NtQueryInformationThread");
+                if (!NtQueryInformationThread) {
+                    std::cerr << "Failed to get NtQueryInformationThread" << std::endl;
+                    return;
+                }
+
+                THREAD_BASIC_INFORMATION tbi = { 0 };
+                NTSTATUS status = NtQueryInformationThread(
+                    GetCurrentThread(),
+                    (THREADINFOCLASS)0,  // ThreadBasicInformation
+                    &tbi,
+                    sizeof(tbi),
+                    nullptr
+                );
+
+                if (status != 0) {
+                    std::cerr << "NtQueryInformationThread failed with status: " << std::hex << status << std::endl;
+                    return;
+                }
+
+                // The TEB (Thread Environment Block) contains stack base/limit
+                PNT_TIB teb = (PNT_TIB)tbi.TebBaseAddress;
+
+                Stack_Start_Address = (void*)((unsigned long long)teb->StackBase + (unsigned long long)teb->StackLimit);
             }
 
             if (Heap_Start_Address == nullptr){
