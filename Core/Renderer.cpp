@@ -8,6 +8,7 @@
 #include <math.h>
 #include <sstream>
 #include <cstdio>
+#include <exception>
 
 namespace GGUI{
     
@@ -459,6 +460,130 @@ namespace GGUI{
         INPUT_RECORD Raw_Input[Raw_Input_Capacity];
         int Raw_Input_Size = 0;
 
+        
+        /**
+         * @brief De-initializes the renderer by cleaning up resources and restoring console states.
+         * 
+         * This function performs the following tasks:
+         * - Cleans up file stream handles by manually calling their destructors.
+         * - Clears the list of file stream handles.
+         * - Restores the previous console modes for both standard output and input.
+         * - Disables specific ANSI features and restores the screen state.
+         * - Flushes the output to ensure all data is written to the console.
+         */
+        void De_Initialize(){
+            // Clean up file stream handles
+            for (auto File_Handle : File_Streamer_Handles){
+                File_Handle.second->~FILE_STREAM(); // Manually call destructor to release resources
+            }
+
+            File_Streamer_Handles.clear();
+
+            // Restore previous console modes
+            SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
+            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
+
+            // Disable specific ANSI features and restore screen
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR).To_String();
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::SCREEN_CAPTURE, false).To_String();
+            std::cout << std::flush; // Ensure all output is flushed to console
+        }
+
+        /**
+         * @brief Gracefully shuts down the application.
+         *
+         * This function performs a series of steps to gracefully shut down the application:
+         * 1. Logs the initiation of the termination process.
+         * 2. Signals subthreads to terminate.
+         * 3. Waits for all subthreads to join.
+         * 4. Reverts the console to its normal mode.
+         * 5. Cleans up platform-specific resources and settings.
+         * 6. Logs the successful shutdown of the application.
+         * 7. Exits the application with the specified exit code.
+         *
+         * @param signum The exit code to be used when terminating the application.
+         */
+        void Exit(int signum){
+            INTERNAL::LOGGER::Log("Sending termination signals to subthreads...");
+
+            // Gracefully shutdown event and rendering threads.
+            Pause_GGUI([](){
+                INTERNAL::Carry_Flags([](INTERNAL::Carry* flags){
+                    flags->Terminate = true;
+                });
+            });
+
+            INTERNAL::LOGGER::Log("Subthreads terminated.");
+
+            // Join the threads
+            for (auto& thread : INTERNAL::Sub_Threads){
+                if (thread.joinable()){
+                    thread.join();
+                }
+            }
+
+            INTERNAL::LOGGER::Log("Reverting to normal console mode...");
+
+            // Clean up platform-specific resources and settings
+            De_Initialize();
+
+            INTERNAL::LOGGER::Log("GGUI shutdown successful.");
+
+            // Exit the application with the specified exit code
+            exit(signum);
+        }
+
+        /**
+         * @brief Converts exception information to a human-readable string.
+         *
+         * This function takes a pointer to an EXCEPTION_POINTERS structure and converts
+         * the exception information into a formatted string using std::string. The string
+         * includes the exception code, exception address, and context information (Rip for
+         * x64 systems or Eip for x86 systems).
+         *
+         * @param exceptionInfo A pointer to an EXCEPTION_POINTERS structure containing the
+         *                      exception information.
+         * @return A std::string containing the formatted exception information.
+         */
+        std::string Exception_To_String(EXCEPTION_POINTERS* exceptionInfo) {
+            // Convert exception info to a string using only std::string
+            std::string result;
+
+            result += "Exception Code: " + std::to_string(exceptionInfo->ExceptionRecord->ExceptionCode) + "\n";
+            result += "Exception Address: " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ExceptionRecord->ExceptionAddress)) + "\n";
+
+            // Handle different architectures (x86 vs x64)
+            #if defined(_M_X64) || defined(__x86_64__)
+                // For x64 systems, use Rip
+                result += "Context (Rip): " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ContextRecord->Rip)) + "\n";
+            #elif defined(_M_IX86) || defined(__i386__)
+                // For x86 systems, use Eip
+                result += "Context (Eip): " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ContextRecord->Eip)) + "\n";
+            #else
+                result += "Context: Architecture not supported\n";
+            #endif
+
+            return result;
+        }
+
+        /**
+         * @brief Handles critical errors and access violations.
+         * 
+         * This function is a custom exception handler that logs critical errors and access violations.
+         * It logs the exception code and the address where the exception occurred, then terminates the program gracefully.
+         * 
+         * @param exceptionInfo A pointer to an EXCEPTION_POINTERS structure that contains the exception information.
+         * @return This function does not return a value.
+         */
+        LONG WINAPI Critical_Error_Handler(EXCEPTION_POINTERS* exceptionInfo) {
+            LOGGER::Log("Access violation or critical error occurred.");
+            LOGGER::Log("Exception Code: " + std::to_string(exceptionInfo->ExceptionRecord->ExceptionCode));
+            LOGGER::Log("Exception Address: " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ExceptionRecord->ExceptionAddress)));
+            LOGGER::Log(Exception_To_String(exceptionInfo));    // Dump
+            Exit(EXIT_FAILURE); // Graceful termination
+        }
+
         /**
          * @brief Renders the current frame to the console.
          * 
@@ -737,6 +862,8 @@ namespace GGUI{
             // Set the console output code page to UTF-8 mode.
             SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
 
+            SetUnhandledExceptionFilter(Critical_Error_Handler);
+
             // Mark the platform as initialized.
             INTERNAL::Platform_Initialized = true;
         }
@@ -797,79 +924,6 @@ namespace GGUI{
             }
 
             return Buffer;
-        }
-
-        /**
-         * @brief De-initializes the renderer by cleaning up resources and restoring console states.
-         * 
-         * This function performs the following tasks:
-         * - Cleans up file stream handles by manually calling their destructors.
-         * - Clears the list of file stream handles.
-         * - Restores the previous console modes for both standard output and input.
-         * - Disables specific ANSI features and restores the screen state.
-         * - Flushes the output to ensure all data is written to the console.
-         */
-        void De_Initialize(){
-            // Clean up file stream handles
-            for (auto File_Handle : File_Streamer_Handles){
-                File_Handle.second->~FILE_STREAM(); // Manually call destructor to release resources
-            }
-
-            File_Streamer_Handles.clear();
-
-            // Restore previous console modes
-            SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
-            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
-
-            // Disable specific ANSI features and restore screen
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR).To_String();
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::SCREEN_CAPTURE, false).To_String();
-            std::cout << std::flush; // Ensure all output is flushed to console
-        }
-
-        /**
-         * @brief Gracefully shuts down the application.
-         *
-         * This function performs a series of steps to gracefully shut down the application:
-         * 1. Logs the initiation of the termination process.
-         * 2. Signals subthreads to terminate.
-         * 3. Waits for all subthreads to join.
-         * 4. Reverts the console to its normal mode.
-         * 5. Cleans up platform-specific resources and settings.
-         * 6. Logs the successful shutdown of the application.
-         * 7. Exits the application with the specified exit code.
-         *
-         * @param signum The exit code to be used when terminating the application.
-         */
-        void Exit(int signum){
-            INTERNAL::LOGGER::Log("Sending termination signals to subthreads...");
-
-            // Gracefully shutdown event and rendering threads.
-            Pause_GGUI([](){
-                INTERNAL::Carry_Flags([](INTERNAL::Carry* flags){
-                    flags->Terminate = true;
-                });
-            });
-
-            INTERNAL::LOGGER::Log("Subthreads terminated.");
-
-            // Join the threads
-            for (auto& thread : INTERNAL::Sub_Threads){
-                if (thread.joinable()){
-                    thread.join();
-                }
-            }
-
-            INTERNAL::LOGGER::Log("Reverting to normal console mode...");
-
-            // Clean up platform-specific resources and settings
-            De_Initialize();
-
-            INTERNAL::LOGGER::Log("GGUI shutdown successful.");
-
-            // Exit the application with the specified exit code
-            exit(signum);
         }
 
         /**
@@ -2666,173 +2720,185 @@ namespace GGUI{
      * @note This function is thread safe.
      */
     void Report(std::string Problem){
-        Pause_GGUI([&Problem]{
-            INTERNAL::LOGGER::Log(Problem);
+        try{
+            Pause_GGUI([&Problem]{
+                INTERNAL::LOGGER::Log(Problem);
 
-            Problem = " " + Problem + " ";
+                Problem = " " + Problem + " ";
 
-            // Error logger structure:
-            /*
-                <Window name="_ERROR_LOGGER_">
-                    <List name="_HISTORY_" type=vertical scrollable=true>
-                        <List type="horizontal">
-                            <TextField>Time</TextField>
-                            <TextField>Problem a</TextField>
-                            <TextField>[repetitions if any]</TextField>
+                // Error logger structure:
+                /*
+                    <Window name="_ERROR_LOGGER_">
+                        <List name="_HISTORY_" type=vertical scrollable=true>
+                            <List type="horizontal">
+                                <TextField>Time</TextField>
+                                <TextField>Problem a</TextField>
+                                <TextField>[repetitions if any]</TextField>
+                            </List>
+                            ...
                         </List>
-                        ...
-                    </List>
-                </Window>
-            */
+                    </Window>
+                */
 
-            if (INTERNAL::Main && (INTERNAL::Max_Width != 0 && INTERNAL::Max_Height != 0)){
-                bool Create_New_Line = true;
+                if (INTERNAL::Main && (INTERNAL::Max_Width != 0 && INTERNAL::Max_Height != 0)){
+                    bool Create_New_Line = true;
 
-                // First check if there already is a report log.
-                Window* Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
+                    // First check if there already is a report log.
+                    Window* Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
 
-                if (Error_Logger){
-                    // Get the list
-                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
+                    if (Error_Logger){
+                        // Get the list
+                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
 
-                    // This happens, when Error logger is kidnapped!
-                    if (!History){
-                        // Now create the history lister
-                        History = new Scroll_View(Styling(
-                            width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
-                            text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                            flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
-                        ));
-
-                        Error_Logger->Add_Child(History);
-                    }
-
-                    std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
-
-                    if (Rows.size() > 0){
-                        //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
-                        Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
-                        Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
-
-                        //check if the previous problem was same problem
-                        if (Previous_Problem->Get_Text() == Problem){
-                            // increase the repetition count by one
-                            if (!Previous_Repetitions){
-                                Previous_Repetitions = new Text_Field(Styling(text("2")));
-                                Rows.back()->Add_Child(Previous_Repetitions);
-                            }
-                            else{
-                                // translate the string to int
-                                int Repetition = std::stoi(Previous_Repetitions->Get_Text()) + 1;
-                                Previous_Repetitions->Set_Text(std::to_string(Repetition));
-                            }
-
-                            // We dont need to create a new line.
-                            Create_New_Line = false;
-                        }
-                    }
-                }
-                else{
-                    // create the error logger
-                    Error_Logger = new Window(
-                        Styling(
-                            width(0.25f) | height(0.5f) |
-
-                            text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                            border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
-
-                            title("LOG") | name(INTERNAL::ERROR_LOGGER) | 
-                            
-                            position(
-                                STYLES::top + STYLES::center + STYLING_INTERNAL::Vector(0.0f, 0.0f, INT32_MAX-1)
-                            ) | 
-                            
-                            STYLES::border | allow_overflow(true) | 
-
-                            node(new Scroll_View(Styling(
-                                width(1.0f) | height(1.0f) |
+                        // This happens, when Error logger is kidnapped!
+                        if (!History){
+                            // Now create the history lister
+                            History = new Scroll_View(Styling(
+                                width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                 flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
-                            )))
-                        )
-                    );
+                            ));
 
-                    INTERNAL::Main->Add_Child(Error_Logger);
-                }
+                            Error_Logger->Add_Child(History);
+                        }
 
-                if (Create_New_Line){
-                    // re-find the error_logger.
-                    Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
-                    Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
+                        std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
 
-                    History->Add_Child(new List_View(Styling(
-                        width(History->Get_Width() - 1) | height(1) | 
-                        text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                        flow_priority(DIRECTION::ROW) | 
+                        if (Rows.size() > 0){
+                            //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
+                            Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
+                            Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
 
-                        // The Date field
-                        node(new Text_Field(Styling(
-                            text(INTERNAL::Now().c_str())
-                        ))) | 
+                            //check if the previous problem was same problem
+                            if (Previous_Problem->Get_Text() == Problem){
+                                // increase the repetition count by one
+                                if (!Previous_Repetitions){
+                                    Previous_Repetitions = new Text_Field(Styling(text("2")));
+                                    Rows.back()->Add_Child(Previous_Repetitions);
+                                }
+                                else{
+                                    // translate the string to int
+                                    int Repetition = std::stoi(Previous_Repetitions->Get_Text()) + 1;
+                                    Previous_Repetitions->Set_Text(std::to_string(Repetition));
+                                }
 
-                        // The actual reported problem text
-                        node(new Text_Field(Styling(
-                            text(Problem.c_str())
-                        )))
-                    )));
-
-                    // Calculate the new x position for the Error_Logger
-                    if (Error_Logger->Get_Parent() == INTERNAL::Main)
-                        Error_Logger->Set_Position({
-                            (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
-                            (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
-                            INT32_MAX
-                        });
-
-                    // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
-                    // We can assume that the singular error is at least one tall.
-                    if (GGUI::Min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
-                        // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
-                        // Element* First_Child = History->Get_Childs()[0];
-                        // History->Remove(First_Child);
-
-                        // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
-                        History->Scroll_Down();
+                                // We dont need to create a new line.
+                                Create_New_Line = false;
+                            }
+                        }
                     }
+                    else{
+                        // create the error logger
+                        Error_Logger = new Window(
+                            Styling(
+                                width(0.25f) | height(0.5f) |
+
+                                text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
+                                border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
+
+                                title("LOG") | name(INTERNAL::ERROR_LOGGER) | 
+                                
+                                position(
+                                    STYLES::top + STYLES::center + STYLES::prioritize
+                                ) | 
+                                
+                                STYLES::border | allow_overflow(true) | 
+
+                                node(new Scroll_View(Styling(
+                                    width(1.0f) | height(1.0f) |
+                                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
+                                    flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
+                                )))
+                            )
+                        );
+
+                        INTERNAL::Main->Add_Child(Error_Logger);
+                    }
+
+                    if (Create_New_Line){
+                        // re-find the error_logger.
+                        Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
+                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
+
+                        History->Add_Child(new List_View(Styling(
+                            width(History->Get_Width() - 1) | height(1) | 
+                            text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
+                            flow_priority(DIRECTION::ROW) | 
+
+                            // The Date field
+                            node(new Text_Field(Styling(
+                                text(INTERNAL::Now().c_str())
+                            ))) | 
+
+                            // The actual reported problem text
+                            node(new Text_Field(Styling(
+                                text(Problem.c_str())
+                            )))
+                        )));
+
+                        // Calculate the new x position for the Error_Logger
+                        if (Error_Logger->Get_Parent() == INTERNAL::Main)
+                            Error_Logger->Set_Position({
+                                (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
+                                (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
+                                INT32_MAX
+                            });
+
+                        // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
+                        // We can assume that the singular error is at least one tall.
+                        if (GGUI::Min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
+                            // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
+                            // Element* First_Child = History->Get_Childs()[0];
+                            // History->Remove(First_Child);
+
+                            // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
+                            History->Scroll_Down();
+                        }
+                    }
+
+                    // If the user has disabled the Inspect_Tool then the errors appear as an popup window ,which disappears after 30s.
+                    if (Error_Logger->Get_Parent() == INTERNAL::Main){
+                        Error_Logger->Display(true);
+
+                        INTERNAL::Remember([Error_Logger](std::vector<Memory>* rememberable){
+                            rememberable->push_back(Memory(
+                                TIME::SECOND * 30,
+                                [Error_Logger](GGUI::Event*){
+                                    //delete tmp;
+                                    Error_Logger->Display(false);
+                                    //job successfully done
+                                    return true;
+                                },
+                                MEMORY_FLAGS::PROLONG_MEMORY,
+                                "Report Logger Clearer"
+                            ));
+                        });
+                    }
+
+                }
+                else{
+                    if (!INTERNAL::Platform_Initialized){
+                        INTERNAL::Init_Platform_Stuff();
+                    }
+
+                    // This is for the non GGUI space errors.
+                    UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
+
+                    std::cout << _error__tmp_.To_String() + Problem << std::endl;
                 }
 
-                // If the user has disabled the Inspect_Tool then the errors appear as an popup window ,which disappears after 30s.
-                if (Error_Logger->Get_Parent() == INTERNAL::Main){
-                    Error_Logger->Display(true);
-
-                    INTERNAL::Remember([Error_Logger](std::vector<Memory>* rememberable){
-                        rememberable->push_back(Memory(
-                            TIME::SECOND * 30,
-                            [Error_Logger](GGUI::Event*){
-                                //delete tmp;
-                                Error_Logger->Display(false);
-                                //job successfully done
-                                return true;
-                            },
-                            MEMORY_FLAGS::PROLONG_MEMORY,
-                            "Report Logger Clearer"
-                        ));
-                    });
-                }
-
+            });
+        }
+        catch (std::exception& e){
+            try{
+                // First don't give up on local logging yet
+                INTERNAL::LOGGER::Log("Problem: " + std::string(e.what()));
             }
-            else{
-                if (!INTERNAL::Platform_Initialized){
-                    INTERNAL::Init_Platform_Stuff();
-                }
-
-                // This is for the non GGUI space errors.
-                UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
-
-                std::cout << _error__tmp_.To_String() + Problem << std::endl;
+            catch (std::exception& e){
+                // If logger is also down
+                std::cout << "Problem: " << e.what() << std::endl;
             }
-
-        });
+        }
     }
 
     /**
@@ -3056,7 +3122,7 @@ namespace GGUI{
             flow_priority(DIRECTION::COLUMN) | 
             // Set the position of the list view to the right side of the main window
             position(
-                STYLES::top + STYLES::center + STYLING_INTERNAL::Vector(0.0f, 0.0f, INT32_MAX-1)
+                STYLES::top + STYLES::center + STYLES::prioritize
             ) | 
             // Set the opacity of the list view to 0.8
             opacity(0.8f) |

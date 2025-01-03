@@ -17,6 +17,24 @@ namespace GGUI{
     namespace INTERNAL{
         extern void Report_Stack(std::string Problem);
         extern void Exit(int signum);
+
+        template <typename T>
+        std::string Get_Type_Name() {
+        #if defined(__clang__) || defined(__GNUC__)
+            constexpr const char* func = __PRETTY_FUNCTION__;
+        #elif defined(_MSC_VER)
+            constexpr const char* func = __FUNCSIG__;
+        #else
+            #error Unsupported compiler
+        #endif
+
+            // Extract the type name from the function signature
+            const char* start = strstr(func, "T = ") + 4; // Find "T = " and move the pointer past it
+            const char* end = strchr(start, ']');         // Find the closing bracket
+            size_t length = end - start;                  // Calculate the length of the type name
+
+            return std::string(start, length);            // Construct and return a std::string
+        }
     }
 
     enum class ALIGN{
@@ -67,6 +85,10 @@ namespace GGUI{
 
     // This namespace is an wrapper for the user not to see these !!
     namespace STYLING_INTERNAL{
+
+        template<typename P>
+        constexpr bool Is_Discriminant_Scalar(P value, float scalar);
+
         template<typename T>
         class value {
         protected:
@@ -240,6 +262,15 @@ namespace GGUI{
                     case EVALUATION_TYPE::PERCENTAGE:
                         // If the evaluation type is PERCENTAGE then multiply the parental value by the data and return the result
                         data = static_cast<T>(static_cast<T>(parental_value) * percentage);
+
+                        #if GGUI_DEBUG
+
+                        if (Is_Discriminant_Scalar<T>(parental_value, percentage)){
+                            INTERNAL::Report_Stack("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + GGUI::INTERNAL::Get_Type_Name<T>() + "'.");
+                        }
+
+                        #endif
+
                         return;
                     default:
                         INTERNAL::Report_Stack("Evaluation type not supported!");
@@ -959,6 +990,40 @@ namespace GGUI{
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host,  Element* owner) override;
         };
     
+        template<typename P>
+        constexpr bool Is_Discriminant_Scalar(P value, float scalar){
+            // For types of int and float, we can use basic std::fmod
+            if constexpr (std::is_same_v<P, float> || std::is_same_v<P, int> || std::is_same_v<P, unsigned char> || std::is_same_v<P, unsigned int>){
+                return std::fmod(value, scalar) == 0;
+            }
+            else if constexpr (std::is_same_v<P, RGB>){
+                return Is_Discriminant_Scalar<unsigned char>(value.Red, scalar) && Is_Discriminant_Scalar<unsigned char>(value.Green, scalar) && Is_Discriminant_Scalar<unsigned char>(value.Blue, scalar);
+            }
+            else if constexpr (std::is_same_v<P, RGBA>){
+                return Is_Discriminant_Scalar<unsigned char>(value.Alpha, scalar) && Is_Discriminant_Scalar<RGB>(value, scalar);
+            }
+            else if constexpr (std::is_same_v<P, FVector2>){
+                return Is_Discriminant_Scalar<float>(value.X, scalar) && Is_Discriminant_Scalar<float>(value.Y, scalar);
+            }
+            else if constexpr (std::is_same_v<P, FVector3>){
+                return Is_Discriminant_Scalar<float>(value.Z, scalar) && Is_Discriminant_Scalar<FVector2>(value, scalar);
+            }
+            else if constexpr (std::is_same_v<P, IVector3>){
+                return Is_Discriminant_Scalar<int>(value.X, scalar) && Is_Discriminant_Scalar<int>(value.Y, scalar) && Is_Discriminant_Scalar<int>(value.Z, scalar);
+            }
+            else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::Vector>){
+                return Is_Discriminant_Scalar<IVector3>(value.Get(), scalar);
+            }
+            else if constexpr (std::is_same_v<P, RGB_VALUE>){
+                return Is_Discriminant_Scalar<RGB>(static_cast<RGB_VALUE>(value).Value.Get<RGB>(), scalar);
+            }
+            else if constexpr (std::is_same_v<P, NUMBER_VALUE>){
+                return Is_Discriminant_Scalar<int>(static_cast<NUMBER_VALUE>(value).Value.Get<int>(), scalar);
+            }
+            else {
+                static_assert(!std::is_same_v<P, P>, "Unsupported type!");
+            }
+        }
     }
 
     class position : public STYLING_INTERNAL::Vector{
@@ -2042,7 +2107,8 @@ namespace GGUI{
         inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.5f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
         inline GGUI::STYLING_INTERNAL::Vector center = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f);
-
+        // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
+        inline GGUI::STYLING_INTERNAL::Vector prioritize = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f, std::numeric_limits<int>::max());
     };
 
 }

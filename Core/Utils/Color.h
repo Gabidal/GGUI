@@ -3,7 +3,7 @@
 
 #include <string>
 #include <limits>
-#include <cmath>
+#include <math.h>
 
 #include "Super_String.h"
 #include "Constants.h"
@@ -90,7 +90,6 @@ namespace GGUI{
         constexpr RGB operator*(const float Scalar) const{
             return RGB((unsigned char)((float)Red * Scalar), (unsigned char)((float)Green * Scalar), (unsigned char)((float)Blue * Scalar));
         }
-
     };
 
     class RGBA : public RGB{
