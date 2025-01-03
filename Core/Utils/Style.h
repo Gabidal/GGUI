@@ -30,7 +30,7 @@ namespace GGUI{
 
             // Extract the type name from the function signature
             const char* start = strstr(func, "T = ") + 4; // Find "T = " and move the pointer past it
-            const char* end = strchr(start, ']');         // Find the closing bracket
+            const char* end = strchr(start, ';');         // Find the closing bracket
             size_t length = end - start;                  // Calculate the length of the type name
 
             return std::string(start, length);            // Construct and return a std::string
@@ -266,7 +266,7 @@ namespace GGUI{
                         #if GGUI_DEBUG
 
                         if (Is_Discriminant_Scalar<T>(parental_value, percentage)){
-                            INTERNAL::Report_Stack("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + GGUI::INTERNAL::Get_Type_Name<T>() + "'.");
+                            INTERNAL::Report_Stack("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + To_String(parental_value) + "'.");
                         }
 
                         #endif
@@ -1019,6 +1019,44 @@ namespace GGUI{
             }
             else if constexpr (std::is_same_v<P, NUMBER_VALUE>){
                 return Is_Discriminant_Scalar<int>(static_cast<NUMBER_VALUE>(value).Value.Get<int>(), scalar);
+            }
+            else {
+                static_assert(!std::is_same_v<P, P>, "Unsupported type!");
+            }
+        }
+
+        template<typename P>
+        constexpr std::string To_String(P value){
+            if constexpr (std::is_same_v<P, std::string> || std::is_same_v<P, const char*> || std::is_same_v<P, char*>){
+                // These are already strings
+                return value;
+            }
+            else if constexpr (std::is_same_v<P, float> || std::is_same_v<P, int> || std::is_same_v<P, unsigned char> || std::is_same_v<P, unsigned int>){
+                return std::to_string(value);
+            }
+            else if constexpr (std::is_same_v<P, RGB>){
+                return To_String(value.Red) + ", " + To_String(value.Green) + ", " + To_String(value.Blue);
+            }
+            else if constexpr (std::is_same_v<P, RGBA>){
+                return To_String(static_cast<RGB>(value)) + ", " + To_String(value.Alpha);
+            }
+            else if constexpr (std::is_same_v<P, FVector2>){
+                return To_String(value.X) + ", " + To_String(value.Y);
+            }
+            else if constexpr (std::is_same_v<P, FVector3>){
+                return To_String(static_cast<FVector2>(value)) + ", " + To_String(value.Z);
+            }
+            else if constexpr (std::is_same_v<P, IVector3>){
+                return To_String(value.X) + ", " + To_String(value.Y) + ", " + To_String(value.Z);
+            }
+            else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::Vector>){
+                return To_String(value.Get());
+            }
+            else if constexpr (std::is_same_v<P, RGB_VALUE>){
+                return To_String(static_cast<RGB_VALUE>(value).Value.Get<RGB>());
+            }
+            else if constexpr (std::is_same_v<P, NUMBER_VALUE>){
+                return To_String(static_cast<NUMBER_VALUE>(value).Value.Get<int>());
             }
             else {
                 static_assert(!std::is_same_v<P, P>, "Unsupported type!");

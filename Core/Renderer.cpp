@@ -997,7 +997,7 @@ namespace GGUI{
 
             // Initialize the symbol handler for the process
             if (!SymInitialize(process, NULL, TRUE)) {
-                std::cerr << "Error: Failed to initialize symbol handler." << std::endl;
+                LOGGER::Log("Error: Failed to initialize symbol handler.");
                 return;
             }
 
@@ -1007,7 +1007,7 @@ namespace GGUI{
             // Allocate memory for SYMBOL_INFO structure with space for a name
             symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
             if (!symbol) {
-                Report("Error: Memory allocation for SYMBOL_INFO failed.");
+                LOGGER::Log("Error: Memory allocation for SYMBOL_INFO failed.");
                 return;
             }
             symbol->MaxNameLen = 255;
@@ -1023,7 +1023,7 @@ namespace GGUI{
                 // Resolve the symbol from the address
                 bool Probable_Lambda = false;
                 if (!SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol)) {
-                    Report("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
+                    LOGGER::Log("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
                     Probable_Lambda = true;
                 }
 
@@ -2894,7 +2894,7 @@ namespace GGUI{
                 // First don't give up on local logging yet
                 INTERNAL::LOGGER::Log("Problem: " + std::string(e.what()));
             }
-            catch (std::exception& e){
+            catch (std::exception& f){
                 // If logger is also down
                 std::cout << "Problem: " << e.what() << std::endl;
             }
