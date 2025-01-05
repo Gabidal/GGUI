@@ -582,6 +582,7 @@ namespace GGUI{
             LOGGER::Log("Exception Address: " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ExceptionRecord->ExceptionAddress)));
             LOGGER::Log(Exception_To_String(exceptionInfo));    // Dump
             Exit(EXIT_FAILURE); // Graceful termination
+            return EXCEPTION_EXECUTE_HANDLER;   // For warning fillers, since the execution should not extend to this line.
         }
 
         /**
