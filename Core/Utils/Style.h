@@ -87,7 +87,10 @@ namespace GGUI{
     namespace STYLING_INTERNAL{
 
         template<typename P>
-        constexpr bool Is_Discriminant_Scalar(P value, float scalar);
+        constexpr bool Is_Discriminant_Scalar(const P value, const float scalar);
+
+        template<typename P>
+        constexpr std::string To_String(const P value);
 
         template<typename T>
         class value {
@@ -374,13 +377,13 @@ namespace GGUI{
              */
             virtual ~style_base();
 
+            virtual style_base* Copy() const = 0;
+
             /**
              * @brief Overload the | operator to allow for appending of style_bases.
              * @param other The style_base to append.
              * @return A pointer to the style_base that was appended to.
-             * @details This function is used to append a style_base to another style_base. It does this by
-             *          setting the Other pointer of the current object to the address of the other object.
-             *          Then it returns a pointer to the current object.
+             * @note This bind the two objects indefinefly!
              */
             constexpr style_base* operator|(style_base* other){
                 other->Other = this;
@@ -392,9 +395,7 @@ namespace GGUI{
              * @brief Overload the | operator to allow for appending of style_bases.
              * @param other The style_base to append.
              * @return A reference to the style_base that was appended to.
-             * @details This function is used to append a style_base to another style_base. It does this by
-             *          setting the Other pointer of the current object to the address of the other object.
-             *          Then it returns a reference to the current object.
+             * @note This bind the two objects indefinefly!
              */
             constexpr style_base& operator|(style_base& other){
                 other.Other = this;
@@ -428,7 +429,7 @@ namespace GGUI{
              *          The function is also responsible for setting the Value variable to the evaluated value.
              *          The function should be implemented by the derived classes to perform the evaluation.
              */
-            virtual void Evaluate(Styling* host) = 0;
+            virtual void Evaluate([[maybe_unused]] Styling* host) {};
 
             /**
              * @brief Imprints the style's identity into the Styling object.
@@ -438,7 +439,7 @@ namespace GGUI{
              * @details This function allows single style classes to incorporate their unique characteristics into a Styling object. 
              *          It should be implemented by derived classes to define how the style affects the Styling and Element objects.
              */
-            virtual STAIN_TYPE Embed_Value(Styling* host, Element* owner) = 0;
+            virtual STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) { return STAIN_TYPE::CLEAN; };
         };
 
         class RGB_VALUE : public style_base{
@@ -474,6 +475,10 @@ namespace GGUI{
              * @details This destructor is necessary to ensure that the base class destructor is called.
              */
             ~RGB_VALUE() override { style_base::~style_base(); }
+
+            style_base* Copy() const override {
+                return new RGB_VALUE(*this);
+            }
 
             /**
              * @brief Overload the assignment operator for RGB_VALUE.
@@ -547,7 +552,7 @@ namespace GGUI{
              * @param owner The styling owner to evaluate against.
              * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
              */
-            void Evaluate(Styling* owner) override = 0;
+            void Evaluate([[maybe_unused]] Styling* owner) override {};
         };
 
         class BOOL_VALUE : public style_base{
@@ -571,6 +576,10 @@ namespace GGUI{
              * allocated by the BOOL_VALUE object, including its parent class resources.
              */
             ~BOOL_VALUE() override { style_base::~style_base(); }
+
+            style_base* Copy() const override {
+                return new BOOL_VALUE(*this);
+            }
 
             /**
              * @brief Overload the assignment operator for BOOL_VALUE.
@@ -662,6 +671,10 @@ namespace GGUI{
              */
             ~NUMBER_VALUE() override { style_base::~style_base(); }
 
+            style_base* Copy() const override {
+                return new NUMBER_VALUE(*this);
+            }
+
             /**
              * @brief Overload the assignment operator for NUMBER_VALUE.
              * @param other The other NUMBER_VALUE object to assign from.
@@ -734,7 +747,7 @@ namespace GGUI{
              * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
              *          When called, the function should evaluate the RGB value based on the owner object and set the Value property accordingly.
              */
-            void Evaluate(Styling* owner) override = 0;
+            void Evaluate([[maybe_unused]] Styling* owner) override {};
 
             /**
              * @brief Directly access the value of this NUMBER_VALUE object.
@@ -766,6 +779,10 @@ namespace GGUI{
              *          It is marked as `override` to ensure that it is called when the object is destroyed.
              */
             ~ENUM_VALUE() override { style_base::~style_base(); }
+
+            style_base* Copy() const override {
+                return new ENUM_VALUE(*this);
+            }
 
             /**
              * @brief Overload the assignment operator for ENUM_VALUE.
@@ -804,7 +821,7 @@ namespace GGUI{
              *          It copies the value and status of the other object.
              */
             constexpr ENUM_VALUE(const GGUI::STYLING_INTERNAL::ENUM_VALUE<T>& other) 
-                : style_base(other.Status, true), Value(other.Value) {}
+                : style_base(other.Status), Value(other.Value) {}
                         
             /**
              * @brief Evaluate the style.
@@ -825,7 +842,7 @@ namespace GGUI{
              *          It is used to support dynamic values like percentage depended values.
              *          The function does not do anything as of now.
              */
-            STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) override { return (STAIN_TYPE)0; };
+            STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) override { return STAIN_TYPE::CLEAN; };
         };
         
         class Vector : public style_base{
@@ -856,6 +873,10 @@ namespace GGUI{
              *          are properly cleaned up.
              */
             ~Vector() override { style_base::~style_base(); }
+
+            style_base* Copy() const override {
+                return new Vector(*this);
+            }
 
             /**
              * @brief Overload the assignment operator for Vector.
@@ -991,7 +1012,7 @@ namespace GGUI{
         };
     
         template<typename P>
-        constexpr bool Is_Discriminant_Scalar(P value, float scalar){
+        constexpr bool Is_Discriminant_Scalar(const P value, const float scalar){
             // For types of int and float, we can use basic std::fmod
             if constexpr (std::is_same_v<P, float> || std::is_same_v<P, int> || std::is_same_v<P, unsigned char> || std::is_same_v<P, unsigned int>){
                 return std::fmod(value, scalar) == 0;
@@ -1026,7 +1047,7 @@ namespace GGUI{
         }
 
         template<typename P>
-        constexpr std::string To_String(P value){
+        constexpr std::string To_String(const P value){
             if constexpr (std::is_same_v<P, std::string> || std::is_same_v<P, const char*> || std::is_same_v<P, char*>){
                 // These are already strings
                 return value;
@@ -1447,7 +1468,11 @@ namespace GGUI{
 
         constexpr styled_border() = default;
 
-        ~styled_border() = default;
+        ~styled_border() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new styled_border(*this);
+        }
 
         constexpr styled_border& operator=(const styled_border& other){
             if (other.Status >= Status){
@@ -1562,6 +1587,12 @@ namespace GGUI{
 
         constexpr margin() = default;
 
+        ~margin() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new margin(*this);
+        }
+
         // operator overload for copy operator
         constexpr margin& operator=(const margin& other){
             // Only copy the information if the other is enabled.
@@ -1602,6 +1633,12 @@ namespace GGUI{
 
         constexpr shadow() = default;
 
+        ~shadow() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new shadow(*this);
+        }
+
         constexpr shadow& operator=(const shadow& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
@@ -1630,6 +1667,12 @@ namespace GGUI{
         float Value = 1.0f;
     public:
         constexpr opacity(float value, VALUE_STATE state = VALUE_STATE::VALUE) : style_base(state), Value(value){}
+
+        ~opacity() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new opacity(*this);
+        }
 
         constexpr opacity& operator=(const opacity& other){
             // Only copy the information if the other is enabled.
@@ -1696,6 +1739,12 @@ namespace GGUI{
         
         constexpr node(const GGUI::node& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
+        ~node() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new node(*this);
+        }
+
         constexpr node& operator=(const node& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
@@ -1720,6 +1769,12 @@ namespace GGUI{
         constexpr childs(std::initializer_list<Element*> value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
 
         constexpr childs(const GGUI::childs& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
+
+        ~childs() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new childs(*this);
+        }
 
         constexpr childs& operator=(const childs& other){
             // Only copy the information if the other is enabled.
@@ -1746,6 +1801,12 @@ namespace GGUI{
 
         constexpr on_init(const GGUI::on_init& other) : style_base(other.Status), Value(other.Value){}
 
+        ~on_init() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new on_init(*this);
+        }
+
         constexpr on_init& operator=(const on_init& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
@@ -1768,6 +1829,12 @@ namespace GGUI{
         constexpr on_destroy(void (*value)(Element* self), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
 
         constexpr on_destroy(const GGUI::on_destroy& other) : style_base(other.Status), Value(other.Value){}
+
+        ~on_destroy() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new on_destroy(*this);
+        }
 
         constexpr on_destroy& operator=(const on_destroy& other){
             // Only copy the information if the other is enabled.
@@ -1792,6 +1859,12 @@ namespace GGUI{
 
         constexpr on_hide(const GGUI::on_hide& other) : style_base(other.Status), Value(other.Value){}
 
+        ~on_hide() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new on_hide(*this);
+        }
+
         constexpr on_hide& operator=(const on_hide& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
@@ -1815,6 +1888,12 @@ namespace GGUI{
 
         constexpr on_show(const GGUI::on_show& other) : style_base(other.Status), Value(other.Value){}
 
+        ~on_show() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new on_show(*this);
+        }
+
         constexpr on_show& operator=(const on_show& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
@@ -1837,6 +1916,12 @@ namespace GGUI{
         constexpr name(const char* value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
 
         constexpr name(const GGUI::name& other) : style_base(other.Status), Value(other.Value){}
+
+        ~name() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new name(*this);
+        }
 
         constexpr name& operator=(const name& other){
             // Only copy the information if the other is enabled.
@@ -1902,6 +1987,12 @@ namespace GGUI{
         
         constexpr on_draw(const GGUI::on_draw& other) : style_base(other.Status), Value(other.Value){}
 
+        ~on_draw() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new on_draw(*this);
+        }
+
         constexpr on_draw& operator=(const on_draw& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
@@ -1925,6 +2016,12 @@ namespace GGUI{
 
         constexpr text(const GGUI::text& other) : style_base(other.Status), Value(other.Value){}
 
+        ~text() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new text(*this);
+        }
+
         constexpr text& operator=(const text& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
@@ -1947,6 +2044,12 @@ namespace GGUI{
         constexpr on_click(void (*value)(Element* self), VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
 
         constexpr on_click(const GGUI::on_click& other) : style_base(other.Status), Value(other.Value){}
+
+        ~on_click() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new on_click(*this);
+        }
 
         constexpr on_click& operator=(const on_click& other){
             // Only copy the information if the other is enabled.
@@ -2074,6 +2177,8 @@ namespace GGUI{
             // use the reference one
             Copy(*other);
         }
+
+        void Copy_Un_Parsed_Styles();
         
         // Returns the point of interest of whom the Evaluation will reference to.
         Styling* Get_Reference(Element* owner);
@@ -2132,8 +2237,8 @@ namespace GGUI{
             inline Styling Default;
         }
 
-        inline enable_border border = enable_border(true, VALUE_STATE::VALUE);
-        inline display hide = display(false, VALUE_STATE::VALUE);
+        inline enable_border border = enable_border(true);
+        inline display hide = display(false);
 
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
         inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(-0.5f, 0.0f);

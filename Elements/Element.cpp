@@ -221,6 +221,11 @@ GGUI::Element::Element(Styling s, bool Embed_Styles_On_Construct){
         // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
         Dirty.Clean(STAIN_TYPE::FINALIZE);
     }
+    else{
+        // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
+        // TODO:
+        Style->Copy_Un_Parsed_Styles();
+    }
 }
 
 /**

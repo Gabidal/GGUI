@@ -9,6 +9,7 @@
 #include <sstream>
 #include <cstdio>
 #include <exception>
+#include <csignal>
 
 namespace GGUI{
     
@@ -585,6 +586,13 @@ namespace GGUI{
             return EXCEPTION_EXECUTE_HANDLER;   // For warning fillers, since the execution should not extend to this line.
         }
 
+        void Signal_Handler(int signal) {
+            if (signal == SIGSEGV) {
+                LOGGER::Log("Segmentation fault occurred.");
+                Exit(EXIT_FAILURE);
+            }
+        }
+
         /**
          * @brief Renders the current frame to the console.
          * 
@@ -863,7 +871,9 @@ namespace GGUI{
             // Set the console output code page to UTF-8 mode.
             SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
 
+            // Critical error handlers.
             SetUnhandledExceptionFilter(Critical_Error_Handler);
+            std::signal(SIGSEGV, Signal_Handler);
 
             // Mark the platform as initialized.
             INTERNAL::Platform_Initialized = true;
@@ -2755,7 +2765,7 @@ namespace GGUI{
                         if (!History){
                             // Now create the history lister
                             History = new Scroll_View(Styling(
-                                width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
+                                width(1.0f) | height(1.0f) |
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                 flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
                             ));
@@ -2800,7 +2810,7 @@ namespace GGUI{
                                 title("LOG") | name(INTERNAL::ERROR_LOGGER) | 
                                 
                                 position(
-                                    STYLES::top + STYLES::center + STYLES::prioritize
+                                    STYLES::center + STYLES::prioritize
                                 ) | 
                                 
                                 STYLES::border | allow_overflow(true) | 
