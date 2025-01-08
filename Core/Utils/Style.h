@@ -428,7 +428,7 @@ namespace GGUI{
              *          The function is also responsible for setting the Value variable to the evaluated value.
              *          The function should be implemented by the derived classes to perform the evaluation.
              */
-            virtual void Evaluate(Styling* host) = 0;
+            virtual void Evaluate(Styling* host) {};
 
             /**
              * @brief Imprints the style's identity into the Styling object.
@@ -438,7 +438,7 @@ namespace GGUI{
              * @details This function allows single style classes to incorporate their unique characteristics into a Styling object. 
              *          It should be implemented by derived classes to define how the style affects the Styling and Element objects.
              */
-            virtual STAIN_TYPE Embed_Value(Styling* host, Element* owner) = 0;
+            virtual STAIN_TYPE Embed_Value(Styling* host, Element* owner) {return STAIN_TYPE::CLEAN; };
         };
 
         class RGB_VALUE : public style_base{
@@ -825,7 +825,7 @@ namespace GGUI{
              *          It is used to support dynamic values like percentage depended values.
              *          The function does not do anything as of now.
              */
-            STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) override { return (STAIN_TYPE)0; };
+            STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host, [[maybe_unused]] Element* owner) override { return STAIN_TYPE::CLEAN; };
         };
         
         class Vector : public style_base{
