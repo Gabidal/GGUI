@@ -1741,9 +1741,7 @@ namespace GGUI{
 
         ~node() override { style_base::~style_base(); }
 
-        style_base* Copy() const override {
-            return new node(*this);
-        }
+        style_base* Copy() const override;
 
         constexpr node& operator=(const node& other){
             // Only copy the information if the other is enabled.
@@ -1772,9 +1770,7 @@ namespace GGUI{
 
         ~childs() override { style_base::~style_base(); }
 
-        style_base* Copy() const override {
-            return new childs(*this);
-        }
+        style_base* Copy() const override;
 
         constexpr childs& operator=(const childs& other){
             // Only copy the information if the other is enabled.

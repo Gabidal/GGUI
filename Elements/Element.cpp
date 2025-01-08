@@ -1165,7 +1165,12 @@ GGUI::Element* GGUI::Element::Copy(){
     // Clear the Hovered on bool
     Hovered = false;
 
-    return (Element*)new_element;
+    // Call the potentially un_parsed_styles to clone them too if not initialized yet.
+    if (Dirty.is(STAIN_TYPE::FINALIZE)){
+        new_element->Style->Copy_Un_Parsed_Styles();
+    }
+
+    return new_element;
 }
 
 void GGUI::Element::Embed_Styles(){ 

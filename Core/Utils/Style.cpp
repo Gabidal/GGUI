@@ -396,6 +396,21 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
+    STYLING_INTERNAL::style_base* node::Copy() const {
+        node* new_one = new node(*this);
+        new_one->Value = new_one->Value->Copy();
+        return new_one;
+    }
+            
+    STYLING_INTERNAL::style_base* childs::Copy() const {
+        childs* new_one = new childs(*this);
+        for (auto* c : new_one->Value){
+            c = c->Copy();
+        }
+
+        return new_one;
+    }
+
     Styling* Styling::Get_Reference(Element* owner){
         // Determine the point of interest for style evaluation
         Element* point_of_interest = owner;
@@ -581,12 +596,14 @@ namespace GGUI{
         STYLING_INTERNAL::style_base* previous_attribute = nullptr;
 
         while (current_attribute){
-            // add an anchor
+            // Shallow copy the current attribute from stack into heap.
             STYLING_INTERNAL::style_base* anchor = current_attribute->Copy();
 
             // Then set the current_attribute into the nested one
             if (previous_attribute)
                 previous_attribute->Other = anchor;
+            else    // this means that this is the first occurrence, so set it as the new head
+                un_parsed_styles = anchor;
 
             // Then set the current_attribute into the nested one
             previous_attribute = anchor;
