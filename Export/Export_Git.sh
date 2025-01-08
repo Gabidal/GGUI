@@ -106,6 +106,8 @@ run_with_gdb() {
     ./Export/Export_Git ./ Dev
 }
 
+# CUDA_VISIBLE_DEVICES=0 python3 -m transformers.models.llama.convert_llama_weights_to_hf --model_size 8B --input_dir ./ --output_dir ./ --llama_version 3.1
+
 # Main script execution.
 main() {
     check_directory

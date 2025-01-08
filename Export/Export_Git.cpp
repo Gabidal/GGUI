@@ -4,6 +4,10 @@
 #include <git2.h>
 #include <git2/diff.h>
 #include <sstream>
+#include "./json.hpp"
+#include <cpr/cpr.h> // For HTTP requests
+
+using json = nlohmann::json;
 
 /**
  * @class Hunk
@@ -182,7 +186,6 @@ void Get_Commit_Diff(git_commit* commit, git_repository* repo, Commit& commit_in
     }
 }
 
-
 /**
  * @brief Lists commits that are in the compare_branch but not in the base_branch.
  *
@@ -311,7 +314,6 @@ void Fetch_Hunk_Content(git_repository* repo, const Commit& commit, Hunk& hunk) 
     return;
 }
 
-
 void Print_Commit_Hunks(git_repository* repo, const Commit& commit) {
     for (const Hunk& hunk : commit.Hunks) {
         std::cout << "File: " << hunk.File_Name << "\n";
@@ -355,6 +357,35 @@ int main(int argc, char* argv[]) {
 
     // test
     Print_Commit_Hunks(repo, Commits.back());
+
+    // Use JSON to put the Commits into ./tmp.json
+    json j;
+
+    for (const auto& commit : Commits) {
+        json commit_json;
+        commit_json["id"] = commit.ID;
+        commit_json["message"] = commit.MSG;
+
+        json hunks_json;
+        for (const auto& hunk : commit.Hunks) {
+            json hunk_json;
+            hunk_json["file"] = hunk.File_Name;
+            hunk_json["old_start"] = hunk.Old_Text_Start;
+            hunk_json["old_lines"] = hunk.Old_Text_Line_Count;
+            hunk_json["new_start"] = hunk.New_Text_Start;
+            hunk_json["new_lines"] = hunk.New_Text_Line_Count;
+            hunk_json["old_text"] = hunk.Old_Text;
+            hunk_json["new_text"] = hunk.New_Text;
+            hunks_json.push_back(hunk_json);
+        }
+
+        commit_json["hunks"] = hunks_json;
+        j.push_back(commit_json);
+    }
+
+    std::ofstream file("tmp.json");
+    file << j.dump(4);
+    file.close();
 
     git_repository_free(repo);
     git_libgit2_shutdown();
