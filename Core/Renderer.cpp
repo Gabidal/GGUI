@@ -9,6 +9,7 @@
 #include <sstream>
 #include <cstdio>
 #include <exception>
+#include <csignal>
 
 namespace GGUI{
     
@@ -582,6 +583,14 @@ namespace GGUI{
             LOGGER::Log("Exception Address: " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ExceptionRecord->ExceptionAddress)));
             LOGGER::Log(Exception_To_String(exceptionInfo));    // Dump
             Exit(EXIT_FAILURE); // Graceful termination
+            return EXCEPTION_EXECUTE_HANDLER;   // For warning fillers, since the execution should not extend to this line.
+        }
+
+        void Signal_Handler(int signal) {
+            if (signal == SIGSEGV) {
+                LOGGER::Log("Segmentation fault occurred.");
+                Exit(EXIT_FAILURE);
+            }
         }
 
         /**
@@ -862,7 +871,9 @@ namespace GGUI{
             // Set the console output code page to UTF-8 mode.
             SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
 
+            // Critical error handlers.
             SetUnhandledExceptionFilter(Critical_Error_Handler);
+            std::signal(SIGSEGV, Signal_Handler);
 
             // Mark the platform as initialized.
             INTERNAL::Platform_Initialized = true;
@@ -997,7 +1008,7 @@ namespace GGUI{
 
             // Initialize the symbol handler for the process
             if (!SymInitialize(process, NULL, TRUE)) {
-                std::cerr << "Error: Failed to initialize symbol handler." << std::endl;
+                LOGGER::Log("Error: Failed to initialize symbol handler.");
                 return;
             }
 
@@ -1007,7 +1018,7 @@ namespace GGUI{
             // Allocate memory for SYMBOL_INFO structure with space for a name
             symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
             if (!symbol) {
-                Report("Error: Memory allocation for SYMBOL_INFO failed.");
+                LOGGER::Log("Error: Memory allocation for SYMBOL_INFO failed.");
                 return;
             }
             symbol->MaxNameLen = 255;
@@ -1023,7 +1034,7 @@ namespace GGUI{
                 // Resolve the symbol from the address
                 bool Probable_Lambda = false;
                 if (!SymFromAddr(process, (DWORD64)(Ptr_Table[Stack_Index]), 0, symbol)) {
-                    Report("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
+                    LOGGER::Log("Error: Failed to resolve symbol from address for '" + std::to_string((unsigned long long)Ptr_Table[Stack_Index]) + "'. Probably a lambda.");
                     Probable_Lambda = true;
                 }
 
@@ -2754,7 +2765,7 @@ namespace GGUI{
                         if (!History){
                             // Now create the history lister
                             History = new Scroll_View(Styling(
-                                width(Error_Logger->Get_Width() - 1) | height(Error_Logger->Get_Height() - 1) |
+                                width(1.0f) | height(1.0f) |
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                 flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
                             ));
@@ -2799,7 +2810,7 @@ namespace GGUI{
                                 title("LOG") | name(INTERNAL::ERROR_LOGGER) | 
                                 
                                 position(
-                                    STYLES::top + STYLES::center + STYLES::prioritize
+                                    STYLES::center + STYLES::prioritize
                                 ) | 
                                 
                                 STYLES::border | allow_overflow(true) | 
@@ -2894,7 +2905,7 @@ namespace GGUI{
                 // First don't give up on local logging yet
                 INTERNAL::LOGGER::Log("Problem: " + std::string(e.what()));
             }
-            catch (std::exception& e){
+            catch (std::exception& f){
                 // If logger is also down
                 std::cout << "Problem: " << e.what() << std::endl;
             }

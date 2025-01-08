@@ -17,7 +17,35 @@ namespace GGUI{
         #include <windows.h>
         #include <winternl.h>
 
-        // Define the structure for thread information
+        /**
+         * @typedef NtQueryInformationThread_t
+         * @brief A typedef for a function pointer to the NtQueryInformationThread function.
+         * 
+         * This function retrieves information about the specified thread.
+         * 
+         * @param ThreadHandle A handle to the thread for which information is to be retrieved.
+         * @param ThreadInformationClass The class of information to be retrieved.
+         * @param ThreadInformation A pointer to a buffer that receives the requested information.
+         * @param ThreadInformationLength The size of the buffer pointed to by ThreadInformation.
+         * @param ReturnLength A pointer to a variable that receives the size of the data returned in the buffer.
+         * 
+         * @return NTSTATUS The status code returned by the function.
+         */
+        typedef NTSTATUS(WINAPI* NtQueryInformationThread_t)(
+            HANDLE ThreadHandle,
+            THREADINFOCLASS ThreadInformationClass,
+            PVOID ThreadInformation,
+            ULONG ThreadInformationLength,
+            PULONG ReturnLength
+        );
+
+        /**
+         * @typedef PNT_TIB
+         * @brief A typedef for a pointer to the NT_TIB structure.
+         * 
+         * The NT_TIB structure is the Thread Information Block for a thread.
+         * It contains information about the thread's stack base and limit.
+         */
         typedef struct _THREAD_BASIC_INFORMATION {
             NTSTATUS ExitStatus;
             PVOID TebBaseAddress;
@@ -27,14 +55,20 @@ namespace GGUI{
             LONG BasePriority;
         } THREAD_BASIC_INFORMATION;
 
-        typedef NTSTATUS(WINAPI* NtQueryInformationThread_t)(
-            HANDLE ThreadHandle,
-            THREADINFOCLASS ThreadInformationClass,
-            PVOID ThreadInformation,
-            ULONG ThreadInformationLength,
-            PULONG ReturnLength
-        );
-
+        /**
+         * @brief Reads and initializes the start addresses for the stack and heap.
+         *
+         * This function dynamically loads the NtQueryInformationThread function from ntdll.dll
+         * to retrieve the Thread Environment Block (TEB) for the current thread. It then uses
+         * the TEB to determine the stack base and limit, and calculates the stack start address.
+         * Additionally, it initializes the heap start address by allocating a new integer.
+         *
+         * @note This function should be called only once to initialize the addresses.
+         *       Subsequent calls will have no effect if the addresses are already initialized.
+         *
+         * @warning If the function fails to load ntdll.dll or retrieve NtQueryInformationThread,
+         *          it will print an error message and return without initializing the addresses.
+         */
         void Read_Start_Addresses(){
             if (Stack_Start_Address == nullptr){
 
@@ -45,13 +79,14 @@ namespace GGUI{
                     return;
                 }
 
-                auto NtQueryInformationThread = (NtQueryInformationThread_t)GetProcAddress(ntdll, "NtQueryInformationThread");
+                // We have to cast first to void* so that we can elude warnings.
+                auto NtQueryInformationThread = (NtQueryInformationThread_t)((void*)GetProcAddress(ntdll, "NtQueryInformationThread"));
                 if (!NtQueryInformationThread) {
                     std::cerr << "Failed to get NtQueryInformationThread" << std::endl;
                     return;
                 }
 
-                THREAD_BASIC_INFORMATION tbi = { 0 };
+                THREAD_BASIC_INFORMATION tbi;
                 NTSTATUS status = NtQueryInformationThread(
                     GetCurrentThread(),
                     (THREADINFOCLASS)0,  // ThreadBasicInformation
@@ -77,6 +112,21 @@ namespace GGUI{
             }
         }
         #else
+        /**
+         * @brief Reads the start addresses of the stack and heap memory areas.
+         * 
+         * This function attempts to read the start address of the stack memory area
+         * by parsing the contents of the `/proc/self/maps` file. If the stack area
+         * is found, it extracts the ending address of the stack and stores it in
+         * `Stack_Start_Address`. If the stack area is not found, it captures the
+         * nearest stack address and reports an error.
+         * 
+         * Additionally, this function captures the nearest heap address and stores
+         * it in `Heap_Start_Address` if it is not already set.
+         * 
+         * @note This function is intended to be used on systems that provide the
+         *       `/proc/self/maps` file, such as Linux.
+         */
         void Read_Start_Addresses(){
             if (Stack_Start_Address == nullptr){
                 // Ask the kernel for /proc/self/maps to read the stack areas.

@@ -221,6 +221,11 @@ GGUI::Element::Element(Styling s, bool Embed_Styles_On_Construct){
         // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
         Dirty.Clean(STAIN_TYPE::FINALIZE);
     }
+    else{
+        // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
+        // TODO:
+        Style->Copy_Un_Parsed_Styles();
+    }
 }
 
 /**
@@ -1160,7 +1165,12 @@ GGUI::Element* GGUI::Element::Copy(){
     // Clear the Hovered on bool
     Hovered = false;
 
-    return (Element*)new_element;
+    // Call the potentially un_parsed_styles to clone them too if not initialized yet.
+    if (Dirty.is(STAIN_TYPE::FINALIZE)){
+        new_element->Style->Copy_Un_Parsed_Styles();
+    }
+
+    return new_element;
 }
 
 void GGUI::Element::Embed_Styles(){ 
