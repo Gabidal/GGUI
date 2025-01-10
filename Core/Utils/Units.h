@@ -668,7 +668,7 @@ namespace GGUI{
         CLASS = 1 << 5,         // This is used to tell the renderer that there are still un_parsed classes.
         STATE = 1 << 6,         // This is for Switches that based on their state display one symbol differently. And also for state handlers.
         MOVE = 1 << 7,          // Enabled, to signal absolute position caching.
-        FINALIZE = 1 << 8,     // This is used to signal that the element is finalized and the stylings are successfully been embedded.
+        FINALIZE = 1 << 8,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
     };
  
     /**

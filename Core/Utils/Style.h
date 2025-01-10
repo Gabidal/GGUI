@@ -269,14 +269,14 @@ namespace GGUI{
                         #if GGUI_DEBUG
 
                         if (Is_Discriminant_Scalar<T>(parental_value, percentage)){
-                            INTERNAL::Report_Stack("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + To_String(parental_value) + "'.");
+                            INTERNAL::LOGGER::Log("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + To_String(parental_value) + "'.");
                         }
 
                         #endif
 
                         return;
                     default:
-                        INTERNAL::Report_Stack("Evaluation type not supported!");
+                        INTERNAL::LOGGER::Log("Evaluation type not supported!");
                         // If the evaluation type is not supported then just return the data without any modification
                         return;
                 }
@@ -1097,6 +1097,11 @@ namespace GGUI{
             Transform_Center_To_Top_Left_Origin();
         }
 
+        ~position() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new position(*this);
+        }
 
         constexpr position(const GGUI::position& other) : Vector(other){}
 
@@ -1135,6 +1140,12 @@ namespace GGUI{
 
         constexpr width(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
+        ~width() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new width(*this);
+        }
+
         constexpr width(const GGUI::width& other) : NUMBER_VALUE(other){}
 
         constexpr width& operator=(const width& other) = default;
@@ -1161,6 +1172,12 @@ namespace GGUI{
 
         constexpr height(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
+        ~height() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new height(*this);
+        }
+
         constexpr height(const GGUI::height& other) : NUMBER_VALUE(other){}
 
         constexpr height& operator=(const height& other) = default;
@@ -1186,6 +1203,12 @@ namespace GGUI{
 
         constexpr enable_border(const GGUI::enable_border& other) : BOOL_VALUE(other.Value, other.Status){}
 
+        ~enable_border() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new enable_border(*this);
+        }
+
         constexpr enable_border& operator=(const enable_border& other) = default;
 
         constexpr bool operator==(const enable_border& other) const{
@@ -1210,6 +1233,12 @@ namespace GGUI{
 
         constexpr text_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
+        ~text_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new text_color(*this);
+        }
+
         constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other){}
 
         constexpr text_color& operator=(const text_color& other) = default;
@@ -1227,6 +1256,12 @@ namespace GGUI{
         constexpr background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
         constexpr background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
+        ~background_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new background_color(*this);
+        }
 
         constexpr background_color(const GGUI::background_color& other) : RGB_VALUE(other){}
 
@@ -1246,6 +1281,12 @@ namespace GGUI{
 
         constexpr border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
+        ~border_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new border_color(*this);
+        }
+
         constexpr border_color(const GGUI::border_color& other) : RGB_VALUE(other){}
 
         constexpr border_color& operator=(const border_color& other) = default;
@@ -1263,6 +1304,12 @@ namespace GGUI{
         constexpr border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
         constexpr border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
+        ~border_background_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new border_background_color(*this);
+        }
 
         constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other){}
 
@@ -1282,6 +1329,12 @@ namespace GGUI{
 
         constexpr hover_border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
+        ~hover_border_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new hover_border_color(*this);
+        }
+
         constexpr hover_border_color(const GGUI::hover_border_color& other) : RGB_VALUE(other){}
 
         constexpr hover_border_color& operator=(const hover_border_color& other) = default;
@@ -1299,6 +1352,12 @@ namespace GGUI{
         constexpr hover_text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
         constexpr hover_text_color(float  relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
+        ~hover_text_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new hover_text_color(*this);
+        }
 
         constexpr hover_text_color(const GGUI::hover_text_color& other) : RGB_VALUE(other){}
 
@@ -1318,6 +1377,12 @@ namespace GGUI{
 
         constexpr hover_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
+        ~hover_background_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new hover_background_color(*this);
+        }
+
         constexpr hover_background_color(const GGUI::hover_background_color& other) : RGB_VALUE(other){}
 
         constexpr hover_background_color& operator=(const hover_background_color& other) = default;
@@ -1335,6 +1400,12 @@ namespace GGUI{
         constexpr hover_border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
         constexpr hover_border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
+        ~hover_border_background_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new hover_border_background_color(*this);
+        }
 
         constexpr hover_border_background_color(const GGUI::hover_border_background_color& other) : RGB_VALUE(other){}
 
@@ -1354,6 +1425,12 @@ namespace GGUI{
 
         constexpr focus_border_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
+        ~focus_border_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new focus_border_color(*this);
+        }
+
         constexpr focus_border_color(const GGUI::focus_border_color& other) : RGB_VALUE(other){}
 
         constexpr focus_border_color& operator=(const focus_border_color& other) = default;
@@ -1371,6 +1448,12 @@ namespace GGUI{
         constexpr focus_text_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
         constexpr focus_text_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
+        ~focus_text_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new focus_text_color(*this);
+        }
 
         constexpr focus_text_color(const GGUI::focus_text_color& other) : RGB_VALUE(other){}
 
@@ -1390,6 +1473,12 @@ namespace GGUI{
 
         constexpr focus_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
 
+        ~focus_background_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new focus_background_color(*this);
+        }
+
         constexpr focus_background_color(const GGUI::focus_background_color& other) : RGB_VALUE(other){}
 
         constexpr focus_background_color& operator=(const focus_background_color& other) = default;
@@ -1407,6 +1496,12 @@ namespace GGUI{
         constexpr focus_border_background_color(RGB color, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
 
         constexpr focus_border_background_color(float relative_percentage, VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+
+        ~focus_border_background_color() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new focus_border_background_color(*this);
+        }
 
         constexpr focus_border_background_color(const GGUI::focus_border_background_color& other) : RGB_VALUE(other){}
 
@@ -1516,6 +1611,12 @@ namespace GGUI{
     public:
         constexpr flow_priority(DIRECTION value, VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
 
+        ~flow_priority() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new flow_priority(*this);
+        }
+
         constexpr flow_priority(const GGUI::flow_priority& other) : ENUM_VALUE(other.Value, other.Status){}
 
         constexpr flow_priority& operator=(const flow_priority& other) = default;
@@ -1531,6 +1632,12 @@ namespace GGUI{
     class wrap : public STYLING_INTERNAL::BOOL_VALUE{
     public:
         constexpr wrap(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        ~wrap() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new wrap(*this);
+        }
 
         constexpr wrap(const GGUI::wrap& other) : BOOL_VALUE(other.Value, other.Status){}
 
@@ -1548,6 +1655,12 @@ namespace GGUI{
     public:
         constexpr allow_overflow(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
 
+        ~allow_overflow() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new allow_overflow(*this);
+        }
+
         constexpr allow_overflow(const GGUI::allow_overflow& other) : BOOL_VALUE(other.Value, other.Status){}
 
         constexpr allow_overflow& operator=(const allow_overflow& other) = default;
@@ -1563,6 +1676,12 @@ namespace GGUI{
     class allow_dynamic_size : public STYLING_INTERNAL::BOOL_VALUE{
     public:
         constexpr allow_dynamic_size(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        ~allow_dynamic_size() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new allow_dynamic_size(*this);
+        }
 
         constexpr allow_dynamic_size(const GGUI::allow_dynamic_size& other) : BOOL_VALUE(other.Value, other.Status){}
 
@@ -1703,6 +1822,12 @@ namespace GGUI{
     public:
         constexpr allow_scrolling(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
 
+        ~allow_scrolling() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new allow_scrolling(*this);
+        }
+
         constexpr allow_scrolling(const GGUI::allow_scrolling& other) : BOOL_VALUE(other.Value, other.Status){}
 
         constexpr allow_scrolling& operator=(const allow_scrolling& other) = default;
@@ -1718,6 +1843,12 @@ namespace GGUI{
     class align : public STYLING_INTERNAL::ENUM_VALUE<ALIGN>{
     public:
         constexpr align(ALIGN value, VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
+
+        ~align() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new align(*this);
+        }
 
         constexpr align(const GGUI::align& other) : ENUM_VALUE(other.Value, other.Status){}
 
@@ -1938,6 +2069,12 @@ namespace GGUI{
     public:
         constexpr title(const char* value, VALUE_STATE Default = VALUE_STATE::VALUE) : name(value, Default){}
 
+        ~title() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new title(*this);
+        }
+
         constexpr title(const GGUI::title& other) : name(other.Value, other.Status){}
 
         constexpr title& operator=(const title& other){
@@ -1956,6 +2093,12 @@ namespace GGUI{
     class display : public STYLING_INTERNAL::BOOL_VALUE{
     public:
         constexpr display(bool value, VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+
+        ~display() override { style_base::~style_base(); }
+
+        style_base* Copy() const override {
+            return new display(*this);
+        }
 
         constexpr display(const GGUI::display& other) : BOOL_VALUE(other.Value, other.Status){}
 

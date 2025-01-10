@@ -121,7 +121,7 @@ namespace GGUI{
          */
         void Embed_Styles();
 
-        void Add_Styling(Styling s){
+        void Add_Styling(Styling& s){
             Style->Copy(s);
         }
 
