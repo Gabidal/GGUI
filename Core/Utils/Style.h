@@ -87,7 +87,7 @@ namespace GGUI{
     namespace STYLING_INTERNAL{
 
         template<typename P>
-        constexpr bool Is_Discriminant_Scalar(const P value, const float scalar);
+        constexpr bool Is_Non_Discriminant_Scalar(const P value, const float scalar);
 
         template<typename P>
         constexpr std::string To_String(const P value);
@@ -268,7 +268,7 @@ namespace GGUI{
 
                         #if GGUI_DEBUG
 
-                        if (Is_Discriminant_Scalar<T>(parental_value, percentage)){
+                        if (Is_Non_Discriminant_Scalar<T>(parental_value, percentage)){
                             INTERNAL::LOGGER::Log("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + To_String(parental_value) + "'.");
                         }
 
@@ -1012,34 +1012,44 @@ namespace GGUI{
         };
     
         template<typename P>
-        constexpr bool Is_Discriminant_Scalar(const P value, const float scalar){
+        constexpr bool Has_Left_Over(P A, float B){
+            return (static_cast<int>(A) * static_cast<int>(B)) - (static_cast<float>(A) * B) != 0;
+        }
+
+        template<typename P>
+        constexpr bool Is_Non_Discriminant_Scalar(const P value, const float scalar){
+            // Skip checking for redundant scalars.
+            if (scalar == 1.0f || scalar == 0.0f){
+                return false;
+            }
+
             // For types of int and float, we can use basic std::fmod
             if constexpr (std::is_same_v<P, float> || std::is_same_v<P, int> || std::is_same_v<P, unsigned char> || std::is_same_v<P, unsigned int>){
-                return std::fmod(value, scalar) == 0;
+                return Has_Left_Over<P>(value, scalar);
             }
             else if constexpr (std::is_same_v<P, RGB>){
-                return Is_Discriminant_Scalar<unsigned char>(value.Red, scalar) && Is_Discriminant_Scalar<unsigned char>(value.Green, scalar) && Is_Discriminant_Scalar<unsigned char>(value.Blue, scalar);
+                return Is_Non_Discriminant_Scalar<unsigned char>(value.Red, scalar) && Is_Non_Discriminant_Scalar<unsigned char>(value.Green, scalar) && Is_Non_Discriminant_Scalar<unsigned char>(value.Blue, scalar);
             }
             else if constexpr (std::is_same_v<P, RGBA>){
-                return Is_Discriminant_Scalar<unsigned char>(value.Alpha, scalar) && Is_Discriminant_Scalar<RGB>(value, scalar);
+                return Is_Non_Discriminant_Scalar<unsigned char>(value.Alpha, scalar) && Is_Non_Discriminant_Scalar<RGB>(value, scalar);
             }
             else if constexpr (std::is_same_v<P, FVector2>){
-                return Is_Discriminant_Scalar<float>(value.X, scalar) && Is_Discriminant_Scalar<float>(value.Y, scalar);
+                return Is_Non_Discriminant_Scalar<float>(value.X, scalar) && Is_Non_Discriminant_Scalar<float>(value.Y, scalar);
             }
             else if constexpr (std::is_same_v<P, FVector3>){
-                return Is_Discriminant_Scalar<float>(value.Z, scalar) && Is_Discriminant_Scalar<FVector2>(value, scalar);
+                return Is_Non_Discriminant_Scalar<float>(value.Z, scalar) && Is_Non_Discriminant_Scalar<FVector2>(value, scalar);
             }
             else if constexpr (std::is_same_v<P, IVector3>){
-                return Is_Discriminant_Scalar<int>(value.X, scalar) && Is_Discriminant_Scalar<int>(value.Y, scalar) && Is_Discriminant_Scalar<int>(value.Z, scalar);
+                return Is_Non_Discriminant_Scalar<int>(value.X, scalar) && Is_Non_Discriminant_Scalar<int>(value.Y, scalar) && Is_Non_Discriminant_Scalar<int>(value.Z, scalar);
             }
             else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::Vector>){
-                return Is_Discriminant_Scalar<IVector3>(value.Get(), scalar);
+                return Is_Non_Discriminant_Scalar<IVector3>(value.Get(), scalar);
             }
             else if constexpr (std::is_same_v<P, RGB_VALUE>){
-                return Is_Discriminant_Scalar<RGB>(static_cast<RGB_VALUE>(value).Value.Get<RGB>(), scalar);
+                return Is_Non_Discriminant_Scalar<RGB>(static_cast<RGB_VALUE>(value).Value.Get<RGB>(), scalar);
             }
             else if constexpr (std::is_same_v<P, NUMBER_VALUE>){
-                return Is_Discriminant_Scalar<int>(static_cast<NUMBER_VALUE>(value).Value.Get<int>(), scalar);
+                return Is_Non_Discriminant_Scalar<int>(static_cast<NUMBER_VALUE>(value).Value.Get<int>(), scalar);
             }
             else {
                 static_assert(!std::is_same_v<P, P>, "Unsupported type!");
@@ -1150,9 +1160,6 @@ namespace GGUI{
 
         constexpr width& operator=(const width& other) = default;
 
-        // for dynamically computable values like percentage depended
-        // currently covers:
-        // - screen space
         void Evaluate(Styling* owner) override;
 
         STAIN_TYPE Embed_Value(Styling* host, Element* owner) override;
