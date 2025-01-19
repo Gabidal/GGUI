@@ -2,6 +2,14 @@
 #define _ADDONS_H_
 
 namespace GGUI{
+    
+    /**
+     * @brief Initializes all addons and adds them to the main internal structure.
+     *
+     * This function first calls the initializer for the inspect tool addon.
+     * After all addons are loaded, it iterates through the list of addons
+     * and adds each one to the main internal structure.
+     */
     extern void Init_Addons();
 
     /**

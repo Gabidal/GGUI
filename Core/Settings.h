@@ -21,6 +21,13 @@ namespace GGUI{
 
         }
 
+        /**
+         * @brief Initializes the settings for the application.
+         *
+         * This function sets up the necessary configurations for the application
+         * by initializing the logger file name using the internal logger file name
+         * construction method.
+         */
         extern void Init_Settings();
     };
 }

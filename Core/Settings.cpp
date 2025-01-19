@@ -110,6 +110,13 @@ namespace GGUI{
             std::string File_Name = "";
         }
 
+        /**
+         * @brief Initializes the settings for the application.
+         *
+         * This function sets up the necessary configurations for the application
+         * by initializing the logger file name using the internal logger file name
+         * construction method.
+         */
         void Init_Settings(){
             LOGGER::File_Name = INTERNAL::Construct_Logger_File_Name();
         }

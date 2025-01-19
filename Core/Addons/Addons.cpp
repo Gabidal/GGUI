@@ -15,6 +15,13 @@ namespace GGUI{
         extern Window* Main;
     }
 
+    /**
+     * @brief Initializes all addons and adds them to the main internal structure.
+     *
+     * This function first calls the initializer for the inspect tool addon.
+     * After all addons are loaded, it iterates through the list of addons
+     * and adds each one to the main internal structure.
+     */
     void Init_Addons(){
         // Call addon initializers.
         Init_Inspect_Tool();
@@ -25,6 +32,22 @@ namespace GGUI{
         }
     }
 
+    /**
+     * @brief Generates a string containing various internal statistics.
+     * 
+     * This function collects and formats several internal statistics into a single
+     * string. The statistics include:
+     * - Encoded buffer size
+     * - Raw buffer size
+     * - Number of elements
+     * - Render delay in milliseconds
+     * - Event delay in milliseconds
+     * - Input delay in milliseconds
+     * - Resolution (width x height)
+     * - Task scheduler update speed in milliseconds
+     * 
+     * @return A formatted string containing the collected statistics.
+     */
     std::string Get_Stats_Text(){
         return  "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
                 "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
