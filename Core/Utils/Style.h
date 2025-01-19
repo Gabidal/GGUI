@@ -355,18 +355,18 @@ namespace GGUI{
             // This is used to prevent accidental overwrites.
             VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
 
-            // This is used to store all appended style_bases through the operator|.
-            style_base* Other;
-
             // Represents when the value is embedded.
             EMBED_ORDER Order = EMBED_ORDER::INSTANT;
+
+            // This is used to store all appended style_bases through the operator|.
+            style_base* Other;
 
             /**
              * @brief Construct a new constexpr style_base object.
              * @param status The status to initialize the style_base with.
              * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
              */
-            constexpr style_base(VALUE_STATE status = VALUE_STATE::UNINITIALIZED, EMBED_ORDER order = EMBED_ORDER::INSTANT) : Status(status), Other(nullptr), Order(order){}
+            constexpr style_base(VALUE_STATE status = VALUE_STATE::UNINITIALIZED, EMBED_ORDER order = EMBED_ORDER::INSTANT) : Status(status), Order(order), Other(nullptr){}
 
             /**
              * @brief Destructor of the style_base class.
@@ -2418,7 +2418,7 @@ namespace GGUI{
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
         inline GGUI::STYLING_INTERNAL::Vector center = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector prioritize = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f, std::numeric_limits<int>::max());
+        inline GGUI::STYLING_INTERNAL::Vector prioritize = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f, POSITION::Max_Z);
     };
 
 }

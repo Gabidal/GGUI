@@ -2296,7 +2296,7 @@ namespace GGUI{
                             Error_Logger->Set_Position({
                                 (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
                                 (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
-                                INT32_MAX
+                                POSITION::Max_Z
                             });
 
                         // check if the Current rows amount makes the list new rows un-visible because of the of-limits.

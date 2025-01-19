@@ -15,10 +15,9 @@ namespace GGUI{
 
     class Input : public Event{
     public:
+        unsigned short X = 0;
+        unsigned short Y = 0;
         char Data = 0;
-        unsigned int X = 0;
-        unsigned int Y = 0;
-        int Scale = 1;
 
         // The input information like the character written.
         Input(char d, unsigned long long t){
@@ -26,11 +25,10 @@ namespace GGUI{
             Criteria = t;
         }
 
-        Input(IVector3 c, unsigned long long t, int s = 1){
-            X = c.X;
-            Y = c.Y;
+        Input(IVector3 c, unsigned long long t){
+            X = (unsigned short )c.X;
+            Y = (unsigned short )c.Y;
             Criteria = t;
-            Scale = s;
         }
     };
 

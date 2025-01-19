@@ -234,9 +234,9 @@ namespace GGUI{
 
     class IVector3{
     public:
-        int X = 0;  //Horizontal
-        int Y = 0;  //Vertical
-        int Z = 0;  //priority (the higher the more likely it will be at top).
+        short X = 0;  //Horizontal
+        short Y = 0;  //Vertical
+        short Z = 0;  //priority (the higher the more likely it will be at top).
 
         /**
          * @brief Default constructor
@@ -247,7 +247,7 @@ namespace GGUI{
          * @param y The y-coordinate. Default is 0.
          * @param z The z-coordinate. Default is 0.
          */
-        constexpr IVector3(int x = 0, int y = 0, int z = 0) noexcept
+        constexpr IVector3(short x = 0, short y = 0, short z = 0) noexcept
             : X(x), Y(y), Z(z) {}
 
         /**

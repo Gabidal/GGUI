@@ -31,6 +31,7 @@ sources = [
   '../Core/Utils/Style.cpp',
   '../Core/Utils/Logger.cpp',
   '../Core/Utils/Utils.cpp',
+  '../Core/Utils/Constants.cpp',
   
   # Elements
   '../Elements/Element.cpp',

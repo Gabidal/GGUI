@@ -351,7 +351,11 @@ namespace GGUI{
             Compact_String("250", 3), Compact_String("251", 3), Compact_String("252", 3), Compact_String("253", 3), Compact_String("254", 3), Compact_String("255", 3)
         };
     }
-    
+
+    namespace POSITION{
+        extern short Max_Z;
+    }
+
     namespace BUTTON_STATES{
         static const std::string ESC = "ECS";
         static const std::string F1 = "F1";
