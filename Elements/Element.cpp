@@ -586,18 +586,18 @@ void GGUI::Element::Parse_Classes(){
         Style = new Styling();
     }
 
-    GGUI::INTERNAL::Classes([this](auto* classes){
+    GGUI::INTERNAL::Classes([this](auto& classes){
         //Go through all classes and their styles and accumulate them.
         for(auto Class : Classes){
 
             // The class wanted has not been yet constructed.
             // Pass it for the next render iteration
-            if (classes->find(Class) == classes->end()){
+            if (classes.find(Class) == classes.end()){
                 Dirty.Dirty(STAIN_TYPE::CLASS);
             }
 
             // Copy the style of the class to the current element.
-            Style->Copy(new Styling(classes->at(Class)));
+            Style->Copy(new Styling(classes.at(Class)));
             
         }
     });

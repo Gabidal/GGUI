@@ -4,6 +4,7 @@
 #include <functional>
 #include <mutex>
 #include <string>
+#include <memory>
 
 namespace GGUI{
     namespace INTERNAL{
@@ -11,54 +12,64 @@ namespace GGUI{
 
         namespace Atomic{
 
-            // Helper to make sure all objects created by this are always treated atomically
             template<typename T>
-            class Guard{
+            class Guard {
             public:
-                std::mutex Shared;          // This is shared across all other threads.
-                T* Data = nullptr;
+                std::mutex Shared; // Mutex to guard shared data
+                std::unique_ptr<T> Data;
 
-                Guard(): Data(new T()) {}   // Call the default constructor of the data type.
+                /**
+                 * @brief Constructs a Guard object and initializes its Data member.
+                 * 
+                 * This constructor creates a unique pointer to an instance of type T
+                 * and assigns it to the Data member of the Guard object.
+                 */
+                Guard() : Data(std::make_unique<T>()) {}
 
-                void operator()(std::function<void(T*)> job) {
-                    // Check if the Shared mutex is already locked by higher/upper stack frame.
-                    if (Shared.try_lock()){
-                        try{
-                            job(Data);
-                        } catch(...){
-                            Report_Stack("Failed to execute the function!");
-                        }
-
-                        Shared.unlock();
-                    }
-                    else{
-                        Report_Stack("Cannot double lock mutex");
-                        return;
+                /**
+                 * @brief Functor to execute a job with thread safety.
+                 * 
+                 * This operator() function takes a std::function that operates on a reference to a T object.
+                 * It ensures that the job is executed with mutual exclusion by using a std::lock_guard to lock
+                 * the mutex. If the job throws an exception, it catches it and reports the failure.
+                 * 
+                 * @param job A std::function that takes a reference to a T object and performs some operation.
+                 * 
+                 * @throws Any exception thrown by the job function will be caught and reported.
+                 */
+                void operator()(std::function<void(T&)> job) {
+                    std::lock_guard<std::mutex> lock(Shared); // Automatically manages mutex locking and unlocking
+                    try {
+                        job(*Data);
+                    } catch (...) {
+                        Report_Stack("Failed to execute the function!");
                     }
                 }
 
                 /**
-                 * @brief Reads the value of the guarded object.
-                 *
-                 * This function acquires the lock and reads the value of the guarded object.
-                 * It uses a lambda function to set the result to the value of the guarded object.
-                 *
-                 * @return T* Pointer to the guarded object.
+                 * @brief Reads the data in a thread-safe manner.
+                 * 
+                 * This function acquires a lock on the shared mutex to ensure that the data
+                 * is read in a thread-safe manner. It returns a copy of the data.
+                 * 
+                 * @return T A copy of the data.
                  */
-                T* Read(){
-                    T* result = nullptr;
-                    (*this)([&result](T* self){
-                        result = self;
-                    });
-                    return result;
+                T Read() {
+                    std::lock_guard<std::mutex> lock(Shared);
+                    return *Data;
                 }
 
-                // TODO: enable this code when switched T into T*
-                // Automatically handle the destruction of the atomically handled object.
-                ~Guard(){
-                    (*this)([](T* self){
-                        self->~T();
-                    });
+                /**
+                 * @brief Destructor for the Guard class.
+                 *
+                 * This destructor ensures that the Data object is properly destroyed
+                 * by acquiring a lock on the Shared mutex before resetting the Data.
+                 * The use of std::lock_guard ensures that the mutex is automatically
+                 * released when the destructor exits, preventing potential deadlocks.
+                 */
+                ~Guard() {
+                    std::lock_guard<std::mutex> lock(Shared);
+                    Data.reset(); // Ensures proper destruction
                 }
             };   
         }

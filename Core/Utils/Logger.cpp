@@ -18,12 +18,12 @@ namespace GGUI{
             INTERNAL::Atomic::Guard<FILE_STREAM> Handle;
 
             void Init(){
-                Handle([](GGUI::FILE_STREAM* self){
-                    if (self->Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED){    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
+                Handle([](GGUI::FILE_STREAM& self){
+                    if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED){    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
                         if (SETTINGS::LOGGER::File_Name.size() == 0){
                             SETTINGS::Init_Settings();
                         }
-                        new (self) FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE, true);
+                        new (&self) FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE, true);
                     }
                 });
             }
@@ -31,9 +31,9 @@ namespace GGUI{
             // Writes the given text into the Log file:
             // [TIME]: [Text]
             void Log(std::string Text){
-                Handle([&Text](GGUI::FILE_STREAM* self){
+                Handle([&Text](GGUI::FILE_STREAM& self){
                     // If this log is called before the normal GGUI_Init is called, then we need to manually init this.
-                    if (self->Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED)
+                    if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED)
                         Init();
 
                     // Get the current time as string
@@ -49,7 +49,7 @@ namespace GGUI{
                     }
 
                     // Write the time and the text into the log file.
-                    self->Append(now + Text);
+                    self.Append(now + Text);
                 });
             }
         }

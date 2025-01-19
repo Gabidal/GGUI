@@ -510,8 +510,8 @@ namespace GGUI{
 
             // Gracefully shutdown event and rendering threads.
             Pause_GGUI([](){
-                INTERNAL::Carry_Flags([](INTERNAL::Carry* flags){
-                    flags->Terminate = true;
+                INTERNAL::Carry_Flags([](INTERNAL::Carry& flags){
+                    flags.Terminate = true;
                 });
             });
 
@@ -778,8 +778,8 @@ namespace GGUI{
                     }
                 }
                 else if (Raw_Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
-                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* current_carry){
-                        current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
+                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& current_carry){
+                        current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
                     });
                 }
                 else if (Raw_Input[i].EventType == MOUSE_EVENT && INTERNAL::Mouse_Movement_Enabled){
@@ -1926,8 +1926,8 @@ namespace GGUI{
      */
     int Get_Max_Width(){
         if (INTERNAL::Max_Width == 0 && INTERNAL::Max_Height == 0){
-            INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* current_carry){
-                current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
+            INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& current_carry){
+                current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
             });
         }
         
@@ -1942,8 +1942,8 @@ namespace GGUI{
      */
     int Get_Max_Height(){
         if (INTERNAL::Max_Width == 0 && INTERNAL::Max_Height == 0){
-            INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* current_carry){
-                current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
+            INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& current_carry){
+                current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
             });
         }
 
@@ -2115,55 +2115,55 @@ namespace GGUI{
      *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
      */
     void Recall_Memories(){
-        INTERNAL::Remember([](std::vector<Memory>* rememberable){
+        INTERNAL::Remember([](std::vector<Memory>& rememberable){
             std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
             // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
             size_t Shortest_Time = INTERNAL::MAX_UPDATE_SPEED;
             // Prolong prolongable memories.
-            for (unsigned int i = 0; i < rememberable->size(); i++){
-                for (unsigned int j = i + 1; j < rememberable->size(); j++){
-                    if (rememberable->at(i).Is(MEMORY_FLAGS::PROLONG_MEMORY) && rememberable->at(j).Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
+            for (unsigned int i = 0; i < rememberable.size(); i++){
+                for (unsigned int j = i + 1; j < rememberable.size(); j++){
+                    if (rememberable.at(i).Is(MEMORY_FLAGS::PROLONG_MEMORY) && rememberable.at(j).Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
                         // Check if the Job at I is same as the one at J.
-                        if (rememberable->at(i).Job.target<bool(*)(GGUI::Event*)>() == rememberable->at(j).Job.target<bool(*)(GGUI::Event*)>()){
+                        if (rememberable.at(i).Job.target<bool(*)(GGUI::Event*)>() == rememberable.at(j).Job.target<bool(*)(GGUI::Event*)>()){
                             // Since J will always be one later than I, J will contain the prolonging memory if there is one. 
-                            rememberable->at(i).Start_Time = rememberable->at(j).Start_Time;
+                            rememberable.at(i).Start_Time = rememberable.at(j).Start_Time;
 
-                            rememberable->erase(rememberable->begin() + j--);
+                            rememberable.erase(rememberable.begin() + j--);
                             break;
                         }
                 }
             }
 
-            for (unsigned int i = 0; i < rememberable->size(); i++){
+            for (unsigned int i = 0; i < rememberable.size(); i++){
                 //first calculate the time difference between the start if the task and the end task
-                size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - rememberable->at(i).Start_Time).count();
+                size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - rememberable.at(i).Start_Time).count();
 
-                size_t Time_Left = rememberable->at(i).End_Time - Time_Difference;
+                size_t Time_Left = rememberable.at(i).End_Time - Time_Difference;
 
                 if (Time_Left < Shortest_Time)
                     Shortest_Time = Time_Left;
 
                 //if the time difference is greater than the time limit, then delete the memory
-                if (Time_Difference > rememberable->at(i).End_Time){
+                if (Time_Difference > rememberable.at(i).End_Time){
                     try{
-                        bool Success = rememberable->at(i).Job((Event*)&rememberable->at(i));
+                        bool Success = rememberable.at(i).Job((Event*)&rememberable.at(i));
 
                         // If job is a re-trigger it will ignore whether the job was successful or not.
-                        if (rememberable->at(i).Is(MEMORY_FLAGS::RETRIGGER)){
+                        if (rememberable.at(i).Is(MEMORY_FLAGS::RETRIGGER)){
 
                             // May need to change this into more accurate version of time capturing.
-                            rememberable->at(i).Start_Time = Current_Time;
+                            rememberable.at(i).Start_Time = Current_Time;
 
                         }
                         else if (Success){
-                            rememberable->erase(rememberable->begin() + i);
+                            rememberable.erase(rememberable.begin() + i);
 
                             i--;
                         }
                     }
                     catch (std::exception& e){
-                        INTERNAL::Report_Stack("In memory: '" + rememberable->at(i).ID + "' Problem: " + std::string(e.what()));
+                        INTERNAL::Report_Stack("In memory: '" + rememberable.at(i).ID + "' Problem: " + std::string(e.what()));
                     }
                 }
 
@@ -2512,12 +2512,12 @@ namespace GGUI{
      * @param Styling The styling to be associated with the class.
      */
     void Add_Class(std::string name, Styling Styling){
-        INTERNAL::Classes([name, Styling](auto* classes){
+        INTERNAL::Classes([name, Styling](auto& classes){
             // Obtain a unique class ID for the given class name
             int Class_ID = Get_Free_Class_ID(name);
 
             // Associate the styling with the obtained class ID
-            classes->at(Class_ID) = Styling;
+            classes.at(Class_ID) = Styling;
         }); 
     }
 
@@ -2603,17 +2603,17 @@ namespace GGUI{
                 INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (INTERNAL::Carry_Flags.Read()->Terminate){
+                if (INTERNAL::Carry_Flags.Read().Terminate){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
                 if (INTERNAL::Main){
 
                     // Process the previous carry flags
-                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry* previous_carry){
-                        if (previous_carry->Resize){
+                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& previous_carry){
+                        if (previous_carry.Resize){
                             // Clear the previous carry flag
-                            previous_carry->Resize = false;
+                            previous_carry.Resize = false;
 
                             INTERNAL::Update_Max_Width_And_Height();
                         }
@@ -2659,7 +2659,7 @@ namespace GGUI{
                 });
 
                 // Check for carry signals if the event scheduler needs to be terminated.
-                if (INTERNAL::Carry_Flags.Read()->Terminate){
+                if (INTERNAL::Carry_Flags.Read().Terminate){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
@@ -2871,8 +2871,8 @@ namespace GGUI{
                     if (Error_Logger->Get_Parent() == INTERNAL::Main){
                         Error_Logger->Display(true);
 
-                        INTERNAL::Remember([Error_Logger](std::vector<Memory>* rememberable){
-                            rememberable->push_back(Memory(
+                        INTERNAL::Remember([Error_Logger](std::vector<Memory>& rememberable){
+                            rememberable.push_back(Memory(
                                 TIME::SECOND * 30,
                                 [Error_Logger](GGUI::Event*){
                                     //delete tmp;
@@ -3187,8 +3187,8 @@ namespace GGUI{
                 }, true);
 
                 // Remember the inspect tool, so it will be updated every second
-                INTERNAL::Remember([](std::vector<Memory>* rememberable){
-                    rememberable->push_back(
+                INTERNAL::Remember([](std::vector<Memory>& rememberable){
+                    rememberable.push_back(
                         GGUI::Memory(
                             TIME::SECOND,
                             Update_Stats,
