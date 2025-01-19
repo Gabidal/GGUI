@@ -11,7 +11,7 @@ int main()
 
             width(1.0f) | height(1.0f) |
 
-            on_draw([](unsigned int x, unsigned int y){
+            on_draw([]([[maybe_unused]] unsigned int x, [[maybe_unused]] unsigned int y){
                 return GGUI::Sprite(
                     {
                         {"a", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 

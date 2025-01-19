@@ -90,6 +90,16 @@ namespace GGUI{
 
         extern std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
 
+        // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
+        extern time_t MAX_UPDATE_SPEED;
+        extern time_t MIN_UPDATE_SPEED;    // Close approximation to 60 fps.
+        extern time_t CURRENT_UPDATE_SPEED;
+        extern float Event_Thread_Load;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
+
+        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
+        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+        extern unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
+
         extern std::string Now();
 
         extern std::string Construct_Logger_File_Name();
@@ -398,13 +408,6 @@ namespace GGUI{
      *          to determine where encoding strips start and end.
      */
     extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
-
-    /**
-     * @brief Initializes the inspect tool.
-     * @details This function initializes the inspect tool which is a debug tool that displays the number of elements, render time, and event time.
-     * @see GGUI::Update_Stats
-     */
-    extern void Init_Inspect_Tool();
 
     /**
      * @brief Notifies all global buffer capturers about the latest data to be captured.

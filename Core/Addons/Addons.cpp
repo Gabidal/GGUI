@@ -1,0 +1,145 @@
+#include "./Addons.h"
+#include "../../Elements/Element.h"
+#include "../../Elements/List_View.h"
+#include "../../Elements/Window.h"
+#include "../../Elements/Text_Field.h"
+
+#include "../Renderer.h"
+
+#include <vector>
+
+namespace GGUI{
+    std::vector<Element*> Addons;
+
+    namespace INTERNAL{
+        extern Window* Main;
+    }
+
+    void Init_Addons(){
+        // Call addon initializers.
+        Init_Inspect_Tool();
+
+        // Finally after all addons are loaded
+        for (auto* a : Addons){
+            INTERNAL::Main->Add_Child(a);
+        }
+    }
+
+    std::string Get_Stats_Text(){
+        return  "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
+                "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
+                "Elements: " + std::to_string(INTERNAL::Main->Get_All_Nested_Elements().size()) + "\n" +
+                "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
+                "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
+                "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
+                "Resolution: " + std::to_string(INTERNAL::Max_Width) + "x" + std::to_string(INTERNAL::Max_Height) + "\n" +
+                "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n";
+    }
+    
+    /**
+     * @brief Updates the stats panel with the number of elements, render time, and event time.
+     * @param Event The event that triggered the update.
+     * @return True if the update was successful, false otherwise.
+     * @details This function should be called by the main event loop to update the stats panel.
+     */
+    bool Update_Stats([[maybe_unused]] GGUI::Event* Event){
+        // Check if the inspect tool is displayed
+        Element* Inspect_Tool = INTERNAL::Main->Get_Element("Inspect");
+
+        if (!Inspect_Tool || !Inspect_Tool->Is_Displayed())
+            return false;
+
+        // find the stats element
+        Text_Field* Stats = (Text_Field*)INTERNAL::Main->Get_Element("STATS");
+
+        // Update the stats
+        Stats->Set_Text(Get_Stats_Text());
+
+        // return success
+        return true;
+    }
+
+    /**
+     * @brief Initializes the inspect tool.
+     * @details This function initializes the inspect tool which is a debug tool that displays the number of elements, render time, and event time.
+     * @see GGUI::Update_Stats
+     */
+    void Init_Inspect_Tool(){
+        const char* ERROR_LOGGER = "_ERROR_LOGGER_";
+
+        Addons.push_back(new GGUI::List_View(Styling(
+            width(0.5f) | height(1.0f) | 
+            text_color(1.0f) | background_color(1.0f) |
+            // Set the flow direction to column so the elements stack vertically
+            flow_priority(DIRECTION::COLUMN) | 
+            // Set the position of the list view to the right side of the main window
+            position(
+                STYLES::top + STYLES::center + STYLES::prioritize
+            ) | 
+            // Set the opacity of the list view to 0.8
+            opacity(0.8f) |
+            // Set the name of the list view to "Inspect"
+            name("Inspect") |
+
+            // Add the error logger kidnapper:
+            node(new Window(
+                Styling(
+                    width(1.0f) | height(0.5f) |
+                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
+                    border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
+                    STYLES::border | 
+                    title("LOG: ") | 
+                    // Set the name of the window to "LOG"
+                    name(ERROR_LOGGER) | 
+                    // Allow the window to overflow, so that the text can be seen even if it is longer than the window
+                    allow_overflow(true)
+                )
+            )) | 
+                        
+            // Add a count for how many UTF are being streamed.
+            node(new Text_Field(
+                Styling(
+                    align(ALIGN::LEFT) | 
+                    width(1.0f) |
+                    height(8) |
+                    // Set the name of the text field to "STATS"
+                    name("STATS")
+                    // text(Get_Stats_Text().c_str())
+                )
+            )) | 
+
+            // Hide the inspect tool by default
+            // STYLES::hide | 
+
+            on_init([](Element* self){
+                // Register an event handler to toggle the inspect tool on and off
+                GGUI::INTERNAL::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
+                    GGUI::Input* input = (GGUI::Input*)e;
+
+                    // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
+                    if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
+                        return false;
+
+                    // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
+                    self->Display(!self->Is_Displayed());
+
+                    // Return true to indicate that the event was handled
+                    return true;
+                }, true);
+
+                // Remember the inspect tool, so it will be updated every second
+                INTERNAL::Remember([](std::vector<Memory>& rememberable){
+                    rememberable.push_back(
+                        GGUI::Memory(
+                            TIME::SECOND,
+                            Update_Stats,
+                            MEMORY_FLAGS::RETRIGGER,
+                            "Update Stats"
+                        )
+                    );
+                });
+            })
+        )));
+    }
+
+}

@@ -9,6 +9,17 @@
 namespace GGUI{
 
     class Element;
+    
+    namespace INTERNAL{
+        // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
+        class Carry{
+        public:
+            bool Resize = false;
+            bool Terminate = false;     // Signals the shutdown of subthreads.
+
+            ~Carry() = default;
+        };
+    }
 
     /**
      * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
@@ -19,7 +30,7 @@ namespace GGUI{
      * @param value The unsigned long long integer to be converted to a hexadecimal string.
      * @return A std::string containing the uppercase hexadecimal representation of the input value.
      */
-    std::string Hex(unsigned long long value);
+    extern std::string Hex(unsigned long long value);
 
     /**
      * @brief Checks if two rectangles collide.
@@ -160,7 +171,7 @@ namespace GGUI{
      *
      * @return True if the bit is set, false if it is not.
      */
-    bool Has_Bit_At(char val, int i);
+    extern bool Has_Bit_At(char val, int i);
 
     /**
      * @brief Gets the contents of a given position in the buffer.
@@ -168,7 +179,7 @@ namespace GGUI{
      * @param Absolute_Position The position to get the contents of.
      * @return The contents of the given position, or nullptr if the position is out of bounds.
      */
-    GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
+    extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
 
     /**
      * @brief Calculates the current load of the GGUI thread based on the given current position.
@@ -177,7 +188,7 @@ namespace GGUI{
      * @param Position The current position of the load.
      * @return The current load of the GGUI thread from 0 to 1.
      */
-    float Lerp(int Min, int Max, int Position);
+    extern float Lerp(int Min, int Max, int Position);
 
     /**
      * @brief Checks if the given flag is set in the given flags.
@@ -187,7 +198,7 @@ namespace GGUI{
      * @param Flag The flag to check for.
      * @return True if the flag is set, otherwise false.
      */
-    bool Is(unsigned long long f, unsigned long long Flag);
+    extern bool Is(unsigned long long f, unsigned long long Flag);
 
     /**
      * @brief Checks if a flag is set in a set of flags.
@@ -197,7 +208,7 @@ namespace GGUI{
      * @param flag The flag to check for.
      * @return True if the flag is set, otherwise false.
      */
-    bool Has(unsigned long long f, unsigned long long flag);
+    extern bool Has(unsigned long long f, unsigned long long flag);
 
     /**
      * @brief Checks if all flags in small are set in big.
@@ -207,7 +218,7 @@ namespace GGUI{
      * @param small The flags to check.
      * @return True if all flags in small are set in big, otherwise false.
      */
-    bool Contains(unsigned long long big, unsigned long long Small);
+    extern bool Contains(unsigned long long big, unsigned long long Small);
 
     /**
      * @brief Determines if a given pointer is likely deletable (heap-allocated).
@@ -218,7 +229,7 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    bool Is_Deletable(void* ptr);
+    extern bool Is_Deletable(void* ptr);
 }
 
 #endif

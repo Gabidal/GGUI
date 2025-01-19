@@ -3,6 +3,8 @@
 #include "Settings.h"
 #include "./Utils/Logger.h"
 #include "./Utils/Utils.h"
+#include "./Thread.h"
+#include "./Addons/Addons.h"
 
 #include <string>
 #include <cassert>
@@ -76,18 +78,6 @@ namespace GGUI{
         void* Heap_Start_Address = 0;
 
         Window* Main = nullptr;
-        
-        const char* ERROR_LOGGER = "_ERROR_LOGGER_";
-        const char* HISTORY = "_HISTORY_";
-
-        // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
-        class Carry{
-        public:
-            bool Resize = false;
-            bool Terminate = false;     // Signals the shutdown of subthreads.
-
-            ~Carry() = default;
-        };
 
         Atomic::Guard<Carry> Carry_Flags; 
 
@@ -2123,44 +2113,6 @@ namespace GGUI{
     }
 
     /**
-     * @brief Iterates through all file stream handles and triggers change events.
-     * @details This function goes through each file stream handle in the `File_Streamer_Handles` map.
-     *          It checks if the handle is not a standard output stream, and if so, calls the `Changed` method
-     *          on the file stream to trigger any associated change events.
-     */
-    void Go_Through_File_Streams(){
-        for (auto& File_Handle : File_Streamer_Handles){
-            // Check if the file handle is not a standard output stream
-            if (File_Handle.second->Get_type() == FILE_STREAM_TYPE::READ) {
-                // Trigger change event for the file stream
-                File_Handle.second->Changed();
-            }
-        }
-    }
-
-    /**
-     * @brief Refreshes the state of all multi-frame canvases by advancing their animations and flushing their updated states.
-     * 
-     * This function iterates over each multi-frame canvas, advances its animation to the next frame, and flushes the updated state.
-     * If there are canvases to update, it adjusts the event thread load based on the number of canvases.
-     */
-    void Refresh_Multi_Frame_Canvas() {
-        // Iterate over each multi-frame canvas
-        for (auto i : INTERNAL::Multi_Frame_Canvas) {
-            // Advance the animation to the next frame
-            i.first->Set_Next_Animation_Frame();
-
-            // Flush the updated state of the canvas
-            i.first->Flush(true);
-        }
-
-        // Adjust the event thread load if there are canvases to update
-        if (INTERNAL::Multi_Frame_Canvas.size() > 0) {
-            INTERNAL::Event_Thread_Load = Lerp(INTERNAL::MIN_UPDATE_SPEED, INTERNAL::MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
-        }
-    }
-
-    /**
      * @brief Initializes the GGUI system and returns the main window.
      * 
      * @return The main window of the GGUI system.
@@ -2192,126 +2144,17 @@ namespace GGUI{
         ), true);
 
         std::thread Rendering_Scheduler([&](){
-            while (true){
-                {
-                    std::unique_lock lock(INTERNAL::Atomic::Mutex);
-                    INTERNAL::Atomic::Condition.wait(lock, [&](){ return INTERNAL::Atomic::Pause_Render_Thread == INTERNAL::Atomic::Status::RESUMED; });
-
-                    INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::LOCKED;
-                }
-
-                // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
-                INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
-
-                // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (INTERNAL::Carry_Flags.Read().Terminate){
-                    break;  // Break out of the loop if the terminate flag is set
-                }
-
-                if (INTERNAL::Main){
-
-                    // Process the previous carry flags
-                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& previous_carry){
-                        if (previous_carry.Resize){
-                            // Clear the previous carry flag
-                            previous_carry.Resize = false;
-
-                            INTERNAL::Update_Max_Width_And_Height();
-                        }
-                    });
-
-                    INTERNAL::Abstract_Frame_Buffer = INTERNAL::Main->Render();
-
-                    // ENCODE for optimize
-                    Encode_Buffer(INTERNAL::Abstract_Frame_Buffer);
-
-                    INTERNAL::Frame_Buffer = Liquify_UTF_Text(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->Get_Width(), INTERNAL::Main->Get_Height())->To_String();
-                    
-                    INTERNAL::Render_Frame();
-                }
-
-                // Check the difference of the time captured before render and now after render
-                INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
-
-                INTERNAL::Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
-
-                {
-                    std::unique_lock lock(INTERNAL::Atomic::Mutex);
-                    // Now for itself set it to sleep.
-                    INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::PAUSED;
-                    INTERNAL::Atomic::Condition.notify_all();
-                }
-            }
+            INTERNAL::Renderer();
         });
 
-        Init_Inspect_Tool();
+        Init_Addons();
 
         std::thread Event_Scheduler([&](){
-            while (true){
-                Pause_GGUI([&](){
-                    // Reset the thread load counter
-                    INTERNAL::Event_Thread_Load = 0;
-                    INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
-
-                    // Order independent --------------
-                    Recall_Memories();
-                    Go_Through_File_Streams();
-                    Refresh_Multi_Frame_Canvas();
-                });
-
-                // Check for carry signals if the event scheduler needs to be terminated.
-                if (INTERNAL::Carry_Flags.Read().Terminate){
-                    break;  // Break out of the loop if the terminate flag is set
-                }
-
-                /* 
-                    Notice: Since the Rendering thread will use its own access to render as tickets, so every time it is "RESUMED" it will after its own run set itself to PAUSED.
-                    This is what Tickets are.
-                    So in other words, if there is MUST use of rendering pipeline, use Update_Frame().
-                */  
-                // Resume_GGUI();
-
-                INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
-
-                // Calculate the delta time.
-                INTERNAL::Event_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
-
-                INTERNAL::CURRENT_UPDATE_SPEED = INTERNAL::MIN_UPDATE_SPEED + (INTERNAL::MAX_UPDATE_SPEED - INTERNAL::MIN_UPDATE_SPEED) * (1 - INTERNAL::Event_Thread_Load);
-
-                // If ya want uncapped FPS, disable this sleep code:
-                std::this_thread::sleep_for(std::chrono::milliseconds(
-                    Max(
-                        INTERNAL::CURRENT_UPDATE_SPEED - INTERNAL::Event_Delay, 
-                        INTERNAL::MIN_UPDATE_SPEED
-                    )
-                ));
-            }
+            INTERNAL::Event_Thread();
         });
 
         std::thread Inquire_Scheduler([&](){
-            while (true){
-                // Wait for user input.
-                INTERNAL::Query_Inputs();
-
-                Pause_GGUI([&](){
-                    INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
-
-                    // Translate the Queried inputs.
-                    INTERNAL::Translate_Inputs();
-
-                    // Translate the movements thingies to better usable for user.
-                    SCROLL_API();
-                    MOUSE_API();
-
-                    // Now call upon event handlers which may react to the parsed input.
-                    Event_Handler();
-
-                    INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
-
-                    // Calculate the delta time.
-                    INTERNAL::Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
-                });
-            }
+            INTERNAL::Input_Thread();
         });
 
         INTERNAL::Sub_Threads.push_back(std::move(Rendering_Scheduler));
@@ -2332,8 +2175,10 @@ namespace GGUI{
      * @note This function is thread safe.
      */
     void Report(std::string Problem){
+        const char* ERROR_LOGGER = "_ERROR_LOGGER_";
+        const char* HISTORY = "_HISTORY_";
         try{
-            Pause_GGUI([&Problem]{
+            Pause_GGUI([&Problem, &ERROR_LOGGER, &HISTORY]{
                 INTERNAL::LOGGER::Log(Problem);
 
                 Problem = " " + Problem + " ";
@@ -2356,11 +2201,11 @@ namespace GGUI{
                     bool Create_New_Line = true;
 
                     // First check if there already is a report log.
-                    Window* Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
+                    Window* Error_Logger = (Window*)INTERNAL::Main->Get_Element(ERROR_LOGGER);
 
                     if (Error_Logger){
                         // Get the list
-                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
+                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
                         // This happens, when Error logger is kidnapped!
                         if (!History){
@@ -2368,7 +2213,7 @@ namespace GGUI{
                             History = new Scroll_View(Styling(
                                 width(1.0f) | height(1.0f) |
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                                flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
+                                flow_priority(DIRECTION::COLUMN) | name(HISTORY)
                             ));
 
                             Error_Logger->Add_Child(History);
@@ -2408,7 +2253,7 @@ namespace GGUI{
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
                                 border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
 
-                                title("LOG") | name(INTERNAL::ERROR_LOGGER) | 
+                                title("LOG") | name(ERROR_LOGGER) | 
                                 
                                 position(
                                     STYLES::center + STYLES::prioritize
@@ -2419,7 +2264,7 @@ namespace GGUI{
                                 node(new Scroll_View(Styling(
                                     width(1.0f) | height(1.0f) |
                                     text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                                    flow_priority(DIRECTION::COLUMN) | name(INTERNAL::HISTORY)
+                                    flow_priority(DIRECTION::COLUMN) | name(HISTORY)
                                 )))
                             )
                         );
@@ -2429,8 +2274,8 @@ namespace GGUI{
 
                     if (Create_New_Line){
                         // re-find the error_logger.
-                        Error_Logger = (Window*)INTERNAL::Main->Get_Element(INTERNAL::ERROR_LOGGER);
-                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(INTERNAL::HISTORY);
+                        Error_Logger = (Window*)INTERNAL::Main->Get_Element(ERROR_LOGGER);
+                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
 
                         History->Add_Child(new List_View(Styling(
                             width(History->Get_Width() - 1) | height(1) | 
@@ -2685,121 +2530,6 @@ namespace GGUI{
         if (Buffer[Buffer.size() - 2].Is(UTF_FLAG::ENCODE_END)) {
             Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_START | UTF_FLAG::ENCODE_END);
         }
-    }
-
-    std::string Get_Stats_Text(){
-        return  "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
-                "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
-                "Elements: " + std::to_string(INTERNAL::Main->Get_All_Nested_Elements().size()) + "\n" +
-                "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
-                "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
-                "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
-                "Resolution: " + std::to_string(INTERNAL::Max_Width) + "x" + std::to_string(INTERNAL::Max_Height) + "\n" +
-                "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n";
-    }
-
-    /**
-     * @brief Updates the stats panel with the number of elements, render time, and event time.
-     * @param Event The event that triggered the update.
-     * @return True if the update was successful, false otherwise.
-     * @details This function should be called by the main event loop to update the stats panel.
-     */
-    bool Update_Stats([[maybe_unused]] GGUI::Event* Event){
-        // Check if the inspect tool is displayed
-        Element* Inspect_Tool = INTERNAL::Main->Get_Element("Inspect");
-
-        if (!Inspect_Tool || !Inspect_Tool->Is_Displayed())
-            return false;
-
-        // find the stats element
-        Text_Field* Stats = (Text_Field*)INTERNAL::Main->Get_Element("STATS");
-
-        // Update the stats
-        Stats->Set_Text(Get_Stats_Text());
-
-        // return success
-        return true;
-    }
-
-    /**
-     * @brief Initializes the inspect tool.
-     * @details This function initializes the inspect tool which is a debug tool that displays the number of elements, render time, and event time.
-     * @see GGUI::Update_Stats
-     */
-    void Init_Inspect_Tool(){
-        INTERNAL::Main->Add_Child(new GGUI::List_View(Styling(
-            width(0.5f) | height(1.0f) | 
-            text_color(1.0f) | background_color(1.0f) |
-            // Set the flow direction to column so the elements stack vertically
-            flow_priority(DIRECTION::COLUMN) | 
-            // Set the position of the list view to the right side of the main window
-            position(
-                STYLES::top + STYLES::center + STYLES::prioritize
-            ) | 
-            // Set the opacity of the list view to 0.8
-            opacity(0.8f) |
-            // Set the name of the list view to "Inspect"
-            name("Inspect") |
-
-            // Add the error logger kidnapper:
-            node(new Window(
-                Styling(
-                    width(1.0f) | height(0.5f) |
-                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                    border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
-                    STYLES::border | 
-                    title("LOG: ") | 
-                    // Set the name of the window to "LOG"
-                    name(INTERNAL::ERROR_LOGGER) | 
-                    // Allow the window to overflow, so that the text can be seen even if it is longer than the window
-                    allow_overflow(true)
-                )
-            )) | 
-                        
-            // Add a count for how many UTF are being streamed.
-            node(new Text_Field(
-                Styling(
-                    align(ALIGN::LEFT) | 
-                    width(1.0f) |
-                    height(8) |
-                    // Set the name of the text field to "STATS"
-                    name("STATS") | 
-                    text(Get_Stats_Text().c_str())
-                )
-            )) | 
-
-            // Hide the inspect tool by default
-            // STYLES::hide | 
-
-            on_init([](Element* self){
-                // Register an event handler to toggle the inspect tool on and off
-                GGUI::INTERNAL::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
-                    GGUI::Input* input = (GGUI::Input*)e;
-
-                    // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
-                    if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
-                        return false;
-
-                    // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
-                    self->Display(!self->Is_Displayed());
-
-                    // Return true to indicate that the event was handled
-                    return true;
-                }, true);
-
-                // Remember the inspect tool, so it will be updated every second
-                INTERNAL::Remember([](std::vector<Memory>& rememberable){
-                    rememberable.push_back(
-                        GGUI::Memory(
-                            TIME::SECOND,
-                            Update_Stats,
-                            MEMORY_FLAGS::RETRIGGER,
-                            "Update Stats"
-                        )
-                    );
-                });
-            })
-        )));
     }
 
     /**

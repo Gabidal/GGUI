@@ -50,6 +50,8 @@ sources = [
   '../Core/Utils/No_Inline.cpp',
   '../Core/Settings.cpp',
   '../Core/Renderer.cpp',
+  '../Core/Thread.cpp',
+  '../Core/Addons/Addons.cpp',
   '../Core/main.cpp'
 ]
 
