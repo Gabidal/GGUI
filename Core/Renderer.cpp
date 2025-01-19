@@ -838,8 +838,8 @@ namespace GGUI{
 
             // Gracefully shutdown event and rendering threads.
             Pause_GGUI([](){
-                Carry_Flags([](Carry* flags){
-                    flags->Terminate = true;
+                Carry_Flags([](Carry& flags){
+                    flags.Terminate = true;
                 });
             });
 
@@ -941,10 +941,10 @@ namespace GGUI{
             struct sigaction Handler;
             
             // Setup the function handler with a lambda
-            Handler.sa_handler = [](int signum){
+            Handler.sa_handler = []([[maybe_unused]] int signum){
                 // When the signal is received, update the carry flags to indicate that a resize is needed
-                Carry_Flags([](Carry* current_carry){
-                    current_carry->Resize = true;    // Tell the render thread that an resize is needed to be performed.
+                Carry_Flags([](Carry& current_carry){
+                    current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
                 });
             };
 
@@ -990,7 +990,6 @@ namespace GGUI{
             return Result;
         }
 
-
         /**
          * @brief Reverse-engineers termios raw terminal keybinds.
          * @param keybind_value The value of the key to reverse-engineer.
@@ -1013,7 +1012,6 @@ namespace GGUI{
 
             return keybind_value;
         }
-
 
         /**
          * @brief Waits for user input and stores it in the Raw_Input array.
