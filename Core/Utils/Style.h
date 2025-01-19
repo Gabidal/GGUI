@@ -1011,11 +1011,32 @@ namespace GGUI{
             STAIN_TYPE Embed_Value([[maybe_unused]] Styling* host,  Element* owner) override;
         };
     
+        /**
+         * @brief Checks if there is a leftover when multiplying two values.
+         *
+         * This function takes two parameters of type P and float, respectively, and checks if there is any leftover
+         * when multiplying them. It does this by comparing the product of the integer parts of the parameters with
+         * the product of the original parameters.
+         *
+         * @tparam P The type of the first parameter.
+         * @param A The first parameter.
+         * @param B The second parameter.
+         * @return true if there is a leftover, false otherwise.
+         */
         template<typename P>
         constexpr bool Has_Left_Over(P A, float B){
             return (static_cast<int>(A) * static_cast<int>(B)) - (static_cast<float>(A) * B) != 0;
         }
 
+        /**
+         * @brief Checks if a given value is a non-discriminant scalar.
+         * @tparam P The type of the value to be checked.
+         * @param value The value to be checked.
+         * @param scalar The scalar value to compare against.
+         * @return true if the value is a non-discriminant scalar, false otherwise.
+         * 
+         * @note Supported types: float | int | unsigned char | unsigned int | RGB | RGBA | FVector2 | FVector3 | IVector3 | GGUI::STYLING_INTERNAL::Vector | RGB_VALUE | NUMBER_VALUE
+         */
         template<typename P>
         constexpr bool Is_Non_Discriminant_Scalar(const P value, const float scalar){
             // Skip checking for redundant scalars.

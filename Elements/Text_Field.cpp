@@ -1,6 +1,8 @@
 #include "Text_Field.h"
 #include "../Core/Renderer.h"
 
+#include "../Core/Utils/Utils.h"
+
 namespace GGUI{
 
     /**

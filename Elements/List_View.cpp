@@ -1,5 +1,6 @@
 #include "List_View.h"
 #include "../Core/Renderer.h"
+#include "../Core/Utils/Utils.h"
 #include "HTML.h"
 
 //undefine these before algorithm.h is included

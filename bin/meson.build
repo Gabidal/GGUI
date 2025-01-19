@@ -30,6 +30,7 @@ sources = [
   '../Core/Utils/Color.cpp',
   '../Core/Utils/Style.cpp',
   '../Core/Utils/Logger.cpp',
+  '../Core/Utils/Utils.cpp',
   
   # Elements
   '../Elements/Element.cpp',
