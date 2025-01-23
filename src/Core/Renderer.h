@@ -28,10 +28,10 @@
 namespace GGUI{
 
     namespace INTERNAL{
-        class BUFFER_CAPTURE;
+        class bufferCapture;
 
-        namespace Atomic{
-            enum class Status{
+        namespace atomic{
+            enum class status{
                 RESUMED,
                 PAUSED,
                 LOCKED,
@@ -41,40 +41,40 @@ namespace GGUI{
             extern std::mutex Mutex;
             extern std::condition_variable Condition;
 
-            extern Status Pause_Render_Thread;
+            extern status Pause_Render_Thread;
         }
 
         // Inits with 'NOW()' when created
-        class BUTTON_STATE {
+        class buttonState {
         public:
             bool State;
             std::chrono::high_resolution_clock::time_point Capture_Time;
 
-            BUTTON_STATE(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
+            buttonState(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
         };
 
         extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
         extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
 
-        extern std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
+        extern std::vector<INTERNAL::bufferCapture*> Global_Buffer_Captures;
 
         extern unsigned int Max_Width;
         extern unsigned int Max_Height;
 
-        extern Atomic::Guard<std::vector<Memory>> Remember;
+        extern atomic::Guard<std::vector<Memory>> Remember;
 
         extern std::vector<Action*> Event_Handlers;
         extern std::vector<Input*> Inputs;
         
-        extern std::unordered_map<std::string, Element*> Element_Names;
+        extern std::unordered_map<std::string, element*> Element_Names;
 
-        extern Element* Focused_On;
-        extern Element* Hovered_On;
+        extern element* Focused_On;
+        extern element* Hovered_On;
 
         extern IVector3 Mouse;    
         extern bool Mouse_Movement_Enabled;
 
-        extern std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
+        extern std::unordered_map<std::string, buttonState> KEYBOARD_STATES;
 
         extern time_t MAX_UPDATE_SPEED;
         extern int Inputs_Per_Second;
@@ -83,12 +83,12 @@ namespace GGUI{
         extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
         extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
 
-        extern Atomic::Guard<std::unordered_map<int, Styling>> Classes;
+        extern atomic::Guard<std::unordered_map<int, styling>> Classes;
         extern std::unordered_map<std::string, int> Class_Names;
 
-        extern Window* Main;  
+        extern window* Main;  
 
-        extern std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
+        extern std::unordered_map<GGUI::terminalCanvas*, bool> Multi_Frame_Canvas;
 
         // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
         extern time_t MAX_UPDATE_SPEED;
@@ -100,11 +100,11 @@ namespace GGUI{
         extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
         extern unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
 
-        extern std::string Now();
+        extern std::string now();
 
-        extern std::string Construct_Logger_File_Name();
+        extern std::string constructLoggerFileName();
 
-        extern void Report_Stack(std::string Problem);
+        extern void reportStack(std::string Problem);
 
         /**
          * @brief Initializes platform-specific settings for console handling.
@@ -112,7 +112,7 @@ namespace GGUI{
          *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
          *          handling specific ANSI features.
          */
-        extern void Init_Platform_Stuff();
+        extern void initPlatformStuff();
         
         
         /**
@@ -133,7 +133,7 @@ namespace GGUI{
          * @note The number of bytes written to the console is stored in a temporary
          * variable but is not used elsewhere in the function.
          */
-        extern void Render_Frame();
+        extern void renderFrame();
 
         /**
          * @brief Updates the maximum width and height of the console window.
@@ -144,14 +144,14 @@ namespace GGUI{
          * if the main window is active, its dimensions are set to the updated maximum width
          * and height.
          */
-        extern void Update_Max_Width_And_Height();
+        extern void updateMaxWidthAndHeight();
         
         /**
          * @brief Updates the frame.
          * @details This function updates the frame. It's the main entry point for the rendering thread.
          * @note This function will return immediately if the rendering thread is paused.
          */
-        void Update_Frame();
+        void updateFrame();
         
         /**
          * @brief Queries and appends new input records to the existing buffered input.
@@ -166,7 +166,7 @@ namespace GGUI{
          * @param None
          * @return None
          */
-        extern void Query_Inputs();
+        extern void queryInputs();
         
         /**
          * @brief Gracefully shuts down the application.
@@ -182,7 +182,7 @@ namespace GGUI{
          *
          * @param signum The exit code to be used when terminating the application.
          */
-        extern void Exit(int Signum = 0);
+        extern void EXIT(int Signum = 0);
     }
 
     /**
@@ -192,7 +192,7 @@ namespace GGUI{
      * 
      * @param Signum The signal number to exit with. Default is 0.
      */
-    inline void Exit(int Signum = 0) { INTERNAL::Exit(Signum); }
+    inline void EXIT(int Signum = 0) { INTERNAL::EXIT(Signum); }
 
     /**
      * @brief Processes mouse input events and updates the input list.
@@ -202,14 +202,14 @@ namespace GGUI{
      *          Based on these checks, it creates corresponding input objects and adds them
      *          to the Inputs list.
      */
-    extern void MOUSE_API();
+    extern void mouseAPI();
 
     /**
      * @brief Handles mouse scroll events.
      * @details This function checks if the mouse scroll up or down button has been pressed and if the focused element is not null.
      *          If the focused element is not null, it calls the scroll up or down function on the focused element.
      */
-    extern void SCROLL_API();
+    extern void scrollAPI();
 
     /**
      * @brief Returns the length of a Unicode character based on the first byte.
@@ -218,7 +218,7 @@ namespace GGUI{
      * @param first_char The first byte of the character.
      * @return The length of the character in bytes.
      */
-    extern int Get_Unicode_Length(char first_char);
+    extern int getUnicodeLength(char first_char);
 
     /**
      * @brief Gets the current maximum width of the terminal.
@@ -226,7 +226,7 @@ namespace GGUI{
      *
      * @return The current maximum width of the terminal.
      */
-    extern int Get_Max_Width();
+    extern int getMaxWidth();
 
     /**
      * @brief Gets the current maximum height of the terminal.
@@ -234,7 +234,7 @@ namespace GGUI{
      *
      * @return The current maximum height of the terminal.
      */
-    extern int Get_Max_Height();
+    extern int getMaxHeight();
 
     /**
      * @brief Converts a vector of UTFs into a Super_String.
@@ -244,34 +244,34 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    extern GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height);
+    extern GGUI::Super_String* liquifyUTFText(std::vector<GGUI::UTF>& Text, int Width, int Height);
 
     /**
      * @brief Updates the frame.
      * @details This function updates the frame. It's the main entry point for the rendering thread.
      * @note This function will return immediately if the rendering thread is paused.
      */
-    extern void Update_Frame();
+    extern void updateFrame();
     
     /**
      * @brief Pauses the rendering thread.
      * @details This function pauses the rendering thread. The thread will wait until the rendering thread is resumed.
      */
-    extern void Pause_GGUI();
+    extern void pauseGGUI();
 
     /**
      * @brief Resumes the rendering thread.
      * @details This function resumes the rendering thread after it has been paused.
      * @param restore_render_to The status to restore the rendering thread to.
      */
-    extern void Resume_GGUI(INTERNAL::Atomic::Status restore_render_to = INTERNAL::Atomic::Status::RESUMED);
+    extern void resumeGGUI(INTERNAL::atomic::status restore_render_to = INTERNAL::atomic::status::RESUMED);
 
     /**
      * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
      * @details This function is a lambda function that is used by the Atomic::Guard class to prolong or delete memories in the smart memory system.
      *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
      */
-    extern void Recall_Memories();
+    extern void recallMemories();
 
     /**
      * @brief Removes focus from the currently focused element and its children.
@@ -279,7 +279,7 @@ namespace GGUI{
      *          If there is, it sets the focus state on the element and its children to false.
      *          Focus is only removed if the element's current focus state differs from the desired state.
      */
-    extern void Un_Focus_Element();
+    extern void unFocusElement();
 
     /**
      * @brief Removes the hover state from the currently hovered element and its children.
@@ -287,7 +287,7 @@ namespace GGUI{
      *          If there is, it sets the hover state on the element and its children to false.
      *          Hover is only removed if the element's current hover state differs from the desired state.
      */
-    extern void Un_Hover_Element();
+    extern void unHoverElement();
 
     /**
      * @brief Updates the currently focused element to a new candidate.
@@ -296,7 +296,7 @@ namespace GGUI{
      *          Then, it sets the focus on the new candidate element and all its children.
      * @param new_candidate The new element to focus on.
      */
-    extern void Update_Focused_Element(GGUI::Element* new_candidate);
+    extern void updateFocusedElement(GGUI::element* new_candidate);
 
     /**
      * @brief Updates the currently hovered element to a new candidate.
@@ -305,7 +305,7 @@ namespace GGUI{
      *          Then, it sets the hover state on the new candidate element and all its children.
      * @param new_candidate The new element to hover on.
      */
-    extern void Update_Hovered_Element(GGUI::Element* new_candidate);
+    extern void updateHoveredElement(GGUI::element* new_candidate);
 
     /**
      * @brief Handles all events in the system.
@@ -314,7 +314,7 @@ namespace GGUI{
      *          If the job is successful, it removes the input from the list of inputs.
      *          If the job is unsuccessful, it reports an error.
      */
-    extern void Event_Handler();
+    extern void eventHandler();
 
     /**
      * Get the ID of a class by name, assigning a new ID if it doesn't exist.
@@ -322,7 +322,7 @@ namespace GGUI{
      * @param n The name of the class.
      * @return The ID of the class.
      */
-    extern int Get_Free_Class_ID(std::string n);
+    extern int getFreeClassID(std::string n);
 
     /**
      * @brief Adds a new class with the specified name and styling.
@@ -333,14 +333,14 @@ namespace GGUI{
      * @param name The name of the class.
      * @param Styling The styling to be associated with the class.
      */
-    extern void Add_Class(std::string name, Styling Styling);
+    extern void addClass(std::string name, styling Styling);
 
     /**
      * @brief Initializes the GGUI system and returns the main window.
      * 
      * @return The main window of the GGUI system.
      */
-    extern GGUI::Window* Init_GGUI();
+    extern GGUI::window* initGGUI();
 
     /**
      * @brief Reports an error to the user.
@@ -348,7 +348,7 @@ namespace GGUI{
      * @note If the main window is not created yet, the error will be printed to the console.
      * @note This function is thread safe.
      */
-    extern void Report(std::string Problem);
+    extern void report(std::string Problem);
 
     /**
      * @brief Nests a text buffer into a parent buffer while considering the childs position and size.
@@ -358,14 +358,14 @@ namespace GGUI{
      * @param Text The text buffer to be nested.
      * @param Parent_Buffer The parent buffer which the text is being nested into.
      */
-    extern void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
+    extern void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 
     /**
      * @brief Pauses all other GGUI internal threads and calls the given function.
      * @details This function will pause all other GGUI internal threads and call the given function.
      * @param f The function to call.
      */
-    extern void Pause_GGUI(std::function<void()> f);
+    extern void pauseGGUI(std::function<void()> f);
 
     /**
      * @brief Use GGUI in a simple way.
@@ -381,14 +381,14 @@ namespace GGUI{
      * @param App The whole GGUI Application that GGUI holds.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    extern void GGUI(Styling App, unsigned long long Sleep_For = 0);
+    extern void GGUI(styling App, unsigned long long Sleep_For = 0);
 
     /**
      * @brief Handles the pressing of the tab key.
      * @details This function selects the next tabbed element as focused and not hovered.
      *          If the shift key is pressed, it goes backwards in the list of tabbed elements.
      */
-    extern void Handle_Tabulator();
+    extern void handleTabulator();
 
     /**
      * @brief Handles escape key press events.
@@ -397,7 +397,7 @@ namespace GGUI{
      *          If the focused element is null but the hovered element is not null, it calls the Un_Hover_Element
      *          function to remove the hover.
      */
-    extern void Handle_Escape();
+    extern void handleEscape();
 
     /**
      * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
@@ -407,7 +407,7 @@ namespace GGUI{
      *          It checks each UTF element's foreground and background colors with its adjacent elements
      *          to determine where encoding strips start and end.
      */
-    extern void Encode_Buffer(std::vector<GGUI::UTF>& Buffer);
+    extern void encodeBuffer(std::vector<GGUI::UTF>& Buffer);
 
     /**
      * @brief Notifies all global buffer capturers about the latest data to be captured.
@@ -417,7 +417,7 @@ namespace GGUI{
      *
      * @param informer Pointer to the buffer capturer with the latest data.
      */
-    extern void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer);
+    extern void informAllGlobalBufferCaptures(INTERNAL::bufferCapture* informer);
 
     /**
      * @brief Determines if a given pointer is likely deletable (heap-allocated).
@@ -428,7 +428,7 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    extern bool Is_Deletable(void* ptr);
+    extern bool isDeletable(void* ptr);
 }
 
 #endif

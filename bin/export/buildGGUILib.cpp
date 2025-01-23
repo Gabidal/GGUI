@@ -44,7 +44,7 @@ void Compile_Headers(){
     // Order the files before combination in the including order so that the files which are included the most are at the top. 
 
     std::string Destination_File_Name = "./GGUI.h";
-    std::vector<std::string> Header_Source_Folders = {"../../src/Core/Utils/", "../../src/Elements/", "../../src/Core/", "../../src/Core/SIMD/"};
+    std::vector<std::string> Header_Source_Folders = {"../../src/core/utils/", "../../src/elements/", "../../src/core/", "../../src/core/SIMD/"};
 
     std::unordered_map<std::string, Header_File> Header_Files;
 
@@ -144,31 +144,31 @@ int main(){
     if (SIMD_Support.size() > 0)
         std::cout << "Using SIMD type: " << SIMD_Support << std::endl;
 
-    std::string Universal_Args = " -c ./GGUI_Body.cpp -c -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " --std=c++17 ";
+    std::string Universal_Args = " -c ./GGUIBody.cpp -c -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " --std=c++17 ";
 
     // generate for the main platform this script is run from with gcc
     std::string Command = std::string("g++" + Universal_Args) + Double_Command_Mark + 
-    std::string("ar rcs GGUI_Win.lib ./GGUI_Body.o");
+    std::string("ar rcs GGUIWin.lib ./GGUIBody.o");
 
 #if _WIN32
     // if we are in windows, then generate for unix
     Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
-    std::string("ar rcs GGUI_Unix.lib ./GGUI_Body.o");
+    std::string("ar rcs GGUIUnix.lib ./GGUIBody.o");
 #else
     // if we are on Unix, then generate for windows too
     Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
-    std::string("x86_64-w64-mingw32-ar rcs GGUI_Win.lib ./GGUI_Body.o");
+    std::string("x86_64-w64-mingw32-ar rcs GGUIWin.lib ./GGUIBody.o");
 #endif
 
     system(Command.c_str());
 
 #if _WIN32
     // Clean the *.o file
-    Command = std::string("del GGUI_Body.o");
+    Command = std::string("del GGUIBody.o");
     system(Command.c_str());
 #else
     // Clean the *.o file
-    Command = std::string("rm ./GGUI_Body.o");
+    Command = std::string("rm ./GGUIBody.o");
     system(Command.c_str());
 #endif
 }

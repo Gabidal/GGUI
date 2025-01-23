@@ -5,13 +5,13 @@
 
 namespace GGUI{
 
-    class FILE_STREAM;
+    class fileStream;
 
     namespace INTERNAL{
         // Contains Logging utils.
         namespace LOGGER{
             // File handle for logging to files for Atomic access across different threads.
-            extern Atomic::Guard<FILE_STREAM> Handle;
+            extern atomic::Guard<fileStream> Handle;
 
             extern void Init();
 

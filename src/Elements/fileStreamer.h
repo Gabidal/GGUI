@@ -29,9 +29,9 @@ namespace GGUI{
         Utilities to manage file streams.
     */
 
-    class FILE_STREAM;
+    class fileStream;
 
-    extern std::unordered_map<std::string, FILE_STREAM*> File_Streamer_Handles;
+    extern std::unordered_map<std::string, fileStream*> File_Streamer_Handles;
 
     /**
      * @brief Adds an event handler that is called when the file is changed.
@@ -43,14 +43,14 @@ namespace GGUI{
      * handle is created and the event handler is added to the list of event
      * handlers for that file.
      */
-    extern void Add_File_Stream_Handle(std::string File_Handle, std::function<void()> Handle);
+    extern void addFileStreamHandle(std::string File_Handle, std::function<void()> Handle);
 
     /**
      * @brief Returns the file stream handle associated with the given file name.
      * @param File_Name The name of the file to retrieve the handle for.
      * @return The file stream handle associated with the given file name, or nullptr if no handle exists.
      */
-    extern FILE_STREAM* Get_File_Stream_Handle(std::string File_Name);
+    extern fileStream* getFileStreamHandle(std::string File_Name);
 
     /**
      * @brief Returns the current working directory of the program.
@@ -61,7 +61,7 @@ namespace GGUI{
      * files, data files, and other resources that need to be accessed from
      * the program.
      */
-    extern std::string Get_Current_Location();
+    extern std::string getCurrentLocation();
  
     /**
      * @brief Pulls the current contents of STDIN as a string.
@@ -73,7 +73,7 @@ namespace GGUI{
      * started as a non TTY enabled application. If the application was started
      * as a TTY enabled application, this function will fail.
      */
-    extern std::string Pull_STDIN();
+    extern std::string pullSTDIN();
     
     /**
      * @brief Checks if the application was started from a TTY
@@ -82,12 +82,12 @@ namespace GGUI{
      * This function checks if the application was started from a TTY
      * by checking if STDIN is a TTY.
      */
-    extern bool Has_Started_As_TTY();
+    extern bool hasStartedAsTTY();
 
     namespace INTERNAL{
         // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
         // These black boxes work like Stack Frames, where the data collected will be deleted when the current "Frame" capturer is destructed.
-        class BUFFER_CAPTURE : public std::streambuf{
+        class bufferCapture : public std::streambuf{
         private:
             std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
             std::string Current_Line = "";
@@ -97,7 +97,7 @@ namespace GGUI{
             std::vector<std::function<void()>> On_Change = {};
 
             // For speeding up.
-            std::unordered_map<BUFFER_CAPTURE*, bool> Synced;
+            std::unordered_map<bufferCapture*, bool> Synced;
 
             std::string Name = "";
         public:
@@ -116,7 +116,7 @@ namespace GGUI{
              * This will also insert this as the new cout output stream.
              * If Global is true, this BUFFER_CAPTURE will inform all other global BUFFER_CAPTURES about the change.
              */
-            BUFFER_CAPTURE(std::function<void()> on_change, std::string Name = "", bool Global = false);
+            bufferCapture(std::function<void()> on_change, std::string Name = "", bool Global = false);
 
             /**
              * @brief Default constructor
@@ -124,7 +124,7 @@ namespace GGUI{
              * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
              * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
              */
-            BUFFER_CAPTURE() = default;
+            bufferCapture() = default;
 
             /**
              * @brief Destructor
@@ -132,8 +132,8 @@ namespace GGUI{
              * Called when the BUFFER_CAPTURE is going out of scope.
              * This will call the Close() method to restore the original std::cout stream.
              */
-            ~BUFFER_CAPTURE() {
-                Close();
+            ~bufferCapture() {
+                close();
             }
             
             /**
@@ -155,7 +155,7 @@ namespace GGUI{
              * It checks if the STD_COUT_RESTORATION_HANDLE is nullptr to avoid a double-close of the BUFFER_CAPTURE.
              * If not nullptr, it sets the original std::cout stream back to the previous handle.
              */
-            void Close();
+            void close();
 
             /**
              * @brief Reads the console history and returns it as a single string.
@@ -165,7 +165,7 @@ namespace GGUI{
              * 
              * @return A string containing the entire console history.
              */
-            std::string Read();
+            std::string read();
 
             /**
              * @brief Adds a change handler function to the list.
@@ -176,7 +176,7 @@ namespace GGUI{
              *
              * @param on_change The function to be called on change.
              */
-            void Add_On_Change_Handler(std::function<void()> on_change){                
+            void addOnChangeHandler(std::function<void()> on_change){                
                 // Append the change handler function to the list
                 On_Change.push_back(on_change);
             }
@@ -192,7 +192,7 @@ namespace GGUI{
              * @param Informer The BUFFER_CAPTURE containing the latest data to synchronize with.
              * @return True if synchronization was successful, false otherwise.
              */
-            bool Sync(BUFFER_CAPTURE* Informer);
+            bool sync(bufferCapture* Informer);
 
             /**
              * @brief Gets the name of this BUFFER_CAPTURE.
@@ -200,7 +200,7 @@ namespace GGUI{
              * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
              * @return The name of this BUFFER_CAPTURE.
              */
-            std::string Get_Name();
+            std::string getName();
 
             /**
              * @brief Sets the name of this BUFFER_CAPTURE.
@@ -210,7 +210,7 @@ namespace GGUI{
              * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
              * @see Get_Name()
              */
-            void Set_Name(std::string Name){
+            void setName(std::string Name){
                 this->Name = Name;
             }
         };
@@ -224,9 +224,9 @@ namespace GGUI{
         STD_CAPTURE     = 1 << 2
     };
 
-    class FILE_STREAM{
+    class fileStream{
     private:
-        INTERNAL::BUFFER_CAPTURE* Buffer_Capture = nullptr;
+        INTERNAL::bufferCapture* Buffer_Capture = nullptr;
         std::fstream Handle;
         std::vector<std::function<void()>> On_Change = {};
         std::string Previous_Content = "";
@@ -247,18 +247,18 @@ namespace GGUI{
          * handlers for that file. If not, a new file handle is created and the event handler is added to the list
          * of event handlers for the new file.
          */
-        FILE_STREAM(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
+        fileStream(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
 
         /**
          * @brief Intended for Logger Atomic::Guard, do not use as User!
          */
-        FILE_STREAM() = default;
+        fileStream() = default;
 
-        FILE_STREAM(const FILE_STREAM&) = delete;
-        FILE_STREAM& operator=(const FILE_STREAM&) = delete;
+        fileStream(const fileStream&) = delete;
+        fileStream& operator=(const fileStream&) = delete;
 
-        FILE_STREAM(FILE_STREAM&&) = default;  // Allow move
-        FILE_STREAM& operator=(FILE_STREAM&&) = default;
+        fileStream(fileStream&&) = default;  // Allow move
+        fileStream& operator=(fileStream&&) = default;
 
         /**
          * @brief Destructor for the FILE_STREAM class.
@@ -267,7 +267,7 @@ namespace GGUI{
          * when a FILE_STREAM object is destroyed. It closes the associated
          * BUFFER_CAPTURE if it exists and also closes the file handle.
          */
-        ~FILE_STREAM();
+        ~fileStream();
 
         /**
          * @brief Read the content of the file.
@@ -322,7 +322,7 @@ namespace GGUI{
          */
         void Add_On_Change_Handler(std::function<void()> on_change){
             if (Buffer_Capture)
-                Buffer_Capture->Add_On_Change_Handler(on_change);
+                Buffer_Capture->addOnChangeHandler(on_change);
             else
                 On_Change.push_back(on_change);
         }
@@ -343,7 +343,7 @@ namespace GGUI{
         }
     };
 
-    class FILE_POSITION{
+    class filePosition{
     public:
         std::string File_Name = "";     // Originated.
         unsigned int Line_Number = 0;   // Y
@@ -357,7 +357,7 @@ namespace GGUI{
          * 
          * This constructor creates a new FILE_POSITION object with the given file name, line number and character number.
          */
-        FILE_POSITION(std::string File_Name, unsigned int Line_Number, unsigned int Character){
+        filePosition(std::string File_Name, unsigned int Line_Number, unsigned int Character){
             this->File_Name = File_Name;
             this->Line_Number = Line_Number;
             this->Character = Character;
@@ -367,7 +367,7 @@ namespace GGUI{
          * @brief Default constructor for the FILE_POSITION class.
          * @details This constructor creates a new FILE_POSITION object with default values for the file name, line number and character number.
          */
-        FILE_POSITION() = default;
+        filePosition() = default;
 
         /**
          * @brief Converts the FILE_POSITION object to a string.

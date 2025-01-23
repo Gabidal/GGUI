@@ -91,7 +91,7 @@ namespace GGUI{
          *
          * @return A string representing the full path to the log file.
          */
-        std::string Construct_Logger_File_Name(){
+        std::string constructLoggerFileName(){
             return GGUI::INTERNAL::Get_Executable_Directory(GGUI::INTERNAL::Get_Executable_Path()) + std::string("/log.txt");
         }
     }
@@ -117,8 +117,8 @@ namespace GGUI{
          * by initializing the logger file name using the internal logger file name
          * construction method.
          */
-        void Init_Settings(){
-            LOGGER::File_Name = INTERNAL::Construct_Logger_File_Name();
+        void initSettings(){
+            LOGGER::File_Name = INTERNAL::constructLoggerFileName();
         }
     }
 }

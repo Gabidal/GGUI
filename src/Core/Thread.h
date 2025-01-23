@@ -20,7 +20,7 @@ namespace GGUI{
          * 8. Calculates the render delay.
          * 9. Pauses the render thread and notifies all waiting threads.
          */
-        extern void Renderer();
+        extern void renderer();
 
         /**
          * @brief Event_Thread is a function that runs an infinite loop to handle various events and tasks.
@@ -37,7 +37,7 @@ namespace GGUI{
          * 
          * @note If uncapped FPS is desired, the sleep code can be disabled.
          */
-        extern void Event_Thread();
+        extern void eventThread();
 
         /**
          * @brief Function that continuously handles user input in a separate thread.
@@ -52,7 +52,7 @@ namespace GGUI{
          *    - Records the current time as INTERNAL::Current_Time.
          *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
          */
-        extern void Input_Thread();
+        extern void inputThread();
     }
 }
 

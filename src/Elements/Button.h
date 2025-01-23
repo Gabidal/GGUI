@@ -17,7 +17,7 @@
 
 namespace GGUI{
 
-    class Button : public Element{
+    class button : public element{
     public:
 
         /**
@@ -27,32 +27,32 @@ namespace GGUI{
          * @param s The styling for the button.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the button's style. Only use if you know what you're doing!!!
          */
-        Button(Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        button(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
         /**
          * @brief Creates a deep copy of the Button object.
          * @return A pointer to the new Button object.
          */
-        Element* Safe_Move() override {
+        element* safeMove() override {
             // Create a new Button object and copy all the data from the current Button object to the new one.
-            return new Button();
+            return new button();
         }
 
         /**
          * @brief Gets the name of the Button object.
          * @return A string containing the name of the Button object.
          */
-        std::string Get_Name() const override{
+        std::string getName() const override{
             return "Button<" + Name + ">";
         }
 
-        void Set_Text(std::string Text){
+        void setText(std::string Text){
             // There should always be an Text_Field child
             if (Style->Childs.size() == 0){
-                INTERNAL::Report_Stack("No Text_Field child found in Button: " + Get_Name());
+                INTERNAL::reportStack("No Text_Field child found in Button: " + getName());
             }
 
-            ((Text_Field*)Style->Childs.back())->Set_Text(Text);
+            ((textField*)Style->Childs.back())->setText(Text);
         }
     };
 }

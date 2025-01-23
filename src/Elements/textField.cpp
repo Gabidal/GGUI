@@ -9,13 +9,13 @@ namespace GGUI{
      * @brief Updates the text cache of the text field when the text field has a deep stain.
      * @details This function is called when the text field has a deep stain, and it will update the text cache of the text field. The text cache is a list of compact strings, where each compact string is a line of text. The text cache is used to store the text of the text field, and it is used to determine the size of the text field. The text cache is updated by splitting the text into lines based on the newline character, and then adding each line to the text cache. The text cache is also updated to remove any empty lines at the end of the text cache.
      */
-    void Text_Field::Update_Text_Cache(){
+    void textField::updateTextCache(){
 
         Text_Cache.clear();
 
         if (Text_Cache.capacity() < 1){
             // This should not happen
-            INTERNAL::Report_Stack("Internal error with zero capacity in: " + this->Get_Name());
+            INTERNAL::reportStack("Internal error with zero capacity in: " + this->getName());
         }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
@@ -48,7 +48,7 @@ namespace GGUI{
                 // For this we first need to know how long is this next word if there is any
                 int New_Word_Length = Text.find_first_of(' ', i + 1) - i;
 
-                if (New_Word_Length + current_line.Size >= Get_Width()){
+                if (New_Word_Length + current_line.Size >= getWidth()){
                     flush_row = true;
                     Previous_Line_Reason = Line_Reason::WORDWRAP;
                 }
@@ -70,7 +70,7 @@ namespace GGUI{
         // Make sure the last line is added
         if (current_line.Size > 0){
 
-            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= Get_Width();
+            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= getWidth();
 
             // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
             if (
@@ -103,8 +103,8 @@ namespace GGUI{
         // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
         if (Style->Allow_Dynamic_Size.Value){
             // Set the new size
-            Set_Width(Max(Longest_Line, Get_Width()));
-            Set_Height(Max(Text_Cache.size(), Get_Height()));
+            setWidth(Max(Longest_Line, getWidth()));
+            setHeight(Max(Text_Cache.size(), getHeight()));
         }
     }
 
@@ -114,7 +114,7 @@ namespace GGUI{
      * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
      * @return A vector of UTF objects representing the rendered text field.
      */
-    std::vector<GGUI::UTF>& Text_Field::Render() {
+    std::vector<GGUI::UTF>& textField::render() {
         // Get reference to the render buffer
         std::vector<GGUI::UTF>& Result = Render_Buffer;
 
@@ -137,14 +137,14 @@ namespace GGUI{
 
         // Parse classes if the CLASS stain is detected
         if (Dirty.is(STAIN_TYPE::CLASS)) {
-            Parse_Classes();
+            parseClasses();
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
         if (Dirty.is(STAIN_TYPE::STRETCH)) {
             Result.clear();
-            Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
+            Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
         }
@@ -153,7 +153,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::MOVE)) {
             Dirty.Clean(STAIN_TYPE::MOVE);
 
-            Update_Absolute_Position_Cache();
+            updateAbsolutePositionCache();
         }
 
         // Apply the color system to the resized result list
@@ -161,7 +161,7 @@ namespace GGUI{
             // Clean the color stain after applying the color system.
             Dirty.Clean(STAIN_TYPE::COLOR);
 
-            Apply_Colors(this, Result);
+            applyColors(this, Result);
         }
 
         // Align text and add child windows to the Result buffer if the DEEP stain is detected
@@ -169,16 +169,16 @@ namespace GGUI{
             Dirty.Clean(STAIN_TYPE::DEEP);
 
             if (Style->Align.Value == ALIGN::LEFT)
-                Align_Text_Left(Result);
+                alignTextLeft(Result);
             else if (Style->Align.Value == ALIGN::RIGHT)
-                Align_Text_Right(Result);
+                alignTextRight(Result);
             else if (Style->Align.Value == ALIGN::CENTER)
-                Align_Text_Center(Result);
+                alignTextCenter(Result);
         }
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(STAIN_TYPE::EDGE))
-            Add_Overhead(this, Result);
+            addOverhead(this, Result);
 
         return Result;
     }
@@ -192,26 +192,26 @@ namespace GGUI{
      *          to accommodate the text; otherwise, it constrains the size
      *          within the parent's boundaries.
      */
-    void Text_Field::Set_Size_To_Fill_Parent(){
-        if (!Is_Dynamic_Size_Allowed())
+    void textField::setSizeToFillParent(){
+        if (!isDynamicSizeAllowed())
             return;
 
         int New_Width, New_Height;
 
-        if (Parent->Is_Dynamic_Size_Allowed()){
+        if (Parent->isDynamicSizeAllowed()){
             // If the parent can stretch, set the maximum width and a height of 1.
             New_Width = Text.size();
             New_Height = 1;
         }
         else{
             // Constrain the size within the parent's dimensions.
-            New_Width = Min(Parent->Get_Width() - Get_Position().X, Text.size());
-            Update_Text_Cache();    // Recalculate the height based on the new width.
-            New_Height = Min(Parent->Get_Height() - Get_Position().Y, Text_Cache.size());
+            New_Width = Min(Parent->getWidth() - getPosition().X, Text.size());
+            updateTextCache();    // Recalculate the height based on the new width.
+            New_Height = Min(Parent->getHeight() - getPosition().Y, Text_Cache.size());
         }
         
         // Apply the calculated dimensions to the text field.
-        Set_Dimensions(New_Width, New_Height);
+        setDimensions(New_Width, New_Height);
     }
 
     /**
@@ -219,13 +219,13 @@ namespace GGUI{
      * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the text field.
      */
-    void Text_Field::Set_Text(std::string text){
+    void textField::setText(std::string text){
         Text = text;
-        Update_Text_Cache();
+        updateTextCache();
 
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
 
-        Update_Frame();
+        updateFrame();
     }
 
     /**
@@ -235,24 +235,24 @@ namespace GGUI{
      *          of the text field. The function respects the maximum height and width of the text field 
      *          and handles overflow according to the Style settings.
      */
-    void Text_Field::Align_Text_Left(std::vector<UTF>& Result) {
+    void textField::alignTextLeft(std::vector<UTF>& Result) {
         unsigned int Line_Index = 0;  // To keep track of the inter-line positioning.
 
         for (Compact_String line : Text_Cache) {
             unsigned int Row_Index = 0;  // To track characters within the line.
 
-            if (Line_Index >= Get_Height())
+            if (Line_Index >= getHeight())
                 break;  // Stop if all available lines are filled.
 
-            for (unsigned int Y = 0; Y < Get_Height(); Y++) {
-                for (unsigned int X = 0; X < Get_Width(); X++) {
+            for (unsigned int Y = 0; Y < getHeight(); Y++) {
+                for (unsigned int X = 0; X < getWidth(); X++) {
 
                     // Stop if the end of the current line is reached.
-                    if (Y * Get_Width() + X >= line.Size)
+                    if (Y * getWidth() + X >= line.Size)
                         goto Next_Line;
 
                     // Write the current character to the Result buffer.
-                    Result[(Y + Line_Index) * Get_Width() + X] = line[Row_Index++];
+                    Result[(Y + Line_Index) * getWidth() + X] = line[Row_Index++];
                 }
 
                 // Handle line overflow based on the style settings.
@@ -272,23 +272,23 @@ namespace GGUI{
      *          of the text field. The function respects the maximum height and width of the text field
      *          and handles overflow according to the Style settings.
      */
-    void Text_Field::Align_Text_Right(std::vector<UTF>& Result) {
+    void textField::alignTextRight(std::vector<UTF>& Result) {
         unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
 
         for (Compact_String line : Text_Cache) {
             int Row_Index = line.Size - 1;  // Start from the end of the line
 
-            if (Line_Index >= Get_Height())
+            if (Line_Index >= getHeight())
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < Get_Height(); Y++) {
-                for (int X = (signed)Get_Width() - 1; X >= 0; X--) {
+            for (unsigned int Y = 0; Y < getHeight(); Y++) {
+                for (int X = (signed)getWidth() - 1; X >= 0; X--) {
 
                     if (Row_Index < 0)  // If there are no more characters in the line
                         goto Next_Line;
 
                     // write to the Result
-                    Result[(Y + Line_Index) * Get_Width() + (unsigned)X] = line[Row_Index--];  // Decrement Line_Index
+                    Result[(Y + Line_Index) * getWidth() + (unsigned)X] = line[Row_Index--];  // Decrement Line_Index
                 }
 
                 // If current line has ended and the text is not word wrapped
@@ -307,28 +307,28 @@ namespace GGUI{
      * @details This function iterates over each line in the Text_Cache and aligns them to the center of the text field. The function respects the maximum height and width of the text field
      *          and handles overflow according to the Style settings.
      */
-    void Text_Field::Align_Text_Center(std::vector<UTF>& Result) {
+    void textField::alignTextCenter(std::vector<UTF>& Result) {
         unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
 
         for (Compact_String line : Text_Cache) {
             unsigned int Row_Index = 0;  // Start from the beginning of the line
-            unsigned int Start_Pos = (Get_Width() - line.Size) / 2;  // Calculate the starting position
+            unsigned int Start_Pos = (getWidth() - line.Size) / 2;  // Calculate the starting position
 
-            if (Line_Index >= Get_Height())
+            if (Line_Index >= getHeight())
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < Get_Height(); Y++) {
-                for (unsigned int X = 0; X < Get_Width(); X++) {
+            for (unsigned int Y = 0; Y < getHeight(); Y++) {
+                for (unsigned int X = 0; X < getWidth(); X++) {
 
                     // If the current character is outside the line's range, skip it
                     if (X < Start_Pos || X > Start_Pos + line.Size)
                         continue;
 
-                    if (Y * Get_Width() + X >= line.Size)
+                    if (Y * getWidth() + X >= line.Size)
                         goto Next_Line;
 
                     // write to the Result
-                    Result[(Y + Line_Index) * Get_Width() + X] = line[Row_Index++];
+                    Result[(Y + Line_Index) * getWidth() + X] = line[Row_Index++];
                 }
 
                 // If current line has ended and the text is not word wrapped
@@ -348,7 +348,7 @@ namespace GGUI{
      *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
      *          dirty and updates the frame.
      */
-    void Text_Field::Input(std::function<void(char)> Then) {
+    void textField::input(std::function<void(char)> Then) {
         Action* key_press = new Action(
             Constants::KEY_PRESS,
             [this, Then](GGUI::Event* e) {
@@ -358,7 +358,7 @@ namespace GGUI{
 
                     //First call the function with the user's input
                     Then(input->Data);
-                    Update_Frame();
+                    updateFrame();
 
                     return true;
                 }
@@ -378,7 +378,7 @@ namespace GGUI{
 
                     //First call the function with the user's input
                     Then(input->Data);
-                    Update_Frame();
+                    updateFrame();
 
                     return true;
                 }
@@ -397,7 +397,7 @@ namespace GGUI{
                     if (Text.size() > 0) {
                         Text.pop_back();
                         Dirty.Dirty(STAIN_TYPE::DEEP);
-                        Update_Frame();
+                        updateFrame();
                     }
 
                     return true;

@@ -28,7 +28,7 @@ namespace GGUI{
          * by initializing the logger file name using the internal logger file name
          * construction method.
          */
-        extern void Init_Settings();
+        extern void initSettings();
     };
 }
 

@@ -12,29 +12,29 @@ namespace GGUI{
      * @param event The function to call when the switch is toggled.
      * @param s The styling for the switch.
      */
-    Switch::Switch(std::string text, std::vector<std::string> states, std::function<void (Element* This)> event, Styling s, bool Embed_Styles_On_Construct) : Element(s, Embed_Styles_On_Construct) {
-        Pause_GGUI([this, text, states, event](){
+    switchBox::switchBox(std::string text, std::vector<std::string> states, std::function<void (element* This)> event, styling s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
+        pauseGGUI([this, text, states, event](){
             // Initialize the states for the switch
             States = states;
             
             // Enable text overflow and set initial text
-            Text.Allow_Overflow(true);
-            Set_Text(text);
+            Text.allowOverflow(true);
+            setText(text);
 
             // Define the click event behavior for the switch
-            On_Click([=]([[maybe_unused]] Event* e){
-                this->Toggle();  // Toggle the switch state
+            onClick([=]([[maybe_unused]] Event* e){
+                this->toggle();  // Toggle the switch state
 
                 event(this);  // Execute the provided event handler
 
-                Update_Frame();  // Update the frame to reflect changes
+                updateFrame();  // Update the frame to reflect changes
 
                 return true;  // Allow event propagation
             });
 
             // Set dimensions based on text size
-            Set_Width(Text.Get_Width());
-            Set_Height(Text.Get_Height());
+            setWidth(Text.getWidth());
+            setHeight(Text.getHeight());
 
             // Mark the element as needing a deep state update
             Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STATE);
@@ -46,8 +46,8 @@ namespace GGUI{
      * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the switch element.
      */
-    void Switch::Set_Text(std::string text) { 
-        Pause_GGUI([this, text](){
+    void switchBox::setText(std::string text) { 
+        pauseGGUI([this, text](){
             std::string Symbol = " ";
             char Space = ' ';
 
@@ -55,11 +55,11 @@ namespace GGUI{
             Dirty.Dirty(STAIN_TYPE::DEEP);
 
             // Set the text with a space character added to the beginning
-            Text.Set_Text(Symbol + Space + text);   // This will call the update_frame for us.
+            Text.setText(Symbol + Space + text);   // This will call the update_frame for us.
 
             // Update the switch element's dimensions to fit the new text
-            Set_Width(Text.Get_Width() + Has_Border() * 2);
-            Set_Height(Text.Get_Height() + Has_Border() * 2);
+            setWidth(Text.getWidth() + hasBorder() * 2);
+            setHeight(Text.getHeight() + hasBorder() * 2);
         });
     }
 
@@ -70,7 +70,7 @@ namespace GGUI{
      * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the switch element is rendered correctly.
      * @return A vector of UTF objects representing the rendered switch element.
      */
-    std::vector<GGUI::UTF>& Switch::Render(){
+    std::vector<GGUI::UTF>& switchBox::render(){
         std::vector<GGUI::UTF>& Result = Render_Buffer;
         
         // Check for Dynamic attributes
@@ -91,7 +91,7 @@ namespace GGUI{
 
         // Parse the classes if the CLASS stain is detected.
         if (Dirty.is(STAIN_TYPE::CLASS)){
-            Parse_Classes();
+            parseClasses();
 
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
@@ -99,7 +99,7 @@ namespace GGUI{
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
         if (Dirty.is(STAIN_TYPE::STRETCH)){
             Result.clear();
-            Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
+            Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(STAIN_TYPE::STRETCH);
             
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
@@ -109,12 +109,12 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::MOVE)) {
             Dirty.Clean(STAIN_TYPE::MOVE);
 
-            Update_Absolute_Position_Cache();
+            updateAbsolutePositionCache();
         }
 
         // Check if the text has been changed.
         if (Dirty.is(STAIN_TYPE::DEEP)){
-            Nest_Element(this, &Text, Result, Text.Render());
+            nestElement(this, &Text, Result, Text.render());
 
             // Clean text update notice and state change notice.
             // NOTE: Cleaning STATE flag without checking it's existence might lead to unexpected results.
@@ -125,10 +125,10 @@ namespace GGUI{
 
         // Update the state of the switch.
         if (Dirty.is(STAIN_TYPE::STATE)){
-            int State_Location_X = Has_Border();
-            int State_Location_Y = Has_Border();
+            int State_Location_X = hasBorder();
+            int State_Location_Y = hasBorder();
 
-            Result[State_Location_Y * Get_Width() + State_Location_X] = States[State];
+            Result[State_Location_Y * getWidth() + State_Location_X] = States[State];
 
             Dirty.Clean(STAIN_TYPE::STATE);
             Dirty.Dirty(STAIN_TYPE::COLOR);
@@ -139,12 +139,12 @@ namespace GGUI{
             // Clean the color stain after applying the color system.
             Dirty.Clean(STAIN_TYPE::COLOR);
 
-            Apply_Colors(this, Result);
+            applyColors(this, Result);
         }
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(STAIN_TYPE::EDGE))
-            Add_Overhead(this, Result);
+            addOverhead(this, Result);
 
         return Result;
     }

@@ -5,10 +5,10 @@ using namespace std;
 
 int main(){
     //Pause renderer and resume renderer are only for super optimization purposes, if you dont need blazing fast TUI you can just ignore them.
-    GGUI::Window* Main = GGUI::Init_GGUI();
-    Main->Show_Border(true);
+    GGUI::window* Main = GGUI::initGGUI();
+    Main->showBorder(true);
     
-    GGUI::Window* Text = new GGUI::Window(
+    GGUI::window* Text = new GGUI::window(
         "Hello World!", 
         20,
         10,
@@ -21,14 +21,14 @@ int main(){
     );
 
     // Center the text element
-    Text->Set_Position({Main->Get_Width()/2 - Text->Get_Width()/2, Main->Get_Height()/2 - Text->Get_Height()/2});
+    Text->setPosition({Main->getWidth()/2 - Text->getWidth()/2, Main->getHeight()/2 - Text->getHeight()/2});
     
-    Main->Add_Child(Text);
+    Main->addChild(Text);
 
     while(true){ 
         //Your programm here :D
     }
 
     // Then exit properly
-    GGUI::Exit();
+    GGUI::EXIT();
 }

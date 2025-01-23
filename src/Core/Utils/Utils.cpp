@@ -61,13 +61,13 @@ namespace GGUI{
      * @param Identity Boolean value to return if the elements are the same.
      * @return true if the elements collide, false otherwise.
      */
-    bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity) {
+    bool Collides(GGUI::element* a, GGUI::element* b, bool Identity) {
         if (a == b)
             return Identity;    // For custom purposes, defaults into true
 
         return Collides(
-            a->Get_Absolute_Position(), b->Get_Absolute_Position(),
-            a->Get_Width(), a->Get_Height(), b->Get_Width(), b->Get_Height()
+            a->getAbsolutePosition(), b->getAbsolutePosition(),
+            a->getWidth(), a->getHeight(), b->getWidth(), b->getHeight()
         );
     }
 
@@ -82,9 +82,9 @@ namespace GGUI{
      * @param b The point (as GGUI::IVector3) to check for collision with the element.
      * @return true if the point collides with the element, false otherwise.
      */
-    bool Collides(GGUI::Element* a, GGUI::IVector3 b) {
+    bool Collides(GGUI::element* a, GGUI::IVector3 b) {
         // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
-        return Collides(a->Get_Absolute_Position(), b, a->Get_Width(), a->Get_Height(), 1, 1);
+        return Collides(a->getAbsolutePosition(), b, a->getWidth(), a->getHeight(), 1, 1);
     }
 
     /**
@@ -100,14 +100,14 @@ namespace GGUI{
      * @param Parent The parent element to start the search from.
      * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
      */
-    Element* Get_Accurate_Element_From(IVector3 c, Element* Parent){
+    element* Get_Accurate_Element_From(IVector3 c, element* Parent){
         //first check if the c is in bounds of Parent.
         if (!Collides(Parent, c)){
             return nullptr;
         }
 
         // Check all the child elements of the parent.
-        for (auto child : Parent->Get_Childs()){
+        for (auto child : Parent->getChilds()){
             if (Collides(child, c)){
                 // If a child element contains the position, search in the child element.
                 return Get_Accurate_Element_From(c, child);
@@ -130,23 +130,23 @@ namespace GGUI{
      */
     IVector3 Find_Upper_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
+        element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
         }
 
-        IVector3 tmp_c = Current_Element->Get_Position();
+        IVector3 tmp_c = Current_Element->getPosition();
 
         tmp_c.Y--;  // Move one pixel up
 
-        Element* Upper_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
+        element* Upper_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Upper_Element && Upper_Element != (Element*)&INTERNAL::Main){
-            return Upper_Element->Get_Position();
+        if (Upper_Element && Upper_Element != (element*)&INTERNAL::Main){
+            return Upper_Element->getPosition();
         }
 
-        return Current_Element->Get_Position();
+        return Current_Element->getPosition();
     }
 
     /**
@@ -159,23 +159,23 @@ namespace GGUI{
      */
     IVector3 Find_Lower_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
+        element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
         }
 
-        IVector3 tmp_c = Current_Element->Get_Position();
+        IVector3 tmp_c = Current_Element->getPosition();
 
-        tmp_c.Y += Current_Element->Get_Height();
+        tmp_c.Y += Current_Element->getHeight();
 
-        Element* Lower_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
+        element* Lower_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Lower_Element && Lower_Element != (Element*)&INTERNAL::Main){
-            return Lower_Element->Get_Position();
+        if (Lower_Element && Lower_Element != (element*)&INTERNAL::Main){
+            return Lower_Element->getPosition();
         }
 
-        return Current_Element->Get_Position();
+        return Current_Element->getPosition();
     }
 
     /**
@@ -190,26 +190,26 @@ namespace GGUI{
      */
     IVector3 Find_Left_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
+        element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
         }
 
-        IVector3 tmp_c = Current_Element->Get_Position();
+        IVector3 tmp_c = Current_Element->getPosition();
 
         // Move one pixel to the left
         tmp_c.X--;
 
-        Element* Left_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
+        element* Left_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Left_Element && Left_Element != (Element*)&INTERNAL::Main){
+        if (Left_Element && Left_Element != (element*)&INTERNAL::Main){
             // If a left element is found, return its position
-            return Left_Element->Get_Position();
+            return Left_Element->getPosition();
         }
 
         // If no left element is found, return the current element's position
-        return Current_Element->Get_Position();
+        return Current_Element->getPosition();
     }
 
     /**
@@ -226,26 +226,26 @@ namespace GGUI{
      */
     IVector3 Find_Right_Element(){
         //first get the current element.
-        Element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
+        element* Current_Element = Get_Accurate_Element_From(INTERNAL::Mouse, INTERNAL::Main);
 
         if (Current_Element == nullptr){
             return false;
         }
 
-        IVector3 tmp_c = Current_Element->Get_Position();
+        IVector3 tmp_c = Current_Element->getPosition();
 
         // Move one pixel to the right
-        tmp_c.X += Current_Element->Get_Width();
+        tmp_c.X += Current_Element->getWidth();
 
-        Element* Right_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
+        element* Right_Element = Get_Accurate_Element_From(tmp_c, INTERNAL::Main);
 
-        if (Right_Element && Right_Element != (Element*)&INTERNAL::Main){
+        if (Right_Element && Right_Element != (element*)&INTERNAL::Main){
             // If a right element is found, return its position
-            return Right_Element->Get_Position();
+            return Right_Element->getPosition();
         }
 
         // If no right element is found, return the current element's position
-        return Current_Element->Get_Position();
+        return Current_Element->getPosition();
     }
 
     /**
@@ -259,16 +259,16 @@ namespace GGUI{
      * @param Candidates A vector of pointers to Element objects representing the candidate elements.
      * @return Element* A pointer to the closest candidate element. Returns nullptr if the Candidates vector is empty.
      */
-    Element* Find_Closest_Absolute_Element(IVector3 start, std::vector<Element*> Candidates){
+    element* Find_Closest_Absolute_Element(IVector3 start, std::vector<element*> Candidates){
         // Start from the position and check if the up, down, left, right are within the bounds of the renderable window.
         // If they are, check if they collide with any element.
         // cast "rays" to each four directions, and return the lengths of each collision between the center of the rectangles and the start point.
         // return the smallest one.
         if (Candidates.size() == 0){
-            INTERNAL::Report_Stack("Missing Candidates!");
+            INTERNAL::reportStack("Missing Candidates!");
         }
 
-        Element* Best_Candidate = nullptr;
+        element* Best_Candidate = nullptr;
         float Shortest_Distance = std::numeric_limits<float>::max();
         IVector3 CC; // Center of Candidate
 
@@ -277,7 +277,7 @@ namespace GGUI{
                 continue;   // Incase of event handlers with their stupid empty host.
 
             // Calculate the distance between the candidate position and the start position
-            CC = candidate->Get_Absolute_Position();
+            CC = candidate->getAbsolutePosition();
             float Distance = std::sqrt(std::pow(CC.X - start.X, 2) + std::pow(CC.Y - start.Y, 2));
 
             if (Distance < Shortest_Distance){
@@ -337,8 +337,8 @@ namespace GGUI{
      * @return The contents of the given position, or nullptr if the position is out of bounds.
      */
     GGUI::UTF* Get(GGUI::IVector3 Absolute_Position){
-        if (Absolute_Position.X >= Get_Max_Width() || 
-            Absolute_Position.Y >= Get_Max_Height() ||
+        if (Absolute_Position.X >= getMaxWidth() || 
+            Absolute_Position.Y >= getMaxHeight() ||
             Absolute_Position.X < 0 || 
             Absolute_Position.Y < 0)
         {
@@ -347,7 +347,7 @@ namespace GGUI{
         }
         else{
             // The position is in bounds, return the contents of that position
-            return &INTERNAL::Abstract_Frame_Buffer[Absolute_Position.Y * Get_Max_Width() + Absolute_Position.X];
+            return &INTERNAL::Abstract_Frame_Buffer[Absolute_Position.Y * getMaxWidth() + Absolute_Position.X];
         }
     }
 
@@ -414,7 +414,7 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    bool Is_Deletable(void* ptr) {
+    bool isDeletable(void* ptr) {
         if (ptr == nullptr) {
             return false;  // Null pointer can't be valid
         }
@@ -436,7 +436,7 @@ namespace GGUI{
         // Try to allocate memory on the heap for comparison
         size_t* new_heap = new(std::nothrow) size_t;
         if (new_heap == nullptr) {
-            INTERNAL::Report_Stack("Failed to allocate new heap for stack pointer check!");
+            INTERNAL::reportStack("Failed to allocate new heap for stack pointer check!");
             exit(1);  // FATAL error if heap allocation fails
         }
 

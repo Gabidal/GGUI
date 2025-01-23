@@ -9,21 +9,21 @@
 
 namespace GGUI{
     namespace SETTINGS{
-        extern void Init_Settings();
+        extern void initSettings();
     }
     
     namespace INTERNAL{
         namespace LOGGER{
             // File handle for logging to files for Atomic access across different threads.
-            INTERNAL::Atomic::Guard<FILE_STREAM> Handle;
+            INTERNAL::atomic::Guard<fileStream> Handle;
 
             void Init(){
-                Handle([](GGUI::FILE_STREAM& self){
+                Handle([](GGUI::fileStream& self){
                     if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED){    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
                         if (SETTINGS::LOGGER::File_Name.size() == 0){
-                            SETTINGS::Init_Settings();
+                            SETTINGS::initSettings();
                         }
-                        new (&self) FILE_STREAM(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE, true);
+                        new (&self) fileStream(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE, true);
                     }
                 });
             }
@@ -31,13 +31,13 @@ namespace GGUI{
             // Writes the given text into the Log file:
             // [TIME]: [Text]
             void Log(std::string Text){
-                Handle([&Text](GGUI::FILE_STREAM& self){
+                Handle([&Text](GGUI::fileStream& self){
                     // If this log is called before the normal GGUI_Init is called, then we need to manually init this.
                     if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED)
                         Init();
 
                     // Get the current time as string
-                    std::string now = "[" + GGUI::INTERNAL::Now() + "]: ";
+                    std::string now = "[" + GGUI::INTERNAL::now() + "]: ";
 
                     // When the Stack_Traced report is given we need to push all the following lines after the first line by the length of the now string.
                     for (unsigned int i = 0; i < Text.size(); i++){

@@ -38,7 +38,7 @@ namespace GGUI{
         first = first | second; 
     }
 
-    std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>>* HTML_Translators = {};
+    std::unordered_map<std::string, std::function<GGUI::element* (HTMLNode*)>>* HTMLTranslators = {};
 
     std::unordered_map<std::string, double> POSTFIX_COEFFICIENT = {
         {"px", 1},
@@ -77,12 +77,12 @@ namespace GGUI{
      * The parsed HTML will be set as the child of this HTML object.
      */
     HTML::HTML(std::string File_Name){
-        Pause_GGUI([this, File_Name](){
-            Handle = new FILE_STREAM(File_Name, [this](){
-                this->Set_Childs(Parse_HTML(Handle->Fast_Read(), this));
+        pauseGGUI([this, File_Name](){
+            Handle = new fileStream(File_Name, [this](){
+                this->setChilds(parseHTML(Handle->Fast_Read(), this));
             });
 
-            Set_Name(File_Name);
+            setName(File_Name);
         });
     }
 
@@ -93,32 +93,32 @@ namespace GGUI{
      * This function parses the HTML tokens by combining wrappers like: <, >, (, ), etc...
      * It also captures decimals, parses operators in Reverse PEMDAS order, and combines dynamic wrappers like: <html>, </html>
      */
-    void Parse(std::vector<HTML_Token*>& Input){
+    void parse(std::vector<HTMLToken*>& Input){
         // First combine wrappers like: <, >, (, ), etc...
         for (int i = 0; i < (signed)Input.size(); i++){
-            Parse_Embedded_Bytes(i, Input);
-            Parse_All_Wrappers(i, Input);
+            parseEmbeddedBytes(i, Input);
+            parseAllWrappers(i, Input);
         }
 
         // Capture decimals
         for (int i = 0; i < (signed)Input.size(); i++)
-            Parse_Operator(i, Input, '.');
+            parseOperator(i, Input, '.');
 
         for (int i = 0; i < (signed)Input.size(); i++)
-            Parse_Numeric_Postfix(i, Input);
+            parseNumericPostfix(i, Input);
 
         // Reverse PEMDAS order:
         for (int i = 0; i < (signed)Input.size(); i++)
-            Parse_Operator(i, Input, '+');
+            parseOperator(i, Input, '+');
         for (int i = 0; i < (signed)Input.size(); i++)
-            Parse_Operator(i, Input, '-');
+            parseOperator(i, Input, '-');
         for (int i = 0; i < (signed)Input.size(); i++)
-            Parse_Operator(i, Input, '*');
+            parseOperator(i, Input, '*');
         for (int i = 0; i < (signed)Input.size(); i++)
-            Parse_Operator(i, Input, '/');
+            parseOperator(i, Input, '/');
 
         for (int i = 0; i < (signed)Input.size(); i++)
-            Parse_Operator(i, Input, '=');
+            parseOperator(i, Input, '=');
 
         // now start combining dynamic wrappers like: <html>, </html>
         for (int i = 0; i < (signed)Input.size(); i++){
@@ -126,7 +126,7 @@ namespace GGUI{
             if (Input[i]->Data != "<" || Input[i]->Childs.size() == 0 || Input[i]->Childs[0]->Data == "!")
                 continue;
 
-            Parse_Dynamic_Wrappers(i, Input, Input[i]->Childs[0]->Data);
+            parseDynamicWrappers(i, Input, Input[i]->Childs[0]->Data);
         }
     }
 
@@ -136,25 +136,25 @@ namespace GGUI{
      * @param parent The parent element to set for top-level nodes.
      * @return A vector of parsed HTML elements.
      */
-    std::vector<Element*> Parse_HTML(std::string Raw_Buffer, Element* parent) {
+    std::vector<element*> parseHTML(std::string Raw_Buffer, element* parent) {
         // Lex the raw buffer into HTML tokens.
-        std::vector<HTML_Token*> Lexed_Tokens = Lex_HTML(Raw_Buffer);
+        std::vector<HTMLToken*> Lexed_Tokens = lexHTML(Raw_Buffer);
 
         // Parse the lexed tokens to handle wrappers, operators, etc.
-        Parse(Lexed_Tokens);
+        parse(Lexed_Tokens);
 
         // Convert lexed tokens into parsed HTML nodes.
-        std::vector<HTML_Node*> Parsed_Tokens = Parse_Lexed_Tokens(Lexed_Tokens);
+        std::vector<HTMLNode*> Parsed_Tokens = parseLexedTokens(Lexed_Tokens);
 
         // Set the parent element for the top-level nodes.
         for (auto node : Parsed_Tokens) {
             if (!node->parent) {
-                node->parent = Element_To_Node(parent);
+                node->parent = elementToNode(parent);
             }
         }
 
         // Translate parsed nodes into elements and return them.
-        return Parse_Translators(Parsed_Tokens);
+        return parseTranslators(Parsed_Tokens);
     }
 
     /**
@@ -165,13 +165,13 @@ namespace GGUI{
      * This function parses the HTML tokens by combining wrappers like: <, >, (, ), etc...
      * It also captures decimals, parses operators in Reverse PEMDAS order, and combines dynamic wrappers like: <html>, </html>
      */
-    std::vector<HTML_Token*>& Parse_HTML(std::vector<HTML_Token*>& Input){
-        Parse(Input);
+    std::vector<HTMLToken*>& parseHTML(std::vector<HTMLToken*>& Input){
+        parse(Input);
 
         return Input;
     }
 
-    void Parse_Embedded_Bytes([[maybe_unused]] int& i, [[maybe_unused]] std::vector<HTML_Token*>& Input){
+    void parseEmbeddedBytes([[maybe_unused]] int& i, [[maybe_unused]] std::vector<HTMLToken*>& Input){
         // This function check if the input at i contains '/' which then marks the following tokens to be skipped
         // Example "absc /" a /" "
 
@@ -191,13 +191,13 @@ namespace GGUI{
      * - ""
      * - '
      */
-    void Parse_All_Wrappers(int& i, std::vector<HTML_Token*>& Input){
-        Parse_Wrapper("<", ">", i, Input);  // HTML tags
-        Parse_Wrapper("[", "]", i, Input);  // Brackets
-        Parse_Wrapper("{", "}", i, Input);  // Braces
-        Parse_Wrapper("(", ")", i, Input);  // Parentheses
-        Parse_Wrapper("\"", "\"", i, Input);  // Double quotes
-        Parse_Wrapper("\'", "\'", i, Input);  // Single quotes
+    void parseAllWrappers(int& i, std::vector<HTMLToken*>& Input){
+        parseWrapper("<", ">", i, Input);  // HTML tags
+        parseWrapper("[", "]", i, Input);  // Brackets
+        parseWrapper("{", "}", i, Input);  // Braces
+        parseWrapper("(", ")", i, Input);  // Parentheses
+        parseWrapper("\"", "\"", i, Input);  // Double quotes
+        parseWrapper("\'", "\'", i, Input);  // Single quotes
     }
 
     /**
@@ -214,7 +214,7 @@ namespace GGUI{
      * - ""
      * - '
      */
-    void Parse_Dynamic_Wrappers(int& i, std::vector<HTML_Token*>& Input, std::string word){
+    void parseDynamicWrappers(int& i, std::vector<HTMLToken*>& Input, std::string word){
         if (i < 0)
             return;
 
@@ -223,10 +223,10 @@ namespace GGUI{
         for (End_Index++; End_Index < (signed)Input.size(); End_Index++){
 
             std::string Current_Name = Input[End_Index]->Data;
-            HTML_Token* Current_First_Child = nullptr;    // for </ or <TEXT  instances
-            HTML_Token* Current_Last_Child = nullptr;     // for />           instances
+            HTMLToken* Current_First_Child = nullptr;    // for </ or <TEXT  instances
+            HTMLToken* Current_Last_Child = nullptr;     // for />           instances
 
-            if (Current_Name != "<" || Input[End_Index]->Is(PARSE_BY::DYNAMIC_WRAPPER))
+            if (Current_Name != "<" || Input[End_Index]->is(PARSE_BY::DYNAMIC_WRAPPER))
                 continue;   // skip
 
             if (Input[End_Index]->Childs.size() > 0){
@@ -245,16 +245,16 @@ namespace GGUI{
             // Check if the current End_Index points into another dynamic token wrapper.
             else if (Current_First_Child->Data != "/"){
                 // '<', 'TEXT', ... means that this is an starter token.
-                Parse_Dynamic_Wrappers(End_Index, Input, Current_First_Child->Data);
+                parseDynamicWrappers(End_Index, Input, Current_First_Child->Data);
             }
             else{
                 // This means that the token did not end with '/' and started with '/'
-                HTML_Token* New_Wrapper = new HTML_Token(HTML_GROUP_TYPES::WRAPPER, word);
+                HTMLToken* New_Wrapper = new HTMLToken(HTML_GROUP_TYPES::WRAPPER, word);
 
-                std::vector<HTML_Token*> Cut;
+                std::vector<HTMLToken*> Cut;
                 Cut.insert(Cut.begin(), Input.begin() + i + 1, Input.begin() + End_Index);
 
-                New_Wrapper->Childs = Parse_HTML(Cut);
+                New_Wrapper->Childs = parseHTML(Cut);
 
                 // now also add the Attributes which are defined in the Starting Dynamic Wrapper
                 for (auto attr : Input[i]->Childs){
@@ -300,7 +300,7 @@ namespace GGUI{
      *          If the start pattern is not found in the input vector, the function does nothing.
      *          If the nested count is still above 0 even after looping through all the tokens, just ignore lolw.
      */
-    void Parse_Wrapper(std::string start_pattern, std::string end_pattern, int& i, std::vector<HTML_Token*>& Input){
+    void parseWrapper(std::string start_pattern, std::string end_pattern, int& i, std::vector<HTMLToken*>& Input){
         // This function starts from the given index and every time it finds a start pattern it starts a new loop from the start pattern index until the end pattern count hits 0 and puts all of the tokens between the start and end pattern into the childs.
         if (i < 0)
             return; // Check for instance if the previous pattern already annihilated all the leftover tokens :)
@@ -314,8 +314,8 @@ namespace GGUI{
         for (End_Index++; End_Index < (signed)Input.size() && Nested_Count > 0; End_Index++){
 
             // Check if this is a nested version of this started pattern, but make sure that the current pattern is not already computed.
-            if (Input[End_Index]->Data == start_pattern && !Input[End_Index]->Is(PARSE_BY::TOKEN_WRAPPER)){
-                Parse_Wrapper(start_pattern, end_pattern, End_Index, Input);
+            if (Input[End_Index]->Data == start_pattern && !Input[End_Index]->is(PARSE_BY::TOKEN_WRAPPER)){
+                parseWrapper(start_pattern, end_pattern, End_Index, Input);
             }
 
             if (Input[End_Index]->Data == end_pattern)
@@ -324,10 +324,10 @@ namespace GGUI{
             // now check if the nested count is zero
             if (Nested_Count == 0){
                 // First cut the list
-                std::vector<HTML_Token*> Cut;
+                std::vector<HTMLToken*> Cut;
                 Cut.insert(Cut.begin(), Input.begin() + i + 1, Input.begin() + End_Index);
 
-                Input[i]->Childs = Parse_HTML(Cut);
+                Input[i]->Childs = parseHTML(Cut);
 
                 // Now delete the tokens we just cut
                 Input.erase(Input.begin() + i + 1, Input.begin() + End_Index + 1);
@@ -341,7 +341,7 @@ namespace GGUI{
         // if the nested count is still above 0 even after looping through all the tokens, just ignore lolw.
     }
 
-    const std::vector<HTML_Group> Groups = {
+    const std::vector<HTMLGroup> Groups = {
         {HTML_GROUP_TYPES::NUMBER, 48, 57},             // All numbers
         {HTML_GROUP_TYPES::TEXT, 65, 90},               // Capital letters 
         {HTML_GROUP_TYPES::TEXT, 97, 122},              // Lowercase letters
@@ -355,7 +355,7 @@ namespace GGUI{
         {HTML_GROUP_TYPES::SPACING, 9, 9, false},       // Tabulator
     };
 
-    void Sanitize_HTML_Tokens(std::vector<HTML_Token*>& Un_Sanitized){
+    void Sanitize_HTML_Tokens(std::vector<HTMLToken*>& Un_Sanitized){
         // If there are multiple newlines or spaces ot tabulators combine them into one.
         std::string Previous_Data = "";
 
@@ -391,10 +391,10 @@ namespace GGUI{
      * It identifies different types of tokens such as text, numbers, operators, etc.
      * and returns a vector containing these tokens.
      */
-    std::vector<HTML_Token*> Lex_HTML(std::string Raw_Buffer) {
-        std::vector<HTML_Token*> Result;
-        HTML_Token* Current_Token = new HTML_Token();
-        FILE_POSITION Current_Position = FILE_POSITION("unknown", 0, 0);
+    std::vector<HTMLToken*> lexHTML(std::string Raw_Buffer) {
+        std::vector<HTMLToken*> Result;
+        HTMLToken* Current_Token = new HTMLToken();
+        filePosition Current_Position = filePosition("unknown", 0, 0);
 
         for (auto Current_Char : Raw_Buffer) {
             bool All_Characters_Matched = false;
@@ -409,7 +409,7 @@ namespace GGUI{
                 // Check if a new token group is detected.
                 if (Current_Token->Type != Group.Type || !Group.Is_Sticky) {
                     Result.push_back(Current_Token);
-                    Current_Token = new HTML_Token(Group.Type, Current_Char, Current_Position);
+                    Current_Token = new HTMLToken(Group.Type, Current_Char, Current_Position);
                 } else {
                     // Append character to the current token.
                     Current_Token->Data.push_back(Current_Char);
@@ -421,7 +421,7 @@ namespace GGUI{
             // Handle characters that do not match any group.
             if (!All_Characters_Matched) {
                 Result.push_back(Current_Token);
-                Current_Token = new HTML_Token(HTML_GROUP_TYPES::UNKNOWN, Current_Char, Current_Position);
+                Current_Token = new HTMLToken(HTML_GROUP_TYPES::UNKNOWN, Current_Char, Current_Position);
             }
 
             // Update the current position in the file.
@@ -453,19 +453,19 @@ namespace GGUI{
      * paused GGUI state, meaning all events and updates are paused. After the 
      * translator has been run, the processed node is removed from the input vector.
      */
-    std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input){
-        std::vector<Element*> Result;
+    std::vector<element*> parseTranslators(std::vector<HTMLNode*>& Input){
+        std::vector<element*> Result;
 
-        GGUI::Pause_GGUI([&Input, &Result](){
+        GGUI::pauseGGUI([&Input, &Result](){
             for (unsigned int i = 0; i < Input.size(); i++){
 
-                HTML_Node* Current = Input[i];
+                HTMLNode* Current = Input[i];
 
                 // Try to find the translator fitting for this token.
-                if (HTML_Translators->find(Current->Tag_Name) == HTML_Translators->end())
+                if (HTMLTranslators->find(Current->Tag_Name) == HTMLTranslators->end())
                     continue;
 
-                Element* New_Child = HTML_Translators->at(Current->Tag_Name)(Current);
+                element* New_Child = HTMLTranslators->at(Current->Tag_Name)(Current);
 
                 if (New_Child){
                     Result.push_back(New_Child);
@@ -489,13 +489,13 @@ namespace GGUI{
      * and returns a vector containing these nodes. 
      * Only non-null nodes are added to the result vector.
      */
-    std::vector<HTML_Node*> Parse_Lexed_Tokens(std::vector<HTML_Token*> Input) {
-        std::vector<HTML_Node*> Result;
+    std::vector<HTMLNode*> parseLexedTokens(std::vector<HTMLToken*> Input) {
+        std::vector<HTMLNode*> Result;
 
         // Iterate over each token in the input vector.
         for (unsigned int i = 0; i < Input.size(); i++) {
             // Convert each token into an HTML node.
-            HTML_Node* tmp = Factory(Input[i]);
+            HTMLNode* tmp = factory(Input[i]);
 
             // Add the node to the result vector if it's not null.
             if (tmp)
@@ -517,8 +517,8 @@ namespace GGUI{
      * If the child is not an attribute, it's converted into an HTML node using this function recursively.
      * Finally, the function returns the HTML node.
      */
-    HTML_Node* Factory(HTML_Token* Input) {
-        HTML_Node* Result = new HTML_Node();
+    HTMLNode* factory(HTMLToken* Input) {
+        HTMLNode* Result = new HTMLNode();
 
         Result->Tag_Name = Input->Data;
 
@@ -537,7 +537,7 @@ namespace GGUI{
                 Result->Attributes[token->Childs[0]->Data] = token->Childs[1];
             }
             else {
-                HTML_Node* tmp = Factory(token);
+                HTMLNode* tmp = factory(token);
 
                 if (tmp) {
                     tmp->parent = Result;
@@ -563,9 +563,9 @@ namespace GGUI{
      * If the next token is a postfix, it adds it to the current token as a child and marks the current token as having a postfix.
      * Then it removes the postfix token from the input vector.
      */
-    void Parse_Numeric_Postfix(int& i, std::vector<HTML_Token*>& Input){
+    void parseNumericPostfix(int& i, std::vector<HTMLToken*>& Input){
         // Because numbers and letters do not combine in Lexing phase we can assume that all special numbers would have an tailing token which would describe the postfix.
-        if (Input[i]->Type != HTML_GROUP_TYPES::NUMBER || Input[i]->Is(PARSE_BY::NUMBER_POSTFIX_PARSER))
+        if (Input[i]->Type != HTML_GROUP_TYPES::NUMBER || Input[i]->is(PARSE_BY::NUMBER_POSTFIX_PARSER))
             return;
 
         // check for the postfix
@@ -595,10 +595,10 @@ namespace GGUI{
      * If the decimal number is valid, it creates a new token with the decimal value and replaces the current token with it.
      * If the decimal number is invalid, it reports an error.
      */
-    void Parse_Decimal(int& i, std::vector<HTML_Token*>& Input){
+    void parseDecimal(int& i, std::vector<HTMLToken*>& Input){
 
         // Decimals are '.' operators which have captured an number on their left and right side.
-        if (!Input[i]->Is(PARSE_BY::OPERATOR_PARSER) || Input[i]->Data != ".")
+        if (!Input[i]->is(PARSE_BY::OPERATOR_PARSER) || Input[i]->Data != ".")
             return;
 
         if (Input[i]->Childs.size() != 2)
@@ -615,11 +615,11 @@ namespace GGUI{
             [[maybe_unused]] double Decimal_Value = std::stod(STR_VALUE);
         }
         catch(...){
-            Report("Invalid decimal number: " + STR_VALUE, Input[i]->Position);
+            report("Invalid decimal number: " + STR_VALUE, Input[i]->Position);
             return;
         }
 
-        HTML_Token* Decimal = new HTML_Token(HTML_GROUP_TYPES::NUMBER, STR_VALUE);
+        HTMLToken* Decimal = new HTMLToken(HTML_GROUP_TYPES::NUMBER, STR_VALUE);
         Decimal->Position = Input[i]->Position;
 
         // de-allocate the previous
@@ -642,9 +642,9 @@ namespace GGUI{
      * The function also sets the type of the token to ATTRIBUTE and removes the left and right tokens
      * from the input vector. The index is updated accordingly.
      */
-    void Parse_Operator(int& i, std::vector<HTML_Token*>& Input, char operator_type) {
+    void parseOperator(int& i, std::vector<HTMLToken*>& Input, char operator_type) {
         // Ensure there is space around the current token and it is not already parsed.
-        if (i == 0 || i + 1 >= static_cast<int>(Input.size()) || Input[i]->Is(PARSE_BY::OPERATOR_PARSER))
+        if (i == 0 || i + 1 >= static_cast<int>(Input.size()) || Input[i]->is(PARSE_BY::OPERATOR_PARSER))
             return;
 
         // Check if the current token matches the specified operator type and has no children.
@@ -681,8 +681,8 @@ namespace GGUI{
      * This function appends the location of the error to the error message and
      * calls the GGUI::Report function to display the error to the user.
      */
-    void Report(std::string problem, FILE_POSITION location){
-        GGUI::Report(location.To_String() + ": " + problem);
+    void report(std::string problem, filePosition location){
+        GGUI::report(location.To_String() + ": " + problem);
     }
 
     /**
@@ -695,16 +695,16 @@ namespace GGUI{
      * Then it adds the attributes of the element to the node.
      * The width and height of the element are added as number type attributes.
      */
-    HTML_Node* Element_To_Node(Element* e){
-        HTML_Node* Result = new HTML_Node();
+    HTMLNode* elementToNode(element* e){
+        HTMLNode* Result = new HTMLNode();
 
         // Set the tag name to "div" and the type to wrapper.
         Result->Tag_Name = "div";
         Result->Type = HTML_GROUP_TYPES::WRAPPER;
 
         // Now add the attributes of the element to the node.
-        Result->Attributes["width"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, std::to_string(e->Get_Width()));
-        Result->Attributes["height"] = new GGUI::HTML_Token(HTML_GROUP_TYPES::NUMBER, std::to_string(e->Get_Height()));
+        Result->Attributes["width"] = new GGUI::HTMLToken(HTML_GROUP_TYPES::NUMBER, std::to_string(e->getWidth()));
+        Result->Attributes["height"] = new GGUI::HTMLToken(HTML_GROUP_TYPES::NUMBER, std::to_string(e->getHeight()));
 
         return Result;
     }
@@ -723,15 +723,15 @@ namespace GGUI{
      * checks if the token has a postfix and if so, it calls the Compute_Post_Fix_As_Coefficient
      * function to compute the coefficient of the postfix. The computed value is then returned.
      */
-    double Compute_Val(HTML_Token* val, HTML_Node* parent, std::string attr_name){
+    double computeVal(HTMLToken* val, HTMLNode* parent, std::string attr_name){
         double Result = 0;
 
         if (val->Type == HTML_GROUP_TYPES::OPERATOR)
-            Result = Compute_Operator(val, parent, attr_name);
+            Result = computeOperator(val, parent, attr_name);
 
         // check the postfix
-        else if (val->Is(PARSE_BY::NUMBER_POSTFIX_PARSER))
-            Result *= Compute_Post_Fix_As_Coefficient(val->Childs[0]->Data, parent, attr_name);
+        else if (val->is(PARSE_BY::NUMBER_POSTFIX_PARSER))
+            Result *= computePostFixAsCoefficient(val->Childs[0]->Data, parent, attr_name);
 
         return Result;
     }
@@ -748,12 +748,12 @@ namespace GGUI{
      * @param attr_name The name of the attribute associated with the token.
      * @return The computed result of the operator.
      */
-    double Compute_Operator(HTML_Token* op, HTML_Node* parent, std::string attr_name) {
+    double computeOperator(HTMLToken* op, HTMLNode* parent, std::string attr_name) {
         double Result = 0;
 
         // Compute the values of the left and right child nodes.
-        double Left = Compute_Val(op->Childs[0], parent, attr_name);
-        double Right = Compute_Val(op->Childs[1], parent, attr_name);
+        double Left = computeVal(op->Childs[0], parent, attr_name);
+        double Right = computeVal(op->Childs[1], parent, attr_name);
 
         // Apply the operator to the computed values.
         if (op->Data == "+")
@@ -767,7 +767,7 @@ namespace GGUI{
         else if (op->Data == "=")
             Result = Left = Right;
         else
-            Report("Unknown operator: " + op->Data, op->Position);
+            report("Unknown operator: " + op->Data, op->Position);
 
         return Result;
     }
@@ -783,7 +783,7 @@ namespace GGUI{
      * @param attr_name The name of the attribute associated with the token.
      * @return The computed coefficient.
      */
-    double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent, std::string attr_name){
+    double computePostFixAsCoefficient(std::string postfix, HTMLNode* parent, std::string attr_name){
         double Result = POSTFIX_COEFFICIENT[postfix];
 
         // now check if the post fix is an Relative type.
@@ -805,7 +805,7 @@ namespace GGUI{
         else if (postfix == "vmax")
             Result *= GGUI::Max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
         else
-            Report("Unknown relative type: " + postfix, parent->Position);
+            report("Unknown relative type: " + postfix, parent->Position);
 
         return Result;
     }
@@ -820,7 +820,7 @@ namespace GGUI{
      * It sets the Element's width and height attributes using the Compute_Val function.
      * It also sets the Element's flexbox properties if the flex-direction attribute is set.
      */
-    void Translate_Attributes_To_Element(Element* e, HTML_Node* input){
+    void translateAttributesToElement(element* e, HTMLNode* input){
 
         // Keep track of the current position type
         [[maybe_unused]] GGUI::HTML_POSITION_TYPE Current_Position_Type = GGUI::HTML_POSITION_TYPE::STATIC;
@@ -833,27 +833,27 @@ namespace GGUI{
 
             // Set the width of the Element to the value of the width attribute
             if (attr.first == "width")
-                e->Set_Width(GGUI::Compute_Val(attr.second, input->parent, attr.first));
+                e->setWidth(GGUI::computeVal(attr.second, input->parent, attr.first));
             // Set the height of the Element to the value of the height attribute
             else if (attr.first == "height")
-                e->Set_Height(GGUI::Compute_Val(attr.second, input->parent, attr.first));
+                e->setHeight(GGUI::computeVal(attr.second, input->parent, attr.first));
             // Check if the attribute is a flex property
             else if (attr.first.compare(0, 5, "flex-") == 0){
                 if (!USE_FLEX){
                     // If the flex-direction attribute is not set, report an error
-                    GGUI::Report("Cannot use Flex properties whitout enabling flexbox first!", input->Position);
+                    GGUI::report("Cannot use Flex properties whitout enabling flexbox first!", input->Position);
                     continue;
                 }
 
                 // If the flex-direction attribute is set, set the flow direction of the Element
                 if (attr.first == "flex-direction"){
                     if (attr.second->Data == "column")
-                        ((List_View*)e)->Set_Flow_Direction(GGUI::DIRECTION::COLUMN);
+                        ((listView*)e)->setFlowDirection(GGUI::DIRECTION::COLUMN);
                     else if (attr.second->Data == "row")
-                        ((List_View*)e)->Set_Flow_Direction(GGUI::DIRECTION::ROW);
+                        ((listView*)e)->setFlowDirection(GGUI::DIRECTION::ROW);
                     else
                         // If the flex-direction attribute has an unknown value, report an error
-                        GGUI::Report("Unknown flex-direction: " + attr.second->Data, input->Position);
+                        GGUI::report("Unknown flex-direction: " + attr.second->Data, input->Position);
                 }
             }
         }
@@ -872,7 +872,7 @@ namespace GGUI{
      * to an Element, and the Element is added as a child to the parent Element.
      * Finally, the concatenated text from the Raw_Text vector is set to the provided string pointer.
      */
-    void Translate_Childs_To_Element(Element* e, HTML_Node* input, std::string* Set_Text_To) {
+    void translateChildsToElement(element* e, HTMLNode* input, std::string* Set_Text_To) {
         std::string Result = "";
         std::vector<std::string> Raw_Text;
 
@@ -887,13 +887,13 @@ namespace GGUI{
                 Raw_Text.push_back("\n");
 
             // Check if a translator exists for the child's tag name.
-            if (GGUI::HTML_Translators->find(c->Tag_Name) == GGUI::HTML_Translators->end())
+            if (GGUI::HTMLTranslators->find(c->Tag_Name) == GGUI::HTMLTranslators->end())
                 continue;
 
             // Translate the child node to an Element and add it to the parent Element.
-            GGUI::Element* tmp = GGUI::HTML_Translators->at(c->Tag_Name)(c);
+            GGUI::element* tmp = GGUI::HTMLTranslators->at(c->Tag_Name)(c);
             if (tmp) {
-                e->Add_Child(tmp);
+                e->addChild(tmp);
             }
         }
 

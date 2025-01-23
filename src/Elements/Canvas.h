@@ -14,10 +14,10 @@
 
 namespace GGUI{
 
-    class Canvas : public Element{
+    class canvas : public element{
     private:
         // DONT GIVE THIS TO USER!
-        Canvas(){}
+        canvas(){}
     protected:
         std::vector<RGB> Buffer;
     public:
@@ -27,7 +27,7 @@ namespace GGUI{
          * @param s The styling to be applied to the Canvas.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the canvas's style. Only use if you know what you're doing!!!
          */
-        Canvas(Styling s, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct){}
+        canvas(styling s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
            
         /**
          * @brief Set the value of a pixel on the canvas.
@@ -39,7 +39,7 @@ namespace GGUI{
          * @param color The color of the pixel.
          * @param Flush Whether or not to call Update_Frame() after setting the pixel.
          */
-        void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
+        void set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
         
         /**
          * @brief Flushes the canvas.
@@ -47,7 +47,7 @@ namespace GGUI{
          * This function flushes the canvas by calling Update_Frame().
          * It is used to update the canvas immediately after making changes to it.
          */
-        void Flush();
+        void flush();
         
         /**
          * @brief Renders the canvas and returns the result.
@@ -55,14 +55,14 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the canvas is rendered correctly.
          * @return A vector of UTF objects representing the rendered canvas.
          */
-        std::vector<GGUI::UTF>&  Render() override;
+        std::vector<GGUI::UTF>&  render() override;
 
         /**
          * @brief Creates a deep copy of the Canvas and returns it as a movable Element.
          * @return A deep copy of the Canvas as a movable Element.
          */
-        Element* Safe_Move() override {
-            return new Canvas();
+        element* safeMove() override {
+            return new canvas();
         }
 
         /**
@@ -70,12 +70,12 @@ namespace GGUI{
          * @details The returned string is a combination of the class name and the Name property.
          * @return A string representing the name of the Canvas.
          */
-        std::string Get_Name() const override {
+        std::string getName() const override {
             return "Canvas<" + Name + ">";
         }
     };
 
-    class Sprite{
+    class sprite{
     public:
         std::vector<GGUI::UTF> Frames;
 
@@ -94,7 +94,7 @@ namespace GGUI{
          * @param offset The number of frames to skip before playing the animation.
          * @param speed The speed of the animation playback.
          */
-        Sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1);
+        sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1);
 
         /**
          * @brief Constructs a Sprite object with a single frame.
@@ -103,7 +103,7 @@ namespace GGUI{
          * @param offset The number of frames to skip before playing the animation. Default is 0.
          * @param speed The speed of the animation playback. Default is 1.
          */
-        Sprite(GGUI::UTF frame, int offset = 0, int speed = 1) 
+        sprite(GGUI::UTF frame, int offset = 0, int speed = 1) 
             : Offset(offset), Speed(speed), Frame_Distance(1) {
             // Add the provided frame to the Frames vector.
             Frames.push_back(frame);
@@ -113,7 +113,7 @@ namespace GGUI{
          * @brief Constructs a Sprite object with default values.
          * @details This constructor sets the Sprite to have a single UTF frame, which is a space character, and sets the offset and speed for animation.
          */
-        Sprite() : Frame_Distance(1){
+        sprite() : Frame_Distance(1){
             // Set the default frame to a space character.
             Frames.push_back(GGUI::UTF(' '));
             
@@ -130,7 +130,7 @@ namespace GGUI{
          * @param Current_Frame The current frame of the animation.
          * @return The rendered UTF character.
          */
-        UTF Render(unsigned char Current_Time);
+        UTF render(unsigned char Current_Time);
     };
 
     namespace GROUP_TYPE{
@@ -140,48 +140,48 @@ namespace GGUI{
         inline unsigned char OCTAL = 1 << 4;
     }
 
-    class Terminal_Canvas : public Element{
+    class terminalCanvas : public element{
     private:
         // DONT GIVE THIS TO USER!!!
-        Terminal_Canvas(){}
+        terminalCanvas(){}
     protected:
-        std::vector<Sprite> Buffer;
+        std::vector<sprite> Buffer;
 
         unsigned char Current_Animation_Frame = 0;
 
         // For speeding up sprite sets, to avoid redundant checks in unordered_maps.
         bool Multi_Frame = false;
 
-        GGUI::Sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
+        GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
-        Terminal_Canvas(Styling s) : Element(s){}
+        terminalCanvas(styling s) : element(s){}
         
-        ~Terminal_Canvas() override;
+        ~terminalCanvas() override;
 
-        void Set_Next_Animation_Frame() { Current_Animation_Frame++; }
+        void setNextAnimationFrame() { Current_Animation_Frame++; }
 
-        void Set(unsigned int x, unsigned int y, Sprite& sprite, bool Flush = true);
+        void set(unsigned int x, unsigned int y, sprite& sprite, bool Flush = true);
 
-        void Set(unsigned int x, unsigned int y, Sprite&& sprite, bool Flush = true);
+        void set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush = true);
 
-        void Set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);
+        void set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);
         
-        void Flush(bool Force_Flush = false);
+        void flush(bool Force_Flush = false);
         
-        std::vector<GGUI::UTF>&  Render() override;
+        std::vector<GGUI::UTF>&  render() override;
         
-        void Group_Heuristics();
+        void groupHeuristics();
 
-        void Group(unsigned int Start_Index, int length);
+        void group(unsigned int Start_Index, int length);
 
-        bool Is_Multi_Frame(){ return Multi_Frame; }
+        bool isMultiFrame(){ return Multi_Frame; }
 
         /**
          * @brief Creates a deep copy of the Terminal_Canvas and returns it as a movable Element.
          * @return A deep copy of the Terminal_Canvas as a movable Element.
          */
-        Element* Safe_Move() override {
-            return new Terminal_Canvas();
+        element* safeMove() override {
+            return new terminalCanvas();
         }
 
         /**
@@ -189,7 +189,7 @@ namespace GGUI{
          * @details The returned string is a combination of the class name and the Name property.
          * @return A string representing the name of the Terminal_Canvas.
          */
-        std::string Get_Name() const override {
+        std::string getName() const override {
             // Concatenate class name and Name property to form the full name.
             return "Terminal_Canvas<" + Name + ">";
         }
@@ -208,9 +208,9 @@ namespace GGUI{
          * The function will then set the points in the canvas to the corresponding symbol. If flush is true, the buffer is flushed after
          * the points are set.
          */
-        void Embed_Points(std::vector<bool> pixels, styled_border border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
+        void embedPoints(std::vector<bool> pixels, styled_border border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
 
-        void Set_On_Draw(GGUI::Sprite (*On_Draw)(unsigned int x, unsigned int y)){
+        void setOnDraw(GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y)){
             this->On_Draw = On_Draw;
         }
     };
@@ -229,7 +229,7 @@ namespace GGUI{
          * This function draws a line on the canvas by setting the pixels to true.
          * It uses the Bresenham line drawing algorithm to determine which pixels to set.
          */
-        void Line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width);
+        void line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width);
 
         /**
          * @brief Helper function for the above, creates a line on a given buffer.
@@ -241,7 +241,7 @@ namespace GGUI{
          * This function creates a line on a given buffer by setting the pixels to true.
          * It uses the Bresenham line drawing algorithm to determine which pixels to set.
          */
-        std::vector<bool> Line(FVector2 Start, FVector2 End, int Buffer_Width);
+        std::vector<bool> line(FVector2 Start, FVector2 End, int Buffer_Width);
 
         /**
          * @brief Symmetrical circle draw helper.
@@ -255,7 +255,7 @@ namespace GGUI{
          * This function is a helper function for drawing a circle on the canvas.
          * It fills in the circle symmetrically by setting the pixels to true.
          */
-        void Symmetry_Filler_For_Circle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width);
+        void symmetryFillerForCircle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width);
 
         /**
          * @brief Fills a circle in a given buffer with true values.
@@ -269,7 +269,7 @@ namespace GGUI{
          * using the Bresenham circle drawing algorithm to determine which pixels
          * to set.
          */
-        void Circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width);
+        void circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width);
 
         /**
          * @brief Fills a circle in a given buffer with true values.
@@ -282,7 +282,7 @@ namespace GGUI{
          * using the Bresenham circle drawing algorithm to determine which pixels
          * to set.
          */
-        std::vector<bool> Circle(FVector2 Center, int Radius, int Buffer_Width);
+        std::vector<bool> circle(FVector2 Center, int Radius, int Buffer_Width);
 
         /**
          * @brief Draws a cubic Bezier curve in a given buffer with true values.
@@ -297,7 +297,7 @@ namespace GGUI{
          * using the parametric equation of the Bezier curve to determine which pixels
          * to set.
          */
-        void Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width);
+        void cubicBezierCurve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width);
         
         /**
          * @brief Draws a cubic Bezier curve in a given buffer with true values.
@@ -312,17 +312,17 @@ namespace GGUI{
          * using the parametric equation of the Bezier curve to determine which pixels
          * to set.
          */
-        std::vector<bool> Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, int Buffer_Width);
+        std::vector<bool> cubicBezierCurve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, int Buffer_Width);
 
     }
 
     namespace FONT{
         // Based on: https://learn.microsoft.com/en-us/typography/opentype/spec/otff
-        class Font_Header{
+        class fontHeader{
         public:
         };
 
-        Font_Header Parse_Font_File(std::string File_Name);
+        fontHeader parseFontFile(std::string File_Name);
     }
 
 }

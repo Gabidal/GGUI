@@ -9,24 +9,24 @@
 #include <mutex>
 
 namespace GGUI{
-    class Window;
+    class window;
     namespace INTERNAL{
 
-        extern Window* Main;
+        extern window* Main;
 
-        namespace Atomic{
-            enum class Status;
+        namespace atomic{
+            enum class status;
 
             extern std::mutex Mutex;
             extern std::condition_variable Condition;
 
-            extern Status Pause_Render_Thread;
+            extern status Pause_Render_Thread;
         }
 
         extern std::chrono::high_resolution_clock::time_point Previous_Time;
         extern std::chrono::high_resolution_clock::time_point Current_Time;
 
-        extern Atomic::Guard<Carry> Carry_Flags;
+        extern atomic::Guard<Carry> Carry_Flags;
 
         extern void Translate_Inputs();
 
@@ -46,13 +46,13 @@ namespace GGUI{
          * 8. Calculates the render delay.
          * 9. Pauses the render thread and notifies all waiting threads.
          */
-        void Renderer(){
+        void renderer(){
             while (true){
                 {
-                    std::unique_lock lock(INTERNAL::Atomic::Mutex);
-                    INTERNAL::Atomic::Condition.wait(lock, [&](){ return INTERNAL::Atomic::Pause_Render_Thread == INTERNAL::Atomic::Status::RESUMED; });
+                    std::unique_lock lock(INTERNAL::atomic::Mutex);
+                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::RESUMED; });
 
-                    INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::LOCKED;
+                    INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::LOCKED;
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
@@ -71,18 +71,18 @@ namespace GGUI{
                             // Clear the previous carry flag
                             previous_carry.Resize = false;
 
-                            INTERNAL::Update_Max_Width_And_Height();
+                            INTERNAL::updateMaxWidthAndHeight();
                         }
                     });
 
-                    INTERNAL::Abstract_Frame_Buffer = INTERNAL::Main->Render();
+                    INTERNAL::Abstract_Frame_Buffer = INTERNAL::Main->render();
 
                     // ENCODE for optimize
-                    Encode_Buffer(INTERNAL::Abstract_Frame_Buffer);
+                    encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
 
-                    INTERNAL::Frame_Buffer = Liquify_UTF_Text(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->Get_Width(), INTERNAL::Main->Get_Height())->To_String();
+                    INTERNAL::Frame_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight())->To_String();
                     
-                    INTERNAL::Render_Frame();
+                    INTERNAL::renderFrame();
                 }
 
                 // Check the difference of the time captured before render and now after render
@@ -91,10 +91,10 @@ namespace GGUI{
                 INTERNAL::Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
 
                 {
-                    std::unique_lock lock(INTERNAL::Atomic::Mutex);
+                    std::unique_lock lock(INTERNAL::atomic::Mutex);
                     // Now for itself set it to sleep.
-                    INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::PAUSED;
-                    INTERNAL::Atomic::Condition.notify_all();
+                    INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::PAUSED;
+                    INTERNAL::atomic::Condition.notify_all();
                 }
             }
         }
@@ -125,10 +125,10 @@ namespace GGUI{
             // Iterate over each multi-frame canvas
             for (auto i : INTERNAL::Multi_Frame_Canvas) {
                 // Advance the animation to the next frame
-                i.first->Set_Next_Animation_Frame();
+                i.first->setNextAnimationFrame();
 
                 // Flush the updated state of the canvas
-                i.first->Flush(true);
+                i.first->flush(true);
             }
 
             // Adjust the event thread load if there are canvases to update
@@ -152,15 +152,15 @@ namespace GGUI{
          * 
          * @note If uncapped FPS is desired, the sleep code can be disabled.
          */
-        void Event_Thread(){
+        void eventThread(){
             while (true){
-                Pause_GGUI([&](){
+                pauseGGUI([&](){
                     // Reset the thread load counter
                     INTERNAL::Event_Thread_Load = 0;
                     INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                     // Order independent --------------
-                    Recall_Memories();
+                    recallMemories();
                     Go_Through_File_Streams();
                     Refresh_Multi_Frame_Canvas();
                 });
@@ -207,23 +207,23 @@ namespace GGUI{
          *    - Records the current time as INTERNAL::Current_Time.
          *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
          */
-        void Input_Thread(){
+        void inputThread(){
             while (true){
                 // Wait for user input.
-                INTERNAL::Query_Inputs();
+                INTERNAL::queryInputs();
 
-                Pause_GGUI([&](){
+                pauseGGUI([&](){
                     INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                     // Translate the Queried inputs.
                     INTERNAL::Translate_Inputs();
 
                     // Translate the movements thingies to better usable for user.
-                    SCROLL_API();
-                    MOUSE_API();
+                    scrollAPI();
+                    mouseAPI();
 
                     // Now call upon event handlers which may react to the parsed input.
-                    Event_Handler();
+                    eventHandler();
 
                     INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
 

@@ -13,7 +13,7 @@
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
-    class Window : public Element{
+    class window : public element{
         std::string Title = "";  //if this is empty then no title
 
         RGB Before_Hiding_Border_Color = COLOR::WHITE;
@@ -28,7 +28,7 @@ namespace GGUI{
          * @param s The Styling object to be used for the window.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the window's style. Only use if you know what you're doing!!!
          */
-        Window(Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        window(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
         /**
          * @brief Destructor for the Window class.
@@ -36,9 +36,9 @@ namespace GGUI{
          * This destructor is responsible for cleaning up the memory allocated by the Window object.
          * It calls the base class destructor to ensure all parent class resources are cleaned up.
          */
-        ~Window() override{
+        ~window() override{
             // call the base destructor.
-            Element::~Element();
+            element::~element();
         }
 
         //End of user constructors.
@@ -48,7 +48,7 @@ namespace GGUI{
          * This function prioritizes border color variants if they are available;
          * otherwise, it falls back to text colors or default values.
          */
-        void Update_Hidden_Border_Colors();
+        void updateHiddenBorderColors();
 
         /**
          * @brief Sets the title of the window and updates border visibility and colors accordingly.
@@ -58,14 +58,14 @@ namespace GGUI{
          * 
          * @param t The new title for the window.
          */
-        void Set_Title(std::string t);
+        void setTitle(std::string t);
 
         /**
          * @brief Returns the title of the window.
          * 
          * @return The title of the window as a string.
          */
-        std::string Get_Title();
+        std::string getTitle();
         
         /**
          * @brief Adds the border of the window to the rendered string.
@@ -73,14 +73,14 @@ namespace GGUI{
          * @param w The window to add the border for.
          * @param Result The string to add the border to.
          */
-        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
+        void addOverhead(element* w, std::vector<UTF>& Result) override;
 
         /**
          * @brief Gets the name of the window.
          * 
          * @return The name of the window as a string.
          */
-        std::string Get_Name() const override;
+        std::string getName() const override;
 
         /**
          * @brief Shows or hides the window's border.
@@ -88,7 +88,7 @@ namespace GGUI{
          *          If the state has changed, it updates the border enabled state, marks the element as dirty for border changes, and updates the frame.
          * @param b The desired state of the border visibility.
          */
-        void Show_Border(bool state) override;
+        void showBorder(bool state) override;
 
         /**
          * @brief Shows or hides the window's border.
@@ -97,7 +97,7 @@ namespace GGUI{
          * @param b The desired state of the border visibility.
          * @param Previous_State The current state of the border visibility.
          */
-        void Show_Border(bool state, bool previus_state) override;
+        void showBorder(bool state, bool previus_state) override;
 
         /**
          * @brief Sets the background color of the window.
@@ -105,7 +105,7 @@ namespace GGUI{
          *          It marks the element as dirty for color updates and triggers a frame update.
          * @param color The RGB color to set as the background color.
          */
-        void Set_Background_Color(RGB color) override;
+        void setBackgroundColor(RGB color) override;
 
         /**
          * @brief Sets the text color of the window.
@@ -113,7 +113,7 @@ namespace GGUI{
          *          It marks the element as dirty for color updates and triggers a frame update.
          * @param color The RGB color to set as the text color.
          */
-        void Set_Text_Color(RGB color) override;
+        void setTextColor(RGB color) override;
 
         /**
          * @brief Sets the background color of the window's border.
@@ -121,7 +121,7 @@ namespace GGUI{
          *          It marks the element as dirty for color updates and triggers a frame update.
          * @param color The RGB color to set as the background color of the window's border.
          */
-        void Set_Border_Background_Color(RGB color) override;
+        void setBorderBackgroundColor(RGB color) override;
 
         /**
          * @brief Sets the color of the window's border.
@@ -129,15 +129,15 @@ namespace GGUI{
          *          It marks the element as dirty for color updates and triggers a frame update.
          * @param color The RGB color to set as the border color.
          */
-        void Set_Border_Color(RGB color) override;
+        void setBorderColor(RGB color) override;
 
         /**
          * @brief Creates a deep copy of the Window object.
          * @details This function creates a new Window object and copies all the data from the current Window object to the new one.
          * @return A pointer to the new Window object.
          */
-        Element* Safe_Move() override {
-            return new Window();
+        element* safeMove() override {
+            return new window();
         }
     };
 }

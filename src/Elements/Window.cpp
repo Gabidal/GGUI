@@ -9,9 +9,9 @@
  * @param title The title string to be displayed in the window's title bar.
  * @param s The Styling object to be used for the window.
  */
-GGUI::Window::Window(Styling s, bool Embed_Styles_On_Construct) : Element(s, Embed_Styles_On_Construct) {
-    Pause_GGUI([this](){
-        Update_Hidden_Border_Colors();
+GGUI::window::window(styling s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
+    pauseGGUI([this](){
+        updateHiddenBorderColors();
     });
 }
 
@@ -20,7 +20,7 @@ GGUI::Window::Window(Styling s, bool Embed_Styles_On_Construct) : Element(s, Emb
  * This function prioritizes border color variants if they are available;
  * otherwise, it falls back to text colors or default values.
  */
-void GGUI::Window::Update_Hidden_Border_Colors() {
+void GGUI::window::updateHiddenBorderColors() {
     // Check if a custom border color is initialized and set it as the before hiding color
     if (Style->Border_Color.Status >= VALUE_STATE::INITIALIZED)
         Before_Hiding_Border_Color = Style->Border_Color.Value.Get<RGB>();
@@ -50,27 +50,27 @@ void GGUI::Window::Update_Hidden_Border_Colors() {
  * 
  * @param t The new title for the window.
  */
-void GGUI::Window::Set_Title(std::string t) {
-    Pause_GGUI([this, t]() {
+void GGUI::window::setTitle(std::string t) {
+    pauseGGUI([this, t]() {
         // Set the window title
         Title = t;
 
         // If the window has no border and the title is not empty, show the border
-        if (!Has_Border() && t.size() > 0) {
-            Show_Border(true);
+        if (!hasBorder() && t.size() > 0) {
+            showBorder(true);
 
             // Mark that the window previously had hidden borders
             Has_Hidden_Borders = true;
 
             // Set the border colors to the current background color
-            Before_Hiding_Border_Color = Get_Background_Color();
-            Before_Hiding_Border_Background_Color = Get_Background_Color();
-            Set_Border_Color(Get_Background_Color());
-            Set_Border_Background_Color(Get_Background_Color());
+            Before_Hiding_Border_Color = getBackgroundColor();
+            Before_Hiding_Border_Background_Color = getBackgroundColor();
+            setBorderColor(getBackgroundColor());
+            setBorderBackgroundColor(getBackgroundColor());
         }
 
         // Set the window name to the new title
-        Set_Name(t);
+        setName(t);
 
         // Mark the edge as dirty to trigger a frame update
         Dirty.Dirty(STAIN_TYPE::EDGE);
@@ -82,7 +82,7 @@ void GGUI::Window::Set_Title(std::string t) {
  * 
  * @return The title of the window as a string.
  */
-std::string GGUI::Window::Get_Title() {
+std::string GGUI::window::getTitle() {
     return Title;
 }
 
@@ -92,53 +92,53 @@ std::string GGUI::Window::Get_Title() {
  * @param w The window to add the border for.
  * @param Result The string to add the border to.
  */
-void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result){
+void GGUI::window::addOverhead(GGUI::element* w, std::vector<GGUI::UTF>& Result){
     // Clean the edge stain
     Dirty.Clean(STAIN_TYPE::EDGE);
 
-    if (!w->Has_Border())
+    if (!w->hasBorder())
         // If the window has no border, return
         return;
     
     // Get the custom border style
     GGUI::styled_border* custom_border = &Style->Border_Style;
 
-    for (unsigned int y = 0; y < w->Get_Height(); y++){
-        for (unsigned int x = 0; x < w->Get_Width(); x++){
+    for (unsigned int y = 0; y < w->getHeight(); y++){
+        for (unsigned int x = 0; x < w->getWidth(); x++){
             // Top left corner
             if (y == 0 && x == 0){
                 // Add the top left corner symbol with the border color
-                Result[y * w->Get_Width() + x] = GGUI::UTF(custom_border->TOP_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * w->getWidth() + x] = GGUI::UTF(custom_border->TOP_LEFT_CORNER, w->composeAllBorderRGBValues());
             }
             // Top right corner
-            else if (y == 0 && x == w->Get_Width() - 1){
+            else if (y == 0 && x == w->getWidth() - 1){
                 // Add the top right corner symbol with the border color
-                Result[y * w->Get_Width() + x] = GGUI::UTF(custom_border->TOP_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * w->getWidth() + x] = GGUI::UTF(custom_border->TOP_RIGHT_CORNER, w->composeAllBorderRGBValues());
             }
             // Bottom left corner
-            else if (y == w->Get_Height() - 1 && x == 0){
+            else if (y == w->getHeight() - 1 && x == 0){
                 // Add the bottom left corner symbol with the border color
-                Result[y * w->Get_Width() + x] = GGUI::UTF(custom_border->BOTTOM_LEFT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * w->getWidth() + x] = GGUI::UTF(custom_border->BOTTOM_LEFT_CORNER, w->composeAllBorderRGBValues());
             }
             // Bottom right corner
-            else if (y == w->Get_Height() - 1 && x == w->Get_Width() - 1){
+            else if (y == w->getHeight() - 1 && x == w->getWidth() - 1){
                 // Add the bottom right corner symbol with the border color
-                Result[y * w->Get_Width() + x] = GGUI::UTF(custom_border->BOTTOM_RIGHT_CORNER, w->Compose_All_Border_RGB_Values());
+                Result[y * w->getWidth() + x] = GGUI::UTF(custom_border->BOTTOM_RIGHT_CORNER, w->composeAllBorderRGBValues());
             }
             // The title will only be written after the top left corner symbol until top right corner symbol and will NOT overflow
-            else if (y == 0 && x <= ((GGUI::Window*)w)->Get_Title().size()){
+            else if (y == 0 && x <= ((GGUI::window*)w)->getTitle().size()){
                 // Add the title symbol with the text color
-                Result[y * w->Get_Width() + x] = GGUI::UTF(((GGUI::Window*)w)->Get_Title()[x - 1], w->Compose_All_Text_RGB_Values());
+                Result[y * w->getWidth() + x] = GGUI::UTF(((GGUI::window*)w)->getTitle()[x - 1], w->composeAllTextRGBValues());
             }
             // The roof border
-            else if (y == 0 || y == w->Get_Height() - 1){
+            else if (y == 0 || y == w->getHeight() - 1){
                 // Add the horizontal line symbol with the border color
-                Result[y * w->Get_Width() + x] = GGUI::UTF(custom_border->HORIZONTAL_LINE, w->Compose_All_Border_RGB_Values());
+                Result[y * w->getWidth() + x] = GGUI::UTF(custom_border->HORIZONTAL_LINE, w->composeAllBorderRGBValues());
             }
             // The left border
-            else if (x == 0 || x == w->Get_Width() - 1){
+            else if (x == 0 || x == w->getWidth() - 1){
                 // Add the vertical line symbol with the border color
-                Result[y * w->Get_Width() + x] = GGUI::UTF(custom_border->VERTICAL_LINE, w->Compose_All_Border_RGB_Values());
+                Result[y * w->getWidth() + x] = GGUI::UTF(custom_border->VERTICAL_LINE, w->composeAllBorderRGBValues());
             }
         }
     }
@@ -149,7 +149,7 @@ void GGUI::Window::Add_Overhead(GGUI::Element* w, std::vector<GGUI::UTF>& Result
  * 
  * @return The name of the window as a string.
  */
-std::string GGUI::Window::Get_Name() const{
+std::string GGUI::window::getName() const{
     return "Window<" + Name + ">";
 }
 
@@ -159,13 +159,13 @@ std::string GGUI::Window::Get_Name() const{
  *          If the state has changed, it updates the border enabled state, marks the element as dirty for border changes, and updates the frame.
  * @param b The desired state of the border visibility.
  */
-void GGUI::Window::Show_Border(bool b){
+void GGUI::window::showBorder(bool b){
     
     // This means that the window has setted a title whitout the borders, so we need to reinstate them.
     if (Has_Hidden_Borders){
         // Reinstate the border colors
-        Set_Border_Color(Before_Hiding_Border_Color);
-        Set_Border_Background_Color(Before_Hiding_Border_Background_Color);
+        setBorderColor(Before_Hiding_Border_Color);
+        setBorderBackgroundColor(Before_Hiding_Border_Background_Color);
     }
 
     // If the state has changed, update the border enabled state and mark the element as dirty for border changes
@@ -173,7 +173,7 @@ void GGUI::Window::Show_Border(bool b){
         Style->Border_Enabled = b;
 
         Dirty.Dirty(STAIN_TYPE::EDGE);
-        Update_Frame();
+        updateFrame();
     }
 }
 
@@ -184,13 +184,13 @@ void GGUI::Window::Show_Border(bool b){
  * @param b The desired state of the border visibility.
  * @param Previous_State The current state of the border visibility.
  */
-void GGUI::Window::Show_Border(bool b, bool Previous_State){
+void GGUI::window::showBorder(bool b, bool Previous_State){
     
     // This means that the window has setted a title whitout the borders, so we need to reinstate them.
     if (Has_Hidden_Borders){
         // Reinstate the border colors
-        Set_Border_Color(Before_Hiding_Border_Color);
-        Set_Border_Background_Color(Before_Hiding_Border_Background_Color);
+        setBorderColor(Before_Hiding_Border_Color);
+        setBorderBackgroundColor(Before_Hiding_Border_Background_Color);
     }
 
     // If the state has changed, update the border enabled state and mark the element as dirty for border changes
@@ -201,7 +201,7 @@ void GGUI::Window::Show_Border(bool b, bool Previous_State){
         Dirty.Dirty(STAIN_TYPE::EDGE);
 
         // Trigger a frame update to re-render the window
-        Update_Frame();
+        updateFrame();
     }
 }
 
@@ -212,7 +212,7 @@ void GGUI::Window::Show_Border(bool b, bool Previous_State){
  *          It marks the element as dirty for color updates and triggers a frame update.
  * @param color The RGB color to set as the background color.
  */
-void GGUI::Window::Set_Background_Color(RGB color){
+void GGUI::window::setBackgroundColor(RGB color){
     Style->Background_Color = color;
 
     // Store the background color before hiding the border
@@ -222,7 +222,7 @@ void GGUI::Window::Set_Background_Color(RGB color){
     Dirty.Dirty(STAIN_TYPE::COLOR);
 
     // Trigger a frame update to re-render the window
-    Update_Frame();
+    updateFrame();
 }
 
 /**
@@ -231,7 +231,7 @@ void GGUI::Window::Set_Background_Color(RGB color){
  *          It marks the element as dirty for color updates and triggers a frame update.
  * @param color The RGB color to set as the text color.
  */
-void GGUI::Window::Set_Text_Color(RGB color) {
+void GGUI::window::setTextColor(RGB color) {
     // Store the value in the style
     Style->Text_Color = color;
 
@@ -242,7 +242,7 @@ void GGUI::Window::Set_Text_Color(RGB color) {
     Dirty.Dirty(STAIN_TYPE::COLOR);
 
     // Trigger a frame update to re-render the window
-    Update_Frame();
+    updateFrame();
 }
 
 /**
@@ -251,7 +251,7 @@ void GGUI::Window::Set_Text_Color(RGB color) {
  *          It marks the element as dirty for color updates and triggers a frame update.
  * @param color The RGB color to set as the background color of the window's border.
  */
-void GGUI::Window::Set_Border_Background_Color(RGB color){
+void GGUI::window::setBorderBackgroundColor(RGB color){
     // Store the value in the style
     Style->Border_Background_Color = color;
 
@@ -262,7 +262,7 @@ void GGUI::Window::Set_Border_Background_Color(RGB color){
     Dirty.Dirty(STAIN_TYPE::COLOR);
 
     // Trigger a frame update to re-render the window
-    Update_Frame();
+    updateFrame();
 }
 
 /**
@@ -271,7 +271,7 @@ void GGUI::Window::Set_Border_Background_Color(RGB color){
  *          It marks the element as dirty for color updates and triggers a frame update.
  * @param color The RGB color to set as the border color.
  */
-void GGUI::Window::Set_Border_Color(RGB color){
+void GGUI::window::setBorderColor(RGB color){
     // Store the value in the style
     Style->Border_Color = color;
 
@@ -282,7 +282,7 @@ void GGUI::Window::Set_Border_Color(RGB color){
     Dirty.Dirty(STAIN_TYPE::COLOR);
 
     // Trigger a frame update to re-render the window
-    Update_Frame();
+    updateFrame();
 }
 
 

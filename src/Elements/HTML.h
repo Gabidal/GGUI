@@ -13,12 +13,12 @@
 
 namespace GGUI{
 
-    class HTML : public Element{
+    class HTML : public element{
     private:
         // DONT GIVE TO USER !!!
         HTML(){}
     private:
-        FILE_STREAM* Handle = nullptr;
+        fileStream* Handle = nullptr;
     public:
     
         /**
@@ -45,7 +45,7 @@ namespace GGUI{
 
             // Call the base destructor to ensure that all the resources are properly
             // released.
-            Element::~Element();
+            element::~element();
         }
 
         /**
@@ -56,7 +56,7 @@ namespace GGUI{
          * HTML object to the new one. This is useful for creating a new HTML object that is
          * a modified version of the current one.
          */
-        Element* Safe_Move() override {
+        element* safeMove() override {
             return new HTML();
         }
 
@@ -67,7 +67,7 @@ namespace GGUI{
          * This function will return the name of the HTML object, which is the name
          * of the file that was opened using the HTML constructor.
          */
-        std::string Get_Name() const override{
+        std::string getName() const override{
             return "HTML<" + Name + ">";
         }
     };
@@ -124,12 +124,12 @@ namespace GGUI{
      */
     extern void operator|=(PARSE_BY& first, PARSE_BY second);
 
-    class HTML_Token{
+    class HTMLToken{
     public:
         HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
         std::string Data = "";
-        std::vector<HTML_Token*> Childs;    // also contains attributes!
-        FILE_POSITION Position;
+        std::vector<HTMLToken*> Childs;    // also contains attributes!
+        filePosition Position;
 
         PARSE_BY Parsed_By = PARSE_BY::NONE;
 
@@ -138,7 +138,7 @@ namespace GGUI{
          * @param Type The type of the token.
          * @param Data The data of the token.
          */
-        HTML_Token(HTML_GROUP_TYPES Type, std::string Data) {
+        HTMLToken(HTML_GROUP_TYPES Type, std::string Data) {
             this->Type = Type;
             this->Data = Data;
         }
@@ -149,7 +149,7 @@ namespace GGUI{
          * @param Data The data of the token.
          * @param position The position of the token in the source file.
          */
-        HTML_Token(HTML_GROUP_TYPES Type, char Data, FILE_POSITION position){
+        HTMLToken(HTML_GROUP_TYPES Type, char Data, filePosition position){
             this->Type = Type;
             this->Data.push_back(Data);
             this->Position = position;
@@ -161,7 +161,7 @@ namespace GGUI{
          * @param f The PARSE_BY value to check.
          * @return True if the bit mask of the value is set, otherwise false.
          */
-        bool Is(PARSE_BY f){
+        bool is(PARSE_BY f){
             return (Parsed_By & f) == f;
         }
 
@@ -171,7 +171,7 @@ namespace GGUI{
          * @param f The PARSE_BY value to check.
          * @return True if the bit mask of the value is set, otherwise false.
          */
-        bool Has(PARSE_BY f) {
+        bool has(PARSE_BY f) {
             return (f & Parsed_By) > PARSE_BY::NONE;
         }
 
@@ -179,10 +179,10 @@ namespace GGUI{
          * @brief Default constructor for an HTML_Token.
          * @details This constructor does not initialize any values and should be used with caution.
          */
-        HTML_Token() = default;
+        HTMLToken() = default;
     };
 
-    class HTML_Group{
+    class HTMLGroup{
     public:
         HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
         char Start = 0;
@@ -197,7 +197,7 @@ namespace GGUI{
          * @param End The end of the group.
          * @param Is_Sticky Is the group sticky?
          */
-        HTML_Group(HTML_GROUP_TYPES Type, char Start, char End, bool Is_Sticky = true){
+        HTMLGroup(HTML_GROUP_TYPES Type, char Start, char End, bool Is_Sticky = true){
             this->Type = Type;
             this->Start = Start;
             this->End = End;
@@ -205,23 +205,23 @@ namespace GGUI{
         }
     };
 
-    class HTML_Node{
+    class HTMLNode{
     public:
         std::string Tag_Name = "";  // DIV, HREF, etc...
         
-        std::vector<HTML_Node*> Childs;
-        HTML_Node* parent = nullptr;
+        std::vector<HTMLNode*> Childs;
+        HTMLNode* parent = nullptr;
 
-        FILE_POSITION Position;
+        filePosition Position;
 
-        HTML_Token* RAW = nullptr;
+        HTMLToken* RAW = nullptr;
         HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
 
         // Postfixes are in child[0] for numbers.
         // Decimals are also number typed.
         // Operators left is Child[0] and Right at Child[1].
         // Attributes cannot be computed, before some contextual data on AST level is constructed, since the postfix operands depend on these kind of information from parent.
-        std::unordered_map<std::string, GGUI::HTML_Token*> Attributes;    // contains ID, Name, Class, Color, BG_Color, etc...
+        std::unordered_map<std::string, GGUI::HTMLToken*> Attributes;    // contains ID, Name, Class, Color, BG_Color, etc...
     };
 
     /**
@@ -231,7 +231,7 @@ namespace GGUI{
      * This function parses the HTML tokens by combining wrappers like: <, >, (, ), etc...
      * It also captures decimals, parses operators in Reverse PEMDAS order, and combines dynamic wrappers like: <html>, </html>
      */
-    extern void Parse(std::vector<HTML_Token*>& Input);
+    extern void parse(std::vector<HTMLToken*>& Input);
 
     /**
      * @brief Parses raw HTML buffer into elements.
@@ -239,7 +239,7 @@ namespace GGUI{
      * @param parent The parent element to set for top-level nodes.
      * @return A vector of parsed HTML elements.
      */
-    extern std::vector<Element*> Parse_HTML(std::string Raw_Buffer, Element* parent);
+    extern std::vector<element*> parseHTML(std::string Raw_Buffer, element* parent);
     
     /**
      * @brief Parses the HTML tokens.
@@ -249,9 +249,9 @@ namespace GGUI{
      * This function parses the HTML tokens by combining wrappers like: <, >, (, ), etc...
      * It also captures decimals, parses operators in Reverse PEMDAS order, and combines dynamic wrappers like: <html>, </html>
      */
-    extern std::vector<HTML_Token*>& Parse_HTML(std::vector<HTML_Token*>& Input);
+    extern std::vector<HTMLToken*>& parseHTML(std::vector<HTMLToken*>& Input);
 
-    extern void Parse_Embedded_Bytes(int& i, std::vector<HTML_Token*>& Input);
+    extern void parseEmbeddedBytes(int& i, std::vector<HTMLToken*>& Input);
 
     /**
      * @brief Parses all wrappers in the given vector of tokens.
@@ -266,7 +266,7 @@ namespace GGUI{
      * - ""
      * - '
      */
-    extern void Parse_All_Wrappers(int& i, std::vector<HTML_Token*>& Input);
+    extern void parseAllWrappers(int& i, std::vector<HTMLToken*>& Input);
 
     /**
      * @brief Parses all wrappers in the given vector of tokens.
@@ -282,7 +282,7 @@ namespace GGUI{
      * - ""
      * - '
      */
-    extern void Parse_Dynamic_Wrappers(int& i, std::vector<HTML_Token*>& Input, std::string word);
+    extern void parseDynamicWrappers(int& i, std::vector<HTMLToken*>& Input, std::string word);
 
     /**
      * @brief Parses a wrapper token and all of its child tokens.
@@ -298,9 +298,9 @@ namespace GGUI{
      *          If the start pattern is not found in the input vector, the function does nothing.
      *          If the nested count is still above 0 even after looping through all the tokens, just ignore lolw.
      */
-    extern void Parse_Wrapper(std::string start_pattern, std::string end_pattern, int& i, std::vector<HTML_Token*>& Input);
+    extern void parseWrapper(std::string start_pattern, std::string end_pattern, int& i, std::vector<HTMLToken*>& Input);
 
-    extern const std::vector<HTML_Group> Groups;
+    extern const std::vector<HTMLGroup> Groups;
 
     /**
      * @brief Lexes the raw HTML string into a vector of HTML tokens.
@@ -311,7 +311,7 @@ namespace GGUI{
      * It identifies different types of tokens such as text, numbers, operators, etc.
      * and returns a vector containing these tokens.
      */
-    extern std::vector<HTML_Token*> Lex_HTML(std::string Raw_Buffer);
+    extern std::vector<HTMLToken*> lexHTML(std::string Raw_Buffer);
 
     /**
      * @brief Parses a vector of HTML tokens into HTML nodes.
@@ -323,9 +323,9 @@ namespace GGUI{
      * and returns a vector containing these nodes. 
      * Only non-null nodes are added to the result vector.
      */
-    extern std::vector<HTML_Node*> Parse_Lexed_Tokens(std::vector<HTML_Token*> Input);
+    extern std::vector<HTMLNode*> parseLexedTokens(std::vector<HTMLToken*> Input);
 
-    extern std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>>* HTML_Translators;
+    extern std::unordered_map<std::string, std::function<GGUI::element* (HTMLNode*)>>* HTMLTranslators;
 
     extern std::unordered_map<std::string, double> POSTFIX_COEFFICIENT;
 
@@ -360,12 +360,12 @@ namespace GGUI{
      * It initializes the HTML_Translators map if it's not already initialized,
      * and inserts the provided id and handler into the map.
      */
-    #define GGUI_Add_Translator(id, handler) \
+    #define GGUIAddTranslator(id, handler) \
         auto CONCAT(CONCAT(_, __LINE__), __COUNTER__) = [](){ \
-            if (GGUI::HTML_Translators == nullptr){ \
-                GGUI::HTML_Translators = new std::unordered_map<std::string, std::function<GGUI::Element* (GGUI::HTML_Node*)>>(); \
+            if (GGUI::HTMLTranslators == nullptr){ \
+                GGUI::HTMLTranslators = new std::unordered_map<std::string, std::function<GGUI::element* (GGUI::HTMLNode*)>>(); \
             } \
-            return GGUI::HTML_Translators->insert({id, handler}); \
+            return GGUI::HTMLTranslators->insert({id, handler}); \
         }();
 
     /**
@@ -380,7 +380,7 @@ namespace GGUI{
      * paused GGUI state, meaning all events and updates are paused. After the 
      * translator has been run, the processed node is removed from the input vector.
      */
-    extern std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input);
+    extern std::vector<element*> parseTranslators(std::vector<HTMLNode*>& Input);
 
     /**
      * @brief Converts an HTML token into an HTML node.
@@ -394,7 +394,7 @@ namespace GGUI{
      * If the child is not an attribute, it's converted into an HTML node using this function recursively.
      * Finally, the function returns the HTML node.
      */
-    extern HTML_Node* Factory(HTML_Token* Input);
+    extern HTMLNode* factory(HTMLToken* Input);
 
     /**
      * @brief Parses a postfix for a numeric token.
@@ -406,7 +406,7 @@ namespace GGUI{
      * If the next token is a postfix, it adds it to the current token as a child and marks the current token as having a postfix.
      * Then it removes the postfix token from the input vector.
      */
-    extern void Parse_Numeric_Postfix(int& i, std::vector<HTML_Token*>& Input);
+    extern void parseNumericPostfix(int& i, std::vector<HTMLToken*>& Input);
 
     /**
      * @brief Parses a decimal number token.
@@ -419,7 +419,7 @@ namespace GGUI{
      * If the decimal number is valid, it creates a new token with the decimal value and replaces the current token with it.
      * If the decimal number is invalid, it reports an error.
      */
-    extern void Parse_Decimal(int& i, std::vector<HTML_Token*>& Input);
+    extern void parseDecimal(int& i, std::vector<HTMLToken*>& Input);
 
     /**
      * @brief Parses an operator token and its surrounding tokens.
@@ -434,7 +434,7 @@ namespace GGUI{
      * The function also sets the type of the token to ATTRIBUTE and removes the left and right tokens
      * from the input vector. The index is updated accordingly.
      */
-    extern void Parse_Operator(int& i, std::vector<HTML_Token*>& Input, char operator_type);
+    extern void parseOperator(int& i, std::vector<HTMLToken*>& Input, char operator_type);
 
     /**
      * @brief Reports an error to the user.
@@ -444,7 +444,7 @@ namespace GGUI{
      * This function appends the location of the error to the error message and
      * calls the GGUI::Report function to display the error to the user.
      */
-    extern void Report(std::string problem, FILE_POSITION location);
+    extern void report(std::string problem, filePosition location);
 
     /**
      * @brief Converts an Element to an HTML node.
@@ -456,7 +456,7 @@ namespace GGUI{
      * Then it adds the attributes of the element to the node.
      * The width and height of the element are added as number type attributes.
      */
-    extern HTML_Node* Element_To_Node(Element* e);
+    extern HTMLNode* elementToNode(element* e);
 
     /**
      * @brief Computes the value of a given token.
@@ -471,7 +471,7 @@ namespace GGUI{
      * checks if the token has a postfix and if so, it calls the Compute_Post_Fix_As_Coefficient
      * function to compute the coefficient of the postfix. The computed value is then returned.
      */
-    extern double Compute_Val(HTML_Token* val, HTML_Node* parent, std::string attr_name);
+    extern double computeVal(HTMLToken* val, HTMLNode* parent, std::string attr_name);
 
     /**
      * @brief Computes the result of an operator token.
@@ -485,7 +485,7 @@ namespace GGUI{
      * @param attr_name The name of the attribute associated with the token.
      * @return The computed result of the operator.
      */
-    extern double Compute_Operator(HTML_Token* op, HTML_Node* parent, std::string attr_name);
+    extern double computeOperator(HTMLToken* op, HTMLNode* parent, std::string attr_name);
 
     /**
      * @brief Computes the result of a postfix token as a coefficient.
@@ -498,7 +498,7 @@ namespace GGUI{
      * @param attr_name The name of the attribute associated with the token.
      * @return The computed coefficient.
      */
-    extern double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent, std::string attr_name);
+    extern double computePostFixAsCoefficient(std::string postfix, HTMLNode* parent, std::string attr_name);
 
     /**
      * @brief Translates an HTML node's attributes to an Element.
@@ -509,7 +509,7 @@ namespace GGUI{
      * It sets the Element's width and height attributes using the Compute_Val function.
      * It also sets the Element's flexbox properties if the flex-direction attribute is set.
      */
-    extern void Translate_Attributes_To_Element(Element* e, HTML_Node* input);
+    extern void translateAttributesToElement(element* e, HTMLNode* input);
 
     /**
      * @brief Translates the child nodes of an HTML node to an Element.
@@ -524,7 +524,7 @@ namespace GGUI{
      * to an Element, and the Element is added as a child to the parent Element.
      * Finally, the concatenated text from the Raw_Text vector is set to the provided string pointer.
      */
-    extern void Translate_Childs_To_Element(Element* e, HTML_Node* input, std::string* Set_Text_To);
+    extern void translateChildsToElement(element* e, HTMLNode* input, std::string* Set_Text_To);
 
 }
 

@@ -18,16 +18,16 @@ namespace GGUI{
      * @param color The color of the pixel.
      * @param Flush Whether or not to call Update_Frame() after setting the pixel.
      */
-    void Canvas::Set(unsigned int x, unsigned int y, RGB color, bool Flush){
-        unsigned int Actual_X = x + Has_Border(); // Add the border offset to the x coordinate.
-        unsigned int Actual_Y = y + Has_Border(); // Add the border offset to the y coordinate.
+    void canvas::set(unsigned int x, unsigned int y, RGB color, bool Flush){
+        unsigned int Actual_X = x + hasBorder(); // Add the border offset to the x coordinate.
+        unsigned int Actual_Y = y + hasBorder(); // Add the border offset to the y coordinate.
 
-        Buffer[Actual_X + Actual_Y * Get_Width()] = color; // Set the color of the pixel at the calculated coordinates.
+        Buffer[Actual_X + Actual_Y * getWidth()] = color; // Set the color of the pixel at the calculated coordinates.
 
         Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty so that it will be updated the next time Update_Frame() is called.
 
         if (Flush)
-            Update_Frame(); // If Flush is true, call Update_Frame() to update the canvas.
+            updateFrame(); // If Flush is true, call Update_Frame() to update the canvas.
     }
 
 
@@ -37,9 +37,9 @@ namespace GGUI{
      * This function flushes the canvas by calling Update_Frame().
      * It is used to update the canvas immediately after making changes to it.
      */
-    void Canvas::Flush(){
+    void canvas::flush(){
         // Call Update_Frame() to update the canvas.
-        Update_Frame();
+        updateFrame();
     }
 
     /**
@@ -48,7 +48,7 @@ namespace GGUI{
      * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the canvas is rendered correctly.
      * @return A vector of UTF objects representing the rendered canvas.
      */
-    std::vector<GGUI::UTF>& Canvas::Render() {
+    std::vector<GGUI::UTF>& canvas::render() {
         std::vector<GGUI::UTF>& Result = Render_Buffer;
         
         // Check for Dynamic attributes
@@ -70,14 +70,14 @@ namespace GGUI{
 
         // Parse classes if the CLASS stain is detected.
         if (Dirty.is(STAIN_TYPE::CLASS)) {
-            Parse_Classes();
+            parseClasses();
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
         if (Dirty.is(STAIN_TYPE::STRETCH)) {
             Result.clear();
-            Result.resize(Get_Width() * Get_Height());
+            Result.resize(getWidth() * getHeight());
             Dirty.Clean(STAIN_TYPE::STRETCH);
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
         }
@@ -85,31 +85,31 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::MOVE)){
             Dirty.Clean(STAIN_TYPE::MOVE);
         
-            Update_Absolute_Position_Cache();
+            updateAbsolutePositionCache();
         }
 
         // Apply the color system if the COLOR stain is detected.
         if (Dirty.is(STAIN_TYPE::COLOR)) {
             Dirty.Clean(STAIN_TYPE::COLOR);
 
-            unsigned int Start_X = Has_Border();
-            unsigned int Start_Y = Has_Border();
-            unsigned int End_X = Get_Width() - Has_Border();
-            unsigned int End_Y = Get_Height() - Has_Border();
+            unsigned int Start_X = hasBorder();
+            unsigned int Start_Y = hasBorder();
+            unsigned int End_X = getWidth() - hasBorder();
+            unsigned int End_Y = getHeight() - hasBorder();
 
             // Loop over each pixel within the border to set the background color.
             for (unsigned int y = Start_Y; y < End_Y; y++) {
                 for (unsigned int x = Start_X; x < End_X; x++) {
                     UTF Current_Pixel;
-                    Current_Pixel.Set_Background(Buffer[x + y * Get_Width()]);
-                    Result[x + y * Get_Width()] = Current_Pixel;
+                    Current_Pixel.Set_Background(Buffer[x + y * getWidth()]);
+                    Result[x + y * getWidth()] = Current_Pixel;
                 }
             }
         }
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(STAIN_TYPE::EDGE))
-            Add_Overhead(this, Result);
+            addOverhead(this, Result);
 
         return Result;
     }
@@ -122,7 +122,7 @@ namespace GGUI{
      * @param offset The number of frames to skip before playing the animation.
      * @param speed The speed of the animation playback.
      */
-    Sprite::Sprite(std::vector<GGUI::UTF> frames, int offset, int speed)
+    sprite::sprite(std::vector<GGUI::UTF> frames, int offset, int speed)
         : Frames(frames), Offset(offset), Speed(speed) {
         // Check if the frames size is an power of twos compliment
         // This is done to make sure the animation can be looped without any issues
@@ -140,7 +140,7 @@ namespace GGUI{
      *          If it is, it removes the instance from the list to properly manage resources.
      *          It then calls the base class destructor to ensure all parent class resources are cleaned up.
      */
-    Terminal_Canvas::~Terminal_Canvas() {
+    terminalCanvas::~terminalCanvas() {
         // Check if this Terminal_Canvas is in the multi-frame list
         if (INTERNAL::Multi_Frame_Canvas.find(this) != INTERNAL::Multi_Frame_Canvas.end()) {
             // Remove the canvas from the multi-frame list
@@ -148,7 +148,7 @@ namespace GGUI{
         }
 
         // Call the base class destructor to clean up parent resources
-        Element::~Element();
+        element::~element();
     }
 
     /**
@@ -160,19 +160,19 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void Terminal_Canvas::Set(unsigned int x, unsigned int y, Sprite& sprite, bool Flush){
-        unsigned int Actual_X = x + Has_Border(); // Calculate the actual x coordinate, accounting for border offset.
-        unsigned int Actual_Y = y + Has_Border(); // Calculate the actual y coordinate, accounting for border offset.
+    void terminalCanvas::set(unsigned int x, unsigned int y, sprite& sprite, bool Flush){
+        unsigned int Actual_X = x + hasBorder(); // Calculate the actual x coordinate, accounting for border offset.
+        unsigned int Actual_Y = y + hasBorder(); // Calculate the actual y coordinate, accounting for border offset.
 
-        unsigned int Location = Actual_X + Actual_Y * Get_Width(); // Determine the buffer index for the sprite.
+        unsigned int Location = Actual_X + Actual_Y * getWidth(); // Determine the buffer index for the sprite.
 
         // Resize buffer if necessary to match the width x height of the canvas.
-        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= Get_Width() * Get_Height())){
-            Buffer.resize(Get_Width() * Get_Height());
+        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= getWidth() * getHeight())){
+            Buffer.resize(getWidth() * getHeight());
         }
 
         // Check for multi-frame support and update the management map if needed.
-        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
+        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
             INTERNAL::Multi_Frame_Canvas[this] = true;
             Multi_Frame = true;
         }
@@ -182,7 +182,7 @@ namespace GGUI{
         Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
 
         if (Flush)
-            Update_Frame(); // Update the frame if Flush is true.
+            updateFrame(); // Update the frame if Flush is true.
     }
 
     /**
@@ -194,19 +194,19 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void Terminal_Canvas::Set(unsigned int x, unsigned int y, Sprite&& sprite, bool Flush){
-        unsigned int Actual_X = x + Has_Border(); // Calculate the actual x coordinate, accounting for border offset.
-        unsigned int Actual_Y = y + Has_Border(); // Calculate the actual y coordinate, accounting for border offset.
+    void terminalCanvas::set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush){
+        unsigned int Actual_X = x + hasBorder(); // Calculate the actual x coordinate, accounting for border offset.
+        unsigned int Actual_Y = y + hasBorder(); // Calculate the actual y coordinate, accounting for border offset.
 
-        unsigned int Location = Actual_X + Actual_Y * Get_Width(); // Determine the buffer index for the sprite.
+        unsigned int Location = Actual_X + Actual_Y * getWidth(); // Determine the buffer index for the sprite.
 
         // Resize buffer if necessary to match the width x height of the canvas.
-        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= Get_Width() * Get_Height())){
-            Buffer.resize(Get_Width() * Get_Height());
+        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= getWidth() * getHeight())){
+            Buffer.resize(getWidth() * getHeight());
         }
 
         // Check for multi-frame support and update the management map if needed.
-        if (!Is_Multi_Frame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
+        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
             INTERNAL::Multi_Frame_Canvas[this] = true;
             Multi_Frame = true;
         }
@@ -216,7 +216,7 @@ namespace GGUI{
         Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
 
         if (Flush)
-            Update_Frame(); // Update the frame if Flush is true.
+            updateFrame(); // Update the frame if Flush is true.
     }
 
     /**
@@ -228,15 +228,15 @@ namespace GGUI{
      * @param sprite The UTF sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void Terminal_Canvas::Set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
-        unsigned int Actual_X = x + Has_Border(); // Calculate the actual x coordinate, accounting for border offset.
-        unsigned int Actual_Y = y + Has_Border(); // Calculate the actual y coordinate, accounting for border offset.
+    void terminalCanvas::set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
+        unsigned int Actual_X = x + hasBorder(); // Calculate the actual x coordinate, accounting for border offset.
+        unsigned int Actual_Y = y + hasBorder(); // Calculate the actual y coordinate, accounting for border offset.
 
-        unsigned int Location = Actual_X + Actual_Y * Get_Width(); // Determine the buffer index for the sprite.
+        unsigned int Location = Actual_X + Actual_Y * getWidth(); // Determine the buffer index for the sprite.
 
         // Resize buffer if necessary to match the width x height of the canvas.
-        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= Get_Width() * Get_Height())){
-            Buffer.resize(Get_Width() * Get_Height());
+        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= getWidth() * getHeight())){
+            Buffer.resize(getWidth() * getHeight());
         }
 
         Buffer[Location].Frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
@@ -244,7 +244,7 @@ namespace GGUI{
         Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
 
         if (Flush)
-            Update_Frame(); // Update the frame if Flush is true.
+            updateFrame(); // Update the frame if Flush is true.
     }
 
     /**
@@ -253,12 +253,12 @@ namespace GGUI{
      * If Force_Flush is true, the canvas will be marked as dirty for color updates.
      * @param Force_Flush Whether or not to mark the canvas as dirty for color updates.
      */
-    void Terminal_Canvas::Flush(bool Force_Flush){
+    void terminalCanvas::flush(bool Force_Flush){
         if (Force_Flush){
             Dirty.Dirty(STAIN_TYPE::COLOR);
         }
 
-        Update_Frame();
+        updateFrame();
     }
 
 
@@ -268,7 +268,7 @@ namespace GGUI{
      *          It also handles the multi-frame list and sprite animations.
      * @return A vector of UTF objects representing the rendered canvas.
      */
-    std::vector<GGUI::UTF>& Terminal_Canvas::Render() {
+    std::vector<GGUI::UTF>& terminalCanvas::render() {
         std::vector<GGUI::UTF>& Result = Render_Buffer;
 
         // Check for Dynamic attributes
@@ -288,29 +288,29 @@ namespace GGUI{
             return Result;
 
         if (Dirty.is(STAIN_TYPE::CLASS)) {
-            Parse_Classes();
+            parseClasses();
 
             Dirty.Clean(STAIN_TYPE::CLASS);
         }
 
         if (Dirty.is(STAIN_TYPE::STRETCH)) {
             Result.clear();
-            Result.resize(Get_Width() * Get_Height(), SYMBOLS::EMPTY_UTF);
+            Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
 
             // Also clear and resize the sprite buffer.
             Buffer.clear();
-            Buffer.resize(Get_Width() * Get_Height());
+            Buffer.resize(getWidth() * getHeight());
 
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
-                for (unsigned int y = 0; y < Get_Height(); y++) {
-                    for (unsigned int x = 0; x < Get_Width(); x++) {
-                        Set(x, y, On_Draw(x, y), false);
+                for (unsigned int y = 0; y < getHeight(); y++) {
+                    for (unsigned int x = 0; x < getWidth(); x++) {
+                        set(x, y, On_Draw(x, y), false);
                     }
                 }
             }
             else{
-                Report(Get_Name() + " is missing On_Draw call!");
+                report(getName() + " is missing On_Draw call!");
             }
 
             Dirty.Clean(STAIN_TYPE::STRETCH);
@@ -321,7 +321,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::MOVE)) {
             Dirty.Clean(STAIN_TYPE::MOVE);
 
-            Update_Absolute_Position_Cache();
+            updateAbsolutePositionCache();
         }
 
         // Apply the color system to the resized result list
@@ -329,23 +329,23 @@ namespace GGUI{
 
             Dirty.Clean(STAIN_TYPE::COLOR);
 
-            unsigned int Start_X = Has_Border();
-            unsigned int Start_Y = Has_Border();
+            unsigned int Start_X = hasBorder();
+            unsigned int Start_Y = hasBorder();
 
-            unsigned int End_X = Get_Width() - Has_Border();
-            unsigned int End_Y = Get_Height() - Has_Border();
+            unsigned int End_X = getWidth() - hasBorder();
+            unsigned int End_Y = getHeight() - hasBorder();
 
             unsigned int Pixel_Index = 0;
             for (unsigned int y = Start_Y; y < End_Y; y++) {
                 for (unsigned int x = Start_X; x < End_X; x++) {
-                    Result[x + y * Get_Width()] = Buffer[Pixel_Index++].Render(Current_Animation_Frame);
+                    Result[x + y * getWidth()] = Buffer[Pixel_Index++].render(Current_Animation_Frame);
                 }
             }
         }
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(STAIN_TYPE::EDGE))
-            Add_Overhead(this, Result);
+            addOverhead(this, Result);
 
         return Result;
     }
@@ -355,7 +355,7 @@ namespace GGUI{
      * @param Current_Frame The current frame of the animation.
      * @return The rendered UTF character.
      */
-    UTF Sprite::Render(unsigned char Current_Frame){
+    UTF sprite::render(unsigned char Current_Frame){
         int Frame_Count = Frames.size();
 
         if (Frame_Count < 2){   // Check if current sprite has animation frames.
@@ -414,17 +414,17 @@ namespace GGUI{
      * The function will then set the points in the canvas to the corresponding symbol. If flush is true, the buffer is flushed after
      * the points are set.
      */
-    void GGUI::Terminal_Canvas::Embed_Points(std::vector<bool> pixels, styled_border border_style, bool flush){
+    void GGUI::terminalCanvas::embedPoints(std::vector<bool> pixels, styled_border border_style, bool forceFlush){
 
-        unsigned int Usable_Width = Get_Width() - 2 * Has_Border();
-        unsigned int Usable_Height = Get_Height() - 2 * Has_Border();
+        unsigned int Usable_Width = getWidth() - 2 * hasBorder();
+        unsigned int Usable_Height = getHeight() - 2 * hasBorder();
 
         // first check that the embed-able vector is within the usable area.
         if (pixels.size() != Usable_Width * Usable_Height){
-            INTERNAL::Report_Stack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((Get_Width() - 2 * Has_Border()) * (Get_Height() - 2 * Has_Border())) + " Got: " + std::to_string(pixels.size()));
+            INTERNAL::reportStack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((getWidth() - 2 * hasBorder()) * (getHeight() - 2 * hasBorder())) + " Got: " + std::to_string(pixels.size()));
         }
 
-        std::unordered_map<unsigned int, const char*> custom_border = Get_Custom_Border_Map(border_style);
+        std::unordered_map<unsigned int, const char*> custom_border = getCustomBorderMap(border_style);
 
         // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
         for (unsigned int Y = 0; Y < Usable_Height; Y++){
@@ -448,12 +448,12 @@ namespace GGUI{
 
                 UTF tmp(custom_border[Current_Masks]);
 
-                Set(X, Y, tmp, false);
+                set(X, Y, tmp, false);
             }
         }
 
-        if (flush)
-            Flush();
+        if (forceFlush)
+            flush();
 
         return;
     }
@@ -472,7 +472,7 @@ namespace GGUI{
          * This function draws a line on the canvas by setting the pixels to true.
          * It uses the Bresenham line drawing algorithm to determine which pixels to set.
          */
-        void Line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width) {
+        void line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width) {
             int dx = abs(x2 - x1);
             int dy = abs(y2 - y1);
             int sx = (x1 < x2) ? 1 : -1;
@@ -506,10 +506,10 @@ namespace GGUI{
          * This function creates a line on a given buffer by setting the pixels to true.
          * It uses the Bresenham line drawing algorithm to determine which pixels to set.
          */
-        std::vector<bool> Line(FVector2 Start, FVector2 End, int Buffer_Width){
+        std::vector<bool> line(FVector2 Start, FVector2 End, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
-            Line(Start.X, Start.Y, End.X, End.Y, Result, Buffer_Width);
+            line(Start.X, Start.Y, End.X, End.Y, Result, Buffer_Width);
 
             return Result;
         }
@@ -523,7 +523,7 @@ namespace GGUI{
          * @param pixels The buffer to fill.
          * @param width The width of the buffer.
          */
-        void Symmetry_Filler_For_Circle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width){
+        void symmetryFillerForCircle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width){
             // Fill in the circle symmetrically
             // 8 points for each circle
             pixels[(y_center+y)*width + (x_center+x)] = true;
@@ -548,12 +548,12 @@ namespace GGUI{
          * using the Bresenham circle drawing algorithm to determine which pixels
          * to set.
          */
-        void Circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width){
+        void circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width){
             int x = 0, y = r;
             int d = 3 - 2 * r;
             // Fill in the circle symmetrically
             // 8 points for each circle
-            Symmetry_Filler_For_Circle(x_center, y_center, x, y, pixels, width);
+            symmetryFillerForCircle(x_center, y_center, x, y, pixels, width);
             while (y >= x) {
                 x++;
                 if (d > 0) {
@@ -568,7 +568,7 @@ namespace GGUI{
                 }
                 // Fill in the circle symmetrically
                 // 8 points for each circle
-                Symmetry_Filler_For_Circle(x_center, y_center, x, y, pixels, width);
+                symmetryFillerForCircle(x_center, y_center, x, y, pixels, width);
             }
         }
 
@@ -583,10 +583,10 @@ namespace GGUI{
          * using the Bresenham circle drawing algorithm to determine which pixels
          * to set.
          */
-        std::vector<bool> Circle(FVector2 Center, int Radius, int Buffer_Width){
+        std::vector<bool> circle(FVector2 Center, int Radius, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
-            Circle(Center.X, Center.Y, Radius, Result, Buffer_Width);
+            circle(Center.X, Center.Y, Radius, Result, Buffer_Width);
 
             return Result;
         }
@@ -604,7 +604,7 @@ namespace GGUI{
          * using the parametric equation of the Bezier curve to determine which pixels
          * to set.
          */
-        void Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width){
+        void cubicBezierCurve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width){
             for (double t = 0.0; t <= 1.0; t += 0.001) {
                 double u = 1 - t;
                 double tt = t*t, uu = u*u;
@@ -640,10 +640,10 @@ namespace GGUI{
          * using the parametric equation of the Bezier curve to determine which pixels
          * to set.
          */
-        std::vector<bool> Cubic_Bezier_Curve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, int Buffer_Width){
+        std::vector<bool> cubicBezierCurve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
-            Cubic_Bezier_Curve(P0, P1, P2, P3, Result, Buffer_Width);
+            cubicBezierCurve(P0, P1, P2, P3, Result, Buffer_Width);
 
             return Result;
         }

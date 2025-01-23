@@ -21,7 +21,7 @@
 #include "../core/utils/style.h"
 
 namespace GGUI{
-    class Element{
+    class element{
     protected:
         // Shadows and some other postprocessing effects can have an impact on the final width and height of the element.
         unsigned int Post_Process_Width = 0;
@@ -30,7 +30,7 @@ namespace GGUI{
         // Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
         IVector3 Absolute_Position_Cache;
 
-        class Element* Parent = nullptr;
+        class element* Parent = nullptr;
 
         // Determines if the element is rendered or not.
         bool Show = true;
@@ -51,12 +51,12 @@ namespace GGUI{
         std::string Name = "";
 
         // For long term support made this a pointer to avoid size mismatch.
-        Styling* Style = nullptr;
+        styling* Style = nullptr;
 
-        void (*On_Init)(Element*) = nullptr;
-        void (*On_Destroy)(Element*) = nullptr;
-        void (*On_Hide)(Element*) = nullptr;
-        void (*On_Show)(Element*) = nullptr;
+        void (*On_Init)(element*) = nullptr;
+        void (*On_Destroy)(element*) = nullptr;
+        void (*On_Hide)(element*) = nullptr;
+        void (*On_Show)(element*) = nullptr;
     public:
 
         /**
@@ -69,17 +69,17 @@ namespace GGUI{
          * @param s The Styling object to use for the Element.
          * @param Embed_Styles_On_Construct A flag indicating whether to embed the styles on construction. Only use if you know what you're doing!!!
          */
-        Element(Styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        element(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
         /**
          * @brief For correctly copying data between elements, try the Copy() function.
          * Copying is removed, so that Slicing doesn't happen for the VTable
          */
-        Element(const Element&) = delete;
-        Element& operator=(const GGUI::Element&) = delete;
+        element(const element&) = delete;
+        element& operator=(const GGUI::element&) = delete;
 
-        Element& operator=(Element&&) = default;
-        Element(Element&&) = default;
+        element& operator=(element&&) = default;
+        element(element&&) = default;
 
         /**
          * @brief The destructor for the Element class.
@@ -90,7 +90,7 @@ namespace GGUI{
          * @note This destructor is also responsible for cleaning up the parent
          * element's vector of child elements and the event handlers list.
          */
-        virtual ~Element();
+        virtual ~element();
 
         /**
          * @brief Safely moves the current Element object to a new memory location.
@@ -101,8 +101,8 @@ namespace GGUI{
          * 
          * @return Element* Pointer to the newly created Element object.
          */
-        virtual Element* Safe_Move(){
-            return new Element();
+        virtual element* safeMove(){
+            return new element();
         }
 
         /**
@@ -110,7 +110,7 @@ namespace GGUI{
          * 
          * @return A new Element object that is a copy of this one.
          */
-        Element* Copy();
+        element* copy();
 
         /**
          * @brief Embeds styles into the current element and its child elements.
@@ -119,9 +119,9 @@ namespace GGUI{
          * passing the current element as a parameter. It then recursively calls the 
          * Embed_Styles method on each child element's style.
          */
-        void Embed_Styles();
+        void embedStyles();
 
-        void Add_Styling(Styling& s){
+        void addStyling(styling& s){
             Style->Copy(s);
         }
 
@@ -131,14 +131,14 @@ namespace GGUI{
          * This function sets each stain type on the Dirty object, indicating
          * that the Element needs to be reprocessed for all attributes.
          */
-        void Fully_Stain();
+        void fullyStain();
 
         /**
          * @brief Accumulates all the classes and their styles.
          * @details This method accumulates all the classes and their styles to the
          *          current element.
          */
-        void Parse_Classes();
+        void parseClasses();
 
         /**
          * @brief Returns the Dirty object for the Element.
@@ -147,7 +147,7 @@ namespace GGUI{
          *          Element when it is asked to render.
          * @return A reference to the Dirty object.
          */
-        STAIN& Get_Dirty(){
+        STAIN& getDirty(){
             return Dirty;
         }
 
@@ -156,7 +156,7 @@ namespace GGUI{
          * @brief Returns true if the element is currently focused.
          * @return A boolean indicating whether the element is focused.
          */
-        bool Is_Focused() const{
+        bool isFocused() const{
             return Focused;
         }
 
@@ -166,13 +166,13 @@ namespace GGUI{
          *          If the focus state changes, the element will be dirtied and the frame will be updated.
          * @param f The new focus state.
          */
-        void Set_Focus(bool f);
+        void setFocus(bool f);
 
         /**
          * @brief Returns true if the element is currently hovered.
          * @return A boolean indicating whether the element is hovered.
          */
-        bool Is_Hovered() const{
+        bool isHovered() const{
             return Hovered;
         }
 
@@ -182,7 +182,7 @@ namespace GGUI{
          *          If the hover state changes, the element will be dirtied and the frame will be updated.
          * @param h The new hover state.
          */
-        void Set_Hover_State(bool h);
+        void setHoverState(bool h);
 
         /**
          * @brief Executes the handler function associated with a given state.
@@ -190,7 +190,7 @@ namespace GGUI{
          *          If a handler exists, it invokes the handler function.
          * @param s The state for which the handler should be executed.
          */
-        inline void Check(STATE s){
+        inline void check(STATE s){
             if (s == STATE::INIT && On_Init){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
                 Style->Evaluate_Dynamic_Attribute_Values(this);
@@ -211,9 +211,9 @@ namespace GGUI{
          *          The styling object contains various style attributes such as colors, borders, etc.
          * @return The styling object of the element.
          */
-        Styling Get_Style() const;
+        styling getStyle() const;
 
-        Styling* Get_Direct_Style();
+        styling* getDirectStyle();
 
         /**
          * @brief Sets the styling information of the element.
@@ -223,7 +223,7 @@ namespace GGUI{
          *          will create a new styling object and associate it with the element.
          * @param css The new styling information to associate with the element.
          */
-        void Set_Style(Styling css);
+        void setStyle(styling css);
 
         /**
          * @brief Calculates the hitboxes of all child elements of the element.
@@ -235,7 +235,7 @@ namespace GGUI{
          * @param Starting_Offset The starting offset into the child array. If no argument is provided,
          *                         the function starts at the beginning of the child array.
          */
-        virtual void Calculate_Childs_Hitboxes([[maybe_unused]] unsigned int Starting_Offset = 0) {}
+        virtual void calculateChildsHitboxes([[maybe_unused]] unsigned int Starting_Offset = 0) {}
 
         /**
          * @brief Adds a class to the element.
@@ -244,7 +244,7 @@ namespace GGUI{
          *          The element is then marked as dirty, which will trigger a re-render of the element.
          * @param class_name The name of the class to add.
          */
-        void Add_Class(std::string class_name);
+        void addClass(std::string class_name);
 
         /**
          * @brief Sets the opacity of the element.
@@ -253,7 +253,7 @@ namespace GGUI{
          * function will report an error and do nothing.
          * @param[in] Opacity The opacity value to set.
          */
-        void Set_Opacity(float Opacity);
+        void setOpacity(float Opacity);
         
         /**
          * @brief Sets the opacity of the element using an integer percentage.
@@ -261,7 +261,7 @@ namespace GGUI{
          * and sets the element's opacity. If the value is greater than 100, it will report an error and do nothing.
          * @param[in] Opacity The opacity percentage to set.
          */
-        void Set_Opacity(unsigned int Opacity);
+        void setOpacity(unsigned int Opacity);
 
         /**
          * @brief Gets the current border style of the element.
@@ -273,7 +273,7 @@ namespace GGUI{
          *          connector, and cross connector.
          * @return The current border style of the element.
          */
-        styled_border Get_Border_Style() const {
+        styled_border getBorderStyle() const {
             return Style->Border_Style;
         }
 
@@ -284,7 +284,7 @@ namespace GGUI{
          *          and 1.0 is fully opaque.
          * @return The current opacity of the element.
          */
-        float Get_Opacity() const; 
+        float getOpacity() const; 
 
         /**
          * @brief Checks if the element is transparent.
@@ -293,7 +293,7 @@ namespace GGUI{
          *          indicates that the element is partially or fully transparent.
          * @return True if the element is transparent; otherwise, false.
          */
-        bool Is_Transparent() const;
+        bool isTransparent() const;
 
         /**
          * @brief Gets the processed width of the element.
@@ -302,7 +302,7 @@ namespace GGUI{
          *          original width of the element is returned.
          * @return The processed width of the element.
          */
-        unsigned int Get_Processed_Width();
+        unsigned int getProcessedWidth();
 
         /**
          * @brief Gets the processed height of the element.
@@ -311,7 +311,7 @@ namespace GGUI{
          *          original height of the element is returned.
          * @return The processed height of the element.
          */
-        unsigned int Get_Processed_Height();
+        unsigned int getProcessedHeight();
 
         /**
          * @brief Configures and displays the shadow for the element.
@@ -324,7 +324,7 @@ namespace GGUI{
          * @param Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
          * @param Length The length of the shadow.
          */
-        void Show_Shadow(FVector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
+        void showShadow(FVector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         /**
          * @brief Displays the shadow for the element.
@@ -333,14 +333,14 @@ namespace GGUI{
          * @param Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
          * @param Length The length of the shadow.
          */
-        void Show_Shadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
+        void showShadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         /**
          * @brief Sets the shadow properties for the element.
          * @details This function sets the shadow properties such as direction, color, opacity, and length, and applies the shadow effect to the element. It also marks the element as dirty for a visual update.
          * @param s The shadow properties to set.
          */
-        void Set_Shadow(shadow s);
+        void setShadow(shadow s);
 
         /**
          * @brief Retrieves the parent element.
@@ -348,7 +348,7 @@ namespace GGUI{
          *          If the element has no parent, it will return nullptr.
          * @return A pointer to the parent element.
          */
-        Element* Get_Parent() const{
+        element* getParent() const{
             return Parent;
         }
 
@@ -359,7 +359,7 @@ namespace GGUI{
          *          element.
          * @param parent The parent element to set.
          */
-        void Set_Parent(Element* parent);
+        void setParent(element* parent);
 
         /**
          * @brief Checks if the element has the given class.
@@ -369,7 +369,7 @@ namespace GGUI{
          * @param s The name of the class to check.
          * @return True if the element has the class, false otherwise.
          */
-        bool Has(std::string s) const;
+        bool has(std::string s) const;
 
         /**
          * @brief Checks if the element has the given class ID.
@@ -379,7 +379,7 @@ namespace GGUI{
          * @param s The ID of the class to check.
          * @return True if the element has the class, false otherwise.
          */
-        bool Has(int s) const{
+        bool has(int s) const{
             // Iterate through the class list of the element
             for (auto i : Classes){
                 // If the class ID matches the given ID, return true
@@ -401,13 +401,13 @@ namespace GGUI{
          * @param child The child element for which the fitting dimensions are calculated.
          * @return A pair containing the width and height of the fitting dimensions.
          */
-        std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
+        std::pair<unsigned int, unsigned int> getFittingDimensions(element* child);
 
         /**
          * @brief Returns the maximum dimensions of the element without exceeding the parent element's dimensions.
          * @return A pair containing the maximum width and height of the element.
          */
-        std::pair<unsigned int, unsigned int> Get_Limit_Dimensions();
+        std::pair<unsigned int, unsigned int> getLimitDimensions();
 
         /**
          * @brief Sets the border visibility of the element.
@@ -415,7 +415,7 @@ namespace GGUI{
          *          If the new state is different from the current state, the element will be marked as dirty with the EDGE stain.
          * @param b The new state of the border visibility.
          */
-        virtual void Show_Border(bool b);
+        virtual void showBorder(bool b);
 
         /**
          * @brief Sets the border visibility of the element.
@@ -425,7 +425,7 @@ namespace GGUI{
          * @param b The desired state of the border visibility.
          * @param Previous_State The current state of the border visibility.
          */
-        virtual void Show_Border(bool b, bool Previous_state);
+        virtual void showBorder(bool b, bool Previous_state);
 
         /**
          * @brief Checks if the element has a border.
@@ -433,7 +433,7 @@ namespace GGUI{
          *          It returns true if the element has a border, false otherwise.
          * @return True if the element has a border, false otherwise.
          */
-        bool Has_Border();
+        bool hasBorder();
 
         /**
          * @brief Displays or hides the element and all its children.
@@ -442,7 +442,7 @@ namespace GGUI{
          *          all its children are also hidden.
          * @param f A boolean indicating whether to display (true) or hide (false) the element and its children.
          */
-        void Display(bool f);
+        void display(bool f);
 
         /**
          * @brief Returns whether the element is currently displayed.
@@ -450,7 +450,7 @@ namespace GGUI{
          *          It returns true if the element is displayed and false if the element is hidden.
          * @return A boolean indicating whether the element is displayed (true) or hidden (false).
          */
-        bool Is_Displayed();
+        bool isDisplayed();
 
         /**
          * @brief Adds a child element to the element.
@@ -461,7 +461,7 @@ namespace GGUI{
          *          fit the parent element.
          * @param Child The child element to add.
          */
-        virtual void Add_Child(Element* Child);
+        virtual void addChild(element* Child);
 
         /**
          * @brief Adds a vector of child elements to the current element.
@@ -470,14 +470,14 @@ namespace GGUI{
          * This function adds all the child elements to the current element by calling the Add_Child function for each element in the vector.
          * It also marks the current element as dirty with the DEEP stain after adding all the elements.
          */
-        virtual void Set_Childs(std::vector<Element*> childs);
+        virtual void setChilds(std::vector<element*> childs);
 
         /**
          * @brief Check if any children have changed.
          * @details This function will check if any of the children have changed, this is used to determine if the element needs to be re-drawn.
          * @return true if any children have changed, false otherwise.
          */
-        bool Children_Changed();
+        bool childrenChanged();
         
         /**
          * @brief Check if there are any transparent children.
@@ -485,7 +485,7 @@ namespace GGUI{
          *          are transparent and require redrawing.
          * @return True if any child is transparent and not clean; otherwise, false.
          */
-        bool Has_Transparent_Children();    
+        bool hasTransparentChildren();    
 
         /**
          * @brief Retrieves the list of child elements.
@@ -493,7 +493,7 @@ namespace GGUI{
          *          associated with the current element's style.
          * @return A reference to the vector of child elements.
          */
-        virtual std::vector<Element*>& Get_Childs();
+        virtual std::vector<element*>& getChilds();
 
         /**
          * @brief Removes a child element from the current element.
@@ -505,7 +505,7 @@ namespace GGUI{
          * If it is, the element is deleted and the parent element is marked as dirty with the DEEP and COLOR stains.
          * If the currently focused element is the one being removed, the mouse position is set to the parent element's position.
          */
-        virtual bool Remove(Element* handle);
+        virtual bool remove(element* handle);
 
         /**
          * @brief Removes the element at a given index from the list of child elements.
@@ -515,7 +515,7 @@ namespace GGUI{
          * @param index The index of the element to remove.
          * @return True if the element was successfully removed, false otherwise.
          */
-        virtual bool Remove(unsigned int index);
+        virtual bool remove(unsigned int index);
 
         /**
          * @brief Set the width and height of the element.
@@ -525,21 +525,21 @@ namespace GGUI{
          * @param width The new width of the element.
          * @param height The new height of the element.
          */
-        void Set_Dimensions(unsigned int width, unsigned int height);
+        void setDimensions(unsigned int width, unsigned int height);
 
         /**
          * @brief Get the width of the element.
          * @details This function returns the width of the element.
          * @return The width of the element.
          */
-        constexpr unsigned int Get_Width(){ return Style->Width.Get(); }
+        constexpr unsigned int getWidth(){ return Style->Width.Get(); }
 
         /**
          * @brief Get the height of the element.
          * @details This function returns the height of the element.
          * @return The height of the element.
          */
-        constexpr unsigned int Get_Height() { return Style->Height.Get(); }
+        constexpr unsigned int getHeight() { return Style->Height.Get(); }
 
         /**
          * @brief Set the width of the element.
@@ -548,7 +548,7 @@ namespace GGUI{
          *          The Update_Frame() function is also called to update the frame.
          * @param width The new width of the element.
          */
-        void Set_Width(unsigned int width);
+        void setWidth(unsigned int width);
 
         /**
          * @brief Set the height of the element.
@@ -557,7 +557,7 @@ namespace GGUI{
          *          The Update_Frame() function is also called to update the frame.
          * @param height The new height of the element.
          */
-        void Set_Height(unsigned int height);
+        void setHeight(unsigned int height);
 
         /**
          * @brief Retrieves the evaluation type of the width property.
@@ -567,7 +567,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        EVALUATION_TYPE Get_Width_Type() { return Style->Width.Value.Get_Type(); }
+        EVALUATION_TYPE getWidthType() { return Style->Width.Value.Get_Type(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -576,7 +576,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        EVALUATION_TYPE Get_Height_Type() { return Style->Height.Value.Get_Type(); }
+        EVALUATION_TYPE getHeightType() { return Style->Height.Value.Get_Type(); }
 
         /**
          * @brief Set the position of the element.
@@ -585,7 +585,7 @@ namespace GGUI{
          *          and the frame will be updated.
          * @param c The new position of the element.
          */
-        void Set_Position(IVector3 c);
+        void setPosition(IVector3 c);
        
         /**
          * @brief Set the position of the element.
@@ -594,14 +594,14 @@ namespace GGUI{
          *          and the frame will be updated.
          * @param c The new position of the element.
          */
-        void Set_Position(IVector3* c);
+        void setPosition(IVector3* c);
 
         /**
          * @brief Get the position of the element.
          * @details This function retrieves the position of the element from its style.
          * @return The position of the element as an IVector3 object.
          */
-        constexpr IVector3 Get_Position() { return Style->Position.Get(); }
+        constexpr IVector3 getPosition() { return Style->Position.Get(); }
 
         /**
          * @brief Get the absolute position of the element.
@@ -609,13 +609,13 @@ namespace GGUI{
          *          The absolute position is the position of the element in the context of the entire document or window.
          * @return The absolute position of the element as an IVector3 object.
          */
-        constexpr IVector3 Get_Absolute_Position() { return Absolute_Position_Cache; }
+        constexpr IVector3 getAbsolutePosition() { return Absolute_Position_Cache; }
 
         /**
          * @brief Update the absolute position cache of the element.
          * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
          */
-        void Update_Absolute_Position_Cache();
+        void updateAbsolutePositionCache();
 
         /**
          * @brief Set the margin of the element.
@@ -623,14 +623,14 @@ namespace GGUI{
          *          The margin is stored in the element's style.
          * @param margin The new margin values for the element.
          */
-        void Set_Margin(margin margin);
+        void setMargin(margin margin);
 
         /**
          * @brief Get the margin of the element.
          * @details This function retrieves the margin of the element from its style.
          * @return The margin of the element as a GGUI::margin object.
          */
-        margin Get_Margin() { return Style->Margin; }
+        margin getMargin() { return Style->Margin; }
         
         /**
          * @brief Sets the background color of the element.
@@ -642,7 +642,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the background color.
          */
-        virtual void Set_Background_Color(RGB color);
+        virtual void setBackgroundColor(RGB color);
 
         /**
          * @brief Retrieves the background color of the element.
@@ -652,7 +652,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's background.
          */
-        constexpr RGB Get_Background_Color() { return Style->Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getBackgroundColor() { return Style->Background_Color.Value.Get<RGB>(); }
         
         /**
          * @brief Sets the border color of the element.
@@ -661,7 +661,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the border color.
          */
-        virtual void Set_Border_Color(RGB color);
+        virtual void setBorderColor(RGB color);
         
         /**
          * @brief Retrieves the border color of the element.
@@ -671,7 +671,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border.
          */
-        constexpr RGB Get_Border_Color(){ return Style->Border_Color.Value.Get<RGB>(); }
+        constexpr RGB getBorderColor(){ return Style->Border_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the border background color of the element.
@@ -681,7 +681,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the border background color.
          */
-        virtual void Set_Border_Background_Color(RGB color);
+        virtual void setBorderBackgroundColor(RGB color);
         
         /**
          * @brief Retrieves the border background color of the element.
@@ -691,7 +691,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border background.
          */
-        constexpr RGB Get_Border_Background_Color(){ return Style->Border_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getBorderBackgroundColor(){ return Style->Border_Background_Color.Value.Get<RGB>(); }
         
         /**
          * @brief Sets the text color of the element.
@@ -701,7 +701,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the text color.
          */
-        virtual void Set_Text_Color(RGB color);
+        virtual void setTextColor(RGB color);
 
         /**
          * @brief Retrieves the text color of the element.
@@ -711,7 +711,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's text.
          */
-        constexpr RGB Get_Text_Color(){ return Style->Text_Color.Value.Get<RGB>(); }
+        constexpr RGB getTextColor(){ return Style->Text_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover border color of the element.
@@ -722,7 +722,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the hover border color.
          */
-        void Set_Hover_Border_Color(RGB color);
+        void setHoverBorderColor(RGB color);
 
         /**
          * @brief Retrieves the hover border color of the element.
@@ -732,7 +732,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border.
          */
-        constexpr RGB Get_Hover_Border_Color(){ return Style->Hover_Border_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverBorderColor(){ return Style->Hover_Border_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover background color of the element.
@@ -743,7 +743,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the hover background color.
          */
-        void Set_Hover_Background_Color(RGB color);
+        void setHoverBackgroundColor(RGB color);
 
         /**
          * @brief Retrieves the hover background color of the element.
@@ -753,7 +753,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover background.
          */
-        constexpr RGB Get_Hover_Background_Color(){ return Style->Hover_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverBackgroundColor(){ return Style->Hover_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover text color of the element.
@@ -764,7 +764,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the hover text color.
          */
-        void Set_Hover_Text_Color(RGB color);
+        void setHoverTextColor(RGB color);
 
         /**
          * @brief Retrieves the hover text color of the element.
@@ -774,7 +774,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover text.
          */
-        constexpr RGB Get_Hover_Text_Color(){ return Style->Hover_Text_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverTextColor(){ return Style->Hover_Text_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the hover border background color of the element.
@@ -785,7 +785,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the hover border background color.
          */
-        void Set_Hover_Border_Background_Color(RGB color);
+        void setHoverBorderBackgroundColor(RGB color);
 
         /**
          * @brief Retrieves the hover border background color of the element.
@@ -795,7 +795,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border background.
          */
-        constexpr RGB Get_Hover_Border_Background_Color(){ return Style->Hover_Border_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverBorderBackgroundColor(){ return Style->Hover_Border_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus border color of the element.
@@ -804,7 +804,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the focus border color.
          */
-        void Set_Focus_Border_Color(RGB color);
+        void setFocusBorderColor(RGB color);
 
         /**
          * @brief Retrieves the focus border color of the element.
@@ -814,7 +814,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border.
          */
-        constexpr RGB Get_Focus_Border_Color(){ return Style->Focus_Border_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusBorderColor(){ return Style->Focus_Border_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus background color of the element.
@@ -823,7 +823,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the focus background color.
          */
-        void Set_Focus_Background_Color(RGB color);
+        void setFocusBackgroundColor(RGB color);
 
         /**
          * @brief Retrieves the focus background color of the element.
@@ -833,7 +833,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus background.
          */
-        constexpr RGB Get_Focus_Background_Color(){ return Style->Focus_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusBackgroundColor(){ return Style->Focus_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus text color of the element.
@@ -842,7 +842,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the focus text color.
          */
-        void Set_Focus_Text_Color(RGB color);
+        void setFocusTextColor(RGB color);
 
         /**
          * @brief Retrieves the focus text color of the element.
@@ -852,7 +852,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus text.
          */
-        constexpr RGB Get_Focus_Text_Color(){ return Style->Focus_Text_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusTextColor(){ return Style->Focus_Text_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the focus border background color of the element.
@@ -862,7 +862,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the focus border background color.
          */
-        void Set_Focus_Border_Background_Color(RGB color);
+        void setFocusBorderBackgroundColor(RGB color);
 
         /**
          * @brief Retrieves the focus border background color of the element.
@@ -872,7 +872,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border background.
          */
-        constexpr RGB Get_Focus_Border_Background_Color(){ return Style->Focus_Border_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusBorderBackgroundColor(){ return Style->Focus_Border_Background_Color.Value.Get<RGB>(); }
 
         /**
          * @brief Sets the alignment of the element.
@@ -881,7 +881,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        void Set_Align(ALIGN a);
+        void setAlign(ALIGN a);
 
         /**
          * @brief Sets the alignment of the element.
@@ -890,7 +890,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        constexpr ALIGN Get_Align(){ return Style->Align.Value; }
+        constexpr ALIGN getAlign(){ return Style->Align.Value; }
 
         /**
          * @brief Sets the flow priority of the element.
@@ -900,7 +900,7 @@ namespace GGUI{
          * 
          * @param Priority The flow priority value to set for the element.
          */
-        void Set_Flow_Priority(DIRECTION d);
+        void setFlowPriority(DIRECTION d);
 
         /**
          * @brief Retrieves the flow priority of the element.
@@ -910,7 +910,7 @@ namespace GGUI{
          * 
          * @return The flow priority value of the element.
          */
-        constexpr DIRECTION Get_Flow_Priority(){ return Style->Flow_Priority.Value; }
+        constexpr DIRECTION getFlowPriority(){ return Style->Flow_Priority.Value; }
 
         /**
          * @brief Sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
@@ -921,7 +921,7 @@ namespace GGUI{
          * 
          * @param Wrap The value to set for whether the element will wrap its contents to the next line.
          */
-        void Set_Wrap(bool w);
+        void setWrap(bool w);
 
         /**
          * @brief Retrieves the wrap setting of the element.
@@ -931,7 +931,7 @@ namespace GGUI{
          * 
          * @return True if the element will wrap its contents, false otherwise.
          */
-        constexpr bool Get_Wrap(){ return Style->Wrap.Value; }
+        constexpr bool getWrap(){ return Style->Wrap.Value; }
 
         /**
          * @brief Sets whether the element is allowed to dynamically resize.
@@ -941,7 +941,7 @@ namespace GGUI{
          * 
          * @param True A boolean indicating whether dynamic resizing is allowed.
          */
-        void Allow_Dynamic_Size(bool True);
+        void allowDynamicSize(bool True);
 
         /**
          * @brief Checks whether the element is allowed to dynamically resize.
@@ -951,7 +951,7 @@ namespace GGUI{
          * 
          * @return True if the element is allowed to dynamically resize, false otherwise.
          */
-        constexpr bool Is_Dynamic_Size_Allowed(){ return Style->Allow_Dynamic_Size.Value; }
+        constexpr bool isDynamicSizeAllowed(){ return Style->Allow_Dynamic_Size.Value; }
 
         /**
          * @brief Sets whether the element allows overflow.
@@ -961,7 +961,7 @@ namespace GGUI{
          * 
          * @param True A boolean indicating whether overflow is allowed.
          */ 
-        void Allow_Overflow(bool True);
+        void allowOverflow(bool True);
 
         /**
          * @brief Checks whether the element allows overflow.
@@ -971,7 +971,7 @@ namespace GGUI{
          * 
          * @return True if the element allows overflow, false otherwise.
          */
-        constexpr bool Is_Overflow_Allowed(){ return Style->Allow_Overflow.Value; }
+        constexpr bool isOverflowAllowed(){ return Style->Allow_Overflow.Value; }
         
         /**
          * @brief Gets the fitting area for a child element in its parent.
@@ -983,7 +983,7 @@ namespace GGUI{
          * @param Child The child element.
          * @return A pair of pairs containing the fitting area for the child element within the parent element.
          */
-        static std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
+        static std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> getFittingArea(GGUI::element* Parent, GGUI::element* Child);
                 
         /**
          * @brief Recursively computes the size of the element based on its children.
@@ -998,7 +998,7 @@ namespace GGUI{
          *       elements are being rendered. It is not necessary to call this function
          *       manually.
          */
-        void Compute_Dynamic_Size();
+        void computeDynamicSize();
 
         /**
          * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
@@ -1006,7 +1006,7 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
          * @return A vector of UTF objects representing the rendered element and its children.
          */
-        virtual std::vector<GGUI::UTF>& Render();
+        virtual std::vector<GGUI::UTF>& render();
 
         /**
          * @brief Updates the parent element of the current element.
@@ -1021,7 +1021,7 @@ namespace GGUI{
          *       This ensures that the parent element is re-rendered from scratch when the
          *       rendering thread is updated.
          */
-        virtual void Update_Parent(Element* New_Element);
+        virtual void updateParent(element* New_Element);
 
         /**
          * @brief Add the border of the window to the rendered string.
@@ -1029,7 +1029,7 @@ namespace GGUI{
          * @param w The window to add the border for.
          * @param Result The string to add the border to.
          */
-        virtual void Add_Overhead(Element* w, std::vector<UTF>& Result);
+        virtual void addOverhead(element* w, std::vector<UTF>& Result);
 
         /**
          * @brief Apply the color system to the rendered string.
@@ -1041,7 +1041,7 @@ namespace GGUI{
          * @param w The window to apply the color system to.
          * @param Result The vector containing the rendered string.
          */
-        void Apply_Colors(Element* w, std::vector<UTF>& Result);
+        void applyColors(element* w, std::vector<UTF>& Result);
 
         /**
          * @brief Resizes the element to fit the size of its parent element.
@@ -1054,7 +1054,7 @@ namespace GGUI{
          * @param parent The parent element to resize to.
          * @return true if the resize was successful, false otherwise.
          */
-        virtual bool Resize_To([[maybe_unused]] Element* parent){
+        virtual bool resizeTo([[maybe_unused]] element* parent){
             return false;
         }
 
@@ -1068,7 +1068,7 @@ namespace GGUI{
          * @param Dest The destination element to which the source element will be blended.
          * @param Source The source element which will be blended to the destination element.
          */
-        void Compute_Alpha_To_Nesting(GGUI::UTF& Dest, GGUI::UTF Source);
+        void computeAlphaToNesting(GGUI::UTF& Dest, GGUI::UTF Source);
 
         /**
          * @brief Nests a child element into a parent element.
@@ -1080,14 +1080,14 @@ namespace GGUI{
          * @param Parent_Buffer The parent element's buffer.
          * @param Child_Buffer The child element's buffer.
          */
-        void Nest_Element(Element* Parent, Element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
+        void nestElement(element* Parent, element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
 
         /**
          * @brief Returns a map of the custom border symbols for the given element.
          * @param e The element to get the custom border map for.
          * @return A map of the custom border symbols where the key is the bit mask of the border and the value is the corresponding symbol.
          */
-        std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(Element* e);
+        std::unordered_map<unsigned int, const char*> getCustomBorderMap(element* e);
 
         /**
          * @brief Returns a map of the custom border symbols for the given border style.
@@ -1095,20 +1095,20 @@ namespace GGUI{
          * @param custom_border_style The custom border style to get the map for.
          * @return A map of the custom border symbols.
          */
-        std::unordered_map<unsigned int, const char*> Get_Custom_Border_Map(GGUI::styled_border custom_border_style);
+        std::unordered_map<unsigned int, const char*> getCustomBorderMap(GGUI::styled_border custom_border_style);
 
         /**
          * @brief Sets the custom border style for the element.
          * @details This function sets the custom border style for the element, marks the element's edges as dirty, and ensures that the border is visible.
          * @param style The custom border style to set.
          */
-        void Set_Custom_Border_Style(GGUI::styled_border style);
+        void setCustomBorderStyle(GGUI::styled_border style);
 
         /**
          * @brief Gets the custom border style of the element.
          * @return The custom border style of the element.
          */
-        GGUI::styled_border Get_Custom_Border_Style(){ return Style->Border_Style; }
+        GGUI::styled_border getCustomBorderStyle(){ return Style->Border_Style; }
 
         /**
          * @brief Posts a process that handles the intersection of borders between two elements and their parent.
@@ -1119,7 +1119,7 @@ namespace GGUI{
          * @param B The second element.
          * @param Parent_Buffer The buffer of the parent element.
          */
-        void Post_Process_Borders(Element* A, Element* B, std::vector<UTF>& Parent_Buffer);
+        void postProcessBorders(element* A, element* B, std::vector<UTF>& Parent_Buffer);
 
         /**
          * @brief Composes the RGB values of the text color and background color of the element.
@@ -1135,7 +1135,7 @@ namespace GGUI{
          * 
          * @return A pair of RGB values representing the text color and background color of the element.
          */
-        std::pair<RGB, RGB>  Compose_All_Text_RGB_Values();
+        std::pair<RGB, RGB>  composeAllTextRGBValues();
 
         /**
          * @brief Composes the RGB values of the text color of the element.
@@ -1147,7 +1147,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's text.
          */
-        RGB  Compose_Text_RGB_Values();
+        RGB  composeTextRGBValues();
         
         /**
          * @brief Composes the RGB values of the background color of the element.
@@ -1159,7 +1159,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's background.
          */
-        RGB  Compose_Background_RGB_Values();
+        RGB  composeBackgroundRGBValues();
 
         /**
          * @brief Composes the RGB values of the border color and background color of the element.
@@ -1169,7 +1169,7 @@ namespace GGUI{
          * Otherwise, the function will return the RGB values of the normal border color and background color.
          * @return A pair of RGB values representing the border color and background color of the element.
          */
-        std::pair<RGB, RGB>  Compose_All_Border_RGB_Values();
+        std::pair<RGB, RGB>  composeAllBorderRGBValues();
 
         /**
          * @brief Returns the name of the element.
@@ -1178,7 +1178,7 @@ namespace GGUI{
          *          class name of the element, separated by a "<" and a ">".
          * @return The name of the element.
          */
-        virtual std::string Get_Name() const {
+        virtual std::string getName() const {
             return "Element<" + Name + ">";
         }
 
@@ -1187,7 +1187,7 @@ namespace GGUI{
          * @details This function sets the name of the element and stores it in the global Element_Names map.
          * @param name The name of the element.
          */
-        void Set_Name(std::string name);
+        void setName(std::string name);
 
         /**
          * @brief Removes the element from the parent element.
@@ -1196,7 +1196,7 @@ namespace GGUI{
          *          If the element does not have a parent, it prints an error message to the console.
          *          The function does not update the frame, so it is the caller's responsibility to update the frame after calling this function.
          */
-        void Remove();
+        void remove();
 
         /**
          * @brief A function that registers a lambda to be executed when the element is clicked.
@@ -1204,7 +1204,7 @@ namespace GGUI{
          *          The lambda is expected to return true if it was successful and false if it failed.
          * @param action The lambda to be called when the element is clicked.
          */
-        void On_Click(std::function<bool(GGUI::Event*)> action);
+        void onClick(std::function<bool(GGUI::Event*)> action);
 
         /**
          * @brief A function that registers a lambda to be executed when the element is interacted with in any way.
@@ -1214,7 +1214,7 @@ namespace GGUI{
          * @param action The lambda to be called when the element is interacted with.
          * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
          */
-        void On(unsigned long long criteria, std::function<bool(GGUI::Event*)> action, bool GLOBAL = false);
+        void on(unsigned long long criteria, std::function<bool(GGUI::Event*)> action, bool GLOBAL = false);
 
         /**
          * @brief Retrieves an element by name.
@@ -1223,7 +1223,7 @@ namespace GGUI{
          * @param name The name of the element to retrieve.
          * @return A pointer to the element if it exists; otherwise, nullptr.
          */
-        Element* Get_Element(std::string name);
+        element* getElement(std::string name);
 
         // TEMPLATES
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -1240,7 +1240,7 @@ namespace GGUI{
          * @return A vector of pointers to the elements that have the same type as the given template.
          */
         template<typename T>
-        std::vector<T*> Get_Elements(){
+        std::vector<T*> getElements(){
             std::vector<T*> result;
 
             // Check if the element in question is of the same type as the template T.
@@ -1251,7 +1251,7 @@ namespace GGUI{
             // Go through the child AST, and check if any of the child elements are of the same type as the template T.
             for (auto e : Style->Childs){
                 // Recursively go through the child AST, and check if any of the child elements are of the same type as the template T.
-                std::vector<T*> child_result = e->Get_Elements<T>();
+                std::vector<T*> child_result = e->getElements<T>();
 
                 // Add the results of the recursive call to the result vector.
                 result.insert(result.end(), child_result.begin(), child_result.end());
@@ -1268,8 +1268,8 @@ namespace GGUI{
          * @param Show_Hidden Flag to determine whether to include hidden elements in the result.
          * @return A vector of pointers to all nested elements.
          */
-        std::vector<Element*> Get_All_Nested_Elements(bool Show_Hidden = false) {
-            std::vector<Element*> result;
+        std::vector<element*> getAllNestedElements(bool Show_Hidden = false) {
+            std::vector<element*> result;
 
             // If the element is not visible and hidden elements should not be shown, return an empty vector.
             if (!Show && !Show_Hidden)
@@ -1279,8 +1279,8 @@ namespace GGUI{
             result.push_back(this);
 
             // Recursively retrieve all nested elements from child elements.
-            for (auto e : Get_Childs()) {
-                std::vector<Element*> child_result = e->Get_All_Nested_Elements(Show_Hidden);
+            for (auto e : getChilds()) {
+                std::vector<element*> child_result = e->getAllNestedElements(Show_Hidden);
                 result.insert(result.end(), child_result.begin(), child_result.end());
             }
 
@@ -1295,27 +1295,27 @@ namespace GGUI{
          * @details By default, elements do not have inherent scrolling abilities.
          *          This function is used as a base for other elements to implement their own scrolling.
          */
-        virtual void Scroll_Up() {}
+        virtual void scrollUp() {}
 
         /**
          * @brief Default virtual function for scrolling down.
          * @details By default, elements do not have inherent scrolling abilities.
          *          This function is used as a base for other elements to implement their own scrolling.
          */
-        virtual void Scroll_Down() {}
+        virtual void scrollDown() {}
 
         /**
          * @brief Reorders child elements based on their z-position.
          * @details This function sorts the child elements of the current element by their z-coordinate
          *          in ascending order, so that elements with a higher z-coordinate appear later in the list.
          */
-        void Re_Order_Childs();
+        void reOrderChilds();
 
         /**
          * @brief Focuses the element.
          * @details This function updates the global focus information by setting the mouse position to the element's position and updating the focused element.
          */
-        void Focus();
+        void focus();
 
         /**
          * @brief Adds a handler function to the state handlers map.
@@ -1324,14 +1324,14 @@ namespace GGUI{
          * @param s The state for which the handler should be executed.
          * @param job The handler function to be executed
          */
-        void On_State(STATE s, void (*job)(Element* self));
+        void onState(STATE s, void (*job)(element* self));
 
         /**
          * @brief Checks if the element needs postprocessing.
          * @details This function checks if the element needs postprocessing by checking if the element has a shadow or is transparent.
          * @return True if the element needs postprocessing; otherwise, false.
          */
-        bool Has_Postprocessing_To_Do();
+        bool hasPostprocessingToDo();
 
         /**
          * @brief Process the shadow of the element.
@@ -1339,14 +1339,14 @@ namespace GGUI{
          *          It then offsets the shadow box buffer by the direction and blends it with the original buffer.
          * @param Current_Buffer The buffer to be processed.
          */
-        void Process_Shadow(std::vector<GGUI::UTF>& Current_Buffer);
+        void processShadow(std::vector<GGUI::UTF>& Current_Buffer);
 
         /**
          * @brief Applies the opacity of the element to the given buffer.
          * @details This function will iterate over the given buffer and apply the opacity of the element to the background and foreground of each UTF character.
          * @param Current_Buffer The buffer to be processed.
          */
-        void Process_Opacity(std::vector<GGUI::UTF>& Current_Buffer);
+        void processOpacity(std::vector<GGUI::UTF>& Current_Buffer);
 
         /**
          * @brief
@@ -1354,7 +1354,7 @@ namespace GGUI{
          * It applies the shadow, and then the opacity to the rendered buffer.
          * @return The postprocessed buffer.
          */
-        virtual std::vector<GGUI::UTF>& Postprocess();
+        virtual std::vector<GGUI::UTF>& postprocess();
 
         // Customization helper function
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -1366,7 +1366,7 @@ namespace GGUI{
          *          The function takes a STAIN_TYPE as a parameter and adds it to the list of stains.
          * @param s The stain to be added.
          */
-        void Add_Stain(STAIN_TYPE s){
+        void addStain(STAIN_TYPE s){
             Dirty.Dirty(s);
         }
 
@@ -1377,25 +1377,25 @@ namespace GGUI{
          * @param other Child element to check
          * @return True if the child element is visible within the bounds of the parent.
          */
-        bool Child_Is_Shown(Element* other);
+        bool childIsShown(element* other);
 
-        inline void Set_On_Init(void (*func)(Element* self)){
+        inline void setOnInit(void (*func)(element* self)){
             On_Init = func;
         }
 
-        inline void Set_On_Destroy(void (*func)(Element* self)){
+        inline void setOnDestroy(void (*func)(element* self)){
             On_Destroy = func;
         }
 
-        inline void Set_On_Hide(void (*func)(Element* self)){
+        inline void setOnHide(void (*func)(element* self)){
             On_Hide = func;
         }
 
-        inline void Set_On_Show(void (*func)(Element* self)){
+        inline void setOnShow(void (*func)(element* self)){
             On_Show = func;
         }
 
-        inline void Force_Style_Evaluation(){
+        inline void forceStyleEvaluation(){
             if (Style)
                 Style->Evaluate_Dynamic_Attribute_Values(this);
         }

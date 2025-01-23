@@ -8,9 +8,9 @@
 
 namespace GGUI{
     namespace INTERNAL{
-        extern void Report_Stack(std::string Problem);
+        extern void reportStack(std::string Problem);
 
-        namespace Atomic{
+        namespace atomic{
 
             template<typename T>
             class Guard {
@@ -42,7 +42,7 @@ namespace GGUI{
                     try {
                         job(*Data);
                     } catch (...) {
-                        Report_Stack("Failed to execute the function!");
+                        reportStack("Failed to execute the function!");
                     }
                 }
 

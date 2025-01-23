@@ -21,30 +21,30 @@ namespace GGUI{
         std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
 
         // For threading system
-        namespace Atomic{
+        namespace atomic{
             std::mutex Mutex;
             std::condition_variable Condition;
 
-            Status Pause_Render_Thread = Status::NOT_INITIALIZED;
+            status Pause_Render_Thread = status::NOT_INITIALIZED;
         }
 
         std::vector<std::thread> Sub_Threads;
 
-        std::vector<INTERNAL::BUFFER_CAPTURE*> Global_Buffer_Captures;
+        std::vector<INTERNAL::bufferCapture*> Global_Buffer_Captures;
 
         unsigned int Max_Width = 0;
         unsigned int Max_Height = 0;
 
-        Atomic::Guard<std::vector<Memory>> Remember;
+        atomic::Guard<std::vector<Memory>> Remember;
 
         std::vector<Action*> Event_Handlers;
         std::vector<Input*> Inputs;
         std::chrono::system_clock::time_point Last_Input_Clear_Time;
 
-        std::unordered_map<std::string, Element*> Element_Names;
+        std::unordered_map<std::string, element*> Element_Names;
 
-        Element* Focused_On = nullptr;
-        Element* Hovered_On = nullptr;
+        element* Focused_On = nullptr;
+        element* Hovered_On = nullptr;
 
         bool Platform_Initialized = false;
 
@@ -52,8 +52,8 @@ namespace GGUI{
         //move 1 by 1, or element by element.
         bool Mouse_Movement_Enabled = true;
 
-        std::unordered_map<std::string, BUTTON_STATE> KEYBOARD_STATES;
-        std::unordered_map<std::string, BUTTON_STATE> PREVIOUS_KEYBOARD_STATES;
+        std::unordered_map<std::string, buttonState> KEYBOARD_STATES;
+        std::unordered_map<std::string, buttonState> PREVIOUS_KEYBOARD_STATES;
 
         // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
         inline time_t MAX_UPDATE_SPEED = TIME::SECOND;
@@ -68,25 +68,25 @@ namespace GGUI{
         unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
         unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
 
-        inline Atomic::Guard<std::unordered_map<int, Styling>> Classes;
+        inline atomic::Guard<std::unordered_map<int, styling>> Classes;
 
         inline std::unordered_map<std::string, int> Class_Names;
 
-        std::unordered_map<GGUI::Terminal_Canvas*, bool> Multi_Frame_Canvas;
+        std::unordered_map<GGUI::terminalCanvas*, bool> Multi_Frame_Canvas;
 
         void* Stack_Start_Address = 0;
         void* Heap_Start_Address = 0;
 
-        Window* Main = nullptr;
+        window* Main = nullptr;
 
-        Atomic::Guard<Carry> Carry_Flags; 
+        atomic::Guard<Carry> Carry_Flags; 
 
         /**
          * @brief Temporary function to return the current date and time in a string.
          * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
          * @note This function will be replaced when the Date_Element is implemented.
          */
-        std::string Now(){
+        std::string now(){
             // This function takes the current time and returns a string of the time.
             // Format: DD.MM.YYYY: SS.MM.HH
             std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -160,7 +160,7 @@ namespace GGUI{
         void De_Initialize(){
             // Clean up file stream handles
             for (auto File_Handle : File_Streamer_Handles){
-                File_Handle.second->~FILE_STREAM(); // Manually call destructor to release resources
+                File_Handle.second->~fileStream(); // Manually call destructor to release resources
             }
 
             File_Streamer_Handles.clear();
@@ -190,11 +190,11 @@ namespace GGUI{
          *
          * @param signum The exit code to be used when terminating the application.
          */
-        void Exit(int signum){
+        void EXIT(int signum){
             INTERNAL::LOGGER::Log("Sending termination signals to subthreads...");
 
             // Gracefully shutdown event and rendering threads.
-            Pause_GGUI([](){
+            pauseGGUI([](){
                 INTERNAL::Carry_Flags([](INTERNAL::Carry& flags){
                     flags.Terminate = true;
                 });
@@ -267,14 +267,14 @@ namespace GGUI{
             LOGGER::Log("Exception Code: " + std::to_string(exceptionInfo->ExceptionRecord->ExceptionCode));
             LOGGER::Log("Exception Address: " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ExceptionRecord->ExceptionAddress)));
             LOGGER::Log(Exception_To_String(exceptionInfo));    // Dump
-            Exit(EXIT_FAILURE); // Graceful termination
+            EXIT(EXIT_FAILURE); // Graceful termination
             return EXCEPTION_EXECUTE_HANDLER;   // For warning fillers, since the execution should not extend to this line.
         }
 
         void Signal_Handler(int signal) {
             if (signal == SIGSEGV) {
                 LOGGER::Log("Segmentation fault occurred.");
-                Exit(EXIT_FAILURE);
+                EXIT(EXIT_FAILURE);
             }
         }
 
@@ -287,7 +287,7 @@ namespace GGUI{
          * @note The number of bytes written to the console is stored in a temporary
          * variable but is not used elsewhere in the function.
          */
-        void Render_Frame(){
+        void renderFrame(){
             // The number of bytes written to the console, not used anywhere else.
             unsigned long long tmp = 0;
             // Move the cursor to the top left corner of the screen.
@@ -305,7 +305,7 @@ namespace GGUI{
          * if the main window is active, its dimensions are set to the updated maximum width
          * and height.
          */
-        void Update_Max_Width_And_Height(){
+        void updateMaxWidthAndHeight(){
             // Get the console information.
             CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
 
@@ -315,12 +315,12 @@ namespace GGUI{
 
             // Check if we got the console information correctly.
             if (INTERNAL::Max_Width == 0 || INTERNAL::Max_Height == 0){
-                INTERNAL::Report_Stack("Failed to get console info!");
+                INTERNAL::reportStack("Failed to get console info!");
             }
 
             // Check that the main window is not active and if so, set its dimensions.
             if (INTERNAL::Main)
-                INTERNAL::Main->Set_Dimensions(INTERNAL::Max_Width, INTERNAL::Max_Height);
+                INTERNAL::Main->setDimensions(INTERNAL::Max_Width, INTERNAL::Max_Height);
         }
 
         void Update_Frame(bool Lock_Event_Thread);
@@ -371,7 +371,7 @@ namespace GGUI{
          * @param None
          * @return None
          */
-        void Query_Inputs(){
+        void queryInputs(){
             // For appending to already existing buffered input which has not yet been processed, we can use the previous Raw_Input_Size to deduce the new starting point.
             INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
 
@@ -416,45 +416,45 @@ namespace GGUI{
 
                     if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
                         INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::UP));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::UP] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::UP] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
                         INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::DOWN));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::DOWN] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::DOWN] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
                         INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::LEFT));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::LEFT] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::LEFT] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
                         INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::RIGHT));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::RIGHT] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::RIGHT] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
                         INTERNAL::Inputs.push_back(new GGUI::Input('\n', GGUI::Constants::ENTER));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
                         INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::SHIFT));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
                         INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::CONTROL));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
                         INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::BACKSPACE));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = INTERNAL::BUTTON_STATE(Pressed);
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
                         INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::ESCAPE));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ESC] = INTERNAL::BUTTON_STATE(Pressed);
-                        Handle_Escape();
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ESC] = INTERNAL::buttonState(Pressed);
+                        handleEscape();
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
                         INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::TAB));
-                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::TAB] = INTERNAL::BUTTON_STATE(Pressed);
-                        Handle_Tabulator();
+                        INTERNAL::KEYBOARD_STATES[BUTTON_STATES::TAB] = INTERNAL::buttonState(Pressed);
+                        handleTabulator();
                     }
                     else if (Raw_Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
                         char Result = Reverse_Engineer_Keybinds(Raw_Input[i].Event.KeyEvent.uChar.AsciiChar);
@@ -535,7 +535,7 @@ namespace GGUI{
          * - Sets the console output code page to UTF-8 mode.
          * - Marks the platform as initialized.
          */
-        void Init_Platform_Stuff(){
+        void initPlatformStuff(){
             // Save the STD handles to prevent excess calls.
             GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
             GLOBAL_STD_INPUT_HANDLE = GetStdHandle(STD_INPUT_HANDLE);
@@ -584,7 +584,7 @@ namespace GGUI{
             if (!GetConsoleScreenBufferInfo(GLOBAL_STD_OUTPUT_HANDLE, &Result)){
                 int Last_Error = GetLastError();
 
-                INTERNAL::Report_Stack("Failed to get console info: " + std::to_string(Last_Error));
+                INTERNAL::reportStack("Failed to get console info: " + std::to_string(Last_Error));
             }
 
             return Result;
@@ -681,7 +681,7 @@ namespace GGUI{
          * - The function uses the Windows API for capturing and resolving stack traces.
          * - The function allocates memory for the SYMBOL_INFO structure and frees it before returning.
          */
-        void Report_Stack(std::string Problem) {
+        void reportStack(std::string Problem) {
             const int Stack_Trace_Depth = 10;
             void* Ptr_Table[Stack_Trace_Depth];
             unsigned short Usable_Depth;
@@ -766,7 +766,7 @@ namespace GGUI{
             Result += "Problem: " + Problem;
 
             // Report the final result
-            Report(Result);  // Assuming `Report()` is defined elsewhere to log the result.
+            report(Result);  // Assuming `Report()` is defined elsewhere to log the result.
         }
 
     }
@@ -1431,7 +1431,7 @@ namespace GGUI{
      *          Based on these checks, it creates corresponding input objects and adds them
      *          to the Inputs list.
      */
-    void MOUSE_API() {
+    void mouseAPI() {
         // Get the duration the left mouse button has been pressed
         unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
             abs(INTERNAL::Current_Time - INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time)).count();
@@ -1477,20 +1477,20 @@ namespace GGUI{
      * @details This function checks if the mouse scroll up or down button has been pressed and if the focused element is not null.
      *          If the focused element is not null, it calls the scroll up or down function on the focused element.
      */
-    void SCROLL_API(){
+    void scrollAPI(){
         // Check if the mouse scroll up button has been pressed
         if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_UP].State){
 
             // If the focused element is not null, call the scroll up function
             if (INTERNAL::Focused_On)
-                INTERNAL::Focused_On->Scroll_Up();
+                INTERNAL::Focused_On->scrollUp();
         }
         // Check if the mouse scroll down button has been pressed
         else if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_SCROLL_DOWN].State){
 
             // If the focused element is not null, call the scroll down function
             if (INTERNAL::Focused_On)
-                INTERNAL::Focused_On->Scroll_Down();
+                INTERNAL::Focused_On->scrollDown();
         }
     }
 
@@ -1501,7 +1501,7 @@ namespace GGUI{
      *          If the focused element is null but the hovered element is not null, it calls the Un_Hover_Element
      *          function to remove the hover.
      */
-    void Handle_Escape(){
+    void handleEscape(){
         // Check if the escape key has been pressed
         if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ESC].State)
             return;
@@ -1509,11 +1509,11 @@ namespace GGUI{
         // If the focused element is not null, remove the focus
         if (INTERNAL::Focused_On){
             INTERNAL::Hovered_On = INTERNAL::Focused_On;
-            Un_Focus_Element();
+            unFocusElement();
         }
         // If the focused element is null but the hovered element is not null, remove the hover
         else if (INTERNAL::Hovered_On){
-            Un_Hover_Element();
+            unHoverElement();
         }
     }
 
@@ -1522,7 +1522,7 @@ namespace GGUI{
      * @details This function selects the next tabbed element as focused and not hovered.
      *          If the shift key is pressed, it goes backwards in the list of tabbed elements.
      */
-    void Handle_Tabulator(){
+    void handleTabulator(){
         // Check if the tab key has been pressed
         if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::TAB].State)
             return;
@@ -1531,7 +1531,7 @@ namespace GGUI{
         bool Shift_Is_Pressed = INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State;
 
         // Get the current element from the selected element
-        Element* Current = INTERNAL::Focused_On;
+        element* Current = INTERNAL::Focused_On;
 
         // If there has not been anything selected then then skip this phase and default to zero.
         if (!Current)
@@ -1558,14 +1558,14 @@ namespace GGUI{
         }
 
         // Now update the focused element with the new index
-        Un_Hover_Element();
-        Update_Focused_Element(INTERNAL::Event_Handlers[Current_Index]->Host);
+        unHoverElement();
+        updateFocusedElement(INTERNAL::Event_Handlers[Current_Index]->Host);
     }
 
     // Returns the length of a Unicode character based on the first byte.
     // @param first_char The first byte of the character.
     // @return The length of the character in bytes. Returns 1 if it is not a Unicode character.
-    int Get_Unicode_Length(char first_char) {
+    int getUnicodeLength(char first_char) {
         // Check if the character is an ASCII character (0xxxxxxx)
         if (!Has_Bit_At(first_char, 7)) // ASCII characters have the most significant bit as 0
             return 1;
@@ -1592,7 +1592,7 @@ namespace GGUI{
      *
      * @return The current maximum width of the terminal.
      */
-    int Get_Max_Width(){
+    int getMaxWidth(){
         if (INTERNAL::Max_Width == 0 && INTERNAL::Max_Height == 0){
             INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& current_carry){
                 current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
@@ -1608,7 +1608,7 @@ namespace GGUI{
      *
      * @return The current maximum height of the terminal.
      */
-    int Get_Max_Height(){
+    int getMaxHeight(){
         if (INTERNAL::Max_Width == 0 && INTERNAL::Max_Height == 0){
             INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& current_carry){
                 current_carry.Resize = true;    // Tell the render thread that an resize is needed to be performed.
@@ -1635,7 +1635,7 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    GGUI::Super_String* Liquify_UTF_Text(std::vector<GGUI::UTF>& Text, int Width, int Height){
+    GGUI::Super_String* liquifyUTFText(std::vector<GGUI::UTF>& Text, int Width, int Height){
         const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
         
         // Since they are located as globals we need to remember to restart the starting offset.
@@ -1687,34 +1687,34 @@ namespace GGUI{
      * @details This function updates the frame. It's the main entry point for the rendering thread.
      * @note This function will return immediately if the rendering thread is paused.
      */
-    void Update_Frame(){
-        std::unique_lock lock(INTERNAL::Atomic::Mutex);
+    void updateFrame(){
+        std::unique_lock lock(INTERNAL::atomic::Mutex);
 
         // Check if the rendering thread is paused.
-        if (INTERNAL::Atomic::Pause_Render_Thread == INTERNAL::Atomic::Status::LOCKED)
+        if (INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::LOCKED)
             return;
 
         // Give the rendering thread one ticket.
-        INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::RESUMED;
+        INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::RESUMED;
 
         // Notify all waiting threads that the frame has been updated.
-        INTERNAL::Atomic::Condition.notify_all();
+        INTERNAL::atomic::Condition.notify_all();
     }
 
     /**
      * @brief Pauses the rendering thread.
      * @details This function pauses the rendering thread. The thread will wait until the rendering thread is resumed.
      */
-    void Pause_GGUI(){
-        std::unique_lock lock(INTERNAL::Atomic::Mutex);
+    void pauseGGUI(){
+        std::unique_lock lock(INTERNAL::atomic::Mutex);
 
         // Set the render status to locked.
-        INTERNAL::Atomic::Pause_Render_Thread = INTERNAL::Atomic::Status::LOCKED;
+        INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::LOCKED;
 
         // Wait for the rendering thread to become available.
-        INTERNAL::Atomic::Condition.wait_for(lock, GGUI::SETTINGS::Thread_Timeout, []{
+        INTERNAL::atomic::Condition.wait_for(lock, GGUI::SETTINGS::Thread_Timeout, []{
             // If the rendering thread is not locked, then the wait is over.
-            return INTERNAL::Atomic::Pause_Render_Thread == INTERNAL::Atomic::Status::LOCKED;
+            return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::LOCKED;
         });
     }
 
@@ -1723,18 +1723,18 @@ namespace GGUI{
      * @details This function resumes the rendering thread after it has been paused.
      * @param restore_render_to The status to restore the rendering thread to.
      */
-    void Resume_GGUI(INTERNAL::Atomic::Status restore_render_to){
+    void resumeGGUI(INTERNAL::atomic::status restore_render_to){
         {
             // Local scope to set the new render status.
-            std::unique_lock lock(INTERNAL::Atomic::Mutex);
+            std::unique_lock lock(INTERNAL::atomic::Mutex);
             // Set the render status to the given status.
-            INTERNAL::Atomic::Pause_Render_Thread = restore_render_to;
+            INTERNAL::atomic::Pause_Render_Thread = restore_render_to;
         }
 
         // Check if the rendering status is anything but locked.
-        if (restore_render_to < INTERNAL::Atomic::Status::LOCKED){
+        if (restore_render_to < INTERNAL::atomic::status::LOCKED){
             // If it's not locked, then update the frame.
-            Update_Frame();
+            updateFrame();
         }
     }
 
@@ -1743,7 +1743,7 @@ namespace GGUI{
      * @details This function is a lambda function that is used by the Atomic::Guard class to prolong or delete memories in the smart memory system.
      *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
      */
-    void Recall_Memories(){
+    void recallMemories(){
         INTERNAL::Remember([](std::vector<Memory>& rememberable){
             std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
@@ -1792,7 +1792,7 @@ namespace GGUI{
                         }
                     }
                     catch (std::exception& e){
-                        INTERNAL::Report_Stack("In memory: '" + rememberable.at(i).ID + "' Problem: " + std::string(e.what()));
+                        INTERNAL::reportStack("In memory: '" + rememberable.at(i).ID + "' Problem: " + std::string(e.what()));
                     }
                 }
 
@@ -1811,7 +1811,7 @@ namespace GGUI{
      * @param current The current element to apply or remove focus.
      * @param Focus The desired focus state.
      */
-    void Recursively_Apply_Focus(Element* current, bool Focus){
+    void Recursively_Apply_Focus(element* current, bool Focus){
         // Flag to determine if the current element is an event handler
         bool Is_An_Event_handler = false;
 
@@ -1824,14 +1824,14 @@ namespace GGUI{
         } 
 
         // If the element is an event handler and the focus state is unchanged, return
-        if (Is_An_Event_handler && current->Is_Focused() != Focus)
+        if (Is_An_Event_handler && current->isFocused() != Focus)
             return;
 
         // Set the focus state on the current element
-        current->Set_Focus(Focus);
+        current->setFocus(Focus);
 
         // Recurse on all child elements
-        for (auto c : current->Get_Childs()){
+        for (auto c : current->getChilds()){
             Recursively_Apply_Focus(c, Focus);
         }
     }
@@ -1845,7 +1845,7 @@ namespace GGUI{
      * @param current The current element to apply or remove hover.
      * @param Hover The desired hover state.
      */
-    void Recursively_Apply_Hover(Element* current, bool Hover){
+    void Recursively_Apply_Hover(element* current, bool Hover){
         // check if the current element is one of the Event handlers, if not, then apply the focus buff.
         bool Is_An_Event_handler = false;
 
@@ -1856,13 +1856,13 @@ namespace GGUI{
             }
         }
 
-        if (Is_An_Event_handler && current->Is_Hovered() != Hover)
+        if (Is_An_Event_handler && current->isHovered() != Hover)
             return;
 
-        current->Set_Hover_State(Hover);
+        current->setHoverState(Hover);
 
         // Recurse on all child elements
-        for (auto c : current->Get_Childs()){
+        for (auto c : current->getChilds()){
             Recursively_Apply_Hover(c, Hover);
         }
     }
@@ -1873,11 +1873,11 @@ namespace GGUI{
      *          If there is, it sets the focus state on the element and its children to false.
      *          Focus is only removed if the element's current focus state differs from the desired state.
      */
-    void Un_Focus_Element(){
+    void unFocusElement(){
         if (!INTERNAL::Focused_On)
             return;
 
-        INTERNAL::Focused_On->Set_Focus(false);
+        INTERNAL::Focused_On->setFocus(false);
 
         // Recursively remove focus from all child elements
         Recursively_Apply_Focus(INTERNAL::Focused_On, false);
@@ -1891,12 +1891,12 @@ namespace GGUI{
      *          If there is, it sets the hover state on the element and its children to false.
      *          Hover is only removed if the element's current hover state differs from the desired state.
      */
-    void Un_Hover_Element(){
+    void unHoverElement(){
         if (!INTERNAL::Hovered_On)
             return;
 
         // Set the hover state to false on the currently hovered element
-        INTERNAL::Hovered_On->Set_Hover_State(false);
+        INTERNAL::Hovered_On->setHoverState(false);
 
         // Recursively remove the hover state from all child elements
         Recursively_Apply_Hover(INTERNAL::Hovered_On, false);
@@ -1912,20 +1912,20 @@ namespace GGUI{
      *          Then, it sets the focus on the new candidate element and all its children.
      * @param new_candidate The new element to focus on.
      */
-    void Update_Focused_Element(GGUI::Element* new_candidate){
+    void updateFocusedElement(GGUI::element* new_candidate){
         if (INTERNAL::Focused_On == new_candidate || new_candidate == INTERNAL::Main)
             return;
 
         // Unfocus the previous focused element and its children
         if (INTERNAL::Focused_On){
-            Un_Focus_Element();
+            unFocusElement();
         }
 
         // Set the focus on the new element and all its children
         INTERNAL::Focused_On = new_candidate;
 
         // Set the focus state on the new element to true
-        INTERNAL::Focused_On->Set_Focus(true);
+        INTERNAL::Focused_On->setFocus(true);
 
         // Recursively set the focus state on all child elements to true
         Recursively_Apply_Focus(INTERNAL::Focused_On, true);
@@ -1938,20 +1938,20 @@ namespace GGUI{
      *          Then, it sets the hover state on the new candidate element and all its children.
      * @param new_candidate The new element to hover on.
      */
-    void Update_Hovered_Element(GGUI::Element* new_candidate){
+    void updateHoveredElement(GGUI::element* new_candidate){
         if (INTERNAL::Hovered_On == new_candidate || new_candidate == INTERNAL::Main)
             return;
 
         // Remove the hover state from the previous hovered element and its children
         if (INTERNAL::Hovered_On){
-            Un_Hover_Element();
+            unHoverElement();
         }
 
         // Set the hover state on the new element and all its children
         INTERNAL::Hovered_On = new_candidate;
 
         // Set the hover state on the new element to true
-        INTERNAL::Hovered_On->Set_Hover_State(true);
+        INTERNAL::Hovered_On->setHoverState(true);
 
         // Recursively set the hover state on all child elements to true
         Recursively_Apply_Hover(INTERNAL::Hovered_On, true);
@@ -1964,10 +1964,10 @@ namespace GGUI{
      *          If the job is successful, it removes the input from the list of inputs.
      *          If the job is unsuccessful, it reports an error.
      */
-    void Event_Handler(){
+    void eventHandler(){
         // Disable hovered element if the mouse isn't on top of it anymore.
         if (INTERNAL::Hovered_On && !Collides(INTERNAL::Hovered_On, GGUI::INTERNAL::Mouse)){
-            Un_Hover_Element();
+            unHoverElement();
         }
 
         // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
@@ -1991,28 +1991,28 @@ namespace GGUI{
                         }
                         else{
                             // TODO: report miscarried event job.
-                            INTERNAL::Report_Stack("Job '" + e->ID + "' failed!");
+                            INTERNAL::reportStack("Job '" + e->ID + "' failed!");
                         }
                     }
                     catch(std::exception& problem){
-                        INTERNAL::Report_Stack("In event: '" + e->ID + "' Problem: " + std::string(problem.what()));
+                        INTERNAL::reportStack("In event: '" + e->ID + "' Problem: " + std::string(problem.what()));
                     }
                 }
             }
 
             // Hosted branches
             if (e->Host){
-                if (!e->Host->Is_Displayed())
+                if (!e->Host->isDisplayed())
                     continue;
 
                 //update the focused
                 if (Collides(e->Host, GGUI::INTERNAL::Mouse)){
                     if (Has_Select_Event){
-                        Update_Focused_Element(e->Host);
-                        Un_Hover_Element();
+                        updateFocusedElement(e->Host);
+                        unHoverElement();
                     }
                     else{
-                        Update_Hovered_Element(e->Host);
+                        updateHoveredElement(e->Host);
                     }
                 }
             }
@@ -2076,7 +2076,7 @@ namespace GGUI{
      * @param n The name of the class.
      * @return The ID of the class.
      */
-    int Get_Free_Class_ID(std::string n){
+    int getFreeClassID(std::string n){
         // Check if the class name is already in the map
         if (INTERNAL::Class_Names.find(n) != INTERNAL::Class_Names.end()){
             // Return the existing class ID
@@ -2100,10 +2100,10 @@ namespace GGUI{
      * @param name The name of the class.
      * @param Styling The styling to be associated with the class.
      */
-    void Add_Class(std::string name, Styling Styling){
+    void addClass(std::string name, styling Styling){
         INTERNAL::Classes([name, Styling](auto& classes){
             // Obtain a unique class ID for the given class name
-            int Class_ID = Get_Free_Class_ID(name);
+            int Class_ID = getFreeClassID(name);
 
             // Associate the styling with the obtained class ID
             classes.at(Class_ID) = Styling;
@@ -2115,16 +2115,16 @@ namespace GGUI{
      * 
      * @return The main window of the GGUI system.
      */
-    GGUI::Window* Init_GGUI(){
+    GGUI::window* initGGUI(){
         INTERNAL::Read_Start_Addresses();
-        SETTINGS::Init_Settings();
+        SETTINGS::initSettings();
         INTERNAL::LOGGER::Init();
         INTERNAL::LOGGER::Log("Starting GGUI Core initialization...");
 
-        INTERNAL::Update_Max_Width_And_Height();
+        INTERNAL::updateMaxWidthAndHeight();
         
         if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
-            INTERNAL::Report_Stack("Width/Height is zero!");
+            INTERNAL::reportStack("Width/Height is zero!");
             return nullptr;
         }
 
@@ -2132,27 +2132,27 @@ namespace GGUI{
         INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
         INTERNAL::Previous_Time = INTERNAL::Current_Time;
 
-        INTERNAL::Init_Platform_Stuff();
+        INTERNAL::initPlatformStuff();
 
         // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
-        INTERNAL::Main = (Window*)0xFFFFFFFF;
-        INTERNAL::Main = new Window(Styling(
+        INTERNAL::Main = (window*)0xFFFFFFFF;
+        INTERNAL::Main = new window(styling(
             width(INTERNAL::Max_Width) |
             height(INTERNAL::Max_Height)
         ), true);
 
         std::thread Rendering_Scheduler([&](){
-            INTERNAL::Renderer();
+            INTERNAL::renderer();
         });
 
-        Init_Addons();
+        initAddons();
 
         std::thread Event_Scheduler([&](){
-            INTERNAL::Event_Thread();
+            INTERNAL::eventThread();
         });
 
         std::thread Inquire_Scheduler([&](){
-            INTERNAL::Input_Thread();
+            INTERNAL::inputThread();
         });
 
         INTERNAL::Sub_Threads.push_back(std::move(Rendering_Scheduler));
@@ -2172,11 +2172,11 @@ namespace GGUI{
      * @note If the main window is not created yet, the error will be printed to the console.
      * @note This function is thread safe.
      */
-    void Report(std::string Problem){
+    void report(std::string Problem){
         const char* ERROR_LOGGER = "_ERROR_LOGGER_";
         const char* HISTORY = "_HISTORY_";
         try{
-            Pause_GGUI([&Problem, &ERROR_LOGGER, &HISTORY]{
+            pauseGGUI([&Problem, &ERROR_LOGGER, &HISTORY]{
                 INTERNAL::LOGGER::Log(Problem);
 
                 Problem = " " + Problem + " ";
@@ -2199,42 +2199,42 @@ namespace GGUI{
                     bool Create_New_Line = true;
 
                     // First check if there already is a report log.
-                    Window* Error_Logger = (Window*)INTERNAL::Main->Get_Element(ERROR_LOGGER);
+                    window* Error_Logger = (window*)INTERNAL::Main->getElement(ERROR_LOGGER);
 
                     if (Error_Logger){
                         // Get the list
-                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
+                        scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
                         // This happens, when Error logger is kidnapped!
                         if (!History){
                             // Now create the history lister
-                            History = new Scroll_View(Styling(
+                            History = new scrollView(styling(
                                 width(1.0f) | height(1.0f) |
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                 flow_priority(DIRECTION::COLUMN) | name(HISTORY)
                             ));
 
-                            Error_Logger->Add_Child(History);
+                            Error_Logger->addChild(History);
                         }
 
-                        std::vector<List_View*>& Rows = (std::vector<List_View*>&)History->Get_Container()->Get_Childs(); 
+                        std::vector<listView*>& Rows = (std::vector<listView*>&)History->getContainer()->getChilds(); 
 
                         if (Rows.size() > 0){
                             //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
-                            Text_Field* Previous_Problem = Rows.back()->Get<Text_Field>(1);
-                            Text_Field* Previous_Repetitions = Rows.back()->Get<Text_Field>(2);
+                            textField* Previous_Problem = Rows.back()->get<textField>(1);
+                            textField* Previous_Repetitions = Rows.back()->get<textField>(2);
 
                             //check if the previous problem was same problem
-                            if (Previous_Problem->Get_Text() == Problem){
+                            if (Previous_Problem->getText() == Problem){
                                 // increase the repetition count by one
                                 if (!Previous_Repetitions){
-                                    Previous_Repetitions = new Text_Field(Styling(text("2")));
-                                    Rows.back()->Add_Child(Previous_Repetitions);
+                                    Previous_Repetitions = new textField(styling(text("2")));
+                                    Rows.back()->addChild(Previous_Repetitions);
                                 }
                                 else{
                                     // translate the string to int
-                                    int Repetition = std::stoi(Previous_Repetitions->Get_Text()) + 1;
-                                    Previous_Repetitions->Set_Text(std::to_string(Repetition));
+                                    int Repetition = std::stoi(Previous_Repetitions->getText()) + 1;
+                                    Previous_Repetitions->setText(std::to_string(Repetition));
                                 }
 
                                 // We dont need to create a new line.
@@ -2244,8 +2244,8 @@ namespace GGUI{
                     }
                     else{
                         // create the error logger
-                        Error_Logger = new Window(
-                            Styling(
+                        Error_Logger = new window(
+                            styling(
                                 width(0.25f) | height(0.5f) |
 
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
@@ -2259,7 +2259,7 @@ namespace GGUI{
                                 
                                 STYLES::border | allow_overflow(true) | 
 
-                                node(new Scroll_View(Styling(
+                                node(new scrollView(styling(
                                     width(1.0f) | height(1.0f) |
                                     text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                     flow_priority(DIRECTION::COLUMN) | name(HISTORY)
@@ -2267,60 +2267,60 @@ namespace GGUI{
                             )
                         );
 
-                        INTERNAL::Main->Add_Child(Error_Logger);
+                        INTERNAL::Main->addChild(Error_Logger);
                     }
 
                     if (Create_New_Line){
                         // re-find the error_logger.
-                        Error_Logger = (Window*)INTERNAL::Main->Get_Element(ERROR_LOGGER);
-                        Scroll_View* History = (Scroll_View*)Error_Logger->Get_Element(HISTORY);
+                        Error_Logger = (window*)INTERNAL::Main->getElement(ERROR_LOGGER);
+                        scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
-                        History->Add_Child(new List_View(Styling(
-                            width(History->Get_Width() - 1) | height(1) | 
+                        History->addChild(new listView(styling(
+                            width(History->getWidth() - 1) | height(1) | 
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                             flow_priority(DIRECTION::ROW) | 
 
                             // The Date field
-                            node(new Text_Field(Styling(
-                                text(INTERNAL::Now().c_str())
+                            node(new textField(styling(
+                                text(INTERNAL::now().c_str())
                             ))) | 
 
                             // The actual reported problem text
-                            node(new Text_Field(Styling(
+                            node(new textField(styling(
                                 text(Problem.c_str())
                             )))
                         )));
 
                         // Calculate the new x position for the Error_Logger
-                        if (Error_Logger->Get_Parent() == INTERNAL::Main)
-                            Error_Logger->Set_Position({
-                                (Error_Logger->Get_Parent()->Get_Width() - History->Get_Width()) / 2,
-                                (Error_Logger->Get_Parent()->Get_Height() - History->Get_Height()) / 2,
+                        if (Error_Logger->getParent() == INTERNAL::Main)
+                            Error_Logger->setPosition({
+                                (Error_Logger->getParent()->getWidth() - History->getWidth()) / 2,
+                                (Error_Logger->getParent()->getHeight() - History->getHeight()) / 2,
                                 POSITION::Max_Z
                             });
 
                         // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                         // We can assume that the singular error is at least one tall.
-                        if (GGUI::Min(History->Get_Container()->Get_Height(), (int)History->Get_Container()->Get_Childs().size()) >= Error_Logger->Get_Height()){
+                        if (GGUI::Min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight()){
                             // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
                             // Element* First_Child = History->Get_Childs()[0];
                             // History->Remove(First_Child);
 
                             // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
-                            History->Scroll_Down();
+                            History->scrollDown();
                         }
                     }
 
                     // If the user has disabled the Inspect_Tool then the errors appear as an popup window ,which disappears after 30s.
-                    if (Error_Logger->Get_Parent() == INTERNAL::Main){
-                        Error_Logger->Display(true);
+                    if (Error_Logger->getParent() == INTERNAL::Main){
+                        Error_Logger->display(true);
 
                         INTERNAL::Remember([Error_Logger](std::vector<Memory>& rememberable){
                             rememberable.push_back(Memory(
                                 TIME::SECOND * 30,
                                 [Error_Logger](GGUI::Event*){
                                     //delete tmp;
-                                    Error_Logger->Display(false);
+                                    Error_Logger->display(false);
                                     //job successfully done
                                     return true;
                                 },
@@ -2333,7 +2333,7 @@ namespace GGUI{
                 }
                 else{
                     if (!INTERNAL::Platform_Initialized){
-                        INTERNAL::Init_Platform_Stuff();
+                        INTERNAL::initPlatformStuff();
                     }
 
                     // This is for the non GGUI space errors.
@@ -2364,41 +2364,41 @@ namespace GGUI{
      * @param Text The text buffer to be nested.
      * @param Parent_Buffer The parent buffer which the text is being nested into.
      */
-    void Nest_UTF_Text(GGUI::Element* Parent, GGUI::Element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer)
+    void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer)
     {
         if (Parent == child)
         {
             std::string R = 
                 std::string("Cannot nest element to it self\n") +
-                std::string("Element name: ") + Parent->Get_Name();
+                std::string("Element name: ") + Parent->getName();
 
-            if (Parent->Get_Parent())
+            if (Parent->getParent())
             {
                 R += std::string("\n") + 
-                std::string("Inside of: ") + Parent->Get_Parent()->Get_Name();
+                std::string("Inside of: ") + Parent->getParent()->getName();
             }
 
-            INTERNAL::Report_Stack(
+            INTERNAL::reportStack(
                 R
             );
         }
 
         // Get the position of the child element in the parent buffer.
-        GGUI::IVector3 C = child->Get_Position();
+        GGUI::IVector3 C = child->getPosition();
 
         int i = 0;
         // Iterate over the parent buffer and copy the text buffer into the parent buffer at the correct position.
-        for (int Parent_Y = 0; Parent_Y < (signed)Parent->Get_Height(); Parent_Y++)
+        for (int Parent_Y = 0; Parent_Y < (signed)Parent->getHeight(); Parent_Y++)
         {
-            for (int Parent_X = 0; Parent_X < (signed)Parent->Get_Width(); Parent_X++)
+            for (int Parent_X = 0; Parent_X < (signed)Parent->getWidth(); Parent_X++)
             {
                 if (
                     Parent_Y >= C.Y && Parent_X >= C.X &&
-                    Parent_Y <= C.Y + (signed)child->Get_Height() &&
-                    Parent_X <= C.X + (signed)child->Get_Width()
+                    Parent_Y <= C.Y + (signed)child->getHeight() &&
+                    Parent_X <= C.X + (signed)child->getWidth()
                 )
                 {
-                    Parent_Buffer[Parent_Y * (signed)Parent->Get_Width() + Parent_X] = Text[i++];
+                    Parent_Buffer[Parent_Y * (signed)Parent->getWidth() + Parent_X] = Text[i++];
                 }
             }
         }
@@ -2409,21 +2409,21 @@ namespace GGUI{
      * @details This function will pause all other GGUI internal threads and call the given function.
      * @param f The function to call.
      */
-    void Pause_GGUI(std::function<void()> f){
+    void pauseGGUI(std::function<void()> f){
 
         // Save the current render status.
-        INTERNAL::Atomic::Status Previous_Render_Status;
+        INTERNAL::atomic::status Previous_Render_Status;
 
         // Make an virtual local scope to temporary own the mutex.
         {
             // Lock the mutex to make sure we are the only one that can change the render status.
-            std::unique_lock lock(INTERNAL::Atomic::Mutex);
+            std::unique_lock lock(INTERNAL::atomic::Mutex);
 
             // Save the current render status.
-            Previous_Render_Status = INTERNAL::Atomic::Pause_Render_Thread;
+            Previous_Render_Status = INTERNAL::atomic::Pause_Render_Thread;
         }
 
-        Pause_GGUI();
+        pauseGGUI();
 
         try{
             // Call the given function.
@@ -2434,11 +2434,11 @@ namespace GGUI{
             std::string Given_Function_Label_Location = Hex(reinterpret_cast<unsigned long long>(&f));
 
             // If an exception is thrown, report the stack trace and the exception message.
-            INTERNAL::Report_Stack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: " + std::string(e.what()));
+            INTERNAL::reportStack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: " + std::string(e.what()));
         }
 
         // Resume the render thread with the previous render status.
-        Resume_GGUI(
+        resumeGGUI(
             Previous_Render_Status
         );
     }
@@ -2452,14 +2452,14 @@ namespace GGUI{
     void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
         INTERNAL::Read_Start_Addresses();
 
-        Pause_GGUI([DOM](){
-            Init_GGUI();
+        pauseGGUI([DOM](){
+            initGGUI();
 
             DOM();
         });
 
         // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
-        Resume_GGUI();
+        resumeGGUI();
 
         INTERNAL::SLEEP(Sleep_For);
         // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
@@ -2471,21 +2471,21 @@ namespace GGUI{
      * @param DOM The elements to add to the root window.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    void GGUI(Styling App, unsigned long long Sleep_For){
+    void GGUI(styling App, unsigned long long Sleep_For){
         INTERNAL::Read_Start_Addresses();
 
-        Pause_GGUI([&App](){
-            Init_GGUI();
+        pauseGGUI([&App](){
+            initGGUI();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
-            INTERNAL::Main->Add_Styling(App);
+            INTERNAL::Main->addStyling(App);
 
             // Now recursively go down in the App AST nodes and Build each node.
-            INTERNAL::Main->Embed_Styles();
+            INTERNAL::Main->embedStyles();
         });
 
         // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
-        Resume_GGUI();
+        resumeGGUI();
 
         // Sleep for the given amount of milliseconds.
         INTERNAL::SLEEP(Sleep_For);
@@ -2499,7 +2499,7 @@ namespace GGUI{
      *          It checks each UTF element's foreground and background colors with its adjacent elements
      *          to determine where encoding strips start and end.
      */
-    void Encode_Buffer(std::vector<GGUI::UTF>& Buffer) {
+    void encodeBuffer(std::vector<GGUI::UTF>& Buffer) {
         
         // Initialize the first and last elements with start and end flags respectively.
         Buffer[0].Set_Flag(UTF_FLAG::ENCODE_START);
@@ -2538,7 +2538,7 @@ namespace GGUI{
      *
      * @param informer Pointer to the buffer capturer with the latest data.
      */
-    void Inform_All_Global_BUFFER_CAPTURES(INTERNAL::BUFFER_CAPTURE* informer){
+    void informAllGlobalBufferCaptures(INTERNAL::bufferCapture* informer){
 
         // Iterate over all global buffer capturers
         for (auto* capturer : INTERNAL::Global_Buffer_Captures){
@@ -2546,7 +2546,7 @@ namespace GGUI{
                 continue;
 
             // Give the capturers the latest row of captured buffer data
-            if (capturer->Sync(informer)){
+            if (capturer->sync(informer)){
                 // success
             }
             else{

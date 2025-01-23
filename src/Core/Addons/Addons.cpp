@@ -9,10 +9,10 @@
 #include <vector>
 
 namespace GGUI{
-    std::vector<Element*> Addons;
+    std::vector<element*> Addons;
 
     namespace INTERNAL{
-        extern Window* Main;
+        extern window* Main;
     }
 
     /**
@@ -22,13 +22,13 @@ namespace GGUI{
      * After all addons are loaded, it iterates through the list of addons
      * and adds each one to the main internal structure.
      */
-    void Init_Addons(){
+    void initAddons(){
         // Call addon initializers.
-        Init_Inspect_Tool();
+        initInspectTool();
 
         // Finally after all addons are loaded
         for (auto* a : Addons){
-            INTERNAL::Main->Add_Child(a);
+            INTERNAL::Main->addChild(a);
         }
     }
 
@@ -51,7 +51,7 @@ namespace GGUI{
     std::string Get_Stats_Text(){
         return  "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
                 "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
-                "Elements: " + std::to_string(INTERNAL::Main->Get_All_Nested_Elements().size()) + "\n" +
+                "Elements: " + std::to_string(INTERNAL::Main->getAllNestedElements().size()) + "\n" +
                 "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
                 "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
                 "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
@@ -67,16 +67,16 @@ namespace GGUI{
      */
     bool Update_Stats([[maybe_unused]] GGUI::Event* Event){
         // Check if the inspect tool is displayed
-        Element* Inspect_Tool = INTERNAL::Main->Get_Element("Inspect");
+        element* Inspect_Tool = INTERNAL::Main->getElement("Inspect");
 
-        if (!Inspect_Tool || !Inspect_Tool->Is_Displayed())
+        if (!Inspect_Tool || !Inspect_Tool->isDisplayed())
             return false;
 
         // find the stats element
-        Text_Field* Stats = (Text_Field*)INTERNAL::Main->Get_Element("STATS");
+        textField* Stats = (textField*)INTERNAL::Main->getElement("STATS");
 
         // Update the stats
-        Stats->Set_Text(Get_Stats_Text());
+        Stats->setText(Get_Stats_Text());
 
         // return success
         return true;
@@ -87,10 +87,10 @@ namespace GGUI{
      * @details This function initializes the inspect tool which is a debug tool that displays the number of elements, render time, and event time.
      * @see GGUI::Update_Stats
      */
-    void Init_Inspect_Tool(){
+    void initInspectTool(){
         const char* ERROR_LOGGER = "_ERROR_LOGGER_";
 
-        Addons.push_back(new GGUI::List_View(Styling(
+        Addons.push_back(new GGUI::listView(styling(
             width(0.5f) | height(1.0f) | 
             text_color(1.0f) | background_color(1.0f) |
             // Set the flow direction to column so the elements stack vertically
@@ -105,8 +105,8 @@ namespace GGUI{
             name("Inspect") |
 
             // Add the error logger kidnapper:
-            node(new Window(
-                Styling(
+            node(new window(
+                styling(
                     width(1.0f) | height(0.5f) |
                     text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
                     border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
@@ -120,8 +120,8 @@ namespace GGUI{
             )) | 
                         
             // Add a count for how many UTF are being streamed.
-            node(new Text_Field(
-                Styling(
+            node(new textField(
+                styling(
                     align(ALIGN::LEFT) | 
                     width(1.0f) |
                     height(8) |
@@ -134,9 +134,9 @@ namespace GGUI{
             // Hide the inspect tool by default
             // STYLES::hide | 
 
-            on_init([](Element* self){
+            on_init([](element* self){
                 // Register an event handler to toggle the inspect tool on and off
-                GGUI::INTERNAL::Main->On(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
+                GGUI::INTERNAL::Main->on(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
                     GGUI::Input* input = (GGUI::Input*)e;
 
                     // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
@@ -144,7 +144,7 @@ namespace GGUI{
                         return false;
 
                     // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
-                    self->Display(!self->Is_Displayed());
+                    self->display(!self->isDisplayed());
 
                     // Return true to indicate that the event was handled
                     return true;

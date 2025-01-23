@@ -8,7 +8,7 @@
 
 namespace GGUI{
 
-    class Element;
+    class element;
     
     namespace INTERNAL{
         // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
@@ -61,7 +61,7 @@ namespace GGUI{
      * @param Identity Boolean value to return if the elements are the same.
      * @return true if the elements collide, false otherwise.
      */
-    extern bool Collides(GGUI::Element* a, GGUI::Element* b, bool Identity = true);
+    extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
 
     /**
      * @brief Checks if a given point collides with a specified element.
@@ -74,7 +74,7 @@ namespace GGUI{
      * @param b The point (as GGUI::IVector3) to check for collision with the element.
      * @return true if the point collides with the element, false otherwise.
      */
-    extern bool Collides(GGUI::Element* a, GGUI::IVector3 b);
+    extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
 
     /**
      * @brief Recursively finds the most accurate element that contains the given position.
@@ -89,7 +89,7 @@ namespace GGUI{
      * @param Parent The parent element to start the search from.
      * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
      */
-    extern Element* Get_Accurate_Element_From(IVector3 c, Element* Parent);
+    extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
 
     /**
      * @brief Finds the upper element relative to the current element's position.
@@ -229,7 +229,7 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    extern bool Is_Deletable(void* ptr);
+    extern bool isDeletable(void* ptr);
 }
 
 #endif

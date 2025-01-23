@@ -12,7 +12,7 @@
 
 namespace GGUI{
 
-    class PROGRESS_STYLE{
+    class progressStyle{
     public:
         Compact_String Head;
         Compact_String Body;
@@ -33,7 +33,7 @@ namespace GGUI{
          * 
          * The default is to use the centered horizontal line character for all three parts of the progress bar.
          */
-        PROGRESS_STYLE(
+        progressStyle(
             const char* head = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE.data(),
             const char* body = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE.data(),
             const char* tail = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE.data()
@@ -48,7 +48,7 @@ namespace GGUI{
          * This constructor is used to create a PROGRESS_STYLE with the same color for the head, body, and tail.
          * The default is to use the centered horizontal line character for all three parts of the progress bar.
          */
-        PROGRESS_STYLE(RGB fill_color, RGB empty_color) : PROGRESS_STYLE() {
+        progressStyle(RGB fill_color, RGB empty_color) : progressStyle() {
             Head_Color = fill_color;
             Body_Color = fill_color;
             Tail_Color = fill_color;
@@ -63,7 +63,7 @@ namespace GGUI{
          * 
          * This constructor copies the data from the other PROGRESS_STYLE object to this one.
          */
-        PROGRESS_STYLE(const PROGRESS_STYLE& other){
+        progressStyle(const progressStyle& other){
             // Copy data
             Head = other.Head;
             Body = other.Body;
@@ -78,7 +78,7 @@ namespace GGUI{
         }
 
         // Copy assignment operator
-        PROGRESS_STYLE& operator=(const PROGRESS_STYLE& other) {
+        progressStyle& operator=(const progressStyle& other) {
             if (this != &other) {  // Protect against self-assignment
                 // Copy data
                 Head = other.Head;
@@ -97,17 +97,17 @@ namespace GGUI{
 
     };
 
-    namespace Progress_Bar_Styles{
-        extern PROGRESS_STYLE Default;
-        extern PROGRESS_STYLE Blocky;
-        extern PROGRESS_STYLE Arrow;
+    namespace progressBarStyles{
+        extern progressStyle Default;
+        extern progressStyle Blocky;
+        extern progressStyle Arrow;
     }
 
-    class Progress_Bar : public Element{
+    class progressBar : public element{
     protected:
         float Progress = 0; // 0.0 - 1.0
 
-        PROGRESS_STYLE Progress_Style;
+        progressStyle Progress_Style;
 
         std::vector<UTF> Content;
     public:
@@ -121,9 +121,9 @@ namespace GGUI{
          * @param s The style for the Progress_Bar.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Progress_Bar's style. Only use if you know what you're doing!!!
          */
-        Progress_Bar(Styling s, bool Embed_Styles_On_Construct = false) : Element(s, Embed_Styles_On_Construct){
+        progressBar(styling s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
             Progress = 0.0f;
-            Progress_Style = Progress_Bar_Styles::Default;
+            Progress_Style = progressBarStyles::Default;
         }
 
         /**
@@ -132,7 +132,7 @@ namespace GGUI{
          * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
          * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
          */
-        Progress_Bar() = default;
+        progressBar() = default;
 
         /**
          * @brief Returns the index of the head of the progress bar.
@@ -142,14 +142,14 @@ namespace GGUI{
          * The result is then rounded down to the nearest integer using the floor() function.
          * @return The index of the head of the progress bar.
          */
-        unsigned int Get_Index_of_Head();
+        unsigned int getIndexofHead();
 
         /**
          * @brief Colors the bar with the current progress value.
          * @details
          * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
          */
-        void Color_Bar();
+        void colorBar();
 
         /**
          * @brief Renders the progress bar into the Render_Buffer.
@@ -157,7 +157,7 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
          * @return A vector of UTF objects representing the rendered progress bar.
          */
-        std::vector<GGUI::UTF>& Render() override;
+        std::vector<GGUI::UTF>& render() override;
 
         /**
          * @brief Sets the progress value of the progress bar.
@@ -166,14 +166,14 @@ namespace GGUI{
          * It also updates the color of the progress bar and marks the render buffer as dirty.
          * @param New_Progress The new progress value to set (should be between 0.0 and 1.0).
          */
-        void Set_Progress(float New_Progress);
+        void setProgress(float New_Progress);
         
         /**
          * @brief Returns the current progress value of the progress bar.
          * @details This function returns the current progress value of the progress bar, which is a float between 0.0 and 1.0.
          * @return The current progress value of the progress bar.
          */
-        float Get_Progress();
+        float getProgress();
 
         /**
          * @brief Toggles the border visibility of the progress bar.
@@ -181,7 +181,7 @@ namespace GGUI{
          *          If the state has changed, it updates the border enabled state, marks the element as dirty for border changes, and updates the frame.
          * @param b The desired state of the border visibility.
          */
-        void Show_Border(bool state) override;
+        void showBorder(bool state) override;
 
         /**
          * @brief Destructor for the Progress_Bar class.
@@ -190,9 +190,9 @@ namespace GGUI{
          * allocated by the Progress_Bar object. It calls the base class destructor
          * to ensure all parent class resources are also cleaned up.
          */
-        ~Progress_Bar() override {
+        ~progressBar() override {
             // Call the base destructor to clean up base class resources.
-            Element::~Element();
+            element::~element();
         }
         
         /**
@@ -201,8 +201,8 @@ namespace GGUI{
          *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
          * @return A pointer to the new Progress_Bar object.
          */
-        Element* Safe_Move() override {
-            return new Progress_Bar();
+        element* safeMove() override {
+            return new progressBar();
         }
 
         /**
@@ -212,7 +212,7 @@ namespace GGUI{
          *          class name "Progress_Bar", separated by a "<" and a ">".
          * @return The name of the Progress_Bar object.
          */
-        std::string Get_Name() const override{
+        std::string getName() const override{
             return "Progress_Bar<" + Name + ">";
         }
     };
