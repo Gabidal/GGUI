@@ -27,33 +27,33 @@ TYPE = DEBUG  # Change this to RELEASE or PROFILE for different build types
 # Source files for the project
 sources = [
   # Core utilities
-  '../Core/Utils/Color.cpp',
-  '../Core/Utils/Style.cpp',
-  '../Core/Utils/Logger.cpp',
-  '../Core/Utils/Utils.cpp',
-  '../Core/Utils/Constants.cpp',
+  '../src/core/utils/color.cpp',
+  '../src/core/utils/style.cpp',
+  '../src/core/utils/logger.cpp',
+  '../src/core/utils/utils.cpp',
+  '../src/core/utils/constants.cpp',
   
   # Elements
-  '../Elements/Element.cpp',
-  '../Elements/Window.cpp',
-  '../Elements/List_View.cpp',
-  '../Elements/Text_Field.cpp',
-  '../Elements/Button.cpp', 
-  '../Elements/Switch.cpp',
-  '../Elements/Canvas.cpp',
-  '../Elements/Progress_Bar.cpp',
+  '../src/elements/element.cpp',
+  '../src/elements/window.cpp',
+  '../src/elements/listView.cpp',
+  '../src/elements/textField.cpp',
+  '../src/elements/button.cpp', 
+  '../src/elements/switch.cpp',
+  '../src/elements/canvas.cpp',
+  '../src/elements/progressBar.cpp',
 
   # Specialized elements
-  '../Elements/File_Streamer.cpp',
-  '../Elements/HTML.cpp',
+  '../src/elements/fileStreamer.cpp',
+  '../src/elements/HTML.cpp',
 
-  # Core functionalities
-  '../Core/Utils/No_Inline.cpp',
-  '../Core/Settings.cpp',
-  '../Core/Renderer.cpp',
-  '../Core/Thread.cpp',
-  '../Core/Addons/Addons.cpp',
-  '../Core/main.cpp'
+  # core functionalities
+  '../src/core/utils/noInline.cpp',
+  '../src/core/settings.cpp',
+  '../src/core/renderer.cpp',
+  '../src/core/thread.cpp',
+  '../src/core/addons/addons.cpp',
+  '../src/main.cpp'
 ]
 
 # SIMD and CPU-specific options
