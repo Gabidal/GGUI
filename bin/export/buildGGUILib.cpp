@@ -128,6 +128,23 @@ std::string Get_Machine_SIMD_Type(){
     return "";
 }
 
+/// @brief Gathers all cpp files under GGUI/src and returns them as usable source files for g++
+std::string Get_Cpp_Files(){
+    std::vector<std::string> Cpp_Files;
+    for (const auto & entry : std::filesystem::directory_iterator("../../src")) {
+        if(entry.path().extension() != ".cpp" || entry.path().filename() == "main") continue;
+        Cpp_Files.push_back(entry.path().filename().string());
+    }
+
+    std::string Result = "";
+
+    for(auto& file : Cpp_Files){
+        Result += " -c ../../src/" + file;
+    }
+
+    return Result;
+}
+
 int main(){
     std::string Double_Command_Mark = " ; ";
 
@@ -137,6 +154,8 @@ int main(){
     // Compile the headers:
     Compile_Headers();
 
+    std::string CPP_Files = Get_Cpp_Files();
+
     // generate the .o file for window and linux
 
     std::string SIMD_Support = Get_Machine_SIMD_Type();
@@ -144,31 +163,31 @@ int main(){
     if (SIMD_Support.size() > 0)
         std::cout << "Using SIMD type: " << SIMD_Support << std::endl;
 
-    std::string Universal_Args = " -c ./GGUIBody.cpp -c -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " --std=c++17 ";
+    std::string Universal_Args = CPP_Files + " -c -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " -DGGUI_RELEASE --std=c++17 ";
 
     // generate for the main platform this script is run from with gcc
     std::string Command = std::string("g++" + Universal_Args) + Double_Command_Mark + 
-    std::string("ar rcs GGUIWin.lib ./GGUIBody.o");
+    std::string("ar rcs GGUIWin.lib ./main.o");
 
 #if _WIN32
     // if we are in windows, then generate for unix
     Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
-    std::string("ar rcs GGUIUnix.lib ./GGUIBody.o");
+    std::string("ar rcs GGUIUnix.lib ./main.o");
 #else
     // if we are on Unix, then generate for windows too
     Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
-    std::string("x86_64-w64-mingw32-ar rcs GGUIWin.lib ./GGUIBody.o");
+    std::string("x86_64-w64-mingw32-ar rcs GGUIWin.lib ./main.o");
 #endif
 
     system(Command.c_str());
 
 #if _WIN32
     // Clean the *.o file
-    Command = std::string("del GGUIBody.o");
+    Command = std::string("del main.o");
     system(Command.c_str());
 #else
     // Clean the *.o file
-    Command = std::string("rm ./GGUIBody.o");
+    Command = std::string("rm ./main.o");
     system(Command.c_str());
 #endif
 }
