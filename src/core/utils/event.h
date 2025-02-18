@@ -1,0 +1,92 @@
+#ifndef _EVENT_H_
+#define _EVENT_H_
+
+#include <functional>
+#include <chrono>
+
+#include "units.h"
+
+namespace GGUI{
+    
+    class Event{
+    public:
+        unsigned long long Criteria;
+    };
+
+    class Input : public Event{
+    public:
+        unsigned short X = 0;
+        unsigned short Y = 0;
+        char Data = 0;
+
+        // The input information like the character written.
+        Input(char d, unsigned long long t){
+            Data = d;
+            Criteria = t;
+        }
+
+        Input(IVector3 c, unsigned long long t){
+            X = (unsigned short )c.X;
+            Y = (unsigned short )c.Y;
+            Criteria = t;
+        }
+    };
+
+    class Action : public Event{
+    public:
+        class element* Host = nullptr;
+
+        std::function<bool(GGUI::Event*)> Job;
+        
+        std::string ID; 
+    
+        Action() = default;
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, std::string id = ""){
+            Criteria = criteria;
+            Job = job;
+            Host = nullptr;
+            ID = id;
+        }
+
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, class element* host, std::string id = ""){
+            Criteria = criteria;
+            Job = job;
+            Host = host;
+            ID = id;
+        }
+    };
+
+    namespace MEMORY_FLAGS{
+        inline unsigned char PROLONG_MEMORY     = 1 << 0;
+        inline unsigned char RETRIGGER          = 1 << 1;
+    };
+
+    class Memory : public Action{
+    public:
+        std::chrono::high_resolution_clock::time_point Start_Time;
+        size_t End_Time = 0;
+
+        // By default all memories automatically will not prolong each other similar memories.
+        unsigned char Flags = 0x0;
+
+        // When the job starts, job, prolong previous similar job by this time.
+        Memory(size_t end, std::function<bool(GGUI::Event*)>job, unsigned char flags = 0x0, std::string id = ""){
+            Start_Time = std::chrono::high_resolution_clock::now();
+            End_Time = end;
+            Job = job;
+            Flags = flags;
+            ID = id;
+        }
+
+        bool Is(const unsigned char f) const{
+            return (Flags & f) > 0;
+        }
+
+        void Set(const unsigned char f){
+            Flags |= f;
+        }
+    };
+
+}
+
+#endif
