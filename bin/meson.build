@@ -67,10 +67,10 @@ SIMD_MODE = ''
 # Common C++ compiler flags
 cpp_args = [
   '-fpermissive',                # Allow some non-standard C++ constructs
-  '-Wno-narrowing',              # Disable narrowing warnings (e.g., casting to a smaller type)
-  '-fvisibility=hidden',         # Hide symbols by default
-  '-fPIC',                       # Generate position-independent code
-  '-fno-semantic-interposition', # Disable semantic interposition
+  '-Wno-narrowing'              # Disable narrowing warnings (e.g., casting to a smaller type)
+  # '-fvisibility=hidden',         # Hide symbols by default
+  # '-fPIC',                       # Generate position-independent code
+  # '-fno-semantic-interposition', # Disable semantic interposition
 ]
 
 # Platform-specific settings

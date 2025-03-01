@@ -6,16 +6,13 @@ using namespace GGUI;
 
 int main() 
 {
-    GGUI::GGUI([&](){
-        GGUI::Terminal_Canvas* tem = new GGUI::Terminal_Canvas(
-            Styling(
-                width(GGUI::Max_Width) | height(GGUI::Max_Height)
-            )
-        );
+    GGUI::GGUI(styling(
+        node(new terminalCanvas(styling(
 
-        for (int x = 0; x < tem->Get_Width(); x++){
-            for (int y = 0; y < tem->Get_Height(); y++){
-                GGUI::Sprite s(
+            width(1.0f) | height(1.0f) |
+
+            on_draw([]([[maybe_unused]] unsigned int x, [[maybe_unused]] unsigned int y){
+                return GGUI::sprite(
                     {
                         {"a", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
                         {"b", {GGUI::COLOR::BLUE, GGUI::COLOR::BLUE}}, 
@@ -23,15 +20,9 @@ int main()
                     0,  // Animation offset
                     1   // Animation speed
                 );
+            })
+        )))
+    ), INT32_MAX);
 
-                tem->Set(x, y, s, false);
-            }
-        }
-
-        tem->Flush(true);
-
-        GGUI::Main->Add_Child(tem);
-    }, INT32_MAX);
-
-    GGUI::Exit();
+    GGUI::EXIT();
 }

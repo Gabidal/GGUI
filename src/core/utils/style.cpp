@@ -292,7 +292,7 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE node::Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]]  element* owner){
+    STAIN_TYPE node::Embed_Value(styling* host, [[maybe_unused]]  element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
         if (!isDeletable(Value))
@@ -303,7 +303,7 @@ namespace GGUI{
         return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
 
-    STAIN_TYPE childs::Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]]  element* owner){
+    STAIN_TYPE childs::Embed_Value(styling* host, [[maybe_unused]]  element* owner){
         for (auto* c : Value){
             // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
             if (!isDeletable(c))
@@ -378,7 +378,7 @@ namespace GGUI{
         else if (dynamic_cast<button*>(owner))
             ((button*)owner)->setText(Value);
         else
-            throw std::runtime_error("The text attribute can only be used on Text_Field type elements.");
+            throw std::runtime_error("The text attribute can only be used on textField type elements.");
 
         return STAIN_TYPE::CLEAN;
     }

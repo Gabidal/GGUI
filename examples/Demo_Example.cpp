@@ -4,49 +4,76 @@ using namespace GGUI;
 
 int main() 
 {
-    GGUI::GGUI([&](){
+    GGUI::GGUI(styling(
+        childs({
+            new listView(styling(
+                childs({
+                    new button(styling(text("File") | STYLES::border)),
+                    new button(styling(text("Edit") | STYLES::border)),
+                    new button(styling(text("View") | STYLES::border)),
+                    new button(styling(text("Help") | STYLES::border))
+                }) |
+                STYLES::border
+            )),
+            new window(styling(
+                title("A") | width(20) | height(10) | background_color(COLOR::MAGENTA) | text_color(COLOR::RED) | opacity(0.5f)
+            )),
+            new window(styling(
+                title("B") | width(20) | height(10) | background_color(COLOR::YELLOW) | text_color(COLOR::GREEN) | opacity(0.5f)
+            )),
+            new window(styling(
+                title("C") | width(20) | height(10) | background_color(COLOR::CYAN) | text_color(COLOR::BLUE) | opacity(0.5f)
+            ))
+        }) | 
+        title("Your App UI") |
+        background_color(COLOR::WHITE) |
+        text_color(COLOR::BLACK) |
+        STYLES::border
+    ));
 
-        List_View* bar = new List_View(
-            GGUI::Main,
-            {
-                new Button("File"),
-                new Button("Edit"),
-                new Button("View"),
-                new Button("Help")
-            }
-        );
+    // GGUI::GGUI([&](){
 
-        bar->Show_Border(true);
+    //     List_View* bar = new List_View(
+    //         GGUI::Main,
+    //         {
+    //             new Button("File"),
+    //             new Button("Edit"),
+    //             new Button("View"),
+    //             new Button("Help")
+    //         }
+    //     );
 
-        // for (auto i : bar->Get_Childs()){
-        //     i->Show_Border(false);
-        // }
+    //     bar->Show_Border(true);
 
-        Window* A = new Window("A", 20, 10, COLOR::MAGENTA, COLOR::RED);
-        Window* B = new Window("B", 20, 10, COLOR::YELLOW, COLOR::GREEN);
-        Window* C = new Window("C", 20, 10, COLOR::CYAN, COLOR::BLUE);
+    //     // for (auto i : bar->Get_Childs()){
+    //     //     i->Show_Border(false);
+    //     // }
 
-        A->Set_Opacity(0.5f);
-        B->Set_Opacity(0.5f);
-        C->Set_Opacity(0.5f);
+    //     Window* A = new Window("A", 20, 10, COLOR::MAGENTA, COLOR::RED);
+    //     Window* B = new Window("B", 20, 10, COLOR::YELLOW, COLOR::GREEN);
+    //     Window* C = new Window("C", 20, 10, COLOR::CYAN, COLOR::BLUE);
 
-        GGUI::Main->Add_Child(A);
-        GGUI::Main->Add_Child(B);
-        GGUI::Main->Add_Child(C);
+    //     A->Set_Opacity(0.5f);
+    //     B->Set_Opacity(0.5f);
+    //     C->Set_Opacity(0.5f);
 
-        A->Set_Position({10, 10});
-        B->Set_Position({30, 10});
-        C->Set_Position({20, 15});
-    });
+    //     GGUI::Main->Add_Child(A);
+    //     GGUI::Main->Add_Child(B);
+    //     GGUI::Main->Add_Child(C);
+
+    //     A->Set_Position({10, 10});
+    //     B->Set_Position({30, 10});
+    //     C->Set_Position({20, 15});
+    // });
     
-    GGUI::Main->Set_Title("Your App UI");
-    GGUI::Main->Set_Background_Color(COLOR::WHITE);
-    GGUI::Main->Set_Text_Color(COLOR::BLACK);
-    GGUI::Main->Show_Border(true);    
+    // GGUI::Main->Set_Title("Your App UI");
+    // GGUI::Main->Set_Background_Color(COLOR::WHITE);
+    // GGUI::Main->Set_Text_Color(COLOR::BLACK);
+    // GGUI::Main->Show_Border(true);    
 
-    // Your code here...
-    GGUI::SLEEP(UINT32_MAX);
+    // // Your code here...
+    GGUI::INTERNAL::SLEEP(UINT32_MAX);
     
-    // Then exit properly
-    GGUI::Exit();
+    // // Then exit properly
+    GGUI::EXIT();
 }

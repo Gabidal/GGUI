@@ -802,14 +802,14 @@ void GGUI::element::addChild(element* Child){
         else if (Child->resizeTo(this) == false){
 
             // Report an error if the child element exceeds the size of the parent element and the parent element is not allowed to resize
-            GGUI::report(
-                "Window exceeded static bounds\n "
-                "Starts at: {" + std::to_string(Child->Style->Position.Get().X) + ", " + std::to_string(Child->Style->Position.Get().Y) + "}\n "
-                "Ends at: {" + std::to_string(Child->Style->Position.Get().X + Child->getWidth()) + ", " + std::to_string(Child->Style->Position.Get().Y + Child->getHeight()) + "}\n "
-                "Max is at: {" + std::to_string(getWidth()) + ", " + std::to_string(getHeight()) + "}\n "
-            );
+            // GGUI::report(
+            //     "Window exceeded static bounds\n "
+            //     "Starts at: {" + std::to_string(Child->Style->Position.Get().X) + ", " + std::to_string(Child->Style->Position.Get().Y) + "}\n "
+            //     "Ends at: {" + std::to_string(Child->Style->Position.Get().X + Child->getWidth()) + ", " + std::to_string(Child->Style->Position.Get().Y + Child->getHeight()) + "}\n "
+            //     "Max is at: {" + std::to_string(getWidth() - hasBorder()) + ", " + std::to_string(getHeight() - hasBorder()) + "}\n "
+            // );
 
-            return;
+            // return;
         }
     }
 
@@ -1174,11 +1174,11 @@ GGUI::element* GGUI::element::copy(){
     return new_element;
 }
 
-void GGUI::element::embedStyles(){ 
+void GGUI::element::embedStyles(){
     // If this is true, then the user probably:
     // A.) Doesn't know what the fuck he is doing.
     // B.) He is trying to use the OUTBOX feature.
-    if (GGUI::INTERNAL::Main == nullptr){
+    if (Parent == nullptr && GGUI::INTERNAL::Main == nullptr){
         // Lets go with B.
         INTERNAL::reportStack("OUTBOX not supported, cannot anchor: " + getName());
     }

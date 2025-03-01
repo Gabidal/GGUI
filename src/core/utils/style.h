@@ -1925,6 +1925,8 @@ namespace GGUI{
 
         constexpr childs(std::initializer_list<element*> value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
 
+        // TODO: maybe an std::initializer_list<element> version too?
+
         constexpr childs(const GGUI::childs& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
         ~childs() override { style_base::~style_base(); }
