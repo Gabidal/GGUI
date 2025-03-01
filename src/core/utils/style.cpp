@@ -5,6 +5,8 @@
 #include "../../elements/button.h"
 #include "../renderer.h"
 
+#include "./utils.h"
+
 namespace GGUI{
 
     /**
@@ -30,11 +32,11 @@ namespace GGUI{
     }
 
     void width::Evaluate(styling* parent){
-        Value.Evaluate(parent->Width.Get());
+        Value.Evaluate(Max(parent->Width.Get() - (parent->Border_Enabled.Value * 2), 1));
     }
 
     void height::Evaluate(styling* parent){
-        Value.Evaluate(parent->Height.Get());
+        Value.Evaluate(Max(parent->Height.Get() - (parent->Border_Enabled.Value * 2), 1));
     }
 
     void text_color::Evaluate(styling* parent){

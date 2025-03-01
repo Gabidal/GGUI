@@ -5,6 +5,7 @@ using namespace GGUI;
 int main() 
 {
     GGUI::GGUI(styling(
+        // childs styling is broken
         node(new button(styling(text("File") | STYLES::border)))
         // childs({
         //     new listView(styling(
