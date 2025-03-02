@@ -1967,6 +1967,10 @@ namespace GGUI{
         std::array<element*, INT8_MAX>::const_iterator end() const{
             return std::find(Value.cbegin(), Value.cend(), nullptr);
         }
+
+        int length() const{
+            return std::distance(begin(), end());
+        }
     };
 
     class on_init : public STYLING_INTERNAL::style_base{
