@@ -8,6 +8,7 @@
 #include <array>
 #include <string>
 #include <cassert>
+#include <cstdarg>
 
 namespace GGUI{
     // Externies
@@ -1920,10 +1921,16 @@ namespace GGUI{
     };
 
     class childs : public STYLING_INTERNAL::style_base{
+    protected:
+        std::array<element*, INT8_MAX> Value;
     public:
-        std::initializer_list<element*> Value;
 
-        constexpr childs(std::initializer_list<element*> value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
+        constexpr childs(std::initializer_list<element*> value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value{}{
+            assert(value.size() <= INT8_MAX);
+            for (size_t i = 0; i < value.size(); i++){
+                Value[i] = *(value.begin() + i);
+            }
+        }
 
         // TODO: maybe an std::initializer_list<element> version too?
 
@@ -1948,6 +1955,18 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+
+        // -----< UTILS >-----
+
+        // iterator fetcher to skip the nullptr tail of the Value
+        std::array<element*, INT8_MAX>::const_iterator begin() const{
+            return Value.cbegin();
+        }
+
+        // iterator fetcher to skip the nullptr tail of the Value
+        std::array<element*, INT8_MAX>::const_iterator end() const{
+            return std::find(Value.cbegin(), Value.cend(), nullptr);
+        }
     };
 
     class on_init : public STYLING_INTERNAL::style_base{

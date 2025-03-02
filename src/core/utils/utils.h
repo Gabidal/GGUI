@@ -21,6 +21,13 @@ namespace GGUI{
         };
     }
 
+    enum class ALLOCATION_TYPE{
+        UNKNOWN         = 0 << 0,
+        STACK           = 1 << 0,
+        HEAP            = 1 << 1,
+        DATA            = 1 << 2
+    };
+
     /**
      * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
      * 
@@ -210,6 +217,8 @@ namespace GGUI{
      */
     extern bool Has(unsigned long long f, unsigned long long flag);
 
+    extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
+
     /**
      * @brief Checks if all flags in small are set in big.
      * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
@@ -220,6 +229,8 @@ namespace GGUI{
      */
     extern bool Contains(unsigned long long big, unsigned long long Small);
 
+    extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
+
     /**
      * @brief Determines if a given pointer is likely deletable (heap-allocated).
      *
@@ -229,7 +240,7 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    extern bool isDeletable(void* ptr);
+    extern ALLOCATION_TYPE getAllocationType(void* ptr);
 }
 
 #endif

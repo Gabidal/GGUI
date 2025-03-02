@@ -393,6 +393,10 @@ namespace GGUI{
         return (f & flag) != 0;
     }
 
+    bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag){
+        return Has((unsigned long long)f, (unsigned long long)flag);
+    }
+
     /**
      * @brief Checks if all flags in small are set in big.
      * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
@@ -404,6 +408,10 @@ namespace GGUI{
     bool Contains(unsigned long long big, unsigned long long Small) {
         return (Small & big) == Small;
     }
+
+    bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small){
+        return Contains((unsigned long long)big, (unsigned long long)small);
+    }
     
     /**
      * @brief Determines if a given pointer is likely deletable (heap-allocated).
@@ -414,24 +422,23 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    bool isDeletable(void* ptr) {
+    ALLOCATION_TYPE getAllocationType(void* ptr) {
         if (ptr == nullptr) {
-            return false;  // Null pointer can't be valid
+            return ALLOCATION_TYPE::UNKNOWN; // Null pointer can't be valid
         }
 
-        static void* Start_Of_BSS = nullptr;  // Placeholder for BSS segment start
+        constexpr void* Start_Of_BSS = nullptr;  // Placeholder for BSS segment start
 
         constexpr int MiB = 0x100000;
-        static signed long long Somewhere_In_DATA = 100 * MiB;  // Arbitrary location in the data section
+        constexpr uintptr_t Somewhere_In_DATA = 100 * MiB;  // Arbitrary location in the data section
 
         // Check if ptr is above BSS, indicating potential data section location
         bool Ptr_Is_Above_BSS = ptr >= Start_Of_BSS;
 
-        // Calculate if ptr is within range of the data section
-        bool Ptr_Is_In_Range_Of_DATA_Section = ((signed long long)ptr - (signed long long)&Somewhere_In_DATA) <= Somewhere_In_DATA;
+        uintptr_t ptr_distance_to_DATA_section = abs((signed long long)ptr - (signed long long)Somewhere_In_DATA);
 
-        // Check if ptr is smaller than the stack start address
-        bool Lower_Than_Stack = (uintptr_t)ptr < (uintptr_t)INTERNAL::Stack_Start_Address;
+        // Calculate if ptr is within range of the data section
+        bool Ptr_Is_In_Range_Of_DATA_Section = ptr_distance_to_DATA_section <= Somewhere_In_DATA;
 
         // Try to allocate memory on the heap for comparison
         size_t* new_heap = new(std::nothrow) size_t;
@@ -440,29 +447,39 @@ namespace GGUI{
             exit(1);  // FATAL error if heap allocation fails
         }
 
-        // Check if the new heap address is below the stack start address
-        bool Heap_Is_Lower_Than_Stack = (uintptr_t)new_heap < (uintptr_t)INTERNAL::Stack_Start_Address;
+        // Allocate an closeby stack variable
+        char Local_Stack_Variable = 0;
 
         // Calculate distance from ptr to the stack start address
-        uintptr_t ptr_distance_to_stack = (uintptr_t)INTERNAL::Stack_Start_Address - (uintptr_t)ptr;
+        uintptr_t ptr_distance_to_stack = Min(
+            abs((signed long long)ptr - (signed long long)INTERNAL::Stack_Start_Address),
+            abs((signed long long)ptr - (signed long long)&Local_Stack_Variable)
+        );
 
-        // Calculate distance from ptr to the closest heap address
-        uintptr_t heap_min_address = Min((uintptr_t)new_heap, (uintptr_t)INTERNAL::Heap_Start_Address);
-        uintptr_t ptr_distance_to_heap = heap_min_address - (uintptr_t)ptr;
-
-        // Determine if ptr is closer to the stack than the heap and below the stack start
-        bool Stack_Is_Closer = ptr_distance_to_stack < ptr_distance_to_heap && Lower_Than_Stack;
+        // Calculate distance from ptr to the closest heap address, heap grows accumulatively
+        // uintptr_t heap_max_address = Max((uintptr_t)new_heap, (uintptr_t)INTERNAL::Heap_Start_Address);
+        uintptr_t ptr_distance_to_heap = Min(
+            abs((signed long long)ptr - (signed long long)new_heap),
+            abs((signed long long)ptr - (signed long long)INTERNAL::Heap_Start_Address)
+        );
 
         // Clean up the heap allocation
         delete new_heap;
 
-        // Assess likelihood of pointer being in heap, stack, or data section
-        int Points_To_DATA_Section = Ptr_Is_Above_BSS + Ptr_Is_In_Range_Of_DATA_Section;  // 2pts for data section
-        int Points_To_Stack = Lower_Than_Stack + Stack_Is_Closer;  // 2pts for stack
-        int Points_To_Heap = !Lower_Than_Stack + !Stack_Is_Closer + Heap_Is_Lower_Than_Stack - Points_To_DATA_Section;  // 3pts for heap
+        bool Points_To_DATA_Section = ((ptr_distance_to_DATA_section < ptr_distance_to_stack && ptr_distance_to_DATA_section < ptr_distance_to_heap) || Ptr_Is_Above_BSS) && Ptr_Is_In_Range_Of_DATA_Section;
+        bool Points_To_Stack = ptr_distance_to_stack < ptr_distance_to_heap && ptr_distance_to_stack < ptr_distance_to_DATA_section;
+        bool Points_To_Heap = ptr_distance_to_heap < ptr_distance_to_stack && ptr_distance_to_heap < ptr_distance_to_DATA_section;
 
-        // Return true if pointer is more likely heap-allocated
-        return Points_To_Heap > Points_To_Stack && Points_To_Heap > Points_To_DATA_Section;
+        uintptr_t Result = 0;
+
+        if (Points_To_Heap)
+            Result |= (uintptr_t)ALLOCATION_TYPE::HEAP;
+        if (Points_To_Stack)
+            Result |= (uintptr_t)ALLOCATION_TYPE::STACK;
+        if (Points_To_DATA_Section)
+            Result |= (uintptr_t)ALLOCATION_TYPE::DATA;
+
+        return (ALLOCATION_TYPE)Result;
     }
 
 }

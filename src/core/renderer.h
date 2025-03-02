@@ -418,17 +418,6 @@ namespace GGUI{
      * @param informer Pointer to the buffer capturer with the latest data.
      */
     extern void informAllGlobalBufferCaptures(INTERNAL::bufferCapture* informer);
-
-    /**
-     * @brief Determines if a given pointer is likely deletable (heap-allocated).
-     *
-     * This function assesses whether a pointer may belong to the heap by comparing its
-     * position relative to known memory sections such as the stack, heap, and data segments.
-     *
-     * @param ptr Pointer to be evaluated.
-     * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
-     */
-    extern bool isDeletable(void* ptr);
 }
 
 #endif

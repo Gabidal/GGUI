@@ -18,7 +18,7 @@ namespace GGUI{
      */
     STYLING_INTERNAL::style_base::~style_base(){
         // Check if the other is closer to an stack_starting address or to heap
-        if (isDeletable(Other))
+        if (getAllocationType(Other) == ALLOCATION_TYPE::HEAP)
             delete Other;
     }
 
@@ -297,18 +297,20 @@ namespace GGUI{
     STAIN_TYPE node::Embed_Value(styling* host, [[maybe_unused]]  element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
-        if (!isDeletable(Value))
+        // if (!isDeletable(Value))
+        if (Has(getAllocationType(Value), ALLOCATION_TYPE::STACK))
             Value = Value->copy();
 
         host->Childs.push_back(Value);
 
         return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
-
+    
     STAIN_TYPE childs::Embed_Value(styling* host, [[maybe_unused]]  element* owner){
-        for (auto* c : Value){
+        for (auto* c : *this){
             // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
-            if (!isDeletable(c))
+            // if (!isDeletable(c))
+            if (Has(getAllocationType(c), ALLOCATION_TYPE::STACK))
                 c = c->copy();
 
             host->Childs.push_back(c);
@@ -406,7 +408,8 @@ namespace GGUI{
             
     STYLING_INTERNAL::style_base* childs::Copy() const {
         childs* new_one = new childs(*this);
-        for (auto* c : new_one->Value){
+
+        for (auto* c : *this){
             c = c->copy();
         }
 

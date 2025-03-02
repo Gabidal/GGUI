@@ -3,7 +3,6 @@
 #include "../core/renderer.h"
 
 namespace GGUI{
-
     /**
      * @brief Constructs a Button element with specified text, action, and styling.
      * @param text The text to display on the button.
@@ -23,6 +22,6 @@ namespace GGUI{
             // text(Text.c_str()) |     // The text is given from the Styling s.
             width(1.0f) | height(1.0f)
         )));
-    }
 
+    }
 }
