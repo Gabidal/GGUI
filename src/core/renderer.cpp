@@ -842,15 +842,15 @@ namespace GGUI{
                     flags.Terminate = true;
                 });
             });
-
-            LOGGER::Log("Subthreads terminated.");
-
+            
             // Join the threads
             for (auto& thread : Sub_Threads){
                 if (thread.joinable()){
                     thread.join();
                 }
             }
+
+            LOGGER::Log("Subthreads terminated.");
 
             LOGGER::Log("Reverting to normal console mode...");
 
@@ -2217,12 +2217,12 @@ namespace GGUI{
                             Error_Logger->addChild(History);
                         }
 
-                        std::vector<listView*>& Rows = (std::vector<listView*>&)History->getContainer()->getChilds(); 
+                        std::vector<listView*>& Rows = (std::vector<listView*>&)(History->getContainer()->getChilds()); 
 
                         if (Rows.size() > 0){
                             //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);
-                            textField* Previous_Problem = Rows.back()->get<textField>(1);
-                            textField* Previous_Repetitions = Rows.back()->get<textField>(2);
+                            textField* Previous_Problem = Rows.back()->get<textField>(0);
+                            textField* Previous_Repetitions = Rows.back()->get<textField>(1);
 
                             //check if the previous problem was same problem
                             if (Previous_Problem->getText() == Problem){
@@ -2276,14 +2276,14 @@ namespace GGUI{
                         scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
                         History->addChild(new listView(styling(
-                            width(History->getWidth() - 1) | height(1) | 
+                            width(1.0f) | height(1) | 
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                             flow_priority(DIRECTION::ROW) | 
 
                             // The Date field
-                            node(new textField(styling(
-                                text(INTERNAL::now().c_str())
-                            ))) | 
+                            // node(new textField(styling(
+                            //     text(INTERNAL::now().c_str())
+                            // ))) | 
 
                             // The actual reported problem text
                             node(new textField(styling(

@@ -142,6 +142,14 @@ namespace GGUI{
     public:
 
         /**
+         * @brief Default constructor for the scrollView class.
+         * 
+         * This constructor initializes a scrollView object by calling the base class
+         * element's default constructor.
+         */
+        scrollView() : element() {}
+
+        /**
          * @brief Constructor for the Scroll_View class.
          * @details This constructor initializes a Scroll_View object with the specified styling.
          * @param s The styling to be applied to the Scroll_View.
@@ -246,7 +254,18 @@ namespace GGUI{
         listView* getContainer(){
             return (listView*)Style->Childs[0];
         }
-    
+        
+        /**
+         * @brief Safely moves the current element to a new scrollView element.
+         * 
+         * This function overrides the safeMove method from the base class and 
+         * creates a new instance of the scrollView element.
+         * 
+         * @return A pointer to the newly created scrollView element.
+         */
+        element* safeMove() override {
+            return new scrollView();
+        }
     };
 }
 

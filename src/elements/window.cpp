@@ -70,7 +70,8 @@ void GGUI::window::setTitle(std::string t) {
         }
 
         // Set the window name to the new title
-        setName(t);
+        if (hasEmptyName())
+            setName(t);
 
         // Mark the edge as dirty to trigger a frame update
         Dirty.Dirty(STAIN_TYPE::EDGE);

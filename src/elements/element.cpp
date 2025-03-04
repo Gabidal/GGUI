@@ -207,7 +207,6 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
  * @param s The Styling object to use for the Element.
  */
 GGUI::element::element(styling s, bool Embed_Styles_On_Construct){
-    Name = std::to_string((unsigned long long)this);
     parseClasses();
 
     fullyStain();
@@ -817,7 +816,7 @@ void GGUI::element::addChild(element* Child){
     Dirty.Dirty(STAIN_TYPE::DEEP);
 
     // Add the child element to the parent's child list
-    INTERNAL::Element_Names.insert({Child->Name, Child});
+    INTERNAL::Element_Names.insert({Child->getNameAsRaw(), Child});
 
     Style->Childs.push_back(Child);
 

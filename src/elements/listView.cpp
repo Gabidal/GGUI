@@ -112,7 +112,7 @@ void GGUI::listView::addChild(element* e) {
         Dirty.Dirty(STAIN_TYPE::DEEP);
 
         // Add the child element to the internal structures.
-        INTERNAL::Element_Names.insert({e->getName(), e});
+        INTERNAL::Element_Names.insert({e->getNameAsRaw(), e});
         Style->Childs.push_back(e);
     });
 }
@@ -295,6 +295,14 @@ bool GGUI::listView::remove(element* remove){
 void GGUI::scrollView::addChild(element* e) {
     // Mark the Scroll_View as dirty with the DEEP stain because we are adding a new child element.
     Dirty.Dirty(STAIN_TYPE::DEEP);
+
+    // If the container has not been yet initialized, do so.
+    if (getChilds().size() == 0){
+        allowOverflow(true);
+        element::addChild(new listView(
+            // ...
+        ));
+    }
 
     // Add the child element to the List_View that is being used as the container.
     getContainer()->addChild(e);

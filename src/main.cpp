@@ -9,10 +9,10 @@ int main()
         childs({
             new listView(styling(
                 childs({
-                    new button(styling(text("File") | STYLES::border)),
-                    new button(styling(text("Edit") | STYLES::border)),
-                    new button(styling(text("View") | STYLES::border)),
-                    new button(styling(text("Help") | STYLES::border))
+                    new button(styling(text("File") | on_click([](element* self){}))),
+                    new button(styling(text("Edit") | on_click([](element* self){}))),
+                    new button(styling(text("View") | on_click([](element* self){}))),
+                    new button(styling(text("Help") | on_click([](element* self){})))
                 }) |
                 STYLES::border
             )),

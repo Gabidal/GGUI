@@ -1179,7 +1179,16 @@ namespace GGUI{
          * @return The name of the element.
          */
         virtual std::string getName() const {
-            return "Element<" + Name + ">";
+            return "Element<" + getNameAsRaw() + ">";
+        }
+
+        std::string getNameAsRaw() const {
+            if (Name.size() == 0) return std::to_string((unsigned long long)this);
+            else return Name;
+        }
+
+        bool hasEmptyName() const {
+            return Name.size() == 0;
         }
 
         /**
