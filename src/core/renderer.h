@@ -418,6 +418,15 @@ namespace GGUI{
      * @param informer Pointer to the buffer capturer with the latest data.
      */
     extern void informAllGlobalBufferCaptures(INTERNAL::bufferCapture* informer);
+
+    /**
+    * @brief Retrieves an element by name.
+    * @details This function takes a string argument representing the name of the element
+    *          and returns a pointer to the element if it exists in the global Element_Names map.
+    * @param name The name of the element to retrieve.
+    * @return A pointer to the element if it exists; otherwise, nullptr.
+    */
+    extern element* getElement(std::string name);
 }
 
 #endif

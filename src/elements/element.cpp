@@ -1593,6 +1593,9 @@ void GGUI::element::computeDynamicSize(){
     if (!isDisplayed())
         return;
 
+    if (!isDynamicSizeAllowed())
+        return;
+
     if (childrenChanged()){
         // Iterate through all the elements that are being displayed.
         for (auto c : Style->Childs){
@@ -1621,7 +1624,7 @@ void GGUI::element::computeDynamicSize(){
             );
 
             // but only update those who actually allow dynamic sizing.
-            if (Style->Allow_Dynamic_Size.Value && (New_Width != getWidth() || New_Height != getHeight())){
+            if (New_Width != getWidth() || New_Height != getHeight()){
                 setHeight(New_Height);
                 setWidth(New_Width);
                 Dirty.Dirty(STAIN_TYPE::STRETCH);
@@ -1643,7 +1646,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
     //if inned children have changed without this changing, then this will trigger.
     if (childrenChanged() || hasTransparentChildren()){
-        Dirty.Dirty(STAIN_TYPE::DEEP);
+        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::COLOR);
     }
 
     // Check for Dynamic attributes
@@ -1672,18 +1675,18 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         Dirty.Clean(STAIN_TYPE::CLASS);
     }
 
-    if (Dirty.is(STAIN_TYPE::STRETCH)){
-        Result.clear();
-        Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
-        Dirty.Clean(STAIN_TYPE::STRETCH);
-
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
-    }
-
     if (Dirty.is(STAIN_TYPE::MOVE)){
         Dirty.Clean(STAIN_TYPE::MOVE);
 
         updateAbsolutePositionCache();
+    }
+
+    if (Dirty.is(STAIN_TYPE::STRETCH)){
+        Result.clear(); // <- TODO remove this.
+        Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+        Dirty.Clean(STAIN_TYPE::STRETCH);
+
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
 
     // Apply the color system to the resized result list
@@ -2194,13 +2197,16 @@ bool GGUI::element::childrenChanged(){
     if (!Show)
         return false;
 
-    // If the element is dirty.
-    if (Dirty.Type != STAIN_TYPE::CLEAN){
-        return true;
-    }
+    // After 0.1.8 elements will no longer flag their own changes under "child change".
+    // if (Dirty.Type != STAIN_TYPE::CLEAN){ // If the element is dirty.
+    //     return true;
+    // }
 
     // recursion
     for (auto e : Style->Childs){
+        if (e->getDirty().Type != STAIN_TYPE::CLEAN)
+            return true;
+
         if (e->childrenChanged())
             return true;
     }
@@ -2220,11 +2226,14 @@ bool GGUI::element::hasTransparentChildren() {
         return false;
 
     // Check if the current element is transparent and not clean.
-    if (isTransparent() && Dirty.Type != STAIN_TYPE::CLEAN)
-        return true;
+    // if (isTransparent() && Dirty.Type != STAIN_TYPE::CLEAN)
+    //     return true;
 
     // Recursively check each child element for transparency.
     for (auto e : Style->Childs) {
+        if (e->isTransparent())
+            return true;
+
         if (e->hasTransparentChildren())
             return true;
     }
@@ -2247,23 +2256,28 @@ void GGUI::element::setName(std::string name){
 }
 
 /**
- * @brief Retrieves an element by name.
- * @details This function takes a string argument representing the name of the element
- *          and returns a pointer to the element if it exists in the global Element_Names map.
- * @param name The name of the element to retrieve.
- * @return A pointer to the element if it exists; otherwise, nullptr.
+ * @brief Retrieves an element by its name.
+ * 
+ * This function searches through the child elements of the current element
+ * to find an element with the specified name. It performs a recursive search
+ * through all descendants.
+ * 
+ * @param name The name of the element to search for.
+ * @return A pointer to the element with the specified name, or nullptr if no such element is found.
  */
 GGUI::element* GGUI::element::getElement(std::string name){
-    element* Result = nullptr;
+    for (auto* c : getChilds()){
+        if (c->getNameAsRaw() == name)
+            return c;
 
-    // Check if the element is in the global Element_Names map.
-    if (INTERNAL::Element_Names.find(name) != INTERNAL::Element_Names.end()){
-        // If the element exists, assign it to the result.
-        Result = INTERNAL::Element_Names[name];
+        element* tmp = c->getElement(name);
+
+        if (tmp){
+            return tmp;
+        }
     }
 
-    // Return the result.
-    return Result;
+    return nullptr;
 }
 
 /**

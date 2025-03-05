@@ -2487,6 +2487,9 @@ namespace GGUI{
         // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
         resumeGGUI();
 
+        // TODO: remove this:
+        updateFrame();
+
         // Sleep for the given amount of milliseconds.
         INTERNAL::SLEEP(Sleep_For);
     }
@@ -2557,4 +2560,23 @@ namespace GGUI{
 
     }
 
+    /**
+     * @brief Retrieves an element by name.
+     * @details This function takes a string argument representing the name of the element
+     *          and returns a pointer to the element if it exists in the global Element_Names map.
+     * @param name The name of the element to retrieve.
+     * @return A pointer to the element if it exists; otherwise, nullptr.
+     */
+    element* getElement(std::string name){
+        element* Result = nullptr;
+
+        // Check if the element is in the global Element_Names map.
+        if (INTERNAL::Element_Names.find(name) != INTERNAL::Element_Names.end()){
+            // If the element exists, assign it to the result.
+            Result = INTERNAL::Element_Names[name];
+        }
+
+        // Return the result.
+        return Result;
+    }
 }
