@@ -211,6 +211,8 @@ GGUI::element::element(styling s, bool Embed_Styles_On_Construct){
 
     fullyStain();
 
+    Dirty.Dirty(STAIN_TYPE::FINALIZE);
+
     Style = new styling(s);
 
     if (Embed_Styles_On_Construct){
@@ -294,8 +296,8 @@ void GGUI::element::fullyStain() {
     this->Dirty.Dirty(
         STAIN_TYPE::CLASS | STAIN_TYPE::STRETCH | 
         STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | 
-        STAIN_TYPE::EDGE | STAIN_TYPE::MOVE |
-        STAIN_TYPE::FINALIZE
+        STAIN_TYPE::EDGE | STAIN_TYPE::MOVE
+        // STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
     );
 }
 
@@ -402,7 +404,7 @@ void GGUI::element::setOpacity(float Opacity){
 
     Style->Opacity.Set(Opacity);
 
-    Dirty.Dirty(STAIN_TYPE::STRETCH);
+    Dirty.Dirty(STAIN_TYPE::RESET);
     updateFrame();
 }
 
@@ -423,7 +425,7 @@ void GGUI::element::setOpacity(unsigned int Opacity) {
     Style->Opacity.Set((float)Opacity / 100.f);
 
     // Mark the element as dirty to trigger a visual update
-    Dirty.Dirty(STAIN_TYPE::STRETCH);
+    Dirty.Dirty(STAIN_TYPE::RESET);
     updateFrame(); // Update the frame to reflect the changes
 }
 
@@ -513,7 +515,7 @@ void GGUI::element::showShadow(FVector2 Direction, RGB Shadow_Color, float Opaci
     properties->Status = VALUE_STATE::VALUE;
 
     // Mark the element as dirty for a visual update
-    Dirty.Dirty(STAIN_TYPE::STRETCH);
+    Dirty.Dirty(STAIN_TYPE::RESET);
     updateFrame();
 }
 
@@ -544,7 +546,7 @@ void GGUI::element::showShadow(RGB Shadow_Color, float Opacity, float Length){
     properties->Status = VALUE_STATE::VALUE;
 
     // Mark the element as dirty for a visual update
-    Dirty.Dirty(STAIN_TYPE::STRETCH);
+    Dirty.Dirty(STAIN_TYPE::RESET);
     updateFrame();
 }
 
@@ -557,7 +559,7 @@ void GGUI::element::setShadow(shadow s){
     Style->Shadow = s;
 
     // Mark the element as dirty for a visual update
-    Dirty.Dirty(STAIN_TYPE::STRETCH);
+    Dirty.Dirty(STAIN_TYPE::RESET);
     updateFrame();
 }
 
@@ -689,7 +691,7 @@ void GGUI::element::addClass(std::string class_name){
     }
 
     // Mark the element as dirty after adding a new class.
-    Dirty.Dirty(STAIN_TYPE::STRETCH | STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+    Dirty.Dirty(STAIN_TYPE::CLASS);
 }
 
 /**
@@ -933,7 +935,7 @@ void GGUI::element::display(bool f){
         }
 
         // now also update all children, this is for the sake of events, since they do not obey AST structure where parental hidden would stop going deeper into AST events are linear list.
-        GGUI::pauseGGUI([this, f](){
+        pauseGGUI([this, f](){
             for (element* c : Style->Childs){
                 c->display(f);
             }
@@ -1174,11 +1176,7 @@ GGUI::element* GGUI::element::copy(){
 }
 
 void GGUI::element::embedStyles(){
-    // If this is true, then the user probably:
-    // A.) Doesn't know what the fuck he is doing.
-    // B.) He is trying to use the OUTBOX feature.
     if (Parent == nullptr && GGUI::INTERNAL::Main == nullptr){
-        // Lets go with B.
         INTERNAL::reportStack("OUTBOX not supported, cannot anchor: " + getName());
     }
 
@@ -1646,7 +1644,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
     //if inned children have changed without this changing, then this will trigger.
     if (childrenChanged() || hasTransparentChildren()){
-        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::COLOR);
+        Dirty.Dirty(STAIN_TYPE::RESET);
     }
 
     // Check for Dynamic attributes
@@ -1681,10 +1679,19 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         updateAbsolutePositionCache();
     }
 
+    if (Dirty.is(STAIN_TYPE::RESET)){
+        Dirty.Clean(STAIN_TYPE::RESET);
+
+        std::fill(Result.begin(), Result.end(), SYMBOLS::EMPTY_UTF);
+        
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+    }
+
     if (Dirty.is(STAIN_TYPE::STRETCH)){
-        Result.clear(); // <- TODO remove this.
-        Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
         Dirty.Clean(STAIN_TYPE::STRETCH);
+        
+        Result.clear();
+        Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
 
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
@@ -2186,24 +2193,22 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::Eve
  * @return true if any children have changed, false otherwise.
  */
 bool GGUI::element::childrenChanged(){
-    // This is used if an element is recently hidden so the DEEP search wouldn't find it if not for this. 
-    // Clean the state changed elements already here.
-    if (Dirty.is(STAIN_TYPE::STATE)){
-        Dirty.Clean(STAIN_TYPE::STATE);
-        return true;
-    }
-
-    // Not counting State machine, if element is not being drawn return always false.
-    if (!Show)
-        return false;
-
-    // After 0.1.8 elements will no longer flag their own changes under "child change".
-    // if (Dirty.Type != STAIN_TYPE::CLEAN){ // If the element is dirty.
-    //     return true;
-    // }
-
-    // recursion
     for (auto e : Style->Childs){
+        if (e->getDirty().is(STAIN_TYPE::FINALIZE)){
+            GGUI::INTERNAL::reportStack("Child element passthrough Finalization stage!");
+        }
+
+        // This is used if an element is recently hidden so the DEEP search wouldn't find it if not for this. 
+        // Clean the state changed elements already here.
+        if (e->getDirty().is(STAIN_TYPE::STATE)){
+            e->Dirty.Clean(STAIN_TYPE::STATE);
+            return true;
+        }
+
+        // Not counting State machine, if element is not being drawn return always false.
+        if (!Show)
+            return false;
+
         if (e->getDirty().Type != STAIN_TYPE::CLEAN)
             return true;
 

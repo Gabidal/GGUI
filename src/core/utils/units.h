@@ -669,6 +669,7 @@ namespace GGUI{
         STATE = 1 << 6,         // This is for Switches that based on their state display one symbol differently. And also for state handlers.
         MOVE = 1 << 7,          // Enabled, to signal absolute position caching.
         FINALIZE = 1 << 8,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
+        RESET = 1 << 9,         // This is to remove redundant STRETCH flagging.
     };
  
     /**

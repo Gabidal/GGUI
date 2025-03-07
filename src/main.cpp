@@ -1,23 +1,42 @@
 #include "ggui.h"
-
-#include <math.h>
+#include "./core/utils/utils.h"
 
 using namespace GGUI;
 
-int main()
+int main() 
 {
     GGUI::GGUI(styling(
-        node(new element(styling(
-            width(10) | height(10) | background_color(COLOR::RED) | name("A") | opacity(0.5f)
-        )))
+        // childs({
+        //     new listView(styling(
+        //         childs({
+        //             new button(styling(text("File") | on_click([]([[maybe_unused]] element* self){}))),
+        //             new button(styling(text("Edit") | on_click([]([[maybe_unused]] element* self){}))),
+        //             new button(styling(text("View") | on_click([]([[maybe_unused]] element* self){}))),
+        //             new button(styling(text("Help") | on_click([]([[maybe_unused]] element* self){})))
+        //         }) |
+        //         STYLES::border
+        //     )),
+        //     new window(styling(
+        //         title("A") | width(20) | height(10) | background_color(COLOR::MAGENTA) | text_color(COLOR::RED) | opacity(0.5f) | position(10, 10)
+        //     )),
+        //     new window(styling(
+        //         title("B") | width(20) | height(10) | background_color(COLOR::YELLOW) | text_color(COLOR::GREEN) | opacity(0.5f) | position(30, 10)
+        //     )),
+        //     new window(styling(
+        //         title("C") | width(20) | height(10) | background_color(COLOR::CYAN) | text_color(COLOR::BLUE) | opacity(0.5f) | position(20, 15)
+        //     ))
+        // }) |
+        title("Your App UI") |
+        background_color(COLOR::WHITE) |
+        text_color(COLOR::BLACK) |
+        STYLES::border
     ));
 
     GGUI::INTERNAL::SLEEP(1000);
-    element* a = GGUI::getElement("A");
+    report("aaaa");
 
-    a->setPosition({10, 10});
+    GGUI::INTERNAL::SLEEP(INT32_MAX);
 
-    GGUI::INTERNAL::SLEEP(INT16_MAX);
-
+    // // Then exit properly
     GGUI::EXIT();
 }
