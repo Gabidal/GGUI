@@ -2429,9 +2429,6 @@ namespace GGUI{
             inline styling Default;
         }
 
-        inline enable_border border = enable_border(true);
-        inline display hide = display(false);
-
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
         inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(-0.5f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).

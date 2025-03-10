@@ -56,7 +56,8 @@ namespace GGUI{
                 "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
                 "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
                 "Resolution: " + std::to_string(INTERNAL::Max_Width) + "x" + std::to_string(INTERNAL::Max_Height) + "\n" +
-                "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n";
+                "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n" + 
+                "Mouse: {" + std::to_string(INTERNAL::Mouse.X) + ", " + std::to_string(INTERNAL::Mouse.Y) + "}\n";
     }
     
     /**
@@ -112,7 +113,7 @@ namespace GGUI{
                     width(1.0f) | height(0.5f) |
                     text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
                     border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
-                    STYLES::border | 
+                    enable_border(true) | 
                     title("LOG: ") | 
                     // Set the name of the window to "LOG"
                     name(ERROR_LOGGER) | 
@@ -126,7 +127,7 @@ namespace GGUI{
                 styling(
                     align(ALIGN::LEFT) | 
                     width(1.0f) |
-                    height(8) |
+                    height(0.5f) |
                     // Set the name of the text field to "STATS"
                     name("STATS")
                     // text(Get_Stats_Text().c_str())

@@ -29,7 +29,7 @@ int main()
         title("Your App UI") |
         background_color(COLOR::WHITE) |
         text_color(COLOR::BLACK) |
-        STYLES::border
+        enable_border(true)
     ));
 
     GGUI::INTERNAL::SLEEP(1000);

@@ -26,8 +26,8 @@ namespace GGUI{
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
     void position::Evaluate(styling* parent){
-        X.Evaluate(parent->Width.Get());
-        Y.Evaluate(parent->Height.Get());
+        X.Evaluate(Max(parent->Width.Get() - (parent->Border_Enabled.Value * 2), 1));
+        Y.Evaluate(Max(parent->Height.Get() - (parent->Border_Enabled.Value * 2), 1));
         // Z.Evaluate(parent->Position.Get().Z);    // Since child as always parent.Z+1, there is no world where this is useful.
     }
 

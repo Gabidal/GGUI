@@ -1606,9 +1606,9 @@ void GGUI::element::computeDynamicSize(){
             int Border_Offset = (hasBorder() - c->hasBorder()) * hasBorder() * 2;
 
             // If the width is an percentage value, then it is always smaller or equal to this's width.
-            bool Skip_Width_Modification = c->getWidthType() != EVALUATION_TYPE::PERCENTAGE;  // Skip checking width if the width attribute type is an relative one
+            bool Skip_Width_Modification = c->getWidthType() != EVALUATION_TYPE::PERCENTAGE && getWidthType() != EVALUATION_TYPE::PERCENTAGE;  // Skip checking width if the width attribute type is an relative one
             // Do the same for the Height attribute
-            bool Skip_Height_Modification = c->getHeightType() != EVALUATION_TYPE::PERCENTAGE;
+            bool Skip_Height_Modification = c->getHeightType() != EVALUATION_TYPE::PERCENTAGE && getHeightType() != EVALUATION_TYPE::PERCENTAGE; // Skip checking height if the height attribute type is an relative one
 
             // Add the border offset to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = (unsigned int)GGUI::Max(
@@ -1643,7 +1643,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     std::vector<GGUI::UTF>& Result = Render_Buffer;
 
     //if inned children have changed without this changing, then this will trigger.
-    if (childrenChanged() || hasTransparentChildren()){
+    if (!Dirty.is(STAIN_TYPE::STRETCH) && (childrenChanged() || hasTransparentChildren())){
         Dirty.Dirty(STAIN_TYPE::RESET);
     }
 

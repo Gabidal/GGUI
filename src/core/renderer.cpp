@@ -2145,8 +2145,6 @@ namespace GGUI{
             INTERNAL::renderer();
         });
 
-        initAddons();
-
         std::thread Event_Scheduler([&](){
             INTERNAL::eventThread();
         });
@@ -2257,7 +2255,7 @@ namespace GGUI{
                                     STYLES::center + STYLES::prioritize
                                 ) | 
                                 
-                                STYLES::border | allow_overflow(true) | 
+                                enable_border(true) | allow_overflow(true) | 
 
                                 node(new scrollView(styling(
                                     width(1.0f) | height(1.0f) |
@@ -2482,6 +2480,9 @@ namespace GGUI{
 
             // Now recursively go down in the App AST nodes and Build each node.
             INTERNAL::Main->embedStyles();
+
+            // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
+            initAddons();
         });
 
         // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
