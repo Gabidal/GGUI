@@ -27,6 +27,23 @@ GGUI::scrollView::scrollView(listView& container) : element(){
 
 //End of user constructors.
 
+GGUI::IVector3 GGUI::listView::getDimensionLimit(){
+    // Overflow does not have bounds, and is thus unbounded.
+    if (isOverflowAllowed()){
+        return {INT16_MAX, INT16_MAX};
+    }
+
+    if (isDynamicSizeAllowed()){
+        IVector3 Start_Address = Last_Child->getPosition();
+
+        IVector3 End_Address = getFinalLimit();
+
+        return End_Address - Start_Address;
+    }
+
+    return {getWidth(), getHeight()};
+}
+
 /**
  * @brief Adds a child element to the list view.
  * @details This function adds a child element to the list view and manages the positioning and sizing
@@ -47,9 +64,7 @@ void GGUI::listView::addChild(element* e) {
         }
 
         // Get the maximum width and height limits for the list view.
-        std::pair<unsigned int, unsigned int> limits = getLimitDimensions();
-        unsigned int max_width = limits.first;
-        unsigned int max_height = limits.second;
+        IVector3 limits = getDimensionLimit();
 
         // Calculate the border offset for the child element.
         unsigned Offset = (hasBorder() - e->hasBorder()) * hasBorder();
@@ -66,16 +81,13 @@ void GGUI::listView::addChild(element* e) {
         if (Style->Flow_Priority.Value == DIRECTION::ROW) {
             // Adjust for minimum width needed when borders are present.
             signed int Width_Modifier = e->hasBorder() & Last_Child->hasBorder();
-            unsigned long long Proposed_Height = Max(Child_Needs_Minimum_Height_Of, getHeight());
-            unsigned long long Proposed_Width = Max(Last_Child->getPosition().X + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
+            if (isDynamicSizeAllowed()){
+                unsigned long long Proposed_Height = Max(Child_Needs_Minimum_Height_Of, getHeight());
+                unsigned long long Proposed_Width = Max(Last_Child->getPosition().X + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
 
-            // Check if the parent allows stretching or overflow.
-            if (!Parent->isDynamicSizeAllowed() && !Parent->isOverflowAllowed()) {
-                setHeight(Min(max_height, Proposed_Height));
-                setWidth(Min(max_width, Proposed_Width));
-            } else {
-                setWidth(Proposed_Width);
-                setHeight(Proposed_Height);
+                // Check if the parent allows stretching or overflow.
+                setHeight(Min(limits.Y, Proposed_Height));
+                setWidth(Min(limits.X, Proposed_Width));
                 Dirty.Dirty(STAIN_TYPE::STRETCH);
             }
 
@@ -86,16 +98,13 @@ void GGUI::listView::addChild(element* e) {
         } else {
             // Adjust for minimum height needed when borders are present.
             signed int Height_Modifier = e->hasBorder() & Last_Child->hasBorder();
-            unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, getWidth());
-            unsigned long long Proposed_Height = Max(Last_Child->getPosition().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
+            if (isDynamicSizeAllowed()){
+                unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, getWidth());
+                unsigned long long Proposed_Height = Max(Last_Child->getPosition().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
 
-            // Check if the parent allows stretching or overflow.
-            if (!Parent->isDynamicSizeAllowed() && !Parent->isOverflowAllowed()) {
-                setWidth(Min(max_width, Proposed_Width));
-                setHeight(Min(max_height, Proposed_Height));
-            } else {
-                setWidth(Proposed_Width);
-                setHeight(Proposed_Height);
+                // Check if the parent allows stretching or overflow.
+                setWidth(Min(limits.X, Proposed_Width));
+                setHeight(Min(limits.Y, Proposed_Height));
                 Dirty.Dirty(STAIN_TYPE::STRETCH);
             }
 
@@ -170,7 +179,11 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
         }
     }
 
-    if (isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()){
+    if (
+        (
+        Style->Width.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE
+        ) && isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()
+    ){
         setDimensions(Max_Width, Max_Height);
     }
 }
@@ -207,19 +220,6 @@ bool GGUI::listView::remove(element* remove){
             return false;
         }
 
-        // So basically this algorithm just calculates the gap which is born, when this element is removed from the middle of the list, and our task is to collapse the gap.
-
-        // First fetch some data:
-        std::pair<unsigned int, unsigned int> limits = getLimitDimensions();
-
-        unsigned int Inner_Width = limits.first;
-        unsigned int Inner_Height = limits.second;
-
-        // represents as well as the vertical list as well the horizontal list.
-        // where this checks if this element was the root cause for the elements height or width to be stretched when this was added.
-        // so for an vertical list this checks if it changed the width, or for an horizontal list the height. 
-        bool Is_Stretcher = remove->getWidth() == Inner_Width || remove->getHeight() == Inner_Height;
-
         // now sadly we need to branch the code into the vertical and horizontal calculations.
         if (Style->Flow_Priority.Value == DIRECTION::ROW){
             // represents the horizontal list
@@ -234,16 +234,13 @@ bool GGUI::listView::remove(element* remove){
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
-                if (Is_Stretcher && Style->Childs[i]->getHeight() > New_Stretched_Height)
+                if (Style->Childs[i]->getHeight() > New_Stretched_Height)
                     New_Stretched_Height = Style->Childs[i]->getHeight();
             }
 
-            if (Is_Stretcher)
-                Inner_Height = New_Stretched_Height;
-
-            Inner_Width -= Gap;
-
-            setDimensions(Inner_Width, Inner_Height);
+            if (isDynamicSizeAllowed()){
+                setDimensions(getWidth() - Gap, New_Stretched_Height);
+            }
         }   
         else{
             // represents the vertical list
@@ -258,16 +255,13 @@ bool GGUI::listView::remove(element* remove){
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
-                if (Is_Stretcher && Style->Childs[i]->getWidth() > New_Stretched_Width)
+                if (Style->Childs[i]->getWidth() > New_Stretched_Width)
                     New_Stretched_Width = Style->Childs[i]->getWidth();
             }
 
-            if (Is_Stretcher)
-                Inner_Width = New_Stretched_Width;
-
-            Inner_Height -= Gap;
-
-            setDimensions(Inner_Width, Inner_Height);
+            if (isDynamicSizeAllowed()){
+                setDimensions(New_Stretched_Width, getHeight() - Gap);
+            }
         }
 
         delete remove;

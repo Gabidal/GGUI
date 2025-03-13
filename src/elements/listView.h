@@ -51,6 +51,8 @@ namespace GGUI{
 
         //End of user constructors.
 
+        IVector3 getDimensionLimit();
+
         /**
          * @brief Adds a child element to the list view.
          * @details This function adds a child element to the list view and manages the positioning and sizing

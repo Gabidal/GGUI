@@ -403,11 +403,7 @@ namespace GGUI{
          */
         std::pair<unsigned int, unsigned int> getFittingDimensions(element* child);
 
-        /**
-         * @brief Returns the maximum dimensions of the element without exceeding the parent element's dimensions.
-         * @return A pair containing the maximum width and height of the element.
-         */
-        std::pair<unsigned int, unsigned int> getLimitDimensions();
+        IVector3 getFinalLimit();
 
         /**
          * @brief Sets the border visibility of the element.

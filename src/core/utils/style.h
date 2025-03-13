@@ -1125,6 +1125,7 @@ namespace GGUI{
             Transform_Center_To_Top_Left_Origin();
         }
 
+        // WARNING: Uses zero origin based coordinates!!!
         constexpr position(STYLING_INTERNAL::value<int> X, STYLING_INTERNAL::value<int> Y, STYLING_INTERNAL::value<int> Z = 0, VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(X, Y, Z, Default){
             Transform_Center_To_Top_Left_Origin();
         }
@@ -1170,6 +1171,7 @@ namespace GGUI{
         constexpr width(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
         constexpr width(unsigned int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
+        // When this is used we should automatically disable AllowDynamicSize
         constexpr width(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
         ~width() override { style_base::~style_base(); }
@@ -1199,6 +1201,7 @@ namespace GGUI{
         constexpr height(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
         constexpr height(unsigned int value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
+        // When this is used we should automatically disable AllowDynamicSize
         constexpr height(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
 
         ~height() override { style_base::~style_base(); }

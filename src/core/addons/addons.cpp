@@ -79,7 +79,6 @@ namespace GGUI{
         // Update the stats
         Stats->setText(Get_Stats_Text());
 
-        // return success
         return true;
     }
 
@@ -93,7 +92,7 @@ namespace GGUI{
 
         Addons.push_back(new GGUI::listView(styling(
             width(0.5f) | height(1.0f) | 
-            text_color(1.0f) | background_color(1.0f) |
+            text_color(1.0f) | background_color(GGUI::COLOR::BLACK) |
             // Set the flow direction to column so the elements stack vertically
             flow_priority(DIRECTION::COLUMN) | 
             // Set the position of the list view to the right side of the main window
@@ -105,14 +104,12 @@ namespace GGUI{
             // Set the name of the list view to "Inspect"
             name("Inspect") |
 
-            // STYLES::border |     <- will crash since the child nodes do not have borders enabled.
+            // enable_border(true) |     // <- will crash since the child nodes do not have borders enabled.
 
             // Add the error logger kidnapper:
             node(new window(
                 styling(
                     width(1.0f) | height(0.5f) |
-                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                    border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
                     enable_border(true) | 
                     title("LOG: ") | 
                     // Set the name of the window to "LOG"
@@ -127,7 +124,7 @@ namespace GGUI{
                 styling(
                     align(ALIGN::LEFT) | 
                     width(1.0f) |
-                    height(0.5f) |
+                    height(8) |
                     // Set the name of the text field to "STATS"
                     name("STATS")
                     // text(Get_Stats_Text().c_str())

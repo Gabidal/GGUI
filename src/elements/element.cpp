@@ -1254,36 +1254,19 @@ std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(elemen
     return {Result_Width, Result_Height};
 }
 
-/**
- * @brief Returns the maximum dimensions of the element without exceeding the parent element's dimensions.
- * @return A pair containing the maximum width and height of the element.
- */
-std::pair<unsigned int, unsigned int> GGUI::element::getLimitDimensions(){
-    unsigned int max_width = 0;
-    unsigned int max_height = 0;
-
-    if (Parent){
-        // If the element has a parent, then get the fitting dimensions from the parent.
-        std::pair<unsigned int, unsigned int> Max_Dimensions = Parent->getFittingDimensions(this);
-
-        max_width = Max_Dimensions.first;
-        max_height = Max_Dimensions.second;
-    }
-    else{
-        // If the element does not have a parent, then get the maximum dimensions from the main window.
-        if ((element*)this == (element*)GGUI::INTERNAL::Main){
-            // If the element is the main window, then get the maximum dimensions directly.
-            max_width = INTERNAL::Max_Width;
-            max_height = INTERNAL::Max_Height;
-        }
-        else{
-            // If the element is not the main window, then get the maximum dimensions from the main window minus 2 for the border offset.
-            max_width = GGUI::INTERNAL::Main->getWidth() - GGUI::INTERNAL::Main->hasBorder() * 2;
-            max_height = GGUI::INTERNAL::Main->getHeight() - GGUI::INTERNAL::Main->hasBorder() * 2;
-        }
+GGUI::IVector3 GGUI::element::getFinalLimit(){
+    if (isOverflowAllowed()){
+        return {UINT32_MAX, UINT32_MAX};
     }
 
-    return {max_width, max_height};
+    IVector3 End_Address = IVector3(getWidth(), getHeight());
+
+    // We can check if the parent allows some flexibility.
+    if (Parent && isDynamicSizeAllowed()){
+        End_Address = Parent->getFinalLimit();
+    }
+
+    return End_Address;
 }
 
 /**
@@ -1374,8 +1357,11 @@ void GGUI::element::setTextColor(RGB color){
  * @param True A boolean indicating whether dynamic resizing is allowed.
  */
 void GGUI::element::allowDynamicSize(bool True) {
+    // Since dynamic size and percentage based size are two incompatible systems.
+    if (Style->Width.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE){
+        Style->Allow_Dynamic_Size = True; 
+    }
     // Set the Allow_Dynamic_Size property in the element's style
-    Style->Allow_Dynamic_Size = True; 
     // No need to update the frame, as this is used only on content change which triggers a frame update
 }
 

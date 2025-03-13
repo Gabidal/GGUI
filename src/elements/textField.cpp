@@ -101,7 +101,7 @@ namespace GGUI{
         }
 
         // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
-        if (Style->Allow_Dynamic_Size.Value){
+        if (isDynamicSizeAllowed()){
             // Set the new size
             setWidth(Max(Longest_Line, getWidth()));
             setHeight(Max(Text_Cache.size(), getHeight()));

@@ -339,6 +339,10 @@ namespace GGUI{
             return IVector3(X + other.X, Y + other.Y, Z + other.Z);
         }
 
+        constexpr IVector3 operator-(const IVector3& other) const noexcept {
+            return IVector3(X - other.X, Y - other.Y, Z - other.Z);
+        }
+
 
         /**
          * @brief * operator with a float

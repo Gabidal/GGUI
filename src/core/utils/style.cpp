@@ -147,11 +147,23 @@ namespace GGUI{
     STAIN_TYPE width::Embed_Value(styling* host, [[maybe_unused]] element* owner){
         host->Width = *this;
 
+        // Since dynamic size and percentage based size are two incompatible systems.
+        if (host->Width.Value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+            allow_dynamic_size tmp = allow_dynamic_size(false);
+            tmp.Embed_Value(host, owner);
+        }
+
         return STAIN_TYPE::STRETCH;
     }
 
     STAIN_TYPE height::Embed_Value(styling* host, [[maybe_unused]] element* owner){
         host->Height = *this;
+
+        // Since dynamic size and percentage based size are two incompatible systems.
+        if (host->Width.Value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+            allow_dynamic_size tmp = allow_dynamic_size(false);
+            tmp.Embed_Value(host, owner);
+        }
         
         return STAIN_TYPE::STRETCH;
     }
