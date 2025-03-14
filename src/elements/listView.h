@@ -254,6 +254,14 @@ namespace GGUI{
          * @return The container of the scroll view.
          */
         listView* getContainer(){
+            // If the container has not been yet initialized, do so.
+            if (getChilds().size() == 0){
+                allowOverflow(true);
+                element::addChild(new listView(
+                    // ...
+                ));
+            }
+
             return (listView*)Style->Childs[0];
         }
         

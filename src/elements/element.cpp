@@ -1256,7 +1256,7 @@ std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(elemen
 
 GGUI::IVector3 GGUI::element::getFinalLimit(){
     if (isOverflowAllowed()){
-        return {UINT32_MAX, UINT32_MAX};
+        return {INT16_MAX, INT16_MAX};
     }
 
     IVector3 End_Address = IVector3(getWidth(), getHeight());

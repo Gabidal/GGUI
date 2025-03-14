@@ -290,14 +290,6 @@ void GGUI::scrollView::addChild(element* e) {
     // Mark the Scroll_View as dirty with the DEEP stain because we are adding a new child element.
     Dirty.Dirty(STAIN_TYPE::DEEP);
 
-    // If the container has not been yet initialized, do so.
-    if (getChilds().size() == 0){
-        allowOverflow(true);
-        element::addChild(new listView(
-            // ...
-        ));
-    }
-
     // Add the child element to the List_View that is being used as the container.
     getContainer()->addChild(e);
 }

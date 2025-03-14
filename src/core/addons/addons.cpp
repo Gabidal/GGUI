@@ -57,7 +57,7 @@ namespace GGUI{
                 "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
                 "Resolution: " + std::to_string(INTERNAL::Max_Width) + "x" + std::to_string(INTERNAL::Max_Height) + "\n" +
                 "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n" + 
-                "Mouse: {" + std::to_string(INTERNAL::Mouse.X) + ", " + std::to_string(INTERNAL::Mouse.Y) + "}\n";
+                "Mouse: {" + std::to_string(INTERNAL::Mouse.X) + ", " + std::to_string(INTERNAL::Mouse.Y) + "}";
     }
     
     /**
@@ -124,7 +124,7 @@ namespace GGUI{
                 styling(
                     align(ALIGN::LEFT) | 
                     width(1.0f) |
-                    height(8) |
+                    height(9) |
                     // Set the name of the text field to "STATS"
                     name("STATS")
                     // text(Get_Stats_Text().c_str())
