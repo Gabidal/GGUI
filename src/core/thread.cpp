@@ -30,6 +30,8 @@ namespace GGUI{
 
         extern void Translate_Inputs();
 
+        bool Identical_Frame = false;
+
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.
          * It waits for a condition to resume rendering, processes rendering tasks, and
@@ -75,14 +77,18 @@ namespace GGUI{
                         }
                     });
 
+                    Identical_Frame = false;
+
                     INTERNAL::Abstract_Frame_Buffer = INTERNAL::Main->render();
 
-                    // ENCODE for optimize
-                    encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
+                    if (Identical_Frame){
+                        // ENCODE for optimize
+                        encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
 
-                    INTERNAL::Frame_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight())->To_String();
-                    
-                    INTERNAL::renderFrame();
+                        INTERNAL::Frame_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight())->To_String();
+                        
+                        INTERNAL::renderFrame();
+                    }
                 }
 
                 // Check the difference of the time captured before render and now after render

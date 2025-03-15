@@ -3,6 +3,7 @@
 
 #include "../core/renderer.h"
 #include "../core/utils/utils.h"
+#include "../core/thread.h"
 
 #include <algorithm>
 #include <vector>
@@ -1628,11 +1629,6 @@ void GGUI::element::computeDynamicSize(){
 std::vector<GGUI::UTF>& GGUI::element::render(){
     std::vector<GGUI::UTF>& Result = Render_Buffer;
 
-    //if inned children have changed without this changing, then this will trigger.
-    if (!Dirty.is(STAIN_TYPE::STRETCH) && (childrenChanged() || hasTransparentChildren())){
-        Dirty.Dirty(STAIN_TYPE::RESET);
-    }
-
     // Check for Dynamic attributes
     if(Style->Evaluate_Dynamic_Dimensions(this))
         Dirty.Dirty(STAIN_TYPE::STRETCH);
@@ -1649,6 +1645,23 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     calculateChildsHitboxes();    // Normally elements will NOT oder their content by hitbox system.
 
     computeDynamicSize();
+
+    //if inned children have changed without this changing, then this will trigger.
+    if (!Dirty.has(STAIN_TYPE::STRETCH | STAIN_TYPE::RESET)){
+        bool tmp = childrenChanged();
+
+        if (!tmp && Dirty.is(STAIN_TYPE::CLEAN)){
+            return Result;
+        }
+        else if (tmp || hasTransparentChildren()){
+            Dirty.Dirty(STAIN_TYPE::RESET);
+        }
+    }
+
+    // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
+    if (this == GGUI::INTERNAL::Main && !Dirty.is(STAIN_TYPE::CLEAN)){
+        GGUI::INTERNAL::Identical_Frame = true;
+    }
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
         return Result;
@@ -2215,10 +2228,6 @@ bool GGUI::element::hasTransparentChildren() {
     // If the element is not visible, return false.
     if (!Show)
         return false;
-
-    // Check if the current element is transparent and not clean.
-    // if (isTransparent() && Dirty.Type != STAIN_TYPE::CLEAN)
-    //     return true;
 
     // Recursively check each child element for transparency.
     for (auto e : Style->Childs) {

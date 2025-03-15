@@ -738,6 +738,10 @@ namespace GGUI{
             return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
         }
 
+        bool has(unsigned int f){
+            return ((unsigned int)Type & (unsigned int)f) != 0;
+        }
+
         /**
          * @brief Clears a STAIN_TYPE flag from the current STAIN object.
          * @details This function clears a given STAIN_TYPE flag from the current

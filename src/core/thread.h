@@ -3,6 +3,8 @@
 
 namespace GGUI{
     namespace INTERNAL{
+
+        extern bool Identical_Frame;
         
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.

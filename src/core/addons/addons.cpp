@@ -49,8 +49,8 @@ namespace GGUI{
      * @return A formatted string containing the collected statistics.
      */
     std::string Get_Stats_Text(){
-        return  "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
-                "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
+        return  "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
+                "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
                 "Elements: " + std::to_string(INTERNAL::Main->getAllNestedElements().size()) + "\n" +
                 "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
                 "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
@@ -76,8 +76,12 @@ namespace GGUI{
         // find the stats element
         textField* Stats = (textField*)INTERNAL::Main->getElement("STATS");
 
+        std::string new_stats = Get_Stats_Text();
+
         // Update the stats
-        Stats->setText(Get_Stats_Text());
+        if (new_stats != Stats->getText()){
+            Stats->setText(new_stats);
+        }
 
         return true;
     }

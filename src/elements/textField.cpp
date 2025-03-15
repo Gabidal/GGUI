@@ -223,7 +223,7 @@ namespace GGUI{
         Text = text;
         updateTextCache();
 
-        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STRETCH);
+        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);
 
         updateFrame();
     }
