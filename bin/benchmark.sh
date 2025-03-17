@@ -40,7 +40,7 @@ fi
 echo "Building the project..."
 
 current_dir=$(pwd)
-build_script="$current_dir/bin/Build.sh"
+build_script="$current_dir/bin/build.sh"
 
 if [[ ! -f "$build_script" ]]; then
     handle_error "Build script '$build_script' not found."
@@ -56,7 +56,7 @@ sleep 3
 echo "Running GGUI with Valgrind and Callgrind enabled..."
 
 DEFAULT_SETTINGS="--tool=callgrind --dump-instr=yes -s"
-FULL_SETTINGS="--tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes"
+FULL_SETTINGS="--tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes"
 
 # Select profiling settings based on user input.
 if [[ "$1" =~ ^(-F|-f)$ ]]; then
