@@ -99,11 +99,11 @@ void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_O
     // Get the background colour as a string
     Background.Get_Colour_As_Super_String(Background_Colour);
 
-    Result->Add(Text_Overhead, true);
-    Result->Add(Text_Colour, true);
+    Result->Add(Text_Overhead);
+    Result->Add(Text_Colour);
     Result->Add(Constants::ANSI::END_COMMAND);
-    Result->Add(Background_Overhead, true);
-    Result->Add(Background_Colour, true);
+    Result->Add(Background_Overhead);
+    Result->Add(Background_Colour);
 
     if (Is(UTF_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
@@ -176,11 +176,11 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
         Background.Get_Over_Head_As_Super_String(Background_Overhead, false);
         Background.Get_Colour_As_Super_String(Background_Colour);
 
-        Result->Add(Text_Overhead, true);
-        Result->Add(Text_Colour, true);
+        Result->Add(Text_Overhead);
+        Result->Add(Text_Colour);
         Result->Add(Constants::ANSI::END_COMMAND);
-        Result->Add(Background_Overhead, true);
-        Result->Add(Background_Colour, true);
+        Result->Add(Background_Overhead);
+        Result->Add(Background_Colour);
         Result->Add(Constants::ANSI::END_COMMAND);
     }
 

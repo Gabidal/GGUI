@@ -185,11 +185,7 @@ namespace GGUI{
          * @param Expected A boolean flag indicating whether the reservation size is already
          *                 expected to be sufficient. If false, the Data vector will be resized.
          */
-        void Add(Super_String* other, bool Expected = false){
-            // Enlarge the reservation if necessary.
-            if (!Expected)
-                Data.resize(Current_Index + other->Current_Index);
-
+        void Add(Super_String* other){
             // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other->Current_Index; i++){
 
@@ -203,11 +199,8 @@ namespace GGUI{
          * @param Expected If true, the size of the Data vector will not be changed.
          * @details This function is used to concatenate Super_Strings.
          */
-        void Add(Super_String& other, bool Expected = false){
-            // enlarge the reservation
-            if (!Expected)
-                Data.resize(Current_Index + other.Current_Index);
-
+        void Add(Super_String& other){
+            // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other.Current_Index; i++){
 
                 Data[Current_Index++] = other.Data[i];

@@ -1663,7 +1663,7 @@ namespace GGUI{
                     &INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR
                 );
                 
-                Result->Add(INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER, true);
+                Result->Add(INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER);
 
                 // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
                 INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();

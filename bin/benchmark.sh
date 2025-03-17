@@ -58,7 +58,7 @@ echo "Running GGUI with Valgrind and Callgrind enabled..."
 DEFAULT_SETTINGS="--tool=callgrind --dump-instr=yes -s"
 FULL_SETTINGS="--tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes"
 
-# Select profiling settings based on user input.
+# Select profiling settings based on user input. 
 if [[ "$1" =~ ^(-F|-f)$ ]]; then
     CURRENT_FLAG=$FULL_SETTINGS
 else
