@@ -32,6 +32,9 @@ namespace GGUI{
 
         bool Identical_Frame = false;
 
+        // Async-Signal-Safe global flag.
+        volatile sig_atomic_t Terminate = false;
+
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.
          * It waits for a condition to resume rendering, processes rendering tasks, and
@@ -49,7 +52,7 @@ namespace GGUI{
          * 9. Pauses the render thread and notifies all waiting threads.
          */
         void renderer(){
-            while (true){
+            while (!Terminate){
                 {
                     std::unique_lock lock(INTERNAL::atomic::Mutex);
                     INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::RESUMED; });
@@ -61,9 +64,9 @@ namespace GGUI{
                 INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (INTERNAL::Carry_Flags.Read().Terminate){
-                    break;  // Break out of the loop if the terminate flag is set
-                }
+                // if (INTERNAL::Carry_Flags.Read().Terminate){
+                //     break;  // Break out of the loop if the terminate flag is set
+                // }
 
                 if (INTERNAL::Main){
 
@@ -103,6 +106,13 @@ namespace GGUI{
                     INTERNAL::atomic::Condition.notify_all();
                 }
             }
+
+            LOGGER::Log("Rendering thread terminated!");
+
+            LOGGER::Log("Reverting to normal console mode...");
+
+            // Clean up platform-specific resources and settings
+            De_Initialize();
         }
 
         /**
@@ -159,7 +169,7 @@ namespace GGUI{
          * @note If uncapped FPS is desired, the sleep code can be disabled.
          */
         void eventThread(){
-            while (true){
+            while (!Terminate){
                 pauseGGUI([&](){
                     // Reset the thread load counter
                     INTERNAL::Event_Thread_Load = 0;
@@ -172,9 +182,9 @@ namespace GGUI{
                 });
 
                 // Check for carry signals if the event scheduler needs to be terminated.
-                if (INTERNAL::Carry_Flags.Read().Terminate){
-                    break;  // Break out of the loop if the terminate flag is set
-                }
+                // if (INTERNAL::Carry_Flags.Read().Terminate){
+                //     break;  // Break out of the loop if the terminate flag is set
+                // }
 
                 /* 
                     Notice: Since the Rendering thread will use its own access to render as tickets, so every time it is "RESUMED" it will after its own run set itself to PAUSED.
@@ -198,6 +208,8 @@ namespace GGUI{
                     )
                 ));
             }
+        
+            LOGGER::Log("Event thread terminated!");
         }
     
         /**
@@ -214,7 +226,7 @@ namespace GGUI{
          *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
          */
         void inputThread(){
-            while (true){
+            while (!Terminate){
                 // Wait for user input.
                 INTERNAL::queryInputs();
 
@@ -237,6 +249,8 @@ namespace GGUI{
                     INTERNAL::Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
                 });
             }
+        
+            LOGGER::Log("Input thread terminated!");
         }
     }
 }

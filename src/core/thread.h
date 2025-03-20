@@ -1,10 +1,16 @@
 #ifndef _THREAD_H_
 #define _THREAD_H_
 
+#include <csignal>
+
 namespace GGUI{
     namespace INTERNAL{
 
         extern bool Identical_Frame;
+
+        extern volatile sig_atomic_t Terminate;
+
+        extern void De_Initialize();
         
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.

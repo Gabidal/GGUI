@@ -81,6 +81,8 @@ namespace GGUI{
 
         atomic::Guard<Carry> Carry_Flags; 
 
+        extern volatile sig_atomic_t Terminate;
+
         /**
          * @brief Temporary function to return the current date and time in a string.
          * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
@@ -191,32 +193,35 @@ namespace GGUI{
          * @param signum The exit code to be used when terminating the application.
          */
         void EXIT(int signum){
-            if (!Carry_Flags.Read().Terminate){
-                LOGGER::Log("Sending termination signals to subthreads...");
+            Terminate = true;
 
-                // Gracefully shutdown event and rendering threads.
-                pauseGGUI([](){
-                    Carry_Flags([](Carry& flags){
-                        flags.Terminate = true;
-                    });
-                });
+            updateFrame();
+            // if (!Carry_Flags.Read().Terminate){
+            //     LOGGER::Log("Sending termination signals to subthreads...");
+
+            //     // Gracefully shutdown event and rendering threads.
+            //     pauseGGUI([](){
+            //         Carry_Flags([](Carry& flags){
+            //             flags.Terminate = true;
+            //         });
+            //     });
     
-                LOGGER::Log("Subthreads terminated.");
+            //     LOGGER::Log("Subthreads terminated.");
     
-                // Join the threads
-                for (auto& thread : INTERNAL::Sub_Threads){
-                    if (thread.joinable()){
-                        thread.join();
-                    }
-                }
-            }
+            //     // Join the threads
+            //     for (auto& thread : INTERNAL::Sub_Threads){
+            //         if (thread.joinable()){
+            //             thread.join();
+            //         }
+            //     }
+            // }
 
-            LOGGER::Log("Reverting to normal console mode...");
+            // LOGGER::Log("Reverting to normal console mode...");
 
-            // Clean up platform-specific resources and settings
-            De_Initialize();
+            // // Clean up platform-specific resources and settings
+            // De_Initialize();
 
-            LOGGER::Log("GGUI shutdown successful.");
+            // LOGGER::Log("GGUI shutdown successful.");
 
             // Exit the application with the specified exit code
             exit(signum);
@@ -325,7 +330,7 @@ namespace GGUI{
                 INTERNAL::Main->setDimensions(INTERNAL::Max_Width, INTERNAL::Max_Height);
         }
 
-        void Update_Frame(bool Lock_Event_Thread);
+        void updateFrame();
         //Is called on every cycle.
 
         /**
@@ -836,32 +841,35 @@ namespace GGUI{
          * @param signum The exit code for the application.
          */
         void EXIT(int signum){
-            if (!Carry_Flags.Read().Terminate){
-                LOGGER::Log("Sending termination signals to subthreads...");
+            Terminate = true;
 
-                // Gracefully shutdown event and rendering threads.
-                pauseGGUI([](){
-                    Carry_Flags([](Carry& flags){
-                        flags.Terminate = true;
-                    });
-                });
+            updateFrame();
+            // if (!Carry_Flags.Read().Terminate){
+            //     LOGGER::Log("Sending termination signals to subthreads...");
+
+            //     // Gracefully shutdown event and rendering threads.
+            //     pauseGGUI([](){
+            //         Carry_Flags([](Carry& flags){
+            //             flags.Terminate = true;
+            //         });
+            //     });
     
-                LOGGER::Log("Subthreads terminated.");
+            //     LOGGER::Log("Subthreads terminated.");
     
-                // Join the threads
-                for (auto& thread : INTERNAL::Sub_Threads){
-                    if (thread.joinable()){
-                        thread.join();
-                    }
-                }
-            }
+            //     // Join the threads
+            //     for (auto& thread : INTERNAL::Sub_Threads){
+            //         if (thread.joinable()){
+            //             thread.join();
+            //         }
+            //     }
+            // }
 
-            LOGGER::Log("Reverting to normal console mode...");
+            // LOGGER::Log("Reverting to normal console mode...");
 
-            // Clean up platform-specific resources and settings
-            De_Initialize();
+            // // Clean up platform-specific resources and settings
+            // De_Initialize();
 
-            LOGGER::Log("GGUI shutdown successful.");
+            // LOGGER::Log("GGUI shutdown successful.");
 
             // Exit the application with the specified exit code
             exit(signum);

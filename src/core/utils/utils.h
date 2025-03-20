@@ -15,7 +15,7 @@ namespace GGUI{
         class Carry{
         public:
             bool Resize = false;
-            bool Terminate = false;     // Signals the shutdown of subthreads.
+            // bool Terminate = false;     // Signals the shutdown of subthreads.
 
             ~Carry() = default;
         };

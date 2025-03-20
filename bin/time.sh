@@ -78,38 +78,45 @@ timer() {
     echo "Running program '$PROGRAM' under Valgrind for a duration of ${runFor}s..."
 
     # Run the program inside Valgrind's callgrind tool
-    timeout "$runFor" valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM" 2>&1
+    # timeout "$runFor" valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM" 2>&1
+    valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM" 2>&1
 
     # Extract total instruction count
     result=$(get_instruction_count)
 
-    rm -f callgrind.out
+    # rm -f callgrind.out
 
     if [ -z "$result" ]; then
         handle_error "Failed to retrieve instruction count for '$PROGRAM' after running for '$runFor' seconds."
     fi
 
-    $RESULT=$result
+    RESULT="$result"
 }
 
 # Step 2: Run the program for the short duration and capture instruction count.
 timer $TIME_SHORT
-SHORT_COUNT=$RESULT
+SHORT_COUNT="$RESULT"
 echo "Short run instructions: $SHORT_COUNT"
 
 # Step 3: Run the program for the longer duration and capture instruction count.
 timer $TIME_LONG
-LONG_COUNT=$RESULT
+LONG_COUNT="$RESULT"
 echo "Long run instructions: $LONG_COUNT"
 
 # Step 4: Compute the instruction rate slopes.
 SLOPE1=$(echo "scale=10; $SHORT_COUNT / $TIME_SHORT" | bc -l)
-SLOPE2=$(echo "scale=10; ($LONG_COUNT - $SHORT_COUNT) / ($TIME_LONG - $TIME_SHORT)" | bc -l)
-RATIO=$(echo "scale=10; $SLOPE2 / $SLOPE1" | bc -l)
 
-# Step 5: Output the computed results.
-echo "-------------------------------"
-echo "Results:"
-echo "Time 1: $SLOPE1"
-echo "Time 2: $SLOPE2"
-echo "Growth: $RATIO"
+if [ $(($TIME_LONG - $TIME_SHORT)) -eq 0 ]; then
+    echo "Error: TIME_LONG and TIME_SHORT are equal. Cannot compute SLOPE2."
+else
+    SLOPE2=$(echo "scale=10; ($LONG_COUNT - $SHORT_COUNT) / ($TIME_LONG - $TIME_SHORT)" | bc -l)
+
+    RATIO=$(echo "scale=10; $SLOPE2 / $SLOPE1" | bc -l)
+
+    # Step 5: Output the computed results.
+    echo "-------------------------------"
+    echo "Results:"
+    echo "Time 1: $SLOPE1"
+    echo "Time 2: $SLOPE2"
+    echo "Growth: $RATIO"
+fi
