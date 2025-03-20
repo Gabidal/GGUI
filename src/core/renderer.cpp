@@ -191,30 +191,32 @@ namespace GGUI{
          * @param signum The exit code to be used when terminating the application.
          */
         void EXIT(int signum){
-            INTERNAL::LOGGER::Log("Sending termination signals to subthreads...");
+            if (!Carry_Flags.Read().Terminate){
+                LOGGER::Log("Sending termination signals to subthreads...");
 
-            // Gracefully shutdown event and rendering threads.
-            pauseGGUI([](){
-                INTERNAL::Carry_Flags([](INTERNAL::Carry& flags){
-                    flags.Terminate = true;
+                // Gracefully shutdown event and rendering threads.
+                pauseGGUI([](){
+                    Carry_Flags([](Carry& flags){
+                        flags.Terminate = true;
+                    });
                 });
-            });
-
-            INTERNAL::LOGGER::Log("Subthreads terminated.");
-
-            // Join the threads
-            for (auto& thread : INTERNAL::Sub_Threads){
-                if (thread.joinable()){
-                    thread.join();
+    
+                LOGGER::Log("Subthreads terminated.");
+    
+                // Join the threads
+                for (auto& thread : INTERNAL::Sub_Threads){
+                    if (thread.joinable()){
+                        thread.join();
+                    }
                 }
             }
 
-            INTERNAL::LOGGER::Log("Reverting to normal console mode...");
+            LOGGER::Log("Reverting to normal console mode...");
 
             // Clean up platform-specific resources and settings
             De_Initialize();
 
-            INTERNAL::LOGGER::Log("GGUI shutdown successful.");
+            LOGGER::Log("GGUI shutdown successful.");
 
             // Exit the application with the specified exit code
             exit(signum);
@@ -834,23 +836,25 @@ namespace GGUI{
          * @param signum The exit code for the application.
          */
         void EXIT(int signum){
-            LOGGER::Log("Sending termination signals to subthreads...");
+            if (!Carry_Flags.Read().Terminate){
+                LOGGER::Log("Sending termination signals to subthreads...");
 
-            // Gracefully shutdown event and rendering threads.
-            pauseGGUI([](){
-                Carry_Flags([](Carry& flags){
-                    flags.Terminate = true;
+                // Gracefully shutdown event and rendering threads.
+                pauseGGUI([](){
+                    Carry_Flags([](Carry& flags){
+                        flags.Terminate = true;
+                    });
                 });
-            });
-            
-            // Join the threads
-            for (auto& thread : Sub_Threads){
-                if (thread.joinable()){
-                    thread.join();
+    
+                LOGGER::Log("Subthreads terminated.");
+    
+                // Join the threads
+                for (auto& thread : INTERNAL::Sub_Threads){
+                    if (thread.joinable()){
+                        thread.join();
+                    }
                 }
             }
-
-            LOGGER::Log("Subthreads terminated.");
 
             LOGGER::Log("Reverting to normal console mode...");
 
