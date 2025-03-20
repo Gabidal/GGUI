@@ -330,9 +330,6 @@ namespace GGUI{
                 INTERNAL::Main->setDimensions(INTERNAL::Max_Width, INTERNAL::Max_Height);
         }
 
-        void updateFrame();
-        //Is called on every cycle.
-
         /**
          * @brief Reverse engineers keybinds based on the provided keybind value.
          *

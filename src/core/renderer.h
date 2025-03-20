@@ -147,13 +147,6 @@ namespace GGUI{
         extern void updateMaxWidthAndHeight();
         
         /**
-         * @brief Updates the frame.
-         * @details This function updates the frame. It's the main entry point for the rendering thread.
-         * @note This function will return immediately if the rendering thread is paused.
-         */
-        void updateFrame();
-        
-        /**
          * @brief Queries and appends new input records to the existing buffered input.
          *
          * This function reads input records from the console and appends them to the 
