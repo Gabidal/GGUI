@@ -108,6 +108,13 @@ namespace GGUI{
          */
 
         extern void Read_Start_Addresses();
+
+        void ASYNC_SIGNAL_SAFE_EXIT([[maybe_unused]] int signum){
+            Terminate = true;
+            // Exit the application with the specified exit code
+            INTERNAL::atomic::Condition.notify_all();
+            // Do not call exit() here.
+        }
     }
 
     #if _WIN32
@@ -193,35 +200,28 @@ namespace GGUI{
          * @param signum The exit code to be used when terminating the application.
          */
         void EXIT(int signum){
-            Terminate = true;
+            LOGGER::Log("Sending termination signals to subthreads...");
 
-            updateFrame();
-            // if (!Carry_Flags.Read().Terminate){
-            //     LOGGER::Log("Sending termination signals to subthreads...");
+            // Gracefully shutdown event and rendering threads.
+            pauseGGUI([](){
+                Terminate = true;
+            });
 
-            //     // Gracefully shutdown event and rendering threads.
-            //     pauseGGUI([](){
-            //         Carry_Flags([](Carry& flags){
-            //             flags.Terminate = true;
-            //         });
-            //     });
-    
-            //     LOGGER::Log("Subthreads terminated.");
-    
-            //     // Join the threads
-            //     for (auto& thread : INTERNAL::Sub_Threads){
-            //         if (thread.joinable()){
-            //             thread.join();
-            //         }
-            //     }
-            // }
+            LOGGER::Log("Subthreads terminated.");
 
-            // LOGGER::Log("Reverting to normal console mode...");
+            // Join the threads
+            for (auto& thread : INTERNAL::Sub_Threads){
+                if (thread.joinable()){
+                    thread.join();
+                }
+            }
 
-            // // Clean up platform-specific resources and settings
-            // De_Initialize();
+            LOGGER::Log("Reverting to normal console mode...");
 
-            // LOGGER::Log("GGUI shutdown successful.");
+            // Clean up platform-specific resources and settings
+            De_Initialize();
+
+            LOGGER::Log("GGUI shutdown successful.");
 
             // Exit the application with the specified exit code
             exit(signum);
@@ -838,35 +838,28 @@ namespace GGUI{
          * @param signum The exit code for the application.
          */
         void EXIT(int signum){
-            Terminate = true;
+            LOGGER::Log("Sending termination signals to subthreads...");
 
-            updateFrame();
-            // if (!Carry_Flags.Read().Terminate){
-            //     LOGGER::Log("Sending termination signals to subthreads...");
+            // Gracefully shutdown event and rendering threads.
+            pauseGGUI([](){
+                Terminate = true;
+            });
 
-            //     // Gracefully shutdown event and rendering threads.
-            //     pauseGGUI([](){
-            //         Carry_Flags([](Carry& flags){
-            //             flags.Terminate = true;
-            //         });
-            //     });
-    
-            //     LOGGER::Log("Subthreads terminated.");
-    
-            //     // Join the threads
-            //     for (auto& thread : INTERNAL::Sub_Threads){
-            //         if (thread.joinable()){
-            //             thread.join();
-            //         }
-            //     }
-            // }
+            LOGGER::Log("Subthreads terminated.");
 
-            // LOGGER::Log("Reverting to normal console mode...");
+            // Join the threads
+            for (auto& thread : INTERNAL::Sub_Threads){
+                if (thread.joinable()){
+                    thread.join();
+                }
+            }
 
-            // // Clean up platform-specific resources and settings
-            // De_Initialize();
+            LOGGER::Log("Reverting to normal console mode...");
 
-            // LOGGER::Log("GGUI shutdown successful.");
+            // Clean up platform-specific resources and settings
+            De_Initialize();
+
+            LOGGER::Log("GGUI shutdown successful.");
 
             // Exit the application with the specified exit code
             exit(signum);
@@ -1271,7 +1264,7 @@ namespace GGUI{
 
             // Register the exit handler for the following signals
             struct sigaction* wrapper = new struct sigaction();
-            wrapper->sa_handler = EXIT;
+            wrapper->sa_handler = ASYNC_SIGNAL_SAFE_EXIT;
             sigemptyset(&wrapper->sa_mask);
             wrapper->sa_flags = 0;
 

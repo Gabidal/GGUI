@@ -52,10 +52,10 @@ namespace GGUI{
          * 9. Pauses the render thread and notifies all waiting threads.
          */
         void renderer(){
-            while (!Terminate){
+            while (true){
                 {
                     std::unique_lock lock(INTERNAL::atomic::Mutex);
-                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::RESUMED; });
+                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::RESUMED || Terminate; });
 
                     INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::LOCKED;
                 }
@@ -64,9 +64,9 @@ namespace GGUI{
                 INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                // if (INTERNAL::Carry_Flags.Read().Terminate){
-                //     break;  // Break out of the loop if the terminate flag is set
-                // }
+                if (Terminate){
+                    break;  // Break out of the loop if the terminate flag is set
+                }
 
                 if (INTERNAL::Main){
 
