@@ -111,9 +111,6 @@ namespace GGUI{
 
         void ASYNC_SIGNAL_SAFE_EXIT([[maybe_unused]] int signum){
             Terminate = true;
-            // Exit the application with the specified exit code
-            INTERNAL::atomic::Condition.notify_all();
-            // Do not call exit() here.
         }
     }
 
@@ -1263,10 +1260,10 @@ namespace GGUI{
             */
 
             // Register the exit handler for the following signals
-            struct sigaction* wrapper = new struct sigaction();
-            wrapper->sa_handler = ASYNC_SIGNAL_SAFE_EXIT;
-            sigemptyset(&wrapper->sa_mask);
-            wrapper->sa_flags = 0;
+            struct sigaction* normal_exit = new struct sigaction();
+            normal_exit->sa_handler = EXIT;
+            sigemptyset(&normal_exit->sa_mask);
+            normal_exit->sa_flags = 0;
 
             for (
                 auto i : {
@@ -1277,7 +1274,7 @@ namespace GGUI{
                     SIGSEGV,
                     SIGTERM
                 }){
-                sigaction(i, wrapper, NULL);
+                sigaction(i, normal_exit, NULL);
             }
         
             // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.

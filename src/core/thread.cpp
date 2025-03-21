@@ -55,7 +55,7 @@ namespace GGUI{
             while (true){
                 {
                     std::unique_lock lock(INTERNAL::atomic::Mutex);
-                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::RESUMED || Terminate; });
+                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::RESUMED; });
 
                     INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::LOCKED;
                 }
@@ -64,9 +64,9 @@ namespace GGUI{
                 INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (Terminate){
-                    break;  // Break out of the loop if the terminate flag is set
-                }
+                // if (Terminate){
+                //     break;  // Break out of the loop if the terminate flag is set
+                // }
 
                 if (INTERNAL::Main){
 
@@ -106,13 +106,6 @@ namespace GGUI{
                     INTERNAL::atomic::Condition.notify_all();
                 }
             }
-
-            LOGGER::Log("Rendering thread terminated!");
-
-            LOGGER::Log("Reverting to normal console mode...");
-
-            // Clean up platform-specific resources and settings
-            De_Initialize();
         }
 
         /**
@@ -169,7 +162,7 @@ namespace GGUI{
          * @note If uncapped FPS is desired, the sleep code can be disabled.
          */
         void eventThread(){
-            while (!Terminate){
+            while (true){
                 pauseGGUI([&](){
                     // Reset the thread load counter
                     INTERNAL::Event_Thread_Load = 0;
@@ -226,7 +219,7 @@ namespace GGUI{
          *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
          */
         void inputThread(){
-            while (!Terminate){
+            while (true){
                 // Wait for user input.
                 INTERNAL::queryInputs();
 
