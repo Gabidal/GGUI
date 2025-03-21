@@ -81,8 +81,6 @@ namespace GGUI{
 
         atomic::Guard<Carry> Carry_Flags; 
 
-        extern volatile sig_atomic_t Terminate;
-
         /**
          * @brief Temporary function to return the current date and time in a string.
          * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
@@ -108,10 +106,6 @@ namespace GGUI{
          */
 
         extern void Read_Start_Addresses();
-
-        void ASYNC_SIGNAL_SAFE_EXIT([[maybe_unused]] int signum){
-            Terminate = true;
-        }
     }
 
     #if _WIN32
@@ -828,6 +822,33 @@ namespace GGUI{
             tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
         }
 
+        void Cleanup(){
+            if (!Carry_Flags.Read().Terminate){
+                LOGGER::Log("Sending termination signals to subthreads...");
+
+                // Gracefully shutdown event and rendering threads.
+                Carry_Flags([](Carry& self){
+                    self.Terminate = true;
+                });
+
+                updateFrame();
+
+                // Join the threads
+                for (auto& thread : INTERNAL::Sub_Threads){
+                    if (thread.joinable()){
+                        thread.join();
+                    }
+                }
+
+                LOGGER::Log("Reverting to normal console mode...");
+
+                // Clean up platform-specific resources and settings
+                De_Initialize();
+
+                LOGGER::Log("GGUI shutdown successful.");
+            }
+        }
+
         /**
          * @brief De-initializes platform-specific settings and resources and exits the application.
          * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
@@ -835,29 +856,7 @@ namespace GGUI{
          * @param signum The exit code for the application.
          */
         void EXIT(int signum){
-            LOGGER::Log("Sending termination signals to subthreads...");
-
-            // Gracefully shutdown event and rendering threads.
-            pauseGGUI([](){
-                Terminate = true;
-            });
-
-            LOGGER::Log("Subthreads terminated.");
-
-            // Join the threads
-            for (auto& thread : INTERNAL::Sub_Threads){
-                if (thread.joinable()){
-                    thread.join();
-                }
-            }
-
-            LOGGER::Log("Reverting to normal console mode...");
-
-            // Clean up platform-specific resources and settings
-            De_Initialize();
-
-            LOGGER::Log("GGUI shutdown successful.");
-
+            Cleanup();
             // Exit the application with the specified exit code
             exit(signum);
         }
@@ -1260,10 +1259,12 @@ namespace GGUI{
             */
 
             // Register the exit handler for the following signals
-            struct sigaction* normal_exit = new struct sigaction();
-            normal_exit->sa_handler = EXIT;
-            sigemptyset(&normal_exit->sa_mask);
-            normal_exit->sa_flags = 0;
+            struct sigaction normal_exit = {};
+            normal_exit.sa_handler = []([[maybe_unused]] int dummy){
+                exit(EXIT_SUCCESS);  // Ensures `atexit()` is triggered
+            };
+            sigemptyset(&normal_exit.sa_mask);
+            normal_exit.sa_flags = 0;
 
             for (
                 auto i : {
@@ -1274,7 +1275,11 @@ namespace GGUI{
                     SIGSEGV,
                     SIGTERM
                 }){
-                sigaction(i, normal_exit, NULL);
+                sigaction(i, &normal_exit, NULL);
+            }
+
+            if (atexit([](){Cleanup();})){
+                LOGGER::Log("Failed to register exit handler.");
             }
         
             // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.

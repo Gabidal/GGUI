@@ -29,6 +29,7 @@ show_help() {
     echo "  - Slope1: Instructions per second during the short run (TIME_SHORT)."
     echo "  - Slope2: Additional instructions per second during the extended run."
     echo "  - Ratio : Slope2 / Slope1, indicating the relative change in instruction rate."
+    echo "Give the short and long time in seconds and not in ms!"
     exit 0
 }
 
@@ -78,13 +79,13 @@ timer() {
     echo "Running program '$PROGRAM' under Valgrind for a duration of ${runFor}s..."
 
     # Run the program inside Valgrind's callgrind tool
-    # timeout "$runFor" valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM" 2>&1
-    valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM" 2>&1
+    timeout "$runFor" valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM"
+    # valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM" 2>&1
 
     # Extract total instruction count
     result=$(get_instruction_count)
 
-    # rm -f callgrind.out
+    rm -f callgrind.out
 
     if [ -z "$result" ]; then
         handle_error "Failed to retrieve instruction count for '$PROGRAM' after running for '$runFor' seconds."
@@ -109,7 +110,7 @@ SLOPE1=$(echo "scale=10; $SHORT_COUNT / $TIME_SHORT" | bc -l)
 if [ $(($TIME_LONG - $TIME_SHORT)) -eq 0 ]; then
     echo "Error: TIME_LONG and TIME_SHORT are equal. Cannot compute SLOPE2."
 else
-    SLOPE2=$(echo "scale=10; ($LONG_COUNT - $SHORT_COUNT) / ($TIME_LONG - $TIME_SHORT)" | bc -l)
+    SLOPE2=$(echo "scale=10; ($LONG_COUNT - $SHORT_COUNT) / (1000 * ($TIME_LONG - $TIME_SHORT))" | bc -l)
 
     RATIO=$(echo "scale=10; $SLOPE2 / $SLOPE1" | bc -l)
 
