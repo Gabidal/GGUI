@@ -191,28 +191,30 @@ namespace GGUI{
          * @param signum The exit code to be used when terminating the application.
          */
         void EXIT(int signum){
-            LOGGER::Log("Sending termination signals to subthreads...");
+            if (!Carry_Flags.Read().Terminate){
+                LOGGER::Log("Sending termination signals to subthreads...");
 
-            // Gracefully shutdown event and rendering threads.
-            pauseGGUI([](){
-                Terminate = true;
-            });
+                // Gracefully shutdown event and rendering threads.
+                Carry_Flags([](Carry& self){
+                    self.Terminate = true;
+                });
 
-            LOGGER::Log("Subthreads terminated.");
+                updateFrame();
 
-            // Join the threads
-            for (auto& thread : INTERNAL::Sub_Threads){
-                if (thread.joinable()){
-                    thread.join();
+                // Join the threads
+                for (auto& thread : INTERNAL::Sub_Threads){
+                    if (thread.joinable()){
+                        thread.join();
+                    }
                 }
+
+                LOGGER::Log("Reverting to normal console mode...");
+
+                // Clean up platform-specific resources and settings
+                De_Initialize();
+
+                LOGGER::Log("GGUI shutdown successful.");
             }
-
-            LOGGER::Log("Reverting to normal console mode...");
-
-            // Clean up platform-specific resources and settings
-            De_Initialize();
-
-            LOGGER::Log("GGUI shutdown successful.");
 
             // Exit the application with the specified exit code
             exit(signum);
@@ -269,11 +271,35 @@ namespace GGUI{
             return EXCEPTION_EXECUTE_HANDLER;   // For warning fillers, since the execution should not extend to this line.
         }
 
-        void Signal_Handler(int signal) {
-            if (signal == SIGSEGV) {
-                LOGGER::Log("Segmentation fault occurred.");
-                EXIT(EXIT_FAILURE);
+        BOOL WINAPI Console_Handler(DWORD signal) {
+            std::string signal_name = "";
+            switch (signal)
+            {
+            case CTRL_C_EVENT:
+                signal_name = "CTRL+C";
+                break;
+            case CTRL_BREAK_EVENT:
+                signal_name = "CTRL+BREAK";
+                break;
+            case CTRL_CLOSE_EVENT:
+                signal_name = "CTRL+CLOSE";
+                break;
+            case CTRL_LOGOFF_EVENT:
+                signal_name = "CTRL+LOGOFF";
+                break;
+            case CTRL_SHUTDOWN_EVENT:
+                signal_name = "CTRL+SHUTDOWN";
+                break;
+            default:
+                break;
             }
+
+            if (signal_name.size() != 0) {
+                LOGGER::Log("Terminated via " + signal_name + " signal.");
+                EXIT(EXIT_SUCCESS); 
+                return TRUE;
+            }
+            return FALSE;
         }
 
         /**
@@ -541,7 +567,7 @@ namespace GGUI{
 
             // Set new console modes with extended flags, mouse, and window input enabled.
             SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, -1);
-            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT);
+            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_PROCESSED_INPUT);
 
             // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
             std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String() 
@@ -553,7 +579,25 @@ namespace GGUI{
 
             // Critical error handlers.
             SetUnhandledExceptionFilter(Critical_Error_Handler);
-            std::signal(SIGSEGV, Signal_Handler);
+
+            if (!SetConsoleCtrlHandler(Console_Handler, TRUE)){
+                reportStack("Failed to set console handler!");
+            }
+
+            // These are for most generic cases not needed, but could be useful if GGUI is called inside another utility, like windows version of timeout utility.
+            for (
+                auto i : {
+                    SIGINT,
+                    SIGILL,
+                    SIGABRT,
+                    SIGFPE,
+                    SIGSEGV,
+                    SIGTERM
+                }){
+                std::signal(i, []([[maybe_unused]] int dummy){
+                    GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);  // trigger the Console_Handler
+                });
+            }
 
             // Mark the platform as initialized.
             INTERNAL::Platform_Initialized = true;
@@ -2138,8 +2182,6 @@ namespace GGUI{
 
         INTERNAL::initPlatformStuff();
 
-        // Set the Main to be anything but nullptr, since its own constructor will try anchor it otherwise.
-        INTERNAL::Main = (window*)0xFFFFFFFF;
         INTERNAL::Main = new window(styling(
             width(INTERNAL::Max_Width) |
             height(INTERNAL::Max_Height)
@@ -2180,6 +2222,11 @@ namespace GGUI{
         try{
             pauseGGUI([&Problem, &ERROR_LOGGER, &HISTORY]{
                 INTERNAL::LOGGER::Log(Problem);
+
+                // reportStack is called when the height or width is zero at init, so we dont ned to compute further.
+                if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
+                    return;
+                }
 
                 Problem = " " + Problem + " ";
 

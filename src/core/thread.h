@@ -8,8 +8,6 @@ namespace GGUI{
 
         extern bool Identical_Frame;
 
-        extern volatile sig_atomic_t Terminate;
-
         extern void De_Initialize();
         
         /**
