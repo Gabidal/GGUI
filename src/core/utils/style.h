@@ -9,6 +9,7 @@
 #include <string>
 #include <cassert>
 #include <cstdarg>
+#include <algorithm>
 
 namespace GGUI{
     // Externies

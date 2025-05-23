@@ -113,10 +113,9 @@ namespace GGUI{
             return (float)Alpha / UINT8_MAX;
         }
 
-        constexpr bool operator==(const RGBA& Other) const{
-            // only take the bits which are the 4 unsigned chars, which is same as single integer.
-            // Starting from Red since Red is the first member and normally Virtual function will also allocate their own space before members.
-            return *(unsigned int*)&this->Red == *(unsigned int*)&Other;
+        constexpr bool operator==(const RGBA& Other) const {    // Compile with -O3 to reduce into single 32b cmp
+            return Red == Other.Red && Green == Other.Green &&
+                Blue == Other.Blue && Alpha == Other.Alpha;
         }
 
         constexpr RGBA operator*(const RGBA& Other) const{

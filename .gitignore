@@ -12,3 +12,5 @@ callgrind.*
 /Export/json.hpp
 *.zip
 /Export/cpr/*
+*.srctrldb
+*.srctrlbm
