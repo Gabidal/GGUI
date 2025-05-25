@@ -2376,7 +2376,7 @@ namespace GGUI{
 
         void Copy_Un_Parsed_Styles();
         
-        // Returns the point of interest of whom the Evaluation will reference to.
+        // Returns the pointer of whom this evaluation is to reference.
         styling* Get_Reference(element* owner);
 
         /**

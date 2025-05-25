@@ -1660,7 +1660,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
     // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
     if (this == GGUI::INTERNAL::Main && !Dirty.is(STAIN_TYPE::CLEAN)){
-        GGUI::INTERNAL::Identical_Frame = true;
+        GGUI::INTERNAL::Identical_Frame = false;
     }
 
     if (Dirty.is(STAIN_TYPE::CLEAN))

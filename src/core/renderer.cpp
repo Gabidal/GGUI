@@ -2329,14 +2329,16 @@ namespace GGUI{
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                             flow_priority(DIRECTION::ROW) | 
 
-                            // The Date field
-                            // node(new textField(styling(
-                            //     text(INTERNAL::now().c_str())
-                            // ))) | 
+                            name(INTERNAL::now().c_str()) | 
 
                             // The actual reported problem text
                             node(new textField(styling(
                                 text(Problem.c_str())
+                            ))) |
+
+                            // The Date field
+                            node(new textField(styling(
+                                text(INTERNAL::now().c_str())
                             )))
                         )));
 

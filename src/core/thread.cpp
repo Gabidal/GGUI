@@ -30,7 +30,7 @@ namespace GGUI{
 
         extern void Translate_Inputs();
 
-        bool Identical_Frame = false;
+        bool Identical_Frame = true;
 
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.
@@ -77,17 +77,20 @@ namespace GGUI{
                         }
                     });
 
-                    Identical_Frame = false;
+                    Identical_Frame = true; // Assume that the incoming frame will be identical.
 
                     INTERNAL::Abstract_Frame_Buffer = INTERNAL::Main->render();
 
-                    if (Identical_Frame){
+                    if (!Identical_Frame){
                         // ENCODE for optimize
                         encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
 
                         INTERNAL::Frame_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight())->To_String();
                         
                         INTERNAL::renderFrame();
+                    }
+                    else{
+                        LOGGER::Log("Saved frame");
                     }
                 }
 
