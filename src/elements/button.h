@@ -53,6 +53,7 @@ namespace GGUI{
             }
 
             ((textField*)Style->Childs.back())->setText(Text);
+            setName(Text);
         }
     };
 }

@@ -221,6 +221,7 @@ namespace GGUI{
      */
     void textField::setText(std::string text){
         Text = text;
+        setName(text);
         updateTextCache();
 
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);
@@ -365,7 +366,8 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            this
+            this,
+            getName() + "::input::keypress"
         );
         GGUI::INTERNAL::Event_Handlers.push_back(key_press);
 
@@ -385,7 +387,8 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            this
+            this,
+            getName() + "::input::enter"
         );
         GGUI::INTERNAL::Event_Handlers.push_back(enter);
 
@@ -405,7 +408,8 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            this
+            this,
+            getName() + "::input::backspace"
         );
         GGUI::INTERNAL::Event_Handlers.push_back(back_space);
     }

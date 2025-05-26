@@ -41,14 +41,14 @@ namespace GGUI{
         std::string ID; 
     
         Action() = default;
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, std::string id = ""){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, std::string id){
             Criteria = criteria;
             Job = job;
             Host = nullptr;
             ID = id;
         }
 
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, class element* host, std::string id = ""){
+        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, class element* host, std::string id){
             Criteria = criteria;
             Job = job;
             Host = host;

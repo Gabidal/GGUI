@@ -2146,7 +2146,7 @@ void GGUI::element::onClick(std::function<bool(GGUI::Event*)> action){
             // If the element is under the mouse cursor when it is clicked
             if (Collides(this, INTERNAL::Mouse)){
                 // Construct an Action from the Event obj
-                GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this);
+                GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this, getName() + "::onClick");
 
                 // Call the lambda with the wrapper
                 action(wrapper);
@@ -2157,7 +2157,8 @@ void GGUI::element::onClick(std::function<bool(GGUI::Event*)> action){
             //action failed.
             return false;
         },
-        this
+        this,
+        getName() + "::onClick::wrapper"
     );
     GGUI::INTERNAL::Event_Handlers.push_back(a);
 }
@@ -2181,7 +2182,8 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::Eve
             // action failed.
             return false;
         },
-        this
+        this,
+        getName() + "::on::"
     );
     GGUI::INTERNAL::Event_Handlers.push_back(a);
 }

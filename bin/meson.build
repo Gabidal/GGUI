@@ -84,27 +84,28 @@ else
   endif
 endif
 
-# Add custom flags based on build type
-if TYPE == DEBUG
-  cpp_args += ['-DGGUI_DEBUG']
-elif TYPE == RELEASE
-  cpp_args += ['-DGGUI_RELEASE']
-elif TYPE == PROFILE
-  cpp_args += ['-DGGUI_PROFILE', '-DGGUI_DEBUG']
-endif
-
 # Linker arguments (e.g., libraries)
 link_args = []
 
-# Profiling setup (only enabled for the PROFILE build type)
-if TYPE == PROFILE
-  cpp_args += ['-pg','-rdynamic']           # Enable profiling flags for GCC
-  link_args += ['-pg']                      # Link with profiling support
+# Add custom flags based on build type
+if TYPE == DEBUG
+  cpp_args += ['-DGGUI_DEBUG', '-pg']
+  link_args += ['-pg']
+elif TYPE == RELEASE
+  cpp_args += ['-DGGUI_RELEASE']
+elif TYPE == PROFILE
+  cpp_args += ['-DGGUI_PROFILE', '-DGGUI_DEBUG', '-pg']
+  link_args += ['-pg']
 endif
 
-# Windows-specific settings (e.g., for debugging)
-if host_machine.system() == 'windows'
-  link_args += ['-lDbgHelp']    # Link with DbgHelp library for better debugging support
+if TYPE == DEBUG or TYPE == PROFILE
+  # Windows-specific settings (e.g., for debugging)
+  if host_machine.system() == 'windows'
+    link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library for better debugging support
+  elif host_machine.system() == 'linux'
+    # Linux-specific settings can be added here if needed
+    cpp_args += ['-rdynamic']  
+  endif
 endif
 
 # Define the executable to be built
