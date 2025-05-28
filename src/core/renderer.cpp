@@ -932,7 +932,7 @@ namespace GGUI{
          * - The function uses the Windows API for capturing and resolving stack traces.
          * - The function allocates memory for the SYMBOL_INFO structure and frees it before returning.
          */
-        void reportStack(std::string Problem) {
+        void reportStack(const std::string& problemDescription) {
             const int Stack_Trace_Depth = 10;
             void* Ptr_Table[Stack_Trace_Depth];
             unsigned short Usable_Depth;
@@ -962,6 +962,11 @@ namespace GGUI{
             }
             symbol->MaxNameLen = 255;
             symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+            // Ensure the maximum width is set for proper indentation
+            if (Max_Width == 0) {
+                updateMaxWidthAndHeight();
+            }
 
             // Initialize result string with a header
             std::string Result = "Stack Trace:\n";
@@ -995,17 +1000,6 @@ namespace GGUI{
                 if (symbolName.size() == 0)
                     continue;
 
-                // Get line number if possible
-                // if (SymGetLineFromAddr64(process, (DWORD64)(Ptr_Table[Stack_Index]), &dwDisplacement, &line)) {
-                //     line_info = " (" + std::string(line.FileName) + ": " + std::to_string(line.LineNumber) + ")";
-                // } else {
-                //     line_info = " (unknown file: unknown line)";
-                // }
-
-                // if (Probable_Lambda){
-                //     line_info = " (probably a lambda): " + line_info;
-                // }
-
                 // Append the formatted stack frame info to the result
                 Result += Branch_Start + Indent + " " + symbolName + line_info + "\n";
                 Usable_Stack_Index++;
@@ -1036,9 +1030,14 @@ namespace GGUI{
         #include <sys/ioctl.h>
         #include <signal.h>
         #include <termios.h>
-        #include <execinfo.h>   // for stacktrace
+        #include <execinfo.h>   // For stacktrace
         #include <dlfcn.h>      // For stacktrace
         #include <cxxabi.h>     // For stacktrace
+        #include <elf.h>        // For stacktrace
+        #include <fcntl.h>      // For stacktrace
+        #include <link.h>       // For stacktrace
+        #include <sys/mman.h>   // For stacktrace
+        #include <sys/stat.h>   // For stacktrace
 
         int Previous_Flags = 0;
         struct termios Previous_Raw;
@@ -1574,76 +1573,199 @@ namespace GGUI{
         }
 
         /**
-         * @brief Reports the current stack trace along with a specified problem description.
-         *        Captures the call stack, symbolically resolves the addresses, and formats the stack trace.
-         *        The resulting formatted trace is then reported along with the provided problem description.
-         * @param problem A description of the problem to be reported with the stack trace.
+         * Resolves the symbol name corresponding to a given instruction address by inspecting the
+         * ELF symbol table of the shared object or binary to which the address belongs.
+         * 
+         * This implementation:
+         * - Works without third-party libraries
+         * - Operates only on ELF64 (x86_64) binaries
+         * - Uses .symtab and .strtab for symbol resolution
+         * - Requires non-stripped binaries to find full symbol names
+         * 
+         * @param address Pointer to the instruction address to resolve.
+         * @return A demangled symbol name string if found, or an empty string otherwise.
          */
-        void reportStack(const std::string problem) {
+        std::string ResolveSymbolFromAddress(void* address) {
+            Dl_info dynamicLinkInfo;
+
+            // Query the base module and symbol information from the address
+            if (!dladdr(address, &dynamicLinkInfo) || !dynamicLinkInfo.dli_fname || !dynamicLinkInfo.dli_fbase) {
+                return "";
+            }
+
+            const char* moduleFilePath = dynamicLinkInfo.dli_fname;
+            uintptr_t moduleBaseAddress = reinterpret_cast<uintptr_t>(dynamicLinkInfo.dli_fbase);
+            uintptr_t targetAddress = reinterpret_cast<uintptr_t>(address);
+
+            // Open the shared object or executable for reading
+            int fileDescriptor = open(moduleFilePath, O_RDONLY);
+            if (fileDescriptor < 0) {
+                return "";
+            }
+
+            // Retrieve file size for mmap
+            struct stat fileStatus;
+            if (fstat(fileDescriptor, &fileStatus) < 0) {
+                close(fileDescriptor);
+                return "";
+            }
+
+            // Memory-map the ELF file for reading
+            void* mappedElfFile = mmap(nullptr, fileStatus.st_size, PROT_READ, MAP_PRIVATE, fileDescriptor, 0);
+            close(fileDescriptor);
+            if (mappedElfFile == MAP_FAILED) {
+                return "";
+            }
+
+            // Verify the ELF header
+            Elf64_Ehdr* elfHeader = reinterpret_cast<Elf64_Ehdr*>(mappedElfFile);
+            if (memcmp(elfHeader->e_ident, ELFMAG, SELFMAG) != 0) {
+                munmap(mappedElfFile, fileStatus.st_size);
+                return "";
+            }
+
+            // Locate section headers
+            Elf64_Shdr* sectionHeaders = reinterpret_cast<Elf64_Shdr*>(
+                reinterpret_cast<char*>(mappedElfFile) + elfHeader->e_shoff
+            );
+
+            Elf64_Shdr* symbolTableSection = nullptr;
+            Elf64_Shdr* stringTableSection = nullptr;
+
+            // Iterate over all sections to find the .symtab and its associated string table (.strtab)
+            for (int sectionIndex = 0; sectionIndex < elfHeader->e_shnum; ++sectionIndex) {
+                if (sectionHeaders[sectionIndex].sh_type == SHT_SYMTAB) {
+                    symbolTableSection = &sectionHeaders[sectionIndex];
+                    stringTableSection = &sectionHeaders[symbolTableSection->sh_link];
+                    break;
+                }
+            }
+
+            // Ensure both sections are present
+            if (!symbolTableSection || !stringTableSection) {
+                munmap(mappedElfFile, fileStatus.st_size);
+                return "";
+            }
+
+            const char* stringTableData = reinterpret_cast<const char*>(
+                reinterpret_cast<const char*>(mappedElfFile) + stringTableSection->sh_offset
+            );
+
+            Elf64_Sym* symbolEntries = reinterpret_cast<Elf64_Sym*>(
+                reinterpret_cast<char*>(mappedElfFile) + symbolTableSection->sh_offset
+            );
+
+            size_t totalSymbols = symbolTableSection->sh_size / sizeof(Elf64_Sym);
+
+            std::string closestSymbolName;
+            uintptr_t smallestOffset = static_cast<uintptr_t>(-1);
+
+            // Iterate through all function symbols and find the closest match not exceeding the address
+            for (size_t i = 0; i < totalSymbols; ++i) {
+                const Elf64_Sym& symbol = symbolEntries[i];
+
+                // Skip undefined or non-function symbols
+                if (ELF64_ST_TYPE(symbol.st_info) != STT_FUNC || symbol.st_shndx == SHN_UNDEF) {
+                    continue;
+                }
+
+                uintptr_t symbolAbsoluteAddress = moduleBaseAddress + symbol.st_value;
+
+                if (targetAddress >= symbolAbsoluteAddress) {
+                    uintptr_t offset = targetAddress - symbolAbsoluteAddress;
+                    if (offset < smallestOffset) {
+                        smallestOffset = offset;
+                        closestSymbolName = std::string(stringTableData + symbol.st_name);
+                    }
+                }
+            }
+
+            // Clean up the memory mapping
+            munmap(mappedElfFile, fileStatus.st_size);
+
+            return closestSymbolName;
+        }
+
+        /**
+         * @brief Captures and reports a formatted stack trace along with a provided error description.
+         *
+         * This function performs the following:
+         * - Captures the current call stack up to a fixed depth.
+         * - Resolves each instruction address to a function symbol using ELF symbol tables.
+         * - Demangles C++ function names if applicable.
+         * - Formats the stack trace into a human-readable, indented tree-like structure.
+         * - Appends the original error description to the trace.
+         * - Sends the result to a reporting system.
+         *
+         * Platform: Only supported on non-Android POSIX-compliant systems.
+         *
+         * @param problemDescription A descriptive message about the problem being reported.
+         */
+        void reportStack(const std::string& problemDescription) {
         #ifndef __ANDROID__
-            const int Stack_Trace_Depth = 10;
-            void* ptr_table[Stack_Trace_Depth];
+            constexpr int MaximumStackDepth = 10;
+            void* callStackAddresses[MaximumStackDepth];
 
-            // Capture the stack trace and retrieve the number of valid frames
-            int usable_depth = backtrace(ptr_table, Stack_Trace_Depth);
+            // Capture up to MaximumStackDepth stack frames and store them in callStackAddresses
+            int capturedFrameCount = backtrace(callStackAddresses, MaximumStackDepth);
 
-            // Convert stack addresses to symbolic names
-            char** name_table = backtrace_symbols(ptr_table, usable_depth);
-            if (!name_table) {
-                report("Error: Failed to retrieve stack trace symbols. Original problem: " + problem);
+            // Attempt to generate human-readable strings for each frame address (optional backup, not used directly)
+            char** symbolNames = backtrace_symbols(callStackAddresses, capturedFrameCount);
+            if (!symbolNames) {
+                report("Error: Failed to retrieve stack trace symbols. Problem: " + problemDescription);
                 return;
             }
 
-            // Ensure the maximum width is set for proper indentation
+            // Ensure UI constraints are initialized before printing
             if (Max_Width == 0) {
                 updateMaxWidthAndHeight();
             }
 
-            // Construct the stack trace message
-            std::string result = "Stack Trace:\n";
-            bool use_indent = (unsigned)usable_depth < (Max_Width / 2);
+            std::string formattedTrace = "Stack Trace:\n";
+            bool useIndentation = static_cast<unsigned int>(capturedFrameCount) < (Max_Width / 2);
+            int currentIndentLevel = 0;
 
-            for (int stack_index = 0; stack_index < usable_depth; ++stack_index) {
-                Dl_info info;
-                std::string branch_start = (stack_index == usable_depth - 1) ? "\\" : "|";  // Use '\' for the last entry
-                std::string indent;
+            // Iterate backwards through the captured frames, omitting the frame that called reportStack
+            for (int frameIndex = capturedFrameCount - 1; frameIndex > 0; --frameIndex) {
+                std::string linePrefix = (frameIndex == 1) ? "\\" : "|";
+                std::string indentation;
 
-                // Add indentation based on stack depth if enabled
-                if (use_indent) {
-                    indent = std::string(stack_index, '-');
+                // Add visual indentation for tree structure
+                if (useIndentation) {
+                    indentation = std::string(currentIndentLevel, '-');
                 }
 
-                // Resolve symbols using dladdr
-                if (dladdr(ptr_table[stack_index], &info) && info.dli_sname) {
-                    // Attempt to demangle the symbol name
-                    int status = 0;
-                    char* demangled_name = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
-                    std::string function_name = (status == 0) ? demangled_name : info.dli_sname;
-                    free(demangled_name);
-
-                    // Append the frame information to the result
-                    result += branch_start + indent + " " + function_name;
-                    if (info.dli_fname) {
-                        result += " (in " + std::string(info.dli_fname) + ")";
-                    }
-                    result += "\n";
-                } else {
-                    // Fallback to raw name if dladdr fails
-                    result += branch_start + indent + " " + name_table[stack_index] + " (unknown symbol)\n";
+                std::string resolvedSymbol = ResolveSymbolFromAddress(callStackAddresses[frameIndex]);
+                if (resolvedSymbol.empty()) {
+                    continue; // Skip unresolved frames
                 }
+
+                // Attempt to demangle the symbol for improved readability
+                int demangleStatus = 0;
+                char* demangledName = abi::__cxa_demangle(resolvedSymbol.c_str(), nullptr, nullptr, &demangleStatus);
+                std::string functionName = (demangleStatus == 0 && demangledName) ? demangledName : resolvedSymbol;
+
+                // Append to the trace output
+                formattedTrace += linePrefix + indentation + " " + functionName + "\n";
+
+                if (demangledName) {
+                    std::free(demangledName);
+                }
+
+                ++currentIndentLevel;
             }
 
-            // Free allocated memory for name_table
-            free(name_table);
+            // Clean up symbol name memory allocated by backtrace_symbols
+            std::free(symbolNames);
 
-            // Append the problem description
-            result += "Problem: " + problem;
+            // Attach the problem description to the trace
+            formattedTrace += "Problem: " + problemDescription;
 
-            // Send the formatted stack trace to the Report function
-            report(result);
+            // Output the full report
+            report(formattedTrace);
         #else
-            // Fallback for unsupported platforms
-            report(problem);
+            // If the platform is unsupported (e.g., Android), report the problem without stack trace
+            report(problemDescription);
         #endif
         }
     }
@@ -2538,7 +2660,7 @@ namespace GGUI{
                         scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
                         History->addChild(new listView(styling(
-                            width(1.0f) | height(1) | 
+                            width(1.0f) | height(4) | 
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                             flow_priority(DIRECTION::ROW) | 
 
@@ -2554,6 +2676,9 @@ namespace GGUI{
                                 text(INTERNAL::now().c_str())
                             )))
                         )));
+
+                        listView* row = (listView*)History->getContainer()->getChilds().back();
+                        row->setHeight(row->getChilds()[1]->getHeight());
 
                         // Calculate the new x position for the Error_Logger
                         if (Error_Logger->getParent() == INTERNAL::Main)

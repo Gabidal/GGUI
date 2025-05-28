@@ -149,7 +149,7 @@ namespace GGUI{
          * This constructor initializes a scrollView object by calling the base class
          * element's default constructor.
          */
-        scrollView() : element() {}
+        scrollView() : element() { allow_overflow(true); }
 
         /**
          * @brief Constructor for the Scroll_View class.
@@ -157,7 +157,7 @@ namespace GGUI{
          * @param s The styling to be applied to the Scroll_View.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
          */
-        scrollView(styling s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) {}
+        scrollView(styling s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allow_overflow(true); }
 
         /**
          * @brief Constructor for the Scroll_View class.
@@ -259,7 +259,8 @@ namespace GGUI{
                 allowOverflow(true);
                 element::addChild(new listView(
                     name((getName() + "::container").c_str()) | 
-                    width(1.0f) | height(1.0f)
+                    width(UINT16_MAX) | 
+                    flow_priority(DIRECTION::COLUMN)
                 ));
             }
 

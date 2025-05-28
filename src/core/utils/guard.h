@@ -8,7 +8,7 @@
 
 namespace GGUI{
     namespace INTERNAL{
-        extern void reportStack(std::string Problem);
+        extern void reportStack(const std::string& problemDescription);
 
         namespace atomic{
 

@@ -76,6 +76,9 @@ namespace GGUI{
         // find the stats element
         textField* Stats = (textField*)INTERNAL::Main->getElement("STATS");
 
+        if (!Stats) // This normally should not happen, but can happen if main thread is lagging behind.
+            return false;
+
         std::string new_stats = Get_Stats_Text();
 
         // Update the stats

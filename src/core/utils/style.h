@@ -17,7 +17,7 @@ namespace GGUI{
     class styling;
     enum class STAIN_TYPE;
     namespace INTERNAL{
-        extern void reportStack(std::string Problem);
+        extern void reportStack(const std::string& problemDescription);
         extern void EXIT(int signum);
 
         template <typename T>

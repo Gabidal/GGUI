@@ -104,7 +104,7 @@ namespace GGUI{
 
         extern std::string constructLoggerFileName();
 
-        extern void reportStack(std::string Problem);
+        extern void reportStack(const std::string& problemDescription);
 
         /**
          * @brief Initializes platform-specific settings for console handling.
