@@ -698,321 +698,363 @@ namespace GGUI{
             return Result;
         }
 
-        // Helper: Convert RVA to VA (address)
-        static BYTE* RvaToVa(PIMAGE_NT_HEADERS ntHeaders, BYTE* base, DWORD rva) {
-            PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
-            for (unsigned i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++, section++) {
-                DWORD sectionStart = section->VirtualAddress;
-                DWORD sectionEnd = sectionStart + section->Misc.VirtualSize;
-                if (rva >= sectionStart && rva < sectionEnd) {
-                    return base + (rva - sectionStart) + section->PointerToRawData;
-                }
-            }
-            return nullptr;
-        }
-
-        HMODULE GetModuleForAddress(void* address) {
-            HMODULE hModule = NULL;
-            if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)address, &hModule)) {
+        /**
+         * @brief Retrieves the module handle corresponding to a specific address.
+         *
+         * This function queries the loaded module that contains the provided memory address.
+         * It uses the `GetModuleHandleEx` API with `GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS`.
+         *
+         * @param address The memory address to resolve.
+         * @return HMODULE The handle to the module containing the address, or NULL if not found.
+         */
+        HMODULE GetModuleFromAddress(void* address) {
+            HMODULE moduleHandle = NULL;
+            if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                static_cast<LPCTSTR>(address), &moduleHandle)) {
                 return NULL;
             }
-            return hModule;
+            return moduleHandle;
         }
 
+        /**
+         * @brief Resolves the export symbol name from a module's export table for a given address.
+         *
+         * This function performs the following:
+         * - Identifies the module that contains the provided address.
+         * - Parses the module's PE headers and export directory.
+         * - Matches the address to an exported function range.
+         * - Returns the corresponding exported function name or ordinal.
+         *
+         * @param address A pointer to the code address to resolve.
+         * @return std::string The resolved function name or ordinal, or an empty string if not found.
+         */
         std::string ResolveSymbolFromExportTable(void* address) {
-            HMODULE hModule = GetModuleForAddress(address);
-            if (!hModule) return "";
-
-            BYTE* base = (BYTE*)hModule;
-            PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)base;
-            if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) return "";
-
-            PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)(base + dosHeader->e_lfanew);
-            if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) return "";
-
-            IMAGE_DATA_DIRECTORY exportDataDir = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-            if (exportDataDir.Size == 0) return "";
-
-            PIMAGE_EXPORT_DIRECTORY exportDir = (PIMAGE_EXPORT_DIRECTORY)(base + exportDataDir.VirtualAddress);
-            DWORD* addrFuncs = (DWORD*)(base + exportDir->AddressOfFunctions);
-            DWORD* addrNames = (DWORD*)(base + exportDir->AddressOfNames);
-            WORD* addrNameOrdinals = (WORD*)(base + exportDir->AddressOfNameOrdinals);
-
-            // Collect all function addresses along with their original indices
-            std::vector<std::pair<BYTE*, DWORD>> funcEntries;
-            for (DWORD i = 0; i < exportDir->NumberOfFunctions; ++i) {
-                DWORD funcRVA = addrFuncs[i];
-                if (funcRVA == 0) continue; // Skip forwarded exports
-                funcEntries.emplace_back(base + funcRVA, i);
+            HMODULE moduleHandle = GetModuleFromAddress(address);
+            if (!moduleHandle) {
+                return "";
             }
 
-            // Sort functions by their virtual address
-            std::sort(funcEntries.begin(), funcEntries.end(),
-                [](const auto& a, const auto& b) { return a.first < b.first; });
+            BYTE* moduleBase = reinterpret_cast<BYTE*>(moduleHandle);
+            PIMAGE_DOS_HEADER dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(moduleBase);
 
-            // Iterate through sorted functions to find the matching address range
-            for (size_t i = 0; i < funcEntries.size(); ++i) {
-                BYTE* funcVA = funcEntries[i].first;
-                DWORD originalIndex = funcEntries[i].second;
+            if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+                return "";
+            }
 
-                // Determine the end of the current function's range
-                BYTE* nextFuncVA = nullptr;
-                if (i + 1 < funcEntries.size()) {
-                    nextFuncVA = funcEntries[i + 1].first;
+            PIMAGE_NT_HEADERS ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(moduleBase + dosHeader->e_lfanew);
+            if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) {
+                return "";
+            }
+
+            IMAGE_DATA_DIRECTORY& exportDirectoryEntry =
+                ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+
+            if (exportDirectoryEntry.Size == 0) {
+                return "";
+            }
+
+            PIMAGE_EXPORT_DIRECTORY exportDirectory =
+                reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(moduleBase + exportDirectoryEntry.VirtualAddress);
+
+            DWORD* functionAddresses = reinterpret_cast<DWORD*>(moduleBase + exportDirectory->AddressOfFunctions);
+            DWORD* functionNames = reinterpret_cast<DWORD*>(moduleBase + exportDirectory->AddressOfNames);
+            WORD* nameOrdinals = reinterpret_cast<WORD*>(moduleBase + exportDirectory->AddressOfNameOrdinals);
+
+            // Pair of <function virtual address, original ordinal index>
+            std::vector<std::pair<BYTE*, DWORD>> exportFunctionEntries;
+            for (DWORD i = 0; i < exportDirectory->NumberOfFunctions; ++i) {
+                DWORD functionRelativeAddress = functionAddresses[i];
+                if (functionRelativeAddress == 0) {
+                    continue; // Skip forwarded or null exports
+                }
+                BYTE* functionAbsoluteAddress = moduleBase + functionRelativeAddress;
+                exportFunctionEntries.emplace_back(functionAbsoluteAddress, i);
+            }
+
+            // Sort exported functions by address for efficient range search
+            std::sort(exportFunctionEntries.begin(), exportFunctionEntries.end(),
+                    [](const auto& a, const auto& b) {
+                        return a.first < b.first;
+                    });
+
+            // Find the address range the input address falls into
+            for (size_t i = 0; i < exportFunctionEntries.size(); ++i) {
+                BYTE* functionStartAddress = exportFunctionEntries[i].first;
+                DWORD functionOrdinalIndex = exportFunctionEntries[i].second;
+
+                // Determine the end of this function's code by checking the next function address or section boundary
+                BYTE* functionEndAddress = nullptr;
+                if (i + 1 < exportFunctionEntries.size()) {
+                    functionEndAddress = exportFunctionEntries[i + 1].first;
                 } else {
-                    // Find the section containing the current function to determine the end
-                    DWORD funcRVA = (DWORD)(funcVA - base);
-                    PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
-                    for (unsigned j = 0; j < ntHeaders->FileHeader.NumberOfSections; ++j, ++section) {
-                        DWORD start = section->VirtualAddress;
-                        DWORD end = start + section->Misc.VirtualSize;
-                        if (funcRVA >= start && funcRVA < end) {
-                            nextFuncVA = base + end;
+                    // Locate the section to determine the upper bound
+                    DWORD relativeAddress = static_cast<DWORD>(functionStartAddress - moduleBase);
+                    PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(ntHeaders);
+                    for (unsigned int j = 0; j < ntHeaders->FileHeader.NumberOfSections; ++j, ++sectionHeader) {
+                        DWORD sectionStart = sectionHeader->VirtualAddress;
+                        DWORD sectionEnd = sectionStart + sectionHeader->Misc.VirtualSize;
+                        if (relativeAddress >= sectionStart && relativeAddress < sectionEnd) {
+                            functionEndAddress = moduleBase + sectionEnd;
                             break;
                         }
                     }
-                    if (!nextFuncVA) {
-                        nextFuncVA = funcVA + 0x1000; // Fallback if section not found
+                    // Fallback range if section not identified
+                    if (!functionEndAddress) {
+                        functionEndAddress = functionStartAddress + 0x1000;
                     }
                 }
 
-                // Check if the address falls within this function's range
-                if (address >= funcVA && address < nextFuncVA) {
-                    // Lookup the function name
-                    for (DWORD j = 0; j < exportDir->NumberOfNames; ++j) {
-                        if (addrNameOrdinals[j] == originalIndex) {
-                            char* funcName = (char*)(base + addrNames[j]);
-                            return std::string(funcName);
+                // Check if the input address lies within the current function's range
+                if (reinterpret_cast<BYTE*>(address) >= functionStartAddress &&
+                    reinterpret_cast<BYTE*>(address) < functionEndAddress) {
+
+                    // Try to find the function's name using its ordinal
+                    for (DWORD j = 0; j < exportDirectory->NumberOfNames; ++j) {
+                        if (nameOrdinals[j] == functionOrdinalIndex) {
+                            const char* functionName = reinterpret_cast<const char*>(moduleBase + functionNames[j]);
+                            return std::string(functionName);
                         }
                     }
-                    // No name found, return ordinal
-                    return "ExportedFunc_Ordinal_" + std::to_string(originalIndex + exportDir->Base);
+
+                    // If no name found, fall back to ordinal
+                    DWORD exportedOrdinal = functionOrdinalIndex + exportDirectory->Base;
+                    return "ExportedFunc_Ordinal_" + std::to_string(exportedOrdinal);
                 }
             }
 
-            return ""; // No matching symbol found
+            return ""; // No match found in the export table
         }
 
-        std::string SimpleDemangle(const std::string& mangled) {
-            // Itanium C++ ABI mangling usually starts with _Z
-            // We will parse names and nested names, handling template args simply
+        /**
+         * @brief Performs basic demangling of Itanium C++ ABI mangled symbols.
+         *
+         * This function provides a simplified demangler for common mangled symbols generated by GCC and Clang
+         * following the Itanium C++ ABI. It supports:
+         * - Parsing simple and nested names
+         * - Basic support for template argument lists
+         *
+         * This is *not* a full demangler and will not cover all edge cases or types. For production-grade use,
+         * prefer tools like `abi::__cxa_demangle` or third-party demangling libraries.
+         *
+         * @param mangledSymbol A mangled C++ symbol following the Itanium ABI (typically starting with "_Z").
+         * @return std::string A best-effort demangled version of the symbol.
+         */
+        std::string SimpleDemangle(const std::string& mangledSymbol) {
+            const char* cursor = mangledSymbol.c_str();
+            const char* end = cursor + mangledSymbol.size();
 
-            const char* p = mangled.c_str();
-            const char* end = p + mangled.size();
+            // Helper function to parse a decimal number (used for name lengths)
+            auto parseLength = [&]() -> int {
+                int value = 0;
+                if (!std::isdigit(*cursor)) return -1;
 
-            // Helper lambdas for parsing
-            auto parse_number = [&]() -> int {
-                int val = 0;
-                if (!std::isdigit(*p)) return -1;
-                while (p < end && std::isdigit(*p)) {
-                    val = val * 10 + (*p - '0');
-                    ++p;
+                while (cursor < end && std::isdigit(*cursor)) {
+                    value = value * 10 + (*cursor - '0');
+                    ++cursor;
                 }
-                return val;
+                return value;
             };
 
-            auto parse_name = [&]() -> std::string {
-                // Name is encoded as <length><string>
-                int len = parse_number();
-                if (len < 0 || p + len > end) return "";
+            // Helper function to parse a single name (length-prefixed)
+            auto parseName = [&]() -> std::string {
+                int length = parseLength();
+                if (length < 0 || cursor + length > end) return "";
 
-                std::string result(p, p + len);
-                p += len;
-                return result;
+                std::string name(cursor, cursor + length);
+                cursor += length;
+                return name;
             };
 
-            auto parse_nested_name = [&]() -> std::string {
-                // Nested name: N [names]+ E
-                // Example: N3Foo3BarE -> Foo::Bar
-                if (*p != 'N') return "";
+            // Helper function to parse a nested name: N<names>E
+            // Example: N3Foo3BarE -> Foo::Bar
+            auto parseNestedName = [&]() -> std::string {
+                if (*cursor != 'N') return "";
+                ++cursor; // consume 'N'
 
-                ++p; // consume 'N'
-                std::string result;
-                while (p < end && *p != 'E') {
-                    std::string name = parse_name();
-                    if (name.empty()) break;
-                    if (!result.empty()) result += "::";
-                    result += name;
+                std::string fullName;
+                while (cursor < end && *cursor != 'E') {
+                    std::string component = parseName();
+                    if (component.empty()) break;
+
+                    if (!fullName.empty()) {
+                        fullName += "::";
+                    }
+                    fullName += component;
                 }
 
-                if (*p == 'E') ++p; // consume 'E'
-                return result;
+                if (*cursor == 'E') {
+                    ++cursor; // consume 'E'
+                }
+
+                return fullName;
             };
 
-            auto parse_template_args = [&]() -> std::string {
-                // Simple parsing of template args enclosed in I...E
-                if (*p != 'I') return "";
-                ++p; // consume 'I'
+            // Helper function to parse template arguments enclosed in I...E
+            auto parseTemplateArguments = [&]() -> std::string {
+                if (*cursor != 'I') return "";
+                ++cursor; // consume 'I'
 
                 std::string result = "<";
-                bool first = true;
+                bool firstArgument = true;
 
-                while (p < end && *p != 'E') {
-                    if (!first) result += ", ";
-                    first = false;
+                while (cursor < end && *cursor != 'E') {
+                    if (!firstArgument) {
+                        result += ", ";
+                    }
+                    firstArgument = false;
 
-                    // We try to parse a name or nested name or literal type here
-                    if (*p == 'N') {
-                        std::string nested = parse_nested_name();
+                    if (*cursor == 'N') {
+                        std::string nested = parseNestedName();
                         if (nested.empty()) break;
                         result += nested;
-                    } else if (std::isdigit(*p)) {
-                        std::string name = parse_name();
+                    } else if (std::isdigit(*cursor)) {
+                        std::string name = parseName();
                         if (name.empty()) break;
                         result += name;
                     } else {
-                        // Could parse literals here; for simplicity consume single char
-                        result += *p;
-                        ++p;
+                        // Fallback for unknown types or literals; consume single character
+                        result += *cursor;
+                        ++cursor;
                     }
                 }
 
-                if (*p == 'E') ++p; // consume 'E'
+                if (*cursor == 'E') {
+                    ++cursor; // consume 'E'
+                }
+
                 result += ">";
                 return result;
             };
 
-            // Main demangle logic
+            // Begin demangling logic
 
-            // Mangling must start with _Z
-            if (mangled.size() < 2 || mangled[0] != '_' || mangled[1] != 'Z') {
-                return mangled; // Not a mangled name
+            // All Itanium ABI mangled names start with "_Z"
+            if (mangledSymbol.size() < 2 || mangledSymbol[0] != '_' || mangledSymbol[1] != 'Z') {
+                return mangledSymbol; // Not a mangled name
             }
-            p += 2; // consume _Z
 
+            cursor += 2; // skip "_Z"
             std::string demangled;
 
-            if (*p == 'N') {
-                // Nested name
-                demangled = parse_nested_name();
-                if (p < end && *p == 'I') {
-                    // Template args for the last name
-                    std::string tmpl = parse_template_args();
-                    // Insert template args after last component
-                    size_t pos = demangled.rfind("::");
-                    if (pos == std::string::npos) {
-                        demangled += tmpl;
+            if (*cursor == 'N') {
+                // Handle nested names
+                demangled = parseNestedName();
+
+                if (cursor < end && *cursor == 'I') {
+                    // Template arguments may follow the last name component
+                    std::string templateArgs = parseTemplateArguments();
+
+                    // Attach template args to last component
+                    size_t lastSeparator = demangled.rfind("::");
+                    if (lastSeparator == std::string::npos) {
+                        demangled += templateArgs;
                     } else {
-                        demangled.insert(pos + 2 + (demangled.size() - pos - 2), tmpl);
+                        demangled.insert(lastSeparator + 2 + (demangled.size() - lastSeparator - 2), templateArgs);
                     }
                 }
-            } else if (std::isdigit(*p)) {
-                // Single name, no nesting
-                demangled = parse_name();
-                if (p < end && *p == 'I') {
-                    demangled += parse_template_args();
+            } else if (std::isdigit(*cursor)) {
+                // Single name without nesting
+                demangled = parseName();
+
+                if (cursor < end && *cursor == 'I') {
+                    demangled += parseTemplateArguments();
                 }
             } else {
-                // Unsupported mangling pattern - fallback
-                demangled = mangled;
+                // Fallback for unrecognized or unsupported patterns
+                demangled = mangledSymbol;
             }
 
             return demangled;
         }
 
         /**
-         * @brief Reports the current stack trace along with a given problem description.
+         * @brief Captures and reports a simplified symbolic stack trace with demangled symbol names.
          *
-         * This function captures the current stack trace up to a specified depth, resolves
-         * the symbols for each stack frame, and formats the stack trace into a readable string.
-         * The formatted stack trace is then reported along with the provided problem description.
+         * This function uses Windows APIs to capture the current thread's call stack,
+         * resolves each address to a symbol name (via the export table), attempts to demangle
+         * the name (assuming Itanium ABI-style mangling), and formats the result into a visual stack tree.
          *
-         * @param Problem A string describing the problem to be reported along with the stack trace.
-         *
-         * The function performs the following steps:
-         * 1. Initializes the symbol handler for the current process.
-         * 2. Captures the stack backtrace up to a predefined depth.
-         * 3. Resolves the symbols for each captured stack frame.
-         * 4. Formats the stack trace into a readable string, including file names and line numbers if available.
-         * 5. Appends the provided problem description to the formatted stack trace.
-         * 6. Reports the final result using the `Report()` function.
-         *
-         * Note:
-         * - The function assumes that `Report()` is defined elsewhere to handle the logging of the result.
-         * - The function uses the Windows API for capturing and resolving stack traces.
-         * - The function allocates memory for the SYMBOL_INFO structure and frees it before returning.
+         * @param problemDescription A textual description of the issue related to the stack trace.
          */
         void reportStack(const std::string& problemDescription) {
-            const int Stack_Trace_Depth = 10;
-            void* Ptr_Table[Stack_Trace_Depth];
-            unsigned short Usable_Depth;
-            SYMBOL_INFO* symbol;
-            HANDLE process;
+            constexpr int MaximumStackDepth = 10;
+            void* stackAddressTable[MaximumStackDepth] = {};
+            int capturedFrameCount = 0;
 
-            // Get the current process handle
-            process = GetCurrentProcess();
-            
-            // Optional:
+            HANDLE currentProcess = GetCurrentProcess();
+
+            // Set symbol options to improve resolution and enable demangling
             SymSetOptions(SymGetOptions() | SYMOPT_LOAD_LINES | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
 
-            // Initialize the symbol handler for the process
-            if (!SymInitialize(process, NULL, TRUE)) {
+            // Initialize DbgHelp symbol handler for the current process
+            if (!SymInitialize(currentProcess, nullptr, TRUE)) {
                 LOGGER::Log("Error: Failed to initialize symbol handler.");
                 return;
             }
 
-            // Capture the stack backtrace
-            Usable_Depth = CaptureStackBackTrace(0, Stack_Trace_Depth, Ptr_Table, NULL);
+            // Capture the current call stack
+            capturedFrameCount = CaptureStackBackTrace(0, MaximumStackDepth, stackAddressTable, nullptr);
 
-            // Allocate memory for SYMBOL_INFO structure with space for a name
-            symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
-            if (!symbol) {
+            // Allocate SYMBOL_INFO structure with additional space for symbol name
+            SYMBOL_INFO* symbolInfo = reinterpret_cast<SYMBOL_INFO*>(
+                calloc(1, sizeof(SYMBOL_INFO) + 256 * sizeof(char))
+            );
+
+            if (!symbolInfo) {
                 LOGGER::Log("Error: Memory allocation for SYMBOL_INFO failed.");
                 return;
             }
-            symbol->MaxNameLen = 255;
-            symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
-            // Ensure the maximum width is set for proper indentation
+            symbolInfo->MaxNameLen = 255;
+            symbolInfo->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+            // Ensure any global visual layout constants are updated
             if (Max_Width == 0) {
-                updateMaxWidthAndHeight();
+                updateMaxWidthAndHeight(); // Presumed external function
             }
 
-            // Initialize result string with a header
-            std::string Result = "Stack Trace:\n";
-            int Usable_Stack_Index = 0;
-            bool Use_Indent = Usable_Depth < (INTERNAL::Max_Width / 2);  // Assuming Max_Width is predefined
+            // Start assembling the final report
+            std::string formattedStackTrace = "Stack Trace:\n";
+            int visualDepthIndex = 0;
 
-            // Iterate over the captured stack frames
-            for (unsigned int Stack_Index = Usable_Depth; Stack_Index > 0; Stack_Index--) {
-                if (Ptr_Table[Stack_Index] == nullptr)
+            const bool enableIndentation = capturedFrameCount < (Max_Width / 2);
+
+            // Traverse stack frames in reverse (from newest to oldest)
+            for (int frameIndex = capturedFrameCount - 1; frameIndex > 0; --frameIndex) {
+                void* currentAddress = stackAddressTable[frameIndex];
+                if (currentAddress == nullptr) {
                     continue;
+                }
 
-                // Determine the branch start symbol
-                std::string Branch_Start = "|";
-                if (Stack_Index == (unsigned int)Usable_Depth - 1)
-                    Branch_Start = "\\";
+                // Draw the tree-style branch symbol (main is '|' end is '\')
+                std::string branchSymbol = (frameIndex == 1) ? "\\" : "|";
 
-                // Create indentation for the current stack level
-                std::string Indent = "";
-                for (int i = 0; i < Usable_Stack_Index && Use_Indent; i++)
-                    Indent += "-";
+                // Construct indentation based on depth
+                std::string indentation;
+                if (enableIndentation) {
+                    indentation.assign(visualDepthIndex, '-');
+                }
 
-                // Add symbol and file information
-                std::string line_info;
-                IMAGEHLP_LINE64 line;
-                line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-                DWORD dwDisplacement = 0;
+                // Attempt to resolve and demangle the symbol for the current address
+                std::string symbolName = ResolveSymbolFromExportTable(currentAddress);
+                std::string readableName = SimpleDemangle(symbolName);
 
-                std::string symbolName = ResolveSymbolFromExportTable(Ptr_Table[Stack_Index]);
-                symbolName = SimpleDemangle(symbolName);
-
-                if (symbolName.size() == 0)
+                if (readableName.empty()) {
                     continue;
+                }
 
-                // Append the formatted stack frame info to the result
-                Result += Branch_Start + Indent + " " + symbolName + line_info + "\n";
-                Usable_Stack_Index++;
+                formattedStackTrace += branchSymbol + indentation + " " + readableName + "\n";
+                ++visualDepthIndex;
             }
 
-            // Free allocated memory for symbol
-            free(symbol);
+            // Clean up symbol information memory
+            free(symbolInfo);
 
-            // Append the problem description to the result
-            Result += "Problem: " + Problem;
+            // Append description of the triggering problem
+            formattedStackTrace += "Problem: " + problemDescription;
 
-            // Report the final result
-            report(Result);  // Assuming `Report()` is defined elsewhere to log the result.
+            // Submit the final formatted report
+            report(formattedStackTrace);
         }
 
     }

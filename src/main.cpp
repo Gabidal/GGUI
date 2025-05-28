@@ -34,12 +34,11 @@ int main()
 
     // GGUI::INTERNAL::reportStack("aaa");
 
-    for (int i = 0; i < 100; i++){
-        for (int j = 0; j < 10; j++){
-            GGUI::report("[" + std::to_string(i) + std::to_string(j) + "]");
-            GGUI::INTERNAL::SLEEP(1500);
-        }
-    }
+    // for (int i = 0; i < 100; i++){
+    //     for (int j = 0; j < 10; j++){
+    //         GGUI::report("[" + std::to_string(i) + std::to_string(j) + "]");
+    //     }
+    // }
 
     GGUI::INTERNAL::SLEEP(INT32_MAX);
 
