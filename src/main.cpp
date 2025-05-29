@@ -32,8 +32,6 @@ int main()
         // enable_border(true)
     ));
 
-    GGUI::INTERNAL::SLEEP(2000);
-
 
     // GGUI::INTERNAL::reportStack("aaa");
     // GGUI::INTERNAL::reportStack("bbb");
@@ -41,9 +39,11 @@ int main()
     for (int i = 0; i < 100; i++){
         for (int j = 0; j < 10; j++){
             GGUI::report("[" + std::to_string(i) + "]");
-            GGUI::INTERNAL::SLEEP(50);
+            GGUI::INTERNAL::SLEEP(100);
         }
     }
+
+    GGUI::INTERNAL::LOGGER::Log("valmis");
 
     GGUI::INTERNAL::SLEEP(INT32_MAX);
 

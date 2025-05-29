@@ -8,7 +8,9 @@
 
 namespace GGUI{
     namespace INTERNAL{
-        extern void reportStack(const std::string& problemDescription);
+        namespace LOGGER{
+            extern void Log(std::string Text);
+        }
 
         namespace atomic{
 
@@ -42,7 +44,7 @@ namespace GGUI{
                     try {
                         job(*Data);
                     } catch (...) {
-                        reportStack("Failed to execute the function!");
+                        INTERNAL::LOGGER::Log("Failed to execute the function!");
                     }
                 }
 

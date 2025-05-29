@@ -18,14 +18,19 @@ namespace GGUI{
     namespace INTERNAL{
         namespace LOGGER{
 
+            // File handle for logging to files for Atomic access across different threads.
+            INTERNAL::atomic::Guard<fileStream> Handle;
+
             // to enable default to nullptr for Guard
             class queue{
             public:
-                std::queue<std::string>* Handle = nullptr;
+                std::queue<std::string>* Handle;
 
-                queue() = default;
-                queue(bool init){
-                    Handle = new std::queue<std::string>();
+                queue(bool init = false){
+                    if (init)
+                        Handle = new std::queue<std::string>();
+                    else
+                        Handle = nullptr;
                 }
 
                 void flushInto(queue& dest) {
@@ -35,12 +40,9 @@ namespace GGUI{
                     }
                 }
             };
-
+            
             typedef INTERNAL::atomic::Guard<queue> guardedQueue;    // for tidying
-
-            // File handle for logging to files for Atomic access across different threads.
-            INTERNAL::atomic::Guard<fileStream> Handle;
-            thread_local guardedQueue localQueue;
+            thread_local guardedQueue* localQueue = new guardedQueue();
             INTERNAL::atomic::Guard<std::vector<guardedQueue*>> AllQueues;
 
             /**
@@ -106,15 +108,15 @@ namespace GGUI{
              * This allows the logging system to keep track of all thread-local queues for message processing.
              */
             void RegisterCurrentThread(){
-                localQueue([](queue& current){
+                (*localQueue)([](queue& current){
                     if (current.Handle != nullptr)
                         return;
 
                     current.Handle = new std::queue<std::string>();
                 });
 
-                AllQueues([](std::vector<guardedQueue*> queues){
-                    queues.push_back(&localQueue);
+                AllQueues([](std::vector<guardedQueue*>& queues){
+                    queues.push_back(localQueue);
                 });
             }
 
@@ -915,7 +917,7 @@ namespace GGUI{
                 LOGGER::queue LinearQueue(true);
 
                 // First we'll quickly do a checkup into the AllQueues and look if there is anything to log.
-                LOGGER::AllQueues([&LinearQueue](std::vector<LOGGER::guardedQueue*> self){
+                LOGGER::AllQueues([&LinearQueue](std::vector<LOGGER::guardedQueue*>& self){
                     for (auto* queue : self){
                         // Pause the current queue
                         (*queue)([&LinearQueue](LOGGER::queue& self){
@@ -930,13 +932,15 @@ namespace GGUI{
 
                     renderLogger(CurrentProblem);
                 }
+
+                INTERNAL::SLEEP(100);
             }
         }
 
     }
 
     void report(const std::string& problem){
-        INTERNAL::LOGGER::localQueue([&problem](INTERNAL::LOGGER::queue& self){
+        (*INTERNAL::LOGGER::localQueue)([&problem](INTERNAL::LOGGER::queue& self){
             if (self.Handle){
                 self.Handle->push(problem); // Push the problem to the local queue.
             }else{
