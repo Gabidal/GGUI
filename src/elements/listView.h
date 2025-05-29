@@ -259,8 +259,7 @@ namespace GGUI{
                 allowOverflow(true);
                 element::addChild(new listView(
                     name((getName() + "::container").c_str()) | 
-                    width(UINT16_MAX) | 
-                    flow_priority(DIRECTION::COLUMN)
+                    flow_priority(element::getFlowPriority())
                 ));
             }
 

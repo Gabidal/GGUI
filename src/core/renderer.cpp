@@ -967,6 +967,24 @@ namespace GGUI{
             return demangled;
         }
 
+        bool InitSymbolHandler() {
+            static bool initialized = false;
+            static HANDLE process = GetCurrentProcess();
+
+            if (!initialized) {
+                // Set symbol options to improve resolution and enable demangling
+                SymSetOptions(SymGetOptions() | SYMOPT_LOAD_LINES | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+                
+                if (SymInitialize(process, nullptr, TRUE)) {
+                    initialized = true;
+                } else {
+                    return false; // Initialization failed
+                }
+            }
+
+            return true;
+        }
+
         /**
          * @brief Captures and reports a simplified symbolic stack trace with demangled symbol names.
          *
@@ -981,13 +999,8 @@ namespace GGUI{
             void* stackAddressTable[MaximumStackDepth] = {};
             int capturedFrameCount = 0;
 
-            HANDLE currentProcess = GetCurrentProcess();
-
-            // Set symbol options to improve resolution and enable demangling
-            SymSetOptions(SymGetOptions() | SYMOPT_LOAD_LINES | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-
             // Initialize DbgHelp symbol handler for the current process
-            if (!SymInitialize(currentProcess, nullptr, TRUE)) {
+            if (!InitSymbolHandler()) {
                 LOGGER::Log("Error: Failed to initialize symbol handler.");
                 return;
             }
@@ -1017,7 +1030,7 @@ namespace GGUI{
             std::string formattedStackTrace = "Stack Trace:\n";
             int visualDepthIndex = 0;
 
-            const bool enableIndentation = capturedFrameCount < (Max_Width / 2);
+            const bool enableIndentation = capturedFrameCount < (Max((signed)Max_Width, 0) / 2);
 
             // Traverse stack frames in reverse (from newest to oldest)
             for (int frameIndex = capturedFrameCount - 1; frameIndex > 0; --frameIndex) {
@@ -2702,7 +2715,6 @@ namespace GGUI{
                         scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
                         History->addChild(new listView(styling(
-                            width(1.0f) | height(4) | 
                             text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                             flow_priority(DIRECTION::ROW) | 
 
@@ -2711,16 +2723,18 @@ namespace GGUI{
                             // The actual reported problem text
                             node(new textField(styling(
                                 text(Problem.c_str())
-                            ))) |
+                            ))) 
+                            // |
 
-                            // The Date field
-                            node(new textField(styling(
-                                text(INTERNAL::now().c_str())
-                            )))
+                            // // The Date field
+                            // node(new textField(styling(
+                            //     text(INTERNAL::now().c_str())
+                            // )))
                         )));
 
-                        listView* row = (listView*)History->getContainer()->getChilds().back();
-                        row->setHeight(row->getChilds()[1]->getHeight());
+                        // listView* row = (listView*)History->getContainer()->getChilds().back();
+                        // // row->setHeight(row->getChilds()[1]->getHeight());
+                        // row->setHeight(row->getChilds()[0]->getHeight());
 
                         // Calculate the new x position for the Error_Logger
                         if (Error_Logger->getParent() == INTERNAL::Main)
@@ -2732,7 +2746,8 @@ namespace GGUI{
 
                         // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                         // We can assume that the singular error is at least one tall.
-                        if (GGUI::Min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight()){
+                        // -1, since the border takes one.
+                        if (GGUI::Min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight() - 1){
                             // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
                             // Element* First_Child = History->Get_Childs()[0];
                             // History->Remove(First_Child);
