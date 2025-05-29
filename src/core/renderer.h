@@ -71,6 +71,8 @@ namespace GGUI{
         extern element* Focused_On;
         extern element* Hovered_On;
 
+        extern bool Platform_Initialized;
+
         extern IVector3 Mouse;    
         extern bool Mouse_Movement_Enabled;
 
@@ -103,8 +105,6 @@ namespace GGUI{
         extern std::string now();
 
         extern std::string constructLoggerFileName();
-
-        extern void reportStack(const std::string& problemDescription);
 
         /**
          * @brief Initializes platform-specific settings for console handling.
@@ -334,14 +334,6 @@ namespace GGUI{
      * @return The main window of the GGUI system.
      */
     extern GGUI::window* initGGUI();
-
-    /**
-     * @brief Reports an error to the user.
-     * @param Problem The error message to display.
-     * @note If the main window is not created yet, the error will be printed to the console.
-     * @note This function is thread safe.
-     */
-    extern void report(std::string Problem);
 
     /**
      * @brief Nests a text buffer into a parent buffer while considering the childs position and size.
