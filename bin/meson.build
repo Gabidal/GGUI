@@ -91,7 +91,7 @@ if TYPE == DEBUG
   cpp_args += ['-DGGUI_DEBUG', '-pg']
   link_args += ['-pg']
 elif TYPE == RELEASE
-  cpp_args += ['-DGGUI_RELEASE']
+  cpp_args += ['-DGGUI_RELEASE', '-march=native']
 elif TYPE == PROFILE
   cpp_args += ['-DGGUI_PROFILE', '-DGGUI_DEBUG', '-pg']
   link_args += ['-pg']

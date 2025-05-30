@@ -355,10 +355,10 @@ namespace GGUI{
         class style_base{
         public:
             // This is used to prevent accidental overwrites.
-            VALUE_STATE Status = VALUE_STATE::UNINITIALIZED;
+            VALUE_STATE Status;
 
             // Represents when the value is embedded.
-            EMBED_ORDER Order = EMBED_ORDER::INSTANT;
+            EMBED_ORDER Order;
 
             // This is used to store all appended style_bases through the operator|.
             style_base* Other;
@@ -368,7 +368,7 @@ namespace GGUI{
              * @param status The status to initialize the style_base with.
              * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
              */
-            constexpr style_base(VALUE_STATE status = VALUE_STATE::UNINITIALIZED, EMBED_ORDER order = EMBED_ORDER::INSTANT) : Status(status), Order(order), Other(nullptr){}
+            constexpr style_base(VALUE_STATE status = VALUE_STATE::UNINITIALIZED, EMBED_ORDER order = EMBED_ORDER::INSTANT) : Status(status), Order(order), Other(nullptr) {}
 
             /**
              * @brief Destructor of the style_base class.
@@ -2407,26 +2407,25 @@ namespace GGUI{
 
     namespace STYLES{
         namespace BORDER{
-            const inline styled_border Double = std::array<const char*, 11>{
+            inline styled_border Double = std::array<const char*, 11>{
                 "╔", "╚", "╗", "╝", "║", "═", "╠", "╣", "╦", "╩", "╬"
             };
 
-            const inline styled_border Round = std::array<const char*, 11>{
+            inline styled_border Round = std::array<const char*, 11>{
                 "╭", "╰", "╮", "╯", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            const inline styled_border Single = std::array<const char*, 11>{
+            inline styled_border Single = std::array<const char*, 11>{
                 "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            const inline styled_border Bold = std::array<const char*, 11>{
+            inline styled_border Bold = std::array<const char*, 11>{
                 "▛", "▙", "▜", "▟", "█", "▅", "▉", "▉", "▉", "▉", "▉"
             };
 
-            const inline styled_border Modern = std::array<const char*, 11>{
+            inline styled_border Modern = std::array<const char*, 11>{
                 "/", "\\", "\\", "/", "|", "-", "|", "|", "-", "-", "+"
             };
-            
         }
 
         namespace CONSTANTS{

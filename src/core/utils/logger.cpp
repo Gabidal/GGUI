@@ -128,7 +128,9 @@ namespace GGUI{
         #include <windows.h>
         #include <DbgHelp.h>
 
-        
+        #ifndef GGUI_RELEASE
+
+
         /**
          * @brief Retrieves the module handle corresponding to a specific address.
          *
@@ -416,6 +418,8 @@ namespace GGUI{
             return true;
         }
 
+        #endif
+
         /**
          * @brief Captures and reports a simplified symbolic stack trace with demangled symbol names.
          *
@@ -426,6 +430,9 @@ namespace GGUI{
          * @param problemDescription A textual description of the issue related to the stack trace.
          */
         void reportStack(const std::string& problemDescription) {
+            std::string result = "";
+            
+        #ifndef GGUI_RELEASE
             constexpr int MaximumStackDepth = 10;
             void* stackAddressTable[MaximumStackDepth] = {};
             int capturedFrameCount = 0;
@@ -495,14 +502,19 @@ namespace GGUI{
             free(symbolInfo);
 
             // Append description of the triggering problem
-            formattedStackTrace += "Problem: " + problemDescription;
-
+            result = formattedStackTrace + "Problem: " + problemDescription;
+        #else
+            result = problemDescription;
+        #endif
             // Submit the final formatted report
-            report(formattedStackTrace);
+            report(result);
         }
 
 
     #else
+        
+        #ifndef GGUI_RELEASE
+
         #include <execinfo.h>   // For stacktrace
         #include <dlfcn.h>      // For stacktrace
         #include <cxxabi.h>     // For stacktrace
@@ -626,6 +638,8 @@ namespace GGUI{
             return closestSymbolName;
         }
 
+        #endif
+
         /**
          * @brief Captures and reports a formatted stack trace along with a provided error description.
          *
@@ -642,7 +656,7 @@ namespace GGUI{
          * @param problemDescription A descriptive message about the problem being reported.
          */
         void reportStack(const std::string& problemDescription) {
-        #ifndef __ANDROID__
+        #ifndef __ANDROID__ and GGUI_RELEASE
             constexpr int MaximumStackDepth = 10;
             void* callStackAddresses[MaximumStackDepth];
 
