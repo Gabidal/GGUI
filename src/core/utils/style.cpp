@@ -18,7 +18,8 @@ namespace GGUI{
      */
     STYLING_INTERNAL::style_base::~style_base(){
         // Check if the other is closer to an stack_starting address or to heap
-        [[gnu::assume(Other != nullptr || Other == nullptr)]]; // Hint that 'Other' is initialized
+        // [[gnu::assume(Other != nullptr || Other == nullptr)]]; // Hint that 'Other' is initialized
+        // (void)Other;
         if (getAllocationType(Other) == ALLOCATION_TYPE::HEAP)
             delete Other;
     }

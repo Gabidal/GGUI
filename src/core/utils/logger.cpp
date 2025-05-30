@@ -656,7 +656,7 @@ namespace GGUI{
          * @param problemDescription A descriptive message about the problem being reported.
          */
         void reportStack(const std::string& problemDescription) {
-        #ifndef __ANDROID__ and GGUI_RELEASE
+        #if !defined(__ANDROID__) && !defined(GGUI_RELEASE)
             constexpr int MaximumStackDepth = 10;
             void* callStackAddresses[MaximumStackDepth];
 
