@@ -27,7 +27,7 @@ namespace GGUI{
         bool State = false;
 
         //COntains the unchecked version of the symbol and the checked version.
-        std::vector<std::string> States;
+        std::vector<Compact_String> States;
 
         textField Text;
     public:
@@ -40,8 +40,8 @@ namespace GGUI{
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the switch's style. Only use if you know what you're doing!!!
          */
         switchBox(
-            std::string text,
-            std::vector<std::string> states,
+            Compact_String text,
+            std::vector<Compact_String> states,
             std::function<void (element* This)> event = []([[maybe_unused]] element* e){}, 
             styling s = STYLES::CONSTANTS::Default,
             bool Embed_Styles_On_Construct = false
@@ -73,7 +73,7 @@ namespace GGUI{
          * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
          * @param text The new text for the switch element.
          */
-        void setText(std::string text);
+        void setText(Compact_String text);
         
         /**
          * @brief Creates a deep copy of the Switch object.
@@ -105,7 +105,7 @@ namespace GGUI{
          *          The text parameter is the text to display next to the radio button.
          * @param text The text to display next to the radio button.
          */
-        radioButton(std::string text) : switchBox(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
+        radioButton(Compact_String text) : switchBox(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
 
         /**
          * @brief Destructor for the Radio_Button class.
@@ -152,7 +152,7 @@ namespace GGUI{
          * @details A Check_Box is a special type of Switch that can be either checked or unchecked.
          *          The symbols for the unchecked and checked states are EMPTY_CHECK_BOX and CHECKED_CHECK_BOX, respectively.
          */
-        checkBox(std::string text) : switchBox(text, {SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}){}
+        checkBox(Compact_String text) : switchBox(text, {SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}){}
 
         /**
          * @brief Returns the current state of the Radio_Button.

@@ -14,7 +14,7 @@ int main()
                     new button(styling(text("View") | on_click([]([[maybe_unused]] element* self){}))),
                     new button(styling(text("Help") | on_click([]([[maybe_unused]] element* self){})))
                 }) |
-                STYLES::border
+                enable_border(true)
             )),
             new window(styling(
                 title("A") | width(20) | height(10) | background_color(COLOR::MAGENTA) | text_color(COLOR::RED) | opacity(0.5f) | position(10, 10)
@@ -29,9 +29,11 @@ int main()
         title("Your App UI") |
         background_color(COLOR::WHITE) |
         text_color(COLOR::BLACK) |
-        STYLES::border
-    ), INT32_MAX);
+        enable_border(true)
+    ));
 
-    // // Then exit properly
+    GGUI::INTERNAL::SLEEP(INT32_MAX);
+
+    // // Then exit properly. After 0.1.8 this is unnecessary, unless user overrides exit handlers.
     GGUI::EXIT();
 }

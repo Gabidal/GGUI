@@ -11,13 +11,6 @@ namespace GGUI{
 
     class UTF;
 
-    namespace UTF_FLAG{
-        constexpr inline unsigned char IS_ASCII          = 1 << 0;
-        constexpr inline unsigned char IS_UNICODE        = 1 << 1;
-        constexpr inline unsigned char ENCODE_START      = 1 << 2;
-        constexpr inline unsigned char ENCODE_END        = 1 << 3;
-    };
-
     namespace SYMBOLS{
         static const std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
         static const std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
@@ -39,11 +32,11 @@ namespace GGUI{
         inline unsigned int CONNECTS_LEFT = 1 << 2;
         inline unsigned int CONNECTS_RIGHT = 1 << 3;
 
-        static const std::string RADIOBUTTON_OFF = "○";
-        static const std::string RADIOBUTTON_ON = "◉";
+        static const Compact_String RADIOBUTTON_OFF = "○";
+        static const Compact_String RADIOBUTTON_ON = "◉";
 
-        static const std::string EMPTY_CHECK_BOX = "☐";
-        static const std::string CHECKED_CHECK_BOX = "☒";
+        static const Compact_String EMPTY_CHECK_BOX = "☐";
+        static const Compact_String CHECKED_CHECK_BOX = "☒";
 
         extern GGUI::UTF EMPTY_UTF;
     }

@@ -4,16 +4,20 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <variant>
+#include <initializer_list>
 
 namespace GGUI{
+    
+    namespace COMPACT_STRING_FLAG{
+        constexpr inline unsigned char IS_ASCII          = 1 << 0;
+        constexpr inline unsigned char IS_UNICODE        = 1 << 1;
+    };
+
     // And lighter-weight version of the UTF class. [Probably after making the RGBA use unsigned char instead of float, and thus making the overall size into 32 bits, replace this class with UTF.]
     class Compact_String{
     public:
-        union{
-            const char* Unicode_Data;
-            char Ascii_Data;
-        } Data = { nullptr };
-
+        std::variant<char, const char*> Text;
         unsigned int Size = 0;
 
         /**
@@ -21,7 +25,7 @@ namespace GGUI{
          * @warning Do not use this constructor directly, as it will not initialize the Data property.
          * This constructor initializes a Compact_String object with default values.
          */
-        Compact_String() = default;
+        constexpr Compact_String() = default;
 
         /**
          * @brief Constructs a Compact_String object from a C-style string.
@@ -32,13 +36,14 @@ namespace GGUI{
          * 
          * @param data A pointer to a null-terminated C-style string.
          */
-        Compact_String(const char* data){
+        constexpr Compact_String(const char* data) : Text(data){
             Size = std::strlen(data); // Get the length of the string.
 
-            if (Size > 1)
-                Data.Unicode_Data = data; // Store the string data.
-            else
-                Data.Ascii_Data = data[0]; // Store the single character.
+            // Store the string as Unicode data if its length is greater than 1.
+            // Store the single character as ASCII data.
+            Size > 1 ? 
+                Set_Unicode(data) : 
+                Set_Ascii(data[0]);
         }
 
         /**
@@ -50,8 +55,7 @@ namespace GGUI{
          * 
          * @param data The ASCII character to initialize the Compact_String with.
          */
-        Compact_String(char data){
-            Data.Ascii_Data = data;
+        constexpr Compact_String(const char data) : Text(data){
             Size = 1;
         }
 
@@ -69,17 +73,34 @@ namespace GGUI{
          * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
          * Otherwise, the data is stored as a single ASCII character.
          */
-        Compact_String(const char* data, unsigned int size, bool Force_Unicode = false) {
+        constexpr Compact_String(const char* data, const unsigned int size, const bool Force_Unicode = false) : Text(data) {
             Size = size;
 
             // Determine data storage based on size and Force_Unicode flag.
-            if (Size > 1 || Force_Unicode) {
-                // Store as Unicode data if size is greater than 1 or forced.
-                Data.Unicode_Data = data;
-            } else {
-                // Store as a single ASCII character.
-                Data.Ascii_Data = data[0];
-            }
+            // Store as Unicode data if size is greater than 1 or forced.
+            // Store as a single ASCII character.
+            (Size > 1 || Force_Unicode) ? 
+                Set_Unicode(data) : 
+                Set_Ascii(data[0]);
+        }
+
+        /**
+         * @brief Checks if a specific UTF flag is set.
+         * @param cs_flag The UTF flag to check.
+         * @return True if the flag is set, otherwise false.
+         */
+        constexpr bool Is(unsigned char cs_flag) const {
+            return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && Size == 1) ? true : false;
+        }
+
+        // Fast comparison of type and content
+        constexpr bool Is(const char* other) const {
+            return Is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::strcmp(std::get<const char*>(Text), other) == 0 : false;
+        }
+
+        // Fast comparison of type and content
+        constexpr bool Is(char other) const {
+            return Is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(Text) == other : false;
         }
 
         /**
@@ -92,13 +113,48 @@ namespace GGUI{
          * @param index The index of the character to access.
          * @return char The character at the specified index.
          */
-        char operator[](unsigned int index) const {
+        constexpr char operator[](unsigned int index) const {
             // If the size is greater than 1, we have to index into the Unicode data.
-            if (Size > 1)
-                return Data.Unicode_Data[index];
-            else
-                // If the size is 1, we just return the ASCII data.
-                return Data.Ascii_Data;
+            // If the size is 1, we just return the ASCII data.
+            return Size > 1 ? 
+                std::get<const char*>(Text)[index] : 
+                std::get<char>(Text);
+        }
+
+        constexpr const char* Get_Unicode() const {
+            // If the size is greater than 1, return the Unicode data.
+            // Otherwise, return a pointer to the ASCII data.
+            return Size > 1 ? 
+                std::get<const char*>(Text) : 
+                nullptr;
+        }
+
+        constexpr char Get_Ascii() const {
+            // If the size is 1, return the ASCII data.
+            // Otherwise, return a null character.
+            return Size == 1 ? 
+                std::get<char>(Text) : 
+                '\0';
+        }
+
+        constexpr void Set_Unicode(const char* text) {
+            // Set the Text to the Unicode data.
+            Text = std::variant<char, const char*>(text);
+            Size = std::strlen(text); // Update the size based on the new string.
+        }
+
+        constexpr void Set_Ascii(const char text) {
+            // Set the Text to the ASCII data.
+            Text = std::variant<char, const char*>(text);
+            Size = 1; // Update the size to 1 since it's a single character.
+        }
+        
+        /**
+         * @brief Checks if the UTF object has a default text.
+         * @return true if the UTF object has a default text, false otherwise.
+         */
+        constexpr bool Has_Default_Text() {
+            return Is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(Text) == ' ' : std::get<const char*>(Text)[0] == ' ';
         }
     };
 
@@ -117,9 +173,15 @@ namespace GGUI{
          * @param Final_Size The final size to which the internal data storage should be resized.
          *                   Default value is 1.
          */
-        Super_String(unsigned int Final_Size = 1) {
+        Super_String(const unsigned int Final_Size = 1) {
             Data.resize(Final_Size);
             Current_Index = 0;
+        }
+
+        Super_String(const std::initializer_list<Compact_String>& data) : Super_String(data.size()) {
+            for (const auto& item : data) {
+                Add(item);
+            }
         }
 
         /**
@@ -128,7 +190,7 @@ namespace GGUI{
          * This function resets the current index back to the start of the vector,
          * effectively clearing any stored data.
          */
-        void Clear(){
+        constexpr void Clear(){
             // Set the current index back to the start of the vector.
             Current_Index = 0;
         }
@@ -143,7 +205,7 @@ namespace GGUI{
          * @param data Pointer to the character array containing the string to be added.
          * @param size The size of the string to be added.
          */
-        void Add(const char* data, int size){
+        void Add(const char* data, const int size){
             // Store the string in the data vector.
             Data[Current_Index++] = Compact_String(data, size);
         }
@@ -156,7 +218,7 @@ namespace GGUI{
          * 
          * @param data The character to be added to the Super_String.
          */
-        void Add(char data){
+        void Add(const char data){
             // Store the character in the data vector.
             Data[Current_Index++] = Compact_String(data);
         }
@@ -185,7 +247,7 @@ namespace GGUI{
          * @param Expected A boolean flag indicating whether the reservation size is already
          *                 expected to be sufficient. If false, the Data vector will be resized.
          */
-        void Add(Super_String* other){
+        void Add(const Super_String* other){
             // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other->Current_Index; i++){
 
@@ -199,7 +261,7 @@ namespace GGUI{
          * @param Expected If true, the size of the Data vector will not be changed.
          * @details This function is used to concatenate Super_Strings.
          */
-        void Add(Super_String& other){
+        void Add(const Super_String& other){
             // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other.Current_Index; i++){
 
@@ -249,13 +311,13 @@ namespace GGUI{
                 // Size of ones are always already loaded from memory into a char.
                 if (data.Size > 1){
                     // Replace the current contents of the string with the contents of the Unicode data.
-                    result.replace(Current_UTF_Insert_Index, data.Size, data.Data.Unicode_Data);
+                    result.replace(Current_UTF_Insert_Index, data.Size, data.Get_Unicode());
 
                     Current_UTF_Insert_Index += data.Size;
                 }
                 else{
                     // Add the single character to the string.
-                    result[Current_UTF_Insert_Index++] = data.Data.Ascii_Data;
+                    result[Current_UTF_Insert_Index++] = data.Get_Ascii();
                 }
             }
 

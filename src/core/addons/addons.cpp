@@ -24,7 +24,7 @@ namespace GGUI{
      */
     void initAddons(){
         // Call addon initializers.
-        initInspectTool();
+        // initInspectTool();
 
         // Finally after all addons are loaded
         for (auto* a : Addons){

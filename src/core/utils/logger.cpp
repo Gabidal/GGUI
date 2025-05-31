@@ -940,6 +940,8 @@ namespace GGUI{
                     }
                 });
                 
+                int LinearQueueSize = LinearQueue.Handle->size();
+
                 while (!LinearQueue.Handle->empty()){
                     std::string CurrentProblem = LinearQueue.Handle->front();
                     LinearQueue.Handle->pop();
@@ -947,7 +949,14 @@ namespace GGUI{
                     renderLogger(CurrentProblem);
                 }
 
-                INTERNAL::SLEEP(100);
+                unsigned int SleepTime = GGUI::TIME::SECOND;
+
+                if (LinearQueueSize != 0){
+                    // If there was something to log, then we can sleep less.
+                    SleepTime = GGUI::TIME::MILLISECOND * 100;
+                }
+
+                INTERNAL::SLEEP(SleepTime);
             }
         }
 

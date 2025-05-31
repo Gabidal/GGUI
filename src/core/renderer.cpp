@@ -2189,8 +2189,8 @@ namespace GGUI{
     void encodeBuffer(std::vector<GGUI::UTF>& Buffer) {
         
         // Initialize the first and last elements with start and end flags respectively.
-        Buffer[0].Set_Flag(UTF_FLAG::ENCODE_START);
-        Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_END);
+        Buffer[0].Set_Flag(ENCODING_FLAG::START);
+        Buffer[Buffer.size() - 1].Set_Flag(ENCODING_FLAG::END);
 
         // Iterate through the buffer to determine encoding strip positions.
         for (unsigned int Index = 1; Index < Buffer.size() - 1; Index++) {
@@ -2202,18 +2202,18 @@ namespace GGUI{
 
             // Set end flag if current colors differ from the next.
             if (!Same_Colours_As_Next) {
-                Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_END);
+                Buffer[Index].Set_Flag(ENCODING_FLAG::END);
             }
 
             // Set start flag if current colors differ from the previous.
             if (!Same_Colours_As_Previous) {
-                Buffer[Index].Set_Flag(UTF_FLAG::ENCODE_START);
+                Buffer[Index].Set_Flag(ENCODING_FLAG::START);
             }
         }
 
         // Ensure the last element is marked correctly if the second to last was an ending node.
-        if (Buffer[Buffer.size() - 2].Is(UTF_FLAG::ENCODE_END)) {
-            Buffer[Buffer.size() - 1].Set_Flag(UTF_FLAG::ENCODE_START | UTF_FLAG::ENCODE_END);
+        if (Buffer[Buffer.size() - 2].Is(ENCODING_FLAG::END)) {
+            Buffer[Buffer.size() - 1].Set_Flag(ENCODING_FLAG::START | ENCODING_FLAG::END);
         }
     }
 

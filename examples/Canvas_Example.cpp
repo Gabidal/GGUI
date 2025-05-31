@@ -24,5 +24,6 @@ int main()
         )))
     ), INT32_MAX);
 
+    // // Then exit properly. After 0.1.8 this is unnecessary, unless user overrides exit handlers.
     GGUI::EXIT();
 }

@@ -12,7 +12,7 @@ namespace GGUI{
      * @param event The function to call when the switch is toggled.
      * @param s The styling for the switch.
      */
-    switchBox::switchBox(std::string text, std::vector<std::string> states, std::function<void (element* This)> event, styling s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
+    switchBox::switchBox(Compact_String text, std::vector<Compact_String> states, std::function<void (element* This)> event, styling s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
         pauseGGUI([this, text, states, event](){
             // Initialize the states for the switch
             States = states;
@@ -46,16 +46,18 @@ namespace GGUI{
      * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the switch element.
      */
-    void switchBox::setText(std::string text) { 
+    void switchBox::setText(Compact_String text) { 
         pauseGGUI([this, text](){
-            std::string Symbol = " ";
-            char Space = ' ';
+            Compact_String Symbol = " ";   // This is where the switchbox symbol will replace to.
+            Compact_String Space = ' ';
+
+            Super_String container{Symbol, Space, text};
 
             // Mark the element as needing a deep state update
             Dirty.Dirty(STAIN_TYPE::DEEP);
 
             // Set the text with a space character added to the beginning
-            Text.setText(Symbol + Space + text);   // This will call the update_frame for us.
+            Text.setText(container.To_String());
 
             // Update the switch element's dimensions to fit the new text
             setWidth(Text.getWidth() + hasBorder() * 2);

@@ -59,7 +59,7 @@ namespace GGUI{
          * @param Result A pointer to the Super_String to populate with escape codes.
          * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
          */
-        void Get_Over_Head_As_Super_String(Super_String* Result, bool Is_Text_Color = true) const {
+        void Get_Over_Head_As_Super_String(Super_String* Result, const bool Is_Text_Color = true) const {
             if (Is_Text_Color) {
                 // Add escape codes for text color
                 Result->Add(Constants::ANSI::ESC_CODE);
@@ -100,9 +100,9 @@ namespace GGUI{
             Alpha = a;
         }
 
-        RGBA() = default;
+        constexpr RGBA() = default;
 
-        RGBA(RGB primal) : RGB(primal){}
+        constexpr RGBA(RGB primal) : RGB(primal){}
     
         // For float API's
         constexpr void Set_Alpha(float a){
