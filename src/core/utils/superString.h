@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstring>
+#include <array>
 #include <vector>
 #include <variant>
 #include <initializer_list>
@@ -159,26 +160,16 @@ namespace GGUI{
     };
 
     // Instead of reconstructing new strings every time, this class stores the components, and then only one time constructs the final string representation.
+    template<std::size_t MaxSize>
     class Super_String{
     public:
-        std::vector<Compact_String> Data;
+        std::array<Compact_String, MaxSize> Data;
         unsigned int Current_Index = 0;
+        unsigned int Liquefied_Size = 0;
 
-        /**
-         * @brief Constructs a Super_String object with a specified final size.
-         * 
-         * This constructor initializes the Super_String object by resizing the internal
-         * data storage to the specified final size and sets the current index to 0.
-         * 
-         * @param Final_Size The final size to which the internal data storage should be resized.
-         *                   Default value is 1.
-         */
-        Super_String(const unsigned int Final_Size = 1) {
-            Data.resize(Final_Size);
-            Current_Index = 0;
-        }
+        constexpr Super_String() = default;
 
-        Super_String(const std::initializer_list<Compact_String>& data) : Super_String(data.size()) {
+        constexpr Super_String(const std::initializer_list<Compact_String>& data) {
             for (const auto& item : data) {
                 Add(item);
             }
@@ -193,6 +184,7 @@ namespace GGUI{
         constexpr void Clear(){
             // Set the current index back to the start of the vector.
             Current_Index = 0;
+            Liquefied_Size = 0;
         }
 
         /**
@@ -205,9 +197,10 @@ namespace GGUI{
          * @param data Pointer to the character array containing the string to be added.
          * @param size The size of the string to be added.
          */
-        void Add(const char* data, const int size){
+        constexpr void Add(const char* data, const int size){
             // Store the string in the data vector.
             Data[Current_Index++] = Compact_String(data, size);
+            Liquefied_Size += size; // Update the liquefied size with the size of the new string.
         }
 
         /**
@@ -218,9 +211,10 @@ namespace GGUI{
          * 
          * @param data The character to be added to the Super_String.
          */
-        void Add(const char data){
+        constexpr void Add(const char data){
             // Store the character in the data vector.
             Data[Current_Index++] = Compact_String(data);
+            Liquefied_Size += 1; // Update the liquefied size with the size of the new character.
         }
 
         /**
@@ -231,9 +225,10 @@ namespace GGUI{
          * 
          * @param data The string to be added to the data vector.
          */
-        void Add(const std::string& data){
+        constexpr void Add(const std::string& data){
             // Store the string in the data vector.
             Data[Current_Index++] = Compact_String(data.data(), data.size());
+            Liquefied_Size += data.size(); // Update the liquefied size with the size of the new string.
         }
 
         /**
@@ -247,11 +242,12 @@ namespace GGUI{
          * @param Expected A boolean flag indicating whether the reservation size is already
          *                 expected to be sufficient. If false, the Data vector will be resized.
          */
-        void Add(const Super_String* other){
+        template<std::size_t OtherMaxSize>
+        constexpr void Add(const Super_String<OtherMaxSize>* other){
             // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other->Current_Index; i++){
-
                 Data[Current_Index++] = other->Data[i];
+                Liquefied_Size += other->Data[i].Size; // Update the liquefied size with the size of the new string.
             }
         }
         
@@ -261,11 +257,12 @@ namespace GGUI{
          * @param Expected If true, the size of the Data vector will not be changed.
          * @details This function is used to concatenate Super_Strings.
          */
-        void Add(const Super_String& other){
+        template<std::size_t OtherMaxSize>
+        constexpr void Add(const Super_String<OtherMaxSize>& other){
             // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other.Current_Index; i++){
-
                 Data[Current_Index++] = other.Data[i];
+                Liquefied_Size += other.Data[i].Size; // Update the liquefied size with the size of the new string.
             }
         }
 
@@ -277,9 +274,10 @@ namespace GGUI{
          * 
          * @param other The Compact_String to add to the data vector.
          */
-        void Add(const Compact_String& other){
+        constexpr void Add(const Compact_String& other){
             // Store the Compact_String in the data vector.
             Data[Current_Index++] = other;
+            Liquefied_Size += other.Size; // Update the liquefied size with the size of the new Compact_String.
         }
 
         /**
@@ -291,22 +289,18 @@ namespace GGUI{
          * 
          * @return A std::string that contains all the strings stored in the Data vector.
          */
-        std::string To_String() const {
-            unsigned int Overall_Size = 0;
-
-            // Calculate the total size of all the strings stored in the Data vector.
-            for(unsigned int i = 0; i < Current_Index; i++){
-                Overall_Size += Data[i].Size;
-            }
-
+        std::string To_String() {
             // Resize a std::string to the total size.
             std::string result;
-            result.resize(Overall_Size);
+            result.resize(Liquefied_Size);
 
             // Copy the contents of the Data vector into the std::string.
             int Current_UTF_Insert_Index = 0;
             for(unsigned int i = 0; i < Current_Index; i++){
                 Compact_String data = Data[i];
+
+                if (data.Size == 0)
+                    break;
 
                 // Size of ones are always already loaded from memory into a char.
                 if (data.Size > 1){
@@ -320,10 +314,38 @@ namespace GGUI{
                     result[Current_UTF_Insert_Index++] = data.Get_Ascii();
                 }
             }
-
             return result;
         }
     };
+
+    inline std::string To_String(std::vector<Compact_String>* Data, unsigned int Liquefied_Size) {
+        // Resize a std::string to the total size.
+        std::string result;
+        result.resize(Liquefied_Size);
+
+        // Copy the contents of the Data vector into the std::string.
+        int Current_UTF_Insert_Index = 0;
+        for(unsigned int i = 0; i < Data->size(); i++){
+            Compact_String data = Data->at(i);
+
+            if (data.Size == 0)
+                break;
+
+            // Size of ones are always already loaded from memory into a char.
+            if (data.Size > 1){
+                // Replace the current contents of the string with the contents of the Unicode data.
+                result.replace(Current_UTF_Insert_Index, data.Size, data.Get_Unicode());
+
+                Current_UTF_Insert_Index += data.Size;
+            }
+            else{
+                // Add the single character to the string.
+                result[Current_UTF_Insert_Index++] = data.Get_Ascii();
+            }
+        }
+
+        return result;
+    }
 
 }
 

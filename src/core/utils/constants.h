@@ -105,8 +105,8 @@ namespace GGUI{
              * @param Enable If true, enable the feature. Otherwise, disable it.
              * @return A Super_String object with the correct escape sequence to enable or disable the feature
              */
-            inline Super_String Enable_Private_SGR_Feature(const std::string& command, bool Enable = true) { 
-                Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature);
+            inline Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature> Enable_Private_SGR_Feature(const std::string& command, bool Enable = true) { 
+                Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature> Result;
 
                 // Add the escape code
                 Result.Add(ESC_CODE);
@@ -135,8 +135,8 @@ namespace GGUI{
              * @param command The command to enable
              * @return A Super_String object with the correct escape sequence to enable the feature
              */
-            inline Super_String Enable_SGR_Feature(const std::string& command) {
-                Super_String Result(Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature);
+            inline Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature> Enable_SGR_Feature(const std::string& command) {
+                Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature> Result;
 
                 // Add the escape code
                 Result.Add(ESC_CODE);

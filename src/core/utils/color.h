@@ -19,20 +19,28 @@ namespace GGUI{
         constexpr RGB(unsigned char r, unsigned char g, unsigned char b) : Red(r), Green(g), Blue(b) {}
 
         constexpr RGB() = default;
-        
-        /**
-         * @brief Gets the colour as a string.
-         *
-         * @return The colour as a string. Format is: "X;Y;Z" where X, Y, Z are the values of red, green, blue respectively.
-         */
-        std::string Get_Colour() const;
 
         /**
          * @brief Converts the RGB colour to a string.
          *
          * @param Result The result string.
          */
-        void Get_Colour_As_Super_String(Super_String* Result) const;
+        constexpr void Get_Colour_As_Super_String(Super_String<Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Result) const {
+            // Add the red value to the string
+            Result->Add(Constants::To_Compact[Red]);
+            
+            // Add the separator to the string
+            Result->Add(Constants::ANSI::SEPARATE);
+            
+            // Add the green value to the string
+            Result->Add(Constants::To_Compact[Green]);
+            
+            // Add the separator to the string
+            Result->Add(Constants::ANSI::SEPARATE);
+            
+            // Add the blue value to the string
+            Result->Add(Constants::To_Compact[Blue]);
+        }
     
         /**
          * @brief Generates an ANSI escape code for setting text or background color using RGB values.
@@ -59,7 +67,7 @@ namespace GGUI{
          * @param Result A pointer to the Super_String to populate with escape codes.
          * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
          */
-        void Get_Over_Head_As_Super_String(Super_String* Result, const bool Is_Text_Color = true) const {
+        void Get_Over_Head_As_Super_String(Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Result, const bool Is_Text_Color = true) const {
             if (Is_Text_Color) {
                 // Add escape codes for text color
                 Result->Add(Constants::ANSI::ESC_CODE);

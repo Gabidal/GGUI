@@ -1481,12 +1481,12 @@ namespace GGUI{
     }
 
     namespace INTERNAL{
-        static Super_String LIQUIFY_UTF_TEXT_RESULT_CACHE;
-        static Super_String LIQUIFY_UTF_TEXT_TMP_CONTAINER(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String);
-        static Super_String LIQUIFY_UTF_TEXT_TEXT_OVERHEAD(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head);
-        static Super_String LIQUIFY_UTF_TEXT_TEXT_COLOUR(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
-        static Super_String LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR(GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color);
+        static std::vector<Compact_String> LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
     }
 
     /**
@@ -1497,11 +1497,12 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    GGUI::Super_String* liquifyUTFText(std::vector<GGUI::UTF>& Text, int Width, int Height){
-        const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + SETTINGS::Word_Wrapping * (Height - 1));
+    std::vector<Compact_String>* liquifyUTFText(std::vector<GGUI::UTF>& Text, unsigned int& Liquefied_Size, int Width, int Height){
+        const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + !SETTINGS::Word_Wrapping * (Height - 1));
         
         // Since they are located as globals we need to remember to restart the starting offset.
-        INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Clear();
+        unsigned int LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX = 0;
+
         INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();
         INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.Clear();
         INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.Clear();
@@ -1509,11 +1510,9 @@ namespace GGUI{
         INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.Clear();
         
         // We need to dynamically resize this, since the window size will be potentially re-sized.
-        if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.Data.capacity() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
-            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE = Super_String(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
+        if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.capacity() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
+            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE = std::vector<Compact_String>(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
         }
-
-        Super_String* Result = &INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE;
  
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
@@ -1525,7 +1524,11 @@ namespace GGUI{
                     &INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR
                 );
                 
-                Result->Add(INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER);
+                for (unsigned int i = 0; i < INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Current_Index; i++){
+                    INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Data[i];
+                }
+
+                Liquefied_Size += INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Liquefied_Size;
 
                 // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
                 INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();
@@ -1537,11 +1540,11 @@ namespace GGUI{
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
             if (!SETTINGS::Word_Wrapping){
-                Result->Add('\n');   // the system is word wrapped.
+                INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = Compact_String('\n'); // the system is word wrapped.
             }
         }
 
-        return Result;
+        return &INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE;
     }
 
     /**

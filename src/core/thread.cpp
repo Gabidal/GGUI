@@ -85,7 +85,9 @@ namespace GGUI{
                         // ENCODE for optimize
                         encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
 
-                        INTERNAL::Frame_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight())->To_String();
+                        unsigned int Liquefied_Size = 0;
+                        std::vector<Compact_String>* CS_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, Liquefied_Size, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight());
+                        INTERNAL::Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
                         
                         INTERNAL::renderFrame();
                     }

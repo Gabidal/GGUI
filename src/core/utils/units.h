@@ -581,12 +581,6 @@ namespace GGUI{
         std::string To_String() const;
 
         /**
-         * @brief Converts the UTF character to an encoded string.
-         * @return The encoded string representation of the UTF character.
-         */
-        std::string To_Encoded_String() const;
-
-        /**
          * @brief Converts the UTF character to a Super_String.
          * @param Result The result string.
          * @param Text_Overhead The foreground colour and style as a string.
@@ -594,7 +588,13 @@ namespace GGUI{
          * @param Text_Colour The foreground colour as a string.
          * @param Background_Colour The background colour as a string.
          */
-        void To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour) const;
+        void To_Super_String(
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String>* Result,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Text_Overhead,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Background_Overhead,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Text_Colour,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Background_Colour
+        ) const;
 
         /**
          * @brief Converts the UTF character to an encoded Super_String.
@@ -604,7 +604,13 @@ namespace GGUI{
          * @param Text_Colour The Super_String where the foreground colour will be stored.
          * @param Background_Colour The Super_String where the background colour will be stored.
          */
-        void To_Encoded_Super_String(Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour) const;
+        void To_Encoded_Super_String(
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String>* Result,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Text_Overhead,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Background_Overhead,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Text_Colour,
+            Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Background_Colour
+        ) const;
 
         /**
          * @brief Assign a character to the UTF object.

@@ -51,7 +51,7 @@ namespace GGUI{
             Compact_String Symbol = " ";   // This is where the switchbox symbol will replace to.
             Compact_String Space = ' ';
 
-            Super_String container{Symbol, Space, text};
+            Super_String<3> container{Symbol, Space, text};
 
             // Mark the element as needing a deep state update
             Dirty.Dirty(STAIN_TYPE::DEEP);

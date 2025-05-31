@@ -18,38 +18,6 @@ namespace GGUI{
     }
 }
 
-
-/**
- * @brief Gets the colour as a string.
- *
- * @return The colour as a string. Format is: "X;Y;Z" where X, Y, Z are the values of red, green, blue respectively.
- */
-std::string GGUI::RGB::Get_Colour() const{
-    return Constants::To_String[Red] + Constants::ANSI::SEPARATE + Constants::To_String[Green] + Constants::ANSI::SEPARATE + Constants::To_String[Blue];
-}
-
-/**
- * @brief Converts the RGB colour to a string.
- *
- * @param Result The result string.
- */
-void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
-    // Add the red value to the string
-    Result->Add(Constants::To_Compact[Red]);
-    
-    // Add the separator to the string
-    Result->Add(Constants::ANSI::SEPARATE);
-    
-    // Add the green value to the string
-    Result->Add(Constants::To_Compact[Green]);
-    
-    // Add the separator to the string
-    Result->Add(Constants::ANSI::SEPARATE);
-    
-    // Add the blue value to the string
-    Result->Add(Constants::To_Compact[Blue]);
-}
-
 /**
  * @brief Converts the UTF character to a string.
  *
@@ -59,11 +27,17 @@ void GGUI::RGB::Get_Colour_As_Super_String(Super_String* Result) const{
  * @return The string representation of the UTF character.
  */
 std::string GGUI::UTF::To_String() const {
+    Super_String<Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> foreground;
+    Super_String<Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> background;
+
+    Foreground.Get_Colour_As_Super_String(&foreground);
+    Background.Get_Colour_As_Super_String(&background);
+
     std::string Result =
         // Get the foreground colour and style as a string
-        Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::ANSI::END_COMMAND + 
+        Foreground.Get_Over_Head(true) + foreground.To_String() + Constants::ANSI::END_COMMAND + 
         // Get the background colour and style as a string
-        Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::ANSI::END_COMMAND;
+        Background.Get_Over_Head(false) + background.To_String() + Constants::ANSI::END_COMMAND;
 
     if(Is(COMPACT_STRING_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
@@ -89,7 +63,13 @@ std::string GGUI::UTF::To_String() const {
  * @param Text_Colour The foreground colour as a string.
  * @param Background_Colour The background colour as a string.
  */
-void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour) const{
+void GGUI::UTF::To_Super_String(
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String>* Result,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Text_Overhead,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Background_Overhead,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Text_Colour,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Background_Colour
+) const{
     // Get the foreground colour and style as a string
     Foreground.Get_Over_Head_As_Super_String(Text_Overhead, true);
     // Get the foreground colour as a string
@@ -118,43 +98,6 @@ void GGUI::UTF::To_Super_String(GGUI::Super_String* Result, Super_String* Text_O
 }
 
 /**
- * @brief Converts the UTF character to an encoded string.
- *
- * This function converts the UTF character to an encoded string by applying
- * encoding flags and combining the foreground and background colour strings
- * with the character itself.
- *
- * @return The encoded string representation of the UTF character.
- */
-std::string GGUI::UTF::To_Encoded_String() const {
-    std::string Result;
-
-    // Check if the start encoding flag is set
-    if (Is(ENCODING_FLAG::START)) {
-        // Add the foreground and background colour and style to the result
-        Result = Foreground.Get_Over_Head(true) + Foreground.Get_Colour() + Constants::ANSI::END_COMMAND 
-               + Background.Get_Over_Head(false) + Background.Get_Colour() + Constants::ANSI::END_COMMAND;
-    }
-
-    // Check if the character is a Unicode character
-    if (Is(COMPACT_STRING_FLAG::IS_UNICODE)) {
-        // Append the Unicode character to the result
-        Result.append(std::get<const char*>(Text), Size);
-    } else {
-        // Append the ASCII character to the result
-        Result += std::get<char>(Text);
-    }
-
-    // Check if the end encoding flag is set
-    if (Is(ENCODING_FLAG::END)) {
-        // Add the reset ANSI code to the end of the string
-        Result += Constants::ANSI::RESET_COLOR;
-    }
-
-    return Result;
-}
-
-/**
  * @brief Converts the UTF character to an encoded Super_String.
  *
  * This function converts the UTF character to an encoded Super_String by applying
@@ -167,7 +110,13 @@ std::string GGUI::UTF::To_Encoded_String() const {
  * @param Text_Colour The Super_String where the foreground colour will be stored.
  * @param Background_Colour The Super_String where the background colour will be stored.
  */
-void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text_Overhead, Super_String* Background_Overhead, Super_String* Text_Colour, Super_String* Background_Colour) const{
+void GGUI::UTF::To_Encoded_Super_String(
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String>* Result,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Text_Overhead,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Background_Overhead,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Text_Colour,
+    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Background_Colour
+) const{
 
     if (Is(ENCODING_FLAG::START)) {
         // Add the foreground and background colour and style to the result
@@ -186,10 +135,10 @@ void GGUI::UTF::To_Encoded_Super_String(Super_String* Result, Super_String* Text
 
     if (Is(COMPACT_STRING_FLAG::IS_UNICODE)) {
         // Append the Unicode character to the result
-        Result->Add(std::get<const char*>(Text), Size);
+        Result->Add(Get_Unicode(), Size);
     } else {
         // Append the ASCII character to the result
-        Result->Add(std::get<char>(Text));
+        Result->Add(Get_Ascii());
     }
 
     if (Is(ENCODING_FLAG::END)) {
