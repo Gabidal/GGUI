@@ -27,11 +27,6 @@ namespace GGUI{
         static const std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
         static const std::string FULL_BLOCK = "█";//"\e(0\x2588\e(B";
 
-        inline unsigned int CONNECTS_UP = 1 << 0;
-        inline unsigned int CONNECTS_DOWN = 1 << 1;
-        inline unsigned int CONNECTS_LEFT = 1 << 2;
-        inline unsigned int CONNECTS_RIGHT = 1 << 3;
-
         static const Compact_String RADIOBUTTON_OFF = "○";
         static const Compact_String RADIOBUTTON_ON = "◉";
 
@@ -39,6 +34,26 @@ namespace GGUI{
         static const Compact_String CHECKED_CHECK_BOX = "☒";
 
         extern GGUI::UTF EMPTY_UTF;
+    }
+
+    enum class Border_Connection{
+        NONE    = 0 << 0,
+        UP      = 1 << 0,
+        DOWN    = 1 << 1,
+        LEFT    = 1 << 2,
+        RIGHT   = 1 << 3
+    };
+
+    constexpr bool operator==(const Border_Connection lhs, const Border_Connection rhs) {
+        return static_cast<int>(lhs) == static_cast<int>(rhs);
+    }
+
+    constexpr Border_Connection operator|(const Border_Connection lhs, const Border_Connection rhs) {
+        return static_cast<Border_Connection>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    }
+
+    constexpr void operator|=(Border_Connection& lhs, const Border_Connection rhs) {
+        lhs = static_cast<Border_Connection>(static_cast<int>(lhs) | static_cast<int>(rhs));
     }
 
     namespace TIME{

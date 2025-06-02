@@ -412,6 +412,41 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
+    const char* styled_border::get_border(Border_Connection flags){
+        // Corners
+        if (flags == (Border_Connection::DOWN | Border_Connection::RIGHT))
+            return TOP_LEFT_CORNER;
+        else if (flags == (Border_Connection::DOWN | Border_Connection::LEFT))
+            return TOP_RIGHT_CORNER;
+        else if (flags == (Border_Connection::UP | Border_Connection::RIGHT))
+            return BOTTOM_LEFT_CORNER;
+        else if (flags == (Border_Connection::UP | Border_Connection::LEFT))
+            return BOTTOM_RIGHT_CORNER;
+        // Vertical lines
+        else if (flags == (Border_Connection::DOWN | Border_Connection::UP))
+            return VERTICAL_LINE;
+
+        // Horizontal lines
+        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT))
+            return HORIZONTAL_LINE;
+
+        // connectors
+        else if (flags == (Border_Connection::DOWN | Border_Connection::UP | Border_Connection::RIGHT))
+            return VERTICAL_RIGHT_CONNECTOR;
+        else if (flags == (Border_Connection::DOWN | Border_Connection::UP | Border_Connection::LEFT))
+            return VERTICAL_LEFT_CONNECTOR;
+        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::DOWN))
+            return HORIZONTAL_BOTTOM_CONNECTOR;
+        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP))
+            return HORIZONTAL_TOP_CONNECTOR;
+
+        // cross connectors
+        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP | Border_Connection::DOWN))
+            return CROSS_CONNECTOR;
+        else
+            return nullptr;
+    }
+
     STYLING_INTERNAL::style_base* node::Copy() const {
         node* new_one = new node(*this);
         new_one->Value = new_one->Value->copy();

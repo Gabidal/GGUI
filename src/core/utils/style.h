@@ -1638,6 +1638,8 @@ namespace GGUI{
         void Evaluate([[maybe_unused]] styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+
+        const char* get_border(Border_Connection flags);
     };
 
     class flow_priority : public STYLING_INTERNAL::ENUM_VALUE<DIRECTION>{

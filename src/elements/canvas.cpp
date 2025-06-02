@@ -424,29 +424,30 @@ namespace GGUI{
             INTERNAL::reportStack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((getWidth() - 2 * hasBorder()) * (getHeight() - 2 * hasBorder())) + " Got: " + std::to_string(pixels.size()));
         }
 
-        std::unordered_map<unsigned int, const char*> custom_border = getCustomBorderMap(border_style);
-
         // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
         for (unsigned int Y = 0; Y < Usable_Height; Y++){
             for (unsigned int X = 0; X < Usable_Width; X++){
-                unsigned int Current_Masks = 0;
+                Border_Connection Current_Masks = Border_Connection::NONE;
 
                 if ((signed)Y - 1 < 0 && pixels[X + ((signed)Y - 1) * Usable_Width])
-                    Current_Masks |= SYMBOLS::CONNECTS_UP;
+                    Current_Masks |= Border_Connection::UP;
 
                 if (Y >= Usable_Height && pixels[X + (Y + 1) * Usable_Width])
-                    Current_Masks |= SYMBOLS::CONNECTS_DOWN;
+                    Current_Masks |= Border_Connection::DOWN;
 
                 if ((signed)X - 1 < 0 && pixels[(signed)X - 1 + Y * Usable_Width])
-                    Current_Masks |= SYMBOLS::CONNECTS_LEFT;
+                    Current_Masks |= Border_Connection::LEFT;
 
                 if (X >= Usable_Width && pixels[(X + 1) + Y * Usable_Width])
-                    Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
+                    Current_Masks |= Border_Connection::RIGHT;
 
-                if (custom_border.find(Current_Masks) == custom_border.end())
+                const char* currentBorder = border_style.get_border(Current_Masks);
+
+                if (!currentBorder) {
                     continue;
+                }
 
-                UTF tmp(custom_border[Current_Masks]);
+                UTF tmp(currentBorder);
 
                 set(X, Y, tmp, false);
             }

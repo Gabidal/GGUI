@@ -1895,49 +1895,6 @@ inline GGUI::UTF* From(GGUI::IVector3 index, std::vector<GGUI::UTF>& Parent_Buff
 }
 
 /**
- * @brief Returns a map of the custom border symbols for the given element.
- * @param e The element to get the custom border map for.
- * @return A map of the custom border symbols where the key is the bit mask of the border and the value is the corresponding symbol.
- */
-std::unordered_map<unsigned int, const char*> GGUI::element::getCustomBorderMap(GGUI::element* e){
-    GGUI::styled_border custom_border_style = e->getBorderStyle();
-
-    return getCustomBorderMap(custom_border_style);
-}
-
-/**
- * @brief Returns a map of the custom border symbols for the given border style.
- * The map key is the bit mask of the border and the value is the corresponding symbol.
- * @param custom_border_style The custom border style to get the map for.
- * @return A map of the custom border symbols.
- */
-std::unordered_map<unsigned int, const char*> GGUI::element::getCustomBorderMap(GGUI::styled_border custom_border_style){
-    return {
-            // corners
-            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style.TOP_LEFT_CORNER},
-            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style.TOP_RIGHT_CORNER},
-            {GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style.BOTTOM_LEFT_CORNER},
-            {GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style.BOTTOM_RIGHT_CORNER},
-
-            // vertical lines
-            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_UP, custom_border_style.VERTICAL_LINE},
-
-            // horizontal lines
-            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style.HORIZONTAL_LINE},
-
-            // connectors
-            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_RIGHT, custom_border_style.VERTICAL_RIGHT_CONNECTOR},
-            {GGUI::SYMBOLS::CONNECTS_DOWN | GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_LEFT, custom_border_style.VERTICAL_LEFT_CONNECTOR},
-
-            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT | GGUI::SYMBOLS::CONNECTS_DOWN, custom_border_style.HORIZONTAL_BOTTOM_CONNECTOR},
-            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT | GGUI::SYMBOLS::CONNECTS_UP, custom_border_style.HORIZONTAL_TOP_CONNECTOR},
-
-            // cross connectors
-            {GGUI::SYMBOLS::CONNECTS_LEFT | GGUI::SYMBOLS::CONNECTS_RIGHT | GGUI::SYMBOLS::CONNECTS_UP | GGUI::SYMBOLS::CONNECTS_DOWN, custom_border_style.CROSS_CONNECTOR}
-        };
-}
-
-/**
  * @brief Sets the custom border style for the element.
  * @details This function sets the custom border style for the element, marks the element's edges as dirty, and ensures that the border is visible.
  * @param style The custom border style to set.
@@ -2036,8 +1993,6 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
         );
     }
 
-    std::unordered_map<unsigned int, const char*> custom_border = getCustomBorderMap(A);
-
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
 
@@ -2046,37 +2001,40 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
         IVector3 Left = { Max((signed)c.X - 1, 0), c.Y };
         IVector3 Right = { c.X + 1, c.Y };
 
-        unsigned int Current_Masks = 0;
+        Border_Connection Current_Masks = Border_Connection::NONE;
 
         // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
         if (Is_In_Bounds(Above, this) && (
             From(Above, Parent_Buffer, this)->Is(A->getCustomBorderStyle().VERTICAL_LINE) ||
             From(Above, Parent_Buffer, this)->Is(B->getCustomBorderStyle().VERTICAL_LINE)
         ))
-            Current_Masks |= SYMBOLS::CONNECTS_UP;
+            Current_Masks |= Border_Connection::UP;
 
         if (Is_In_Bounds(Below, this) && (
             From(Below, Parent_Buffer, this)->Is(A->getCustomBorderStyle().VERTICAL_LINE) ||
             From(Below, Parent_Buffer, this)->Is(B->getCustomBorderStyle().VERTICAL_LINE)
         ))
-            Current_Masks |= SYMBOLS::CONNECTS_DOWN;
+            Current_Masks |= Border_Connection::DOWN;
 
         if (Is_In_Bounds(Left, this) && (
             From(Left, Parent_Buffer, this)->Is(A->getCustomBorderStyle().HORIZONTAL_LINE) ||
             From(Left, Parent_Buffer, this)->Is(B->getCustomBorderStyle().HORIZONTAL_LINE)
         ))
-            Current_Masks |= SYMBOLS::CONNECTS_LEFT;
+            Current_Masks |= Border_Connection::LEFT;
 
         if (Is_In_Bounds(Right, this) && (
             From(Right, Parent_Buffer, this)->Is(A->getCustomBorderStyle().HORIZONTAL_LINE) ||
             From(Right, Parent_Buffer, this)->Is(B->getCustomBorderStyle().HORIZONTAL_LINE)
         ))
-            Current_Masks |= SYMBOLS::CONNECTS_RIGHT;
+            Current_Masks |= Border_Connection::RIGHT;
 
-        if (custom_border.find(Current_Masks) == custom_border.end())
+        const char* finalBorder = A->getBorderStyle().get_border(Current_Masks);
+
+        if (!finalBorder){
             continue;
+        }
 
-        From(c, Parent_Buffer, this)->Set_Text(custom_border[Current_Masks]);
+        From(c, Parent_Buffer, this)->Set_Text(finalBorder);
     }
 }
 

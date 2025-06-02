@@ -1079,21 +1079,6 @@ namespace GGUI{
         void nestElement(element* Parent, element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
 
         /**
-         * @brief Returns a map of the custom border symbols for the given element.
-         * @param e The element to get the custom border map for.
-         * @return A map of the custom border symbols where the key is the bit mask of the border and the value is the corresponding symbol.
-         */
-        std::unordered_map<unsigned int, const char*> getCustomBorderMap(element* e);
-
-        /**
-         * @brief Returns a map of the custom border symbols for the given border style.
-         * The map key is the bit mask of the border and the value is the corresponding symbol.
-         * @param custom_border_style The custom border style to get the map for.
-         * @return A map of the custom border symbols.
-         */
-        std::unordered_map<unsigned int, const char*> getCustomBorderMap(GGUI::styled_border custom_border_style);
-
-        /**
          * @brief Sets the custom border style for the element.
          * @details This function sets the custom border style for the element, marks the element's edges as dirty, and ensures that the border is visible.
          * @param style The custom border style to set.
