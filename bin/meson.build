@@ -88,7 +88,7 @@ link_args = []
 
 # Add custom flags based on build type
 if TYPE == DEBUG
-  cpp_args += ['-DGGUI_DEBUG', '-pg']
+  cpp_args += ['-DGGUI_DEBUG', '-pg', '-Og']
   link_args += ['-pg']
 elif TYPE == RELEASE
   cpp_args += ['-DGGUI_RELEASE', '-march=native']

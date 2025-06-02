@@ -32,7 +32,7 @@ int main()
         enable_border(true) 
     ));
 
-    GGUI::INTERNAL::SLEEP(INT32_MAX);
+    // GGUI::INTERNAL::SLEEP(1000);
 
     // // Then exit properly. After 0.1.8 this is unnecessary, unless user overrides exit handlers.
     GGUI::EXIT();
