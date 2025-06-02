@@ -1787,7 +1787,7 @@ void GGUI::element::addOverhead(GGUI::element* w, std::vector<GGUI::UTF>& Result
  * @param Dest The destination element to which the source element will be blended.
  * @param Source The source element which will be blended to the destination element.
  */
-void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, GGUI::UTF Source){
+void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source){
     // If the Source element has full opacity, then the destination gets fully rewritten over.
     if (Source.Background.Alpha == UINT8_MAX){
         Dest = Source;

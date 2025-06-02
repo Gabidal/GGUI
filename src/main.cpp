@@ -1,27 +1,35 @@
 #include "ggui.h"
-
-#include <math.h>
+#include "./core/utils/utils.h"
 
 using namespace GGUI;
 
 int main() 
 {
     GGUI::GGUI(styling(
-        node(new terminalCanvas(styling(
-
-            width(1.0f) | height(1.0f) |
-
-            on_draw([]([[maybe_unused]] unsigned int x, [[maybe_unused]] unsigned int y){
-                return GGUI::sprite(
-                    {
-                        {" ", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
-                        {" ", {GGUI::COLOR::BLUE, GGUI::COLOR::BLUE}}, 
-                    },
-                    0,  // Animation offset
-                    1   // Animation speed
-                );
-            })
-        )))
+        childs({
+            new listView(styling(
+                childs({
+                    new button(styling(text("File") | on_click([]([[maybe_unused]] element* self){}))),
+                    new button(styling(text("Edit") | on_click([]([[maybe_unused]] element* self){}))),
+                    new button(styling(text("View") | on_click([]([[maybe_unused]] element* self){}))),
+                    new button(styling(text("Help") | on_click([]([[maybe_unused]] element* self){})))
+                }) |
+                enable_border(true)
+            )),
+            new window(styling(
+                title("A") | width(20) | height(10) | background_color(COLOR::MAGENTA) | text_color(COLOR::RED) | opacity(0.5f) | position(10, 10) | enable_border(true)
+            )),
+            new window(styling(
+                title("B") | width(20) | height(10) | background_color(COLOR::YELLOW) | text_color(COLOR::GREEN) | opacity(0.5f) | position(30, 10) | enable_border(true)
+            )),
+            new window(styling(
+                title("C") | width(20) | height(10) | background_color(COLOR::CYAN) | text_color(COLOR::BLUE) | opacity(0.5f) | position(20, 15) | enable_border(true)
+            ))
+        }) |
+        title("Your App UI") |
+        background_color(COLOR::WHITE) |
+        text_color(COLOR::BLACK) |
+        enable_border(true) 
     ));
 
     GGUI::INTERNAL::SLEEP(INT32_MAX);

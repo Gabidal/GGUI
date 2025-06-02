@@ -37,12 +37,10 @@ namespace GGUI{
          * 
          * @param data A pointer to a null-terminated C-style string.
          */
-        constexpr Compact_String(const char* data) : Text(data){
-            Size = std::strlen(data); // Get the length of the string.
-
+        constexpr Compact_String(const char* data){
             // Store the string as Unicode data if its length is greater than 1.
             // Store the single character as ASCII data.
-            Size > 1 ? 
+            std::strlen(data) > 1 ? 
                 Set_Unicode(data) : 
                 Set_Ascii(data[0]);
         }
@@ -74,15 +72,17 @@ namespace GGUI{
          * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
          * Otherwise, the data is stored as a single ASCII character.
          */
-        constexpr Compact_String(const char* data, const unsigned int size, const bool Force_Unicode = false) : Text(data) {
-            Size = size;
-
+        constexpr Compact_String(const char* data, const unsigned int size, const bool Force_Unicode = false){
             // Determine data storage based on size and Force_Unicode flag.
             // Store as Unicode data if size is greater than 1 or forced.
             // Store as a single ASCII character.
-            (Size > 1 || Force_Unicode) ? 
-                Set_Unicode(data) : 
-                Set_Ascii(data[0]);
+            (size > 1 || Force_Unicode) ? 
+            Set_Unicode(data) : 
+            Set_Ascii(data[0]);
+
+            // If force unicode has been issued, then the size is probably a non-unicode standard size of zero or one, so we need to override the size.
+            if (Force_Unicode)
+                Size = size;
         }
 
         /**
@@ -91,7 +91,7 @@ namespace GGUI{
          * @return True if the flag is set, otherwise false.
          */
         constexpr bool Is(unsigned char cs_flag) const {
-            return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && Size == 1) ? true : false;
+            return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && Size == 1) || (cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && Size > 1) ? true : false;
         }
 
         // Fast comparison of type and content
@@ -154,7 +154,7 @@ namespace GGUI{
          * @brief Checks if the UTF object has a default text.
          * @return true if the UTF object has a default text, false otherwise.
          */
-        constexpr bool Has_Default_Text() {
+        constexpr bool Has_Default_Text() const {
             return Is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(Text) == ' ' : std::get<const char*>(Text)[0] == ' ';
         }
     };

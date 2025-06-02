@@ -1064,7 +1064,7 @@ namespace GGUI{
          * @param Dest The destination element to which the source element will be blended.
          * @param Source The source element which will be blended to the destination element.
          */
-        void computeAlphaToNesting(GGUI::UTF& Dest, GGUI::UTF Source);
+        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source);
 
         /**
          * @brief Nests a child element into a parent element.

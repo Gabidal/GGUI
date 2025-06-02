@@ -10,13 +10,7 @@ namespace GGUI{
      * @details This function is called when the text field has a deep stain, and it will update the text cache of the text field. The text cache is a list of compact strings, where each compact string is a line of text. The text cache is used to store the text of the text field, and it is used to determine the size of the text field. The text cache is updated by splitting the text into lines based on the newline character, and then adding each line to the text cache. The text cache is also updated to remove any empty lines at the end of the text cache.
      */
     void textField::updateTextCache(){
-
         Text_Cache.clear();
-
-        if (Text_Cache.capacity() < 1){
-            // This should not happen
-            INTERNAL::reportStack("Internal error with zero capacity in: " + this->getName());
-        }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
         Compact_String current_line(Text.data(), 0, true);

@@ -47,7 +47,8 @@ namespace GGUI{
             }
 
             // Update the text cache list by newlines, and if no found then set the Text as the zeroth index.
-            updateTextCache();
+            if (Embed_Styles_On_Construct)
+                updateTextCache();
         }
 
         /**
