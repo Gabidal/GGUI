@@ -15,7 +15,29 @@ namespace GGUI{
         constexpr inline unsigned char IS_UNICODE        = 1 << 1;
     };
 
-    // And lighter-weight version of the UTF class. [Probably after making the RGBA use unsigned char instead of float, and thus making the overall size into 32 bits, replace this class with UTF.]
+    /**
+     * @class Compact_String
+     * @brief A lightweight string class optimized for compact storage of ASCII and Unicode strings.
+     *
+     * The Compact_String class provides an efficient way to store and manipulate short strings,
+     * optimizing for the case where the string is a single ASCII character. For longer strings,
+     * it stores a pointer to a null-terminated C-style string. The class uses a std::variant to
+     * hold either a single character or a pointer to a string, and maintains the size of the string.
+     *
+     * Key Features:
+     * - Stores either a single ASCII character or a pointer to a C-style string.
+     * - Provides constructors for ASCII characters, C-style strings, and explicit size/force Unicode.
+     * - Offers fast type and content checks for ASCII and Unicode representations.
+     * - Supports subscript operator for character access.
+     * - Utility methods for getting and setting ASCII/Unicode data.
+     * - Designed for use in scenarios where memory efficiency and fast type checks are important.
+     *
+     * Usage Notes:
+     * - The default constructor is intended only for resizing containers and should not be used directly.
+     * - The class does not manage the lifetime of external string data; ensure that any pointer passed
+     *   to the class remains valid for the lifetime of the Compact_String instance.
+     * - The class is constexpr-friendly for compile-time usage where possible.
+     */
     class Compact_String{
     public:
         std::variant<char, const char*> Text;
@@ -29,6 +51,48 @@ namespace GGUI{
         constexpr Compact_String() = default;
 
         /**
+         * @brief Default copy constructor for Compact_String.
+         *
+         * Creates a new Compact_String object as a copy of an existing one.
+         * This constructor performs a member-wise copy of the source object.
+         *
+         * @param other The Compact_String instance to copy from.
+         */
+        constexpr Compact_String(const Compact_String&) = default;
+
+        /**
+         * @brief Move constructor for Compact_String.
+         *
+         * Constructs a new Compact_String by transferring the resources from another
+         * Compact_String instance. The source object is left in a valid but unspecified state.
+         *
+         * @param other The Compact_String instance to move from.
+         */
+        constexpr Compact_String(Compact_String&&) = default;
+
+        /**
+         * @brief Default copy assignment operator for Compact_String.
+         *
+         * Assigns the contents of another Compact_String to this one.
+         * The default implementation performs a member-wise copy of all fields.
+         *
+         * @param other The Compact_String instance to copy from.
+         * @return Reference to this Compact_String after assignment.
+         */
+        constexpr Compact_String& operator=(const Compact_String&) = default;
+
+        /**
+         * @brief Default move assignment operator for Compact_String.
+         *
+         * Allows assigning the contents of another Compact_String to this one using move semantics.
+         * The default implementation efficiently transfers resources from the source object,
+         * leaving it in a valid but unspecified state.
+         *
+         * @return Reference to this Compact_String after assignment.
+         */
+        constexpr Compact_String& operator=(Compact_String&&) = default;
+
+        /**
          * @brief Constructs a Compact_String object from a C-style string.
          * 
          * This constructor initializes the Compact_String object by determining the length of the input string.
@@ -40,7 +104,7 @@ namespace GGUI{
         constexpr Compact_String(const char* data){
             // Store the string as Unicode data if its length is greater than 1.
             // Store the single character as ASCII data.
-            std::strlen(data) > 1 ? 
+            strlen(data) > 1 ? 
                 Set_Unicode(data) : 
                 Set_Ascii(data[0]);
         }
@@ -141,7 +205,7 @@ namespace GGUI{
         constexpr void Set_Unicode(const char* text) {
             // Set the Text to the Unicode data.
             Text = std::variant<char, const char*>(text);
-            Size = std::strlen(text); // Update the size based on the new string.
+            Size = strlen(text); // Update the size based on the new string.
         }
 
         constexpr void Set_Ascii(const char text) {
@@ -157,9 +221,40 @@ namespace GGUI{
         constexpr bool Has_Default_Text() const {
             return Is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(Text) == ' ' : std::get<const char*>(Text)[0] == ' ';
         }
+
+    protected:
+        /**
+         * @brief Computes the length of a null-terminated C-string at compile time.
+         *
+         * This constexpr function iterates through the input string until it encounters
+         * the null terminator ('\0'), counting the number of characters.
+         *
+         * @param str Pointer to the null-terminated C-string.
+         * @return The number of characters in the string, excluding the null terminator.
+         */
+        constexpr size_t Get_Length(const char* str) {
+            size_t length = 0;
+            while (str[length] != '\0') ++length;
+            return length;
+        }
     };
 
-    // Instead of reconstructing new strings every time, this class stores the components, and then only one time constructs the final string representation.
+    /**
+     * @class Super_String
+     * @brief A container class for efficiently managing and concatenating multiple Compact_String objects.
+     *
+     * The Super_String class provides a fixed-size array of Compact_String objects, allowing for efficient
+     * storage, addition, and concatenation of strings and characters. It maintains an internal index to track
+     * the current number of stored elements and a liquefied size representing the total number of characters
+     * across all stored strings. The class supports various methods for adding strings, characters, and other
+     * Super_String instances, as well as clearing its contents and converting the stored data into a single
+     * std::string.
+     *
+     * @tparam MaxSize The maximum number of Compact_String objects that can be stored in the Super_String.
+     *
+     * @note This class is designed for performance and memory efficiency, making it suitable for scenarios
+     *       where frequent string concatenation and manipulation are required.
+     */
     template<std::size_t MaxSize>
     class Super_String{
     public:
@@ -167,8 +262,22 @@ namespace GGUI{
         unsigned int Current_Index = 0;
         unsigned int Liquefied_Size = 0;
 
+        /**
+         * @brief Default constexpr constructor for the Super_String class.
+         *
+         * Initializes a Super_String object with default values at compile time.
+         * This constructor does not perform any custom initialization logic.
+         */
         constexpr Super_String() = default;
 
+        /**
+         * @brief Constructs a Super_String from an initializer list of Compact_String objects.
+         *
+         * This constructor allows you to initialize a Super_String with a list of Compact_String
+         * instances. Each item in the initializer list is added to the Super_String using the Add method.
+         *
+         * @param data An initializer list containing Compact_String objects to be added to the Super_String.
+         */
         constexpr Super_String(const std::initializer_list<Compact_String>& data) {
             for (const auto& item : data) {
                 Add(item);
@@ -297,7 +406,7 @@ namespace GGUI{
             // Copy the contents of the Data vector into the std::string.
             int Current_UTF_Insert_Index = 0;
             for(unsigned int i = 0; i < Current_Index; i++){
-                Compact_String data = Data[i];
+                const Compact_String& data = Data[i];
 
                 if (data.Size == 0)
                     break;
@@ -326,7 +435,7 @@ namespace GGUI{
         // Copy the contents of the Data vector into the std::string.
         int Current_UTF_Insert_Index = 0;
         for(unsigned int i = 0; i < Data->size(); i++){
-            Compact_String data = Data->at(i);
+            const Compact_String& data = Data->at(i);
 
             if (data.Size == 0)
                 break;
