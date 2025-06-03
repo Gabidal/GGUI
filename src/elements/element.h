@@ -98,7 +98,7 @@ namespace GGUI{
          * 
          * @return Element* Pointer to the newly created Element object.
          */
-        virtual element* safeMove(){
+        virtual element* safeMove() const {
             return new element();
         }
 
@@ -107,7 +107,7 @@ namespace GGUI{
          * 
          * @return A new Element object that is a copy of this one.
          */
-        element* copy();
+        element* copy() const;
 
         /**
          * @brief Embeds styles into the current element and its child elements.
@@ -128,7 +128,16 @@ namespace GGUI{
          * This function sets each stain type on the Dirty object, indicating
          * that the Element needs to be reprocessed for all attributes.
          */
-        void fullyStain();
+        constexpr void fullyStain(){
+            // Mark the element as dirty for all possible stain types to ensure
+            // complete re-evaluation and rendering.
+            this->Dirty.Dirty(
+                STAIN_TYPE::STRETCH | 
+                STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | 
+                STAIN_TYPE::EDGE | STAIN_TYPE::MOVE
+                // STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
+            );
+        }
 
         /**
          * @brief Returns the Dirty object for the Element.
@@ -137,7 +146,7 @@ namespace GGUI{
          *          Element when it is asked to render.
          * @return A reference to the Dirty object.
          */
-        STAIN& getDirty(){
+        constexpr STAIN& getDirty(){
             return Dirty;
         }
 
@@ -146,7 +155,7 @@ namespace GGUI{
          * @brief Returns true if the element is currently focused.
          * @return A boolean indicating whether the element is focused.
          */
-        bool isFocused() const{
+        constexpr bool isFocused() const {
             return Focused;
         }
 
@@ -162,7 +171,7 @@ namespace GGUI{
          * @brief Returns true if the element is currently hovered.
          * @return A boolean indicating whether the element is hovered.
          */
-        bool isHovered() const{
+        constexpr bool isHovered() const {
             return Hovered;
         }
 
@@ -180,7 +189,7 @@ namespace GGUI{
          *          If a handler exists, it invokes the handler function.
          * @param s The state for which the handler should be executed.
          */
-        inline void check(STATE s){
+        constexpr void check(STATE s){
             if (s == STATE::INIT && On_Init){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
                 Style->Evaluate_Dynamic_Attribute_Values(this);

@@ -412,7 +412,7 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    const char* styled_border::get_border(Border_Connection flags){
+    const char* styled_border::get_border(const Border_Connection flags){
         // Corners
         if (flags == (Border_Connection::DOWN | Border_Connection::RIGHT))
             return TOP_LEFT_CORNER;

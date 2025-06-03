@@ -236,21 +236,6 @@ GGUI::element::~element(){
         GGUI::INTERNAL::Hovered_On = nullptr;
 }   
 
-// @brief Marks the Element as fully dirty by setting all stain types.
-// 
-// This function sets each stain type on the Dirty object, indicating
-// that the Element needs to be reprocessed for all attributes.
-void GGUI::element::fullyStain() {
-    // Mark the element as dirty for all possible stain types to ensure
-    // complete re-evaluation and rendering.
-    this->Dirty.Dirty(
-        STAIN_TYPE::STRETCH | 
-        STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | 
-        STAIN_TYPE::EDGE | STAIN_TYPE::MOVE
-        // STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
-    );
-}
-
 /**
  * @brief Composes the RGB values of the text color and background color of the element.
  * 
@@ -995,7 +980,7 @@ void GGUI::element::setMargin(margin margin) {
  * Creates a deep copy of this Element, including all its children.
  * @return A new Element object that is a copy of this one.
  */
-GGUI::element* GGUI::element::copy(){
+GGUI::element* GGUI::element::copy() const {
     // Compile time check
     //static_assert(std::is_same<T&, decltype(*this)>::value, "T must be the same as the type of the object");
     element* new_element = safeMove();
@@ -1040,10 +1025,10 @@ GGUI::element* GGUI::element::copy(){
     // TODO: somehow make the Lambda functions for State Handlers to switch their self pointers.
 
     // Clear the Focused on bool
-    Focused = false;
+    new_element->Focused = false;
 
     // Clear the Hovered on bool
-    Hovered = false;
+    new_element->Hovered = false;
 
     // Call the potentially un_parsed_styles to clone them too if not initialized yet.
     if (Dirty.is(STAIN_TYPE::FINALIZE)){

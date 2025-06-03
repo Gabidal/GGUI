@@ -33,7 +33,7 @@ namespace GGUI{
          * @brief Creates a deep copy of the Button object.
          * @return A pointer to the new Button object.
          */
-        element* safeMove() override {
+        element* safeMove() const override {
             // Create a new Button object and copy all the data from the current Button object to the new one.
             return new button();
         }

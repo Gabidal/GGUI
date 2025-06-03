@@ -121,7 +121,7 @@ namespace GGUI{
          */
         void input(std::function<void(char)> Then);
 
-        element* safeMove() override {
+        element* safeMove() const override {
             return new textField();
         }
     };

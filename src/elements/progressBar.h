@@ -201,7 +201,7 @@ namespace GGUI{
          *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
          * @return A pointer to the new Progress_Bar object.
          */
-        element* safeMove() override {
+        element* safeMove() const override {
             return new progressBar();
         }
 

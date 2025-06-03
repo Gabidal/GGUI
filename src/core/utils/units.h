@@ -663,9 +663,9 @@ namespace GGUI{
      * @param b The second STAIN_TYPE value.
      * @return The result of the bitwise OR operation as an unsigned integer.
      */
-    inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b) {
+    constexpr unsigned int operator|(const STAIN_TYPE a, const STAIN_TYPE b) {
         // Cast both STAIN_TYPE values to unsigned integers and perform the bitwise OR operation.
-        return (unsigned int)a | (unsigned int)b;
+        return static_cast<unsigned int>(a) | static_cast<unsigned int>(b);
     }
 
     /**
@@ -677,8 +677,8 @@ namespace GGUI{
      * @param b The unsigned integer.
      * @return The result of the bitwise OR operation as an unsigned integer.
      */
-    inline unsigned int operator|(STAIN_TYPE a, unsigned int b){
-        return (unsigned int)a | b;
+    constexpr unsigned int operator|(const STAIN_TYPE a, const unsigned int b){
+        return static_cast<unsigned int>(a) | b;
     }
 
     /**
@@ -690,8 +690,8 @@ namespace GGUI{
      * @param b The STAIN_TYPE value.
      * @return The result of the bitwise OR operation as an unsigned integer.
      */
-    inline unsigned int operator|(unsigned int a, STAIN_TYPE b){
-        return a | (unsigned int)b;
+    constexpr unsigned int operator|(const unsigned int a, const STAIN_TYPE b){
+        return a | static_cast<unsigned int>(b);
     }
 
     class STAIN{
@@ -707,29 +707,17 @@ namespace GGUI{
          * @param f The STAIN_TYPE flag to check.
          * @return true if the specified flag is set; false otherwise.
          */
-        bool is(STAIN_TYPE f) {
+        constexpr bool is(const STAIN_TYPE f) const {
             // Special handling for the CLEAN flag
             if (f == STAIN_TYPE::CLEAN) {
                 return Type <= f;
             }
             // Check if the specified flag is set using bitwise AND
-            return ((unsigned int)Type & (unsigned int)f) == (unsigned int)f;
+            return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) == static_cast<unsigned int>(f);
         }
 
-        bool has(unsigned int f){
-            return ((unsigned int)Type & (unsigned int)f) != 0;
-        }
-
-        /**
-         * @brief Clears a STAIN_TYPE flag from the current STAIN object.
-         * @details This function clears a given STAIN_TYPE flag from the current
-         *          STAIN object. It performs a bitwise AND operation with the
-         *          bitwise compliment of the specified flag.
-         *
-         * @param f The STAIN_TYPE flag to clear.
-         */
-        void Clean(STAIN_TYPE f){
-            Type = (STAIN_TYPE)((unsigned int)Type & ~(unsigned int)f);
+        constexpr bool has(const unsigned int f) const {
+            return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) != 0;
         }
 
         /**
@@ -740,8 +728,20 @@ namespace GGUI{
          *
          * @param f The STAIN_TYPE flag to clear.
          */
-        void Clean(unsigned int f){
-            Type = (STAIN_TYPE)((unsigned int)Type & ~f);
+        constexpr void Clean(const STAIN_TYPE f){
+            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~static_cast<unsigned int>(f));
+        }
+
+        /**
+         * @brief Clears a STAIN_TYPE flag from the current STAIN object.
+         * @details This function clears a given STAIN_TYPE flag from the current
+         *          STAIN object. It performs a bitwise AND operation with the
+         *          bitwise compliment of the specified flag.
+         *
+         * @param f The STAIN_TYPE flag to clear.
+         */
+        constexpr void Clean(const unsigned int f){
+            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~f);
         }
 
         /**
@@ -752,9 +752,9 @@ namespace GGUI{
          *
          * @param f The STAIN_TYPE flag to set.
          */
-        void Dirty(STAIN_TYPE f) {
+        constexpr void Dirty(const STAIN_TYPE f) {
             // Set the specified flag using bitwise OR
-            Type = (STAIN_TYPE)((unsigned int)Type | (unsigned int)f);
+            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | static_cast<unsigned int>(f));
         }
 
         /**
@@ -765,9 +765,9 @@ namespace GGUI{
          *
          * @param f The STAIN_TYPE flag to set.
          */
-        void Dirty(unsigned int f){
+        constexpr void Dirty(const unsigned int f){
             // Set the specified flag using bitwise OR
-            Type = (STAIN_TYPE)((unsigned int)Type | f);
+            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | f);
         }
 
     };

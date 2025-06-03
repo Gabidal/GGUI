@@ -422,7 +422,7 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    ALLOCATION_TYPE getAllocationType(void* ptr) {
+    ALLOCATION_TYPE getAllocationType(const void* ptr) {
         if (ptr == nullptr) {
             return ALLOCATION_TYPE::UNKNOWN; // Null pointer can't be valid
         }

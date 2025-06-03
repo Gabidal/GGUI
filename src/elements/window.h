@@ -136,7 +136,7 @@ namespace GGUI{
          * @details This function creates a new Window object and copies all the data from the current Window object to the new one.
          * @return A pointer to the new Window object.
          */
-        element* safeMove() override {
+        element* safeMove() const override {
             return new window();
         }
     };

@@ -240,7 +240,7 @@ namespace GGUI{
      * @param ptr Pointer to be evaluated.
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
-    extern ALLOCATION_TYPE getAllocationType(void* ptr);
+    extern ALLOCATION_TYPE getAllocationType(const void* ptr);
 }
 
 #endif
