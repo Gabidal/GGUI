@@ -1803,11 +1803,7 @@ void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Sour
     // Check if source has text
     if (!Source.Has_Default_Text()){
         Dest.Set_Text(Source);
-
-        // Set the text color right.
-        if (!Dest.Has_Default_Text()){
-            Dest.Foreground += Source.Foreground; 
-        }
+        Dest.Foreground += Source.Foreground; 
     }
 }
 

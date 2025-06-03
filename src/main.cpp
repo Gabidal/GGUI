@@ -17,22 +17,22 @@ int main()
                 enable_border(true)
             )),
             new window(styling(
-                title("A") | width(20) | height(10) | background_color(COLOR::MAGENTA) | text_color(COLOR::RED) | opacity(0.5f) | position(10, 10) | enable_border(true)
+                title("A") | width(20) | height(10) | background_color(COLOR::MAGENTA) | text_color(COLOR::RED) | opacity(0.5f) | position(10, 10)
             )),
             new window(styling(
-                title("B") | width(20) | height(10) | background_color(COLOR::YELLOW) | text_color(COLOR::GREEN) | opacity(0.5f) | position(30, 10) | enable_border(true)
+                title("B") | width(20) | height(10) | background_color(COLOR::YELLOW) | text_color(COLOR::GREEN) | opacity(0.5f) | position(30, 10)
             )),
             new window(styling(
-                title("C") | width(20) | height(10) | background_color(COLOR::CYAN) | text_color(COLOR::BLUE) | opacity(0.5f) | position(20, 15) | enable_border(true)
+                title("C") | width(20) | height(10) | background_color(COLOR::CYAN) | text_color(COLOR::BLUE) | opacity(0.5f) | position(20, 15)
             ))
         }) |
 
-        node(new element(styling(
-            background_color(COLOR::BLACK) | opacity(0.5f) | allow_dynamic_size(true) | 
-            node(new textField(styling(
-                text("abcefg")
-            )))
-        ))) | 
+        // node(new element(styling(
+        //     background_color(COLOR::BLACK) | opacity(0.5f) | allow_dynamic_size(true) | 
+        //     node(new textField(styling(
+        //         text("abcefg")
+        //     )))
+        // ))) | 
 
         title("Your App UI") |
         background_color(COLOR::WHITE) |

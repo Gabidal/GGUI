@@ -569,9 +569,6 @@ namespace GGUI{
          */
         constexpr void Set_Text(const UTF& other) {
             Compact_String::operator=(other);
-            Foreground = other.Foreground;
-            Background = other.Background;
-            Flags = other.Flags;
         }
 
         /**
