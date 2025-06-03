@@ -1640,6 +1640,8 @@ namespace GGUI{
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
 
         const char* get_border(Border_Connection flags);
+
+        Border_Connection get_border_type(const char* border);
     };
 
     class flow_priority : public STYLING_INTERNAL::ENUM_VALUE<DIRECTION>{

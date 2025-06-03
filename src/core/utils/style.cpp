@@ -447,6 +447,32 @@ namespace GGUI{
             return nullptr;
     }
 
+    Border_Connection styled_border::get_border_type(const char* border){
+        if (border == TOP_LEFT_CORNER)
+            return Border_Connection::DOWN | Border_Connection::RIGHT;
+        else if (border == TOP_RIGHT_CORNER)
+            return Border_Connection::DOWN | Border_Connection::LEFT;
+        else if (border == BOTTOM_LEFT_CORNER)
+            return Border_Connection::UP | Border_Connection::RIGHT;
+        else if (border == BOTTOM_RIGHT_CORNER)
+            return Border_Connection::UP | Border_Connection::LEFT;
+        else if (border == VERTICAL_LINE)
+            return Border_Connection::DOWN | Border_Connection::UP;
+        else if (border == HORIZONTAL_LINE)
+            return Border_Connection::LEFT | Border_Connection::RIGHT;
+        else if (border == VERTICAL_RIGHT_CONNECTOR)
+            return Border_Connection::DOWN | Border_Connection::UP | Border_Connection::RIGHT;
+        else if (border == VERTICAL_LEFT_CONNECTOR)
+            return Border_Connection::DOWN | Border_Connection::UP | Border_Connection::LEFT;
+        else if (border == HORIZONTAL_BOTTOM_CONNECTOR)
+            return Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::DOWN;
+        else if (border == HORIZONTAL_TOP_CONNECTOR)
+            return Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP;
+        else if (border == CROSS_CONNECTOR)
+            return Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP | Border_Connection::DOWN;
+        else return Border_Connection::NONE;
+    }
+
     STYLING_INTERNAL::style_base* node::Copy() const {
         node* new_one = new node(*this);
         new_one->Value = new_one->Value->copy();

@@ -1996,37 +1996,49 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
 
-        IVector3 Above = { c.X, Max((signed)c.Y - 1, 0) };
+        IVector3 Above = { c.X, c.Y - 1 };
         IVector3 Below = { c.X, c.Y + 1 };
-        IVector3 Left = { Max((signed)c.X - 1, 0), c.Y };
+        IVector3 Left = { c.X - 1, c.Y };
         IVector3 Right = { c.X + 1, c.Y };
 
         Border_Connection Current_Masks = Border_Connection::NONE;
 
         // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
-        if (Is_In_Bounds(Above, this) && (
-            From(Above, Parent_Buffer, this)->Is(A->getCustomBorderStyle().VERTICAL_LINE) ||
-            From(Above, Parent_Buffer, this)->Is(B->getCustomBorderStyle().VERTICAL_LINE)
-        ))
-            Current_Masks |= Border_Connection::UP;
+        if (Is_In_Bounds(Above, this)){
+            // Since the border above can be already processed we need to check all possible border variations.
+            Border_Connection borderAbove = A->getCustomBorderStyle().get_border_type(From(Above, Parent_Buffer, this)->Get_Unicode()) | 
+                                            B->getCustomBorderStyle().get_border_type(From(Above, Parent_Buffer, this)->Get_Unicode());
+            
+            if (borderAbove != Border_Connection::NONE)
+                Current_Masks |= Border_Connection::UP;
+        }
 
-        if (Is_In_Bounds(Below, this) && (
-            From(Below, Parent_Buffer, this)->Is(A->getCustomBorderStyle().VERTICAL_LINE) ||
-            From(Below, Parent_Buffer, this)->Is(B->getCustomBorderStyle().VERTICAL_LINE)
-        ))
-            Current_Masks |= Border_Connection::DOWN;
+        if (Is_In_Bounds(Below, this)){
+            // Since the border below can be already processed we need to check all possible border variations.
+            Border_Connection borderBelow = A->getCustomBorderStyle().get_border_type(From(Below, Parent_Buffer, this)->Get_Unicode()) | 
+                                            B->getCustomBorderStyle().get_border_type(From(Below, Parent_Buffer, this)->Get_Unicode());
+            
+            if (borderBelow != Border_Connection::NONE)
+                Current_Masks |= Border_Connection::DOWN;
+        }
 
-        if (Is_In_Bounds(Left, this) && (
-            From(Left, Parent_Buffer, this)->Is(A->getCustomBorderStyle().HORIZONTAL_LINE) ||
-            From(Left, Parent_Buffer, this)->Is(B->getCustomBorderStyle().HORIZONTAL_LINE)
-        ))
-            Current_Masks |= Border_Connection::LEFT;
+        if (Is_In_Bounds(Left, this)){
+            // Since the border left can be already processed we need to check all possible border variations.
+            Border_Connection borderLeft = A->getCustomBorderStyle().get_border_type(From(Left, Parent_Buffer, this)->Get_Unicode()) | 
+                                           B->getCustomBorderStyle().get_border_type(From(Left, Parent_Buffer, this)->Get_Unicode());
+            
+            if (borderLeft != Border_Connection::NONE)
+                Current_Masks |= Border_Connection::LEFT;
+        }
 
-        if (Is_In_Bounds(Right, this) && (
-            From(Right, Parent_Buffer, this)->Is(A->getCustomBorderStyle().HORIZONTAL_LINE) ||
-            From(Right, Parent_Buffer, this)->Is(B->getCustomBorderStyle().HORIZONTAL_LINE)
-        ))
-            Current_Masks |= Border_Connection::RIGHT;
+        if (Is_In_Bounds(Right, this)){
+            // Since the border right can be already processed we need to check all possible border variations.
+            Border_Connection borderRight = A->getCustomBorderStyle().get_border_type(From(Right, Parent_Buffer, this)->Get_Unicode()) | 
+                                            B->getCustomBorderStyle().get_border_type(From(Right, Parent_Buffer, this)->Get_Unicode());
+            
+            if (borderRight != Border_Connection::NONE)
+                Current_Masks |= Border_Connection::RIGHT;
+        }
 
         const char* finalBorder = A->getBorderStyle().get_border(Current_Masks);
 
