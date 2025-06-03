@@ -129,12 +129,6 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
-        // Parse classes if the CLASS stain is detected
-        if (Dirty.is(STAIN_TYPE::CLASS)) {
-            parseClasses();
-            Dirty.Clean(STAIN_TYPE::CLASS);
-        }
-
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
         if (Dirty.is(STAIN_TYPE::STRETCH)) {
             Result.clear();

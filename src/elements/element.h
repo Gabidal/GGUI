@@ -40,9 +40,6 @@ namespace GGUI{
 
         // State machine for render pipeline only focus on changed aspects.
         STAIN Dirty;
-        
-        // For styling to have shared styles.
-        std::vector<int> Classes;
 
         bool Focused = false;
         bool Hovered = false;
@@ -132,13 +129,6 @@ namespace GGUI{
          * that the Element needs to be reprocessed for all attributes.
          */
         void fullyStain();
-
-        /**
-         * @brief Accumulates all the classes and their styles.
-         * @details This method accumulates all the classes and their styles to the
-         *          current element.
-         */
-        void parseClasses();
 
         /**
          * @brief Returns the Dirty object for the Element.
@@ -360,35 +350,6 @@ namespace GGUI{
          * @param parent The parent element to set.
          */
         void setParent(element* parent);
-
-        /**
-         * @brief Checks if the element has the given class.
-         * @details This function takes a class name and checks if the element has the class in its class list.
-         *          If the class does not exist in the global class map, the function will return false.
-         *          If the class exists, the function will return true if the element has the class in its list.
-         * @param s The name of the class to check.
-         * @return True if the element has the class, false otherwise.
-         */
-        bool has(std::string s) const;
-
-        /**
-         * @brief Checks if the element has the given class ID.
-         * @details This function takes a class ID and checks if the element has the class in its class list.
-         *          If the class does not exist in the global class map, the function will return false.
-         *          If the class exists, the function will return true if the element has the class in its list.
-         * @param s The ID of the class to check.
-         * @return True if the element has the class, false otherwise.
-         */
-        bool has(int s) const{
-            // Iterate through the class list of the element
-            for (auto i : Classes){
-                // If the class ID matches the given ID, return true
-                if (i == s)
-                    return true;
-            }
-            // If no match is found, return false
-            return false;
-        }
 
         /**
          * @brief Get the fitting dimensions for the given child element.

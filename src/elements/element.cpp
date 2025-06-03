@@ -157,7 +157,7 @@ void GGUI::UTF::To_Encoded_Super_String(
  * @param s The Styling object to use for the Element.
  */
 GGUI::element::element(styling s, bool Embed_Styles_On_Construct){
-    parseClasses();
+    Style = new styling();
 
     fullyStain();
 
@@ -244,7 +244,7 @@ void GGUI::element::fullyStain() {
     // Mark the element as dirty for all possible stain types to ensure
     // complete re-evaluation and rendering.
     this->Dirty.Dirty(
-        STAIN_TYPE::CLASS | STAIN_TYPE::STRETCH | 
+        STAIN_TYPE::STRETCH | 
         STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | 
         STAIN_TYPE::EDGE | STAIN_TYPE::MOVE
         // STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
@@ -529,33 +529,6 @@ void GGUI::element::setParent(element* parent){
 }
 
 /**
- * @brief Accumulates all the classes and their styles.
- * @details This method accumulates all the classes and their styles to the
- *          current element.
- */
-void GGUI::element::parseClasses(){
-    if (Style == nullptr){
-        Style = new styling();
-    }
-
-    GGUI::INTERNAL::Classes([this](auto& classes){
-        //Go through all classes and their styles and accumulate them.
-        for(auto Class : Classes){
-
-            // The class wanted has not been yet constructed.
-            // Pass it for the next render iteration
-            if (classes.find(Class) == classes.end()){
-                Dirty.Dirty(STAIN_TYPE::CLASS);
-            }
-
-            // Copy the style of the class to the current element.
-            Style->Copy(new styling(classes.at(Class)));
-            
-        }
-    });
-}
-
-/**
  * @brief Sets the focus state of the element.
  * @details Sets the focus state of the element to the given value.
  *          If the focus state changes, the element will be dirtied and the frame will be updated.
@@ -621,51 +594,6 @@ void GGUI::element::setStyle(styling css){
     // Update the frame after changing the styling information.
     updateFrame();
 }
-
-/**
- * @brief Adds a class to the element.
- * @details This function adds the given class to the element's class list.
- *          If the class does not exist in the global class map, a new ID is assigned to the class.
- *          The element is then marked as dirty, which will trigger a re-render of the element.
- * @param class_name The name of the class to add.
- */
-void GGUI::element::addClass(std::string class_name){
-    // Check if the class already exists in the global class map.
-    if (INTERNAL::Class_Names.find(class_name) != INTERNAL::Class_Names.end()) {
-        // If the class already exists, add the existing ID to the element's class list.
-        Classes.push_back(INTERNAL::Class_Names[class_name]);
-    }
-    else {
-        // If the class does not exist, assign a new ID to the class and add it to the element's class list.
-        Classes.push_back(GGUI::getFreeClassID(class_name));
-    }
-
-    // Mark the element as dirty after adding a new class.
-    Dirty.Dirty(STAIN_TYPE::CLASS);
-}
-
-/**
- * @brief Checks if the element has the given class.
- * @details This function takes a class name and checks if the element has the class in its class list.
- *          If the class does not exist in the global class map, the function will return false.
- *          If the class exists, the function will return true if the element has the class in its list.
- * @param s The name of the class to check.
- * @return True if the element has the class, false otherwise.
- */
-bool GGUI::element::has(std::string s) const {
-    //first convert the string to the ID
-    int id = INTERNAL::Class_Names[s];
-
-    //then check if the element has the class
-    for (unsigned int i = 0; i < Classes.size(); i++) {
-        if (Classes[i] == id) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 
 /**
  * @brief Sets the border visibility of the element.
@@ -1614,12 +1542,6 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
         return Result;
-
-    if (Dirty.is(STAIN_TYPE::CLASS)){
-        parseClasses();
-
-        Dirty.Clean(STAIN_TYPE::CLASS);
-    }
 
     if (Dirty.is(STAIN_TYPE::MOVE)){
         Dirty.Clean(STAIN_TYPE::MOVE);
