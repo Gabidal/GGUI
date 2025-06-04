@@ -86,12 +86,15 @@ endif
 # Linker arguments (e.g., libraries)
 link_args = []
 
+# For PGO, use '-fprofile-generate' to generate and use: '-fprofile-use=GGUI.p/*.gcda', '-fprofile-correction' in compile_commands.json.
+
 # Add custom flags based on build type
 if TYPE == DEBUG
-  cpp_args += ['-DGGUI_DEBUG', '-pg', '-Og']
-  link_args += ['-pg']
+  cpp_args += ['-DGGUI_DEBUG', '-Og']
+  link_args += []
 elif TYPE == RELEASE
-  cpp_args += ['-DGGUI_RELEASE', '-march=native']
+  cpp_args += ['-DGGUI_RELEASE', '-march=native', '-flto', '-fwhole-program']
+  link_args += ['-flto', '-fwhole-program']
 elif TYPE == PROFILE
   cpp_args += ['-DGGUI_PROFILE', '-DGGUI_DEBUG', '-pg']
   link_args += ['-pg']
