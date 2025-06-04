@@ -27,20 +27,13 @@ int main()
             ))
         }) |
 
-        // node(new element(styling(
-        //     background_color(COLOR::BLACK) | opacity(0.5f) | allow_dynamic_size(true) | 
-        //     node(new textField(styling(
-        //         text("abcefg")
-        //     )))
-        // ))) | 
-
         title("Your App UI") |
         background_color(COLOR::WHITE) |
         text_color(COLOR::BLACK) |
         enable_border(true) 
     ));
 
-    GGUI::INTERNAL::SLEEP(UINT32_MAX);
+    // GGUI::INTERNAL::SLEEP(UINT32_MAX);
 
     // // Then exit properly. After 0.1.8 this is unnecessary, unless user overrides exit handlers.
     GGUI::EXIT();

@@ -909,7 +909,7 @@ namespace GGUI{
                         // This is for the non GGUI space errors.
                         UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
 
-                        std::cout << _error__tmp_.To_String() + Problem << std::endl;
+                        std::cout << _error__tmp_.To_Super_String()->To_String() + Problem << std::endl;
                     }
 
                 });

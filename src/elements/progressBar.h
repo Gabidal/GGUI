@@ -34,9 +34,9 @@ namespace GGUI{
          * The default is to use the centered horizontal line character for all three parts of the progress bar.
          */
         progressStyle(
-            const char* head = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE.data(),
-            const char* body = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE.data(),
-            const char* tail = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE.data()
+            const Compact_String head = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE,
+            const Compact_String body = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE,
+            const Compact_String tail = GGUI::SYMBOLS::CENTERED_HORIZONTAL_LINE
         ) : Head(head), Body(body), Tail(tail){}
 
         /**

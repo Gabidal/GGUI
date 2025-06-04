@@ -12,20 +12,20 @@ namespace GGUI{
     class UTF;
 
     namespace SYMBOLS{
-        static const std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
-        static const std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
-        static const std::string TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
-        static const std::string BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
-        static const std::string VERTICAL_LINE = "│";//"\e(0\x78\e(B";
-        static const std::string HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
-        static const std::string VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
-        static const std::string VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
-        static const std::string HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
-        static const std::string HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
-        static const std::string CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
+        static const Compact_String TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
+        static const Compact_String BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
+        static const Compact_String TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
+        static const Compact_String BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
+        static const Compact_String VERTICAL_LINE = "│";//"\e(0\x78\e(B";
+        static const Compact_String HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
+        static const Compact_String VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
+        static const Compact_String VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
+        static const Compact_String HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        static const Compact_String HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
+        static const Compact_String CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
 
-        static const std::string CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
-        static const std::string FULL_BLOCK = "█";//"\e(0\x2588\e(B";
+        static const Compact_String CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
+        static const Compact_String FULL_BLOCK = "█";//"\e(0\x2588\e(B";
 
         static const Compact_String RADIOBUTTON_OFF = "○";
         static const Compact_String RADIOBUTTON_ON = "◉";
@@ -103,15 +103,15 @@ namespace GGUI{
             static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature = 1 + 1 + 1;
 
             // CSI (Control Sequence Introducer) sequences.
-            static const std::string ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
-            static const std::string SEPARATE = ";";
-            static const std::string USE_RGB = "2";
-            static const std::string END_COMMAND = "m";
-            static const std::string CLEAR_SCREEN = ESC_CODE + "2J";
-            static const std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
-            static const std::string SET_CURSOR_TO_START = ESC_CODE + "H";
-            static const std::string RESET_CONSOLE = ESC_CODE + "c";
-            static const std::string RESET_COLOR = ESC_CODE + '0' + END_COMMAND;  // Basically same as RESET_SGR but baked the end command into it for Super_String
+            constexpr Compact_String ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
+            constexpr Compact_String SEPARATE = ';';
+            constexpr Compact_String USE_RGB = '2';
+            constexpr Compact_String END_COMMAND = 'm';
+            constexpr Compact_String RESET_COLOR = "\x1B[0m";  // Basically same as RESET_SGR but baked the end command into it for Super_String
+            constexpr Compact_String CLEAR_SCREEN = "\x1B[2J";
+            constexpr Compact_String CLEAR_SCROLLBACK = "\x1B[3J";
+            constexpr Compact_String SET_CURSOR_TO_START = "\x1B[H";
+            constexpr Compact_String RESET_CONSOLE = "\x1B[c";
 
             /**
              * @brief Enable or disable a private SGR feature
@@ -120,7 +120,7 @@ namespace GGUI{
              * @param Enable If true, enable the feature. Otherwise, disable it.
              * @return A Super_String object with the correct escape sequence to enable or disable the feature
              */
-            inline Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature> Enable_Private_SGR_Feature(const std::string& command, bool Enable = true) { 
+            constexpr Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature> Enable_Private_SGR_Feature(const Compact_String& command, bool Enable = true) { 
                 Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature> Result;
 
                 // Add the escape code
@@ -150,7 +150,7 @@ namespace GGUI{
              * @param command The command to enable
              * @return A Super_String object with the correct escape sequence to enable the feature
              */
-            inline Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature> Enable_SGR_Feature(const std::string& command) {
+            constexpr Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature> Enable_SGR_Feature(const Compact_String& command) {
                 Super_String<Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature> Result;
 
                 // Add the escape code
@@ -166,139 +166,139 @@ namespace GGUI{
             }
 
             // SGR constants
-            static const std::string RESET_SGR = "0";                                  // Removes all SGR features. 
-            static const std::string BOLD = "1";                                       // Not widely supported!
-            static const std::string FAINT = "2";                                      // Not widely supported!
-            static const std::string ITALIC = "3";                                     // Not widely supported! (Can also be same as blink)
-            static const std::string UNDERLINE = "4";              
-            static const std::string SLOW_BLINK = "5";                                 // ~150 BPM
-            static const std::string RAPID_BLINK = "6";                                // Not widely supported!
-            static const std::string INVERT_FOREGROUND_WITH_BACKGROUND = "7";          // Not widely supported!
-            static const std::string CONCEAL = "8";                                    // Not widely supported!
-            static const std::string CROSSED_OUT = "9";                                // Not widely supported!
-            static const std::string PRIMARY_FONT = "10";                              // Sets the default font.
-            static const std::string ALTERNATIVE_FONT_1 = "11";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_2 = "12";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_3 = "13";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_4 = "14";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_5 = "15";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_6 = "16";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_7 = "17";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_8 = "18";                        // Custom font slot.
-            static const std::string ALTERNATIVE_FONT_9 = "19";                        // Custom font slot.
-            static const std::string FRAKTUR = "20";                                   // Not widely supported! (But cool font)
-            static const std::string NOT_BOLD = "21";                                  // Removes the BOLD feature
-            static const std::string NORMAL_INTENSITY = "22";                          // Removes BOLD and ITALIC and other affixes.
-            static const std::string NOT_UNDERLINE = "23";                             // Removes UNDERLINE.
-            static const std::string NOT_BLINK = "24";                                 // Removes BLINK.
-            static const std::string INVERT_INVERT_FOREGROUND_WITH_BACKGROUND = "27";  // Inverts the INVERT_FOREGROUND_WITH_BACKGROUND.
-            static const std::string TEXT_COLOR = "38";                               // Sets the foreground color.
-            static const std::string DEFAULT_TEXT_COLOR = "39";                       // Sets the default color.
-            static const std::string BACKGROUND_COLOR = "48";                         // Sets the background color.
-            static const std::string DEFAULT_BACKGROUND_COLOR = "49";                 // Sets the default color.
+            constexpr Compact_String RESET_SGR = "0";                                  // Removes all SGR features. 
+            constexpr Compact_String BOLD = "1";                                       // Not widely supported!
+            constexpr Compact_String FAINT = "2";                                      // Not widely supported!
+            constexpr Compact_String ITALIC = "3";                                     // Not widely supported! (Can also be same as blink)
+            constexpr Compact_String UNDERLINE = "4";              
+            constexpr Compact_String SLOW_BLINK = "5";                                 // ~150 BPM
+            constexpr Compact_String RAPID_BLINK = "6";                                // Not widely supported!
+            constexpr Compact_String INVERT_FOREGROUND_WITH_BACKGROUND = "7";          // Not widely supported!
+            constexpr Compact_String CONCEAL = "8";                                    // Not widely supported!
+            constexpr Compact_String CROSSED_OUT = "9";                                // Not widely supported!
+            constexpr Compact_String PRIMARY_FONT = "10";                              // Sets the default font.
+            constexpr Compact_String ALTERNATIVE_FONT_1 = "11";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_2 = "12";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_3 = "13";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_4 = "14";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_5 = "15";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_6 = "16";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_7 = "17";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_8 = "18";                        // Custom font slot.
+            constexpr Compact_String ALTERNATIVE_FONT_9 = "19";                        // Custom font slot.
+            constexpr Compact_String FRAKTUR = "20";                                   // Not widely supported! (But cool font)
+            constexpr Compact_String NOT_BOLD = "21";                                  // Removes the BOLD feature
+            constexpr Compact_String NORMAL_INTENSITY = "22";                          // Removes BOLD and ITALIC and other affixes.
+            constexpr Compact_String NOT_UNDERLINE = "23";                             // Removes UNDERLINE.
+            constexpr Compact_String NOT_BLINK = "24";                                 // Removes BLINK.
+            constexpr Compact_String INVERT_INVERT_FOREGROUND_WITH_BACKGROUND = "27";  // Inverts the INVERT_FOREGROUND_WITH_BACKGROUND.
+            constexpr Compact_String TEXT_COLOR = "38";                               // Sets the foreground color.
+            constexpr Compact_String DEFAULT_TEXT_COLOR = "39";                       // Sets the default color.
+            constexpr Compact_String BACKGROUND_COLOR = "48";                         // Sets the background color.
+            constexpr Compact_String DEFAULT_BACKGROUND_COLOR = "49";                 // Sets the default color.
 
             // Private SGR codes
-            static const std::string REPORT_MOUSE_HIGHLIGHTS = "1000";
-            static const std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
-            static const std::string REPORT_MOUSE_ALL_EVENTS = "1003";
+            constexpr Compact_String REPORT_MOUSE_HIGHLIGHTS = "1000";
+            constexpr Compact_String REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
+            constexpr Compact_String REPORT_MOUSE_ALL_EVENTS = "1003";
 
-            static const std::string MOUSE_CURSOR = "25";
-            static const std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
-            static const std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
+            constexpr Compact_String MOUSE_CURSOR = "25";
+            constexpr Compact_String SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
+            constexpr Compact_String ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
             // End of enable settings for ANSI
 
             // ACC (ASCII Control Characters)
-            inline char NONE = 0;
-            inline char START_OF_HEADING = 1;
-            inline char START_OF_TEXT = 2;
-            inline char END_OF_TEXT = 3;
-            inline char END_OF_TRANSMISSION = 4;
-            inline char ENQUIRY = 5;
-            inline char ACKNOWLEDGE = 6;
-            inline char BELL = 7;
-            inline char BACKSPACE = 8;
-            inline char HORIZONTAL_TAB = 9;
-            inline char LINE_FEED = 10;             // Also known as newline
-            inline char VERTICAL_TAB = 11;
-            inline char FORM_FEED = 12;
-            inline char CARRIAGE_RETURN = 13;
-            inline char SHIFT_OUT = 14;
-            inline char SHIFT_IN = 15;
-            inline char DATA_LINK_ESCAPE = 16;
-            inline char DEVICE_CONTROL_1 = 17;
-            inline char DEVICE_CONTROL_2 = 18;
-            inline char DEVICE_CONTROL_3 = 19;
-            inline char DEVICE_CONTROL_4 = 20;
-            inline char NEGATIVE_ACKNOWLEDGE = 21;
-            inline char SYNCHRONOUS_IDLE = 22;
-            inline char END_OF_TRANSMISSION_BLOCK = 23;
-            inline char CANCEL = 24;
-            inline char END_OF_MEDIUM = 25;
-            inline char SUBSTITUTE = 26;
-            inline char ESCAPE = 27;
-            inline char FILE_SEPARATOR = 28;
-            inline char GROUP_SEPARATOR = 29;
-            inline char RECORD_SEPARATOR = 30;
-            inline char UNIT_SEPARATOR = 31;
+            constexpr char NONE = 0;
+            constexpr char START_OF_HEADING = 1;
+            constexpr char START_OF_TEXT = 2;
+            constexpr char END_OF_TEXT = 3;
+            constexpr char END_OF_TRANSMISSION = 4;
+            constexpr char ENQUIRY = 5;
+            constexpr char ACKNOWLEDGE = 6;
+            constexpr char BELL = 7;
+            constexpr char BACKSPACE = 8;
+            constexpr char HORIZONTAL_TAB = 9;
+            constexpr char LINE_FEED = 10;             // Also known as newline
+            constexpr char VERTICAL_TAB = 11;
+            constexpr char FORM_FEED = 12;
+            constexpr char CARRIAGE_RETURN = 13;
+            constexpr char SHIFT_OUT = 14;
+            constexpr char SHIFT_IN = 15;
+            constexpr char DATA_LINK_ESCAPE = 16;
+            constexpr char DEVICE_CONTROL_1 = 17;
+            constexpr char DEVICE_CONTROL_2 = 18;
+            constexpr char DEVICE_CONTROL_3 = 19;
+            constexpr char DEVICE_CONTROL_4 = 20;
+            constexpr char NEGATIVE_ACKNOWLEDGE = 21;
+            constexpr char SYNCHRONOUS_IDLE = 22;
+            constexpr char END_OF_TRANSMISSION_BLOCK = 23;
+            constexpr char CANCEL = 24;
+            constexpr char END_OF_MEDIUM = 25;
+            constexpr char SUBSTITUTE = 26;
+            constexpr char ESCAPE = 27;
+            constexpr char FILE_SEPARATOR = 28;
+            constexpr char GROUP_SEPARATOR = 29;
+            constexpr char RECORD_SEPARATOR = 30;
+            constexpr char UNIT_SEPARATOR = 31;
         }
 
-        inline unsigned long long NONE = (unsigned long long)1 << 0;
-        inline unsigned long long ENTER = (unsigned long long)1 << 1;
-        inline unsigned long long ESCAPE = (unsigned long long)1 << 2;
-        inline unsigned long long BACKSPACE = (unsigned long long)1 << 3;
-        inline unsigned long long TAB = (unsigned long long)1 << 4;
-        inline unsigned long long UP = (unsigned long long)1 << 5;
-        inline unsigned long long DOWN = (unsigned long long)1 << 6;
-        inline unsigned long long LEFT = (unsigned long long)1 << 7;
-        inline unsigned long long RIGHT = (unsigned long long)1 << 8;
-        inline unsigned long long SPACE = (unsigned long long)1 << 9;
-        inline unsigned long long SHIFT = (unsigned long long)1 << 10;
-        inline unsigned long long ALT = (unsigned long long)1 << 11;
-        inline unsigned long long CONTROL = (unsigned long long)1 << 12;
-        inline unsigned long long SUPER = (unsigned long long)1 << 13;
-        inline unsigned long long HOME = (unsigned long long)1 << 14;
-        inline unsigned long long INSERT = (unsigned long long)1 << 15;
-        inline unsigned long long DELETE = (unsigned long long)1 << 16;
-        inline unsigned long long END = (unsigned long long)1 << 17;
-        inline unsigned long long PAGE_UP = (unsigned long long)1 << 18;
-        inline unsigned long long PAGE_DOWN = (unsigned long long)1 << 19;
-        inline unsigned long long F0 = (unsigned long long)1 << 20;
-        inline unsigned long long F1 = (unsigned long long)1 << 21;
-        inline unsigned long long F2 = (unsigned long long)1 << 22;
-        inline unsigned long long F3 = (unsigned long long)1 << 23;
-        inline unsigned long long F4 = (unsigned long long)1 << 24;
-        inline unsigned long long F5 = (unsigned long long)1 << 25;
-        inline unsigned long long F6 = (unsigned long long)1 << 26;
-        inline unsigned long long F7 = (unsigned long long)1 << 27;
-        inline unsigned long long F8 = (unsigned long long)1 << 28;
-        inline unsigned long long F9 = (unsigned long long)1 << 29;
-        inline unsigned long long F10 = (unsigned long long)1 << 30;
-        inline unsigned long long F11 = (unsigned long long)1 << 31;
-        inline unsigned long long F12 = (unsigned long long)1 << 32;
-        inline unsigned long long F13 = (unsigned long long)1 << 33;
-        inline unsigned long long F14 = (unsigned long long)1 << 34;
-        inline unsigned long long F15 = (unsigned long long)1 << 35;
-        inline unsigned long long F16 = (unsigned long long)1 << 36;
+        constexpr unsigned long long NONE = (unsigned long long)1 << 0;
+        constexpr unsigned long long ENTER = (unsigned long long)1 << 1;
+        constexpr unsigned long long ESCAPE = (unsigned long long)1 << 2;
+        constexpr unsigned long long BACKSPACE = (unsigned long long)1 << 3;
+        constexpr unsigned long long TAB = (unsigned long long)1 << 4;
+        constexpr unsigned long long UP = (unsigned long long)1 << 5;
+        constexpr unsigned long long DOWN = (unsigned long long)1 << 6;
+        constexpr unsigned long long LEFT = (unsigned long long)1 << 7;
+        constexpr unsigned long long RIGHT = (unsigned long long)1 << 8;
+        constexpr unsigned long long SPACE = (unsigned long long)1 << 9;
+        constexpr unsigned long long SHIFT = (unsigned long long)1 << 10;
+        constexpr unsigned long long ALT = (unsigned long long)1 << 11;
+        constexpr unsigned long long CONTROL = (unsigned long long)1 << 12;
+        constexpr unsigned long long SUPER = (unsigned long long)1 << 13;
+        constexpr unsigned long long HOME = (unsigned long long)1 << 14;
+        constexpr unsigned long long INSERT = (unsigned long long)1 << 15;
+        constexpr unsigned long long DELETE = (unsigned long long)1 << 16;
+        constexpr unsigned long long END = (unsigned long long)1 << 17;
+        constexpr unsigned long long PAGE_UP = (unsigned long long)1 << 18;
+        constexpr unsigned long long PAGE_DOWN = (unsigned long long)1 << 19;
+        constexpr unsigned long long F0 = (unsigned long long)1 << 20;
+        constexpr unsigned long long F1 = (unsigned long long)1 << 21;
+        constexpr unsigned long long F2 = (unsigned long long)1 << 22;
+        constexpr unsigned long long F3 = (unsigned long long)1 << 23;
+        constexpr unsigned long long F4 = (unsigned long long)1 << 24;
+        constexpr unsigned long long F5 = (unsigned long long)1 << 25;
+        constexpr unsigned long long F6 = (unsigned long long)1 << 26;
+        constexpr unsigned long long F7 = (unsigned long long)1 << 27;
+        constexpr unsigned long long F8 = (unsigned long long)1 << 28;
+        constexpr unsigned long long F9 = (unsigned long long)1 << 29;
+        constexpr unsigned long long F10 = (unsigned long long)1 << 30;
+        constexpr unsigned long long F11 = (unsigned long long)1 << 31;
+        constexpr unsigned long long F12 = (unsigned long long)1 << 32;
+        constexpr unsigned long long F13 = (unsigned long long)1 << 33;
+        constexpr unsigned long long F14 = (unsigned long long)1 << 34;
+        constexpr unsigned long long F15 = (unsigned long long)1 << 35;
+        constexpr unsigned long long F16 = (unsigned long long)1 << 36;
 
         // Should not fucking exist bro!
-        //inline unsigned long long SHIFT_TAB = (unsigned long long)1 << 37;
+        //constexpr unsigned long long SHIFT_TAB = (unsigned long long)1 << 37;
 
 
         //key_Press includes [a-z, A-Z] & [0-9]
-        inline unsigned long long KEY_PRESS = (unsigned long long)1 << 38;
+        constexpr unsigned long long KEY_PRESS = (unsigned long long)1 << 38;
 
         // EASY MOUSE API
-        inline unsigned long long MOUSE_LEFT_CLICKED = (unsigned long long)1 << 39;
-        inline unsigned long long MOUSE_MIDDLE_CLICKED = (unsigned long long)1 << 40;
-        inline unsigned long long MOUSE_RIGHT_CLICKED = (unsigned long long)1 << 41;
+        constexpr unsigned long long MOUSE_LEFT_CLICKED = (unsigned long long)1 << 39;
+        constexpr unsigned long long MOUSE_MIDDLE_CLICKED = (unsigned long long)1 << 40;
+        constexpr unsigned long long MOUSE_RIGHT_CLICKED = (unsigned long long)1 << 41;
 
         // NOTE: These will be spammed until it is not pressed anymore!
-        inline unsigned long long MOUSE_LEFT_PRESSED = (unsigned long long)1 << 42;
-        inline unsigned long long MOUSE_MIDDLE_PRESSED = (unsigned long long)1 << 43;
-        inline unsigned long long MOUSE_RIGHT_PRESSED = (unsigned long long)1 << 44;
+        constexpr unsigned long long MOUSE_LEFT_PRESSED = (unsigned long long)1 << 42;
+        constexpr unsigned long long MOUSE_MIDDLE_PRESSED = (unsigned long long)1 << 43;
+        constexpr unsigned long long MOUSE_RIGHT_PRESSED = (unsigned long long)1 << 44;
 
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = (unsigned long long)1 << 45;
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = (unsigned long long)1 << 46;
+        constexpr unsigned long long MOUSE_MIDDLE_SCROLL_UP = (unsigned long long)1 << 45;
+        constexpr unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = (unsigned long long)1 << 46;
     
         // At compile time generate 0-255 representations as const char* values.
         constexpr const char* To_String[256] = {

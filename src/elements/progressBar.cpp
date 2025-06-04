@@ -11,7 +11,7 @@ namespace GGUI{
 
     namespace progressBarStyles{
         inline progressStyle Default = progressStyle();
-        inline progressStyle Blocky = progressStyle(GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data(), GGUI::SYMBOLS::FULL_BLOCK.data());
+        inline progressStyle Blocky = progressStyle(GGUI::SYMBOLS::FULL_BLOCK, GGUI::SYMBOLS::FULL_BLOCK, GGUI::SYMBOLS::FULL_BLOCK);
         inline progressStyle Arrow = progressStyle(">", "=", "=");
     }
 

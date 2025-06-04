@@ -24,39 +24,6 @@ namespace GGUI{
  * This function converts the UTF character to a string by combining the foreground and background colour
  * strings with the character itself.
  *
- * @return The string representation of the UTF character.
- */
-std::string GGUI::UTF::To_String() const {
-    Super_String<Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> foreground;
-    Super_String<Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> background;
-
-    Foreground.Get_Colour_As_Super_String(&foreground);
-    Background.Get_Colour_As_Super_String(&background);
-
-    std::string Result =
-        // Get the foreground colour and style as a string
-        Foreground.Get_Over_Head(true) + foreground.To_String() + Constants::ANSI::END_COMMAND + 
-        // Get the background colour and style as a string
-        Background.Get_Over_Head(false) + background.To_String() + Constants::ANSI::END_COMMAND;
-
-    if(Is(COMPACT_STRING_FLAG::IS_UNICODE)){
-        // Add the const char* to the Result
-        Result.append(std::get<const char*>(Text), Size);
-    }
-    else{
-        Result += std::get<char>(Text);
-    }
-
-    // Add the reset ANSI code to the end of the string
-    return Result + Constants::ANSI::RESET_COLOR;
-}
-
-/**
- * @brief Converts the UTF character to a string.
- *
- * This function converts the UTF character to a string by combining the foreground and background colour
- * strings with the character itself.
- *
  * @param Result The result string.
  * @param Text_Overhead The foreground colour and style as a string.
  * @param Background_Overhead The background colour and style as a string.

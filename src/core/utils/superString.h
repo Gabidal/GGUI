@@ -104,7 +104,7 @@ namespace GGUI{
         constexpr Compact_String(const char* data){
             // Store the string as Unicode data if its length is greater than 1.
             // Store the single character as ASCII data.
-            strlen(data) > 1 ? 
+            Get_Length(data) > 1 ? 
                 Set_Unicode(data) : 
                 Set_Ascii(data[0]);
         }
@@ -205,7 +205,7 @@ namespace GGUI{
         constexpr void Set_Unicode(const char* text) {
             // Set the Text to the Unicode data.
             Text = std::variant<char, const char*>(text);
-            Size = strlen(text); // Update the size based on the new string.
+            Size = Get_Length(text); // Update the size based on the new string.
         }
 
         constexpr void Set_Ascii(const char text) {
@@ -324,20 +324,6 @@ namespace GGUI{
             // Store the character in the data vector.
             Data[Current_Index++] = Compact_String(data);
             Liquefied_Size += 1; // Update the liquefied size with the size of the new character.
-        }
-
-        /**
-         * @brief Adds a string to the data vector.
-         * 
-         * This function stores the provided string in the data vector by compacting it
-         * and placing it at the current index. The current index is then incremented.
-         * 
-         * @param data The string to be added to the data vector.
-         */
-        constexpr void Add(const std::string& data){
-            // Store the string in the data vector.
-            Data[Current_Index++] = Compact_String(data.data(), data.size());
-            Liquefied_Size += data.size(); // Update the liquefied size with the size of the new string.
         }
 
         /**

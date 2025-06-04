@@ -43,22 +43,6 @@ namespace GGUI{
         }
     
         /**
-         * @brief Generates an ANSI escape code for setting text or background color using RGB values.
-         * 
-         * @param Is_Text_Color Determines whether the escape code is for text color (true) or background color (false).
-         * @return A string containing the ANSI escape code for the specified color type.
-         */
-        std::string Get_Over_Head(bool Is_Text_Color = true) const {
-            if (Is_Text_Color) {
-                // Return escape code for text color
-                return Constants::ANSI::ESC_CODE + Constants::ANSI::TEXT_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
-            } else {
-                // Return escape code for background color
-                return Constants::ANSI::ESC_CODE + Constants::ANSI::BACKGROUND_COLOR + Constants::ANSI::SEPARATE + Constants::ANSI::USE_RGB + Constants::ANSI::SEPARATE;
-            }
-        }
-
-        /**
          * @brief Populates a Super_String with ANSI escape codes for text or background color.
          * 
          * This function adds the escape codes for either text or background color to the provided Super_String.
@@ -67,22 +51,16 @@ namespace GGUI{
          * @param Result A pointer to the Super_String to populate with escape codes.
          * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
          */
-        void Get_Over_Head_As_Super_String(Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Result, const bool Is_Text_Color = true) const {
-            if (Is_Text_Color) {
-                // Add escape codes for text color
-                Result->Add(Constants::ANSI::ESC_CODE);
-                Result->Add(Constants::ANSI::TEXT_COLOR);
-                Result->Add(Constants::ANSI::SEPARATE);
-                Result->Add(Constants::ANSI::USE_RGB);
-                Result->Add(Constants::ANSI::SEPARATE);
-            } else {
-                // Add escape codes for background color
-                Result->Add(Constants::ANSI::ESC_CODE);
+        constexpr void Get_Over_Head_As_Super_String(Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Result, const bool Is_Text_Color = true) const {
+            Result->Add(Constants::ANSI::ESC_CODE);
+            
+            Is_Text_Color ? 
+                Result->Add(Constants::ANSI::TEXT_COLOR) :
                 Result->Add(Constants::ANSI::BACKGROUND_COLOR);
-                Result->Add(Constants::ANSI::SEPARATE);
-                Result->Add(Constants::ANSI::USE_RGB);
-                Result->Add(Constants::ANSI::SEPARATE);
-            }
+
+            Result->Add(Constants::ANSI::SEPARATE);
+            Result->Add(Constants::ANSI::USE_RGB);
+            Result->Add(Constants::ANSI::SEPARATE);
         }
     
         constexpr bool operator==(const RGB& Other) const{

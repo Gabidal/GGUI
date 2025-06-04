@@ -824,7 +824,7 @@ namespace GGUI{
          */
         void renderFrame() {
             // Move the cursor to the top-left corner of the terminal
-            printf("%s", GGUI::Constants::ANSI::SET_CURSOR_TO_START.c_str());
+            printf("%s", GGUI::Constants::ANSI::SET_CURSOR_TO_START.Get_Unicode());
 
             // Flush the output buffer to ensure it's written immediately
             fflush(stdout);
@@ -1511,7 +1511,7 @@ namespace GGUI{
         
         // We need to dynamically resize this, since the window size will be potentially re-sized.
         if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.capacity() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
-            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE = std::vector<Compact_String>(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
+            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
         }
  
         for (int y = 0; y < Height; y++){
