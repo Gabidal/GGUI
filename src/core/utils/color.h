@@ -76,6 +76,10 @@ namespace GGUI{
         constexpr RGB operator*(const float Scalar) const{
             return RGB((unsigned char)((float)Red * Scalar), (unsigned char)((float)Green * Scalar), (unsigned char)((float)Blue * Scalar));
         }
+
+        constexpr RGB operator!() const{
+            return RGB(UINT8_MAX - Red, UINT8_MAX - Green, UINT8_MAX - Blue);
+        }
     };
 
     class RGBA : public RGB{

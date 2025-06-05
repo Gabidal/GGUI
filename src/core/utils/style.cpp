@@ -173,17 +173,30 @@ namespace GGUI{
     STAIN_TYPE enable_border::Embed_Value(styling* host, [[maybe_unused]] element* owner){
         host->Border_Enabled = *this;
 
+        // If border background value has not been given, then set this background color inverted.
+        if (host->Border_Background_Color.Status < VALUE_STATE::VALUE){
+            host->Border_Background_Color.Value = host->Background_Color.Value;
+            host->Border_Color.Value.Set(!host->Background_Color.Value.Get<RGB>());
+        }
+
         return STAIN_TYPE::EDGE;
     }
 
     STAIN_TYPE text_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
         host->Text_Color = *this;
 
+        if (host->Border_Color.Status < VALUE_STATE::VALUE)
+            host->Border_Color.Value = this->Value;
+
         return STAIN_TYPE::COLOR;
     }
 
     STAIN_TYPE background_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
         host->Background_Color = *this;
+
+        // If border background value has not been given, then set this background color as it.
+        if (host->Border_Background_Color.Status < VALUE_STATE::VALUE)
+            host->Border_Background_Color.Value = this->Value;
 
         return STAIN_TYPE::COLOR;
     }

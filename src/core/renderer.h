@@ -342,19 +342,23 @@ namespace GGUI{
 
     /**
      * @brief Use GGUI in a simple way.
-     * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, call the given function, sleep for the given amount of milliseconds, and then exit GGUI.
-     * @param DOM The function that will add all the elements to the root window.
-     * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
-     */
-    extern void GGUI(std::function<void()> DOM, unsigned long long Sleep_For = 0);
-
-    /**
-     * @brief Use GGUI in a simple way.
      * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, add all the elements to the root window, sleep for the given amount of milliseconds, and then exit GGUI.
      * @param App The whole GGUI Application that GGUI holds.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    extern void GGUI(styling App, unsigned long long Sleep_For = 0);
+    extern void GGUI(STYLING_INTERNAL::style_base& App, unsigned long long Sleep_For = 0);
+
+    /**
+     * @brief Calls the GGUI function with the provided style and sleep duration.
+     *
+     * This function forwards the given style object and sleep duration to another
+     * overload of the GGUI function. It is typically used to initialize or update
+     * the graphical user interface with specific styling and timing parameters.
+     *
+     * @param App An rvalue reference to a STYLING_INTERNAL::style_base object representing the application's style.
+     * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
+     */
+    extern void GGUI(STYLING_INTERNAL::style_base&& App, unsigned long long Sleep_For = 0);
 
     /**
      * @brief Handles the pressing of the tab key.

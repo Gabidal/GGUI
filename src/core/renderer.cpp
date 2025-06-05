@@ -2110,40 +2110,18 @@ namespace GGUI{
 
     /**
      * @brief Use GGUI in a simple way.
-     * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, call the given function, sleep for the given amount of milliseconds, and then exit GGUI.
-     * @param DOM The function that will add all the elements to the root window.
-     * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
-     */
-    void GGUI(std::function<void()> DOM, unsigned long long Sleep_For){
-        INTERNAL::Read_Start_Addresses();
-
-        pauseGGUI([DOM](){
-            initGGUI();
-
-            DOM();
-        });
-
-        // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
-        resumeGGUI();
-
-        INTERNAL::SLEEP(Sleep_For);
-        // No need of un-initialization here or forced exit, since on process death the right exit codes will be initiated.
-    }
-
-    /**
-     * @brief Use GGUI in a simple way.
      * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, add all the elements to the root window, sleep for the given amount of milliseconds, and then exit GGUI.
      * @param DOM The elements to add to the root window.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    void GGUI(styling App, unsigned long long Sleep_For){
+    void GGUI(STYLING_INTERNAL::style_base& App, unsigned long long Sleep_For){
         INTERNAL::Read_Start_Addresses();
 
         pauseGGUI([&App](){
             initGGUI();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
-            INTERNAL::Main->addStyling(App);
+            INTERNAL::Main->AddStyling(App);
 
             // Now recursively go down in the App AST nodes and Build each node.
             INTERNAL::Main->embedStyles();
@@ -2161,6 +2139,18 @@ namespace GGUI{
         // Sleep for the given amount of milliseconds.
         INTERNAL::SLEEP(Sleep_For);
     }
+
+    /**
+     * @brief Calls the GGUI function with the provided style and sleep duration.
+     *
+     * This function forwards the given style object and sleep duration to another
+     * overload of the GGUI function. It is typically used to initialize or update
+     * the graphical user interface with specific styling and timing parameters.
+     *
+     * @param App An rvalue reference to a STYLING_INTERNAL::style_base object representing the application's style.
+     * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
+     */
+    void GGUI(STYLING_INTERNAL::style_base&& App, unsigned long long Sleep_For) { GGUI(App, Sleep_For); }
 
     /**
      * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.

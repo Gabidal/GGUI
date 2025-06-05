@@ -300,7 +300,7 @@ namespace GGUI{
              * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
              */
             template<typename P>
-            inline constexpr P Get() {                
+            constexpr P Get() {                
                 return data;
             }
 
@@ -2353,6 +2353,30 @@ namespace GGUI{
          * @param attributes A style_base object containing the style attributes.
          */
         styling(STYLING_INTERNAL::style_base&& attributes){
+            un_parsed_styles = &attributes;
+        }
+
+        /**
+         * @brief Associates the given style attributes with the current object.
+         *
+         * This function sets the internal pointer to the provided style_base object,
+         * allowing the object to use or reference the specified styling attributes.
+         *
+         * @param attributes Reference to a style_base object containing the style attributes to be added.
+         */
+        void Add(STYLING_INTERNAL::style_base& attributes){
+            un_parsed_styles = &attributes;
+        }
+
+        /**
+         * @brief Adds a new style by moving the given style attributes.
+         *
+         * Stores a pointer to the provided style attributes, which are passed as an rvalue reference.
+         * Note: The lifetime of the passed attributes must outlive the usage of un_parsed_styles.
+         *
+         * @param attributes Rvalue reference to a style_base object containing style attributes.
+         */
+        void Add(STYLING_INTERNAL::style_base&& attributes){
             un_parsed_styles = &attributes;
         }
 

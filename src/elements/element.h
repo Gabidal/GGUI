@@ -121,8 +121,43 @@ namespace GGUI{
          */
         void embedStyles();
 
+        /**
+         * @brief Applies the given styling to the element.
+         *
+         * This function copies the provided styling object into the element's current style,
+         * updating its appearance accordingly.
+         *
+         * @param s Reference to a styling object containing the new style properties to apply.
+         */
         void addStyling(styling& s){
             Style->Copy(s);
+        }
+
+        /**
+         * @brief Adds a style to the current element's style collection.
+         *
+         * This function takes a reference to a style object and adds it to the element's
+         * internal style handler. It allows dynamic modification or extension of the element's
+         * appearance at runtime.
+         *
+         * @param s Reference to a style_base object containing the styling information to add.
+         */
+        void AddStyling(STYLING_INTERNAL::style_base& s){
+            Style->Add(s);
+            Style->Embed_Styles(this);
+        }
+        
+        /**
+         * @brief Adds a new style to the element's styling collection.
+         *
+         * This function takes ownership of the provided style object and adds it to the
+         * element's internal style manager. The style is passed as an rvalue reference,
+         * allowing for efficient move semantics.
+         *
+         * @param s An rvalue reference to a style_base object representing the style to add.
+         */
+        void AddStyling(STYLING_INTERNAL::style_base&& s){
+            AddStyling(s);
         }
 
         /** 
