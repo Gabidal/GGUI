@@ -24,7 +24,7 @@ namespace GGUI{
      */
     void initAddons(){
         // Call addon initializers.
-        // initInspectTool();
+        initInspectTool();
 
         // Finally after all addons are loaded
         for (auto* a : Addons){
@@ -97,7 +97,7 @@ namespace GGUI{
     void initInspectTool(){
         const char* ERROR_LOGGER = "_ERROR_LOGGER_";
 
-        Addons.push_back(new GGUI::listView(styling(
+        Addons.push_back(new GGUI::listView(
             width(0.5f) | height(1.0f) | 
             text_color(1.0f) | background_color(GGUI::COLOR::BLACK) |
             // Set the flow direction to column so the elements stack vertically
@@ -115,27 +115,23 @@ namespace GGUI{
 
             // Add the error logger kidnapper:
             node(new window(
-                styling(
-                    width(1.0f) | height(0.5f) |
-                    enable_border(true) | 
-                    title("LOG: ") | 
-                    // Set the name of the window to "LOG"
-                    name(ERROR_LOGGER) | 
-                    // Allow the window to overflow, so that the text can be seen even if it is longer than the window
-                    allow_overflow(true)
-                )
+                width(1.0f) | height(0.5f) |
+                enable_border(true) | 
+                title("LOG: ") | 
+                // Set the name of the window to "LOG"
+                name(ERROR_LOGGER) | 
+                // Allow the window to overflow, so that the text can be seen even if it is longer than the window
+                allow_overflow(true)
             )) | 
                         
             // Add a count for how many UTF are being streamed.
             node(new textField(
-                styling(
-                    align(ALIGN::LEFT) | 
-                    width(1.0f) |
-                    height(9) |
-                    // Set the name of the text field to "STATS"
-                    name("STATS")
-                    // text(Get_Stats_Text().c_str())
-                )
+                align(ALIGN::LEFT) | 
+                width(1.0f) |
+                height(9) |
+                // Set the name of the text field to "STATS"
+                name("STATS")
+                // text(Get_Stats_Text().c_str())
             )) | 
 
             // Hide the inspect tool by default
@@ -169,7 +165,7 @@ namespace GGUI{
                     );
                 });
             })
-        )));
+        ));
     }
 
 }

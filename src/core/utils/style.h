@@ -1114,6 +1114,17 @@ namespace GGUI{
                 static_assert(!std::is_same_v<P, P>, "Unsupported type!");
             }
         }
+    
+        class empty : public style_base{
+        public:
+            constexpr empty() = default;
+
+            inline ~empty() override { style_base::~style_base(); }
+
+            inline style_base* Copy() const override {
+                return new empty(*this);
+            }
+        };
     }
 
     class position : public STYLING_INTERNAL::Vector{
@@ -2431,7 +2442,9 @@ namespace GGUI{
         }
 
         namespace CONSTANTS{
-            inline styling Default;
+            // inline styling Default;
+            inline STYLING_INTERNAL::empty Default;
+            inline styling defaultStyling;
         }
 
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).

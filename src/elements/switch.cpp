@@ -12,7 +12,13 @@ namespace GGUI{
      * @param event The function to call when the switch is toggled.
      * @param s The styling for the switch.
      */
-    switchBox::switchBox(Compact_String text, std::vector<Compact_String> states, std::function<void (element* This)> event, styling s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
+    switchBox::switchBox(
+        Compact_String text, 
+        std::vector<Compact_String> states, 
+        STYLING_INTERNAL::style_base& s, 
+        std::function<void (element* This)> event, 
+        bool Embed_Styles_On_Construct
+    ) : element(s, Embed_Styles_On_Construct) {
         pauseGGUI([this, text, states, event](){
             // Initialize the states for the switch
             States = states;

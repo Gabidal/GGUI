@@ -2000,10 +2000,10 @@ namespace GGUI{
 
         INTERNAL::initPlatformStuff();
 
-        INTERNAL::Main = new window(styling(
+        INTERNAL::Main = new window(
             width(INTERNAL::Max_Width) |
             height(INTERNAL::Max_Height)
-        ), true);
+        , true);
 
         std::thread Rendering_Scheduler([&](){
             INTERNAL::LOGGER::RegisterCurrentThread();

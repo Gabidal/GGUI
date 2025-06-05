@@ -771,11 +771,11 @@ namespace GGUI{
                             // This happens, when Error logger is kidnapped!
                             if (!History){
                                 // Now create the history lister
-                                History = new scrollView(styling(
+                                History = new scrollView(
                                     width(1.0f) | height(1.0f) |
                                     text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                     flow_priority(DIRECTION::COLUMN) | name(HISTORY)
-                                ));
+                                );
 
                                 Error_Logger->addChild(History);
                             }
@@ -791,7 +791,7 @@ namespace GGUI{
                                 if (Previous_Problem->getText() == Problem){
                                     // increase the repetition count by one
                                     if (!Previous_Repetitions){
-                                        Previous_Repetitions = new textField(styling(text("2")));
+                                        Previous_Repetitions = new textField(text("2"));
                                         Rows.back()->addChild(Previous_Repetitions);
                                     }
                                     else{
@@ -808,26 +808,24 @@ namespace GGUI{
                         else{
                             // create the error logger
                             Error_Logger = new window(
-                                styling(
-                                    width(0.25f) | height(0.5f) |
+                                width(0.25f) | height(0.5f) |
 
-                                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                                    border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
+                                text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
+                                border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
 
-                                    title("LOG") | name(ERROR_LOGGER) | 
-                                    
-                                    position(
-                                        STYLES::center + STYLES::prioritize
-                                    ) | 
-                                    
-                                    enable_border(true) | allow_overflow(true) | 
+                                title("LOG") | name(ERROR_LOGGER) | 
+                                
+                                position(
+                                    STYLES::center + STYLES::prioritize
+                                ) | 
+                                
+                                enable_border(true) | allow_overflow(true) | 
 
-                                    node(new scrollView(styling(
-                                        width(1.0f) | height(1.0f) |
-                                        text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                                        flow_priority(DIRECTION::COLUMN) | name(HISTORY)
-                                    )))
-                                )
+                                node(new scrollView(
+                                    width(1.0f) | height(1.0f) |
+                                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
+                                    flow_priority(DIRECTION::COLUMN) | name(HISTORY)
+                                ))
                             );
 
                             INTERNAL::Main->addChild(Error_Logger);
@@ -838,23 +836,23 @@ namespace GGUI{
                             Error_Logger = (window*)INTERNAL::Main->getElement(ERROR_LOGGER);
                             scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
-                            History->addChild(new listView(styling(
+                            History->addChild(new listView(
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
                                 flow_priority(DIRECTION::ROW) | 
 
                                 name(INTERNAL::now().c_str()) | 
 
                                 // The actual reported problem text
-                                node(new textField(styling(
+                                node(new textField(
                                     text(Problem.c_str())
-                                ))) 
+                                ))
                                 // |
 
                                 // // The Date field
                                 // node(new textField(styling(
                                 //     text(INTERNAL::now().c_str())
                                 // )))
-                            )));
+                            ));
 
                             // listView* row = (listView*)History->getContainer()->getChilds().back();
                             // // row->setHeight(row->getChilds()[1]->getHeight());

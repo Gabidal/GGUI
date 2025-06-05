@@ -27,7 +27,8 @@ namespace GGUI{
          * @param s The styling for the button.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the button's style. Only use if you know what you're doing!!!
          */
-        button(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        button(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        button(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : button(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Creates a deep copy of the Button object.

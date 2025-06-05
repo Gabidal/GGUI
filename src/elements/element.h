@@ -66,7 +66,10 @@ namespace GGUI{
          * @param s The Styling object to use for the Element.
          * @param Embed_Styles_On_Construct A flag indicating whether to embed the styles on construction. Only use if you know what you're doing!!!
          */
-        element(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        // element(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+
+        element(STYLING_INTERNAL::style_base& style = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        element(STYLING_INTERNAL::style_base&& style, bool Embed_Styles_On_Construct = false) : element(style, Embed_Styles_On_Construct) {}
 
         /**
          * @brief For correctly copying data between elements, try the Copy() function.

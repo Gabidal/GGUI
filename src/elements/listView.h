@@ -14,7 +14,7 @@ namespace GGUI{
     class listView : public element{
     public:
         //We can always assume that the list starts from the upper left corner, right?
-        element* Last_Child = new element(styling(position(0, 0) | width(0) | height(0)));
+        element* Last_Child = new element(position(0, 0) | width(0) | height(0));
 
         /**
          * @brief Default constructor for List_View.
@@ -31,7 +31,8 @@ namespace GGUI{
          * 
          * @param s The style for the list view.
          */
-        listView(styling s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
+        listView(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
+        listView(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Destructor for the List_View class.
@@ -157,7 +158,8 @@ namespace GGUI{
          * @param s The styling to be applied to the Scroll_View.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
          */
-        scrollView(styling s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allow_overflow(true); }
+        scrollView(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allow_overflow(true); }
+        scrollView(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Constructor for the Scroll_View class.

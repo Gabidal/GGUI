@@ -9,7 +9,7 @@ namespace GGUI{
      * @param press The function to call when the button is pressed.
      * @param s The styling for the button.
      */
-    button::button(styling s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
+    button::button(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
         // Allow the button to resize dynamically
         allowDynamicSize(true);
 
@@ -17,11 +17,11 @@ namespace GGUI{
         showBorder(true);
 
         // Add a centered text field as a child element
-        addChild(new textField(styling(
+        addChild(new textField(
             align(ALIGN::CENTER)
             // text(Text.c_str()) |     // The text is given from the Styling s.
             // width(1.0f) | height(1.0f)
-        )));
+        ));
 
     }
 }

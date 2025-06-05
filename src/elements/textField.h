@@ -37,7 +37,7 @@ namespace GGUI{
          * @param s The Styling object to use for the Text_Field object.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Text_Field's style. Only use if you know what you're doing!!!
          */
-        textField(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
+        textField(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
 
             // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
             Text_Cache.reserve(getHeight());
@@ -50,6 +50,8 @@ namespace GGUI{
             if (Embed_Styles_On_Construct)
                 updateTextCache();
         }
+        
+        textField(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : textField(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Sets the size of the text field to fill its parent element.

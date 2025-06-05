@@ -28,7 +28,8 @@ namespace GGUI{
          * @param s The Styling object to be used for the window.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the window's style. Only use if you know what you're doing!!!
          */
-        window(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        window(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        window(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : window(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Destructor for the Window class.

@@ -42,10 +42,16 @@ namespace GGUI{
         switchBox(
             Compact_String text,
             std::vector<Compact_String> states,
+            STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default,
             std::function<void (element* This)> event = []([[maybe_unused]] element* e){}, 
-            styling s = STYLES::CONSTANTS::Default,
             bool Embed_Styles_On_Construct = false
         );
+
+        switchBox(            
+            Compact_String text,
+            std::vector<Compact_String> states,
+            STYLING_INTERNAL::style_base&& s
+        ) : switchBox(text, states, s){}
 
         /**
          * @brief Renders the switch element and its children into the Render_Buffer nested buffer of the window.

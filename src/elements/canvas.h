@@ -27,7 +27,8 @@ namespace GGUI{
          * @param s The styling to be applied to the Canvas.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the canvas's style. Only use if you know what you're doing!!!
          */
-        canvas(styling s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
+        canvas(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
+        canvas(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : canvas(s, Embed_Styles_On_Construct){}
            
         /**
          * @brief Set the value of a pixel on the canvas.
@@ -154,7 +155,8 @@ namespace GGUI{
 
         GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
-        terminalCanvas(styling s) : element(s){}
+        terminalCanvas(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
+        terminalCanvas(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : terminalCanvas(s, Embed_Styles_On_Construct){}
         
         ~terminalCanvas() override;
 

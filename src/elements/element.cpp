@@ -114,23 +114,43 @@ void GGUI::UTF::To_Encoded_Super_String(
     }
 }
 
-/**
- * The constructor for the Element class that accepts a Styling object.
- *
- * This constructor is used when an Element is created without a parent.
- * In this case, the Element is created as a root object, and it will be
- * automatically added to the list of root objects.
- *
- * @param s The Styling object to use for the Element.
- */
-GGUI::element::element(styling s, bool Embed_Styles_On_Construct){
-    Style = new styling();
+// /**
+//  * The constructor for the Element class that accepts a Styling object.
+//  *
+//  * This constructor is used when an Element is created without a parent.
+//  * In this case, the Element is created as a root object, and it will be
+//  * automatically added to the list of root objects.
+//  *
+//  * @param s The Styling object to use for the Element.
+//  */
+// GGUI::element::element(styling s, bool Embed_Styles_On_Construct){
+//     fullyStain();
 
+//     Dirty.Dirty(STAIN_TYPE::FINALIZE);
+
+//     Style = new styling(s);
+
+//     if (Embed_Styles_On_Construct){
+//         Style->Embed_Styles(this);
+
+//         check(STATE::INIT);
+
+//         // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
+//         Dirty.Clean(STAIN_TYPE::FINALIZE);
+//     }
+//     else{
+//         // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
+//         // TODO:
+//         Style->Copy_Un_Parsed_Styles();
+//     }
+// }
+
+GGUI::element::element(STYLING_INTERNAL::style_base& style, bool Embed_Styles_On_Construct){
     fullyStain();
 
     Dirty.Dirty(STAIN_TYPE::FINALIZE);
 
-    Style = new styling(s);
+    Style = new styling(style);
 
     if (Embed_Styles_On_Construct){
         Style->Embed_Styles(this);

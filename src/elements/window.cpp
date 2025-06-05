@@ -9,7 +9,7 @@
  * @param title The title string to be displayed in the window's title bar.
  * @param s The Styling object to be used for the window.
  */
-GGUI::window::window(styling s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
+GGUI::window::window(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct) {
     pauseGGUI([this](){
         updateHiddenBorderColors();
     });
@@ -29,7 +29,7 @@ void GGUI::window::updateHiddenBorderColors() {
         Before_Hiding_Border_Color = Style->Text_Color.Value.Get<RGB>();
     // If neither is initialized, use the default border color
     else
-        Before_Hiding_Border_Color = STYLES::CONSTANTS::Default.Border_Color.Value.Get<RGB>();
+        Before_Hiding_Border_Color = STYLES::CONSTANTS::defaultStyling.Border_Color.Value.Get<RGB>();
 
     // Check if a custom border background color is initialized and set it as the before hiding background color
     if (Style->Border_Background_Color.Status >= VALUE_STATE::INITIALIZED)
@@ -39,7 +39,7 @@ void GGUI::window::updateHiddenBorderColors() {
         Before_Hiding_Border_Background_Color = Style->Background_Color.Value.Get<RGB>();
     // If neither is initialized, use the default border background color
     else
-        Before_Hiding_Border_Background_Color = STYLES::CONSTANTS::Default.Border_Background_Color.Value.Get<RGB>();
+        Before_Hiding_Border_Background_Color = STYLES::CONSTANTS::defaultStyling.Border_Background_Color.Value.Get<RGB>();
 }
 
 /**
