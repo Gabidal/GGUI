@@ -240,15 +240,6 @@ namespace GGUI{
         virtual void calculateChildsHitboxes([[maybe_unused]] unsigned int Starting_Offset = 0) {}
 
         /**
-         * @brief Adds a class to the element.
-         * @details This function adds the given class to the element's class list.
-         *          If the class does not exist in the global class map, a new ID is assigned to the class.
-         *          The element is then marked as dirty, which will trigger a re-render of the element.
-         * @param class_name The name of the class to add.
-         */
-        void addClass(std::string class_name);
-
-        /**
          * @brief Sets the opacity of the element.
          * @details This function takes a float value between 0.0f and 1.0f and sets the
          * opacity of the element to that value. If the value is greater than 1.0f, the
@@ -587,6 +578,23 @@ namespace GGUI{
         void updateAbsolutePositionCache();
 
         /**
+         * @brief Sets the title of the window and updates border visibility and colors accordingly.
+         * 
+         * This function sets the window's title and ensures that the border is shown if the title is not empty.
+         * If the window previously had hidden borders, it updates the border colors based on the background color.
+         * 
+         * @param t The new title for the window.
+         */
+        void setTitle(Compact_String t);
+
+        /**
+         * @brief Returns the title of the window.
+         * 
+         * @return The title of the window as a string.
+         */
+        Compact_String getTitle();
+
+        /**
          * @brief Set the margin of the element.
          * @details This function sets the margin of the element to the specified margin values.
          *          The margin is stored in the element's style.
@@ -611,7 +619,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the background color.
          */
-        virtual void setBackgroundColor(RGB color);
+        void setBackgroundColor(RGB color);
 
         /**
          * @brief Retrieves the background color of the element.
@@ -630,7 +638,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the border color.
          */
-        virtual void setBorderColor(RGB color);
+        void setBorderColor(RGB color);
         
         /**
          * @brief Retrieves the border color of the element.
@@ -650,7 +658,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the border background color.
          */
-        virtual void setBorderBackgroundColor(RGB color);
+        void setBorderBackgroundColor(RGB color);
         
         /**
          * @brief Retrieves the border background color of the element.
@@ -670,7 +678,7 @@ namespace GGUI{
          * 
          * @param color The RGB color to set as the text color.
          */
-        virtual void setTextColor(RGB color);
+        void setTextColor(RGB color);
 
         /**
          * @brief Retrieves the text color of the element.
@@ -990,15 +998,16 @@ namespace GGUI{
          *       This ensures that the parent element is re-rendered from scratch when the
          *       rendering thread is updated.
          */
-        virtual void updateParent(element* New_Element);
+        void updateParent(element* New_Element);
 
         /**
          * @brief Add the border of the window to the rendered string.
          *
-         * @param w The window to add the border for.
          * @param Result The string to add the border to.
          */
-        virtual void addOverhead(element* w, std::vector<UTF>& Result);
+        void addOverhead(std::vector<UTF>& Result);
+
+        void renderTitle(std::vector<UTF>& Result);
 
         /**
          * @brief Apply the color system to the rendered string.

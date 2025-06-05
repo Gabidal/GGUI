@@ -77,7 +77,7 @@ namespace GGUI{
         void* Stack_Start_Address = 0;
         void* Heap_Start_Address = 0;
 
-        window* Main = nullptr;
+        element* Main = nullptr;
 
         atomic::Guard<Carry> Carry_Flags; 
 
@@ -1957,30 +1957,11 @@ namespace GGUI{
     }
 
     /**
-     * @brief Adds a new class with the specified name and styling.
-     * @details This function retrieves a unique class ID for the given name.
-     *          It then associates the provided styling with this class ID 
-     *          in the `Classes` map.
-     * 
-     * @param name The name of the class.
-     * @param Styling The styling to be associated with the class.
-     */
-    void addClass(std::string name, styling Styling){
-        INTERNAL::Classes([name, Styling](auto& classes){
-            // Obtain a unique class ID for the given class name
-            int Class_ID = getFreeClassID(name);
-
-            // Associate the styling with the obtained class ID
-            classes.at(Class_ID) = Styling;
-        }); 
-    }
-
-    /**
      * @brief Initializes the GGUI system and returns the main window.
      * 
      * @return The main window of the GGUI system.
      */
-    GGUI::window* initGGUI(){
+    GGUI::element* initGGUI(){
         INTERNAL::Read_Start_Addresses();
         SETTINGS::initSettings();
         INTERNAL::LOGGER::Init();
@@ -2000,7 +1981,7 @@ namespace GGUI{
 
         INTERNAL::initPlatformStuff();
 
-        INTERNAL::Main = new window(
+        INTERNAL::Main = new element(
             width(INTERNAL::Max_Width) |
             height(INTERNAL::Max_Height)
         , true);

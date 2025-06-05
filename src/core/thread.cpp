@@ -9,10 +9,10 @@
 #include <mutex>
 
 namespace GGUI{
-    class window;
+    class element;
     namespace INTERNAL{
 
-        extern window* Main;
+        extern element* Main;
 
         namespace atomic{
             enum class status;

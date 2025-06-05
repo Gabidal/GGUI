@@ -1,7 +1,6 @@
 #include "./addons.h"
 #include "../../elements/element.h"
 #include "../../elements/listView.h"
-#include "../../elements/window.h"
 #include "../../elements/textField.h"
 
 #include "../renderer.h"
@@ -12,7 +11,7 @@ namespace GGUI{
     std::vector<element*> Addons;
 
     namespace INTERNAL{
-        extern window* Main;
+        extern element* Main;
     }
 
     /**
@@ -114,7 +113,7 @@ namespace GGUI{
             // enable_border(true) |     // <- will crash since the child nodes do not have borders enabled.
 
             // Add the error logger kidnapper:
-            node(new window(
+            node(new element(
                 width(1.0f) | height(0.5f) |
                 enable_border(true) | 
                 title("LOG: ") | 

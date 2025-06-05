@@ -762,7 +762,7 @@ namespace GGUI{
                         bool Create_New_Line = true;
 
                         // First check if there already is a report log.
-                        window* Error_Logger = (window*)INTERNAL::Main->getElement(ERROR_LOGGER);
+                        element* Error_Logger = INTERNAL::Main->getElement(ERROR_LOGGER);
 
                         if (Error_Logger){
                             // Get the list
@@ -807,7 +807,7 @@ namespace GGUI{
                         }
                         else{
                             // create the error logger
-                            Error_Logger = new window(
+                            Error_Logger = new element(
                                 width(0.25f) | height(0.5f) |
 
                                 text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
@@ -833,7 +833,7 @@ namespace GGUI{
 
                         if (Create_New_Line){
                             // re-find the error_logger.
-                            Error_Logger = (window*)INTERNAL::Main->getElement(ERROR_LOGGER);
+                            Error_Logger = INTERNAL::Main->getElement(ERROR_LOGGER);
                             scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
                             History->addChild(new listView(

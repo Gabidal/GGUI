@@ -356,17 +356,13 @@ namespace GGUI{
     }
 
     STAIN_TYPE name::Embed_Value([[maybe_unused]] styling* host, element* owner){
-        owner->setName(Value);
+        owner->setName(Value.Get_Unicode());
 
         return STAIN_TYPE::CLEAN;
     }
 
     STAIN_TYPE title::Embed_Value([[maybe_unused]] styling* host, element* owner){
-        // first make sure that the element is an Window type element.
-        if (dynamic_cast<window*>(owner))
-            ((window*)owner)->setTitle(Value);
-        else
-            throw std::runtime_error("The title attribute can only be used on Window type elements.");
+        owner->setTitle(Value);
 
         return STAIN_TYPE::CLEAN;
     }

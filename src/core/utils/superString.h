@@ -222,6 +222,12 @@ namespace GGUI{
             return Is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(Text) == ' ' : std::get<const char*>(Text)[0] == ' ';
         }
 
+        constexpr bool Empty() const {
+            // Check if the Compact_String is empty.
+            // An empty Compact_String has a size of 0.
+            return Size == 0;
+        }
+
     protected:
         /**
          * @brief Computes the length of a null-terminated C-string at compile time.
@@ -234,6 +240,11 @@ namespace GGUI{
          */
         constexpr size_t Get_Length(const char* str) {
             size_t length = 0;
+
+            if (!str) {
+                return length; // Return 0 if the input string is null.
+            }
+
             while (str[length] != '\0') ++length;
             return length;
         }

@@ -952,6 +952,15 @@ void GGUI::element::updateAbsolutePositionCache(){
     Absolute_Position_Cache += getPosition();
 }
 
+void GGUI::element::setTitle(Compact_String t){
+    Style->Title.Value = t;
+}
+
+GGUI::Compact_String GGUI::element::getTitle(){
+    // Return the title of the element
+    return Style->Title.Value;
+}
+
 /**
  * @brief Set the margin of the element.
  * @details This function sets the margin of the element to the specified margin values.
@@ -1577,8 +1586,10 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         Dirty.Dirty(STAIN_TYPE::EDGE);
 
     //This will add the borders if necessary and the title of the window.
-    if (Dirty.is(STAIN_TYPE::EDGE))
-        addOverhead(this, Result);
+    if (Dirty.is(STAIN_TYPE::EDGE)){
+        addOverhead(Result);
+        renderTitle(Result);
+    }
 
     // This will calculate the connecting borders.
     if (Childs_With_Borders > 0){
@@ -1621,14 +1632,13 @@ void GGUI::element::applyColors(element* w, std::vector<UTF>& Result){
 /**
  * @brief Add the border of the window to the rendered string.
  *
- * @param w The window to add the border for.
  * @param Result The string to add the border to.
  */
-void GGUI::element::addOverhead(GGUI::element* w, std::vector<GGUI::UTF>& Result)
+void GGUI::element::addOverhead(std::vector<UTF>& Result)
 {
     Dirty.Clean(STAIN_TYPE::EDGE);
 
-    if (!w->hasBorder())
+    if (!hasBorder())
         return;
 
     GGUI::styled_border custom_border = Style->Border_Style;
@@ -1640,32 +1650,62 @@ void GGUI::element::addOverhead(GGUI::element* w, std::vector<GGUI::UTF>& Result
             //top left corner
             if (y == 0 && x == 0)
             {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.TOP_LEFT_CORNER, w->composeAllBorderRGBValues());
+                Result[y * getWidth() + x] = GGUI::UTF(custom_border.TOP_LEFT_CORNER, composeAllBorderRGBValues());
             }
             //top right corner
             else if (y == 0 && x == getWidth() - 1)
             {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.TOP_RIGHT_CORNER, w->composeAllBorderRGBValues());
+                Result[y * getWidth() + x] = GGUI::UTF(custom_border.TOP_RIGHT_CORNER, composeAllBorderRGBValues());
             }
             //bottom left corner
             else if (y == getHeight() - 1 && x == 0)
             {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.BOTTOM_LEFT_CORNER, w->composeAllBorderRGBValues());
+                Result[y * getWidth() + x] = GGUI::UTF(custom_border.BOTTOM_LEFT_CORNER, composeAllBorderRGBValues());
             }
             //bottom right corner
             else if (y == getHeight() - 1 && x == getWidth() - 1)
             {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.BOTTOM_RIGHT_CORNER, w->composeAllBorderRGBValues());
+                Result[y * getWidth() + x] = GGUI::UTF(custom_border.BOTTOM_RIGHT_CORNER, composeAllBorderRGBValues());
             }
             //The roof border
             else if (y == 0 || y == getHeight() - 1)
             {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.HORIZONTAL_LINE, w->composeAllBorderRGBValues());
+                Result[y * getWidth() + x] = GGUI::UTF(custom_border.HORIZONTAL_LINE, composeAllBorderRGBValues());
             }
             //The left border
             else if (x == 0 || x == getWidth() - 1)
             {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.VERTICAL_LINE, w->composeAllBorderRGBValues());
+                Result[y * getWidth() + x] = GGUI::UTF(custom_border.VERTICAL_LINE, composeAllBorderRGBValues());
+            }
+        }
+    }
+}
+
+void GGUI::element::renderTitle(std::vector<UTF>& Result){
+    if (Style->Title.empty())
+        return;
+
+    unsigned int Title_Length = Style->Title.Value.Size; // +1 for trailing, since COmpact_Strings do not include trailing characters in their size.
+    unsigned int Horizontal_Offset = hasBorder();
+    Compact_String Ellipsis = "...";
+    bool Enable_Ellipsis = false;
+
+    unsigned int Writable_Length = Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.Size - 1);
+
+    if (Writable_Length < Title_Length)
+        Enable_Ellipsis = true;
+
+    // Now we'll write what we can
+    for (unsigned int x = Horizontal_Offset; x < Writable_Length + Horizontal_Offset; x++){
+        Result[x] = UTF(Style->Title.Value[x - Horizontal_Offset], composeAllTextRGBValues());
+    }
+
+    // And then we'll add the ellipsis
+    if (Enable_Ellipsis){
+        unsigned int Ellipsis_Offset = Writable_Length + Horizontal_Offset;
+        for (unsigned int x = 0; x < Ellipsis.Size; x++){
+            if (Ellipsis_Offset + x < getWidth()){
+                Result[Ellipsis_Offset + x] = UTF(Ellipsis[x], composeAllTextRGBValues());
             }
         }
     }

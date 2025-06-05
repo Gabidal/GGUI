@@ -2108,9 +2108,9 @@ namespace GGUI{
 
     class name : public STYLING_INTERNAL::style_base{
     public:
-        const char* Value;
+        Compact_String Value;
 
-        constexpr name(const char* value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr name(Compact_String value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
 
         constexpr name(const GGUI::name& other) : style_base(other.Status), Value(other.Value){}
 
@@ -2137,7 +2137,7 @@ namespace GGUI{
 
     class title : public name{
     public:
-        constexpr title(const char* value, const VALUE_STATE Default = VALUE_STATE::VALUE) : name(value, Default){}
+        constexpr title(const Compact_String&& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : name(value, Default){}
 
         inline ~title() override { style_base::~style_base(); }
 
@@ -2158,6 +2158,10 @@ namespace GGUI{
         }
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+
+        constexpr bool empty(){
+            return Value.Empty();
+        }
     };
 
     class display : public STYLING_INTERNAL::BOOL_VALUE{
@@ -2277,10 +2281,12 @@ namespace GGUI{
 
     class styling{
     public:
-        position Position                                               = position(IVector3(0, 0, 0), VALUE_STATE::INITIALIZED);
+        position                        Position                        = position(IVector3(0, 0, 0), VALUE_STATE::INITIALIZED);
 
-        width Width                                                     = width(1, VALUE_STATE::INITIALIZED);
-        height Height                                                   = height(1, VALUE_STATE::INITIALIZED);
+        width                           Width                           = width(1, VALUE_STATE::INITIALIZED);
+        height                          Height                          = height(1, VALUE_STATE::INITIALIZED);
+
+        title                           Title                           = title(Compact_String(nullptr, 0, true), VALUE_STATE::INITIALIZED);
 
         enable_border                   Border_Enabled                  = enable_border(false, VALUE_STATE::INITIALIZED);
         text_color                      Text_Color                      = text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);

@@ -35,7 +35,6 @@ sources = [
   
   # Elements
   '../src/elements/element.cpp',
-  '../src/elements/window.cpp',
   '../src/elements/listView.cpp',
   '../src/elements/textField.cpp',
   '../src/elements/button.cpp', 

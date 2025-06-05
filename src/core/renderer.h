@@ -10,7 +10,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "../elements/window.h"
 #include "../elements/textField.h"
 #include "../elements/listView.h"
 #include "../elements/canvas.h"
@@ -88,7 +87,7 @@ namespace GGUI{
         extern atomic::Guard<std::unordered_map<int, styling>> Classes;
         extern std::unordered_map<std::string, int> Class_Names;
 
-        extern window* Main;  
+        extern element* Main;  
 
         extern std::unordered_map<GGUI::terminalCanvas*, bool> Multi_Frame_Canvas;
 
@@ -318,22 +317,11 @@ namespace GGUI{
     extern int getFreeClassID(std::string n);
 
     /**
-     * @brief Adds a new class with the specified name and styling.
-     * @details This function retrieves a unique class ID for the given name.
-     *          It then associates the provided styling with this class ID 
-     *          in the `Classes` map.
-     * 
-     * @param name The name of the class.
-     * @param Styling The styling to be associated with the class.
-     */
-    extern void addClass(std::string name, styling Styling);
-
-    /**
      * @brief Initializes the GGUI system and returns the main window.
      * 
      * @return The main window of the GGUI system.
      */
-    extern GGUI::window* initGGUI();
+    extern GGUI::element* initGGUI();
 
     /**
      * @brief Nests a text buffer into a parent buffer while considering the childs position and size.
