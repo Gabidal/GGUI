@@ -1533,7 +1533,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 void GGUI::element::applyColors(std::vector<UTF>& Result){
     // Loop over each UTF-8 character in the rendered string and set its color to the
     // color specified in the style.
-    const auto composedRGB = composeAllBorderRGBValues();
+    const auto composedRGB = composeAllTextRGBValues();
 
     for (auto& utf : Result){
         utf.Set_Color(composedRGB);
