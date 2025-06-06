@@ -534,7 +534,7 @@ namespace GGUI{
          * @brief Sets the foreground and background color of the UTF element.
          * @param primals A pair of RGB colors. The first element is the foreground color; the second is the background color.
          */
-        constexpr void Set_Color(const std::pair<RGB, RGB> primals) {
+        constexpr void Set_Color(const std::pair<RGB, RGB>& primals) {
             Foreground = primals.first;
             Background = primals.second;
         }

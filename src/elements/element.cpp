@@ -224,96 +224,6 @@ GGUI::element::~element(){
 }   
 
 /**
- * @brief Composes the RGB values of the text color and background color of the element.
- * 
- * This function will return a pair of RGB values, where the first element is the
- * color of the text and the second element is the color of the background.
- * 
- * If the element is focused, the function will return the RGB values of the focused
- * text color and background color. If the element is hovered, the function will
- * return the RGB values of the hovered text color and background color. Otherwise,
- * the function will return the RGB values of the normal text color and background
- * color.
- * 
- * @return A pair of RGB values representing the text color and background color of the element.
- */
-std::pair<GGUI::RGB, GGUI::RGB>  GGUI::element::composeAllTextRGBValues(){
-    if (Focused){
-        return {Style->Focus_Text_Color.Value.Get<RGB>(), Style->Focus_Background_Color.Value.Get<RGB>()};
-    }
-    else if (Hovered){
-        return {Style->Hover_Text_Color.Value.Get<RGB>(), Style->Hover_Background_Color.Value.Get<RGB>()};
-    }
-    else{
-        return {Style->Text_Color.Value.Get<RGB>(), Style->Background_Color.Value.Get<RGB>()};
-    }
-}
-
-/**
- * @brief Composes the RGB values of the text color of the element.
- * 
- * This function will return the RGB values of the text color of the element.
- * If the element is focused, the function will return the RGB values of the focused
- * text color. If the element is hovered, the function will return the RGB values of the hovered
- * text color. Otherwise, the function will return the RGB values of the normal text color.
- * 
- * @return The RGB color of the element's text.
- */
-GGUI::RGB GGUI::element::composeTextRGBValues(){
-    if (Focused){
-        return Style->Focus_Text_Color.Value.Get<RGB>();
-    }
-    else if (Hovered){
-        return Style->Hover_Text_Color.Value.Get<RGB>();
-    }
-    else{
-        return Style->Text_Color.Value.Get<RGB>();
-    }
-}
-
-/**
- * @brief Composes the RGB values of the background color of the element.
- * 
- * This function will return the RGB values of the background color of the element.
- * If the element is focused, the function will return the RGB values of the focused
- * background color. If the element is hovered, the function will return the RGB values of the hovered
- * background color. Otherwise, the function will return the RGB values of the normal background color.
- * 
- * @return The RGB color of the element's background.
- */
-GGUI::RGB GGUI::element::composeBackgroundRGBValues(){
-    if (Focused){
-        return Style->Focus_Background_Color.Value.Get<RGB>();
-    }
-    else if (Hovered){
-        return Style->Hover_Background_Color.Value.Get<RGB>();
-    }
-    else{
-        return Style->Background_Color.Value.Get<RGB>();
-    }
-}
-
-/**
- * @brief Composes the RGB values of the border color and background color of the element.
- * @details This function will return the RGB values of the border color and background color of the element.
- * If the element is focused, the function will return the RGB values of the focused border color and background color.
- * If the element is hovered, the function will return the RGB values of the hovered border color and background color.
- * Otherwise, the function will return the RGB values of the normal border color and background color.
- * @return A pair of RGB values representing the border color and background color of the element.
- */
-std::pair<GGUI::RGB, GGUI::RGB> GGUI::element::composeAllBorderRGBValues(){
-    if (Focused){
-        return {Style->Focus_Border_Color.Value.Get<RGB>(), Style->Focus_Border_Background_Color.Value.Get<RGB>()};
-    }
-    else if (Hovered){
-        return {Style->Hover_Border_Color.Value.Get<RGB>(), Style->Hover_Border_Background_Color.Value.Get<RGB>()};
-    }
-    else{
-        return {Style->Border_Color.Value.Get<RGB>(), Style->Border_Background_Color.Value.Get<RGB>()};
-    }
-}
-
-/**
  * @brief Sets the opacity of the element.
  * @details This function takes a float value between 0.0f and 1.0f and sets the
  * opacity of the element to that value. If the value is greater than 1.0f, the
@@ -1552,7 +1462,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         // Clean the color stain after applying the color system.
         Dirty.Clean(STAIN_TYPE::COLOR);
 
-        applyColors(this, Result);
+        applyColors(Result);
     }
 
     bool Connect_Borders_With_Parent = hasBorder();
@@ -1587,7 +1497,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
     //This will add the borders if necessary and the title of the window.
     if (Dirty.is(STAIN_TYPE::EDGE)){
-        addOverhead(Result);
+        renderBorders(Result);
         renderTitle(Result);
     }
 
@@ -1618,14 +1528,15 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
  * It is called after the element has been rendered and the result is stored in the
  * Result vector.
  *
- * @param w The window to apply the color system to.
  * @param Result The vector containing the rendered string.
  */
-void GGUI::element::applyColors(element* w, std::vector<UTF>& Result){
+void GGUI::element::applyColors(std::vector<UTF>& Result){
     // Loop over each UTF-8 character in the rendered string and set its color to the
     // color specified in the style.
+    const auto composedRGB = composeAllBorderRGBValues();
+
     for (auto& utf : Result){
-        utf.Set_Color(w->composeAllTextRGBValues());
+        utf.Set_Color(composedRGB);
     }
 }
 
@@ -1634,52 +1545,34 @@ void GGUI::element::applyColors(element* w, std::vector<UTF>& Result){
  *
  * @param Result The string to add the border to.
  */
-void GGUI::element::addOverhead(std::vector<UTF>& Result)
-{
+void GGUI::element::renderBorders(std::vector<UTF>& Result){
     Dirty.Clean(STAIN_TYPE::EDGE);
+    if (!hasBorder()) return;
 
-    if (!hasBorder())
-        return;
+    const unsigned int Width  = getWidth();
+    const unsigned int Height = getHeight();
+    const auto composedRGB    = composeAllBorderRGBValues();
+    const auto& Border        = Style->Border_Style;
 
-    GGUI::styled_border custom_border = Style->Border_Style;
+    // Corners
+    Result[0] = GGUI::UTF(Border.TOP_LEFT_CORNER, composedRGB);
+    Result[Width - 1] = GGUI::UTF(Border.TOP_RIGHT_CORNER, composedRGB);
+    Result[(Height - 1) * Width] = GGUI::UTF(Border.BOTTOM_LEFT_CORNER, composedRGB);
+    Result[(Height * Width) - 1] = GGUI::UTF(Border.BOTTOM_RIGHT_CORNER, composedRGB);
 
-    for (unsigned int y = 0; y < getHeight(); y++)
-    {
-        for (unsigned int x = 0; x < getWidth(); x++)
-        {
-            //top left corner
-            if (y == 0 && x == 0)
-            {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.TOP_LEFT_CORNER, composeAllBorderRGBValues());
-            }
-            //top right corner
-            else if (y == 0 && x == getWidth() - 1)
-            {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.TOP_RIGHT_CORNER, composeAllBorderRGBValues());
-            }
-            //bottom left corner
-            else if (y == getHeight() - 1 && x == 0)
-            {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.BOTTOM_LEFT_CORNER, composeAllBorderRGBValues());
-            }
-            //bottom right corner
-            else if (y == getHeight() - 1 && x == getWidth() - 1)
-            {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.BOTTOM_RIGHT_CORNER, composeAllBorderRGBValues());
-            }
-            //The roof border
-            else if (y == 0 || y == getHeight() - 1)
-            {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.HORIZONTAL_LINE, composeAllBorderRGBValues());
-            }
-            //The left border
-            else if (x == 0 || x == getWidth() - 1)
-            {
-                Result[y * getWidth() + x] = GGUI::UTF(custom_border.VERTICAL_LINE, composeAllBorderRGBValues());
-            }
-        }
+    // Top and Bottom horizontal borders
+    for (unsigned int x = 1; x < Width - 1; ++x) {
+        Result[x] = GGUI::UTF(Border.HORIZONTAL_LINE, composedRGB);                          // Top row
+        Result[(Height - 1) * Width + x] = GGUI::UTF(Border.HORIZONTAL_LINE, composedRGB);   // Bottom row
+    }
+
+    // Left and Right vertical borders
+    for (unsigned int y = 1; y < Height - 1; ++y) {
+        Result[y * Width] = GGUI::UTF(Border.VERTICAL_LINE, composedRGB);            // Left column
+        Result[y * Width + (Width - 1)] = GGUI::UTF(Border.VERTICAL_LINE, composedRGB); // Right column
     }
 }
+
 
 void GGUI::element::renderTitle(std::vector<UTF>& Result){
     if (Style->Title.empty())

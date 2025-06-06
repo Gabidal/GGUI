@@ -27,76 +27,76 @@ namespace GGUI{
     // EVALs
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
-    void position::Evaluate(styling* parent){
+    void position::Evaluate(const styling* parent){
         X.Evaluate(Max(parent->Width.Get() - (parent->Border_Enabled.Value * 2), 1));
         Y.Evaluate(Max(parent->Height.Get() - (parent->Border_Enabled.Value * 2), 1));
         // Z.Evaluate(parent->Position.Get().Z);    // Since child as always parent.Z+1, there is no world where this is useful.
     }
 
-    void width::Evaluate(styling* parent){
+    void width::Evaluate(const styling* parent){
         Value.Evaluate(Max(parent->Width.Get() - (parent->Border_Enabled.Value * 2), 1));
     }
 
-    void height::Evaluate(styling* parent){
+    void height::Evaluate(const styling* parent){
         Value.Evaluate(Max(parent->Height.Get() - (parent->Border_Enabled.Value * 2), 1));
     }
 
-    void text_color::Evaluate(styling* parent){
+    void text_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Text_Color.Value.Get<RGB>());
     }
 
-    void background_color::Evaluate(styling* parent){
+    void background_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Background_Color.Value.Get<RGB>());
     }
 
-    void border_color::Evaluate(styling* parent){
+    void border_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Border_Color.Value.Get<RGB>());
     }
 
-    void border_background_color::Evaluate(styling* parent){
+    void border_background_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Border_Background_Color.Value.Get<RGB>());
     }
 
-    void hover_border_color::Evaluate(styling* parent){
+    void hover_border_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Hover_Border_Color.Value.Get<RGB>());
     }
 
-    void hover_text_color::Evaluate(styling* parent){
+    void hover_text_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Hover_Text_Color.Value.Get<RGB>());
     }
 
-    void hover_background_color::Evaluate(styling* parent){
+    void hover_background_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Hover_Background_Color.Value.Get<RGB>());
     }
 
-    void hover_border_background_color::Evaluate(styling* parent){
+    void hover_border_background_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Hover_Border_Background_Color.Value.Get<RGB>());
     }
 
-    void focus_border_color::Evaluate(styling* parent){
+    void focus_border_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Focus_Border_Color.Value.Get<RGB>());
     }
 
-    void focus_text_color::Evaluate(styling* parent){
+    void focus_text_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Focus_Text_Color.Value.Get<RGB>());
     }
 
-    void focus_background_color::Evaluate(styling* parent){
+    void focus_background_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Focus_Background_Color.Value.Get<RGB>());
     }
 
-    void focus_border_background_color::Evaluate(styling* parent){
+    void focus_border_background_color::Evaluate(const styling* parent){
         Value.Evaluate(parent->Focus_Border_Background_Color.Value.Get<RGB>());
     }
 
-    void margin::Evaluate(styling* parent){
+    void margin::Evaluate(const styling* parent){
         Top.Evaluate(parent->Margin.Top.Get<unsigned int>());
         Bottom.Evaluate(parent->Margin.Bottom.Get<unsigned int>());
         Left.Evaluate(parent->Margin.Left.Get<unsigned int>());
         Right.Evaluate(parent->Margin.Right.Get<unsigned int>());
     }
 
-    void shadow::Evaluate(styling* parent){
+    void shadow::Evaluate(const styling* parent){
         Direction.Evaluate(parent->Shadow.Direction.Get<FVector3>());
         Color.Evaluate(parent->Shadow.Color.Get<RGB>());
     }
@@ -590,18 +590,18 @@ namespace GGUI{
             reference = Get_Reference(owner);
         }
 
-        text_color previous_text_color = Text_Color;
-        background_color previous_background_color = Background_Color;
-        border_color previous_border_color = Border_Color;
-        border_background_color previous_border_background_color = Border_Background_Color;
-        hover_border_color previous_hover_border_color = Hover_Border_Color;
-        hover_text_color previous_hover_text_color = Hover_Text_Color;
-        hover_background_color previous_hover_background_color = Hover_Background_Color;
-        hover_border_background_color previous_hover_border_background_color = Hover_Border_Background_Color;
-        focus_border_color previous_focus_border_color = Focus_Border_Color;
-        focus_text_color previous_focus_text_color = Focus_Text_Color;
-        focus_background_color previous_focus_background_color = Focus_Background_Color;
-        focus_border_background_color previous_focus_border_background_color = Focus_Border_Background_Color;
+        static text_color previous_text_color = Text_Color;
+        static background_color previous_background_color = Background_Color;
+        static border_color previous_border_color = Border_Color;
+        static border_background_color previous_border_background_color = Border_Background_Color;
+        static hover_border_color previous_hover_border_color = Hover_Border_Color;
+        static hover_text_color previous_hover_text_color = Hover_Text_Color;
+        static hover_background_color previous_hover_background_color = Hover_Background_Color;
+        static hover_border_background_color previous_hover_border_background_color = Hover_Border_Background_Color;
+        static focus_border_color previous_focus_border_color = Focus_Border_Color;
+        static focus_text_color previous_focus_text_color = Focus_Text_Color;
+        static focus_background_color previous_focus_background_color = Focus_Background_Color;
+        static focus_border_background_color previous_focus_border_background_color = Focus_Border_Background_Color;
 
         Text_Color.Evaluate(reference);
         Background_Color.Evaluate(reference);
@@ -617,18 +617,18 @@ namespace GGUI{
         Focus_Border_Background_Color.Evaluate(reference);
 
         // check if any of the colors are still the same
-        return previous_text_color != Text_Color ||
-               previous_background_color != Background_Color ||
-               previous_border_color != Border_Color ||
-               previous_border_background_color != Border_Background_Color ||
-               previous_hover_border_color != Hover_Border_Color ||
-               previous_hover_text_color != Hover_Text_Color ||
-               previous_hover_background_color != Hover_Background_Color ||
-               previous_hover_border_background_color != Hover_Border_Background_Color ||
-               previous_focus_border_color != Focus_Border_Color ||
-               previous_focus_text_color != Focus_Text_Color ||
-               previous_focus_background_color != Focus_Background_Color || 
-               previous_focus_border_background_color != Focus_Border_Background_Color;
+        return previous_text_color                      != Text_Color                       ||
+               previous_background_color                != Background_Color                 ||
+               previous_border_color                    != Border_Color                     ||
+               previous_border_background_color         != Border_Background_Color          ||
+               previous_hover_border_color              != Hover_Border_Color               ||
+               previous_hover_text_color                != Hover_Text_Color                 ||
+               previous_hover_background_color          != Hover_Background_Color           ||
+               previous_hover_border_background_color   != Hover_Border_Background_Color    ||
+               previous_focus_border_color              != Focus_Border_Color               ||
+               previous_focus_text_color                != Focus_Text_Color                 ||
+               previous_focus_background_color          != Focus_Background_Color           || 
+               previous_focus_border_background_color   != Focus_Border_Background_Color;
     }
 
     /**

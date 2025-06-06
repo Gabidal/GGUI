@@ -140,12 +140,12 @@ namespace GGUI{
             // Clean the color stain after applying the color system.
             Dirty.Clean(STAIN_TYPE::COLOR);
 
-            applyColors(this, Result);
+            applyColors(Result);
         }
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(STAIN_TYPE::EDGE)){
-            addOverhead(Result);
+            renderBorders(Result);
             renderTitle(Result);
         }
 

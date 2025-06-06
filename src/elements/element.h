@@ -1040,7 +1040,7 @@ namespace GGUI{
          *
          * @param Result The string to add the border to.
          */
-        void addOverhead(std::vector<UTF>& Result);
+        void renderBorders(std::vector<UTF>& Result);
 
         void renderTitle(std::vector<UTF>& Result);
 
@@ -1051,10 +1051,9 @@ namespace GGUI{
          * It is called after the element has been rendered and the result is stored in the
          * Result vector.
          *
-         * @param w The window to apply the color system to.
          * @param Result The vector containing the rendered string.
          */
-        void applyColors(element* w, std::vector<UTF>& Result);
+        void applyColors(std::vector<UTF>& Result);
 
         /**
          * @brief Resizes the element to fit the size of its parent element.
@@ -1133,31 +1132,17 @@ namespace GGUI{
          * 
          * @return A pair of RGB values representing the text color and background color of the element.
          */
-        std::pair<RGB, RGB>  composeAllTextRGBValues();
-
-        /**
-         * @brief Composes the RGB values of the text color of the element.
-         * 
-         * This function will return the RGB values of the text color of the element.
-         * If the element is focused, the function will return the RGB values of the focused
-         * text color. If the element is hovered, the function will return the RGB values of the hovered
-         * text color. Otherwise, the function will return the RGB values of the normal text color.
-         * 
-         * @return The RGB color of the element's text.
-         */
-        RGB  composeTextRGBValues();
-        
-        /**
-         * @brief Composes the RGB values of the background color of the element.
-         * 
-         * This function will return the RGB values of the background color of the element.
-         * If the element is focused, the function will return the RGB values of the focused
-         * background color. If the element is hovered, the function will return the RGB values of the hovered
-         * background color. Otherwise, the function will return the RGB values of the normal background color.
-         * 
-         * @return The RGB color of the element's background.
-         */
-        RGB  composeBackgroundRGBValues();
+        constexpr std::pair<RGB, RGB>  composeAllTextRGBValues(){
+            if (Focused){
+                return {Style->Focus_Text_Color.Value.Get<RGB>(), Style->Focus_Background_Color.Value.Get<RGB>()};
+            }
+            else if (Hovered){
+                return {Style->Hover_Text_Color.Value.Get<RGB>(), Style->Hover_Background_Color.Value.Get<RGB>()};
+            }
+            else{
+                return {Style->Text_Color.Value.Get<RGB>(), Style->Background_Color.Value.Get<RGB>()};
+            }
+        }
 
         /**
          * @brief Composes the RGB values of the border color and background color of the element.
@@ -1167,7 +1152,17 @@ namespace GGUI{
          * Otherwise, the function will return the RGB values of the normal border color and background color.
          * @return A pair of RGB values representing the border color and background color of the element.
          */
-        std::pair<RGB, RGB>  composeAllBorderRGBValues();
+        constexpr std::pair<RGB, RGB> composeAllBorderRGBValues(){
+            if (Focused){
+                return {Style->Focus_Border_Color.Value.Get<RGB>(), Style->Focus_Border_Background_Color.Value.Get<RGB>()};
+            }
+            else if (Hovered){
+                return {Style->Hover_Border_Color.Value.Get<RGB>(), Style->Hover_Border_Background_Color.Value.Get<RGB>()};
+            }
+            else{
+                return {Style->Border_Color.Value.Get<RGB>(), Style->Border_Background_Color.Value.Get<RGB>()};
+            }
+        }
 
         /**
          * @brief Returns the name of the element.

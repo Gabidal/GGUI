@@ -2161,35 +2161,50 @@ namespace GGUI{
      *          to determine where encoding strips start and end.
      */
     void encodeBuffer(std::vector<GGUI::UTF>& Buffer) {
-        
-        // Initialize the first and last elements with start and end flags respectively.
-        Buffer[0].Set_Flag(ENCODING_FLAG::START);
-        Buffer[Buffer.size() - 1].Set_Flag(ENCODING_FLAG::END);
+        const size_t Count = Buffer.size();
+        if (Count == 0) return;
 
-        // Iterate through the buffer to determine encoding strip positions.
-        for (unsigned int Index = 1; Index < Buffer.size() - 1; Index++) {
+        // Set START flag for the first element
+        Buffer.front().Set_Flag(ENCODING_FLAG::START);
 
-            bool Same_Colours_As_Previous = Buffer[Index].Background == Buffer[Index - 1].Background &&
-                                            Buffer[Index].Foreground == Buffer[Index - 1].Foreground;
-            bool Same_Colours_As_Next = Buffer[Index].Background == Buffer[Index + 1].Background &&
-                                        Buffer[Index].Foreground == Buffer[Index + 1].Foreground;
-
-            // Set end flag if current colors differ from the next.
-            if (!Same_Colours_As_Next) {
-                Buffer[Index].Set_Flag(ENCODING_FLAG::END);
-            }
-
-            // Set start flag if current colors differ from the previous.
-            if (!Same_Colours_As_Previous) {
-                Buffer[Index].Set_Flag(ENCODING_FLAG::START);
-            }
+        // If only one element, also mark as END
+        if (Count == 1) {
+            Buffer.front().Set_Flag(ENCODING_FLAG::END);
+            return;
         }
 
-        // Ensure the last element is marked correctly if the second to last was an ending node.
-        if (Buffer[Buffer.size() - 2].Is(ENCODING_FLAG::END)) {
-            Buffer[Buffer.size() - 1].Set_Flag(ENCODING_FLAG::START | ENCODING_FLAG::END);
+        // Cache previous colors
+        auto PrevFg = Buffer.front().Foreground;
+        auto PrevBg = Buffer.front().Background;
+
+        for (size_t i = 1; i < Count - 1; i++) {
+            auto& Curr = Buffer[i];
+            const auto& Next = Buffer[i + 1];
+
+            bool SameAsPrev = (Curr.Foreground == PrevFg) && (Curr.Background == PrevBg);
+            bool SameAsNext = (Curr.Foreground == Next.Foreground) && (Curr.Background == Next.Background);
+
+            if (!SameAsPrev)
+                Curr.Set_Flag(ENCODING_FLAG::START);
+
+            if (!SameAsNext)
+                Curr.Set_Flag(ENCODING_FLAG::END);
+
+            PrevFg = Curr.Foreground;
+            PrevBg = Curr.Background;
+        }
+
+        // Handle the last element
+        auto& Last = Buffer.back();
+        Last.Set_Flag(ENCODING_FLAG::END);
+
+        // Compare last with second-last for possible START flag
+        const auto& SecondLast = Buffer[Count - 2];
+        if (!(Last.Foreground == SecondLast.Foreground) || !(Last.Background == SecondLast.Background)) {
+            Last.Set_Flag(ENCODING_FLAG::START);
         }
     }
+
 
     /**
      * @brief Notifies all global buffer capturers about the latest data to be captured.

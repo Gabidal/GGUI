@@ -103,7 +103,7 @@ namespace GGUI{
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(STAIN_TYPE::EDGE)){
-            addOverhead(Result);
+            renderBorders(Result);
             renderTitle(Result);
         }
 
@@ -335,7 +335,7 @@ namespace GGUI{
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(STAIN_TYPE::EDGE)){
-            addOverhead(Result);
+            renderBorders(Result);
             renderTitle(Result);
         }
 
