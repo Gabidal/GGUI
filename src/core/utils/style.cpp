@@ -315,7 +315,7 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE align::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE anchor::Embed_Value(styling* host, [[maybe_unused]] element* owner){
         host->Align = *this;
 
         return STAIN_TYPE::CLEAN;
@@ -377,6 +377,11 @@ namespace GGUI{
     STAIN_TYPE title::Embed_Value([[maybe_unused]] styling* host, element* owner){
         owner->setTitle(Value);
 
+        if (owner->hasEmptyName()){
+            // If the name is empty, then set the name to the title.
+            owner->setName(To_String(Value));
+        }
+
         return STAIN_TYPE::CLEAN;
     }
 
@@ -413,10 +418,17 @@ namespace GGUI{
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
 
-            this->Value(owner);
-
-            return true;
+            return this->Value(owner);
         });
+
+        return STAIN_TYPE::CLEAN;
+    }
+
+    STAIN_TYPE on_input::Embed_Value([[maybe_unused]] styling* host, element* owner){
+        if (dynamic_cast<textField*>(owner))
+            ((textField*)owner)->input(Value);
+        else
+            throw std::runtime_error("The on_input attribute can only be used on textField type elements.");
 
         return STAIN_TYPE::CLEAN;
     }

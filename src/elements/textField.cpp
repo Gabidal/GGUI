@@ -156,11 +156,11 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::DEEP)) {
             Dirty.Clean(STAIN_TYPE::DEEP);
 
-            if (Style->Align.Value == ALIGN::LEFT)
+            if (Style->Align.Value == ANCHOR::LEFT)
                 alignTextLeft(Result);
-            else if (Style->Align.Value == ALIGN::RIGHT)
+            else if (Style->Align.Value == ANCHOR::RIGHT)
                 alignTextRight(Result);
-            else if (Style->Align.Value == ALIGN::CENTER)
+            else if (Style->Align.Value == ANCHOR::CENTER)
                 alignTextCenter(Result);
         }
 
@@ -339,7 +339,7 @@ namespace GGUI{
      *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
      *          dirty and updates the frame.
      */
-    void textField::input(std::function<void(char)> Then) {
+    void textField::input(std::function<void(textField*, char)> Then) {
         Action* key_press = new Action(
             Constants::KEY_PRESS,
             [this, Then](GGUI::Event* e) {
@@ -348,7 +348,7 @@ namespace GGUI{
                     GGUI::Input* input = (GGUI::Input*)e;
 
                     //First call the function with the user's input
-                    Then(input->Data);
+                    Then(this, input->Data);
                     updateFrame();
 
                     return true;
@@ -369,7 +369,7 @@ namespace GGUI{
                     GGUI::Input* input = (GGUI::Input*)e;
 
                     //First call the function with the user's input
-                    Then(input->Data);
+                    Then(this, input->Data);
                     updateFrame();
 
                     return true;

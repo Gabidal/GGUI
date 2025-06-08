@@ -121,7 +121,7 @@ namespace GGUI{
          *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
          *          dirty and updates the frame.
          */
-        void input(std::function<void(char)> Then);
+        void input(std::function<void(textField*, char)> Then);
 
         element* safeMove() const override {
             return new textField();

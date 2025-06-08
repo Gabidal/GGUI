@@ -1,35 +1,46 @@
 #include "ggui.h"
 
-#include <vector>
-
 using namespace std;
+using namespace GGUI;
+using namespace progress;
 
-void Main(){
-    while (true)
-        for (auto i : GGUI::Main->Get_Elements<GGUI::Progress_Bar>()){
-            i->Set_Progress(i->Get_Progress() + 0.01);
+void update(){
+    while (true){
+        for (auto* i : GGUI::INTERNAL::Main->getElements<Bar>()){
+            i->updateProgress(0.01);
         }
+
+        GGUI::INTERNAL::SLEEP(100);
+    }
 }
 
-int main(int Argument_Count, char** Arguments){
-    GGUI::GGUI([=](){
+int main(){
+    GGUI::GGUI(
+        // arrow like progressbar
+        node(new Bar(
+            width(1.0f) | 
+            part(partType::TAIL, COLOR::GREEN, '#') | 
+            part(partType::BODY, COLOR::GREEN, '=') | 
+            part(partType::HEAD, COLOR::GREEN, '>')| 
+            part(partType::EMPTY, COLOR::GRAY)
+        )) | 
 
-        GGUI::Progress_Bar* arrow = new GGUI::Progress_Bar(GGUI::Main->Get_Width(), 1, GGUI::Progress_Bar_Styles::Arrow);
-        GGUI::Progress_Bar* slim = new GGUI::Progress_Bar(GGUI::Main->Get_Width(), 1, GGUI::Progress_Bar_Styles::Default);
-        GGUI::Progress_Bar* blocky = new GGUI::Progress_Bar(GGUI::Main->Get_Width(), 3, GGUI::Progress_Bar_Styles::Blocky);
-        
-        slim->Set_Position({0, arrow->Get_Height()});
-        blocky->Set_Position({0, slim->Get_Height() + slim->Get_Position().Y});
+        // Default progressbar
+        node(new Bar(
+            width(1.0f) // Faults to the default style.
+        )) | 
 
-        GGUI::Main->Add_Child(arrow);
-        GGUI::Main->Add_Child(slim);
-        GGUI::Main->Add_Child(blocky);
-    });
+        // Blocky progressbar
+        node(new Bar(
+            width(1.0f) | height(3) | 
+            part(partType::HEAD, COLOR::BLUE, SYMBOLS::FULL_BLOCK) |
+            part(partType::BODY, COLOR::BLUE, SYMBOLS::FULL_BLOCK) | 
+            part(partType::TAIL, COLOR::BLUE, SYMBOLS::FULL_BLOCK) | 
+            part(partType::EMPTY, COLOR::RED)
+        ))
+    );
 
-    Main();
+    update();
 
-    GGUI::SLEEP(INT64_MAX);
-    
-    // Then exit properly
-    GGUI::Exit();
+    GGUI::INTERNAL::SLEEP(INT32_MAX);
 }

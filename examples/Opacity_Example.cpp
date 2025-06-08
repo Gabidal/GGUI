@@ -1,35 +1,27 @@
 #include "ggui.h"
 
-#include <vector>
-
 using namespace std;
+using namespace GGUI;
 
-int main(int Argument_Count, char** Arguments){
-    GGUI::GGUI([&](){
+int main(){
+    GGUI::GGUI(
+        node(new element(
+            name("A") | width(20) | height(10) | 
+            text_color(COLOR::MAGENTA) | background_color(COLOR::RED) | 
+            opacity(0.5f) | position(10, 20)
+        )) | 
+        node(new element(
+            name("B") | width(20) | height(10) | 
+            text_color(COLOR::YELLOW) | background_color(COLOR::GREEN) | 
+            opacity(0.5f) | position(20, 12)
+        )) | 
+        node(new element(
+            name("C") | width(20) | height(10) | 
+            text_color(COLOR::CYAN) | background_color(COLOR::BLUE) | 
+            opacity(0.5f) | position(15, 17)
+        )) | 
+        background_color(COLOR::WHITE)
+    );
 
-        GGUI::Window* A = new GGUI::Window("A", 20, 10, GGUI::COLOR::MAGENTA, GGUI::COLOR::RED);
-        GGUI::Window* B = new GGUI::Window("B", 20, 10, GGUI::COLOR::YELLOW, GGUI::COLOR::GREEN);
-        GGUI::Window* C = new GGUI::Window("C", 20, 10, GGUI::COLOR::CYAN, GGUI::COLOR::BLUE);
-
-        A->Set_Opacity(0.5f);
-        B->Set_Opacity(0.5f);
-        C->Set_Opacity(0.5f);
-
-        GGUI::Main->Add_Child(A);
-        GGUI::Main->Add_Child(B);
-        GGUI::Main->Add_Child(C);
-
-        A->Set_Position({10, 10});
-        B->Set_Position({20, 12});
-        C->Set_Position({15, 17});
-
-        GGUI::Main->Set_Background_Color(GGUI::COLOR::WHITE);
-
-        // B->Show_Shadow(GGUI::COLOR::BLUE, 1, 10.0f);
-    });
-
-    GGUI::SLEEP(INT32_MAX);
-    
-    // Then exit properly
-    GGUI::Exit();
+    GGUI::INTERNAL::SLEEP(INT32_MAX);
 }

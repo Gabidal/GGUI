@@ -592,6 +592,15 @@ namespace GGUI{
         void setPosition(IVector3* c);
 
         /**
+         * @brief Updates the position of the element by adding the given vector.
+         *
+         * This function increments the current position of the element by the specified vector `v`.
+         *
+         * @param v The vector to add to the element's current position.
+         */
+        void updatePosition(IVector3 v);
+
+        /**
          * @brief Get the position of the element.
          * @details This function retrieves the position of the element from its style.
          * @return The position of the element as an IVector3 object.
@@ -893,7 +902,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        void setAlign(ALIGN a);
+        void setAnchor(ANCHOR Anchor);
 
         /**
          * @brief Sets the alignment of the element.
@@ -902,7 +911,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        constexpr ALIGN getAlign(){ return Style->Align.Value; }
+        constexpr ANCHOR getAlign(){ return Style->Align.Value; }
 
         /**
          * @brief Sets the flow priority of the element.

@@ -3,6 +3,7 @@
 #include <vector>
 
 using namespace std;
+using namespace GGUI;
 
 // IDEAS:
 /*
@@ -11,146 +12,95 @@ using namespace std;
 
 */
 
-string MENU_NAME = "menu";
-string CAMPAING_NAME = "campaing";
-string CANVAS_NAME = "canvas";
-string TEXT_INPUT_NAME = "text_input";
+const char* MENU_NAME = "menu";
+const char* CAMPAIGN_NAME = "campaign";
+const char* CANVAS_NAME = "canvas";
+const char* TEXT_INPUT_NAME = "text_input";
+const char* EXIT_NAME = "exit";
 
-GGUI::Text_Field* User_Input;
-GGUI::Text_Field* Output;
-GGUI::Canvas* Map_Canvas;
+GGUI::textField* User_Input;
+GGUI::textField* Output;
+GGUI::canvas* Map_Canvas;
 
-void Input_Handler(string input){
-
-    Output->Set_Text(Output->Get_Text() + "\n" + input);
-
+void inputHandler(string input){
+    Output->setText(Output->getText() + "\n" + input);
 }
 
 // Switches from the 'From' ID to the 'To' ID
-void Switch(string From, string To, GGUI::Element* parent){
-
-    GGUI::Element* From_Element = parent->Get_Element(From);
-    GGUI::Element* To_Element = parent->Get_Element(To);
+void switchDisplayedElements(const char* From, const char* To){
+    GGUI::element* From_Element = INTERNAL::Main->getElement(From);
+    GGUI::element* To_Element = INTERNAL::Main->getElement(To);
 
     // Run these changes in safe mode.
-    GGUI::Pause_GGUI([From_Element, To_Element](){
-        From_Element->Display(false);
-        To_Element->Display(true);
+    GGUI::pauseGGUI([From_Element, To_Element](){
+        From_Element->display(false);
+        To_Element->display(true);
     });
-
 }
 
-void Menu(){
-    GGUI::Button* Campaing_Button = new GGUI::Button(
-        CAMPAING_NAME,
-        [](GGUI::Button* This){
-            GGUI::Mouse_Movement_Enabled = false;;
-            User_Input->Focus();
-            Switch(MENU_NAME, CAMPAING_NAME, This->Get_Parent());
-        }
-    );
-
-    GGUI::Button* Exit_Button = new GGUI::Button(
-        "Exit",
-        [](GGUI::Button* This){
-            exit(0);
-        }
-    );
-
-    GGUI::List_View* menu = new GGUI::List_View(
-        GGUI::Main,
-        {
-            Campaing_Button,
-            Exit_Button
-        },
-        GGUI::DIRECTION::COLUMN
-    );
-
-    menu->Set_Name(MENU_NAME);
-    menu->Set_Width(GGUI::Main->Get_Width());
-    menu->Set_Height(GGUI::Main->Get_Height());
+node initMenu(){
+    return node(new listView(
+        flow_priority(DIRECTION::COLUMN) |
+        width(1.0f) | height(1.0f) | 
+        name(MENU_NAME) | 
+        node(new button(
+            text(CAMPAIGN_NAME) | 
+            on_click([]([[maybe_unused]] element* self){
+                self->focus();
+                switchDisplayedElements(MENU_NAME, CAMPAIGN_NAME);
+                return true;
+            })
+        )) | 
+        node(new button(
+            text(EXIT_NAME) | 
+            on_click([]([[maybe_unused]] element* self){
+                EXIT();
+                return true;
+            })
+        ))
+    ));
 }
 
-void Adventure_Mode(GGUI::Window* Parent){
+node initCampaign(){
+    constexpr int inputFieldHeight = 3;
 
+    return node(new element(
+        name(CAMPAIGN_NAME) | display(false) | 
+        width(1.0f) | height(1.0f) |
 
+        // Top right canvas
+        node(new canvas(
+            width(0.5f) | height(0.5f) | position(0.5f, 0) | name(CANVAS_NAME) | enable_border(true)
+        )) |
 
+        // Bottom left, text input field
+        node(new textField(
+            width(0.5f) | height(inputFieldHeight) | 
+            name(TEXT_INPUT_NAME) | enable_border(true) | 
+            position(STYLES::bottom) | allow_overflow(true) | 
+            on_input([](textField* self, char input){
+                if (input == '\n'){
+                    string text = self->getText();
+                    self->setText("");
+                    inputHandler(text);
+                }
+                else{
+                    self->setText(self->getText() + input);
+                }
+            })
+        )) | 
+
+        // top left, input history
+        node(new textField(
+            width(0.5f) | height(0.5f) | enable_border(true) | allow_overflow(true)
+        )) 
+    ));
 }
 
-void Campaing(){
-    GGUI::Window* Campaing = new GGUI::Window();
-
-    Campaing->Set_Width(GGUI::Main->Get_Width());
-    Campaing->Set_Height(GGUI::Main->Get_Height());
-
-    // Make sizes for the map to be 1/4 of the screen space.
-    unsigned int Screen_Division_Width = GGUI::Main->Get_Width() / 2;
-    unsigned int Screen_Division_Height = GGUI::Main->Get_Height() / 2; 
-
-    // Set the map canvas to the top right corner.
-    Map_Canvas = new GGUI::Canvas(
-        Screen_Division_Width,
-        Screen_Division_Height,
-        GGUI::Coordinates(Screen_Division_Width, 0)
+int main(){
+    GGUI::GGUI(
+        initMenu() | initCampaign()
     );
 
-    Map_Canvas->Set_Name(CANVAS_NAME);
-    Map_Canvas->Show_Border(true);
-
-    // The user input field is on the bottom left corner.
-    User_Input = new GGUI::Text_Field();
-    User_Input->Set_Width(Screen_Division_Width);
-    User_Input->Set_Height(3);  // one row for text and two for the borders
-    User_Input->Set_Name(TEXT_INPUT_NAME);
-    User_Input->Show_Border(true);
-    User_Input->Set_Position({0, Screen_Division_Height * 2 - User_Input->Get_Height() + 1});
-    User_Input->Allow_Overflow(true);
-
-    User_Input->Input(
-        [=](char input){
-            if (input == '\n'){
-                string text = User_Input->Get_Text();
-                User_Input->Set_Text("");
-                Input_Handler(text);
-            }   
-            else{
-                User_Input->Set_Text(User_Input->Get_Text() + input);
-            }
-        }
-    ); 
-
-    Output = new GGUI::Text_Field();
-    Output->Set_Width(Screen_Division_Width);
-    Output->Set_Height(Screen_Division_Height * 2 - User_Input->Get_Height() + 2);
-    Output->Set_Position({0, 0});
-    Output->Show_Border(true);
-    Output->Allow_Overflow(true);
-
-    GGUI::Window* Action_Bar = new GGUI::Window();
-    Action_Bar->Set_Width(Screen_Division_Width);
-    Action_Bar->Set_Height(Screen_Division_Height + 2);
-    Action_Bar->Set_Position({Screen_Division_Width, Screen_Division_Height - 1});
-    Action_Bar->Show_Border(true);
-
-    Adventure_Mode(Action_Bar);
-
-    Campaing->Add_Child(Map_Canvas);
-    Campaing->Add_Child(Action_Bar);
-    Campaing->Add_Child(User_Input);
-    Campaing->Add_Child(Output);
-
-    Campaing->Set_Name(CAMPAING_NAME);
-    Campaing->Display(false);
-
-    GGUI::Main->Add_Child(Campaing);
-}
-
-int main(int Argument_Count, char** Arguments){
-    GGUI::GGUI([=](){
-        Menu();
-        Campaing();
-    }, INT32_MAX);
-    
-    // Then exit properly
-    GGUI::Exit();
+    GGUI::INTERNAL::SLEEP(UINT32_MAX);
 }

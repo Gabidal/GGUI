@@ -18,7 +18,7 @@ namespace GGUI{
 
         // Add a centered text field as a child element
         addChild(new textField(
-            align(ALIGN::CENTER)
+            anchor(ANCHOR::CENTER)
             // text(Text.c_str()) |     // The text is given from the Styling s.
             // width(1.0f) | height(1.0f)
         ));

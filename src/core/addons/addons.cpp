@@ -23,7 +23,7 @@ namespace GGUI{
      */
     void initAddons(){
         // Call addon initializers.
-        initInspectTool();
+        // initInspectTool();
 
         // Finally after all addons are loaded
         for (auto* a : Addons){
@@ -125,7 +125,7 @@ namespace GGUI{
                         
             // Add a count for how many UTF are being streamed.
             node(new textField(
-                align(ALIGN::LEFT) | 
+                anchor(ANCHOR::LEFT) | 
                 width(1.0f) |
                 height(9) |
                 // Set the name of the text field to "STATS"

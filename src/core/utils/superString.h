@@ -453,6 +453,24 @@ namespace GGUI{
         return result;
     }
 
+    inline std::string To_String(Compact_String& cstr){
+        // Resize a std::string to the total size.
+        std::string result;
+        result.resize(cstr.Size);
+
+        // Copy the contents of the Compact_String into the std::string.
+        if (cstr.Size > 1){
+            // Replace the current contents of the string with the contents of the Unicode data.
+            result.replace(0, cstr.Size, cstr.Get_Unicode());
+        }
+        else{
+            // Add the single character to the string.
+            result[0] = cstr.Get_Ascii();
+        }
+
+        return result;
+    }
+
 }
 
 #endif

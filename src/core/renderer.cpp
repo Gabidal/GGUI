@@ -2126,6 +2126,9 @@ namespace GGUI{
             // Now recursively go down in the App AST nodes and Build each node.
             INTERNAL::Main->embedStyles();
 
+            // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
+            INTERNAL::Main->check(STATE::INIT);
+
             // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
             initAddons();
         });

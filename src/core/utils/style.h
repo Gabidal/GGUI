@@ -14,6 +14,7 @@
 namespace GGUI{
     // Externies
     class element;
+    class textField;
     class styling;
     enum class STAIN_TYPE;
     namespace INTERNAL{
@@ -39,7 +40,7 @@ namespace GGUI{
         }
     }
 
-    enum class ALIGN{
+    enum class ANCHOR{
         UP,
         DOWN,
         LEFT,
@@ -991,6 +992,19 @@ namespace GGUI{
                 return Vector(X - other.X, Y - other.Y, Z - other.Z);
             }
         
+            inline void operator+=(const IVector3 v){
+                // check if debug mode is on
+                #ifdef GGUI_DEBUG
+                assert(X.Get_Type() == EVALUATION_TYPE::DEFAULT && "X is not a default evaluation type");
+                assert(Y.Get_Type() == EVALUATION_TYPE::DEFAULT && "Y is not a default evaluation type");
+                assert(Z.Get_Type() == EVALUATION_TYPE::DEFAULT && "Z is not a default evaluation type");
+                #endif
+
+                X.Direct<int>() += v.X;
+                Y.Direct<int>() += v.Y;
+                Z.Direct<int>() += v.Z;
+            }
+
             /**
              * @brief Evaluate the Vector value.
              * @param owner The Styling object that the Vector is a part of.
@@ -1132,6 +1146,10 @@ namespace GGUI{
         constexpr position(const IVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
 
         constexpr position(const Vector&& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
+            Transform_Center_To_Top_Left_Origin();
+        }
+
+        constexpr position(const Vector& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
             Transform_Center_To_Top_Left_Origin();
         }
 
@@ -1886,19 +1904,19 @@ namespace GGUI{
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
 
-    class align : public STYLING_INTERNAL::ENUM_VALUE<ALIGN>{
+    class anchor : public STYLING_INTERNAL::ENUM_VALUE<ANCHOR>{
     public:
-        constexpr align(const ALIGN value, const VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
+        constexpr anchor(const ANCHOR value, const VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
 
-        inline ~align() override { style_base::~style_base(); }
+        inline ~anchor() override { style_base::~style_base(); }
 
         inline style_base* Copy() const override {
-            return new align(*this);
+            return new anchor(*this);
         }
 
-        constexpr align(const GGUI::align& other) : ENUM_VALUE(other.Value, other.Status){}
+        constexpr anchor(const GGUI::anchor& other) : ENUM_VALUE(other.Value, other.Status){}
 
-        constexpr align& operator=(const align& other) = default;
+        constexpr anchor& operator=(const anchor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -2252,9 +2270,9 @@ namespace GGUI{
 
     class on_click : public STYLING_INTERNAL::style_base{
     public:
-        void (*Value)(element* self);
+        bool (*Value)(element* self);
 
-        constexpr on_click(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr on_click(bool (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
 
         constexpr on_click(const GGUI::on_click& other) : style_base(other.Status), Value(other.Value){}
 
@@ -2265,6 +2283,35 @@ namespace GGUI{
         }
 
         constexpr on_click& operator=(const on_click& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Value = other.Value;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+    };
+
+    class on_input : public STYLING_INTERNAL::style_base{
+    public:
+        void (*Value)(textField* self, char c);
+
+        constexpr on_input(void (*value)(textField* self, char c), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+
+        constexpr on_input(const GGUI::on_input& other) : style_base(other.Status), Value(other.Value){}
+
+        inline ~on_input() override { style_base::~style_base(); }
+
+        inline style_base* Copy() const override {
+            return new on_input(*this);
+        }
+
+        constexpr on_input& operator=(const on_input& other){
             // Only copy the information if the other is enabled.
             if (other.Status >= Status){
                 Value = other.Value;
@@ -2318,7 +2365,7 @@ namespace GGUI{
 
         allow_scrolling                 Allow_Scrolling                 = allow_scrolling(false, VALUE_STATE::INITIALIZED);
 
-        align                           Align                           = align(ALIGN::LEFT, VALUE_STATE::INITIALIZED);
+        anchor                           Align                           = anchor(ANCHOR::LEFT, VALUE_STATE::INITIALIZED);
 
         std::vector<element*>           Childs;
 

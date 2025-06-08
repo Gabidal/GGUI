@@ -847,6 +847,17 @@ void GGUI::element::setPosition(IVector3* c){
 }
 
 /**
+ * @brief Updates the position of the element by adding the given vector.
+ *
+ * This function increments the current position of the element by the specified vector `v`.
+ *
+ * @param v The vector to add to the element's current position.
+ */
+void GGUI::element::updatePosition(IVector3 v){
+    Style->Position += v;
+}
+
+/**
  * @brief Update the absolute position cache of the element.
  * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
  */
@@ -1298,9 +1309,9 @@ void GGUI::element::setFocusBorderBackgroundColor(RGB color){
  * 
  * @param Align The alignment value to set for the element.
  */
-void GGUI::element::setAlign(GGUI::ALIGN Align){
+void GGUI::element::setAnchor(GGUI::ANCHOR Anchor){
     // Set the alignment in the style
-    Style->Align = Align;
+    Style->Align = Anchor;
 }
 
 /**

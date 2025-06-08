@@ -1,39 +1,26 @@
 #include "ggui.h"
 
+using namespace std;
 using namespace GGUI;
 
-int main() 
-{
+int main(){
+    
     GGUI::GGUI(
-        childs({
-            new listView(
-                childs({
-                    new button(text("File") | on_click([]([[maybe_unused]] element* self){})),
-                    new button(text("Edit") | on_click([]([[maybe_unused]] element* self){})),
-                    new button(text("View") | on_click([]([[maybe_unused]] element* self){})),
-                    new button(text("Help") | on_click([]([[maybe_unused]] element* self){}))
-                }) |
-                enable_border(true)
-            ),
-            new element(
-                title("A") | width(20) | height(10) | background_color(COLOR::MAGENTA) | text_color(COLOR::RED) | opacity(0.5f) | position(10, 10) | enable_border(true)
-            ),
-            new element(
-                title("B") | width(20) | height(10) | background_color(COLOR::YELLOW) | text_color(COLOR::GREEN) | opacity(0.5f) | position(30, 10) | enable_border(true)
-            ),
-            new element(
-                title("C") | width(20) | height(10) | background_color(COLOR::CYAN) | text_color(COLOR::BLUE) | opacity(0.5f) | position(20, 15) | enable_border(true)
-            )
-        }) |
+        node(new listView( flow_priority(DIRECTION::ROW) | 
+            node(new textField(
+                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
+                anchor(ANCHOR::LEFT) | width(22) | height(8)
+            )) | 
 
-        title("Your App UI") |
-        background_color(COLOR::WHITE) |
-        text_color(COLOR::BLACK) |
-        enable_border(true) 
-    );
+            node(new textField(
+                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
+                anchor(ANCHOR::CENTER) | width(22) | height(8)
+            )) | 
 
-    GGUI::INTERNAL::SLEEP(UINT32_MAX);
-
-    // // Then exit properly. After 0.1.8 this is unnecessary, unless user overrides exit handlers.
-    GGUI::EXIT();
+            node(new textField(
+                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
+                anchor(ANCHOR::RIGHT) | width(22) | height(8)
+            ))
+        ))
+    , UINT32_MAX);
 }
