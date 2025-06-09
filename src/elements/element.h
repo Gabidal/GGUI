@@ -21,6 +21,12 @@
 #include "../core/utils/style.h"
 
 namespace GGUI{
+    struct fittingArea{
+        IVector2 negativeOffset;
+        IVector2 start;
+        IVector2 end;
+    };
+
     class element{
     protected:
         // Shadows and some other postprocessing effects can have an impact on the final width and height of the element.
@@ -1004,7 +1010,7 @@ namespace GGUI{
          * @param Child The child element.
          * @return A pair of pairs containing the fitting area for the child element within the parent element.
          */
-        static std::pair<std::pair<unsigned int, unsigned int> ,std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>> getFittingArea(GGUI::element* Parent, GGUI::element* Child);
+        static fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
                 
         /**
          * @brief Recursively computes the size of the element based on its children.

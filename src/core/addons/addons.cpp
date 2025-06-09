@@ -48,7 +48,7 @@ namespace GGUI{
      * @return A formatted string containing the collected statistics.
      */
     std::string Get_Stats_Text(){
-        return  "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer.size()) + "\n" +
+        return  "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer->size()) + "\n" +
                 "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
                 "Elements: " + std::to_string(INTERNAL::Main->getAllNestedElements().size()) + "\n" +
                 "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +

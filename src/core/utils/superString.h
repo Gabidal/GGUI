@@ -424,10 +424,19 @@ namespace GGUI{
         }
     };
 
-    inline std::string To_String(std::vector<Compact_String>* Data, unsigned int Liquefied_Size) {
-        // Resize a std::string to the total size.
-        std::string result;
-        result.resize(Liquefied_Size);
+    namespace INTERNAL{
+        namespace CACHE{
+            static std::string To_String_Buffer; 
+        }
+    }
+
+    inline std::string* To_String(std::vector<Compact_String>* Data, unsigned int Liquefied_Size) {
+        std::string& result = INTERNAL::CACHE::To_String_Buffer;
+
+        if (result.empty() || Liquefied_Size > result.size()){
+            // Resize a std::string to the total size.
+            result.resize(Liquefied_Size);
+        }
 
         // Copy the contents of the Data vector into the std::string.
         int Current_UTF_Insert_Index = 0;
@@ -450,7 +459,7 @@ namespace GGUI{
             }
         }
 
-        return result;
+        return &result;
     }
 
     inline std::string To_String(Compact_String& cstr){

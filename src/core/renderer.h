@@ -31,11 +31,13 @@ namespace GGUI{
 
         namespace atomic{
             enum class status{
-                RESUMED,
                 PAUSED,
-                LOCKED,
+                REQUESTING_RENDERING,
+                RENDERING,
                 NOT_INITIALIZED
             };
+
+            extern int LOCKED;
 
             extern std::mutex Mutex;
             extern std::condition_variable Condition;
@@ -53,7 +55,7 @@ namespace GGUI{
         };
 
         extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
-        extern std::string Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
+        extern std::string* Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
 
         extern std::vector<INTERNAL::bufferCapture*> Global_Buffer_Captures;
 
@@ -256,7 +258,7 @@ namespace GGUI{
      * @details This function resumes the rendering thread after it has been paused.
      * @param restore_render_to The status to restore the rendering thread to.
      */
-    extern void resumeGGUI(INTERNAL::atomic::status restore_render_to = INTERNAL::atomic::status::RESUMED);
+    extern void resumeGGUI();
 
     /**
      * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.

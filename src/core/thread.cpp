@@ -52,9 +52,9 @@ namespace GGUI{
             while (true){
                 {
                     std::unique_lock lock(INTERNAL::atomic::Mutex);
-                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::RESUMED; });
+                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::REQUESTING_RENDERING; });
 
-                    INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::LOCKED;
+                    INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::RENDERING;
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
@@ -182,7 +182,7 @@ namespace GGUI{
                 }
 
                 /* 
-                    Notice: Since the Rendering thread will use its own access to render as tickets, so every time it is "RESUMED" it will after its own run set itself to PAUSED.
+                    Notice: Since the Rendering thread will use its own access to render as tickets, so every time it is "REQUESTING_PAUSE" it will after its own run set itself to PAUSED.
                     This is what Tickets are.
                     So in other words, if there is MUST use of rendering pipeline, use Update_Frame().
                 */  

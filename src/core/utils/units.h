@@ -232,10 +232,168 @@ namespace GGUI{
         }
     };
 
-    class IVector3{
+    class IVector2{
     public:
         short X = 0;  //Horizontal
         short Y = 0;  //Vertical
+
+        /**
+         * @brief Default constructor
+         *
+         * Initializes the IVector2 with the given x and y values.
+         *
+         * @param x The x-coordinate. Default is 0.
+         * @param y The y-coordinate. Default is 0.
+         */
+        constexpr IVector2(short x = 0, short y = 0) noexcept
+            : X(x), Y(y) {}
+
+        /**
+         * @brief Copy constructor
+         * 
+         * Initializes the IVector2 by copying another IVector2.
+         * @param other The IVector2 to copy.
+         */
+        constexpr IVector2(const IVector2& other) noexcept = default;
+
+        /**
+         * @brief Move constructor
+         * 
+         * Initializes the IVector2 by moving another IVector2.
+         * @param other The IVector2 to move.
+         */
+        constexpr IVector2(IVector2&& other) noexcept = default;
+
+        /**
+         * @brief Copy assignment operator
+         *
+         * Assigns another IVector2 to this one by copying its values.
+         *
+         * @param other The IVector2 to copy.
+         * @return A reference to this IVector2.
+         */
+        constexpr IVector2& operator=(const IVector2& other) noexcept = default;
+
+        /**
+         * @brief Move assignment operator
+         *
+         * Moves the values from another IVector2 to this one.
+         *
+         * @param other The IVector2 to move.
+         * @return A reference to this IVector2.
+         */
+        constexpr IVector2& operator=(IVector2&& other) noexcept = default;
+
+        /**
+         * @brief += operator with a pointer to an IVector2
+         *
+         * Adds the values of the IVector2 pointed to by the pointer to this IVector2.
+         *
+         * @param other The pointer to the IVector2 to add.
+         */
+        constexpr void operator+=(IVector2* other) noexcept {
+            X += other->X;
+            Y += other->Y;
+        }
+
+        /**
+         * @brief += operator with an FVector2
+         *
+         * Adds the values of the FVector2 to this IVector2.
+         *
+         * @param other The FVector2 to add.
+         */
+        constexpr void operator+=(FVector2 other) noexcept {
+            X += static_cast<short>(other.X);
+            Y += static_cast<short>(other.Y);
+        }
+
+        /**
+         * @brief += operator with another IVector2
+         *
+         * Adds the values of another IVector2 to this one.
+         *
+         * @param other The IVector2 to add.
+         */
+        constexpr void operator+=(IVector2 other) noexcept {
+            X += other.X;  // Add the x-coordinate
+            Y += other.Y;  // Add the y-coordinate
+        }
+
+        /**
+         * @brief + operator with another IVector2
+         *
+         * Creates a new IVector2 with the added values of this IVector2 and the other IVector2.
+         *
+         * @param other The IVector2 to add.
+         * @return A new IVector2 with the added values.
+         */
+        constexpr IVector2 operator+(const IVector2& other) const noexcept {
+            return IVector2(X + other.X, Y + other.Y);
+        }
+
+        /**
+         * @brief - operator with another IVector2
+         *
+         * Creates a new IVector2 with the subtracted values of this IVector2 and the other IVector2.
+         *
+         * @param other The IVector2 to subtract.
+         * @return A new IVector2 with the subtracted values.
+         */
+        constexpr IVector2 operator-(const IVector2& other) const noexcept {
+            return IVector2(X - other.X, Y - other.Y);
+        }
+
+        /**
+         * @brief * operator with a float
+         *
+         * Multiplies the IVector2 by a float, creating a new IVector2.
+         *
+         * @param num The float to multiply.
+         * @return A new IVector2 with the multiplied float.
+         */
+        constexpr IVector2 operator*(float num) const noexcept {
+            return IVector2(static_cast<short>(X * num), static_cast<short>(Y * num)); // Multiply each coordinate by num
+        }
+
+        /**
+         * @brief == operator with another IVector2
+         * 
+         * Compares the IVector2 with another IVector2.
+         * 
+         * @param other The IVector2 to compare with.
+         * @return True if the IVector2s are equal, otherwise false.
+         */
+        constexpr bool operator==(const IVector2& other) const noexcept {
+            return X == other.X && Y == other.Y; // Check if the coordinates are equal
+        }
+
+        /**
+         * @brief != operator with another IVector2
+         * 
+         * Compares the IVector2 with another IVector2.
+         * 
+         * @param other The IVector2 to compare with.
+         * @return False if the IVector2s are equal, otherwise true.
+         */
+        constexpr bool operator!=(const IVector2& other) const noexcept {
+            return X != other.X || Y != other.Y; // Check if the coordinates are not equal
+        }
+
+        /**
+         * @brief Converts the IVector2 to a string
+         *
+         * Converts the IVector2 to a string representation.
+         *
+         * @return A string representation of the IVector2.
+         */
+        std::string To_String() const {
+            return std::to_string(X) + ", " + std::to_string(Y);
+        }
+    };
+
+    class IVector3 : public IVector2{
+    public:
         short Z = 0;  //priority (the higher the more likely it will be at top).
 
         /**
@@ -248,7 +406,7 @@ namespace GGUI{
          * @param z The z-coordinate. Default is 0.
          */
         constexpr IVector3(short x = 0, short y = 0, short z = 0) noexcept
-            : X(x), Y(y), Z(z) {}
+            : IVector2(x, y), Z(z) {}
 
         /**
          * @brief Copy constructor
@@ -299,19 +457,6 @@ namespace GGUI{
             X += other->X;
             Y += other->Y;
             Z += other->Z;
-        }
-
-
-        /**
-         * @brief += operator with an FVector2
-         *
-         * Adds the values of the FVector2 to this IVector3.
-         *
-         * @param other The FVector2 to add.
-         */
-        constexpr void operator+=(FVector2 other) noexcept {
-            X += other.X;
-            Y += other.Y;
         }
 
         /**

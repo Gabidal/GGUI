@@ -1,26 +1,29 @@
 #include "ggui.h"
 
-using namespace std;
+#include <math.h>
+
 using namespace GGUI;
 
-int main(){
-    
+int main() 
+{
     GGUI::GGUI(
-        node(new listView( flow_priority(DIRECTION::ROW) | 
-            node(new textField(
-                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
-                anchor(ANCHOR::LEFT) | width(22) | height(8)
-            )) | 
+        node(new terminalCanvas(
 
-            node(new textField(
-                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
-                anchor(ANCHOR::CENTER) | width(22) | height(8)
-            )) | 
+            width(1.0f) | height(1.0f) |
 
-            node(new textField(
-                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
-                anchor(ANCHOR::RIGHT) | width(22) | height(8)
-            ))
+            on_draw([]([[maybe_unused]] unsigned int x, [[maybe_unused]] unsigned int y){
+                return GGUI::sprite(
+                    {
+                        {" ", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
+                        {" ", {GGUI::COLOR::BLUE, GGUI::COLOR::BLUE}}, 
+                    },
+                    0,  // Animation offset
+                    1   // Animation speed
+                );
+            })
         ))
-    , UINT32_MAX);
+    , INT32_MAX);
+
+    // // Then exit properly. After 0.1.8 this is unnecessary, unless user overrides exit handlers.
+    GGUI::EXIT();
 }

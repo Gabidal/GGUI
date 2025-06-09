@@ -18,14 +18,15 @@ namespace GGUI{
     namespace INTERNAL{
         std::vector<GGUI::UTF> SAFE_MIRROR;                               // Only used for references to be initalized to point at.
         std::vector<UTF>& Abstract_Frame_Buffer = SAFE_MIRROR;      // 2D clean vector without bold nor color
-        std::string Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
+        std::string* Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
 
         // For threading system
         namespace atomic{
             std::mutex Mutex;
             std::condition_variable Condition;
-
-            status Pause_Render_Thread = status::NOT_INITIALIZED;
+            
+            int LOCKED = 0;
+            status Pause_Render_Thread = status::PAUSED;
         }
 
         std::vector<std::thread> Sub_Threads;
@@ -830,10 +831,10 @@ namespace GGUI{
             fflush(stdout);
 
             // Write the contents of Frame_Buffer to STDOUT
-            int Error = write(STDOUT_FILENO, Frame_Buffer.data(), Frame_Buffer.size());
+            int Error = write(STDOUT_FILENO, Frame_Buffer->data(), Frame_Buffer->size());
 
             // Check for write errors or incomplete writes
-            if (Error != (signed)Frame_Buffer.size()) {
+            if (Error != (signed)Frame_Buffer->size()) {
                 INTERNAL::reportStack("Failed to write to STDOUT: " + std::to_string(Error));
             }
         }
@@ -1555,12 +1556,12 @@ namespace GGUI{
     void updateFrame(){
         std::unique_lock lock(INTERNAL::atomic::Mutex);
 
-        // Check if the rendering thread is paused.
-        if (INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::LOCKED)
+        // The rendering thread is either locked, already rendering or already requested to render.
+        if (INTERNAL::atomic::LOCKED > 0)
             return;
 
         // Give the rendering thread one ticket.
-        INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::RESUMED;
+        INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::REQUESTING_RENDERING;
 
         // Notify all waiting threads that the frame has been updated.
         INTERNAL::atomic::Condition.notify_all();
@@ -1573,14 +1574,16 @@ namespace GGUI{
     void pauseGGUI(){
         std::unique_lock lock(INTERNAL::atomic::Mutex);
 
-        // Set the render status to locked.
-        INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::LOCKED;
+        // Already paused via upper scope.
+        if (INTERNAL::atomic::LOCKED++ > 0)
+            return;
 
-        // Wait for the rendering thread to become available.
-        INTERNAL::atomic::Condition.wait_for(lock, GGUI::SETTINGS::Thread_Timeout, []{
-            // If the rendering thread is not locked, then the wait is over.
-            return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::LOCKED;
+        // await until the rendering thread has used it's rendering ticket.
+        INTERNAL::atomic::Condition.wait(lock, []{
+            return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::PAUSED;
         });
+
+        INTERNAL::atomic::LOCKED = true;
     }
 
     /**
@@ -1588,19 +1591,21 @@ namespace GGUI{
      * @details This function resumes the rendering thread after it has been paused.
      * @param restore_render_to The status to restore the rendering thread to.
      */
-    void resumeGGUI(INTERNAL::atomic::status restore_render_to){
+    void resumeGGUI(){
         {
             // Local scope to set the new render status.
             std::unique_lock lock(INTERNAL::atomic::Mutex);
-            // Set the render status to the given status.
-            INTERNAL::atomic::Pause_Render_Thread = restore_render_to;
+
+            if (--INTERNAL::atomic::LOCKED > 0)
+                return;
+
+            INTERNAL::atomic::Condition.wait(lock, []{
+                // If the rendering thread is not locked, then the wait is over.
+                return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::PAUSED;
+            });
         }
 
-        // Check if the rendering status is anything but locked.
-        if (restore_render_to < INTERNAL::atomic::status::LOCKED){
-            // If it's not locked, then update the frame.
-            updateFrame();
-        }
+        updateFrame();
     }
 
     /**
@@ -2075,19 +2080,6 @@ namespace GGUI{
      * @param f The function to call.
      */
     void pauseGGUI(std::function<void()> f){
-
-        // Save the current render status.
-        INTERNAL::atomic::status Previous_Render_Status;
-
-        // Make an virtual local scope to temporary own the mutex.
-        {
-            // Lock the mutex to make sure we are the only one that can change the render status.
-            std::unique_lock lock(INTERNAL::atomic::Mutex);
-
-            // Save the current render status.
-            Previous_Render_Status = INTERNAL::atomic::Pause_Render_Thread;
-        }
-
         pauseGGUI();
 
         try{
@@ -2103,9 +2095,7 @@ namespace GGUI{
         }
 
         // Resume the render thread with the previous render status.
-        resumeGGUI(
-            Previous_Render_Status
-        );
+        resumeGGUI();
     }
 
     /**
@@ -2125,19 +2115,19 @@ namespace GGUI{
 
             // Now recursively go down in the App AST nodes and Build each node.
             INTERNAL::Main->embedStyles();
-
-            // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
-            INTERNAL::Main->check(STATE::INIT);
-
+            
             // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
             initAddons();
         });
+        
+        // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
+        INTERNAL::Main->check(STATE::INIT);
 
         // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
-        resumeGGUI();
+        // resumeGGUI();
 
         // TODO: remove this:
-        updateFrame();
+        // updateFrame();
 
         // Sleep for the given amount of milliseconds.
         INTERNAL::SLEEP(Sleep_For);

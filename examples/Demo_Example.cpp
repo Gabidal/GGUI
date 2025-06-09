@@ -8,10 +8,10 @@ int main()
         childs({
             new listView(
                 childs({
-                    new button(text("File") | on_click([]([[maybe_unused]] element* self){})),
-                    new button(text("Edit") | on_click([]([[maybe_unused]] element* self){})),
-                    new button(text("View") | on_click([]([[maybe_unused]] element* self){})),
-                    new button(text("Help") | on_click([]([[maybe_unused]] element* self){}))
+                    new button(text("File")),
+                    new button(text("Edit") | on_click([]([[maybe_unused]] element* self){ return true; })),
+                    new button(text("View") | on_click([]([[maybe_unused]] element* self){ return true; })),
+                    new button(text("Help") | on_click([]([[maybe_unused]] element* self){ return true; }))
                 }) |
                 enable_border(true)
             ),

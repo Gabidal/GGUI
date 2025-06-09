@@ -8,11 +8,13 @@ using namespace GGUI;
 void foo(element* self){
     GGUI::IVector3 A_velocity = {1, 2};
     GGUI::IVector3 B_velocity = {3, 1};
-    GGUI::IVector3 C_velocity = {1, 1};
+    GGUI::IVector3 C_velocity = {2, 3};
 
     element* A = self->getElement("A");
     element* B = self->getElement("B");
     element* C = self->getElement("C");
+
+    // return;
 
     while (true){
         pauseGGUI();
@@ -37,14 +39,15 @@ void foo(element* self){
         if (C->getPosition().Y <= 0 || C->getPosition().Y + C->getProcessedHeight() >= self->getHeight())
             C_velocity.Y = -C_velocity.Y;
 
-        resumeGGUI();
-        // press 'CTRL + SHIFT + I' to open the inspect window. 
         GGUI::report(to_string(A->getPosition().X));
-        GGUI::INTERNAL::SLEEP(200);
+        resumeGGUI();
+
+        // press 'CTRL + SHIFT + I' to open the inspect window. 
+        GGUI::INTERNAL::SLEEP(16);
     }
 }
 
-int main(int Argument_Count, char** Arguments){
+int main(){
     GGUI::GGUI(
         childs({
             new element(
@@ -61,7 +64,7 @@ int main(int Argument_Count, char** Arguments){
                 opacity(0.5f) |
                 position(30, 10)
             ),
-            new element(
+            new element( 
                 title("C") |
                 width(20) | height(10) |
                 background_color(COLOR::CYAN) | text_color(COLOR::BLUE) |
