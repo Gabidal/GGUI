@@ -318,7 +318,7 @@ namespace GGUI{
             // Move the cursor to the top left corner of the screen.
             SetConsoleCursorPosition(GLOBAL_STD_OUTPUT_HANDLE, {0, 0});
             // Write the Frame_Buffer data to the console.
-            WriteFile(GLOBAL_STD_OUTPUT_HANDLE, INTERNAL::Frame_Buffer.data(), INTERNAL::Frame_Buffer.size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
+            WriteFile(GLOBAL_STD_OUTPUT_HANDLE, INTERNAL::Frame_Buffer->data(), INTERNAL::Frame_Buffer->size(), reinterpret_cast<LPDWORD>(&tmp), NULL);
         }
 
         /**
@@ -335,8 +335,8 @@ namespace GGUI{
             CONSOLE_SCREEN_BUFFER_INFO info = Get_Console_Info();
 
             // Update the maximum width and height.
-            INTERNAL::Max_Width = info.srWindow.Right - info.srWindow.Left + 1;
-            INTERNAL::Max_Height = info.srWindow.Bottom - info.srWindow.Top + 1;
+            INTERNAL::Max_Width = info.dwSize.X;
+            INTERNAL::Max_Height = info.dwSize.Y;
 
             // Check if we got the console information correctly.
             if (INTERNAL::Max_Width == 0 || INTERNAL::Max_Height == 0){
@@ -1482,12 +1482,12 @@ namespace GGUI{
     }
 
     namespace INTERNAL{
-        static std::vector<Compact_String> LIQUIFY_UTF_TEXT_RESULT_CACHE;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
+        thread_local static std::vector<Compact_String> LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
+        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
+        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
+        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
+        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
     }
 
     /**
@@ -1503,6 +1503,7 @@ namespace GGUI{
         
         // Since they are located as globals we need to remember to restart the starting offset.
         unsigned int LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX = 0;
+        Liquefied_Size = 0;
 
         INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();
         INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.Clear();
@@ -1511,8 +1512,8 @@ namespace GGUI{
         INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.Clear();
         
         // We need to dynamically resize this, since the window size will be potentially re-sized.
-        if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.capacity() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
-            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
+        if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.size() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
+            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer, Compact_String());
         }
  
         for (int y = 0; y < Height; y++){
@@ -1542,6 +1543,7 @@ namespace GGUI{
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
             if (!SETTINGS::Word_Wrapping){
                 INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = Compact_String('\n'); // the system is word wrapped.
+                Liquefied_Size += 1;
             }
         }
 

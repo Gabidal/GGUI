@@ -83,7 +83,10 @@ namespace GGUI{
 
                     if (!Identical_Frame){
                         // ENCODE for optimize
-                        encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
+                        // encodeBuffer(INTERNAL::Abstract_Frame_Buffer);       // <- encoder broken when resizing :(
+                        for (auto& u : INTERNAL::Abstract_Frame_Buffer){
+                            u.Set_Flag(ENCODING_FLAG::START | ENCODING_FLAG::END);
+                        }
 
                         unsigned int Liquefied_Size = 0;
                         std::vector<Compact_String>* CS_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, Liquefied_Size, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight());

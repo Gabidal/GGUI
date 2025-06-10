@@ -319,8 +319,9 @@ namespace GGUI{
          */
         constexpr void Add(const char* data, const int size){
             // Store the string in the data vector.
-            Data[Current_Index++] = Compact_String(data, size);
-            Liquefied_Size += size; // Update the liquefied size with the size of the new string.
+            Compact_String tmp = Compact_String(data, size);
+            Data[Current_Index++] = tmp;
+            Liquefied_Size += tmp.Size; // Update the liquefied size with the size of the new string.
         }
 
         /**
@@ -353,8 +354,9 @@ namespace GGUI{
             // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other->Current_Index; i++){
                 Data[Current_Index++] = other->Data[i];
-                Liquefied_Size += other->Data[i].Size; // Update the liquefied size with the size of the new string.
             }
+
+            Liquefied_Size += other->Liquefied_Size; // Update the liquefied size with the size of the new string.
         }
         
         /**
@@ -368,8 +370,9 @@ namespace GGUI{
             // Copy the contents of the other Super_String into the Data vector.
             for (unsigned int i = 0; i < other.Current_Index; i++){
                 Data[Current_Index++] = other.Data[i];
-                Liquefied_Size += other.Data[i].Size; // Update the liquefied size with the size of the new string.
             }
+            
+            Liquefied_Size += other.Liquefied_Size; // Update the liquefied size with the size of the new string.
         }
 
         /**
@@ -424,27 +427,18 @@ namespace GGUI{
         }
     };
 
-    namespace INTERNAL{
-        namespace CACHE{
-            static std::string To_String_Buffer; 
-        }
-    }
-
     inline std::string* To_String(std::vector<Compact_String>* Data, unsigned int Liquefied_Size) {
-        std::string& result = INTERNAL::CACHE::To_String_Buffer;
+        static std::string result;  // an internal cache container between renders.
 
-        if (result.empty() || Liquefied_Size > result.size()){
+        if (result.empty() || Liquefied_Size != result.size()){
             // Resize a std::string to the total size.
-            result.resize(Liquefied_Size);
+            result.resize(Liquefied_Size, '\0');
         }
 
         // Copy the contents of the Data vector into the std::string.
-        int Current_UTF_Insert_Index = 0;
-        for(unsigned int i = 0; i < Data->size(); i++){
+        unsigned int Current_UTF_Insert_Index = 0;
+        for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
             const Compact_String& data = Data->at(i);
-
-            if (data.Size == 0)
-                break;
 
             // Size of ones are always already loaded from memory into a char.
             if (data.Size > 1){
