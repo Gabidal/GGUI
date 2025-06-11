@@ -347,7 +347,7 @@ namespace GGUI{
         }
         else{
             // The position is in bounds, return the contents of that position
-            return &INTERNAL::Abstract_Frame_Buffer[Absolute_Position.Y * getMaxWidth() + Absolute_Position.X];
+            return &INTERNAL::Abstract_Frame_Buffer->at(Absolute_Position.Y * getMaxWidth() + Absolute_Position.X);
         }
     }
 

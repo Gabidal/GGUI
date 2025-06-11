@@ -16,9 +16,8 @@
 
 namespace GGUI{
     namespace INTERNAL{
-        std::vector<GGUI::UTF> SAFE_MIRROR;                               // Only used for references to be initalized to point at.
-        std::vector<UTF>& Abstract_Frame_Buffer = SAFE_MIRROR;      // 2D clean vector without bold nor color
-        std::string* Frame_Buffer;                                   // string with bold and color, this what gets drawn to console.
+        std::vector<UTF>* Abstract_Frame_Buffer = nullptr;              // 2D clean vector without bold nor color
+        std::string* Frame_Buffer;                                      // string with bold and color, this what gets drawn to console.
 
         // For threading system
         namespace atomic{
@@ -1498,7 +1497,7 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    std::vector<Compact_String>* liquifyUTFText(std::vector<GGUI::UTF>& Text, unsigned int& Liquefied_Size, int Width, int Height){
+    std::vector<Compact_String>* liquifyUTFText(std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
         const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + !SETTINGS::Word_Wrapping * (Height - 1));
         
         // Since they are located as globals we need to remember to restart the starting offset.
@@ -1518,7 +1517,7 @@ namespace GGUI{
  
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
-                Text[y * Width + x].To_Encoded_Super_String(
+                Text->at(y * Width + x).To_Encoded_Super_String(
                     &INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER,
                     &INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD,
                     &INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD,
@@ -2155,26 +2154,26 @@ namespace GGUI{
      *          It checks each UTF element's foreground and background colors with its adjacent elements
      *          to determine where encoding strips start and end.
      */
-    void encodeBuffer(std::vector<GGUI::UTF>& Buffer) {
-        const size_t Count = Buffer.size();
+    void encodeBuffer(std::vector<GGUI::UTF>* Buffer) {
+        const size_t Count = Buffer->size();
         if (Count == 0) return;
 
         // Set START flag for the first element
-        Buffer.front().Set_Flag(ENCODING_FLAG::START);
+        Buffer->front().Set_Flag(ENCODING_FLAG::START);
 
         // If only one element, also mark as END
         if (Count == 1) {
-            Buffer.front().Set_Flag(ENCODING_FLAG::END);
+            Buffer->front().Set_Flag(ENCODING_FLAG::END);
             return;
         }
 
         // Cache previous colors
-        auto PrevFg = Buffer.front().Foreground;
-        auto PrevBg = Buffer.front().Background;
+        auto PrevFg = Buffer->front().Foreground;
+        auto PrevBg = Buffer->front().Background;
 
         for (size_t i = 1; i < Count - 1; i++) {
-            auto& Curr = Buffer[i];
-            const auto& Next = Buffer[i + 1];
+            auto& Curr = Buffer->at(i);
+            const auto& Next = Buffer->at(i + 1);
 
             bool SameAsPrev = (Curr.Foreground == PrevFg) && (Curr.Background == PrevBg);
             bool SameAsNext = (Curr.Foreground == Next.Foreground) && (Curr.Background == Next.Background);
@@ -2190,16 +2189,15 @@ namespace GGUI{
         }
 
         // Handle the last element
-        auto& Last = Buffer.back();
+        auto& Last = Buffer->back();
         Last.Set_Flag(ENCODING_FLAG::END);
 
         // Compare last with second-last for possible START flag
-        const auto& SecondLast = Buffer[Count - 2];
+        const auto& SecondLast = Buffer->at(Count - 2);
         if (!(Last.Foreground == SecondLast.Foreground) || !(Last.Background == SecondLast.Background)) {
             Last.Set_Flag(ENCODING_FLAG::START);
         }
     }
-
 
     /**
      * @brief Notifies all global buffer capturers about the latest data to be captured.

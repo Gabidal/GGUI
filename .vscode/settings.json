@@ -102,10 +102,5 @@
         "netfwd": "cpp",
         "valarray": "cpp",
         "future": "cpp"
-    },
-    "cSpell.words": [
-        "Hitboxes",
-        "keybinds",
-        "Multiplatform"
-    ]
+    }
 }

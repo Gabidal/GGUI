@@ -49,7 +49,7 @@ namespace GGUI{
      */
     std::string Get_Stats_Text(){
         return  "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer->size()) + "\n" +
-                "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer.size()) + "\n" + 
+                "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer->size()) + "\n" + 
                 "Elements: " + std::to_string(INTERNAL::Main->getAllNestedElements().size()) + "\n" +
                 "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
                 "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 

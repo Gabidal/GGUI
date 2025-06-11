@@ -54,7 +54,7 @@ namespace GGUI{
             buttonState(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
         };
 
-        extern std::vector<UTF>& Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
+        extern std::vector<UTF>* Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
         extern std::string* Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
 
         extern std::vector<INTERNAL::bufferCapture*> Global_Buffer_Captures;
@@ -238,7 +238,7 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    extern std::vector<Compact_String>* liquifyUTFText(std::vector<GGUI::UTF>& Text, unsigned int& Liquefied_Size, int Width, int Height);
+    extern std::vector<Compact_String>* liquifyUTFText(std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
 
     /**
      * @brief Updates the frame.
@@ -386,7 +386,7 @@ namespace GGUI{
      *          It checks each UTF element's foreground and background colors with its adjacent elements
      *          to determine where encoding strips start and end.
      */
-    extern void encodeBuffer(std::vector<GGUI::UTF>& Buffer);
+    extern void encodeBuffer(std::vector<GGUI::UTF>* Buffer);
 
     /**
      * @brief Notifies all global buffer capturers about the latest data to be captured.

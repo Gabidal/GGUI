@@ -1402,8 +1402,6 @@ void GGUI::element::computeDynamicSize(){
  * @return A vector of UTF objects representing the rendered element and its children.
  */
 std::vector<GGUI::UTF>& GGUI::element::render(){
-    std::vector<GGUI::UTF>& Result = Render_Buffer;
-
     // Check for Dynamic attributes
     if(Style->Evaluate_Dynamic_Dimensions(this))
         Dirty.Dirty(STAIN_TYPE::STRETCH);
@@ -1426,7 +1424,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         bool tmp = childrenChanged();
 
         if (!tmp && Dirty.is(STAIN_TYPE::CLEAN)){
-            return Result;
+            return Render_Buffer;
         }
         else if (tmp || hasTransparentChildren()){
             Dirty.Dirty(STAIN_TYPE::RESET);
@@ -1439,7 +1437,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     }
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
-        return Result;
+        return Render_Buffer;
 
     if (Dirty.is(STAIN_TYPE::MOVE)){
         Dirty.Clean(STAIN_TYPE::MOVE);
@@ -1450,7 +1448,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     if (Dirty.is(STAIN_TYPE::RESET)){
         Dirty.Clean(STAIN_TYPE::RESET);
 
-        std::fill(Result.begin(), Result.end(), SYMBOLS::EMPTY_UTF);
+        std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
         
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
@@ -1458,8 +1456,8 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     if (Dirty.is(STAIN_TYPE::STRETCH)){
         Dirty.Clean(STAIN_TYPE::STRETCH);
         
-        Result.clear();
-        Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+        Render_Buffer.clear();
+        Render_Buffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
 
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
@@ -1469,7 +1467,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         // Clean the color stain after applying the color system.
         Dirty.Clean(STAIN_TYPE::COLOR);
 
-        applyColors(Result);
+        applyColors(Render_Buffer);
     }
 
     bool Connect_Borders_With_Parent = hasBorder();
@@ -1495,7 +1493,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
             if (c->hasPostprocessingToDo())
                 tmp = &c->postprocess();
 
-            nestElement(this, c, Result, *tmp);
+            nestElement(this, c, Render_Buffer, *tmp);
         }
     }
 
@@ -1504,8 +1502,8 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
     //This will add the borders if necessary and the title of the window.
     if (Dirty.is(STAIN_TYPE::EDGE)){
-        renderBorders(Result);
-        renderTitle(Result);
+        renderBorders(Render_Buffer);
+        renderTitle(Render_Buffer);
     }
 
     // This will calculate the connecting borders.
@@ -1518,14 +1516,14 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
                 if (!A->isDisplayed() || !A->hasBorder() || !B->isDisplayed() || !B->hasBorder())
                     continue;
 
-                postProcessBorders(A, B, Result);
+                postProcessBorders(A, B, Render_Buffer);
             }
 
-            postProcessBorders(this, A, Result);
+            postProcessBorders(this, A, Render_Buffer);
         }
     }
 
-    return Result;
+    return Render_Buffer;
 }
 
 /**
