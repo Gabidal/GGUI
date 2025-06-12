@@ -192,14 +192,7 @@ namespace GGUI{
          */
         void EXIT(int signum){
             if (!Carry_Flags.Read().Terminate){
-                LOGGER::Log("Sending termination signals to subthreads...");
-
-                // Gracefully shutdown event and rendering threads.
-                Carry_Flags([](Carry& self){
-                    self.Terminate = true;
-                });
-
-                updateFrame();
+                waitForThreadTermination();
 
                 // Join the threads
                 for (auto& thread : INTERNAL::Sub_Threads){
@@ -214,10 +207,10 @@ namespace GGUI{
                 De_Initialize();
 
                 LOGGER::Log("GGUI shutdown successful.");
-            }
 
-            // Exit the application with the specified exit code
-            exit(signum);
+                // Exit the application with the specified exit code
+                exit(signum);
+            }
         }
 
         /**
@@ -755,14 +748,7 @@ namespace GGUI{
 
         void Cleanup(){
             if (!Carry_Flags.Read().Terminate){
-                LOGGER::Log("Sending termination signals to subthreads...");
-
-                // Gracefully shutdown event and rendering threads.
-                Carry_Flags([](Carry& self){
-                    self.Terminate = true;
-                });
-
-                updateFrame();
+                waitForThreadTermination();
 
                 // Join the threads
                 for (auto& thread : INTERNAL::Sub_Threads){
@@ -1481,12 +1467,12 @@ namespace GGUI{
     }
 
     namespace INTERNAL{
-        thread_local static std::vector<Compact_String> LIQUIFY_UTF_TEXT_RESULT_CACHE;
-        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
-        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
-        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
-        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
-        thread_local static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
+        static std::vector<Compact_String> LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
+        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
     }
 
     /**
@@ -1583,8 +1569,30 @@ namespace GGUI{
         INTERNAL::atomic::Condition.wait(lock, []{
             return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::PAUSED;
         });
+    }
 
-        INTERNAL::atomic::LOCKED = true;
+    namespace INTERNAL{
+        void waitForThreadTermination(){
+            LOGGER::Log("Sending termination signals to subthreads...");
+
+            std::unique_lock lock(atomic::Mutex);
+            
+            // Gracefully shutdown event and rendering threads.
+            Carry_Flags([](Carry& self){
+                self.Terminate = true;
+            });
+            
+            // Give the rendering thread one ticket.
+            atomic::Pause_Render_Thread = atomic::status::REQUESTING_RENDERING;
+
+            // Notify all waiting threads that the frame has been updated.
+            atomic::Condition.notify_all();
+
+            // await until the rendering thread has used it's rendering ticket.
+            atomic::Condition.wait(lock, []{
+                return atomic::Pause_Render_Thread == atomic::status::TERMINATED;
+            });
+        }
     }
 
     /**
@@ -1992,36 +2000,35 @@ namespace GGUI{
             height(INTERNAL::Max_Height)
         , true);
 
-        std::thread Rendering_Scheduler([&](){
+        INTERNAL::Sub_Threads.emplace_back([](){
             INTERNAL::LOGGER::RegisterCurrentThread();
             INTERNAL::renderer();
         });
         
-        std::thread Event_Scheduler([&](){
+        INTERNAL::Sub_Threads.emplace_back([](){
             INTERNAL::LOGGER::RegisterCurrentThread();
             INTERNAL::eventThread();
         });
         
-        std::thread Inquire_Scheduler([&](){
+        std::thread Inquire_Scheduler([](){
             INTERNAL::LOGGER::RegisterCurrentThread();
             INTERNAL::inputThread();
         });
 
-        std::thread Logging_Scheduler([&](){
+        std::thread Logging_Scheduler([](){
             INTERNAL::LOGGER::RegisterCurrentThread();
             INTERNAL::loggerThread();
         });
+        
+        // INTERNAL::Sub_Threads.push_back(std::move(Inquire_Scheduler));
+        // INTERNAL::Sub_Threads.back().detach();    // the Inquire scheduler cannot never stop and thus needs to be as an separate thread.
+        
+        Inquire_Scheduler.detach();
+        Logging_Scheduler.detach();
 
-        INTERNAL::Sub_Threads.push_back(std::move(Rendering_Scheduler));
-        INTERNAL::Sub_Threads.push_back(std::move(Event_Scheduler));
+        // INTERNAL::Sub_Threads.push_back(std::move(Logging_Scheduler));
+        // INTERNAL::Sub_Threads.back().detach();    // the Logging scheduler cannot never stop and thus needs to be as an separate thread.
         
-        INTERNAL::Sub_Threads.push_back(std::move(Inquire_Scheduler));
-        INTERNAL::Sub_Threads.back().detach();    // the Inquire scheduler cannot never stop and thus needs to be as an separate thread.
-        
-        INTERNAL::Sub_Threads.push_back(std::move(Logging_Scheduler));
-        INTERNAL::Sub_Threads.back().detach();    // the Logging scheduler cannot never stop and thus needs to be as an separate thread.
-        
-
         INTERNAL::LOGGER::Log("GGUI Core initialization complete.");
 
         return INTERNAL::Main;

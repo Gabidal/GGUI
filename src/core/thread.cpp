@@ -108,6 +108,14 @@ namespace GGUI{
                     INTERNAL::atomic::Condition.notify_all();
                 }
             }
+
+            LOGGER::Log("Render thread terminated!");
+        
+            // Give signal to other threads this one has paused for good.
+            std::unique_lock lock(INTERNAL::atomic::Mutex);
+            // Now for itself set it to sleep.
+            INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::TERMINATED;
+            INTERNAL::atomic::Condition.notify_all();
         }
 
         /**
@@ -165,21 +173,26 @@ namespace GGUI{
          */
         void eventThread(){
             while (true){
-                pauseGGUI([&](){
-                    // Reset the thread load counter
-                    INTERNAL::Event_Thread_Load = 0;
-                    INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
+                {
+                    std::unique_lock lock(INTERNAL::atomic::Mutex);
 
-                    // Order independent --------------
-                    recallMemories();
-                    Go_Through_File_Streams();
-                    Refresh_Multi_Frame_Canvas();
-                });
+                    INTERNAL::atomic::Condition.wait(lock, [&](){ 
+                        return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::PAUSED || INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::TERMINATED; 
+                    });
 
-                // Check for carry signals if the event scheduler needs to be terminated.
-                if (Carry_Flags.Read().Terminate){
-                    break;  // Break out of the loop if the terminate flag is set
+                    if (INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::TERMINATED){
+                        break;
+                    }
                 }
+
+                // Reset the thread load counter
+                INTERNAL::Event_Thread_Load = 0;
+                INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
+
+                // Order independent --------------
+                recallMemories();
+                Go_Through_File_Streams();
+                Refresh_Multi_Frame_Canvas();
 
                 /* 
                     Notice: Since the Rendering thread will use its own access to render as tickets, so every time it is "REQUESTING_PAUSE" it will after its own run set itself to PAUSED.

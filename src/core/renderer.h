@@ -34,6 +34,7 @@ namespace GGUI{
                 PAUSED,
                 REQUESTING_RENDERING,
                 RENDERING,
+                TERMINATED,
                 NOT_INITIALIZED
             };
 
@@ -177,6 +178,8 @@ namespace GGUI{
          * @param signum The exit code to be used when terminating the application.
          */
         extern void EXIT(int Signum = 0);
+
+        extern void waitForThreadTermination();
     }
 
     /**

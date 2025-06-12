@@ -101,6 +101,24 @@
         "stacktrace": "cpp",
         "netfwd": "cpp",
         "valarray": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "strstream": "cpp",
+        "barrier": "cpp",
+        "cfenv": "cpp",
+        "csetjmp": "cpp",
+        "cuchar": "cpp",
+        "expected": "cpp",
+        "source_location": "cpp",
+        "flat_map": "cpp",
+        "flat_set": "cpp",
+        "generator": "cpp",
+        "latch": "cpp",
+        "print": "cpp",
+        "scoped_allocator": "cpp",
+        "spanstream": "cpp",
+        "stdfloat": "cpp",
+        "syncstream": "cpp",
+        "text_encoding": "cpp",
+        "typeindex": "cpp"
     }
 }
