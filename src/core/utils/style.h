@@ -109,8 +109,8 @@ namespace GGUI{
              * @param type The type of the value
              * @param use_constexpr Whether to use constexpr or not
              */
-            constexpr value(const T value, const EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT)
-                : data(value), percentage(0.0f), evaluation_type(type) {}
+            constexpr value(const T d, const EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT)
+                : data(d), percentage(0.0f), evaluation_type(type) {}
 
             /**
              * Constructor for value class
@@ -122,8 +122,8 @@ namespace GGUI{
              * specified. The constexpr parameter is used to determine whether to
              * use a constexpr constructor or not.
              */
-            constexpr value(const float value, const EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE)
-                : data{}, percentage(value), evaluation_type(type) {}
+            constexpr value(const float f, const EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE)
+                : data{}, percentage(f), evaluation_type(type) {}
 
             /**
              * Copy constructor
@@ -335,8 +335,8 @@ namespace GGUI{
              * @details This sets the value of the variant to the provided value.
              *          The evaluation type is set to EVALUATION_TYPE::DEFAULT.
              */
-            constexpr void Set(const T value) {
-                data = value;
+            constexpr void Set(const T d) {
+                data = d;
                 evaluation_type = EVALUATION_TYPE::DEFAULT;
             }
 
@@ -345,8 +345,8 @@ namespace GGUI{
              * @param value The value to set the variant to.
              * @details This sets the value of the variant to the provided value, and sets the evaluation type to EVALUATION_TYPE::PERCENTAGE.
              */
-            constexpr void Set(const float value){
-                percentage = value;
+            constexpr void Set(const float f){
+                percentage = f;
                 evaluation_type = EVALUATION_TYPE::PERCENTAGE;
             }
         };
@@ -1154,7 +1154,7 @@ namespace GGUI{
         }
 
         // WARNING: Uses zero origin based coordinates!!!
-        constexpr position(const STYLING_INTERNAL::value<int> X, const STYLING_INTERNAL::value<int> Y, const STYLING_INTERNAL::value<int> Z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(X, Y, Z, Default){
+        constexpr position(const STYLING_INTERNAL::value<int> x, const STYLING_INTERNAL::value<int> y, const STYLING_INTERNAL::value<int> z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(x, y, z, Default){
             Transform_Center_To_Top_Left_Origin();
         }
 

@@ -1689,13 +1689,13 @@ GGUI::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::ele
  * @param Parent_Buffer The parent element's buffer.
  * @param Child_Buffer The child element's buffer.
  */
-void GGUI::element::nestElement(GGUI::element* Parent, GGUI::element* Child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF>& Child_Buffer){
-    fittingArea Limits = getFittingArea(Parent, Child);
+void GGUI::element::nestElement(GGUI::element* parent, GGUI::element* child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF>& Child_Buffer){
+    fittingArea Limits = getFittingArea(parent, child);
 
     for (int y = Limits.start.Y; y < Limits.end.Y; y++){
         for (int x = Limits.start.X; x < Limits.end.X; x++){
             // Calculate the position of the child element in its own buffer.
-            int Child_Buffer_Y = (y - Limits.start.Y + Limits.negativeOffset.Y) * Child->getProcessedWidth();
+            int Child_Buffer_Y = (y - Limits.start.Y + Limits.negativeOffset.Y) * child->getProcessedWidth();
             int Child_Buffer_X = (x - Limits.start.X + Limits.negativeOffset.X); 
             computeAlphaToNesting(Parent_Buffer[y * getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X]);
         }
@@ -1882,19 +1882,16 @@ void GGUI::element::onClick(std::function<bool(GGUI::Event*)> action){
     Action* a = new Action(
         Constants::MOUSE_LEFT_CLICKED,
         [this, action](GGUI::Event* e){
-            // If the element is under the mouse cursor when it is clicked
-            if (Collides(this, INTERNAL::Mouse)){
-                // Construct an Action from the Event obj
-                GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this, getName() + "::onClick");
+            // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
 
-                // Call the lambda with the wrapper
-                action(wrapper);
+            // Construct an Action from the Event obj
+            GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this, getName() + "::onClick");
 
-                //action successfully executed.
-                return true;
-            }
-            //action failed.
-            return false;
+            // Call the lambda with the wrapper
+            action(wrapper);
+
+            //action successfully executed.
+            return true;
         },
         this,
         getName() + "::onClick::wrapper"

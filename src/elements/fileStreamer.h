@@ -210,8 +210,8 @@ namespace GGUI{
              * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
              * @see Get_Name()
              */
-            void setName(std::string Name){
-                this->Name = Name;
+            void setName(std::string name){
+                this->Name = name;
             }
         };
 
@@ -357,10 +357,10 @@ namespace GGUI{
          * 
          * This constructor creates a new FILE_POSITION object with the given file name, line number and character number.
          */
-        filePosition(std::string File_Name, unsigned int Line_Number, unsigned int Character){
-            this->File_Name = File_Name;
-            this->Line_Number = Line_Number;
-            this->Character = Character;
+        filePosition(std::string file_name, unsigned int line_number, unsigned int character){
+            this->File_Name = file_name;
+            this->Line_Number = line_number;
+            this->Character = character;
         }
 
         /**

@@ -1852,46 +1852,53 @@ namespace GGUI{
         // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
         Populate_Inputs_For_Held_Down_Keys();
 
-        for (auto& e : INTERNAL::Event_Handlers){
-
+        for (unsigned int i = 0; i < INTERNAL::Event_Handlers.size(); i++){
             bool Has_Select_Event = false;
 
-            for (unsigned int i = 0; i < INTERNAL::Inputs.size(); i++){
-                if (Has(INTERNAL::Inputs[i]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
+            for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
+                if (Has(INTERNAL::Inputs[j]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
                     Has_Select_Event = true;
 
                 // Criteria must be identical for more accurate criteria listing.
-                if (e->Criteria == INTERNAL::Inputs[i]->Criteria){
+                if (
+                    INTERNAL::Event_Handlers[i]->Criteria == INTERNAL::Inputs[j]->Criteria && (
+                        Collides(INTERNAL::Event_Handlers[i]->Host, GGUI::INTERNAL::Mouse) || 
+                        INTERNAL::Event_Handlers[i]->Host->isFocused()
+                    )
+                ){
                     try{
                         // Check if this job could be run successfully.
-                        if (e->Job(INTERNAL::Inputs[i])){
+                        if (INTERNAL::Event_Handlers[i]->Job(INTERNAL::Inputs[j])){
                             //dont let anyone else react to this event.
-                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + i);
+                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j);
                         }
                         else{
                             // TODO: report miscarried event job.
-                            INTERNAL::reportStack("Job '" + e->ID + "' failed!");
+                            INTERNAL::reportStack("Job '" + INTERNAL::Event_Handlers[i]->ID + "' failed!");
                         }
                     }
                     catch(std::exception& problem){
-                        INTERNAL::reportStack("In event: '" + e->ID + "' Problem: " + std::string(problem.what()));
+                        INTERNAL::reportStack("In event: '" + INTERNAL::Event_Handlers[i]->ID + "' Problem: " + std::string(problem.what()));
                     }
                 }
             }
 
+            if (i >= INTERNAL::Event_Handlers.size())
+                break;
+
             // Hosted branches
-            if (e->Host){
-                if (!e->Host->isDisplayed())
+            if (INTERNAL::Event_Handlers[i]->Host){
+                if (!INTERNAL::Event_Handlers[i]->Host->isDisplayed())
                     continue;
 
                 //update the focused
-                if (Collides(e->Host, GGUI::INTERNAL::Mouse)){
+                if (Collides(INTERNAL::Event_Handlers[i]->Host, GGUI::INTERNAL::Mouse)){
                     if (Has_Select_Event){
-                        updateFocusedElement(e->Host);
+                        updateFocusedElement(INTERNAL::Event_Handlers[i]->Host);
                         unHoverElement();
                     }
                     else{
-                        updateHoveredElement(e->Host);
+                        updateHoveredElement(INTERNAL::Event_Handlers[i]->Host);
                     }
                 }
             }
@@ -1907,15 +1914,15 @@ namespace GGUI{
 
             // TODO: Do better you dum!
             // GO through the inputs and check if they contain all the flags required
-            unsigned long long Remaining_Flags = e->Criteria;
+            unsigned long long Remaining_Flags = INTERNAL::Event_Handlers[i]->Criteria;
             std::vector<GGUI::Input *> Accepted_Inputs;
 
             // if an input has flags that meet the criteria, then remove the criteria from the remaining flags and continue until the remaining flags are equal to zero.
-            for (auto& i : INTERNAL::Inputs){
+            for (auto* j : INTERNAL::Inputs){
 
-                if (Contains(Remaining_Flags, i->Criteria)){
-                    Remaining_Flags &= ~i->Criteria;
-                    Accepted_Inputs.push_back(i);
+                if (Contains(Remaining_Flags, j->Criteria)){
+                    Remaining_Flags &= ~j->Criteria;
+                    Accepted_Inputs.push_back(j);
                 }
 
                 if (Remaining_Flags == 0)
@@ -1926,19 +1933,19 @@ namespace GGUI{
                 // Now we need to find the information to send to the event handler.
                 Input* Best_Candidate = Accepted_Inputs[0];
 
-                for (auto i : Accepted_Inputs){
-                    if (i->Data > Best_Candidate->Data){
-                        Best_Candidate = i;
+                for (auto* j : Accepted_Inputs){
+                    if (j->Data > Best_Candidate->Data){
+                        Best_Candidate = j;
                     }
                 }
 
                 //check if this job could be run successfully.
-                if (e->Job(Best_Candidate)){
+                if (INTERNAL::Event_Handlers[i]->Job(Best_Candidate)){
                     // Now remove the candidates from the input
-                    for (unsigned int i = 0; i < INTERNAL::Inputs.size(); i++){
-                        if (INTERNAL::Inputs[i] == Best_Candidate){
-                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + i);
-                            i--;
+                    for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
+                        if (INTERNAL::Inputs[j] == Best_Candidate){
+                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j);
+                            j--;
                         }
                     }
                 }

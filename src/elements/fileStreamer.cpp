@@ -446,7 +446,7 @@ namespace GGUI{
          * This will also insert this as the new cout output stream.
          * If Global is true, this BUFFER_CAPTURE will inform all other global BUFFER_CAPTURES about the change.
          */
-        bufferCapture::bufferCapture(std::function<void()> on_change, std::string Name, bool Global) : Name(Name), Is_Global(Global){
+        bufferCapture::bufferCapture(std::function<void()> on_change, std::string name, bool Global) : Name(name), Is_Global(Global){
             Current_Line = "";
 
             // Store the previous handle.

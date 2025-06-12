@@ -1107,7 +1107,7 @@ namespace GGUI{
          * @param Parent_Buffer The parent element's buffer.
          * @param Child_Buffer The child element's buffer.
          */
-        void nestElement(element* Parent, element* Child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
+        void nestElement(element* parent, element* child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
 
         /**
          * @brief Sets the custom border style for the element.

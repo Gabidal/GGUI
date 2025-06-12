@@ -686,9 +686,6 @@ namespace GGUI{
     }
 
     void GGUI::styling::Copy_Un_Parsed_Styles(){
-        // for the cleaning afterwards
-        STYLING_INTERNAL::style_base* cleaning_handle = un_parsed_styles;
-
         // deep copies the 'Other' members and uses their respective Copy virtual functions.
         STYLING_INTERNAL::style_base* current_attribute = un_parsed_styles;
 
@@ -709,20 +706,6 @@ namespace GGUI{
 
             // Then set the current_attribute into the nested one
             current_attribute = current_attribute->Other;
-        }
-
-        // now we can clean the 'Others' from the clean_handle
-        while (cleaning_handle){
-            // add an anchor
-            STYLING_INTERNAL::style_base* dish = cleaning_handle;
-
-            // Then set the current_attribute into the nested one
-            cleaning_handle = cleaning_handle->Other;
-
-            // check if this was the last dish and so no 'Other's in it.
-            if (dish)
-                // now we can release the anchor
-                dish->Other = nullptr;
         }
     }
 

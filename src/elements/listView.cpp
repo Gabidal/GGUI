@@ -216,7 +216,7 @@ bool GGUI::listView::remove(element* remove){
         if (Index == Style->Childs.size()){
             report("Internal: no element with ptr value: " + remove->getName() + " was found in the list view: " + getName());
             
-            // Since this removal action failed report to starter, that this failed sadge.
+            // Removal action failed.
             return false;
         }
 

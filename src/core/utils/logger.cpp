@@ -932,8 +932,8 @@ namespace GGUI{
                 LOGGER::AllQueues([&LinearQueue](std::vector<LOGGER::guardedQueue*>& self){
                     for (auto* queue : self){
                         // Pause the current queue
-                        (*queue)([&LinearQueue](LOGGER::queue& self){
-                            self.flushInto(LinearQueue);
+                        (*queue)([&LinearQueue](LOGGER::queue& self2){
+                            self2.flushInto(LinearQueue);
                         });
                     }
                 });

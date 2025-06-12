@@ -212,8 +212,8 @@ namespace GGUI{
          */
         void embedPoints(std::vector<bool> pixels, styled_border border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
 
-        void setOnDraw(GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y)){
-            this->On_Draw = On_Draw;
+        void setOnDraw(GGUI::sprite (*on_draw)(unsigned int x, unsigned int y)){
+            this->On_Draw = on_draw;
         }
     };
 

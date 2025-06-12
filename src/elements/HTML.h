@@ -138,9 +138,9 @@ namespace GGUI{
          * @param Type The type of the token.
          * @param Data The data of the token.
          */
-        HTMLToken(HTML_GROUP_TYPES Type, std::string Data) {
-            this->Type = Type;
-            this->Data = Data;
+        HTMLToken(HTML_GROUP_TYPES type, std::string data) {
+            this->Type = type;
+            this->Data = data;
         }
 
         /**
@@ -149,9 +149,9 @@ namespace GGUI{
          * @param Data The data of the token.
          * @param position The position of the token in the source file.
          */
-        HTMLToken(HTML_GROUP_TYPES Type, char Data, filePosition position){
-            this->Type = Type;
-            this->Data.push_back(Data);
+        HTMLToken(HTML_GROUP_TYPES type, char data, filePosition position){
+            this->Type = type;
+            this->Data.push_back(data);
             this->Position = position;
         }
 
@@ -197,11 +197,11 @@ namespace GGUI{
          * @param End The end of the group.
          * @param Is_Sticky Is the group sticky?
          */
-        HTMLGroup(HTML_GROUP_TYPES Type, char Start, char End, bool Is_Sticky = true){
-            this->Type = Type;
-            this->Start = Start;
-            this->End = End;
-            this->Is_Sticky = Is_Sticky;
+        HTMLGroup(HTML_GROUP_TYPES type, char start, char end, bool is_sticky = true){
+            this->Type = type;
+            this->Start = start;
+            this->End = end;
+            this->Is_Sticky = is_sticky;
         }
     };
 
