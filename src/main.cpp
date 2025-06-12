@@ -1,29 +1,31 @@
 #include "ggui.h"
 
-#include <math.h>
-
+using namespace std;
 using namespace GGUI;
 
-int main() 
-{
+int main(){
+    textField* t = new textField(
+        text(
+    "A AA AAA AAAA AAAAA AAAAAA AAAAAAA AAAAAAAA \n"
+    "B BB BBB BBBB BBBBB BBBBBB BBBBBBB BBBBBBBB \n"
+    "C CC CCC CCCC CCCCC CCCCCC CCCCCCC CCCCCCCC \n"
+        ) | 
+
+        on_click([](element* self){
+            self->remove();
+
+            return true;
+        })
+    );
+    
+
     GGUI::GGUI(
-        node(new terminalCanvas(
-
-            width(1.0f) | height(1.0f) |
-
-            on_draw([]([[maybe_unused]] unsigned int x, [[maybe_unused]] unsigned int y){
-                return GGUI::sprite(
-                    {
-                        {" ", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
-                        {" ", {GGUI::COLOR::BLUE, GGUI::COLOR::BLUE}}, 
-                    },
-                    0,  // Animation offset
-                    1   // Animation speed
-                );
-            })
+        node(new listView(
+            node(t) | node(t->copy())
         ))
-    , INT32_MAX);
+    );
 
-    // // Then exit properly. After 0.1.8 this is unnecessary, unless user overrides exit handlers.
-    GGUI::EXIT();
+    while(true){ 
+        //Your programm here :D
+    }
 }

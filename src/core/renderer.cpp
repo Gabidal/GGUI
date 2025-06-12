@@ -25,7 +25,7 @@ namespace GGUI{
             std::condition_variable Condition;
             
             int LOCKED = 0;
-            status Pause_Render_Thread = status::PAUSED;
+            status Pause_Render_Thread = status::NOT_INITIALIZED;
         }
 
         std::vector<std::thread> Sub_Threads;
@@ -1544,7 +1544,7 @@ namespace GGUI{
         std::unique_lock lock(INTERNAL::atomic::Mutex);
 
         // The rendering thread is either locked, already rendering or already requested to render.
-        if (INTERNAL::atomic::LOCKED > 0)
+        if (INTERNAL::atomic::LOCKED > 0 || INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::NOT_INITIALIZED)
             return;
 
         // Give the rendering thread one ticket.
@@ -1562,7 +1562,7 @@ namespace GGUI{
         std::unique_lock lock(INTERNAL::atomic::Mutex);
 
         // Already paused via upper scope.
-        if (INTERNAL::atomic::LOCKED++ > 0)
+        if (INTERNAL::atomic::LOCKED++ > 0 || INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::NOT_INITIALIZED)
             return;
 
         // await until the rendering thread has used it's rendering ticket.
@@ -2030,6 +2030,13 @@ namespace GGUI{
         // INTERNAL::Sub_Threads.back().detach();    // the Logging scheduler cannot never stop and thus needs to be as an separate thread.
         
         INTERNAL::LOGGER::Log("GGUI Core initialization complete.");
+
+        {
+            std::unique_lock lock(INTERNAL::atomic::Mutex);
+
+            // Remove NOT_INITALIZED from the render thread flag.
+            INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::PAUSED;
+        }
 
         return INTERNAL::Main;
     }

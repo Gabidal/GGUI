@@ -851,6 +851,10 @@ void GGUI::element::setPosition(IVector3* c){
  */
 void GGUI::element::updatePosition(IVector3 v){
     Style->Position += v;
+
+    Dirty.Dirty(STAIN_TYPE::MOVE);
+
+    updateFrame();
 }
 
 /**
