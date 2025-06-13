@@ -68,7 +68,18 @@ cpp_args = [
   '-Wno-narrowing',              # Disable narrowing warnings (e.g., casting to a smaller type)
   '-Wshadow',
   '-Wdangling-reference',
-  '-Wformat=2'
+  '-Wformat=2',
+  '-Wnon-virtual-dtor',
+  '-Wcast-align',
+  '-Wunused',
+  '-Wmisleading-indentation',
+  '-Wduplicated-cond',
+  '-Wduplicated-branches',
+  '-Wlogical-op',
+  '-Wnull-dereference',
+  '-Wuseless-cast',
+  '-Wdouble-promotion',
+  '-Wimplicit-fallthrough'
   # '-fvisibility=hidden',         # Hide symbols by default
   # '-fPIC',                       # Generate position-independent code
   # '-fno-semantic-interposition', # Disable semantic interposition

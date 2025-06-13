@@ -598,10 +598,10 @@ namespace GGUI{
          * to set.
          */
         void cubicBezierCurve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width){
-            for (double t = 0.0; t <= 1.0; t += 0.001) {
-                double u = 1 - t;
-                double tt = t*t, uu = u*u;
-                double uuu = uu * u, ttt = tt * t;
+            for (float t = 0.0f; t <= 1.0f; t += 0.001f) {
+                float u = 1 - t;
+                float tt = t*t, uu = u*u;
+                float uuu = uu * u, ttt = tt * t;
 
                 FVector2 P;
                 P.X = uuu * P0.X; //influence of P0

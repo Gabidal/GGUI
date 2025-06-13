@@ -162,7 +162,7 @@ namespace GGUI{
          */
         void Bar::setProgress(float New_Progress) {
             // Check if the new progress value exceeds the maximum limit
-            if (New_Progress > 1.00) {
+            if (New_Progress > 1.0f) {
                 // Report a percentage overflow warning
                 report(getName() + " got a percentage overflow!");
                 return;

@@ -599,7 +599,7 @@ namespace GGUI{
                 return "";
             }
 
-            const char* stringTableData = reinterpret_cast<const char*>(
+            const char* stringTableData = (
                 reinterpret_cast<const char*>(mappedElfFile) + stringTableSection->sh_offset
             );
 
