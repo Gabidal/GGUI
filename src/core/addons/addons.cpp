@@ -23,7 +23,7 @@ namespace GGUI{
      */
     void initAddons(){
         // Call addon initializers.
-        // initInspectTool();
+        initInspectTool();
 
         // Finally after all addons are loaded
         for (auto* a : Addons){
@@ -103,7 +103,7 @@ namespace GGUI{
             flow_priority(DIRECTION::COLUMN) | 
             // Set the position of the list view to the right side of the main window
             position(
-                STYLES::top + STYLES::center + STYLES::prioritize
+                STYLES::top + STYLES::right + STYLES::prioritize
             ) | 
             // Set the opacity of the list view to 0.8
             opacity(0.8f) |
@@ -134,7 +134,7 @@ namespace GGUI{
             )) | 
 
             // Hide the inspect tool by default
-            // STYLES::hide | 
+            display(false) | 
 
             on_init([](element* self){
                 // Register an event handler to toggle the inspect tool on and off

@@ -66,24 +66,7 @@ namespace GGUI{
 
     enum class EVALUATION_TYPE{
         DEFAULT,        // no further evaluation needed, just return the value
-        PIXELS,         // the value is multiplied by 1:1
-        PERCENTAGE,     // the value is a percentage of the parent attribute
-        EM,             // the value is a multiple of the font size
-        REM,            // the value is a multiple of the root font size
-        VW,             // the value is a percentage of the viewport width
-        VH,             // the value is a percentage of the viewport height
-        CH,             // the value is a relative to the width of the "0" (zero) character in the element’s font.
-        VMIN,           // the value is a percentage of the viewport’s smaller dimension
-        VMAX,           // the value is a percentage of the viewport’s larger dimension
-        EX,             // the value is a multiple of the x-height of the element’s font
-        FRACTION,       // the value is a fraction of the parent attribute
-
-        // PHYSICAL MEASUREMENTS
-        CM,             // the value is in centimeters defaults to 1:1 in terminal mode
-        MM,             // the value is in millimeters defaults to 1:1 in terminal mode
-        IN,             // the value is in inches defaults to 1:1 in terminal mode
-        PT,             // the value is in points defaults to 1:1 in terminal mode
-        PC,             // the value is in picas defaults to 1:1 in terminal mode
+        PERCENTAGE     // the value is a percentage of the parent attribute
     };
 
     // This namespace is an wrapper for the user not to see these !!
@@ -188,24 +171,24 @@ namespace GGUI{
             }
 
             constexpr bool operator==(const value<T>& other) const {
-                if (evaluation_type != other.evaluation_type){
-                    INTERNAL::reportStack("Cannot compare two different eval type values!");
-                    INTERNAL::EXIT(1);
-                    return false;   // for warnings.
-                }
-                else{
-                    switch (evaluation_type)
-                    {
-                    case EVALUATION_TYPE::DEFAULT:
+                // if (evaluation_type != other.evaluation_type){
+                //     INTERNAL::reportStack("Cannot compare two different eval type values!");
+                //     INTERNAL::EXIT(1);
+                //     return false;   // for warnings.
+                // }
+                // else{
+                //     switch (evaluation_type)
+                //     {
+                //     case EVALUATION_TYPE::DEFAULT:
                         return data == other.data;
-                    case EVALUATION_TYPE::PERCENTAGE:
-                        return percentage == other.percentage;
-                    default:
-                        INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
-                        INTERNAL::EXIT(1);
-                        return false;   // for warnings.
-                    }
-                }
+                //     case EVALUATION_TYPE::PERCENTAGE:
+                //         return percentage == other.percentage;
+                //     default:
+                //         INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                //         INTERNAL::EXIT(1);
+                //         return false;   // for warnings.
+                //     }
+                // }
             }
 
             constexpr value<T> operator+(const value<T>& other){

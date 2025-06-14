@@ -706,7 +706,8 @@ void GGUI::element::display(bool f){
  * @return A boolean indicating whether the element is displayed (true) or hidden (false).
  */
 bool GGUI::element::isDisplayed(){
-    return Show;
+    bool Parent_Exists = Parent;
+    return (Parent_Exists && Parent->isDisplayed()) || !Parent_Exists ? Show : false;
 }
 
 /**

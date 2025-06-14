@@ -56,7 +56,7 @@ node initCampaign(){
     constexpr int inputFieldHeight = 3;
 
     return node(new element(
-        name(CAMPAIGN_NAME) | // display(false) | 
+        name(CAMPAIGN_NAME) | display(false) | 
         width(1.0f) | height(1.0f) |
 
         // Top right canvas
@@ -96,7 +96,7 @@ node initCampaign(){
 
 int main(){
     GGUI::GGUI(
-        initCampaign()
+        initMenu() | initCampaign()
     );
 
     GGUI::INTERNAL::SLEEP(UINT32_MAX);
