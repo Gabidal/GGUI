@@ -386,17 +386,11 @@ namespace GGUI{
          * @return None
          */
         void queryInputs(){
-            // For appending to already existing buffered input which has not yet been processed, we can use the previous Raw_Input_Size to deduce the new starting point.
-            INPUT_RECORD* Current_Starting_Address = Raw_Input + Raw_Input_Size;
-
-            // Ceil the value so that negative numbers wont create overflows.
-            unsigned int Current_Usable_Capacity = Max(Raw_Input_Capacity - Raw_Input_Size, Raw_Input_Capacity);
-
             // Read the console input and store it in Raw_Input.
             ReadConsoleInput(
                 GLOBAL_STD_INPUT_HANDLE,
-                Current_Starting_Address,
-                Current_Usable_Capacity,
+                Raw_Input,
+                Raw_Input_Capacity,
                 (LPDWORD)&Raw_Input_Size
             );
         }
@@ -472,7 +466,6 @@ namespace GGUI{
                     }
                     else if (Raw_Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
                         char Result = Reverse_Engineer_Keybinds(Raw_Input[i].Event.KeyEvent.uChar.AsciiChar);
-
                         INTERNAL::Inputs.push_back(new GGUI::Input(Result, GGUI::Constants::KEY_PRESS));
                     }
                 }
@@ -490,8 +483,6 @@ namespace GGUI{
                         INTERNAL::Mouse.Y = mousePos.Y;
                     }
                     // Handle mouse clicks
-                    // TODO: Windows doesn't give release events.
-                    // Yes it does you fucking moron!
                     if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
                         //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = true;

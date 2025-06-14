@@ -386,7 +386,7 @@ namespace GGUI{
         Action* enter = new Action(
             Constants::ENTER,
             [this, Then](GGUI::Event* e) {
-                if (Focused) {
+                if (Focused && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER].State) {
                     //We know the event was gifted as Input*
                     GGUI::Input* input = (GGUI::Input*)e;
 
@@ -407,11 +407,14 @@ namespace GGUI{
         Action* back_space = new Action(
             Constants::BACKSPACE,
             [this](GGUI::Event*) {
-                if (Focused) {
+                if (Focused && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::BACKSPACE].State) {
                     //If the text field is empty, there is nothing to do
                     if (Text.size() > 0) {
                         Text.pop_back();
-                        Dirty.Dirty(STAIN_TYPE::DEEP);
+
+                        updateTextCache();
+
+                        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);
                         updateFrame();
                     }
 
