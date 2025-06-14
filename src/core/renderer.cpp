@@ -2134,9 +2134,6 @@ namespace GGUI{
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
             INTERNAL::Main->AddStyling(App);
-
-            // Now recursively go down in the App AST nodes and Build each node.
-            INTERNAL::Main->embedStyles();
             
             // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
             initAddons();

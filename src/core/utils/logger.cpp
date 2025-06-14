@@ -729,6 +729,15 @@ namespace GGUI{
          * @param Problem The error message to display.
          * @note If the main window is not created yet, the error will be printed to the console.
          * @note This function is thread safe.
+         * @structure:  <Window name="_ERROR_LOGGER_">
+                            <List name="_HISTORY_" type=vertical scrollable=true>
+                                <List type="horizontal">
+                                    <TextField>Time</TextField>
+                                    <TextField>Problem a</TextField>
+                                    <TextField>[repetitions if any]</TextField>
+                                </List>
+                            </List>
+                        </Window>
          */
         void renderLogger(const std::string& problem){
             const char* ERROR_LOGGER = "_ERROR_LOGGER_";
@@ -743,20 +752,6 @@ namespace GGUI{
                     }
 
                     std::string Problem = " " + problem + " ";
-
-                    // Error logger structure:
-                    /*
-                        <Window name="_ERROR_LOGGER_">
-                            <List name="_HISTORY_" type=vertical scrollable=true>
-                                <List type="horizontal">
-                                    <TextField>Time</TextField>
-                                    <TextField>Problem a</TextField>
-                                    <TextField>[repetitions if any]</TextField>
-                                </List>
-                                ...
-                            </List>
-                        </Window>
-                    */
 
                     if (INTERNAL::Main && (INTERNAL::Max_Width != 0 && INTERNAL::Max_Height != 0)){
                         bool Create_New_Line = true;
@@ -854,27 +849,10 @@ namespace GGUI{
                                 // )))
                             ));
 
-                            // listView* row = (listView*)History->getContainer()->getChilds().back();
-                            // // row->setHeight(row->getChilds()[1]->getHeight());
-                            // row->setHeight(row->getChilds()[0]->getHeight());
-
-                            // Calculate the new x position for the Error_Logger
-                            if (Error_Logger->getParent() == INTERNAL::Main)
-                                Error_Logger->setPosition({
-                                    (Error_Logger->getParent()->getWidth() - History->getWidth()) / 2,
-                                    (Error_Logger->getParent()->getHeight() - History->getHeight()) / 2,
-                                    POSITION::Max_Z
-                                });
-
                             // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                             // We can assume that the singular error is at least one tall.
                             // -1, since the border takes one.
                             if (GGUI::Min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight() - 1){
-                                // Since the children are added asynchronously, we can assume the the order of childs list vector represents the actual visual childs.
-                                // Element* First_Child = History->Get_Childs()[0];
-                                // History->Remove(First_Child);
-
-                                // TODO: Make this into a scroll action and not a remove action, since we want to see the previous errors :)
                                 History->scrollDown();
                             }
                         }

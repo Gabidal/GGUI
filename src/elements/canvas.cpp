@@ -157,15 +157,8 @@ namespace GGUI{
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
     void terminalCanvas::set(unsigned int x, unsigned int y, sprite& sprite, bool Flush){
-        unsigned int Actual_X = x + hasBorder(); // Calculate the actual x coordinate, accounting for border offset.
-        unsigned int Actual_Y = y + hasBorder(); // Calculate the actual y coordinate, accounting for border offset.
-
-        unsigned int Location = Actual_X + Actual_Y * getWidth(); // Determine the buffer index for the sprite.
-
-        // Resize buffer if necessary to match the width x height of the canvas.
-        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= getWidth() * getHeight())){
-            Buffer.resize(getWidth() * getHeight());
-        }
+        unsigned int innerWidth = getWidth() - hasBorder()*2;
+        unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
         if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
@@ -191,15 +184,8 @@ namespace GGUI{
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
     void terminalCanvas::set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush){
-        unsigned int Actual_X = x + hasBorder(); // Calculate the actual x coordinate, accounting for border offset.
-        unsigned int Actual_Y = y + hasBorder(); // Calculate the actual y coordinate, accounting for border offset.
-
-        unsigned int Location = Actual_X + Actual_Y * getWidth(); // Determine the buffer index for the sprite.
-
-        // Resize buffer if necessary to match the width x height of the canvas.
-        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= getWidth() * getHeight())){
-            Buffer.resize(getWidth() * getHeight());
-        }
+        unsigned int innerWidth = getWidth() - hasBorder()*2;
+        unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
         if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
@@ -225,17 +211,15 @@ namespace GGUI{
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
     void terminalCanvas::set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
-        unsigned int Actual_X = x + hasBorder(); // Calculate the actual x coordinate, accounting for border offset.
-        unsigned int Actual_Y = y + hasBorder(); // Calculate the actual y coordinate, accounting for border offset.
-
-        unsigned int Location = Actual_X + Actual_Y * getWidth(); // Determine the buffer index for the sprite.
-
-        // Resize buffer if necessary to match the width x height of the canvas.
-        if (Buffer.size() == 0 || (Location > Buffer.size() && Location <= getWidth() * getHeight())){
-            Buffer.resize(getWidth() * getHeight());
-        }
-
+        unsigned int innerWidth = getWidth() - hasBorder()*2;
+        unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
+        
         Buffer[Location].Frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
+
+        if (!isMultiFrame() && Buffer[Location].Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
+            INTERNAL::Multi_Frame_Canvas[this] = true;
+            Multi_Frame = true;
+        }
 
         Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
 
@@ -287,14 +271,17 @@ namespace GGUI{
             Result.clear();
             Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
 
+            unsigned int fittingWidth = getWidth() - hasBorder()*2;
+            unsigned int fittingHeight = getHeight() - hasBorder()*2;
+
             // Also clear and resize the sprite buffer.
             Buffer.clear();
-            Buffer.resize(getWidth() * getHeight());
+            Buffer.resize(fittingWidth * fittingHeight);
 
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
-                for (unsigned int y = 0; y < getHeight(); y++) {
-                    for (unsigned int x = 0; x < getWidth(); x++) {
+                for (unsigned int y = 0; y < fittingHeight; y++) {
+                    for (unsigned int x = 0; x < fittingWidth; x++) {
                         set(x, y, On_Draw(x, y), false);
                     }
                 }

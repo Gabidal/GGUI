@@ -211,7 +211,10 @@ namespace GGUI{
      */
     void textField::setText(std::string text){
         Text = text;
-        setName(text);
+        // We don't want to accidentally start re-writing into the name when streaming input text.
+        if (hasEmptyName())
+            setName(text);
+            
         updateTextCache();
 
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);

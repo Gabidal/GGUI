@@ -8,15 +8,13 @@ using namespace GGUI;
 const char* MENU_NAME = "menu";
 const char* CAMPAIGN_NAME = "campaign";
 const char* CANVAS_NAME = "canvas";
+const char* INPUT_HISTORY = "input_history";
 const char* TEXT_INPUT_NAME = "text_input";
 const char* EXIT_NAME = "exit";
 
-GGUI::textField* User_Input;
-GGUI::textField* Output;
-GGUI::canvas* Map_Canvas;
-
 void inputHandler(string& input){
-    Output->setText(Output->getText() + "\n" + input);
+    GGUI::textField* textHistory = (GGUI::textField*)INTERNAL::Main->getElement(INPUT_HISTORY);
+    textHistory->setText(textHistory->getText() + "\n" + input);
 }
 
 // Switches from the 'From' ID to the 'To' ID
@@ -63,7 +61,13 @@ node initCampaign(){
 
         // Top right canvas
         node(new terminalCanvas(
-            width(0.5f) | height(0.5f) | position(STYLES::top + STYLES::right) | name(CANVAS_NAME) | enable_border(true)
+            width(0.5f) | height(0.5f) | position(STYLES::top + STYLES::right) | name(CANVAS_NAME) | 
+            on_draw([](unsigned int x, unsigned int y){
+                return sprite({
+                    UTF(' ', {RGB(x*10, x*10, y*10), RGB(y*10, x*10, x*10)}),
+                    UTF(' ', {RGB(x*10, y*10, x*10), RGB(y*10, y*10, x*10)}),
+                });
+            })
         )) |
 
         // Bottom left, text input field
@@ -85,7 +89,7 @@ node initCampaign(){
 
         // top left, input history
         node(new textField(
-            width(0.5f) | height(0.9f) | enable_border(true) | allow_overflow(true)
+            width(0.5f) | height(0.95f) | enable_border(true) | allow_overflow(true) | name(INPUT_HISTORY)
         )) 
     ));
 }
