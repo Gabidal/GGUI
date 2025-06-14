@@ -5,13 +5,6 @@
 using namespace std;
 using namespace GGUI;
 
-// IDEAS:
-/*
-    Put child render nesting before the parents border rendering.
-    Take into consider if the child has also border combine it with parents own borders.
-
-*/
-
 const char* MENU_NAME = "menu";
 const char* CAMPAIGN_NAME = "campaign";
 const char* CANVAS_NAME = "canvas";

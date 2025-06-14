@@ -5,13 +5,6 @@
 using namespace std;
 using namespace GGUI;
 
-// IDEAS:
-/*
-    Put child render nesting before the parents border rendering.
-    Take into consider if the child has also border combine it with parents own borders.
-
-*/
-
 const char* MENU_NAME = "menu";
 const char* CAMPAIGN_NAME = "campaign";
 const char* CANVAS_NAME = "canvas";
@@ -22,7 +15,7 @@ GGUI::textField* User_Input;
 GGUI::textField* Output;
 GGUI::canvas* Map_Canvas;
 
-void inputHandler(string input){
+void inputHandler(string& input){
     Output->setText(Output->getText() + "\n" + input);
 }
 
@@ -69,15 +62,15 @@ node initCampaign(){
         width(1.0f) | height(1.0f) |
 
         // Top right canvas
-        node(new canvas(
-            width(0.5f) | height(0.5f) | position(0.5f, 0) | name(CANVAS_NAME) | enable_border(true)
+        node(new terminalCanvas(
+            width(0.5f) | height(0.5f) | position(STYLES::top + STYLES::right) | name(CANVAS_NAME) | enable_border(true)
         )) |
 
         // Bottom left, text input field
         node(new textField(
             width(0.5f) | height(inputFieldHeight) | 
             name(TEXT_INPUT_NAME) | enable_border(true) | 
-            position(STYLES::bottom) | allow_overflow(true) | 
+            position(STYLES::bottom + STYLES::left) | allow_overflow(true) | 
             on_input([](textField* self, char input){
                 if (input == '\n'){
                     string text = self->getText();
@@ -92,7 +85,7 @@ node initCampaign(){
 
         // top left, input history
         node(new textField(
-            width(0.5f) | height(0.5f) | enable_border(true) | allow_overflow(true)
+            width(0.5f) | height(0.9f) | enable_border(true) | allow_overflow(true)
         )) 
     ));
 }

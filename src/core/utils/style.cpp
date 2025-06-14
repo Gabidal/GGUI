@@ -27,76 +27,84 @@ namespace GGUI{
     // EVALs
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
-    void position::Evaluate(const styling* parent){
-        X.Evaluate(Max(parent->Width.Get() - (parent->Border_Enabled.Value * 2), 1));
-        Y.Evaluate(Max(parent->Height.Get() - (parent->Border_Enabled.Value * 2), 1));
+    void position::Evaluate(const styling* self, const styling* parent){
+        X.Evaluate(Max(
+            parent->Width.Get()                     // The base width of the parent
+            - (parent->Border_Enabled.Value * 2)    // Offset the width by 2 for both sides of border.
+            - self->Width.Get()                     // So that the relativity will take into count position - width. so that 1.0f doesn't put the element out of bound.
+        , 1));
+        Y.Evaluate(Max(
+            parent->Height.Get()                    // The base height of the parent 
+            - (parent->Border_Enabled.Value * 2)    // Offset the height by 2 for both sides of border.
+            - self->Height.Get()                    // So that the relativity will take into count position - height. so that 1.0f doesn't put the element out of bound.
+        , 1));
         // Z.Evaluate(parent->Position.Get().Z);    // Since child as always parent.Z+1, there is no world where this is useful.
     }
 
-    void width::Evaluate(const styling* parent){
+    void width::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(Max(parent->Width.Get() - (parent->Border_Enabled.Value * 2), 1));
     }
 
-    void height::Evaluate(const styling* parent){
+    void height::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(Max(parent->Height.Get() - (parent->Border_Enabled.Value * 2), 1));
     }
 
-    void text_color::Evaluate(const styling* parent){
+    void text_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Text_Color.Value.Get<RGB>());
     }
 
-    void background_color::Evaluate(const styling* parent){
+    void background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Background_Color.Value.Get<RGB>());
     }
 
-    void border_color::Evaluate(const styling* parent){
+    void border_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Border_Color.Value.Get<RGB>());
     }
 
-    void border_background_color::Evaluate(const styling* parent){
+    void border_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Border_Background_Color.Value.Get<RGB>());
     }
 
-    void hover_border_color::Evaluate(const styling* parent){
+    void hover_border_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Hover_Border_Color.Value.Get<RGB>());
     }
 
-    void hover_text_color::Evaluate(const styling* parent){
+    void hover_text_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Hover_Text_Color.Value.Get<RGB>());
     }
 
-    void hover_background_color::Evaluate(const styling* parent){
+    void hover_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Hover_Background_Color.Value.Get<RGB>());
     }
 
-    void hover_border_background_color::Evaluate(const styling* parent){
+    void hover_border_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Hover_Border_Background_Color.Value.Get<RGB>());
     }
 
-    void focus_border_color::Evaluate(const styling* parent){
+    void focus_border_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Focus_Border_Color.Value.Get<RGB>());
     }
 
-    void focus_text_color::Evaluate(const styling* parent){
+    void focus_text_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Focus_Text_Color.Value.Get<RGB>());
     }
 
-    void focus_background_color::Evaluate(const styling* parent){
+    void focus_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Focus_Background_Color.Value.Get<RGB>());
     }
 
-    void focus_border_background_color::Evaluate(const styling* parent){
+    void focus_border_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Value.Evaluate(parent->Focus_Border_Background_Color.Value.Get<RGB>());
     }
 
-    void margin::Evaluate(const styling* parent){
+    void margin::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Top.Evaluate(parent->Margin.Top.Get<unsigned int>());
         Bottom.Evaluate(parent->Margin.Bottom.Get<unsigned int>());
         Left.Evaluate(parent->Margin.Left.Get<unsigned int>());
         Right.Evaluate(parent->Margin.Right.Get<unsigned int>());
     }
 
-    void shadow::Evaluate(const styling* parent){
+    void shadow::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
         Direction.Evaluate(parent->Shadow.Direction.Get<FVector3>());
         Color.Evaluate(parent->Shadow.Color.Get<RGB>());
     }
@@ -542,16 +550,16 @@ namespace GGUI{
         styling* reference_style = Get_Reference(owner);
 
         // Evaluate each dynamic attribute against the reference style
-        Changed_Attributes |= Evaluate_Dynamic_Position(owner, reference_style);
         Changed_Attributes |= Evaluate_Dynamic_Dimensions(owner, reference_style);
+        Changed_Attributes |= Evaluate_Dynamic_Position(owner, reference_style);
         Changed_Attributes |= Evaluate_Dynamic_Border(owner, reference_style);
         Changed_Attributes |= Evaluate_Dynamic_Colors(owner, reference_style);
 
-        Margin.Evaluate(reference_style);
-        Shadow.Evaluate(reference_style);
-        Opacity.Evaluate(reference_style);
-        Allow_Scrolling.Evaluate(reference_style);
-        Align.Evaluate(reference_style);
+        Margin.Evaluate(owner->getDirectStyle(), reference_style);
+        Shadow.Evaluate(owner->getDirectStyle(), reference_style);
+        Opacity.Evaluate(owner->getDirectStyle(), reference_style);
+        Allow_Scrolling.Evaluate(owner->getDirectStyle(), reference_style);
+        Align.Evaluate(owner->getDirectStyle(), reference_style);
 
         return Changed_Attributes;
     }
@@ -563,7 +571,7 @@ namespace GGUI{
 
         position previous_value = Position;
 
-        Position.Evaluate(reference);
+        Position.Evaluate(owner->getDirectStyle(), reference);
 
         // check if position is still the same
         return previous_value != Position;
@@ -577,8 +585,8 @@ namespace GGUI{
         width previous_width = Width;
         height previous_height = Height;
 
-        Width.Evaluate(reference);
-        Height.Evaluate(reference);
+        Width.Evaluate(owner->getDirectStyle(), reference);
+        Height.Evaluate(owner->getDirectStyle(), reference);
 
         // check if width or height is still the same
         return previous_width != Width || previous_height != Height;
@@ -591,7 +599,7 @@ namespace GGUI{
 
         enable_border previous_value = Border_Enabled;
 
-        Border_Enabled.Evaluate(reference);
+        Border_Enabled.Evaluate(owner->getDirectStyle(), reference);
 
         // check if border is still the same
         return previous_value != Border_Enabled;
@@ -615,18 +623,18 @@ namespace GGUI{
         static focus_background_color previous_focus_background_color = Focus_Background_Color;
         static focus_border_background_color previous_focus_border_background_color = Focus_Border_Background_Color;
 
-        Text_Color.Evaluate(reference);
-        Background_Color.Evaluate(reference);
-        Border_Color.Evaluate(reference);
-        Border_Background_Color.Evaluate(reference);
-        Hover_Border_Color.Evaluate(reference);
-        Hover_Text_Color.Evaluate(reference);
-        Hover_Background_Color.Evaluate(reference);
-        Hover_Border_Background_Color.Evaluate(reference);
-        Focus_Border_Color.Evaluate(reference);
-        Focus_Text_Color.Evaluate(reference);
-        Focus_Background_Color.Evaluate(reference);
-        Focus_Border_Background_Color.Evaluate(reference);
+        Text_Color.Evaluate(owner->getDirectStyle(), reference);
+        Background_Color.Evaluate(owner->getDirectStyle(), reference);
+        Border_Color.Evaluate(owner->getDirectStyle(), reference);
+        Border_Background_Color.Evaluate(owner->getDirectStyle(), reference);
+        Hover_Border_Color.Evaluate(owner->getDirectStyle(), reference);
+        Hover_Text_Color.Evaluate(owner->getDirectStyle(), reference);
+        Hover_Background_Color.Evaluate(owner->getDirectStyle(), reference);
+        Hover_Border_Background_Color.Evaluate(owner->getDirectStyle(), reference);
+        Focus_Border_Color.Evaluate(owner->getDirectStyle(), reference);
+        Focus_Text_Color.Evaluate(owner->getDirectStyle(), reference);
+        Focus_Background_Color.Evaluate(owner->getDirectStyle(), reference);
+        Focus_Border_Background_Color.Evaluate(owner->getDirectStyle(), reference);
 
         // check if any of the colors are still the same
         return previous_text_color                      != Text_Color                       ||

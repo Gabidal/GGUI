@@ -430,7 +430,7 @@ namespace GGUI{
              *          The function is also responsible for setting the Value variable to the evaluated value.
              *          The function should be implemented by the derived classes to perform the evaluation.
              */
-            virtual void Evaluate([[maybe_unused]] const styling* host) {};
+            virtual void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* host) {};
 
             /**
              * @brief Imprints the style's identity into the Styling object.
@@ -553,7 +553,7 @@ namespace GGUI{
              * @param owner The styling owner to evaluate against.
              * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
              */
-            inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };
 
         class BOOL_VALUE : public style_base{
@@ -626,7 +626,7 @@ namespace GGUI{
              * @param owner The styling owner to evaluate against.
              * @details This function is a no-op for BOOL_VALUE, as it does not have any dynamically computable values.
              */
-            inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
             
             /**
              * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
@@ -748,7 +748,7 @@ namespace GGUI{
              * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
              *          When called, the function should evaluate the RGB value based on the owner object and set the Value property accordingly.
              */
-            inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
             /**
              * @brief Directly access the value of this NUMBER_VALUE object.
@@ -831,7 +831,7 @@ namespace GGUI{
              *          It is used to support dynamic values like percentage depended values.
              *          The function does not do anything as of now.
              */
-            inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
             /**
              * @brief Embed the value of this style into the given Styling object.
@@ -1013,7 +1013,7 @@ namespace GGUI{
              *          Currently it covers:
              *          - screen space
              */
-            inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
             
             /**
              * @brief Embeds the value of a Vector object into a Styling object.
@@ -1171,7 +1171,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     protected:
@@ -1212,7 +1212,7 @@ namespace GGUI{
 
         constexpr width& operator=(const width& other) = default;
 
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
 
@@ -1245,7 +1245,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
 
@@ -1282,7 +1282,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1306,7 +1306,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1330,7 +1330,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1354,7 +1354,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1378,7 +1378,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1402,7 +1402,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1426,7 +1426,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1450,7 +1450,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1474,7 +1474,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1498,7 +1498,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1522,7 +1522,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1546,7 +1546,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1570,7 +1570,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1662,7 +1662,7 @@ namespace GGUI{
             CROSS_CONNECTOR = other.CROSS_CONNECTOR;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
 
@@ -1688,7 +1688,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1710,7 +1710,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1732,7 +1732,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1754,7 +1754,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1795,7 +1795,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1840,7 +1840,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* owner) override;
+        void Evaluate(const styling* self, const styling* owner) override;
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1870,7 +1870,7 @@ namespace GGUI{
         constexpr opacity(const GGUI::opacity& other) : style_base(other.Status), Value(other.Value){}
 
         // Since opacity always represents an percentile of its self being displayed on top of its parent.
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
 
@@ -1899,7 +1899,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1921,7 +1921,7 @@ namespace GGUI{
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1950,7 +1950,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -1987,7 +1987,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
 
@@ -2032,7 +2032,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2061,7 +2061,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2090,7 +2090,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2119,7 +2119,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2148,7 +2148,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2204,7 +2204,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2234,7 +2234,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2263,7 +2263,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2292,7 +2292,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
@@ -2321,7 +2321,7 @@ namespace GGUI{
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };

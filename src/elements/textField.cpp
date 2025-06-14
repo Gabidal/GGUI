@@ -90,7 +90,7 @@ namespace GGUI{
         for (Compact_String& line : Text_Cache){
             // We need to take care of the "Force Unicode" shenanigans before we add it to this list.
             if (line.Size == 1){
-                line.Set_Ascii(line.Get_Unicode()[0]);
+                line.Set_Ascii(line.Get_Unicode(true)[0]);
             }
         }
 

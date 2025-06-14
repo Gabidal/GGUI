@@ -53,7 +53,7 @@ namespace GGUI{
 
             STAIN_TYPE Embed_Value([[maybe_unused]] styling* host, element* owner) override;
 
-            inline void Evaluate([[maybe_unused]] const styling* owner) override {};
+            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };
 
 

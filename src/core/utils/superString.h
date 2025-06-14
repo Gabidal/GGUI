@@ -186,10 +186,10 @@ namespace GGUI{
                 std::get<char>(Text);
         }
 
-        constexpr const char* Get_Unicode() const {
+        constexpr const char* Get_Unicode(bool force = false) const {
             // If the size is greater than 1, return the Unicode data.
             // Otherwise, return a pointer to the ASCII data.
-            return Size > 1 ? 
+            return Size > 1 || force ? 
                 std::get<const char*>(Text) : 
                 nullptr;
         }
