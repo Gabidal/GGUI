@@ -11,6 +11,7 @@ namespace GGUI{
      */
     void textField::updateTextCache(){
         Text_Cache.clear();
+        unsigned int innerWidth = getWidth() - hasBorder()*2;
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
         Compact_String current_line(Text.data(), 0, true);
@@ -42,7 +43,7 @@ namespace GGUI{
                 // For this we first need to know how long is this next word if there is any
                 int New_Word_Length = Text.find_first_of(' ', i + 1) - i;
 
-                if (New_Word_Length + current_line.Size >= getWidth()){
+                if (New_Word_Length + current_line.Size >= innerWidth){
                     flush_row = true;
                     Previous_Line_Reason = Line_Reason::WORDWRAP;
                 }
@@ -64,7 +65,7 @@ namespace GGUI{
         // Make sure the last line is added
         if (current_line.Size > 0){
 
-            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= getWidth();
+            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= innerWidth;
 
             // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
             if (
@@ -129,6 +130,14 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
+        if (Dirty.is(STAIN_TYPE::RESET)){
+            Dirty.Clean(STAIN_TYPE::RESET);
+
+            std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
+            
+            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+        }
+
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
         if (Dirty.is(STAIN_TYPE::STRETCH)) {
             Result.clear();
@@ -186,7 +195,11 @@ namespace GGUI{
         if (!isDynamicSizeAllowed())
             return;
 
-        int New_Width, New_Height;
+        unsigned int borderOffset = Parent->hasBorder() != hasBorder() && Parent->hasBorder() ? 1 : 0;
+        unsigned int parentInnerWidth = Parent->getWidth() - borderOffset*2;
+        unsigned int parentInnerHeight = Parent->getHeight() - borderOffset*2;
+
+        unsigned int New_Width, New_Height;
 
         if (Parent->isDynamicSizeAllowed()){
             // If the parent can stretch, set the maximum width and a height of 1.
@@ -195,9 +208,9 @@ namespace GGUI{
         }
         else{
             // Constrain the size within the parent's dimensions.
-            New_Width = Min(Parent->getWidth() - getPosition().X, Text.size());
+            New_Width = Min(parentInnerWidth - getPosition().X, Text.size());
             updateTextCache();    // Recalculate the height based on the new width.
-            New_Height = Min(Parent->getHeight() - getPosition().Y, Text_Cache.size());
+            New_Height = Min(parentInnerHeight - getPosition().Y, Text_Cache.size());
         }
         
         // Apply the calculated dimensions to the text field.
@@ -231,18 +244,20 @@ namespace GGUI{
      */
     void textField::alignTextLeft(std::vector<UTF>& Result) {
         unsigned int Line_Index = 0;  // To keep track of the inter-line positioning.
+        unsigned int writableWidth = getWidth() - hasBorder();
+        unsigned int writableHeight = getHeight() - hasBorder();
 
         for (Compact_String line : Text_Cache) {
             unsigned int Row_Index = 0;  // To track characters within the line.
 
-            if (Line_Index >= getHeight())
+            if (Line_Index >= writableHeight)
                 break;  // Stop if all available lines are filled.
 
-            for (unsigned int Y = 0; Y < getHeight(); Y++) {
-                for (unsigned int X = 0; X < getWidth(); X++) {
+            for (unsigned int Y = hasBorder(); Y < writableHeight; Y++) {
+                for (unsigned int X = hasBorder(); X < writableWidth; X++) {
 
                     // Stop if the end of the current line is reached.
-                    if (Y * getWidth() + X >= line.Size)
+                    if (Row_Index >= line.Size)
                         goto Next_Line;
 
                     // Write the current character to the Result buffer.
@@ -267,16 +282,18 @@ namespace GGUI{
      *          and handles overflow according to the Style settings.
      */
     void textField::alignTextRight(std::vector<UTF>& Result) {
-        unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
+        unsigned int Line_Index = 0;    // To keep track of the inter-line positioning.
+        unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
+        unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
 
         for (Compact_String line : Text_Cache) {
             int Row_Index = line.Size - 1;  // Start from the end of the line
 
-            if (Line_Index >= getHeight())
+            if (Line_Index >= writableHeight)
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < getHeight(); Y++) {
-                for (int X = (signed)getWidth() - 1; X >= 0; X--) {
+            for (unsigned int Y = hasBorder(); Y < writableHeight; Y++) {
+                for (int X = (signed)writableWidth - 1; X >= hasBorder(); X--) {
 
                     if (Row_Index < 0)  // If there are no more characters in the line
                         goto Next_Line;
@@ -302,23 +319,25 @@ namespace GGUI{
      *          and handles overflow according to the Style settings.
      */
     void textField::alignTextCenter(std::vector<UTF>& Result) {
-        unsigned int Line_Index = 0;    // To keep track of the inter-line rowing.
+        unsigned int Line_Index = 0;    // To keep track of the inter-line positioning.
+        unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
+        unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
 
         for (Compact_String line : Text_Cache) {
             unsigned int Row_Index = 0;  // Start from the beginning of the line
-            unsigned int Start_Pos = (getWidth() - line.Size) / 2;  // Calculate the starting position
+            unsigned int Start_Pos = (getWidth()- hasBorder()*2 - line.Size) / 2;  // Calculate the starting position
 
-            if (Line_Index >= getHeight())
+            if (Line_Index >= writableHeight)
                 break;  // All possible usable lines filled.
 
-            for (unsigned int Y = 0; Y < getHeight(); Y++) {
-                for (unsigned int X = 0; X < getWidth(); X++) {
+            for (unsigned int Y = hasBorder(); Y < writableHeight; Y++) {
+                for (unsigned int X = hasBorder(); X < writableWidth; X++) {
 
                     // If the current character is outside the line's range, skip it
                     if (X < Start_Pos || X > Start_Pos + line.Size)
                         continue;
 
-                    if (Y * getWidth() + X >= line.Size)
+                    if (Row_Index >= line.Size)
                         goto Next_Line;
 
                     // write to the Result
