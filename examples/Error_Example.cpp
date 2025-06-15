@@ -81,7 +81,4 @@ int main(){
     );
 
     GGUI::INTERNAL::SLEEP(INT32_MAX);
-    
-    // Then exit properly
-    GGUI::EXIT();
 }

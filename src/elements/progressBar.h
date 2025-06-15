@@ -49,7 +49,7 @@ namespace GGUI{
             }
 
             constexpr part(const part& other) : style_base(other.Status), 
-                character(other.character), color(other.color) {}
+                character(other.character), color(other.color), type(other.type) {}
 
             STAIN_TYPE Embed_Value([[maybe_unused]] styling* host, element* owner) override;
 
@@ -61,9 +61,10 @@ namespace GGUI{
         protected:
             float Progress = 0; // 0.0 - 1.0
 
-            Compact_String Head = Compact_String(' ');
-            Compact_String Body = Compact_String(' ');
-            Compact_String Tail = Compact_String(' ');
+            Compact_String Head = Compact_String('>');
+            Compact_String Body = Compact_String('-');
+            Compact_String Tail = Compact_String('|');
+            Compact_String Empty = Compact_String(' ');
 
             RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
             RGB Body_Color = GGUI::COLOR::GRAY;
@@ -71,8 +72,6 @@ namespace GGUI{
             RGB Empty_Color = GGUI::COLOR::DARK_GRAY;
 
             std::vector<UTF> Content;
-
-            std::vector<UTF>& getContent(bool forceFlush = false);
         public:
 
             /**
@@ -101,6 +100,7 @@ namespace GGUI{
             void setHeadCharacter(Compact_String cs) { Head = cs; }
             void setBodyCharacter(Compact_String cs) { Body = cs; }
             void setTailCharacter(Compact_String cs) { Tail = cs; }
+            void setEmptyCharacter(Compact_String cs) { Empty = cs; }
 
             void setHeadColor(RGB color) { Head_Color = color; }
             void setBodyColor(RGB color) { Body_Color = color; }

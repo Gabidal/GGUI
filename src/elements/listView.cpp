@@ -348,30 +348,33 @@ void GGUI::scrollView::allowScrolling(bool allow) {
  * Marks the view as dirty for a deep update.
  */
 void GGUI::scrollView::scrollUp() {
-    // Check if already at the topmost scroll position
-    if (Scroll_Index <= 0)
+    // check if the scroll is too far.
+    // We can assume that the container height/width always is at the same position as the last child, so that is the max scrollable amount.
+    // We also want to still be able to show the last child, so get the heigh of the current child height.
+    int borderOffset = hasBorder() != getContainer()->Last_Child->hasBorder() && hasBorder() ? 1 : 0;
+    int Length = 0;
+
+    if (getContainer()->getFlowDirection() == DIRECTION::ROW)
+        Length = getContainer()->getWidth() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
+    else
+        Length = getContainer()->getHeight() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
+
+    if (Scroll_Index < -Length || Scroll_Index > Length)
         return;
 
-    // Pause GGUI rendering to safely update the scroll index and container position
-    pauseGGUI([this]() {
-        // Decrease the scroll index to scroll up
-        Scroll_Index--;
+    Scroll_Index--;
 
-        // Get the container associated with this Scroll_View
-        listView* Container = getContainer();
+    listView* Container = getContainer();
 
-        // Update the container position based on its flow direction
-        if (Container->getFlowDirection() == DIRECTION::ROW) {
-            // Move the container's position left by 1 unit
-            Container->setPosition({Container->getPosition().X + 1});
-        } else {
-            // Move the container's position up by 1 unit
-            Container->setPosition({Container->getPosition().X, Container->getPosition().Y + 1});
-        }
+    IVector3 newPosition = Container->getPosition();
 
-        // Mark the Scroll_View as dirty to trigger a deep update
-        Dirty.Dirty(STAIN_TYPE::DEEP);
-    });
+    // Now also re-set the container position dependent of the growth direction.
+    if (Container->getFlowDirection() == DIRECTION::ROW)
+        newPosition.X -= 1; // Move right by 1 unit
+    else
+        newPosition.Y += 1; // Move down by 1 unit
+
+    Container->setPosition(newPosition);
 }
 
 /**
@@ -383,29 +386,30 @@ void GGUI::scrollView::scrollDown() {
     // check if the scroll is too far.
     // We can assume that the container height/width always is at the same position as the last child, so that is the max scrollable amount.
     // We also want to still be able to show the last child, so get the heigh of the current child height.
-    unsigned Offset = (hasBorder() - getContainer()->Last_Child->hasBorder()) * hasBorder();
+    int borderOffset = hasBorder() != getContainer()->Last_Child->hasBorder() && hasBorder() ? 1 : 0;
+    int Length = 0;
 
-    if (getContainer()->getFlowDirection() == DIRECTION::ROW) {
-        if (Scroll_Index > getContainer()->getWidth() - getContainer()->Last_Child->getWidth() - Offset)
-            return;
-    } else {
-        if (Scroll_Index > getContainer()->getHeight() - getContainer()->Last_Child->getHeight() - Offset)
-            return;
-    }
+    if (getContainer()->getFlowDirection() == DIRECTION::ROW)
+        Length = getContainer()->getWidth() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
+    else 
+        Length = getContainer()->getHeight() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
 
-    pauseGGUI([this]() {
-        Scroll_Index++;
+    if (Scroll_Index < -Length || Scroll_Index > Length)
+        return;
 
-        listView* Container = getContainer();
+    Scroll_Index++;
 
-        // Now also re-set the container position dependent of the growth direction.
-        if (Container->getFlowDirection() == DIRECTION::ROW)
-            Container->setPosition({Container->getPosition().X - 1});
-        else
-            Container->setPosition({Container->getPosition().X, Container->getPosition().Y - 1});
+    listView* Container = getContainer();
 
-        Dirty.Dirty(STAIN_TYPE::DEEP);
-    });
+    IVector3 newPosition = Container->getPosition();
+
+    // Now also re-set the container position dependent of the growth direction.
+    if (Container->getFlowDirection() == DIRECTION::ROW)
+        newPosition.X += 1; // Move right by 1 unit
+    else
+        newPosition.Y -= 1; // Move down by 1 unit
+
+    Container->setPosition(newPosition);
 }
 
 GGUI::element* Translate_List(GGUI::HTMLNode* input){

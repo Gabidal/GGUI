@@ -377,7 +377,10 @@ namespace GGUI{
     }
 
     STAIN_TYPE name::Embed_Value([[maybe_unused]] styling* host, element* owner){
-        owner->setName(Value.Get_Unicode());
+        // TODO: Remove this with 0.1.9, with de-standardization of std::string.
+        std::string tmp = Value.Is(COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, Value.Get_Ascii()) : std::string(Value.Get_Unicode());
+
+        owner->setName(tmp);
 
         return STAIN_TYPE::CLEAN;
     }

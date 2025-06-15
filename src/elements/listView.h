@@ -141,7 +141,7 @@ namespace GGUI{
 
     class scrollView : public element{
     protected:
-        unsigned int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
+        int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
     public:
 
         /**

@@ -61,7 +61,13 @@ node initCampaign(){
 
         // Top right canvas
         node(new terminalCanvas(
-            width(0.5f) | height(0.5f) | position(STYLES::top + STYLES::right) | name(CANVAS_NAME) | enable_border(true)
+            width(0.5f) | height(0.5f) | position(STYLES::top + STYLES::right) | name(CANVAS_NAME) | 
+            on_draw([](unsigned int x, unsigned int y){
+                return sprite({
+                    UTF(' ', {RGB(x*10, x*10, y*10), RGB(y*10, x*10, x*10)}),
+                    UTF(' ', {RGB(x*10, y*10, x*10), RGB(y*10, y*10, x*10)}),
+                });
+            })
         )) |
 
         // Bottom left, text input field

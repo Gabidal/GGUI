@@ -27,6 +27,7 @@ namespace GGUI{
                     castedOwner->setTailColor(color);
                 }
                 else if (type == partType::EMPTY){
+                    castedOwner->setEmptyCharacter(character);
                     castedOwner->setEmptyColor(color);
                 }
                 else{
@@ -37,14 +38,6 @@ namespace GGUI{
                 throw std::runtime_error("Progress Bar Head Style can only be used with a Bar element!");
         
             return STAIN_TYPE::COLOR;
-        }
-        
-        std::vector<UTF>& Bar::getContent(bool forceFlush){
-            if (Content.empty() || forceFlush){
-                Content.resize(getWidth() - hasBorder() * 2, UTF(Body, { Empty_Color, getBackgroundColor() }));
-            }
-
-            return Content;
         }
 
         /**
@@ -65,20 +58,23 @@ namespace GGUI{
          * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
          */
         void Bar::colorBar(){
-            // First color the empty part of the bar
-            for (unsigned int i = 0; i < getWidth() - hasBorder() * 2; i++)
-                getContent()[i] = UTF(Body, { Empty_Color , getBackgroundColor() });
+            if (Content.empty() || Content.size() != getWidth() - hasBorder() * 2){
+                // Resize the content to fit the width of the progress bar minus the borders
+                Content.clear();
+                Content.resize(getWidth() - hasBorder() * 2, UTF(Body, { Empty_Color, getBackgroundColor() }));
+            }
 
-            // Now fill in the progressed part
-            for (unsigned int i = 0; i < getIndexofHead(); i++)
-                getContent()[i].Foreground = Body_Color;
+            // First color the progressed part of the bar
+            std::fill(Content.begin(), Content.begin() + getIndexofHead(), UTF(Body, { Body_Color , getBackgroundColor() }));
+
+            // Now fill in the empty part
+            std::fill(Content.begin() + getIndexofHead(), Content.end(), UTF(Empty, { Empty_Color, getBackgroundColor() }));
 
             // now replace the head part
-            getContent()[getIndexofHead()] = UTF(Head, { Head_Color, getBackgroundColor() });
+            Content[getIndexofHead()] = UTF(Head, { Head_Color, getBackgroundColor() });
 
             // now replace the tail part
-            getContent()[0] = UTF(Tail, { Tail_Color, getBackgroundColor() });
-
+            Content.front() = UTF(Tail, { Tail_Color, getBackgroundColor() });
         }
 
         /**
@@ -107,11 +103,18 @@ namespace GGUI{
             if (Dirty.is(STAIN_TYPE::CLEAN))
                 return Result;
 
+            if (Dirty.is(STAIN_TYPE::RESET)){
+                Dirty.Clean(STAIN_TYPE::RESET);
+
+                std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
+                
+                Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+            }
+
             // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
             if (Dirty.is(STAIN_TYPE::STRETCH)) {
                 Result.clear();
                 Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
-                getContent(true);
                 colorBar();
                 Dirty.Clean(STAIN_TYPE::STRETCH);
                 Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
@@ -141,7 +144,7 @@ namespace GGUI{
 
                 for (int y = Starting_Y; y < Ending_Y; y++)
                     for (int x = Starting_X; x < Ending_X; x++)
-                        Result[y * getWidth() + x] = getContent()[x - Starting_X];
+                        Result[y * getWidth() + x] = Content[x - Starting_X];
             }
 
             // Add borders and titles if the EDGE stain is detected.
@@ -200,7 +203,7 @@ namespace GGUI{
             colorBar();
 
             // Mark the render buffer as dirty to reflect changes
-            Dirty.Dirty(STAIN_TYPE::DEEP);
+            Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::COLOR);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
