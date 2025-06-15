@@ -178,12 +178,10 @@ namespace GGUI{
          * @param index The index of the character to access.
          * @return char The character at the specified index.
          */
-        constexpr char operator[](unsigned int index) const {
-            // If the size is greater than 1, we have to index into the Unicode data.
-            // If the size is 1, we just return the ASCII data.
-            return Size > 1 ? 
-                std::get<const char*>(Text)[index] : 
-                std::get<char>(Text);
+        constexpr char operator[](int index) const {
+            return ((unsigned)index > Size || index < 0) ? 
+                '\0' : // Return null character if index is out of bounds.
+                (Size > 1 ? std::get<const char*>(Text)[index] : std::get<char>(Text));  // Return the character from Unicode or ASCII data.
         }
 
         constexpr const char* Get_Unicode(bool force = false) const {

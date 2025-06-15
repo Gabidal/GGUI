@@ -240,6 +240,7 @@ namespace GGUI{
             constexpr char GROUP_SEPARATOR = 29;
             constexpr char RECORD_SEPARATOR = 30;
             constexpr char UNIT_SEPARATOR = 31;
+            constexpr char DELETE = 127;
         }
 
         constexpr unsigned long long NONE = (unsigned long long)1 << 0;
