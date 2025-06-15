@@ -41,7 +41,9 @@ namespace GGUI{
             if (Text[i] == ' ' && !Style->Allow_Dynamic_Size.Value){    
                 // Check if the current line length added one more word would go over the Width
                 // For this we first need to know how long is this next word if there is any
-                int New_Word_Length = Text.find_first_of(' ', i + 1) - i;
+                size_t next_space = Text.find_first_of(' ', i + 1);
+                size_t word_end = (next_space == std::string::npos) ? Text.size() : next_space;
+                int New_Word_Length = word_end - i;
 
                 if (New_Word_Length + current_line.Size >= innerWidth){
                     flush_row = true;
@@ -130,6 +132,11 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
+        // This does not CLEAN the DEEP stain it only checks it setText has been invoked.
+        if (Dirty.is(STAIN_TYPE::DEEP)){
+            updateTextCache();
+        }
+
         if (Dirty.is(STAIN_TYPE::RESET)){
             Dirty.Clean(STAIN_TYPE::RESET);
 
@@ -183,41 +190,6 @@ namespace GGUI{
     }
 
     /**
-     * @brief Sets the size of the text field to fill its parent element.
-     * @details The function first checks if dynamic sizing is allowed for
-     *          the text field and its parent. It then calculates the new
-     *          width and height based on the parent's dimensions and the
-     *          text size. If the parent allows dynamic sizing, it stretches
-     *          to accommodate the text; otherwise, it constrains the size
-     *          within the parent's boundaries.
-     */
-    void textField::setSizeToFillParent(){
-        if (!isDynamicSizeAllowed())
-            return;
-
-        unsigned int borderOffset = Parent->hasBorder() != hasBorder() && Parent->hasBorder() ? 1 : 0;
-        unsigned int parentInnerWidth = Parent->getWidth() - borderOffset*2;
-        unsigned int parentInnerHeight = Parent->getHeight() - borderOffset*2;
-
-        unsigned int New_Width, New_Height;
-
-        if (Parent->isDynamicSizeAllowed()){
-            // If the parent can stretch, set the maximum width and a height of 1.
-            New_Width = Text.size();
-            New_Height = 1;
-        }
-        else{
-            // Constrain the size within the parent's dimensions.
-            New_Width = Min(parentInnerWidth - getPosition().X, Text.size());
-            updateTextCache();    // Recalculate the height based on the new width.
-            New_Height = Min(parentInnerHeight - getPosition().Y, Text_Cache.size());
-        }
-        
-        // Apply the calculated dimensions to the text field.
-        setDimensions(New_Width, New_Height);
-    }
-
-    /**
      * @brief Sets the text of the text field.
      * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the text field.
@@ -227,8 +199,6 @@ namespace GGUI{
         // We don't want to accidentally start re-writing into the name when streaming input text.
         if (hasEmptyName())
             setName(text);
-            
-        updateTextCache();
 
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);
 

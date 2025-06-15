@@ -1,51 +1,26 @@
 #include "ggui.h"
 
-#include <vector>
-
 using namespace std;
 using namespace GGUI;
 
 int main(){
-
+    
     GGUI::GGUI(
-        node(new scrollView(
-            flow_priority(DIRECTION::ROW) | width(1.5f) | name("vertical scroll view") | background_color(COLOR::WHITE) | position(STYLES::center) | 
-            on_init([](element* self){
-                for (int i = 0; i < self->getWidth(); i++){
-                    element* tmp = new element(background_color(RGB(rand()%255,rand()%255,rand()%255)));
-                    self->addChild(tmp);
-                }
-            })
-        )) | 
-        
-        node(new scrollView(
-            flow_priority(DIRECTION::COLUMN)| height(1.5f) | name("horizontal scroll view") | background_color(COLOR::WHITE) | position(STYLES::center) | 
-            on_init([](element* self){
-                for (int i = 0; i < self->getHeight(); i++){
-                    element* tmp = new element(background_color(RGB(rand()%255,rand()%255,rand()%255)));
-                    self->addChild(tmp);
-                }
-            })
+        node(new listView( flow_priority(DIRECTION::ROW) | width(1.0f) | height(1.0f) | 
+            node(new textField(
+                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
+                anchor(ANCHOR::LEFT) | width(0.33f) | height(1.0f)
+            )) | 
+
+            node(new textField(
+                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
+                anchor(ANCHOR::CENTER) | width(0.33f) | height(1.0f)
+            )) | 
+
+            node(new textField(
+                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
+                anchor(ANCHOR::RIGHT) | width(0.33f) | height(1.0f)
+            ))
         ))
-    );
-
-    while (true){
-        for (int i = 0; i < 10; i++){
-            for (auto* scrollable : GGUI::INTERNAL::Main->getElements<scrollView>()){
-                scrollable->scrollUp();
-            }
-            
-            GGUI::INTERNAL::SLEEP(16);
-        }
-
-        for (int i = 0; i < 10; i++){
-            for (auto* scrollable : GGUI::INTERNAL::Main->getElements<scrollView>()){
-                scrollable->scrollDown();
-            }
-
-            GGUI::INTERNAL::SLEEP(16);
-        }
-    }
-
-    GGUI::INTERNAL::SLEEP(INT32_MAX);
+    , UINT32_MAX);
 }

@@ -54,17 +54,6 @@ namespace GGUI{
         textField(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : textField(s, Embed_Styles_On_Construct){}
 
         /**
-         * @brief Sets the size of the text field to fill its parent element.
-         * @details The function first checks if dynamic sizing is allowed for
-         *          the text field and its parent. It then calculates the new
-         *          width and height based on the parent's dimensions and the
-         *          text size. If the parent allows dynamic sizing, it stretches
-         *          to accommodate the text; otherwise, it constrains the size
-         *          within the parent's boundaries.
-         */
-        void setSizeToFillParent();
-
-        /**
          * @brief Sets the text of the text field.
          * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
          * @param text The new text for the text field.
