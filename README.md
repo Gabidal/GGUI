@@ -27,19 +27,25 @@ int main()
 ### For more examples see [examples/README.md](./examples/README.md) folder. 
 
 # Features
- - ### Cross platform (Windows, Linux, *Android*)
+ - ### Cross platform (Windows, Linux, *"Android"*)
  - ### **Dynamic containers** with **horizontal** and **vertical** lists
- - ### **Text fields**, with left, center and right aligning
- - ### **Canvas** with builtin **sprite animation** handling.
+ - ### **Text fields**, with left, center and right alignments
+ - ### **Canvas** with builtin **sprite animation** handling
+ - ### Fully customizable **progress bars** with even **multi line** support!
+ - ### Customizable borders for all drawn elements
+ - ### **Mouse support** with hover and focus effects
+ - ### **Buttons** and **switches**
  - ### **Transparency** control
- - ### Fully customizable **progress bars** with even **multi line** support!.
+ - ### Custom **event handling** with ease of use.
  - ### *Should* contain everything you need to **interact with a terminal**
- - ### **Simple integration** to your projects with single header and lib file
+ - ### **Simple integration** to your projects with single `.h` and `.lib` file
     ```
-    g++ ... GGUI.lib
+    g++ GGUI.lib ...
     ```
+ - ### **Optimized** for **Blazing fast** runtime with c++17 constexpr!
 
 --- 
+
 # Contributing to development of **GGUI**
-- ### Initialize project locally with: `init.sh` or `init.bat`.
+- ### Initialize project locally with the `init.*` script.
 - ### Exporting this project as library is documented in `./export/README.md`.
