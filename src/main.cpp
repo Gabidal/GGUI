@@ -5,7 +5,7 @@ using namespace GGUI;
 int main() 
 {
     GGUI::GGUI(
-        title("Your App UI") | 
+        title("Welcome to GGUI!") | 
         node(new textField( 
             position(STYLES::center) | 
             text("Hello World!")

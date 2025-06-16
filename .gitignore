@@ -16,3 +16,4 @@ callgrind.*
 *.srctrlbm
 *.gcda
 /bin/GGUI.p/
+*~

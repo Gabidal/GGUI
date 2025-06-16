@@ -1,8 +1,8 @@
 # This folder contains the CPP files needed to compile the exported version of GGUI.
 
-### **Run the following in `./Export/` folder:**
+### **Run the following in `./export/` folder:**
 ```bash
-g++ Build_GGUI_Lib.cpp
+g++ buildGGUILib.cpp
 ```
 
 ```bash
