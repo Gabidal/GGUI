@@ -68,7 +68,11 @@ namespace GGUI{
             //return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
             return Red == Other.Red && Green == Other.Green && Blue == Other.Blue;
         }
-    
+
+        constexpr bool operator!=(const RGB& Other) const{
+            return !(*this == Other);
+        }
+
         constexpr RGB operator+(const RGB& Other) const{
             return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
         }

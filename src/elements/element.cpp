@@ -1420,7 +1420,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     if (Style->Evaluate_Dynamic_Border(this))
         Dirty.Dirty(STAIN_TYPE::EDGE);
 
-    calculateChildsHitboxes();    // Normally elements will NOT oder their content by hitbox system.
+    calculateChildsHitboxes();    // Normally elements will NOT order their content by hitbox system.
 
     computeDynamicSize();
 
@@ -1931,10 +1931,14 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::Eve
  * @return true if any children have changed, false otherwise.
  */
 bool GGUI::element::childrenChanged(){
-    for (auto e : Style->Childs){
+    for (auto* e : Style->Childs){
         if (e->getDirty().is(STAIN_TYPE::FINALIZE)){
             GGUI::INTERNAL::reportStack("Child element passthrough Finalization stage!");
         }
+
+        // Not counting State machine, if element is not being drawn return always false.
+        if (!e->Show)
+            return false;
 
         // This is used if an element is recently hidden so the DEEP search wouldn't find it if not for this. 
         // Clean the state changed elements already here.
@@ -1942,10 +1946,6 @@ bool GGUI::element::childrenChanged(){
             e->Dirty.Clean(STAIN_TYPE::STATE);
             return true;
         }
-
-        // Not counting State machine, if element is not being drawn return always false.
-        if (!Show)
-            return false;
 
         if (e->getDirty().Type != STAIN_TYPE::CLEAN)
             return true;

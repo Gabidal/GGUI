@@ -613,18 +613,18 @@ namespace GGUI{
             reference = Get_Reference(owner);
         }
 
-        static text_color previous_text_color = Text_Color;
-        static background_color previous_background_color = Background_Color;
-        static border_color previous_border_color = Border_Color;
-        static border_background_color previous_border_background_color = Border_Background_Color;
-        static hover_border_color previous_hover_border_color = Hover_Border_Color;
-        static hover_text_color previous_hover_text_color = Hover_Text_Color;
-        static hover_background_color previous_hover_background_color = Hover_Background_Color;
-        static hover_border_background_color previous_hover_border_background_color = Hover_Border_Background_Color;
-        static focus_border_color previous_focus_border_color = Focus_Border_Color;
-        static focus_text_color previous_focus_text_color = Focus_Text_Color;
-        static focus_background_color previous_focus_background_color = Focus_Background_Color;
-        static focus_border_background_color previous_focus_border_background_color = Focus_Border_Background_Color;
+        RGB previous_text_color = Text_Color.Value.Get<RGB>();
+        RGB previous_background_color = Background_Color.Value.Get<RGB>();
+        RGB previous_border_color = Border_Color.Value.Get<RGB>();
+        RGB previous_border_background_color = Border_Background_Color.Value.Get<RGB>();
+        RGB previous_hover_border_color = Hover_Border_Color.Value.Get<RGB>();
+        RGB previous_hover_text_color = Hover_Text_Color.Value.Get<RGB>();
+        RGB previous_hover_background_color = Hover_Background_Color.Value.Get<RGB>();
+        RGB previous_hover_border_background_color = Hover_Border_Background_Color.Value.Get<RGB>();
+        RGB previous_focus_border_color = Focus_Border_Color.Value.Get<RGB>();
+        RGB previous_focus_text_color = Focus_Text_Color.Value.Get<RGB>();
+        RGB previous_focus_background_color = Focus_Background_Color.Value.Get<RGB>();
+        RGB previous_focus_border_background_color = Focus_Border_Background_Color.Value.Get<RGB>();
 
         Text_Color.Evaluate(owner->getDirectStyle(), reference);
         Background_Color.Evaluate(owner->getDirectStyle(), reference);
@@ -640,18 +640,18 @@ namespace GGUI{
         Focus_Border_Background_Color.Evaluate(owner->getDirectStyle(), reference);
 
         // check if any of the colors are still the same
-        return previous_text_color                      != Text_Color                       ||
-               previous_background_color                != Background_Color                 ||
-               previous_border_color                    != Border_Color                     ||
-               previous_border_background_color         != Border_Background_Color          ||
-               previous_hover_border_color              != Hover_Border_Color               ||
-               previous_hover_text_color                != Hover_Text_Color                 ||
-               previous_hover_background_color          != Hover_Background_Color           ||
-               previous_hover_border_background_color   != Hover_Border_Background_Color    ||
-               previous_focus_border_color              != Focus_Border_Color               ||
-               previous_focus_text_color                != Focus_Text_Color                 ||
-               previous_focus_background_color          != Focus_Background_Color           || 
-               previous_focus_border_background_color   != Focus_Border_Background_Color;
+        return previous_text_color                      != Text_Color.Value.Get<RGB>()                       ||
+               previous_background_color                != Background_Color.Value.Get<RGB>()                 ||
+               previous_border_color                    != Border_Color.Value.Get<RGB>()                     ||
+               previous_border_background_color         != Border_Background_Color.Value.Get<RGB>()          ||
+               previous_hover_border_color              != Hover_Border_Color.Value.Get<RGB>()               ||
+               previous_hover_text_color                != Hover_Text_Color.Value.Get<RGB>()                 ||
+               previous_hover_background_color          != Hover_Background_Color.Value.Get<RGB>()           ||
+               previous_hover_border_background_color   != Hover_Border_Background_Color.Value.Get<RGB>()    ||
+               previous_focus_border_color              != Focus_Border_Color.Value.Get<RGB>()               ||
+               previous_focus_text_color                != Focus_Text_Color.Value.Get<RGB>()                 ||
+               previous_focus_background_color          != Focus_Background_Color.Value.Get<RGB>()           || 
+               previous_focus_border_background_color   != Focus_Border_Background_Color.Value.Get<RGB>();
     }
 
     /**
