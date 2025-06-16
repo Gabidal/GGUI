@@ -1,13 +1,10 @@
 #ifndef _FILE_STREAMER_H_
 #define _FILE_STREAMER_H_
 
-#include "element.h"
-
-#include "../core/utils/superString.h"
-#include "../core/utils/constants.h"
-#include "../core/utils/color.h"
-#include "../core/utils/units.h"
-// #include "../Core/Utils/Style.h"
+#include "superString.h"
+#include "constants.h"
+#include "color.h"
+#include "utf.h"
 
 #include <fstream>
 #include <functional>

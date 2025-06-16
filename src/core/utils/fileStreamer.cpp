@@ -1,5 +1,5 @@
 #include "fileStreamer.h"
-#include "../core/renderer.h"
+#include "../renderer.h"
 
 #include <filesystem>
 

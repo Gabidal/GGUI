@@ -30,6 +30,7 @@ sources = [
   '../src/core/utils/style.cpp',
   '../src/core/utils/logger.cpp',
   '../src/core/utils/utils.cpp',
+  '../src/core/utils/fileStreamer.cpp',
   
   # Elements
   '../src/elements/element.cpp',
@@ -41,7 +42,6 @@ sources = [
   '../src/elements/progressBar.cpp',
 
   # Specialized elements
-  '../src/elements/fileStreamer.cpp',
   '../src/elements/HTML.cpp',
 
   # core functionalities

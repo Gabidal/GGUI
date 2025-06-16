@@ -2,13 +2,13 @@
 #define _HTML_H_
 
 #include "element.h"
-#include "fileStreamer.h"
 
 #include "../core/utils/superString.h"
 #include "../core/utils/constants.h"
 #include "../core/utils/color.h"
-#include "../core/utils/units.h"
+#include "../core/utils/utf.h"
 #include "../core/utils/style.h"
+#include "../core/utils/fileStreamer.h"
 
 namespace GGUI{
 

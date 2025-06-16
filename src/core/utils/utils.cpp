@@ -1,8 +1,8 @@
 #include <string>
 
-#include "./utils.h"
+#include "utils.h"
 #include "../../elements/element.h"
-#include "../../elements/fileStreamer.h"
+#include "fileStreamer.h"
 #include "../renderer.h"
 
 namespace GGUI{
