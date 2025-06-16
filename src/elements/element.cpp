@@ -12,12 +12,6 @@
 #undef min
 #undef max
 
-namespace GGUI{
-    namespace SYMBOLS{
-        GGUI::UTF EMPTY_UTF(' ', {GGUI::COLOR::WHITE, GGUI::COLOR::BLACK});
-    }
-}
-
 /**
  * @brief Converts the UTF character to a string.
  *

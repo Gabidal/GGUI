@@ -5,7 +5,6 @@
 #include <variant>
 
 #include "superString.h"
-#include "constants.h"
 #include "color.h"
 
 namespace GGUI{
@@ -780,6 +779,10 @@ namespace GGUI{
             return *this;
         }
     };
+
+    namespace SYMBOLS{
+        constexpr GGUI::UTF EMPTY_UTF(' ', {GGUI::COLOR::WHITE, GGUI::COLOR::BLACK});
+    }
 
     enum class STAIN_TYPE{
         CLEAN = 0,              // No change

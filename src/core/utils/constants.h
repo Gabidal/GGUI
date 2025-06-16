@@ -9,31 +9,27 @@
 
 namespace GGUI{
 
-    class UTF;
-
     namespace SYMBOLS{
-        static const Compact_String TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
-        static const Compact_String BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
-        static const Compact_String TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
-        static const Compact_String BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
-        static const Compact_String VERTICAL_LINE = "│";//"\e(0\x78\e(B";
-        static const Compact_String HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
-        static const Compact_String VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
-        static const Compact_String VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
-        static const Compact_String HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
-        static const Compact_String HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
-        static const Compact_String CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
+        constexpr Compact_String TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
+        constexpr Compact_String BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
+        constexpr Compact_String TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
+        constexpr Compact_String BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
+        constexpr Compact_String VERTICAL_LINE = "│";//"\e(0\x78\e(B";
+        constexpr Compact_String HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
+        constexpr Compact_String VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
+        constexpr Compact_String VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
+        constexpr Compact_String HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        constexpr Compact_String HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
+        constexpr Compact_String CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
 
-        static const Compact_String CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
-        static const Compact_String FULL_BLOCK = "█";//"\e(0\x2588\e(B";
+        constexpr Compact_String CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
+        constexpr Compact_String FULL_BLOCK = "█";//"\e(0\x2588\e(B";
 
-        static const Compact_String RADIOBUTTON_OFF = "○";
-        static const Compact_String RADIOBUTTON_ON = "◉";
+        constexpr Compact_String RADIOBUTTON_OFF = "○";
+        constexpr Compact_String RADIOBUTTON_ON = "◉";
 
-        static const Compact_String EMPTY_CHECK_BOX = "☐";
-        static const Compact_String CHECKED_CHECK_BOX = "☒";
-
-        extern GGUI::UTF EMPTY_UTF;
+        constexpr Compact_String EMPTY_CHECK_BOX = "☐";
+        constexpr Compact_String CHECKED_CHECK_BOX = "☒";
     }
 
     enum class Border_Connection{
@@ -57,10 +53,10 @@ namespace GGUI{
     }
 
     namespace TIME{
-        inline constexpr static  unsigned int MILLISECOND = 1; 
-        inline constexpr static  unsigned int SECOND = MILLISECOND * 1000;
-        inline constexpr static  unsigned int MINUTE = SECOND * 60;
-        inline constexpr static  unsigned int HOUR = MINUTE * 60;
+        constexpr  unsigned int MILLISECOND = 1; 
+        constexpr  unsigned int SECOND = MILLISECOND * 1000;
+        constexpr  unsigned int MINUTE = SECOND * 60;
+        constexpr  unsigned int HOUR = MINUTE * 60;
     }
 
     namespace Constants{
@@ -70,14 +66,14 @@ namespace GGUI{
             // 1 to SEPARATE
             // 1 to USE_RGB
             // 1 to SEPARATE
-            static const unsigned int Maximum_Needed_Pre_Allocation_For_Over_Head = 1 + 1 + 1 + 1 + 1;
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Over_Head = 1 + 1 + 1 + 1 + 1;
 
             // 1 to Red
             // 1 to SEPARATE
             // 1 to Green
             // 1 to SEPARATE
             // 1 to Blue
-            static const unsigned int Maximum_Needed_Pre_Allocation_For_Color = 1 + 1 + 1 + 1 + 1;
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Color = 1 + 1 + 1 + 1 + 1;
 
             // 5 to Text_Overhead
             // 5 to Text_Colour
@@ -87,7 +83,7 @@ namespace GGUI{
             // 1 to END_COMMAND
             // 1 to Data
             // 1 to RESET_COLOR
-            static const unsigned int Maximum_Needed_Pre_Allocation_For_Encoded_Super_String = 
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Encoded_Super_String = 
                 Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 +
                 Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 + 1 + 1;
         
@@ -95,12 +91,12 @@ namespace GGUI{
             // 1 to private SGR telltale '?'
             // 1 to Feature to be disabled or enabled
             // 1 to Enable/Disable feature told above.
-            static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature = 1 + 1 + 1 + 1;
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_Private_SGR_Feature = 1 + 1 + 1 + 1;
         
             // 1 to Escape code
             // 1 to feature to be enabled
             // 1 to END_COMMAND
-            static const unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature = 1 + 1 + 1;
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Enabling_Or_Disabling_SGR_Feature = 1 + 1 + 1;
 
             // CSI (Control Sequence Introducer) sequences.
             constexpr Compact_String ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
@@ -362,7 +358,7 @@ namespace GGUI{
     }
 
     namespace POSITION{
-        extern short Max_Z;
+        constexpr short Max_Z = std::numeric_limits<short>::max();
     }
 
     namespace BUTTON_STATES{
@@ -414,7 +410,7 @@ namespace GGUI{
         static const std::string MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
     };
 
-    inline std::unordered_map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
+    static const std::unordered_map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
 
         {BUTTON_STATES::ESC, Constants::ESCAPE},
         {BUTTON_STATES::F1, Constants::F1},
