@@ -1,5 +1,4 @@
 #include "logger.h"
-#include "../settings.h"
 #include "../renderer.h"
 
 #include "../../elements/fileStreamer.h"

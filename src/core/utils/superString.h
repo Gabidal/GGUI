@@ -9,7 +9,6 @@
 #include <initializer_list>
 
 namespace GGUI{
-    
     namespace COMPACT_STRING_FLAG{
         constexpr inline unsigned char IS_ASCII          = 1 << 0;
         constexpr inline unsigned char IS_UNICODE        = 1 << 1;
@@ -424,54 +423,6 @@ namespace GGUI{
             return result;
         }
     };
-
-    inline std::string* To_String(std::vector<Compact_String>* Data, unsigned int Liquefied_Size) {
-        static std::string result;  // an internal cache container between renders.
-
-        if (result.empty() || Liquefied_Size != result.size()){
-            // Resize a std::string to the total size.
-            result.resize(Liquefied_Size, '\0');
-        }
-
-        // Copy the contents of the Data vector into the std::string.
-        unsigned int Current_UTF_Insert_Index = 0;
-        for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
-            const Compact_String& data = Data->at(i);
-
-            // Size of ones are always already loaded from memory into a char.
-            if (data.Size > 1){
-                // Replace the current contents of the string with the contents of the Unicode data.
-                result.replace(Current_UTF_Insert_Index, data.Size, data.Get_Unicode());
-
-                Current_UTF_Insert_Index += data.Size;
-            }
-            else{
-                // Add the single character to the string.
-                result[Current_UTF_Insert_Index++] = data.Get_Ascii();
-            }
-        }
-
-        return &result;
-    }
-
-    inline std::string To_String(Compact_String& cstr){
-        // Resize a std::string to the total size.
-        std::string result;
-        result.resize(cstr.Size);
-
-        // Copy the contents of the Compact_String into the std::string.
-        if (cstr.Size > 1){
-            // Replace the current contents of the string with the contents of the Unicode data.
-            result.replace(0, cstr.Size, cstr.Get_Unicode());
-        }
-        else{
-            // Add the single character to the string.
-            result[0] = cstr.Get_Ascii();
-        }
-
-        return result;
-    }
-
 }
 
 #endif

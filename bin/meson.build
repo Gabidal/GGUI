@@ -27,11 +27,9 @@ TYPE = DEBUG  # Change this to RELEASE or PROFILE for different build types
 # Source files for the project
 sources = [
   # Core utilities
-  '../src/core/utils/color.cpp',
   '../src/core/utils/style.cpp',
   '../src/core/utils/logger.cpp',
   '../src/core/utils/utils.cpp',
-  '../src/core/utils/constants.cpp',
   
   # Elements
   '../src/elements/element.cpp',
@@ -47,8 +45,6 @@ sources = [
   '../src/elements/HTML.cpp',
 
   # core functionalities
-  '../src/core/utils/noInline.cpp',
-  '../src/core/settings.cpp',
   '../src/core/renderer.cpp',
   '../src/core/thread.cpp',
   '../src/core/addons/addons.cpp',

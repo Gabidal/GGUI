@@ -7,7 +7,6 @@
 
 #include "superString.h"
 #include "constants.h"
-#include "../settings.h"
 
 namespace GGUI{
     class RGB{
@@ -192,50 +191,6 @@ namespace GGUI{
         static constexpr RGB DARK_GRAY = RGB(64, 64, 64);
     }
 
-    /**
-     * Linear interpolation function
-     * @param a The start value
-     * @param b The end value
-     * @param t The interpolation value, between 0 and 1
-     * @return The interpolated value
-     */
-    template<typename T>
-    constexpr T lerp(T a, T b, T t) {
-        // Clamp t between a and b
-        return a + t * (b - a);
-    }
-
-    /**
-     * @brief Performs gamma-corrected linear interpolation between two values.
-     * 
-     * @tparam T The type of the input values.
-     * @tparam P The type of the interpolation factor.
-     * @param a The start value.
-     * @param b The end value.
-     * @param t The interpolation factor, typically between 0 and 1.
-     * @return The interpolated value, gamma-corrected and cast back to type T.
-     */
-    template<typename T, typename P>
-    constexpr T Interpolate(T a, T b, P t) {
-        // Define gamma value for correction
-        constexpr float gamma = 2.2F;
-
-        // Apply gamma correction to input values and perform linear interpolation
-        const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
-
-        // Reverse gamma correction and cast back to original type
-        return static_cast<T>(std::pow(c_f, 1.F / gamma));
-    }
-
-    /**
-     * @brief Interpolates between two RGB colors using linear interpolation.
-     * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
-     * @param A The start RGB color.
-     * @param B The end RGB color.
-     * @param Distance The interpolation factor, typically between 0 and 1.
-     * @return The interpolated RGB color.
-     */
-    extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
 }
 
 #endif

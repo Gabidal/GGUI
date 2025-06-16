@@ -2,12 +2,305 @@
 
 #include "./utils.h"
 #include "../../elements/element.h"
+#include "../../elements/fileStreamer.h"
 #include "../renderer.h"
 
 namespace GGUI{
     namespace INTERNAL{
         extern void* Stack_Start_Address;
         extern void* Heap_Start_Address;
+        
+        /**
+         * @brief Initializes the Stack_Start_Address and Heap_Start_Address variables
+         *
+         * This function captures the nearest stack address and the nearest heap address
+         * and assigns them to the Stack_Start_Address and Heap_Start_Address variables
+         * respectively. This only happens if the variables are not already set.
+         */
+        #if _WIN32
+        #include <windows.h>
+        #include <winternl.h>
+
+        /**
+         * @typedef NtQueryInformationThread_t
+         * @brief A typedef for a function pointer to the NtQueryInformationThread function.
+         * 
+         * This function retrieves information about the specified thread.
+         * 
+         * @param ThreadHandle A handle to the thread for which information is to be retrieved.
+         * @param ThreadInformationClass The class of information to be retrieved.
+         * @param ThreadInformation A pointer to a buffer that receives the requested information.
+         * @param ThreadInformationLength The size of the buffer pointed to by ThreadInformation.
+         * @param ReturnLength A pointer to a variable that receives the size of the data returned in the buffer.
+         * 
+         * @return NTSTATUS The status code returned by the function.
+         */
+        typedef NTSTATUS(WINAPI* NtQueryInformationThread_t)(
+            HANDLE ThreadHandle,
+            THREADINFOCLASS ThreadInformationClass,
+            PVOID ThreadInformation,
+            ULONG ThreadInformationLength,
+            PULONG ReturnLength
+        );
+
+        /**
+         * @typedef PNT_TIB
+         * @brief A typedef for a pointer to the NT_TIB structure.
+         * 
+         * The NT_TIB structure is the Thread Information Block for a thread.
+         * It contains information about the thread's stack base and limit.
+         */
+        typedef struct _THREAD_BASIC_INFORMATION {
+            NTSTATUS ExitStatus;
+            PVOID TebBaseAddress;
+            CLIENT_ID ClientId;
+            PVOID AffinityMask;
+            LONG Priority;
+            LONG BasePriority;
+        } THREAD_BASIC_INFORMATION;
+
+        /**
+         * @brief Reads and initializes the start addresses for the stack and heap.
+         *
+         * This function dynamically loads the NtQueryInformationThread function from ntdll.dll
+         * to retrieve the Thread Environment Block (TEB) for the current thread. It then uses
+         * the TEB to determine the stack base and limit, and calculates the stack start address.
+         * Additionally, it initializes the heap start address by allocating a new integer.
+         *
+         * @note This function should be called only once to initialize the addresses.
+         *       Subsequent calls will have no effect if the addresses are already initialized.
+         *
+         * @warning If the function fails to load ntdll.dll or retrieve NtQueryInformationThread,
+         *          it will print an error message and return without initializing the addresses.
+         */
+        void Read_Start_Addresses(){
+            if (Stack_Start_Address == nullptr){
+
+                // Load NtQueryInformationThread dynamically
+                HMODULE ntdll = LoadLibraryA("ntdll.dll");
+                if (!ntdll) {
+                    std::cerr << "Failed to load ntdll.dll" << std::endl;
+                    return;
+                }
+
+                // We have to cast first to void* so that we can elude warnings.
+                auto NtQueryInformationThread = (NtQueryInformationThread_t)((void*)GetProcAddress(ntdll, "NtQueryInformationThread"));
+                if (!NtQueryInformationThread) {
+                    std::cerr << "Failed to get NtQueryInformationThread" << std::endl;
+                    return;
+                }
+
+                THREAD_BASIC_INFORMATION tbi;
+                NTSTATUS status = NtQueryInformationThread(
+                    GetCurrentThread(),
+                    (THREADINFOCLASS)0,  // ThreadBasicInformation
+                    &tbi,
+                    sizeof(tbi),
+                    nullptr
+                );
+
+                if (status != 0) {
+                    std::cerr << "NtQueryInformationThread failed with status: " << std::hex << status << std::endl;
+                    return;
+                }
+
+                // The TEB (Thread Environment Block) contains stack base/limit
+                PNT_TIB teb = (PNT_TIB)tbi.TebBaseAddress;
+
+                Stack_Start_Address = (void*)((unsigned long long)teb->StackBase + (unsigned long long)teb->StackLimit);
+            }
+
+            if (Heap_Start_Address == nullptr){
+                // Now also capture the nearest heap
+                Heap_Start_Address = new int;
+            }
+        }
+        #else
+        /**
+         * @brief Reads the start addresses of the stack and heap memory areas.
+         * 
+         * This function attempts to read the start address of the stack memory area
+         * by parsing the contents of the `/proc/self/maps` file. If the stack area
+         * is found, it extracts the ending address of the stack and stores it in
+         * `Stack_Start_Address`. If the stack area is not found, it captures the
+         * nearest stack address and reports an error.
+         * 
+         * Additionally, this function captures the nearest heap address and stores
+         * it in `Heap_Start_Address` if it is not already set.
+         * 
+         * @note This function is intended to be used on systems that provide the
+         *       `/proc/self/maps` file, such as Linux.
+         */
+        void Read_Start_Addresses(){
+            if (Stack_Start_Address == nullptr){
+                // Ask the kernel for /proc/self/maps to read the stack areas.
+                fileStream maps("/proc/self/maps");
+
+                // Read the contents of /proc/self/maps
+                std::string maps_content = maps.Read();
+                
+                // Find the stack area in the maps content
+                size_t stack_start = maps_content.find("[stack]");
+
+                if (stack_start != std::string::npos){
+                    // Find the start of the line containing the "[stack]" entry
+                    size_t line_start = maps_content.rfind("\n", stack_start);
+                    line_start = (line_start == std::string::npos) ? 0 : line_start + 1; // Adjust for the beginning of the file
+
+                    // Find the end of the line containing the "[stack]" entry
+                    size_t line_end = maps_content.find("\n", stack_start);
+
+                    // Extract the line containing the stack information
+                    std::string stack_line = maps_content.substr(line_start, line_end - line_start);
+
+                    // Extract the memory range (e.g., "7ffc90a54000-7ffc90a76000")
+                    size_t dash_pos = stack_line.find("-");
+                    if (dash_pos != std::string::npos) {
+                        // Get the ending address of the stack area
+                        std::string end_address = stack_line.substr(dash_pos + 1, stack_line.find(" ", dash_pos) - dash_pos - 1);
+                        
+                        // The reason we are storing the stack ending address, is because of how stack works in reverse, so the highest point in stack address space is actually the baseline.
+                        Stack_Start_Address = (void*)std::stoul(end_address, nullptr, 16);
+                    } else {
+                        // Handle error: invalid stack line format
+                        std::cerr << "Error: Failed to parse stack line: " << stack_line << std::endl;
+                    }
+                }
+                else{
+                    // If the stack area is not found, capture the nearest stack
+                    int nearest_address = 0;
+                    Stack_Start_Address = &nearest_address;
+                    
+                    // Report an error
+                    reportStack("Failed to find the stack area in /proc/self/maps!");
+                }
+            }
+
+            if (Heap_Start_Address == nullptr){
+                // Now also capture the nearest heap
+                Heap_Start_Address = new int;
+            }
+        }
+        #endif
+    
+    /**
+         * @brief Extracts the directory path from a full executable path.
+         *
+         * This function takes a full path to an executable and returns the directory
+         * portion of the path. It handles both Windows and Unix-style path separators.
+         *
+         * @param fullPath The full path to the executable as a C-style string.
+         * @return A std::string containing the directory path. If the separator is not found,
+         *         an empty string is returned.
+         */
+        std::string Get_Executable_Directory(const char* fullPath) {
+            std::string path(fullPath);
+        #if defined(_WIN32) || defined(_WIN64)
+            const char separator = '\\';
+        #else
+            const char separator = '/';
+        #endif
+            size_t pos = path.find_last_of(separator);
+            if (pos != std::string::npos) {
+                return path.substr(0, pos); // Extract everything before the last separator
+            }
+            return ""; // Fallback if separator not found
+        }
+
+        #if defined(_WIN32) || defined(_WIN64)
+        #include <windows.h>
+
+        /**
+         * @brief Retrieves the path of the executable file of the current process.
+         * 
+         * This function uses the GetModuleFileName function to obtain the full path 
+         * of the executable file of the current process and returns it as a C-style string.
+         * 
+         * @return const char* A pointer to a null-terminated string that contains the 
+         * path of the executable file. If the function fails, the string will be empty.
+         */
+        const char* Get_Executable_Path() {
+            static char path[MAX_PATH];
+            DWORD len = GetModuleFileName(nullptr, path, MAX_PATH);
+            if (len == 0) {
+                path[0] = '\0';
+            }
+            return path;
+        }
+
+        #elif defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+        #include <unistd.h>
+        #include <limits.h>
+
+        /**
+         * @brief Retrieves the executable path of the current process.
+         *
+         * This function uses the `readlink` system call to obtain the path of the
+         * executable file of the current process. The path is stored in a static
+         * character array and returned as a C-string.
+         *
+         * @return A C-string containing the path of the executable file. If the
+         *         path cannot be determined, an empty string is returned.
+         */
+        const char* Get_Executable_Path() {
+            static char path[PATH_MAX];
+            ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+            if (len != -1) {
+                path[len] = '\0';
+            } else {
+                path[0] = '\0';
+            }
+            return path;
+        }
+
+        #else
+        /**
+         * @brief Retrieves the path of the executable.
+         * 
+         * @return A constant character pointer to the executable path.
+         */
+        const char* Get_Executable_Path() {
+            return "";
+        }
+        #endif
+
+        /**
+         * @brief Constructs the file name for the logger.
+         *
+         * This function constructs the file name for the logger by appending "/log.txt" 
+         * to the directory path of the executable.
+         *
+         * @return A string representing the full path to the log file.
+         */
+        std::string constructLoggerFileName(){
+            return GGUI::INTERNAL::Get_Executable_Directory(GGUI::INTERNAL::Get_Executable_Path()) + std::string("/log.txt");
+        }
+    }
+
+    namespace SETTINGS{
+
+        unsigned long long Mouse_Press_Down_Cooldown = 365;
+
+        bool Word_Wrapping = true;
+
+        std::chrono::milliseconds Thread_Timeout = std::chrono::milliseconds(256);
+
+        bool ENABLE_GAMMA_CORRECTION = false;
+
+        namespace LOGGER{
+            std::string File_Name = "";
+        }
+
+        /**
+         * @brief Initializes the settings for the application.
+         *
+         * This function sets up the necessary configurations for the application
+         * by initializing the logger file name using the internal logger file name
+         * construction method.
+         */
+        void initSettings(){
+            LOGGER::File_Name = INTERNAL::constructLoggerFileName();
+        }
     }
 
     /**
@@ -481,5 +774,22 @@ namespace GGUI{
 
         return (ALLOCATION_TYPE)Result;
     }
+
+    GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance) {
+        if (SETTINGS::ENABLE_GAMMA_CORRECTION) {
+            // Apply gamma correction to input values
+            A.Red = Interpolate(A.Red, B.Red, Distance);
+            A.Green = Interpolate(A.Green, B.Green, Distance);
+            A.Blue = Interpolate(A.Blue, B.Blue, Distance);
+        } else {
+            // Perform linear interpolation on input values
+            A.Red = static_cast<unsigned char>(lerp<float>(A.Red, B.Red, Distance));
+            A.Green = static_cast<unsigned char>(lerp<float>(A.Green, B.Green, Distance));
+            A.Blue = static_cast<unsigned char>(lerp<float>(A.Blue, B.Blue, Distance));
+        }
+        return A;
+    }
+
+    
 
 }

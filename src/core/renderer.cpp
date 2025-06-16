@@ -1,9 +1,7 @@
 #include "renderer.h"
 #include "../elements/fileStreamer.h"
-#include "settings.h"
 #include "./utils/logger.h"
 #include "./utils/utils.h"
-#include "./thread.h"
 #include "./addons/addons.h"
 
 #include <string>

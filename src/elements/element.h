@@ -17,16 +17,9 @@
 #include "../core/utils/constants.h"
 #include "../core/utils/color.h"
 #include "../core/utils/units.h"
-#include "../core/utils/event.h"
 #include "../core/utils/style.h"
 
 namespace GGUI{
-    struct fittingArea{
-        IVector2 negativeOffset;
-        IVector2 start;
-        IVector2 end;
-    };
-
     class element{
     protected:
         // Shadows and some other postprocessing effects can have an impact on the final width and height of the element.

@@ -2,6 +2,7 @@
 #define _STYLE_H_
 
 #include "units.h"
+#include "types.h"
 #include "logger.h"
 
 #include <variant>
@@ -2518,7 +2519,7 @@ namespace GGUI{
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
         inline GGUI::STYLING_INTERNAL::Vector center = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector prioritize = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f, POSITION::Max_Z);
+        inline GGUI::STYLING_INTERNAL::Vector prioritize = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f, std::numeric_limits<short>::max());
     };
 
 }

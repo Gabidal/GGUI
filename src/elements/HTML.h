@@ -8,7 +8,6 @@
 #include "../core/utils/constants.h"
 #include "../core/utils/color.h"
 #include "../core/utils/units.h"
-#include "../core/utils/event.h"
 #include "../core/utils/style.h"
 
 namespace GGUI{

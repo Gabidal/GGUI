@@ -7,13 +7,11 @@
 #include "../core/utils/constants.h"
 #include "../core/utils/color.h"
 #include "../core/utils/units.h"
-#include "../core/utils/event.h"
 #include "../core/utils/style.h"
 
 #include <vector>
 
 namespace GGUI{
-
     class canvas : public element{
     private:
         // DONT GIVE THIS TO USER!

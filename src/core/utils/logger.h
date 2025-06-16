@@ -3,7 +3,7 @@
 
 #include <queue>
 
-#include "guard.h"
+#include "types.h"
 
 namespace GGUI{
 

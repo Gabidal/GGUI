@@ -8,50 +8,6 @@
 #include "superString.h"
 
 namespace GGUI{
-
-    namespace SYMBOLS{
-        constexpr Compact_String TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
-        constexpr Compact_String BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
-        constexpr Compact_String TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
-        constexpr Compact_String BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
-        constexpr Compact_String VERTICAL_LINE = "│";//"\e(0\x78\e(B";
-        constexpr Compact_String HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
-        constexpr Compact_String VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
-        constexpr Compact_String VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
-        constexpr Compact_String HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
-        constexpr Compact_String HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
-        constexpr Compact_String CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
-
-        constexpr Compact_String CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
-        constexpr Compact_String FULL_BLOCK = "█";//"\e(0\x2588\e(B";
-
-        constexpr Compact_String RADIOBUTTON_OFF = "○";
-        constexpr Compact_String RADIOBUTTON_ON = "◉";
-
-        constexpr Compact_String EMPTY_CHECK_BOX = "☐";
-        constexpr Compact_String CHECKED_CHECK_BOX = "☒";
-    }
-
-    enum class Border_Connection{
-        NONE    = 0 << 0,
-        UP      = 1 << 0,
-        DOWN    = 1 << 1,
-        LEFT    = 1 << 2,
-        RIGHT   = 1 << 3
-    };
-
-    constexpr bool operator==(const Border_Connection lhs, const Border_Connection rhs) {
-        return static_cast<int>(lhs) == static_cast<int>(rhs);
-    }
-
-    constexpr Border_Connection operator|(const Border_Connection lhs, const Border_Connection rhs) {
-        return static_cast<Border_Connection>(static_cast<int>(lhs) | static_cast<int>(rhs));
-    }
-
-    constexpr void operator|=(Border_Connection& lhs, const Border_Connection rhs) {
-        lhs = static_cast<Border_Connection>(static_cast<int>(lhs) | static_cast<int>(rhs));
-    }
-
     namespace TIME{
         constexpr  unsigned int MILLISECOND = 1; 
         constexpr  unsigned int SECOND = MILLISECOND * 1000;
@@ -357,10 +313,6 @@ namespace GGUI{
         };
     }
 
-    namespace POSITION{
-        constexpr short Max_Z = std::numeric_limits<short>::max();
-    }
-
     namespace BUTTON_STATES{
         static const std::string ESC = "ECS";
         static const std::string F1 = "F1";
@@ -411,7 +363,6 @@ namespace GGUI{
     };
 
     static const std::unordered_map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
-
         {BUTTON_STATES::ESC, Constants::ESCAPE},
         {BUTTON_STATES::F1, Constants::F1},
         {BUTTON_STATES::F2, Constants::F2},
@@ -459,6 +410,29 @@ namespace GGUI{
         {BUTTON_STATES::MOUSE_SCROLL_UP, Constants::MOUSE_MIDDLE_SCROLL_UP},
         {BUTTON_STATES::MOUSE_SCROLL_DOWN, Constants::MOUSE_MIDDLE_SCROLL_DOWN},
     };
+
+    namespace SYMBOLS{
+        constexpr Compact_String TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
+        constexpr Compact_String BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
+        constexpr Compact_String TOP_RIGHT_CORNER = "┐";//"\e(0\x6b\e(B";
+        constexpr Compact_String BOTTOM_RIGHT_CORNER = "┘";//"\e(0\x6a\e(B";
+        constexpr Compact_String VERTICAL_LINE = "│";//"\e(0\x78\e(B";
+        constexpr Compact_String HORIZONTAL_LINE = "─";//"\e(0\x71\e(B";
+        constexpr Compact_String VERTICAL_RIGHT_CONNECTOR = "├";//"\e(0\x74\e(B";
+        constexpr Compact_String VERTICAL_LEFT_CONNECTOR = "┤";//"\e(0\x75\e(B";
+        constexpr Compact_String HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
+        constexpr Compact_String HORIZONTAL_TOP_CONNECTOR = "┴";//"\e(0\x77\e(B";
+        constexpr Compact_String CROSS_CONNECTOR = "┼";//"\e(0\x6e\e(B";
+
+        constexpr Compact_String CENTERED_HORIZONTAL_LINE = "━";//"\e(0\x2501\e(B";
+        constexpr Compact_String FULL_BLOCK = "█";//"\e(0\x2588\e(B";
+
+        constexpr Compact_String RADIOBUTTON_OFF = "○";
+        constexpr Compact_String RADIOBUTTON_ON = "◉";
+
+        constexpr Compact_String EMPTY_CHECK_BOX = "☐";
+        constexpr Compact_String CHECKED_CHECK_BOX = "☒";
+    }
 }
 
 #endif

@@ -1,5 +1,3 @@
-#include "thread.h"
-#include "./utils/guard.h"
 #include "./utils/utils.h"
 #include "./renderer.h"
 #include "./../elements/fileStreamer.h"

@@ -18,9 +18,7 @@
 #include "../core/utils/constants.h"
 #include "../core/utils/color.h"
 #include "../core/utils/units.h"
-#include "../core/utils/event.h"
 #include "../core/utils/style.h"
-#include "../core/utils/guard.h"
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code

@@ -4,28 +4,96 @@
  * This is an Utils file made for the Renderer.cpp to use internally, these are just removed to clean up the source code.
  */
 
-#include "./units.h"
+#include "types.h"
+#include "superString.h"
+
+#include <math.h>
 
 namespace GGUI{
-
     class element;
-    
-    namespace INTERNAL{
-        // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
-        class Carry{
-        public:
-            bool Resize = false;
-            bool Terminate = false;     // Signals the shutdown of subthreads.
+    class UTF;
+    class RGB;
 
-            ~Carry() = default;
-        };
+    namespace INTERNAL{
+        extern std::string constructLoggerFileName();
+
+        extern bool Identical_Frame;
+
+        extern void De_Initialize();
+        
+        /**
+         * @brief The Renderer function is responsible for managing the rendering loop.
+         * It waits for a condition to resume rendering, processes rendering tasks, and
+         * then pauses itself until the condition is met again.
+         * 
+         * The function performs the following steps:
+         * 1. Waits for the render thread to be resumed.
+         * 2. Saves the current time.
+         * 3. Checks if the rendering scheduler needs to be terminated.
+         * 4. Processes carry flags and updates the maximum width and height if needed.
+         * 5. Renders the main frame buffer.
+         * 6. Encodes the buffer for optimization.
+         * 7. Converts the abstract frame buffer to a string and renders the frame.
+         * 8. Calculates the render delay.
+         * 9. Pauses the render thread and notifies all waiting threads.
+         */
+        extern void renderer();
+
+        /**
+         * @brief Event_Thread is a function that runs an infinite loop to handle various events and tasks.
+         * 
+         * This function performs the following tasks in each iteration of the loop:
+         * - Resets the thread load counter and updates the previous time.
+         * - Calls functions to recall memories, go through file streams, and refresh the multi-frame canvas.
+         * - Checks for termination signals and breaks out of the loop if the terminate flag is set.
+         * - Updates the current time and calculates the delta time.
+         * - Adjusts the current update speed based on the event thread load.
+         * - Sleeps for a calculated duration to control the update speed.
+         * 
+         * The function is designed to be used in a multi-threaded environment where it can be paused and resumed as needed.
+         * 
+         * @note If uncapped FPS is desired, the sleep code can be disabled.
+         */
+        extern void eventThread();
+
+        /**
+         * @brief Function that continuously handles user input in a separate thread.
+         *
+         * This function runs an infinite loop where it performs the following steps:
+         * 1. Waits for user input by calling INTERNAL::Query_Inputs().
+         * 2. Pauses the GGUI system and performs the following actions:
+         *    - Records the current time as INTERNAL::Previous_Time.
+         *    - Translates the queried inputs using INTERNAL::Translate_Inputs().
+         *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
+         *    - Calls the event handlers to react to the parsed input using Event_Handler().
+         *    - Records the current time as INTERNAL::Current_Time.
+         *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
+         */
+        extern void inputThread();
     }
 
-    enum class ALLOCATION_TYPE{
-        UNKNOWN         = 0 << 0,
-        STACK           = 1 << 0,
-        HEAP            = 1 << 1,
-        DATA            = 1 << 2
+    namespace SETTINGS{
+        // How fast for a detection of hold down situation.
+        extern unsigned long long Mouse_Press_Down_Cooldown;
+        
+        extern bool Word_Wrapping;
+
+        extern std::chrono::milliseconds Thread_Timeout;
+
+        extern bool ENABLE_GAMMA_CORRECTION;
+
+        namespace LOGGER{
+            extern std::string File_Name;
+        }
+
+        /**
+         * @brief Initializes the settings for the application.
+         *
+         * This function sets up the necessary configurations for the application
+         * by initializing the logger file name using the internal logger file name
+         * construction method.
+         */
+        extern void initSettings();
     };
 
     /**
@@ -54,7 +122,6 @@ namespace GGUI{
      * @return true if the rectangles overlap, false otherwise.
      */
     extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
-
 
     /**
      * @brief Checks if two GGUI elements collide.
@@ -241,6 +308,99 @@ namespace GGUI{
      * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
      */
     extern ALLOCATION_TYPE getAllocationType(const void* ptr);
+
+    /**
+     * Linear interpolation function
+     * @param a The start value
+     * @param b The end value
+     * @param t The interpolation value, between 0 and 1
+     * @return The interpolated value
+     */
+    template<typename T>
+    constexpr T lerp(T a, T b, T t) {
+        // Clamp t between a and b
+        return a + t * (b - a);
+    }
+
+    /**
+     * @brief Performs gamma-corrected linear interpolation between two values.
+     * 
+     * @tparam T The type of the input values.
+     * @tparam P The type of the interpolation factor.
+     * @param a The start value.
+     * @param b The end value.
+     * @param t The interpolation factor, typically between 0 and 1.
+     * @return The interpolated value, gamma-corrected and cast back to type T.
+     */
+    template<typename T, typename P>
+    constexpr T Interpolate(T a, T b, P t) {
+        // Define gamma value for correction
+        constexpr float gamma = 2.2F;
+
+        // Apply gamma correction to input values and perform linear interpolation
+        const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
+
+        // Reverse gamma correction and cast back to original type
+        return static_cast<T>(std::pow(c_f, 1.F / gamma));
+    }
+
+    /**
+     * @brief Interpolates between two RGB colors using linear interpolation.
+     * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
+     * @param A The start RGB color.
+     * @param B The end RGB color.
+     * @param Distance The interpolation factor, typically between 0 and 1.
+     * @return The interpolated RGB color.
+     */
+    extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
+
+    inline std::string* To_String(std::vector<Compact_String>* Data, unsigned int Liquefied_Size) {
+        static std::string result;  // an internal cache container between renders.
+
+        if (result.empty() || Liquefied_Size != result.size()){
+            // Resize a std::string to the total size.
+            result.resize(Liquefied_Size, '\0');
+        }
+
+        // Copy the contents of the Data vector into the std::string.
+        unsigned int Current_UTF_Insert_Index = 0;
+        for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
+            const Compact_String& data = Data->at(i);
+
+            // Size of ones are always already loaded from memory into a char.
+            if (data.Size > 1){
+                // Replace the current contents of the string with the contents of the Unicode data.
+                result.replace(Current_UTF_Insert_Index, data.Size, data.Get_Unicode());
+
+                Current_UTF_Insert_Index += data.Size;
+            }
+            else{
+                // Add the single character to the string.
+                result[Current_UTF_Insert_Index++] = data.Get_Ascii();
+            }
+        }
+
+        return &result;
+    }
+
+    inline std::string To_String(Compact_String& cstr){
+        // Resize a std::string to the total size.
+        std::string result;
+        result.resize(cstr.Size);
+
+        // Copy the contents of the Compact_String into the std::string.
+        if (cstr.Size > 1){
+            // Replace the current contents of the string with the contents of the Unicode data.
+            result.replace(0, cstr.Size, cstr.Get_Unicode());
+        }
+        else{
+            // Add the single character to the string.
+            result[0] = cstr.Get_Ascii();
+        }
+
+        return result;
+    }
+
 }
 
 #endif
