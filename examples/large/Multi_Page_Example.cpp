@@ -60,7 +60,7 @@ node initCampaign(){
         width(1.0f) | height(1.0f) |
 
         // Top right canvas
-        node(new terminalCanvas(
+        node(new canvas(
             width(0.5f) | height(0.5f) | position(STYLES::top + STYLES::right) | name(CANVAS_NAME) | 
             on_draw([](unsigned int x, unsigned int y){
                 return sprite({

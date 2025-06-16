@@ -8,109 +8,6 @@
 #include "../core/SIMD/SIMD.h"
 
 namespace GGUI{
-    
-    /**
-     * @brief Set the value of a pixel on the canvas.
-     * @details
-     * This function sets the value of a pixel on the canvas. The coordinates are in pixels relative to the top left corner of the canvas.
-     * The color is an RGB object. The Flush argument determines whether or not to call Update_Frame() after setting the pixel.
-     * @param x The x coordinate of the pixel.
-     * @param y The y coordinate of the pixel.
-     * @param color The color of the pixel.
-     * @param Flush Whether or not to call Update_Frame() after setting the pixel.
-     */
-    void canvas::set(unsigned int x, unsigned int y, RGB color, bool Flush){
-        unsigned int Actual_X = x + hasBorder(); // Add the border offset to the x coordinate.
-        unsigned int Actual_Y = y + hasBorder(); // Add the border offset to the y coordinate.
-
-        Buffer[Actual_X + Actual_Y * getWidth()] = color; // Set the color of the pixel at the calculated coordinates.
-
-        Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty so that it will be updated the next time Update_Frame() is called.
-
-        if (Flush)
-            updateFrame(); // If Flush is true, call Update_Frame() to update the canvas.
-    }
-
-
-    /**
-     * @brief Flushes the canvas.
-     * @details
-     * This function flushes the canvas by calling Update_Frame().
-     * It is used to update the canvas immediately after making changes to it.
-     */
-    void canvas::flush(){
-        // Call Update_Frame() to update the canvas.
-        updateFrame();
-    }
-
-    /**
-     * @brief Renders the canvas and returns the result.
-     * @details This function processes the canvas to generate a vector of UTF objects representing the current state.
-     * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the canvas is rendered correctly.
-     * @return A vector of UTF objects representing the rendered canvas.
-     */
-    std::vector<GGUI::UTF>& canvas::render() {
-        std::vector<GGUI::UTF>& Result = Render_Buffer;
-        
-        // Check for Dynamic attributes
-        if(Style->Evaluate_Dynamic_Dimensions(this))
-            Dirty.Dirty(STAIN_TYPE::STRETCH);
-
-        if (Style->Evaluate_Dynamic_Position(this))
-            Dirty.Dirty(STAIN_TYPE::MOVE);
-
-        if (Style->Evaluate_Dynamic_Colors(this))
-            Dirty.Dirty(STAIN_TYPE::COLOR);
-
-        if (Style->Evaluate_Dynamic_Border(this))
-            Dirty.Dirty(STAIN_TYPE::EDGE);
-
-        // If the canvas is clean, return the current render buffer.
-        if (Dirty.is(STAIN_TYPE::CLEAN))
-            return Result;
-
-        // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
-        if (Dirty.is(STAIN_TYPE::STRETCH)) {
-            Result.clear();
-            Result.resize(getWidth() * getHeight());
-            Dirty.Clean(STAIN_TYPE::STRETCH);
-            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
-        }
-
-        if (Dirty.is(STAIN_TYPE::MOVE)){
-            Dirty.Clean(STAIN_TYPE::MOVE);
-        
-            updateAbsolutePositionCache();
-        }
-
-        // Apply the color system if the COLOR stain is detected.
-        if (Dirty.is(STAIN_TYPE::COLOR)) {
-            Dirty.Clean(STAIN_TYPE::COLOR);
-
-            unsigned int Start_X = hasBorder();
-            unsigned int Start_Y = hasBorder();
-            unsigned int End_X = getWidth() - hasBorder();
-            unsigned int End_Y = getHeight() - hasBorder();
-
-            // Loop over each pixel within the border to set the background color.
-            for (unsigned int y = Start_Y; y < End_Y; y++) {
-                for (unsigned int x = Start_X; x < End_X; x++) {
-                    UTF Current_Pixel;
-                    Current_Pixel.Set_Background(Buffer[x + y * getWidth()]);
-                    Result[x + y * getWidth()] = Current_Pixel;
-                }
-            }
-        }
-
-        // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.is(STAIN_TYPE::EDGE)){
-            renderBorders(Result);
-            renderTitle(Result);
-        }
-
-        return Result;
-    }
-
     /**
      * @brief Constructor for Sprite class.
      * @details This constructor initializes a Sprite object with a vector of UTF objects representing the frames,
@@ -137,7 +34,7 @@ namespace GGUI{
      *          If it is, it removes the instance from the list to properly manage resources.
      *          It then calls the base class destructor to ensure all parent class resources are cleaned up.
      */
-    terminalCanvas::~terminalCanvas() {
+    canvas::~canvas() {
         // Check if this Terminal_Canvas is in the multi-frame list
         if (INTERNAL::Multi_Frame_Canvas.find(this) != INTERNAL::Multi_Frame_Canvas.end()) {
             // Remove the canvas from the multi-frame list
@@ -157,7 +54,7 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void terminalCanvas::set(unsigned int x, unsigned int y, sprite& sprite, bool Flush){
+    void canvas::set(unsigned int x, unsigned int y, sprite& sprite, bool Flush){
         unsigned int innerWidth = getWidth() - hasBorder()*2;
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
@@ -184,7 +81,7 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void terminalCanvas::set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush){
+    void canvas::set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush){
         unsigned int innerWidth = getWidth() - hasBorder()*2;
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
@@ -211,7 +108,7 @@ namespace GGUI{
      * @param sprite The UTF sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void terminalCanvas::set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
+    void canvas::set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
         unsigned int innerWidth = getWidth() - hasBorder()*2;
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
         
@@ -234,7 +131,7 @@ namespace GGUI{
      * If Force_Flush is true, the canvas will be marked as dirty for color updates.
      * @param Force_Flush Whether or not to mark the canvas as dirty for color updates.
      */
-    void terminalCanvas::flush(bool Force_Flush){
+    void canvas::flush(bool Force_Flush){
         if (Force_Flush){
             Dirty.Dirty(STAIN_TYPE::COLOR);
         }
@@ -249,7 +146,7 @@ namespace GGUI{
      *          It also handles the multi-frame list and sprite animations.
      * @return A vector of UTF objects representing the rendered canvas.
      */
-    std::vector<GGUI::UTF>& terminalCanvas::render() {
+    std::vector<GGUI::UTF>& canvas::render() {
         std::vector<GGUI::UTF>& Result = Render_Buffer;
 
         // Check for Dynamic attributes
@@ -394,7 +291,7 @@ namespace GGUI{
      * The function will then set the points in the canvas to the corresponding symbol. If flush is true, the buffer is flushed after
      * the points are set.
      */
-    void GGUI::terminalCanvas::embedPoints(std::vector<bool> pixels, styled_border border_style, bool forceFlush){
+    void GGUI::canvas::embedPoints(std::vector<bool> pixels, styled_border border_style, bool forceFlush){
 
         unsigned int Usable_Width = getWidth() - 2 * hasBorder();
         unsigned int Usable_Height = getHeight() - 2 * hasBorder();
@@ -631,14 +528,4 @@ namespace GGUI{
 
 
     }
-
-    // namespace FONT{
-    //     Font_Header Parse_Font_File(std::string File_Name){
-
-            
-
-    //     }
-    // }
-
-
 }

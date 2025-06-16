@@ -2,35 +2,33 @@
 
 ## Lightweight Terminal User Interface
 
-<img src="Banner.png"/>
+<img src="banner.png"/>
 
 ## Hello World example
 ```C++
-#include "GGUI.h"
+#include "ggui.h"
 
 using namespace GGUI;
 
 int main() 
 {
-    // Initialize and startup GGUI
-    Init_GGUI();
+    GGUI::GGUI(
+        title("Your App UI") | 
+        node(new textField( 
+            position(STYLES::center) | 
+            text("Hello World!")
+        ))
+    );
 
-    // Give the main window an title
-    Main->Set_Title("Your App UI");
-
-    // Create an text field
-    Text_Field* txt = new Text_Field("Hello World!");
-
-    // Add the text field to the main container to be displayed
-    Main->Add_Child(txt);
-
-    // Your code here...
-
-    // de-initialize console status.
-    Exit();
+    while (true) {
+        // ... 
+    }
 }
 ```
-### For more examples see `./Examples` folder. 
+
+<img src="./bin/img/helloWorld.jpg">
+
+### For more examples see `./examples` folder. 
 
 # Features
  - ### Scrollable horizontal and vertical lists
@@ -44,7 +42,7 @@ int main()
  - ### Cross platform (Windows, Linux, Android)
 
 # Developing this project further
-- ### Initialize project locally with: `Init.sh` or `Init.bat`.
+- ### Initialize project locally with: `init.sh` or `init.bat`.
 - ### Exporting this project as library is documented in `./Export/README.md`.
 - ### Add GGUI to your project
     ```

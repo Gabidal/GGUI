@@ -7,7 +7,7 @@ using namespace GGUI;
 int main() 
 {
     GGUI::GGUI(
-        node(new terminalCanvas(
+        node(new canvas(
 
             width(1.0f) | height(1.0f) |
 

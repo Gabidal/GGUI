@@ -70,7 +70,7 @@ namespace GGUI{
 
         inline std::unordered_map<std::string, int> Class_Names;
 
-        std::unordered_map<GGUI::terminalCanvas*, bool> Multi_Frame_Canvas;
+        std::unordered_map<GGUI::canvas*, bool> Multi_Frame_Canvas;
 
         void* Stack_Start_Address = 0;
         void* Heap_Start_Address = 0;

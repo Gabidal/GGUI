@@ -90,7 +90,7 @@ namespace GGUI{
 
         extern element* Main;  
 
-        extern std::unordered_map<GGUI::terminalCanvas*, bool> Multi_Frame_Canvas;
+        extern std::unordered_map<GGUI::canvas*, bool> Multi_Frame_Canvas;
 
         // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
         extern time_t MAX_UPDATE_SPEED;

@@ -12,68 +12,6 @@
 #include <vector>
 
 namespace GGUI{
-    class canvas : public element{
-    private:
-        // DONT GIVE THIS TO USER!
-        canvas(){}
-    protected:
-        std::vector<RGB> Buffer;
-    public:
-        /**
-         * @brief Constructor for the Canvas class.
-         * @details This constructor initializes a Canvas object with the specified styling.
-         * @param s The styling to be applied to the Canvas.
-         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the canvas's style. Only use if you know what you're doing!!!
-         */
-        canvas(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
-        canvas(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : canvas(s, Embed_Styles_On_Construct){}
-           
-        /**
-         * @brief Set the value of a pixel on the canvas.
-         * @details
-         * This function sets the value of a pixel on the canvas. The coordinates are in pixels relative to the top left corner of the canvas.
-         * The color is an RGB object. The Flush argument determines whether or not to call Update_Frame() after setting the pixel.
-         * @param x The x coordinate of the pixel.
-         * @param y The y coordinate of the pixel.
-         * @param color The color of the pixel.
-         * @param Flush Whether or not to call Update_Frame() after setting the pixel.
-         */
-        void set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
-        
-        /**
-         * @brief Flushes the canvas.
-         * @details
-         * This function flushes the canvas by calling Update_Frame().
-         * It is used to update the canvas immediately after making changes to it.
-         */
-        void flush();
-        
-        /**
-         * @brief Renders the canvas and returns the result.
-         * @details This function processes the canvas to generate a vector of UTF objects representing the current state.
-         * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the canvas is rendered correctly.
-         * @return A vector of UTF objects representing the rendered canvas.
-         */
-        std::vector<GGUI::UTF>&  render() override;
-
-        /**
-         * @brief Creates a deep copy of the Canvas and returns it as a movable Element.
-         * @return A deep copy of the Canvas as a movable Element.
-         */
-        element* safeMove() const override {
-            return new canvas();
-        }
-
-        /**
-         * @brief Returns the name of the Canvas as a string.
-         * @details The returned string is a combination of the class name and the Name property.
-         * @return A string representing the name of the Canvas.
-         */
-        std::string getName() const override {
-            return "Canvas<" + Name + ">";
-        }
-    };
-
     class sprite{
     public:
         std::vector<GGUI::UTF> Frames;
@@ -132,17 +70,10 @@ namespace GGUI{
         UTF render(unsigned char Current_Time);
     };
 
-    namespace GROUP_TYPE{
-        // Defines the group sizes for Sprite group optimizing.
-        inline unsigned char QUAD = 1 << 2;
-        inline unsigned char HEX = 1 << 3;
-        inline unsigned char OCTAL = 1 << 4;
-    }
-
-    class terminalCanvas : public element{
+    class canvas : public element{
     private:
         // DONT GIVE THIS TO USER!!!
-        terminalCanvas(){}
+        canvas(){}
     protected:
         std::vector<sprite> Buffer;
 
@@ -153,10 +84,10 @@ namespace GGUI{
 
         GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
-        terminalCanvas(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
-        terminalCanvas(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : terminalCanvas(s, Embed_Styles_On_Construct){}
+        canvas(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
+        canvas(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : canvas(s, Embed_Styles_On_Construct){}
         
-        ~terminalCanvas() override;
+        ~canvas() override;
 
         void setNextAnimationFrame() { Current_Animation_Frame++; }
 
@@ -181,7 +112,7 @@ namespace GGUI{
          * @return A deep copy of the Terminal_Canvas as a movable Element.
          */
         element* safeMove() const override {
-            return new terminalCanvas();
+            return new canvas();
         }
 
         /**

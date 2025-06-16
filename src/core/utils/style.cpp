@@ -404,8 +404,8 @@ namespace GGUI{
 
     STAIN_TYPE on_draw::Embed_Value([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Terminal_Canvas element.
-        if (dynamic_cast<terminalCanvas*>(owner))
-            ((terminalCanvas*)owner)->setOnDraw(Value);
+        if (dynamic_cast<canvas*>(owner))
+            ((canvas*)owner)->setOnDraw(Value);
         else
             throw std::runtime_error("The on_draw attribute can only be used on Terminal_Canvas type elements.");
 
