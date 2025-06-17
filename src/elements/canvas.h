@@ -40,8 +40,7 @@ namespace GGUI{
          * @param offset The number of frames to skip before playing the animation. Default is 0.
          * @param speed The speed of the animation playback. Default is 1.
          */
-        sprite(GGUI::UTF frame, int offset = 0, int speed = 1) 
-            : Offset(offset), Speed(speed), Frame_Distance(1) {
+        sprite(GGUI::UTF frame){
             // Add the provided frame to the Frames vector.
             Frames.push_back(frame);
         }
@@ -68,6 +67,14 @@ namespace GGUI{
          * @return The rendered UTF character.
          */
         UTF render(unsigned char Current_Time);
+
+        void setAnimationSpeed(int speed){
+            Speed = speed;
+        }
+
+        void setOffset(int offset){
+            Offset = offset;
+        }
     };
 
     class canvas : public element{

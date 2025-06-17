@@ -165,17 +165,23 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
+        unsigned int fittingWidth = getWidth() - hasBorder()*2;
+        unsigned int fittingHeight = getHeight() - hasBorder()*2;
+        
         if (Dirty.is(STAIN_TYPE::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
-
-            unsigned int fittingWidth = getWidth() - hasBorder()*2;
-            unsigned int fittingHeight = getHeight() - hasBorder()*2;
 
             // Also clear and resize the sprite buffer.
             Buffer.clear();
             Buffer.resize(fittingWidth * fittingHeight);
 
+            Dirty.Clean(STAIN_TYPE::STRETCH);
+
+            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::RESET);
+        }
+
+        if (Dirty.is(STAIN_TYPE::RESET)){
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
                 for (unsigned int y = 0; y < fittingHeight; y++) {
@@ -188,9 +194,7 @@ namespace GGUI{
                 report(getName() + " is missing On_Draw call!");
             }
 
-            Dirty.Clean(STAIN_TYPE::STRETCH);
-
-            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+            Dirty.Clean(STAIN_TYPE::RESET);
         }
 
         if (Dirty.is(STAIN_TYPE::MOVE)) {

@@ -92,6 +92,14 @@ namespace GGUI{
         virtual ~element();
 
         /**
+         * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
+         * @details This function processes the element to generate a vector of UTF objects representing the current state.
+         * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
+         * @return A vector of UTF objects representing the rendered element and its children.
+         */
+        virtual std::vector<GGUI::UTF>& render();
+
+        /**
          * @brief Safely moves the current Element object to a new memory location.
          * 
          * This function creates a new Element object, copies the contents of the 
@@ -141,7 +149,7 @@ namespace GGUI{
          *
          * @param s Reference to a style_base object containing the styling information to add.
          */
-        void AddStyling(STYLING_INTERNAL::style_base& s){
+        void addStyling(STYLING_INTERNAL::style_base& s){
             Style->Add(s);
             Style->Embed_Styles(this);
         }
@@ -155,8 +163,8 @@ namespace GGUI{
          *
          * @param s An rvalue reference to a style_base object representing the style to add.
          */
-        void AddStyling(STYLING_INTERNAL::style_base&& s){
-            AddStyling(s);
+        void addStyling(STYLING_INTERNAL::style_base&& s){
+            addStyling(s);
         }
 
         /** 
@@ -1019,14 +1027,6 @@ namespace GGUI{
          *       manually.
          */
         void computeDynamicSize();
-
-        /**
-         * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
-         * @details This function processes the element to generate a vector of UTF objects representing the current state.
-         * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
-         * @return A vector of UTF objects representing the rendered element and its children.
-         */
-        virtual std::vector<GGUI::UTF>& render();
 
         /**
          * @brief Updates the parent element of the current element.

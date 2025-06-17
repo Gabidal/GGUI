@@ -36,7 +36,6 @@ sources = [
   '../src/elements/element.cpp',
   '../src/elements/listView.cpp',
   '../src/elements/textField.cpp',
-  '../src/elements/button.cpp', 
   '../src/elements/switch.cpp',
   '../src/elements/canvas.cpp',
   '../src/elements/progressBar.cpp',

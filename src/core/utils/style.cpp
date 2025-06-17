@@ -2,7 +2,6 @@
 #include "../../elements/element.h"
 #include "../../elements/listView.h"
 #include "../../elements/textField.h"
-#include "../../elements/button.h"
 #include "../renderer.h"
 
 #include "./utils.h"
@@ -179,7 +178,7 @@ namespace GGUI{
     }
 
     STAIN_TYPE enable_border::Embed_Value(styling* host, [[maybe_unused]] element* owner){
-        host->Border_Enabled = *this;
+        owner->showBorder(this->Value);
 
         // If border background value has not been given, then set this background color inverted.
         if (host->Border_Background_Color.Status < VALUE_STATE::VALUE){
@@ -416,8 +415,6 @@ namespace GGUI{
         // first make sure that the element is an Text_Field element.
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->setText(Value);
-        else if (dynamic_cast<button*>(owner))
-            ((button*)owner)->setText(Value);
         else
             throw std::runtime_error("The text attribute can only be used on textField type elements.");
 
@@ -693,7 +690,7 @@ namespace GGUI{
         Childs.insert(Childs.end(), other.Childs.begin(), other.Childs.end());
         
         // Copy the un_parsed_styles
-        un_parsed_styles = other.un_parsed_styles;
+        Copy_Un_Parsed_Styles(&other);
     }
 
     void GGUI::styling::Copy_Un_Parsed_Styles(){
@@ -717,6 +714,25 @@ namespace GGUI{
 
             // Then set the current_attribute into the nested one
             current_attribute = current_attribute->Other;
+        }
+    }
+
+    void styling::Copy_Un_Parsed_Styles(const styling* other){
+        STYLING_INTERNAL::style_base* reader = other->un_parsed_styles;
+        STYLING_INTERNAL::style_base* writer = un_parsed_styles;
+
+        if (reader){
+            writer = reader->Copy(); // Copy the first element from the other styling object
+            reader = reader->Other; // Move to the next element in the other styling object
+        }
+
+        // Anchor the first written as starting point
+        un_parsed_styles = writer;
+
+        while (reader){
+            writer->Other = reader->Copy(); // Copy the current element from the other styling object
+            writer = writer->Other; // Move to the next element in the writer styling object
+            reader = reader->Other; // Move to the next element in the other styling object
         }
     }
 

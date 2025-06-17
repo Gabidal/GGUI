@@ -5,7 +5,6 @@
 #include "./elements/element.h"
 #include "./elements/textField.h"
 #include "./elements/listView.h"
-#include "./elements/button.h"
 #include "./elements/switch.h"
 #include "./elements/canvas.h"
 #include "./elements/progressBar.h"

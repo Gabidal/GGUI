@@ -11,7 +11,15 @@ namespace GGUI{
      */
     void textField::updateTextCache(){
         Text_Cache.clear();
-        unsigned int innerWidth = getWidth() - hasBorder()*2;
+        unsigned int borderOffset = hasBorder() ? 2 : 0;
+        unsigned int innerWidth = getWidth() - borderOffset;
+
+        // NOTE: This can be potentially removed.
+        // This happens when text("...") is given with percentage dimensions, leaving width as zero.
+        // The textField::render() will take care of this if percentage is used.
+        if (innerWidth == 0 && Style->Width.Value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+            return;
+        }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
         Compact_String current_line(Text.data(), 0, true);
@@ -38,7 +46,7 @@ namespace GGUI{
             }
             
             // This is for the word wrapping to beautifully end at when word end and not abruptly
-            if (Text[i] == ' ' && !Style->Allow_Dynamic_Size.Value){    
+            if (Text[i] == ' ' && !isOverflowAllowed()){    
                 // Check if the current line length added one more word would go over the Width
                 // For this we first need to know how long is this next word if there is any
                 size_t next_space = Text.find_first_of(' ', i + 1);
@@ -100,8 +108,8 @@ namespace GGUI{
         // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
         if (isDynamicSizeAllowed()){
             // Set the new size
-            setWidth(Max(Longest_Line, getWidth()));
-            setHeight(Max(Text_Cache.size(), getHeight()));
+            setWidth(Max(Longest_Line + borderOffset, getWidth()));
+            setHeight(Max(Text_Cache.size() + borderOffset, getHeight()));
         }
     }
 
@@ -132,7 +140,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
-        // This does not CLEAN the DEEP stain it only checks it setText has been invoked.
+        // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
         if (Dirty.is(STAIN_TYPE::DEEP)){
             updateTextCache();
         }
@@ -201,6 +209,8 @@ namespace GGUI{
             setName(text);
 
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);
+
+        updateTextCache();
 
         updateFrame();
     }
@@ -398,5 +408,4 @@ namespace GGUI{
         );
         GGUI::INTERNAL::Event_Handlers.push_back(back_space);
     }
-
 }

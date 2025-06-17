@@ -2349,7 +2349,7 @@ namespace GGUI{
 
         allow_scrolling                 Allow_Scrolling                 = allow_scrolling(false, VALUE_STATE::INITIALIZED);
 
-        anchor                           Align                           = anchor(ANCHOR::LEFT, VALUE_STATE::INITIALIZED);
+        anchor                          Align                           = anchor(ANCHOR::LEFT, VALUE_STATE::INITIALIZED);
 
         std::vector<element*>           Childs;
 
@@ -2450,6 +2450,8 @@ namespace GGUI{
 
         void Copy_Un_Parsed_Styles();
         
+        void Copy_Un_Parsed_Styles(const styling* other);
+
         // Returns the pointer of whom this evaluation is to reference.
         styling* Get_Reference(element* owner);
 

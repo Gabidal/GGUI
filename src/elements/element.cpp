@@ -107,37 +107,6 @@ void GGUI::UTF::To_Encoded_Super_String(
     }
 }
 
-// /**
-//  * The constructor for the Element class that accepts a Styling object.
-//  *
-//  * This constructor is used when an Element is created without a parent.
-//  * In this case, the Element is created as a root object, and it will be
-//  * automatically added to the list of root objects.
-//  *
-//  * @param s The Styling object to use for the Element.
-//  */
-// GGUI::element::element(styling s, bool Embed_Styles_On_Construct){
-//     fullyStain();
-
-//     Dirty.Dirty(STAIN_TYPE::FINALIZE);
-
-//     Style = new styling(s);
-
-//     if (Embed_Styles_On_Construct){
-//         Style->Embed_Styles(this);
-
-//         check(STATE::INIT);
-
-//         // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
-//         Dirty.Clean(STAIN_TYPE::FINALIZE);
-//     }
-//     else{
-//         // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
-//         // TODO:
-//         Style->Copy_Un_Parsed_Styles();
-//     }
-// }
-
 GGUI::element::element(STYLING_INTERNAL::style_base& style, bool Embed_Styles_On_Construct){
     fullyStain();
 
@@ -215,6 +184,137 @@ GGUI::element::~element(){
     if (isHovered())
         GGUI::INTERNAL::Hovered_On = nullptr;
 }   
+
+/**
+ * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
+ * @details This function processes the element to generate a vector of UTF objects representing the current state.
+ * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
+ * @return A vector of UTF objects representing the rendered element and its children.
+ */
+std::vector<GGUI::UTF>& GGUI::element::render(){
+    // Check for Dynamic attributes
+    if(Style->Evaluate_Dynamic_Dimensions(this))
+        Dirty.Dirty(STAIN_TYPE::STRETCH);
+
+    if (Style->Evaluate_Dynamic_Position(this))
+        Dirty.Dirty(STAIN_TYPE::MOVE);
+
+    if (Style->Evaluate_Dynamic_Colors(this))
+        Dirty.Dirty(STAIN_TYPE::COLOR);
+
+    if (Style->Evaluate_Dynamic_Border(this))
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+
+    calculateChildsHitboxes();    // Normally elements will NOT order their content by hitbox system.
+
+    computeDynamicSize();
+
+    //if inned children have changed without this changing, then this will trigger.
+    if (!Dirty.has(STAIN_TYPE::STRETCH | STAIN_TYPE::RESET)){
+        bool tmp = childrenChanged();
+
+        if (!tmp && Dirty.is(STAIN_TYPE::CLEAN)){
+            return Render_Buffer;
+        }
+        else if (tmp || hasTransparentChildren()){
+            Dirty.Dirty(STAIN_TYPE::RESET);
+        }
+    }
+
+    // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
+    if (this == GGUI::INTERNAL::Main && !Dirty.is(STAIN_TYPE::CLEAN)){
+        GGUI::INTERNAL::Identical_Frame = false;
+    }
+
+    if (Dirty.is(STAIN_TYPE::CLEAN))
+        return Render_Buffer;
+
+    if (Dirty.is(STAIN_TYPE::MOVE)){
+        Dirty.Clean(STAIN_TYPE::MOVE);
+
+        updateAbsolutePositionCache();
+    }
+
+    if (Dirty.is(STAIN_TYPE::RESET)){
+        Dirty.Clean(STAIN_TYPE::RESET);
+
+        std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
+        
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+    }
+
+    if (Dirty.is(STAIN_TYPE::STRETCH)){
+        Dirty.Clean(STAIN_TYPE::STRETCH);
+        
+        Render_Buffer.clear();
+        Render_Buffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+
+        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+    }
+
+    // Apply the color system to the resized result list
+    if (Dirty.is(STAIN_TYPE::COLOR)){
+        // Clean the color stain after applying the color system.
+        Dirty.Clean(STAIN_TYPE::COLOR);
+
+        applyColors(Render_Buffer);
+    }
+
+    bool Connect_Borders_With_Parent = hasBorder();
+    unsigned int Childs_With_Borders = 0;
+
+    //This will add the child windows to the Result buffer
+    if (Dirty.is(STAIN_TYPE::DEEP)){
+        Dirty.Clean(STAIN_TYPE::DEEP);
+
+        for (auto c : this->Style->Childs){
+            if (!c->isDisplayed())
+                continue;
+
+            // check if the child is within the renderable borders.
+            if (!childIsShown(c))
+                continue;
+
+            if (c->hasBorder())
+                Childs_With_Borders++;
+
+            std::vector<UTF>* tmp = &c->render();
+
+            if (c->hasPostprocessingToDo())
+                tmp = &c->postprocess();
+
+            nestElement(this, c, Render_Buffer, *tmp);
+        }
+    }
+
+    if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
+        Dirty.Dirty(STAIN_TYPE::EDGE);
+
+    //This will add the borders if necessary and the title of the window.
+    if (Dirty.is(STAIN_TYPE::EDGE)){
+        renderBorders(Render_Buffer);
+        renderTitle(Render_Buffer);
+    }
+
+    // This will calculate the connecting borders.
+    if (Childs_With_Borders > 0){
+        for (auto A : this->Style->Childs){
+            for (auto B : this->Style->Childs){
+                if (A == B)
+                    continue;
+
+                if (!A->isDisplayed() || !A->hasBorder() || !B->isDisplayed() || !B->hasBorder())
+                    continue;
+
+                postProcessBorders(A, B, Render_Buffer);
+            }
+
+            postProcessBorders(this, A, Render_Buffer);
+        }
+    }
+
+    return Render_Buffer;
+}
 
 /**
  * @brief Sets the opacity of the element.
@@ -1366,18 +1466,18 @@ void GGUI::element::computeDynamicSize(){
             int Border_Offset = hasBorder() != c->hasBorder() && hasBorder() ? 1 * 2 : 0;
 
             // If the width is an percentage value, then it is always smaller or equal to this's width.
-            bool Skip_Width_Modification = c->getWidthType() != EVALUATION_TYPE::PERCENTAGE && getWidthType() != EVALUATION_TYPE::PERCENTAGE;  // Skip checking width if the width attribute type is an relative one
+            int Enable_Width_Modification = (c->getWidthType() != EVALUATION_TYPE::PERCENTAGE && getWidthType() != EVALUATION_TYPE::PERCENTAGE) ? 1 : 0;  // Enable checking width if the width attribute type is an relative one
             // Do the same for the Height attribute
-            bool Skip_Height_Modification = c->getHeightType() != EVALUATION_TYPE::PERCENTAGE && getHeightType() != EVALUATION_TYPE::PERCENTAGE; // Skip checking height if the height attribute type is an relative one
+            int Enable_Height_Modification = (c->getHeightType() != EVALUATION_TYPE::PERCENTAGE && getHeightType() != EVALUATION_TYPE::PERCENTAGE) ? 1 : 0; // Enable checking height if the height attribute type is an relative one
 
             // Add the border offset to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = (unsigned int)GGUI::Max(
-                (c->Style->Position.Get().X + (signed int)c->getWidth() + Border_Offset) * Skip_Width_Modification,
+                (c->Style->Position.Get().X + (signed int)c->getWidth() + Border_Offset) * Enable_Width_Modification,
                 (signed int)getWidth()
             );
 
             unsigned int New_Height = (unsigned int)GGUI::Max(
-                (c->Style->Position.Get().Y + (signed int)c->getHeight() + Border_Offset) * Skip_Height_Modification,
+                (c->Style->Position.Get().Y + (signed int)c->getHeight() + Border_Offset) * Enable_Height_Modification,
                 (signed int)getHeight()
             );
 
@@ -1391,137 +1491,6 @@ void GGUI::element::computeDynamicSize(){
     }
 
     return;
-}
-
-/**
- * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
- * @details This function processes the element to generate a vector of UTF objects representing the current state.
- * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
- * @return A vector of UTF objects representing the rendered element and its children.
- */
-std::vector<GGUI::UTF>& GGUI::element::render(){
-    // Check for Dynamic attributes
-    if(Style->Evaluate_Dynamic_Dimensions(this))
-        Dirty.Dirty(STAIN_TYPE::STRETCH);
-
-    if (Style->Evaluate_Dynamic_Position(this))
-        Dirty.Dirty(STAIN_TYPE::MOVE);
-
-    if (Style->Evaluate_Dynamic_Colors(this))
-        Dirty.Dirty(STAIN_TYPE::COLOR);
-
-    if (Style->Evaluate_Dynamic_Border(this))
-        Dirty.Dirty(STAIN_TYPE::EDGE);
-
-    calculateChildsHitboxes();    // Normally elements will NOT order their content by hitbox system.
-
-    computeDynamicSize();
-
-    //if inned children have changed without this changing, then this will trigger.
-    if (!Dirty.has(STAIN_TYPE::STRETCH | STAIN_TYPE::RESET)){
-        bool tmp = childrenChanged();
-
-        if (!tmp && Dirty.is(STAIN_TYPE::CLEAN)){
-            return Render_Buffer;
-        }
-        else if (tmp || hasTransparentChildren()){
-            Dirty.Dirty(STAIN_TYPE::RESET);
-        }
-    }
-
-    // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
-    if (this == GGUI::INTERNAL::Main && !Dirty.is(STAIN_TYPE::CLEAN)){
-        GGUI::INTERNAL::Identical_Frame = false;
-    }
-
-    if (Dirty.is(STAIN_TYPE::CLEAN))
-        return Render_Buffer;
-
-    if (Dirty.is(STAIN_TYPE::MOVE)){
-        Dirty.Clean(STAIN_TYPE::MOVE);
-
-        updateAbsolutePositionCache();
-    }
-
-    if (Dirty.is(STAIN_TYPE::RESET)){
-        Dirty.Clean(STAIN_TYPE::RESET);
-
-        std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
-        
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
-    }
-
-    if (Dirty.is(STAIN_TYPE::STRETCH)){
-        Dirty.Clean(STAIN_TYPE::STRETCH);
-        
-        Render_Buffer.clear();
-        Render_Buffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
-
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
-    }
-
-    // Apply the color system to the resized result list
-    if (Dirty.is(STAIN_TYPE::COLOR)){
-        // Clean the color stain after applying the color system.
-        Dirty.Clean(STAIN_TYPE::COLOR);
-
-        applyColors(Render_Buffer);
-    }
-
-    bool Connect_Borders_With_Parent = hasBorder();
-    unsigned int Childs_With_Borders = 0;
-
-    //This will add the child windows to the Result buffer
-    if (Dirty.is(STAIN_TYPE::DEEP)){
-        Dirty.Clean(STAIN_TYPE::DEEP);
-
-        for (auto c : this->Style->Childs){
-            if (!c->isDisplayed())
-                continue;
-
-            // check if the child is within the renderable borders.
-            if (!childIsShown(c))
-                continue;
-
-            if (c->hasBorder())
-                Childs_With_Borders++;
-
-            std::vector<UTF>* tmp = &c->render();
-
-            if (c->hasPostprocessingToDo())
-                tmp = &c->postprocess();
-
-            nestElement(this, c, Render_Buffer, *tmp);
-        }
-    }
-
-    if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
-        Dirty.Dirty(STAIN_TYPE::EDGE);
-
-    //This will add the borders if necessary and the title of the window.
-    if (Dirty.is(STAIN_TYPE::EDGE)){
-        renderBorders(Render_Buffer);
-        renderTitle(Render_Buffer);
-    }
-
-    // This will calculate the connecting borders.
-    if (Childs_With_Borders > 0){
-        for (auto A : this->Style->Childs){
-            for (auto B : this->Style->Childs){
-                if (A == B)
-                    continue;
-
-                if (!A->isDisplayed() || !A->hasBorder() || !B->isDisplayed() || !B->hasBorder())
-                    continue;
-
-                postProcessBorders(A, B, Render_Buffer);
-            }
-
-            postProcessBorders(this, A, Render_Buffer);
-        }
-    }
-
-    return Render_Buffer;
 }
 
 /**
