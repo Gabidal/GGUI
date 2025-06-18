@@ -1,22 +1,28 @@
 #include "ggui.h"
 
-using namespace std;
 using namespace GGUI;
 
 int main(){
     GGUI::GGUI(
+        background_color(COLOR::GREEN) | // <-- This will be our base color
+        
+        // This element should look like Red + Green = Yellow
         node(new element(
-            width(1.0f) | height(0.7f) | 
-            background_color(COLOR::RED) | 
-            opacity(0.5f) | position(STYLES::top)
+            width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
+            background_color(COLOR::RED) |          // base color is red, but 50% of its value is given from its parent
+            opacity(0.5f) | position(STYLES::top)   // positioned at the top of the parent element
         )) | 
+
+        // <-- The overlap between the two elements will produce Yellow + Cyan = brown.
+
+        // This element should look like Blue + Green = Cyan
         node(new element(
-            width(1.0f) | height(0.7f) | 
-            background_color(COLOR::BLUE) | 
-            opacity(0.5f) | position(STYLES::bottom)
-        )) | 
-        background_color(COLOR::WHITE)
+            width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
+            background_color(COLOR::BLUE) |      // base color is blue, but 50% of its value is given from its parent
+            opacity(0.5f) | position(STYLES::bottom) // positioned at the bottom of the parent element
+        ))
     );
 
+    // You can also use the GGUI's internal sleep function to wait.
     GGUI::INTERNAL::SLEEP(INT32_MAX);
 }

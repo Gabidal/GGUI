@@ -1,26 +1,75 @@
 #include "ggui.h"
 
-using namespace std;
 using namespace GGUI;
 
-int main(){
-    
+int main() 
+{
     GGUI::GGUI(
-        node(new listView( flow_priority(DIRECTION::ROW) | width(1.0f) | height(1.0f) | 
-            node(new textField(
-                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
-                anchor(ANCHOR::LEFT) | width(0.33f) | height(1.0f)
-            )) | 
+        // Animated canvas
+        node(new canvas(
+            // Set the canvas to third of screen size. 30%
+            width(0.33f) | height(0.5f) | position(STYLES::left) |
 
-            node(new textField(
-                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
-                anchor(ANCHOR::CENTER) | width(0.33f) | height(1.0f)
-            )) | 
+            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
+            on_draw([](unsigned int x, unsigned int y){
+                // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
+                return GGUI::sprite(
+                    {
+                        // UTF A
+                        {' ', {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
+                        // UTF B
+                        {' ', {GGUI::COLOR::BLUE /*text color*/, GGUI::COLOR::BLUE /*background color*/}} 
+                    },
+                    x+y,  // <-- Animation offset, you can use perlin noise to make some nice wind styled animations
+                    1   // <-- Animation speed of the linear interpolation
+                );
+            })
+        )) | 
 
-            node(new textField(
-                text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.") | 
-                anchor(ANCHOR::RIGHT) | width(0.33f) | height(1.0f)
-            ))
+        // Non-animated canvas with unicode emojis
+        node(new canvas(
+            // Set the canvas to third of screen size. 30%
+            width(0.33f) | height(0.5f) | position(STYLES::center) |
+
+            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
+            on_draw([](unsigned int x, unsigned int y){
+                // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
+                return GGUI::sprite(UTF(
+                    "🗲",   // <-- Unicode characters are supported, but don't use too wide ones, since they currently break GGUI.
+                    {
+                        COLOR::WHITE,       // <-- Text color
+                        COLOR::BLACK        // <-- back. 
+                    }
+                ));
+            })
+        )) | 
+
+        node(new canvas(
+            // Set the canvas to third of screen size. 30%
+            width(0.33f) | height(0.5f) | position(STYLES::right) |
+
+            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
+            on_draw([](unsigned int x, unsigned int y){
+                // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
+                return GGUI::sprite(
+                    {
+                        // UTF A
+                        {' ', {COLOR::BLACK /*text color*/, COLOR::BLACK /*background color*/}}, 
+                        // UTF B
+                        {' ', {COLOR::LIGHT_GRAY /*text color*/, COLOR::LIGHT_GRAY /*background color*/}}, 
+
+                        {"A", {COLOR::LIGHT_RED /*text color*/, COLOR::LIGHT_GREEN /*background color*/}}, 
+
+                        {' ', {COLOR::BLACK /*text color*/, COLOR::BLACK /*background color*/}}
+                    },
+                    x-y*y,  // <-- Animation offset, you can use perlin noise to make some nice wind styled animations
+                    1+x   // <-- Animation speed of the linear interpolation
+                );
+            })
         ))
-    , UINT32_MAX);
+    );
+
+    while (true) {
+        // ... 
+    }
 }
