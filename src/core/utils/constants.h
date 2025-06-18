@@ -30,6 +30,19 @@ namespace GGUI{
             // 1 to SEPARATE
             // 1 to Blue
             constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Color = 1 + 1 + 1 + 1 + 1;
+            
+            // 5 to Text_Overhead
+            // 5 to Text_Colour
+            // 1 to END_COMMAND
+            // 5 to Background_Overhead
+            // 5 to Background_Colour
+            // 1 to END_COMMAND
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Overhead = 
+                Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 +
+                Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1;
+
+            // 1 to RESET_COLOR
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Reset = 1;
 
             // 5 to Text_Overhead
             // 5 to Text_Colour
@@ -39,10 +52,8 @@ namespace GGUI{
             // 1 to END_COMMAND
             // 1 to Data
             // 1 to RESET_COLOR
-            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Encoded_Super_String = 
-                Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 +
-                Maximum_Needed_Pre_Allocation_For_Over_Head + Maximum_Needed_Pre_Allocation_For_Color + 1 + 1 + 1;
-        
+            constexpr unsigned int Maximum_Needed_Pre_Allocation_For_Encoded_Super_String = Maximum_Needed_Pre_Allocation_For_Overhead + 1 + Maximum_Needed_Pre_Allocation_For_Reset;
+
             // 1 to Escape code
             // 1 to private SGR telltale '?'
             // 1 to Feature to be disabled or enabled

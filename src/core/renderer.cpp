@@ -1571,7 +1571,7 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    std::vector<Compact_String>* liquifyUTFText(std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
+    std::vector<Compact_String>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
         const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + !SETTINGS::Word_Wrapping * (Height - 1));
         
         // Since they are located as globals we need to remember to restart the starting offset.
@@ -2273,6 +2273,10 @@ namespace GGUI{
             return;
         }
 
+        // Calculate the relative size difference between the non-encoded and the encoded buffers.
+        INTERNAL::BEFORE_ENCODE_BUFFER_SIZE = Buffer->size() *  Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String;
+        INTERNAL::AFTER_ENCODE_BUFFER_SIZE = 0;
+
         // Cache previous colors
         auto PrevFg = Buffer->front().Foreground;
         auto PrevBg = Buffer->front().Background;
@@ -2284,14 +2288,25 @@ namespace GGUI{
             bool SameAsPrev = (Curr.Foreground == PrevFg) && (Curr.Background == PrevBg);
             bool SameAsNext = (Curr.Foreground == Next.Foreground) && (Curr.Background == Next.Background);
 
-            if (!SameAsPrev)
+            if (!SameAsPrev){
                 Curr.Set_Flag(ENCODING_FLAG::START);
 
-            if (!SameAsNext)
+                // for logging:
+                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Overhead;
+            }
+            
+            if (!SameAsNext){
                 Curr.Set_Flag(ENCODING_FLAG::END);
-
+                
+                // for logging:
+                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Reset;
+            }
+            
             PrevFg = Curr.Foreground;
             PrevBg = Curr.Background;
+
+            // for logging:
+            INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
         }
 
         // Handle the last element

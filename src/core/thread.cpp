@@ -30,6 +30,9 @@ namespace GGUI{
 
         bool Identical_Frame = true;
 
+        int BEFORE_ENCODE_BUFFER_SIZE = 0;
+        int AFTER_ENCODE_BUFFER_SIZE = 0;
+
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.
          * It waits for a condition to resume rendering, processes rendering tasks, and
@@ -85,6 +88,7 @@ namespace GGUI{
 
                         unsigned int Liquefied_Size = 0;
                         std::vector<Compact_String>* CS_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, Liquefied_Size, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight());
+                        
                         INTERNAL::Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
                         
                         INTERNAL::renderFrame();

@@ -4,6 +4,7 @@
 #include "../../elements/textField.h"
 
 #include "../renderer.h"
+#include "../utils/utils.h"
 
 #include <vector>
 
@@ -48,8 +49,12 @@ namespace GGUI{
      * @return A formatted string containing the collected statistics.
      */
     std::string Get_Stats_Text(){
-        return  "Raw buffer: " + std::to_string(INTERNAL::Frame_Buffer->size()) + "\n" +
-                "Encoded buffer: " + std::to_string(INTERNAL::Abstract_Frame_Buffer->size()) + "\n" + 
+        std::string optimized = std::to_string((float)(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE - INTERNAL::AFTER_ENCODE_BUFFER_SIZE) / (float)Max(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE, 1) * 100.0f);
+
+        // cut from the decimal point
+        optimized = optimized.substr(0, optimized.find('.'));
+
+        return  "Optimized: " + optimized + "%\n" + 
                 "Elements: " + std::to_string(INTERNAL::Main->getAllNestedElements().size()) + "\n" +
                 "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
                 "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 

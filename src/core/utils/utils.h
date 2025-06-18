@@ -20,6 +20,9 @@ namespace GGUI{
         extern bool Identical_Frame;
 
         extern void De_Initialize();
+
+        extern int BEFORE_ENCODE_BUFFER_SIZE;
+        extern int AFTER_ENCODE_BUFFER_SIZE;
         
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.

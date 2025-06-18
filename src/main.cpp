@@ -58,7 +58,7 @@ int main()
                         // UTF B
                         {' ', {COLOR::LIGHT_GRAY /*text color*/, COLOR::LIGHT_GRAY /*background color*/}}, 
 
-                        {"A", {COLOR::LIGHT_RED /*text color*/, COLOR::LIGHT_GREEN /*background color*/}}, 
+                        {"𓐉", {COLOR::LIGHT_RED /*text color*/, COLOR::LIGHT_GREEN /*background color*/}}, 
 
                         {' ', {COLOR::BLACK /*text color*/, COLOR::BLACK /*background color*/}}
                     },

@@ -239,7 +239,7 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    extern std::vector<Compact_String>* liquifyUTFText(std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
+    extern std::vector<Compact_String>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
 
     /**
      * @brief Updates the frame.

@@ -162,6 +162,10 @@ namespace GGUI{
         if (Style->Evaluate_Dynamic_Border(this))
             Dirty.Dirty(STAIN_TYPE::EDGE);
 
+        // Since canvas does not utilize DEEP flag, we can just clean it away
+        if (Dirty.is(STAIN_TYPE::DEEP))
+            Dirty.Clean(STAIN_TYPE::DEEP);
+
         if (Dirty.is(STAIN_TYPE::CLEAN))
             return Result;
 
