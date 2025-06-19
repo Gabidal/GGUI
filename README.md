@@ -48,4 +48,4 @@ int main()
 
 # Contributing to development of **GGUI**
 - ### Initialize project locally with the `init.*` script.
-- ### Exporting this project as library is documented in `./export/README.md`.
+- ### Exporting this project as library is documented in [bin/export/README.md](./bin/export/README.md).

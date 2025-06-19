@@ -1,6 +1,5 @@
 #include "ggui.h"
 
-using namespace std;
 using namespace GGUI;
 
 int main(){

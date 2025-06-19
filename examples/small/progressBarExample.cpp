@@ -1,11 +1,11 @@
 #include "ggui.h"
 
-using namespace std;
 using namespace GGUI;
 using namespace progress;
 
 #include <random>
 
+// Simple random generator
 float getRandomFloat(float min, float max) {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -16,7 +16,7 @@ float getRandomFloat(float min, float max) {
 void update(){
     while (true){
         for (auto* i : GGUI::INTERNAL::Main->getElements<Bar>()){
-            i->updateProgress(getRandomFloat(0.00001f, 0.05f));
+            i->updateProgress(getRandomFloat(0.00005f, 0.05f));     // use negative percentage to go backwards if for some reason needed.
         }
 
         GGUI::INTERNAL::SLEEP(100);
@@ -26,15 +26,15 @@ void update(){
 int main(){
     GGUI::GGUI(
         node(new listView(
-            flow_priority(DIRECTION::COLUMN) | width(1.0f) | height(1.0f) | 
+            flow_priority(DIRECTION::COLUMN) | width(1.0f) | height(1.0f) |     // Fullscreen, vertical list
 
             // arrow like progressbar
-            node(new Bar(
+            node(new progress::Bar(
                 width(1.0f) | 
                 part(partType::TAIL, COLOR::LIGHT_YELLOW, '|') | 
                 part(partType::BODY, COLOR::GREEN, '-') | 
                 part(partType::HEAD, COLOR::YELLOW, '>')| 
-                part(partType::EMPTY, COLOR::RED, '-')
+                part(partType::EMPTY, COLOR::RED, '-')          // The empty part of the gauge is colored red of '-'
             )) | 
             
             // Default progressbar
@@ -45,16 +45,15 @@ int main(){
             // Blocky progressbar
             node(new Bar(
                 width(1.0f) | height(3) | 
-                part(partType::HEAD, COLOR::BLUE, SYMBOLS::FULL_BLOCK) |
+                part(partType::HEAD, COLOR::BLUE, SYMBOLS::FULL_BLOCK) |    // Since the color is for text color we can't just put ' ' space, we need to use a full character
                 part(partType::BODY, COLOR::BLUE, SYMBOLS::FULL_BLOCK) | 
-                part(partType::TAIL, COLOR::BLUE, SYMBOLS::FULL_BLOCK) | 
-                part(partType::EMPTY, COLOR::RED)
+                part(partType::TAIL, COLOR::BLUE, SYMBOLS::FULL_BLOCK)
             )) | 
 
             // weirdo
             node(new Bar(
                 width(1.0f) | 
-                part(partType::TAIL, COLOR::YELLOW, '<') | 
+                part(partType::TAIL, COLOR::YELLOW, '<') |                  // Not giving parts of a progress bar, will use the default values
                 part(partType::HEAD, COLOR::YELLOW, '>')
             )) | 
             
@@ -64,12 +63,20 @@ int main(){
                 part(partType::HEAD, COLOR::GREEN, SYMBOLS::FULL_BLOCK) |
                 part(partType::BODY, COLOR::GREEN, SYMBOLS::FULL_BLOCK) | 
                 part(partType::TAIL, COLOR::GREEN, SYMBOLS::FULL_BLOCK) | 
-                part(partType::EMPTY, COLOR::RED, SYMBOLS::FULL_BLOCK)
+                part(partType::EMPTY, COLOR::RED, SYMBOLS::FULL_BLOCK)          // Empty part of the gauge 
+            )) | 
+
+            // reverse progressbar
+            node(new Bar(
+                width(1.0f) |
+                part(partType::HEAD, COLOR::GREEN, '<') |
+                part(partType::BODY, COLOR::BLACK, ' ') |       // Make the filled part invisible, the color can be anything, since space cannot be colored.
+                part(partType::TAIL, COLOR::BLACK, ' ') | 
+                part(partType::EMPTY, COLOR::GREEN, '-')
             ))
         ))
     );
 
+    // call our own totally not realistic custom code
     update();
-
-    GGUI::INTERNAL::SLEEP(INT32_MAX);
 }
