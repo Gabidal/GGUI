@@ -487,6 +487,14 @@ namespace GGUI{
             return IVector3(X - other.X, Y - other.Y, Z - other.Z);
         }
 
+        constexpr IVector3 operator+(int constant) const noexcept {
+            return IVector3(X + constant, Y + constant, Z + constant); // Add the constant to each coordinate
+        }
+
+        constexpr IVector3 operator-(int constant) const noexcept {
+            return IVector3(X - constant, Y - constant, Z - constant); // Subtract the constant from each coordinate
+        }
+
 
         /**
          * @brief * operator with a float
@@ -660,7 +668,7 @@ namespace GGUI{
         EDGE = 1 << 1,          // Title and border changes.
         DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
         STRETCH = 1 << 3,       // Width and or height changes.
-        STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently. And also for state handlers.
+        STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently.
         MOVE = 1 << 5,          // Enabled, to signal absolute position caching.
         FINALIZE = 1 << 6,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
         RESET = 1 << 7,         // This is to remove redundant STRETCH flagging.

@@ -2,6 +2,7 @@
 #include "../../elements/element.h"
 #include "../../elements/listView.h"
 #include "../../elements/textField.h"
+#include "../../elements/switch.h"
 #include "../renderer.h"
 
 #include "./utils.h"
@@ -415,6 +416,8 @@ namespace GGUI{
         // first make sure that the element is an Text_Field element.
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->setText(Value);
+        else if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
+            ((switchBox*)owner)->setText(Value);
         else
             throw std::runtime_error("The text attribute can only be used on textField type elements.");
 
@@ -425,6 +428,8 @@ namespace GGUI{
         owner->onClick([this, owner](Event*){
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
+            // if (dynamic_cast<switchBox*>(owner) || dynamic_cast<checkBox*>(owner))
+            //     ((switchBox*)owner)->toggle();
 
             return this->Value(owner);
         });

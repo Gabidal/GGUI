@@ -194,7 +194,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
  * @return The name of the list view.
  */
 std::string GGUI::listView::getName() const{
-    return "List_View<" + Name + ">";
+    return "listView<" + Name + ">";
 }
 
 /**
@@ -443,7 +443,7 @@ GGUIAddTranslator("select", Translate_List);
  * @return The name of the scroll view.
  */
 std::string GGUI::scrollView::getName() const{
-    return "Scroll_View<" + Name + ">";
+    return "scrollView<" + Name + ">";
 }
 
 /**

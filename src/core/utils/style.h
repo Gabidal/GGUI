@@ -1943,15 +1943,12 @@ namespace GGUI{
     protected:
         std::array<element*, INT8_MAX> Value;
     public:
-
         constexpr childs(const std::initializer_list<element*> value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value{}{
             assert(value.size() <= INT8_MAX);
             for (size_t i = 0; i < value.size(); i++){
                 Value[i] = *(value.begin() + i);
             }
         }
-
-        // TODO: maybe an std::initializer_list<element> version too?
 
         constexpr childs(const GGUI::childs& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
@@ -2256,9 +2253,9 @@ namespace GGUI{
     public:
         bool (*Value)(element* self);
 
-        constexpr on_click(bool (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr on_click(bool (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
 
-        constexpr on_click(const GGUI::on_click& other) : style_base(other.Status), Value(other.Value){}
+        constexpr on_click(const GGUI::on_click& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
         inline ~on_click() override { style_base::~style_base(); }
 
@@ -2272,6 +2269,8 @@ namespace GGUI{
                 Value = other.Value;
 
                 Status = other.Status;
+                
+                Order = other.Order;
             }
             return *this;
         }

@@ -1474,16 +1474,27 @@ namespace GGUI{
             Current = INTERNAL::Hovered_On;
 
         int Current_Index = 0;
+        int temporary_way_of_calculating_how_far_back_we_should_go_with_shift = 1 + 1;
 
         // Find the index of the current element in the list of event handlers
-        if (Current)
+        if (Current){
+            // Find the first occurrence of the event handlers with this Current being their Host.
             for (;(unsigned int)Current_Index < INTERNAL::Event_Handlers.size(); Current_Index++){
                 if (INTERNAL::Event_Handlers[Current_Index]->Host == Current)
                     break;
             }
 
+            // Now, we need to find the last occurrence of this Current in the event handlers
+            for (int i = Current_Index + 1; i < (int)INTERNAL::Event_Handlers.size(); i++){
+                if (INTERNAL::Event_Handlers[i]->Host == Current){
+                    Current_Index = i; // Update the index to the last occurrence
+                    temporary_way_of_calculating_how_far_back_we_should_go_with_shift++;
+                }
+            }
+        }
+
         // Generalize index hopping, if shift is pressed then go backwards.
-        Current_Index += 1 + (-2 * Shift_Is_Pressed);
+        Current_Index += 1 + (-temporary_way_of_calculating_how_far_back_we_should_go_with_shift * Shift_Is_Pressed);
 
         // If the index is out of bounds, wrap it around to the other side of the list
         if (Current_Index < 0){
@@ -1941,17 +1952,18 @@ namespace GGUI{
         Populate_Inputs_For_Held_Down_Keys();
 
         for (unsigned int i = 0; i < INTERNAL::Event_Handlers.size(); i++){
-            bool Has_Select_Event = false;
+            bool Has_Mouse_Left_Click_Event = false;
+            bool Has_Enter_Press_Event = false;
 
             for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
-                if (Has(INTERNAL::Inputs[j]->Criteria, Constants::MOUSE_LEFT_CLICKED | Constants::ENTER))
-                    Has_Select_Event = true;
+                Has_Mouse_Left_Click_Event = Has(INTERNAL::Inputs[j]->Criteria, Constants::MOUSE_LEFT_CLICKED);
+                Has_Enter_Press_Event = Has(INTERNAL::Inputs[j]->Criteria, Constants::ENTER);
 
                 // Criteria must be identical for more accurate criteria listing.
                 if (
                     INTERNAL::Event_Handlers[i]->Criteria == INTERNAL::Inputs[j]->Criteria && (
-                        Collides(INTERNAL::Event_Handlers[i]->Host, GGUI::INTERNAL::Mouse) || 
-                        INTERNAL::Event_Handlers[i]->Host->isFocused()
+                        (Collides(INTERNAL::Event_Handlers[i]->Host, GGUI::INTERNAL::Mouse) && Has_Mouse_Left_Click_Event) || 
+                        (INTERNAL::Event_Handlers[i]->Host->isFocused() && Has_Enter_Press_Event)
                     )
                 ){
                     try{
@@ -1981,7 +1993,7 @@ namespace GGUI{
 
                 //update the focused
                 if (Collides(INTERNAL::Event_Handlers[i]->Host, GGUI::INTERNAL::Mouse)){
-                    if (Has_Select_Event){
+                    if (Has_Mouse_Left_Click_Event){
                         updateFocusedElement(INTERNAL::Event_Handlers[i]->Host);
                         unHoverElement();
                     }

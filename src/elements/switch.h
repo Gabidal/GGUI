@@ -12,44 +12,58 @@
 #include "textField.h"
 
 namespace GGUI{
+
+    class visualState : public STYLING_INTERNAL::style_base {
+    public:
+        const Compact_String *Off, *On;
+
+        constexpr visualState(const Compact_String& off, const Compact_String& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Off(&off), On(&on) {}
+
+        constexpr visualState(const GGUI::visualState& other) : style_base(other.Status), Off(other.Off), On(other.On) {}
+
+        inline ~visualState() override { style_base::~style_base(); }
+
+        inline style_base* Copy() const override {
+            return new visualState(*this);
+        }
+
+        constexpr visualState& operator=(const visualState& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Off = other.Off;
+                On = other.On;
+
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+    };
+
     class switchBox : public element{
-    private:
-        /**
-         * @brief Private default constructor.
-         * @details This constructor is not intended to be used by the user.
-         * It is used to prevent the compiler from generating a default constructor.
-         */
-        // DONT GIVE TO USER !!!
-        switchBox(){}
     protected:
         bool State = false;
 
         //COntains the unchecked version of the symbol and the checked version.
-        std::vector<Compact_String> States;
+        const Compact_String *Off, *On;
 
         textField Text;
     public:
         /**
          * @brief Constructs a Switch element with specified text, states, event handler, and styling.
-         * @param text The text to display on the switch.
-         * @param states A vector containing the unchecked and checked states.
-         * @param event The function to call when the switch is toggled.
          * @param s The styling for the switch.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the switch's style. Only use if you know what you're doing!!!
          */
-        switchBox(
-            Compact_String text,
-            std::vector<Compact_String> states,
-            STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default,
-            std::function<void (element* This)> event = []([[maybe_unused]] element* e){}, 
-            bool Embed_Styles_On_Construct = false
-        );
+        switchBox(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        switchBox(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : switchBox(s, Embed_Styles_On_Construct){}
 
-        switchBox(            
-            Compact_String text,
-            std::vector<Compact_String> states,
-            STYLING_INTERNAL::style_base&& s
-        ) : switchBox(text, states, s){}
+        ~switchBox() override{
+            // call the base destructor.
+            element::~element();
+        }
 
         /**
          * @brief Renders the switch element and its children into the Render_Buffer nested buffer of the window.
@@ -64,13 +78,9 @@ namespace GGUI{
          * @details Flips the current state from checked to unchecked or vice versa,
          * and marks the switch as needing a state update.
          */
-        void toggle() {
-            // Flip the current state of the switch
-            State = !State;
+        void toggle();
 
-            // Mark the switch as needing a state update
-            Dirty.Dirty(STAIN_TYPE::STATE);
-        }
+        void setState(bool b);
 
         /**
          * @brief Sets the text of the switch element.
@@ -78,6 +88,8 @@ namespace GGUI{
          * @param text The new text for the switch element.
          */
         void setText(Compact_String text);
+
+        void showBorder(bool b) override;
         
         /**
          * @brief Creates a deep copy of the Switch object.
@@ -97,30 +109,30 @@ namespace GGUI{
          * @return The name of the Switch object.
          */
         std::string getName() const override{
-            return "Switch<" + Name + ">";
+            return "switchBox<" + Name + ">";
         }
+
+        constexpr Compact_String getStateString() const {
+            return State ? *On : *Off;
+        }
+
+        void setStateString(const Compact_String* off, const Compact_String* on);
     };
 
     class radioButton : public switchBox{
     public:
         /**
-         * @brief Constructs a Radio_Button object with the specified text.
-         * @details A Radio_Button is a special type of Switch that can be either on or off.
-         *          The text parameter is the text to display next to the radio button.
-         * @param text The text to display next to the radio button.
+         * @brief Constructs a radioButton element with optional custom styling and embedding behavior.
+         *
+         * This constructor initializes a radioButton, inheriting from switchBox, with the specified style and visual state.
+         * The visual state is set to display the appropriate radio button symbols for "off" and "on" states.
+         *
+         * @param s The style to apply to the radioButton. Defaults to STYLES::CONSTANTS::Default.
+         * @param Embed_Styles_On_Construct If true, embeds the styles during construction. Defaults to false.
          */
-        radioButton(Compact_String text) : switchBox(text, {SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON}){}
-
-        /**
-         * @brief Destructor for the Radio_Button class.
-         * @details This destructor is responsible for properly deallocating all the memory
-         * allocated by the Radio_Button object. It calls the base class destructor
-         * to ensure all parent class resources are also cleaned up.
-         */
-        ~radioButton() override{
-            // call the base destructor.
-            element::~element();
-        }
+        radioButton(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
+            switchBox(s | visualState(SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON), Embed_Styles_On_Construct) {}
+        radioButton(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : radioButton(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Returns the state of the Radio_Button.
@@ -132,9 +144,6 @@ namespace GGUI{
             return State;
         }
         
-        // The Swtich overrides it for us.
-        //Element* Safe_Move() override;
-        
         /**
          * @brief Returns the name of the Radio_Button object.
          * @details This function returns a string that represents the name of the Radio_Button object.
@@ -144,32 +153,39 @@ namespace GGUI{
          */
         std::string getName() const override{
             // Return the formatted name of the Radio_Button.
-            return "Radio_Button<" + Name + ">";
+            return "radioButton<" + Name + ">";
+        }
+
+
+        element* safeMove() const override {
+            return new radioButton();
         }
     };
 
     class checkBox : public switchBox{
     public:
         /**
-         * @brief Constructs a Check_Box object with the specified text.
-         * @param text The text to display next to the check box.
-         * @details A Check_Box is a special type of Switch that can be either checked or unchecked.
-         *          The symbols for the unchecked and checked states are EMPTY_CHECK_BOX and CHECKED_CHECK_BOX, respectively.
+         * @brief Constructs a checkBox element with optional styling and embedding behavior.
+         *
+         * This constructor initializes a checkBox by applying the provided style and visual states
+         * for checked and unchecked symbols. It also allows specifying whether to embed styles upon construction.
+         *
+         * @param s The style to apply to the checkBox. Defaults to STYLES::CONSTANTS::Default.
+         * @param Embed_Styles_On_Construct If true, embeds styles during construction. Defaults to false.
          */
-        checkBox(Compact_String text) : switchBox(text, {SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}){}
+        checkBox(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
+            switchBox(s | visualState({SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}), Embed_Styles_On_Construct) {}
+        checkBox(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : checkBox(s, Embed_Styles_On_Construct) {}
 
         /**
-         * @brief Returns the current state of the Radio_Button.
-         * @details This function returns a boolean indicating whether the Radio_Button is on or off.
-         * @return The state of the Radio_Button.
+         * @brief Returns the current state of the Check_Box.
+         * @details This function returns a boolean indicating whether the Check_Box is checked or unchecked.
+         * @return The state of the Check_Box.
          */
         bool getState(){
-            return State; // Return the current state of the Radio_Button.
+            return State; // Return the current state of the Check_Box.
         }
         
-        // The Swtich overrides it for us.
-        //Element* Safe_Move() override;
-
         /**
          * @brief Returns the name of the Check_Box object.
          * @details This function returns a string that represents the name of the Check_Box object.
@@ -178,7 +194,11 @@ namespace GGUI{
          * @return The name of the Check_Box object.
          */
         std::string getName() const override{
-            return "Check_Box<" + Name + ">";
+            return "checkBox<" + Name + ">";
+        }
+
+        element* safeMove() const override {
+            return new checkBox();
         }
     };
 }

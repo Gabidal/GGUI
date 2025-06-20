@@ -129,7 +129,7 @@ namespace GGUI{
          */
         std::string getName() const override {
             // Concatenate class name and Name property to form the full name.
-            return "Terminal_Canvas<" + Name + ">";
+            return "canvas<" + Name + ">";
         }
     
         /**

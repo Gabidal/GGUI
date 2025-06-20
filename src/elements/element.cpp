@@ -773,14 +773,17 @@ void GGUI::element::updateParent(element* New_Element){
 void GGUI::element::display(bool f){
     // Check if the to be displayed is true and the element wasn't already displayed.
     if (f != Show){
-        Dirty.Dirty(STAIN_TYPE::STATE);
         Show = f;
-
+        
         if (f){
             check(STATE::SHOWN);
         }
         else{
             check(STATE::HIDDEN);
+            
+            if (Parent){
+                Dirty.Dirty(STAIN_TYPE::RESET);
+            }
         }
 
         // now also update all children, this is for the sake of events, since they do not obey AST structure where parental hidden would stop going deeper into AST events are linear list.
@@ -957,14 +960,17 @@ void GGUI::element::updatePosition(IVector3 v){
  */
 void GGUI::element::updateAbsolutePositionCache(){
     Absolute_Position_Cache = {0, 0, 0};
+    int Border_Offset = 0;
 
     if (Parent){
         // Get the position of the parent
         Absolute_Position_Cache = Parent->getPosition();
+
+        Border_Offset = (Parent->hasBorder() != hasBorder() && Parent->hasBorder()) ? 1 : 0;
     }
 
     // Add the position of the element to the position of its parent
-    Absolute_Position_Cache += getPosition();
+    Absolute_Position_Cache += getPosition() + Border_Offset;
 }
 
 void GGUI::element::setTitle(Compact_String t){
@@ -1842,24 +1848,35 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
  * @param action The lambda to be called when the element is clicked.
  */
 void GGUI::element::onClick(std::function<bool(GGUI::Event*)> action){
-    Action* a = new Action(
+    auto wrapper = [this, action](GGUI::Event* e){
+        // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
+
+        // Construct an Action from the Event obj
+        GGUI::Action* event2actionWrapper = new GGUI::Action(e->Criteria, action, this, getName() + "::onClick");
+
+        // Call the lambda with the wrapper
+        action(event2actionWrapper);
+
+        //action successfully executed.
+        return true;
+    };
+    
+    Action* mouse = new Action(
         Constants::MOUSE_LEFT_CLICKED,
-        [this, action](GGUI::Event* e){
-            // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
-
-            // Construct an Action from the Event obj
-            GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, this, getName() + "::onClick");
-
-            // Call the lambda with the wrapper
-            action(wrapper);
-
-            //action successfully executed.
-            return true;
-        },
+        wrapper,
         this,
-        getName() + "::onClick::wrapper"
+        getName() + "::onClick::wrapper::mouse"
     );
-    GGUI::INTERNAL::Event_Handlers.push_back(a);
+
+    Action* enter = new Action(
+        Constants::ENTER,
+        wrapper,
+        this,
+        getName() + "::onClick::wrapper::enter"
+    );
+
+    GGUI::INTERNAL::Event_Handlers.push_back(mouse);
+    GGUI::INTERNAL::Event_Handlers.push_back(enter);
 }
 
 /**
@@ -1882,7 +1899,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::Eve
             return false;
         },
         this,
-        getName() + "::on::"
+        getName() + "::on::" + std::to_string(criteria)
     );
     GGUI::INTERNAL::Event_Handlers.push_back(a);
 }
@@ -1901,13 +1918,6 @@ bool GGUI::element::childrenChanged(){
         // Not counting State machine, if element is not being drawn return always false.
         if (!e->Show)
             return false;
-
-        // This is used if an element is recently hidden so the DEEP search wouldn't find it if not for this. 
-        // Clean the state changed elements already here.
-        if (e->getDirty().is(STAIN_TYPE::STATE)){
-            e->Dirty.Clean(STAIN_TYPE::STATE);
-            return true;
-        }
 
         if (e->getDirty().Type != STAIN_TYPE::CLEAN)
             return true;

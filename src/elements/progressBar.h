@@ -187,7 +187,7 @@ namespace GGUI{
              * @return The name of the Progress_Bar object.
              */
             std::string getName() const override{
-                return "Progress_Bar<" + Name + ">";
+                return "progressBar<" + Name + ">";
             }
         };
     }

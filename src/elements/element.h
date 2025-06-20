@@ -1180,7 +1180,7 @@ namespace GGUI{
          * @return The name of the element.
          */
         virtual std::string getName() const {
-            return "Element<" + getNameAsRaw() + ">";
+            return "element<" + getNameAsRaw() + ">";
         }
 
         std::string getNameAsRaw() const {
@@ -1257,7 +1257,7 @@ namespace GGUI{
             std::vector<T*> result;
 
             // Check if the element in question is of the same type as the template T.
-            if (typeid(*this) == typeid(T)){
+            if (dynamic_cast<T*>(this)){
                 result.push_back((T*)this);
             }
 
