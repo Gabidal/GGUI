@@ -16,6 +16,15 @@ namespace GGUI{
         return STAIN_TYPE::STATE;
     }
 
+    STAIN_TYPE singleSelect::Embed_Value([[maybe_unused]] styling* host, element* owner){
+        if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
+            ((switchBox*)owner)->enableSingleSelect();
+        else 
+            throw std::runtime_error("The group attribute can only be used on switchBox, radioButton or checkBox type elements.");
+
+        return STAIN_TYPE::CLEAN;
+    }
+
     /**
      * @brief Constructs a Switch element with specified text, states, event handler, and styling.
      * @param text The text to display on the switch.
@@ -196,4 +205,32 @@ namespace GGUI{
         updateFrame();
     }
 
+    void switchBox::enableSingleSelect(){
+        SingleSelect = true;
+    }
+
+    void DisableOthers(switchBox* keepOn){
+        // If this is in switch group, disable other grouped switches
+        if (keepOn->isSingleSelect()){
+            keepOn->setState(true);
+
+            if (!keepOn->getParent())
+                return;
+
+            for (auto* c : keepOn->getParent()->getElements<switchBox>())
+                if (c != keepOn && c->isSingleSelect())
+                    c->setState(false);
+
+            for (auto* c : keepOn->getParent()->getElements<radioButton>())
+                if (c != keepOn && c->isSingleSelect())
+                    c->setState(false);
+
+            for (auto* c : keepOn->getParent()->getElements<checkBox>())
+                if (c != keepOn && c->isSingleSelect())
+                    c->setState(false);
+        }
+        else{
+            keepOn->toggle();
+        }
+    }
 }

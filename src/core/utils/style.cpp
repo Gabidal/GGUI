@@ -428,8 +428,8 @@ namespace GGUI{
         owner->onClick([this, owner](Event*){
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
-            // if (dynamic_cast<switchBox*>(owner) || dynamic_cast<checkBox*>(owner))
-            //     ((switchBox*)owner)->toggle();
+            if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
+                DisableOthers((switchBox*)owner);
 
             return this->Value(owner);
         });

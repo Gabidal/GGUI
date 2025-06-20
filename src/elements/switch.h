@@ -43,9 +43,35 @@ namespace GGUI{
         STAIN_TYPE Embed_Value(styling* host, element* owner) override;
     };
 
+    class singleSelect : public STYLING_INTERNAL::style_base {
+    public:
+        constexpr singleSelect(const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default) {}
+
+        constexpr singleSelect(const GGUI::singleSelect& other) : style_base(other.Status) {}
+
+        inline ~singleSelect() override { style_base::~style_base(); }
+
+        inline style_base* Copy() const override {
+            return new singleSelect(*this);
+        }
+
+        constexpr singleSelect& operator=(const singleSelect& other){
+            // Only copy the information if the other is enabled.
+            if (other.Status >= Status){
+                Status = other.Status;
+            }
+            return *this;
+        }
+
+        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+
+        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+    };
+
     class switchBox : public element{
     protected:
         bool State = false;
+        bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
 
         //COntains the unchecked version of the symbol and the checked version.
         const Compact_String *Off, *On;
@@ -81,6 +107,10 @@ namespace GGUI{
         void toggle();
 
         void setState(bool b);
+
+        void enableSingleSelect();
+
+        bool isSingleSelect() { return SingleSelect; }
 
         /**
          * @brief Sets the text of the switch element.
@@ -201,6 +231,8 @@ namespace GGUI{
             return new checkBox();
         }
     };
+
+    void DisableOthers(switchBox* keepOn);
 }
 
 #endif
