@@ -88,8 +88,13 @@ namespace GGUI{
             Style->Border_Enabled = b;
 
             // Adjust the width and height of the progress bar based on the border state
-            if (b) Style->Width.Direct() += 2;
-            else Style->Height.Direct() -= 2;
+            if (b) {
+                Style->Width.Direct() += 2;
+                Style->Height.Direct() += 2;
+            }else {
+                Style->Width.Direct() -= 2;
+                Style->Height.Direct() -= 2;
+            }
 
             // Mark the element as dirty for border changes
             Dirty.Dirty(STAIN_TYPE::EDGE);
@@ -163,8 +168,11 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::STATE)){
             int State_Location_X = hasBorder();
             int State_Location_Y = hasBorder();
-
-            Result[State_Location_Y * getWidth() + State_Location_X] = getStateString();
+            
+            if (Off && On)
+                Result[State_Location_Y * getWidth() + State_Location_X] = getStateString();
+            else
+                INTERNAL::reportStack(getName() + " Missing visual state strings!");
 
             Dirty.Clean(STAIN_TYPE::STATE);
             Dirty.Dirty(STAIN_TYPE::COLOR);
@@ -218,14 +226,6 @@ namespace GGUI{
                 return;
 
             for (auto* c : keepOn->getParent()->getElements<switchBox>())
-                if (c != keepOn && c->isSingleSelect())
-                    c->setState(false);
-
-            for (auto* c : keepOn->getParent()->getElements<radioButton>())
-                if (c != keepOn && c->isSingleSelect())
-                    c->setState(false);
-
-            for (auto* c : keepOn->getParent()->getElements<checkBox>())
                 if (c != keepOn && c->isSingleSelect())
                     c->setState(false);
         }

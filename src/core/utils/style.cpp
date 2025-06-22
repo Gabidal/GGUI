@@ -416,7 +416,7 @@ namespace GGUI{
         // first make sure that the element is an Text_Field element.
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->setText(Value);
-        else if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
+        else if (dynamic_cast<switchBox*>(owner))
             ((switchBox*)owner)->setText(Value);
         else
             throw std::runtime_error("The text attribute can only be used on textField type elements.");
@@ -428,7 +428,7 @@ namespace GGUI{
         owner->onClick([this, owner](Event*){
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
-            if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
+            if (dynamic_cast<switchBox*>(owner))
                 DisableOthers((switchBox*)owner);
 
             return this->Value(owner);

@@ -1957,7 +1957,7 @@ namespace GGUI{
 
             for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
                 Has_Mouse_Left_Click_Event = Has(INTERNAL::Inputs[j]->Criteria, Constants::MOUSE_LEFT_CLICKED);
-                Has_Enter_Press_Event = Has(INTERNAL::Inputs[j]->Criteria, Constants::ENTER);
+                Has_Enter_Press_Event = Has(INTERNAL::Inputs[j]->Criteria, Constants::ENTER) && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER].State == true;
 
                 // Criteria must be identical for more accurate criteria listing.
                 if (

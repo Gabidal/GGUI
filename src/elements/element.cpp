@@ -964,7 +964,7 @@ void GGUI::element::updateAbsolutePositionCache(){
 
     if (Parent){
         // Get the position of the parent
-        Absolute_Position_Cache = Parent->getPosition();
+        Absolute_Position_Cache = Parent->getAbsolutePosition();
 
         Border_Offset = (Parent->hasBorder() != hasBorder() && Parent->hasBorder()) ? 1 : 0;
     }
@@ -1854,11 +1854,8 @@ void GGUI::element::onClick(std::function<bool(GGUI::Event*)> action){
         // Construct an Action from the Event obj
         GGUI::Action* event2actionWrapper = new GGUI::Action(e->Criteria, action, this, getName() + "::onClick");
 
-        // Call the lambda with the wrapper
-        action(event2actionWrapper);
-
         //action successfully executed.
-        return true;
+        return action(event2actionWrapper);
     };
     
     Action* mouse = new Action(

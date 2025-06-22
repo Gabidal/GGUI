@@ -73,8 +73,8 @@ namespace GGUI{
         bool State = false;
         bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
 
-        //COntains the unchecked version of the symbol and the checked version.
-        const Compact_String *Off, *On;
+        //Contains the unchecked version of the symbol and the checked version.
+        const Compact_String *Off = nullptr, *On = nullptr;
 
         textField Text;
     public:
@@ -111,6 +111,8 @@ namespace GGUI{
         void enableSingleSelect();
 
         bool isSingleSelect() { return SingleSelect; }
+
+        bool isSelected() { return State; }
 
         /**
          * @brief Sets the text of the switch element.
@@ -186,10 +188,10 @@ namespace GGUI{
             return "radioButton<" + Name + ">";
         }
 
-
-        element* safeMove() const override {
-            return new radioButton();
-        }
+        // Diabled, use the switchBox class type for search
+        // element* safeMove() const override {
+        //     return new radioButton();
+        // }
     };
 
     class checkBox : public switchBox{
@@ -227,9 +229,10 @@ namespace GGUI{
             return "checkBox<" + Name + ">";
         }
 
-        element* safeMove() const override {
-            return new checkBox();
-        }
+        // Disabled, use the switchBox class type.
+        // element* safeMove() const override {
+        //     return new checkBox();
+        // }
     };
 
     void DisableOthers(switchBox* keepOn);
