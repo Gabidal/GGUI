@@ -13,7 +13,7 @@ namespace GGUI{
         // Contains Logging utils.
         namespace LOGGER{
             // File handle for logging to files for Atomic access across different threads.
-            extern atomic::Guard<fileStream> Handle;
+            extern atomic::guard<fileStream> Handle;
             extern thread_local std::queue<std::string>* Queue;
 
             extern void Init();

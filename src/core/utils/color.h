@@ -24,21 +24,21 @@ namespace GGUI{
          *
          * @param Result The result string.
          */
-        constexpr void Get_Colour_As_Super_String(Super_String<Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Result) const {
+        constexpr void getColourAsSuperString(superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
             // Add the red value to the string
-            Result->Add(Constants::To_Compact[Red]);
+            Result->add(constants::toCompactTable[Red]);
             
             // Add the separator to the string
-            Result->Add(Constants::ANSI::SEPARATE);
+            Result->add(constants::ANSI::SEPARATE);
             
             // Add the green value to the string
-            Result->Add(Constants::To_Compact[Green]);
+            Result->add(constants::toCompactTable[Green]);
             
             // Add the separator to the string
-            Result->Add(Constants::ANSI::SEPARATE);
+            Result->add(constants::ANSI::SEPARATE);
             
             // Add the blue value to the string
-            Result->Add(Constants::To_Compact[Blue]);
+            Result->add(constants::toCompactTable[Blue]);
         }
     
         /**
@@ -50,16 +50,16 @@ namespace GGUI{
          * @param Result A pointer to the Super_String to populate with escape codes.
          * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
          */
-        constexpr void Get_Over_Head_As_Super_String(Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Result, const bool Is_Text_Color = true) const {
-            Result->Add(Constants::ANSI::ESC_CODE);
+        constexpr void getOverHeadAsSuperString(superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Result, const bool Is_Text_Color = true) const {
+            Result->add(constants::ANSI::ESC_CODE);
             
             Is_Text_Color ? 
-                Result->Add(Constants::ANSI::TEXT_COLOR) :
-                Result->Add(Constants::ANSI::BACKGROUND_COLOR);
+                Result->add(constants::ANSI::TEXT_COLOR) :
+                Result->add(constants::ANSI::BACKGROUND_COLOR);
 
-            Result->Add(Constants::ANSI::SEPARATE);
-            Result->Add(Constants::ANSI::USE_RGB);
-            Result->Add(Constants::ANSI::SEPARATE);
+            Result->add(constants::ANSI::SEPARATE);
+            Result->add(constants::ANSI::USE_RGB);
+            Result->add(constants::ANSI::SEPARATE);
         }
     
         constexpr bool operator==(const RGB& Other) const{
@@ -84,7 +84,7 @@ namespace GGUI{
             return RGB(UINT8_MAX - Red, UINT8_MAX - Green, UINT8_MAX - Blue);
         }
 
-        constexpr void Add(const RGB& other, float opacity){
+        constexpr void add(const RGB& other, float opacity){
             // Calculate the reverse alpha
             float Reverse_Alpha = 1.0f - opacity;
 

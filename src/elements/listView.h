@@ -30,8 +30,8 @@ namespace GGUI{
          * 
          * @param s The style for the list view.
          */
-        listView(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
-        listView(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
+        listView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
+        listView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Destructor for the List_View class.
@@ -107,7 +107,7 @@ namespace GGUI{
          * @return The flow direction of the list view.
          */
         DIRECTION getFlowDirection(){
-            return (DIRECTION)Style->Flow_Priority.Value;
+            return (DIRECTION)Style->Flow_Priority.value;
         }
 
         /**
@@ -149,7 +149,7 @@ namespace GGUI{
          * This constructor initializes a scrollView object by calling the base class
          * element's default constructor.
          */
-        scrollView() : element() { allow_overflow(true); }
+        scrollView() : element() { allowOverflow(true); }
 
         /**
          * @brief Constructor for the Scroll_View class.
@@ -157,8 +157,8 @@ namespace GGUI{
          * @param s The styling to be applied to the Scroll_View.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
          */
-        scrollView(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allow_overflow(true); }
-        scrollView(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
+        scrollView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allowOverflow(true); }
+        scrollView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Constructor for the Scroll_View class.
@@ -188,7 +188,7 @@ namespace GGUI{
          * @return A boolean indicating whether the scrolling is enabled for the Scroll_View.
          */
         bool isScrollingEnabled(){
-            return Style->Allow_Scrolling.Value;
+            return Style->Allow_Scrolling.value;
         }
 
         /**
@@ -260,7 +260,7 @@ namespace GGUI{
                 allowOverflow(true);
                 element::addChild(new listView(
                     name((getName() + "::container").c_str()) | 
-                    flow_priority(element::getFlowPriority())
+                    flowPriority(element::getFlowPriority())
                 ));
             }
 

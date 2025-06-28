@@ -17,12 +17,12 @@ namespace GGUI{
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
         // The textField::render() will take care of this if percentage is used.
-        if (innerWidth == 0 && Style->Width.Value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+        if (innerWidth == 0 && Style->Width.value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
             return;
         }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
-        Compact_String current_line(Text.data(), 0, true);
+        compactString current_line(Text.data(), 0, true);
         unsigned int Longest_Line = 0;
 
         // This is for the remaining liners to determine if they can append into the previous line or not.
@@ -42,7 +42,7 @@ namespace GGUI{
             }
             else{   // NOTE: If there is a newline character we need to TOTALLY skip it!!!
                 // Since in all situations the delimeter is also wanted to be part of the current line, we need to increase the current line length before deciding if we want to add it.
-                current_line.Size++;
+                current_line.size++;
             }
             
             // This is for the word wrapping to beautifully end at when word end and not abruptly
@@ -53,7 +53,7 @@ namespace GGUI{
                 size_t word_end = (next_space == std::string::npos) ? Text.size() : next_space;
                 int New_Word_Length = word_end - i;
 
-                if (New_Word_Length + current_line.Size >= innerWidth){
+                if (New_Word_Length + current_line.size >= innerWidth){
                     flush_row = true;
                     Previous_Line_Reason = Line_Reason::WORDWRAP;
                 }
@@ -64,25 +64,25 @@ namespace GGUI{
                 Text_Cache.push_back(current_line);
 
                 // check if the current line is longer than the longest line
-                if (current_line.Size > Longest_Line)
-                    Longest_Line = current_line.Size;
+                if (current_line.size > Longest_Line)
+                    Longest_Line = current_line.size;
 
                 // reset current
-                current_line = Compact_String(Text.data() + i + 1, 0, true);
+                current_line = compactString(Text.data() + i + 1, 0, true);
             }
         }
 
         // Make sure the last line is added
-        if (current_line.Size > 0){
+        if (current_line.size > 0){
 
-            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().Size >= innerWidth;
+            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().size >= innerWidth;
 
             // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
             if (
                 Text_Cache.size() == 0 ||
                 (
                     Last_Line_Exceeds_Width_With_Current_Line &&
-                    !Style->Allow_Dynamic_Size.Value
+                    !Style->Allow_Dynamic_Size.value
                 ) ||
                 Previous_Line_Reason == Line_Reason::NEWLINE
             ){
@@ -91,17 +91,17 @@ namespace GGUI{
             }
             else{
                 // If it can be added then add it to the last line
-                Text_Cache.back().Size += current_line.Size;
+                Text_Cache.back().size += current_line.size;
             }
 
-            Longest_Line = Max(Longest_Line, Text_Cache.back().Size);
+            Longest_Line = Max(Longest_Line, Text_Cache.back().size);
         }
 
         // now we need to go through each compact string and make sure that those that are enforced as unicode's but are still 1 long, need to be transformed into the char bearing.
-        for (Compact_String& line : Text_Cache){
+        for (compactString& line : Text_Cache){
             // We need to take care of the "Force Unicode" shenanigans before we add it to this list.
-            if (line.Size == 1){
-                line.Set_Ascii(line.Get_Unicode(true)[0]);
+            if (line.size == 1){
+                line.setAscii(line.getUnicode(true)[0]);
             }
         }
 
@@ -121,19 +121,19 @@ namespace GGUI{
      */
     std::vector<GGUI::UTF>& textField::render() {
         // Get reference to the render buffer
-        std::vector<GGUI::UTF>& Result = Render_Buffer;
+        std::vector<GGUI::UTF>& Result = renderBuffer;
 
         // Check for Dynamic attributes
-        if(Style->Evaluate_Dynamic_Dimensions(this))
+        if(Style->evaluateDynamicDimensions(this))
             Dirty.Dirty(STAIN_TYPE::STRETCH);
 
-        if (Style->Evaluate_Dynamic_Position(this))
+        if (Style->evaluateDynamicPosition(this))
             Dirty.Dirty(STAIN_TYPE::MOVE);
 
-        if (Style->Evaluate_Dynamic_Colors(this))
+        if (Style->evaluateDynamicColors(this))
             Dirty.Dirty(STAIN_TYPE::COLOR);
 
-        if (Style->Evaluate_Dynamic_Border(this))
+        if (Style->evaluateDynamicBorder(this))
             Dirty.Dirty(STAIN_TYPE::EDGE);
 
         // If the text field is clean, return the current render buffer
@@ -148,7 +148,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::RESET)){
             Dirty.Clean(STAIN_TYPE::RESET);
 
-            std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
+            std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
             
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
         }
@@ -180,11 +180,11 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::DEEP)) {
             Dirty.Clean(STAIN_TYPE::DEEP);
 
-            if (Style->Align.Value == ANCHOR::LEFT)
+            if (Style->Align.value == ANCHOR::LEFT)
                 alignTextLeft(Result);
-            else if (Style->Align.Value == ANCHOR::RIGHT)
+            else if (Style->Align.value == ANCHOR::RIGHT)
                 alignTextRight(Result);
-            else if (Style->Align.Value == ANCHOR::CENTER)
+            else if (Style->Align.value == ANCHOR::CENTER)
                 alignTextCenter(Result);
         }
 
@@ -227,7 +227,7 @@ namespace GGUI{
         unsigned int writableWidth = getWidth() - hasBorder();
         unsigned int writableHeight = getHeight() - hasBorder();
 
-        for (Compact_String line : Text_Cache) {
+        for (compactString line : Text_Cache) {
             unsigned int Row_Index = 0;  // To track characters within the line.
 
             if (Line_Index >= writableHeight)
@@ -237,7 +237,7 @@ namespace GGUI{
                 for (unsigned int X = hasBorder(); X < writableWidth; X++) {
 
                     // Stop if the end of the current line is reached.
-                    if (Row_Index >= line.Size)
+                    if (Row_Index >= line.size)
                         goto Next_Line;
 
                     // Write the current character to the Result buffer.
@@ -245,7 +245,7 @@ namespace GGUI{
                 }
 
                 // Handle line overflow based on the style settings.
-                if (Style->Allow_Overflow.Value)
+                if (Style->Allow_Overflow.value)
                     goto Next_Line;
             }
 
@@ -266,8 +266,8 @@ namespace GGUI{
         unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
         unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
 
-        for (Compact_String line : Text_Cache) {
-            int Row_Index = line.Size - 1;  // Start from the end of the line
+        for (compactString line : Text_Cache) {
+            int Row_Index = line.size - 1;  // Start from the end of the line
 
             if (Line_Index >= writableHeight)
                 break;  // All possible usable lines filled.
@@ -283,7 +283,7 @@ namespace GGUI{
                 }
 
                 // If current line has ended and the text is not word wrapped
-                if (Style->Allow_Overflow.Value)
+                if (Style->Allow_Overflow.value)
                     goto Next_Line; // An break would suffice but use goto for more readability
             }
 
@@ -303,9 +303,9 @@ namespace GGUI{
         unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
         unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
 
-        for (Compact_String line : Text_Cache) {
+        for (compactString line : Text_Cache) {
             unsigned int Row_Index = 0;  // Start from the beginning of the line
-            unsigned int Start_Pos = (getWidth()- hasBorder()*2 - line.Size) / 2;  // Calculate the starting position
+            unsigned int Start_Pos = (getWidth()- hasBorder()*2 - line.size) / 2;  // Calculate the starting position
 
             if (Line_Index >= writableHeight)
                 break;  // All possible usable lines filled.
@@ -314,10 +314,10 @@ namespace GGUI{
                 for (unsigned int X = hasBorder(); X < writableWidth; X++) {
 
                     // If the current character is outside the line's range, skip it
-                    if (X < Start_Pos || X > Start_Pos + line.Size)
+                    if (X < Start_Pos || X > Start_Pos + line.size)
                         continue;
 
-                    if (Row_Index >= line.Size)
+                    if (Row_Index >= line.size)
                         goto Next_Line;
 
                     // write to the Result
@@ -325,7 +325,7 @@ namespace GGUI{
                 }
 
                 // If current line has ended and the text is not word wrapped
-                if (Style->Allow_Overflow.Value)
+                if (Style->Allow_Overflow.value)
                     goto Next_Line; // An break would suffice but use goto for more readability
             }
 
@@ -342,15 +342,15 @@ namespace GGUI{
      *          dirty and updates the frame.
      */
     void textField::input(std::function<void(textField*, char)> Then) {
-        Action* key_press = new Action(
-            Constants::KEY_PRESS,
-            [this, Then](GGUI::Event* e) {
+        action* key_press = new action(
+            constants::KEY_PRESS,
+            [this, Then](GGUI::event* e) {
                 if (Focused) {
                     //We know the event was gifted as Input*
-                    GGUI::Input* input = (GGUI::Input*)e;
+                    GGUI::input* input = (GGUI::input*)e;
 
                     //First call the function with the user's input
-                    Then(this, input->Data);
+                    Then(this, input->data);
                     updateFrame();
 
                     return true;
@@ -363,15 +363,15 @@ namespace GGUI{
         );
         GGUI::INTERNAL::Event_Handlers.push_back(key_press);
 
-        Action* enter = new Action(
-            Constants::ENTER,
-            [this, Then](GGUI::Event* e) {
+        action* enter = new action(
+            constants::ENTER,
+            [this, Then](GGUI::event* e) {
                 if (Focused && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER].State) {
                     //We know the event was gifted as Input*
-                    GGUI::Input* input = (GGUI::Input*)e;
+                    GGUI::input* input = (GGUI::input*)e;
 
                     //First call the function with the user's input
-                    Then(this, input->Data);
+                    Then(this, input->data);
                     updateFrame();
 
                     return true;
@@ -384,9 +384,9 @@ namespace GGUI{
         );
         GGUI::INTERNAL::Event_Handlers.push_back(enter);
 
-        Action* back_space = new Action(
-            Constants::BACKSPACE,
-            [this](GGUI::Event*) {
+        action* back_space = new action(
+            constants::BACKSPACE,
+            [this](GGUI::event*) {
                 if (Focused && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::BACKSPACE].State) {
                     //If the text field is empty, there is nothing to do
                     if (Text.size() > 0) {

@@ -23,38 +23,38 @@
  * @param Text_Colour The foreground colour as a string.
  * @param Background_Colour The background colour as a string.
  */
-void GGUI::UTF::To_Super_String(
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String>* Result,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Text_Overhead,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Background_Overhead,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Text_Colour,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Background_Colour
+void GGUI::UTF::toSuperString(
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
 ) const{
     // Get the foreground colour and style as a string
-    Foreground.Get_Over_Head_As_Super_String(Text_Overhead, true);
+    foreground.getOverHeadAsSuperString(Text_Overhead, true);
     // Get the foreground colour as a string
-    Foreground.Get_Colour_As_Super_String(Text_Colour);
+    foreground.getColourAsSuperString(Text_Colour);
     // Get the background colour and style as a string
-    Background.Get_Over_Head_As_Super_String(Background_Overhead, false);
+    background.getOverHeadAsSuperString(Background_Overhead, false);
     // Get the background colour as a string
-    Background.Get_Colour_As_Super_String(Background_Colour);
+    background.getColourAsSuperString(Background_Colour);
 
-    Result->Add(Text_Overhead);
-    Result->Add(Text_Colour);
-    Result->Add(Constants::ANSI::END_COMMAND);
-    Result->Add(Background_Overhead);
-    Result->Add(Background_Colour);
+    Result->add(Text_Overhead);
+    Result->add(Text_Colour);
+    Result->add(constants::ANSI::END_COMMAND);
+    Result->add(Background_Overhead);
+    Result->add(Background_Colour);
 
-    if (Is(COMPACT_STRING_FLAG::IS_UNICODE)){
+    if (is(COMPACT_STRING_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
-        Result->Add(std::get<const char*>(Text), Size);
+        Result->add(std::get<const char*>(text), size);
     }
     else{
-        Result->Add(std::get<char>(Text));
+        Result->add(std::get<char>(text));
     }
 
     // Add the reset ANSI code to the end of the string
-    Result->Add(Constants::ANSI::RESET_COLOR);
+    Result->add(constants::ANSI::RESET_COLOR);
 }
 
 /**
@@ -70,44 +70,44 @@ void GGUI::UTF::To_Super_String(
  * @param Text_Colour The Super_String where the foreground colour will be stored.
  * @param Background_Colour The Super_String where the background colour will be stored.
  */
-void GGUI::UTF::To_Encoded_Super_String(
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String>* Result,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Text_Overhead,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head>* Background_Overhead,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Text_Colour,
-    Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color>* Background_Colour
+void GGUI::UTF::toEncodedSuperString(
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
+    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
 ) const{
 
-    if (Is(ENCODING_FLAG::START)) {
+    if (is(ENCODING_FLAG::START)) {
         // Add the foreground and background colour and style to the result
-        Foreground.Get_Over_Head_As_Super_String(Text_Overhead, true);
-        Foreground.Get_Colour_As_Super_String(Text_Colour);
-        Background.Get_Over_Head_As_Super_String(Background_Overhead, false);
-        Background.Get_Colour_As_Super_String(Background_Colour);
+        foreground.getOverHeadAsSuperString(Text_Overhead, true);
+        foreground.getColourAsSuperString(Text_Colour);
+        background.getOverHeadAsSuperString(Background_Overhead, false);
+        background.getColourAsSuperString(Background_Colour);
 
-        Result->Add(Text_Overhead);
-        Result->Add(Text_Colour);
-        Result->Add(Constants::ANSI::END_COMMAND);
-        Result->Add(Background_Overhead);
-        Result->Add(Background_Colour);
-        Result->Add(Constants::ANSI::END_COMMAND);
+        Result->add(Text_Overhead);
+        Result->add(Text_Colour);
+        Result->add(constants::ANSI::END_COMMAND);
+        Result->add(Background_Overhead);
+        Result->add(Background_Colour);
+        Result->add(constants::ANSI::END_COMMAND);
     }
 
-    if (Is(COMPACT_STRING_FLAG::IS_UNICODE)) {
+    if (is(COMPACT_STRING_FLAG::IS_UNICODE)) {
         // Append the Unicode character to the result
-        Result->Add(Get_Unicode(), Size);
+        Result->add(getUnicode(), size);
     } else {
         // Append the ASCII character to the result
-        Result->Add(Get_Ascii());
+        Result->add(getAscii());
     }
 
-    if (Is(ENCODING_FLAG::END)) {
+    if (is(ENCODING_FLAG::END)) {
         // Add the reset ANSI code to the end of the string
-        Result->Add(Constants::ANSI::RESET_COLOR);
+        Result->add(constants::ANSI::RESET_COLOR);
     }
 }
 
-GGUI::element::element(STYLING_INTERNAL::style_base& style, bool Embed_Styles_On_Construct){
+GGUI::element::element(STYLING_INTERNAL::styleBase& style, bool Embed_Styles_On_Construct){
     fullyStain();
 
     Dirty.Dirty(STAIN_TYPE::FINALIZE);
@@ -115,7 +115,7 @@ GGUI::element::element(STYLING_INTERNAL::style_base& style, bool Embed_Styles_On
     Style = new styling(style);
 
     if (Embed_Styles_On_Construct){
-        Style->Embed_Styles(this);
+        Style->embedStyles(this);
 
         check(STATE::INIT);
 
@@ -125,7 +125,7 @@ GGUI::element::element(STYLING_INTERNAL::style_base& style, bool Embed_Styles_On
     else{
         // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
         // TODO:
-        Style->Copy_Un_Parsed_Styles();
+        Style->copyUnParsedStyles();
     }
 }
 
@@ -167,7 +167,7 @@ GGUI::element::~element(){
 
     //now also update the event handlers.
     for (unsigned int i = 0; i < INTERNAL::Event_Handlers.size(); i++)
-        if (INTERNAL::Event_Handlers[i]->Host == this){
+        if (INTERNAL::Event_Handlers[i]->host == this){
             
             //delete the event
             delete INTERNAL::Event_Handlers[i];
@@ -193,16 +193,16 @@ GGUI::element::~element(){
  */
 std::vector<GGUI::UTF>& GGUI::element::render(){
     // Check for Dynamic attributes
-    if(Style->Evaluate_Dynamic_Dimensions(this))
+    if(Style->evaluateDynamicDimensions(this))
         Dirty.Dirty(STAIN_TYPE::STRETCH);
 
-    if (Style->Evaluate_Dynamic_Position(this))
+    if (Style->evaluateDynamicPosition(this))
         Dirty.Dirty(STAIN_TYPE::MOVE);
 
-    if (Style->Evaluate_Dynamic_Colors(this))
+    if (Style->evaluateDynamicColors(this))
         Dirty.Dirty(STAIN_TYPE::COLOR);
 
-    if (Style->Evaluate_Dynamic_Border(this))
+    if (Style->evaluateDynamicBorder(this))
         Dirty.Dirty(STAIN_TYPE::EDGE);
 
     calculateChildsHitboxes();    // Normally elements will NOT order their content by hitbox system.
@@ -214,7 +214,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         bool tmp = childrenChanged();
 
         if (!tmp && Dirty.is(STAIN_TYPE::CLEAN)){
-            return Render_Buffer;
+            return renderBuffer;
         }
         else if (tmp || hasTransparentChildren()){
             Dirty.Dirty(STAIN_TYPE::RESET);
@@ -227,7 +227,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     }
 
     if (Dirty.is(STAIN_TYPE::CLEAN))
-        return Render_Buffer;
+        return renderBuffer;
 
     if (Dirty.is(STAIN_TYPE::MOVE)){
         Dirty.Clean(STAIN_TYPE::MOVE);
@@ -238,7 +238,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     if (Dirty.is(STAIN_TYPE::RESET)){
         Dirty.Clean(STAIN_TYPE::RESET);
 
-        std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
+        std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
         
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
@@ -246,8 +246,8 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     if (Dirty.is(STAIN_TYPE::STRETCH)){
         Dirty.Clean(STAIN_TYPE::STRETCH);
         
-        Render_Buffer.clear();
-        Render_Buffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+        renderBuffer.clear();
+        renderBuffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
 
         Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
     }
@@ -257,7 +257,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         // Clean the color stain after applying the color system.
         Dirty.Clean(STAIN_TYPE::COLOR);
 
-        applyColors(Render_Buffer);
+        applyColors(renderBuffer);
     }
 
     bool Connect_Borders_With_Parent = hasBorder();
@@ -280,7 +280,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
             std::vector<UTF>* tmp = &c->render();
 
-            nestElement(this, c, Render_Buffer, *tmp);
+            nestElement(this, c, renderBuffer, *tmp);
         }
     }
 
@@ -289,8 +289,8 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
     //This will add the borders if necessary and the title of the window.
     if (Dirty.is(STAIN_TYPE::EDGE)){
-        renderBorders(Render_Buffer);
-        renderTitle(Render_Buffer);
+        renderBorders(renderBuffer);
+        renderTitle(renderBuffer);
     }
 
     // This will calculate the connecting borders.
@@ -303,14 +303,14 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
                 if (!A->isDisplayed() || !A->hasBorder() || !B->isDisplayed() || !B->hasBorder())
                     continue;
 
-                postProcessBorders(A, B, Render_Buffer);
+                postProcessBorders(A, B, renderBuffer);
             }
 
-            postProcessBorders(this, A, Render_Buffer);
+            postProcessBorders(this, A, renderBuffer);
         }
     }
 
-    return Render_Buffer;
+    return renderBuffer;
 }
 
 /**
@@ -448,7 +448,7 @@ GGUI::styling* GGUI::element::getDirectStyle() {
  */
 void GGUI::element::setStyle(styling css){
     if (Style)
-        Style->Copy(css);
+        Style->copy(css);
     else
         Style = new styling(css);
 
@@ -463,7 +463,7 @@ void GGUI::element::setStyle(styling css){
  * @param b The new state of the border visibility.
  */
 void GGUI::element::showBorder(bool b){
-    if (b != Style->Border_Enabled.Value){
+    if (b != Style->Border_Enabled.value){
         Style->Border_Enabled = b;
         Dirty.Dirty(STAIN_TYPE::EDGE);
         updateFrame();
@@ -498,7 +498,7 @@ void GGUI::element::showBorder(bool b, bool Previous_State) {
  * @return True if the element has a border, false otherwise.
  */
 bool GGUI::element::hasBorder(){
-    return Style->Border_Enabled.Value;
+    return Style->Border_Enabled.value;
 }
 
 /**
@@ -523,13 +523,13 @@ void GGUI::element::addChild(element* Child){
     int Border_Offset =  hasBorder() != Child->hasBorder() && hasBorder() ? 1 : 0;
 
     if (
-        Child->Style->Position.Get().X + Child->getWidth() > (getWidth() - Border_Offset) || 
-        Child->Style->Position.Get().Y + Child->getHeight() > (getHeight() - Border_Offset)
+        Child->Style->Position.get().X + Child->getWidth() > (getWidth() - Border_Offset) || 
+        Child->Style->Position.get().Y + Child->getHeight() > (getHeight() - Border_Offset)
     ){
-        if (Style->Allow_Dynamic_Size.Value){
+        if (Style->Allow_Dynamic_Size.value){
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = GGUI::Max(Child->Style->Position.Get().X + Child->getWidth() + Border_Offset*2, getWidth());
-            unsigned int New_Height = GGUI::Max(Child->Style->Position.Get().Y + Child->getHeight() + Border_Offset*2, getHeight());
+            unsigned int New_Width = GGUI::Max(Child->Style->Position.get().X + Child->getWidth() + Border_Offset*2, getWidth());
+            unsigned int New_Height = GGUI::Max(Child->Style->Position.get().Y + Child->getHeight() + Border_Offset*2, getHeight());
 
             // Resize the parent element to fit the child element
             setHeight(New_Height);
@@ -606,7 +606,7 @@ bool GGUI::element::remove(element* handle){
         if (Style->Childs[i] == handle){
             // If the mouse is focused on this about to be deleted element, change mouse position into it's parent Position.
             if (INTERNAL::Focused_On == Style->Childs[i]){
-                INTERNAL::Mouse = Style->Childs[i]->Parent->Style->Position.Get();
+                INTERNAL::Mouse = Style->Childs[i]->Parent->Style->Position.get();
             }
 
             delete handle;
@@ -709,7 +709,7 @@ bool GGUI::element::remove(unsigned int index){
 
     // If the mouse is currently focused on the element that is about to be deleted, change the mouse position into the element's parent position.
     if (INTERNAL::Focused_On == tmp){
-        INTERNAL::Mouse = tmp->Parent->Style->Position.Get();
+        INTERNAL::Mouse = tmp->Parent->Style->Position.get();
     }
 
     // Delete the element at the specified index from the vector of child elements.
@@ -802,7 +802,7 @@ void GGUI::element::setHeight(unsigned int height){
  */
 void GGUI::element::setPosition(IVector3 c) {
     // Update the element's position in the style
-    Style->Position.Set(c);
+    Style->Position.set(c);
     
     // Mark the element as dirty for movement updates
     this->Dirty.Dirty(STAIN_TYPE::MOVE);
@@ -845,25 +845,25 @@ void GGUI::element::updatePosition(IVector3 v){
  * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
  */
 void GGUI::element::updateAbsolutePositionCache(){
-    Absolute_Position_Cache = {0, 0, 0};
+    absolutePositionCache = {0, 0, 0};
     int Border_Offset = 0;
 
     if (Parent){
         // Get the position of the parent
-        Absolute_Position_Cache = Parent->getAbsolutePosition();
+        absolutePositionCache = Parent->getAbsolutePosition();
 
         Border_Offset = (Parent->hasBorder() != hasBorder() && Parent->hasBorder()) ? 1 : 0;
     }
 
     // Add the position of the element to the position of its parent
-    Absolute_Position_Cache += getPosition() + Border_Offset;
+    absolutePositionCache += getPosition() + Border_Offset;
 }
 
-void GGUI::element::setTitle(Compact_String t){
+void GGUI::element::setTitle(compactString t){
     Style->Title.Value = t;
 }
 
-GGUI::Compact_String GGUI::element::getTitle(){
+GGUI::compactString GGUI::element::getTitle(){
     // Return the title of the element
     return Style->Title.Value;
 }
@@ -913,12 +913,12 @@ GGUI::element* GGUI::element::copy() const {
     //now also update the event handlers.
     for (auto& e : INTERNAL::Event_Handlers){
 
-        if (e->Host == this){
+        if (e->host == this){
             //copy the event and make a new one
-            Action* new_action = new Action(*e);
+            action* new_action = new action(*e);
 
             //update the host
-            new_action->Host = new_element;
+            new_action->host = new_element;
 
             //add the new action to the event handlers list
             INTERNAL::Event_Handlers.push_back(new_action);
@@ -935,7 +935,7 @@ GGUI::element* GGUI::element::copy() const {
 
     // Call the potentially un_parsed_styles to clone them too if not initialized yet.
     if (Dirty.is(STAIN_TYPE::FINALIZE)){
-        new_element->Style->Copy_Un_Parsed_Styles();
+        new_element->Style->copyUnParsedStyles();
     }
 
     return new_element;
@@ -946,7 +946,7 @@ void GGUI::element::embedStyles(){
         INTERNAL::reportStack("OUTBOX not supported, cannot anchor: " + getName());
     }
 
-    Style->Embed_Styles(this);
+    Style->embedStyles(this);
     
     if (Dirty.is(STAIN_TYPE::FINALIZE)){
         Dirty.Clean(STAIN_TYPE::FINALIZE);
@@ -1050,7 +1050,7 @@ void GGUI::element::setBackgroundColor(RGB color) {
     Style->Background_Color = color;
     
     // If the border background color matches the current background color, update it
-    if (Style->Border_Background_Color.Value.Get<RGB>() == Style->Background_Color.Value.Get<RGB>()) {
+    if (Style->Border_Background_Color.value.get<RGB>() == Style->Background_Color.value.get<RGB>()) {
         Style->Border_Background_Color = color;
     }
     
@@ -1124,7 +1124,7 @@ void GGUI::element::setTextColor(RGB color){
  */
 void GGUI::element::allowDynamicSize(bool True) {
     // Since dynamic size and percentage based size are two incompatible systems.
-    if (Style->Width.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE){
+    if (Style->Width.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE){
         Style->Allow_Dynamic_Size = True; 
     }
     // Set the Allow_Dynamic_Size property in the element's style
@@ -1364,12 +1364,12 @@ void GGUI::element::computeDynamicSize(){
 
             // Add the border offset to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = (unsigned int)GGUI::Max(
-                (c->Style->Position.Get().X + (signed int)c->getWidth() + Border_Offset) * Enable_Width_Modification,
+                (c->Style->Position.get().X + (signed int)c->getWidth() + Border_Offset) * Enable_Width_Modification,
                 (signed int)getWidth()
             );
 
             unsigned int New_Height = (unsigned int)GGUI::Max(
-                (c->Style->Position.Get().Y + (signed int)c->getHeight() + Border_Offset) * Enable_Height_Modification,
+                (c->Style->Position.get().Y + (signed int)c->getHeight() + Border_Offset) * Enable_Height_Modification,
                 (signed int)getHeight()
             );
 
@@ -1400,7 +1400,7 @@ void GGUI::element::applyColors(std::vector<UTF>& Result){
     const auto composedRGB = composeAllTextRGBValues();
 
     for (auto& utf : Result){
-        utf.Set_Color(composedRGB);
+        utf.setColor(composedRGB);
     }
 }
 
@@ -1419,21 +1419,21 @@ void GGUI::element::renderBorders(std::vector<UTF>& Result){
     const auto& Border        = Style->Border_Style;
 
     // Corners
-    Result[0] = GGUI::UTF(Border.TOP_LEFT_CORNER, composedRGB);
-    Result[Width - 1] = GGUI::UTF(Border.TOP_RIGHT_CORNER, composedRGB);
-    Result[(Height - 1) * Width] = GGUI::UTF(Border.BOTTOM_LEFT_CORNER, composedRGB);
-    Result[(Height * Width) - 1] = GGUI::UTF(Border.BOTTOM_RIGHT_CORNER, composedRGB);
+    Result[0] = GGUI::UTF(Border.topLeftCorner, composedRGB);
+    Result[Width - 1] = GGUI::UTF(Border.topRightCorner, composedRGB);
+    Result[(Height - 1) * Width] = GGUI::UTF(Border.bottomLeftCorner, composedRGB);
+    Result[(Height * Width) - 1] = GGUI::UTF(Border.bottomRightCorner, composedRGB);
 
     // Top and Bottom horizontal borders
     for (unsigned int x = 1; x < Width - 1; ++x) {
-        Result[x] = GGUI::UTF(Border.HORIZONTAL_LINE, composedRGB);                          // Top row
-        Result[(Height - 1) * Width + x] = GGUI::UTF(Border.HORIZONTAL_LINE, composedRGB);   // Bottom row
+        Result[x] = GGUI::UTF(Border.horizontalLine, composedRGB);                          // Top row
+        Result[(Height - 1) * Width + x] = GGUI::UTF(Border.horizontalLine, composedRGB);   // Bottom row
     }
 
     // Left and Right vertical borders
     for (unsigned int y = 1; y < Height - 1; ++y) {
-        Result[y * Width] = GGUI::UTF(Border.VERTICAL_LINE, composedRGB);            // Left column
-        Result[y * Width + (Width - 1)] = GGUI::UTF(Border.VERTICAL_LINE, composedRGB); // Right column
+        Result[y * Width] = GGUI::UTF(Border.verticalLine, composedRGB);            // Left column
+        Result[y * Width + (Width - 1)] = GGUI::UTF(Border.verticalLine, composedRGB); // Right column
     }
 }
 
@@ -1442,12 +1442,12 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
     if (Style->Title.empty())
         return;
 
-    unsigned int Title_Length = Style->Title.Value.Size; // +1 for trailing, since COmpact_Strings do not include trailing characters in their size.
+    unsigned int Title_Length = Style->Title.Value.size; // +1 for trailing, since COmpact_Strings do not include trailing characters in their size.
     unsigned int Horizontal_Offset = hasBorder();
-    Compact_String Ellipsis = "...";
+    compactString Ellipsis = "...";
     bool Enable_Ellipsis = false;
 
-    unsigned int Writable_Length = Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.Size - 1);
+    unsigned int Writable_Length = Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.size - 1);
 
     if (Writable_Length < Title_Length)
         Enable_Ellipsis = true;
@@ -1460,7 +1460,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
     // And then we'll add the ellipsis
     if (Enable_Ellipsis){
         unsigned int Ellipsis_Offset = Writable_Length + Horizontal_Offset;
-        for (unsigned int x = 0; x < Ellipsis.Size; x++){
+        for (unsigned int x = 0; x < Ellipsis.size; x++){
             if (Ellipsis_Offset + x < getWidth()){
                 Result[Ellipsis_Offset + x] = UTF(Ellipsis[x], composeAllTextRGBValues());
             }
@@ -1487,13 +1487,13 @@ void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Sour
     else if (childOpacity == 0.0f) return;         // Dont need to do anything.
 
     // Color the Destination UTF by the Source UTF background color.
-    Dest.Background.Add(Source.Background, childOpacity);
-    Dest.Foreground.Add(Source.Background, childOpacity);
+    Dest.background.add(Source.background, childOpacity);
+    Dest.foreground.add(Source.background, childOpacity);
 
     // Check if source has text
-    if (!Source.Has_Default_Text()){
-        Dest.Set_Text(Source);
-        Dest.Foreground.Add(Source.Foreground, childOpacity); 
+    if (!Source.hasDefaultText()){
+        Dest.setText(Source);
+        Dest.foreground.add(Source.foreground, childOpacity); 
     }
 }
 
@@ -1514,14 +1514,14 @@ GGUI::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::ele
 
     // This only contains value if the position of the child element has any negative positioning in it.
     IVector2 negativeOffset = {
-        Child->Style->Position.Get().X < 0 ? -Child->Style->Position.Get().X : 0,
-        Child->Style->Position.Get().Y < 0 ? -Child->Style->Position.Get().Y : 0
+        Child->Style->Position.get().X < 0 ? -Child->Style->Position.get().X : 0,
+        Child->Style->Position.get().Y < 0 ? -Child->Style->Position.get().Y : 0
     };
 
     // Drawable box start, within the bounding box.
     IVector2 childStart = IVector2{
-        GGUI::Max(Child->Style->Position.Get().X, 0),
-        GGUI::Max(Child->Style->Position.Get().Y, 0)
+        GGUI::Max(Child->Style->Position.get().X, 0),
+        GGUI::Max(Child->Style->Position.get().Y, 0)
     } + parentStart;
 
     // Drawable box end, within the bounding box.
@@ -1573,7 +1573,7 @@ inline GGUI::UTF* From(GGUI::IVector3 index, std::vector<GGUI::UTF>& Parent_Buff
  * @details This function sets the custom border style for the element, marks the element's edges as dirty, and ensures that the border is visible.
  * @param style The custom border style to set.
  */
-void GGUI::element::setCustomBorderStyle(GGUI::styled_border style) {
+void GGUI::element::setCustomBorderStyle(GGUI::styledBorder style) {
     // Set the border style of the element
     Style->Border_Style = style;
     
@@ -1603,19 +1603,19 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
     // First calculate if the child is outside the parent.
     if (
-        B->Style->Position.Get().X + (signed)B->getWidth() < A->Style->Position.Get().X ||
-        B->Style->Position.Get().X > A->Style->Position.Get().X + (signed)A->getWidth() ||
-        B->Style->Position.Get().Y + (signed)B->getHeight() < A->Style->Position.Get().Y ||
-        B->Style->Position.Get().Y > A->Style->Position.Get().Y + (signed)A->getHeight()
+        B->Style->Position.get().X + (signed)B->getWidth() < A->Style->Position.get().X ||
+        B->Style->Position.get().X > A->Style->Position.get().X + (signed)A->getWidth() ||
+        B->Style->Position.get().Y + (signed)B->getHeight() < A->Style->Position.get().Y ||
+        B->Style->Position.get().Y > A->Style->Position.get().Y + (signed)A->getHeight()
     )
         return;
 
     // Now calculate if the child is inside the parent.
     if (
-        B->Style->Position.Get().X > A->Style->Position.Get().X &&
-        B->Style->Position.Get().X + (signed)B->getWidth() < A->Style->Position.Get().X + (signed)A->getWidth() &&
-        B->Style->Position.Get().Y > A->Style->Position.Get().Y &&
-        B->Style->Position.Get().Y + (signed)B->getHeight() < A->Style->Position.Get().Y + (signed)A->getHeight()
+        B->Style->Position.get().X > A->Style->Position.get().X &&
+        B->Style->Position.get().X + (signed)B->getWidth() < A->Style->Position.get().X + (signed)A->getWidth() &&
+        B->Style->Position.get().Y > A->Style->Position.get().Y &&
+        B->Style->Position.get().Y + (signed)B->getHeight() < A->Style->Position.get().Y + (signed)A->getHeight()
     )
         return;
 
@@ -1626,10 +1626,10 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
     // store the line x,y into a array for the nested loops to access.
     std::vector<int> Vertical_Line_X_Coordinates = {
         
-        B->Style->Position.Get().X,
-        A->Style->Position.Get().X,
-        B->Style->Position.Get().X + (int)B->getWidth() - 1,
-        A->Style->Position.Get().X + (int)A->getWidth() - 1,
+        B->Style->Position.get().X,
+        A->Style->Position.get().X,
+        B->Style->Position.get().X + (int)B->getWidth() - 1,
+        A->Style->Position.get().X + (int)A->getWidth() - 1,
 
                 
         // A->Style->Position.Get().X,
@@ -1641,10 +1641,10 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
     std::vector<int> Horizontal_Line_Y_Coordinates = {
         
-        A->Style->Position.Get().Y,
-        B->Style->Position.Get().Y + (int)B->getHeight() - 1,
-        A->Style->Position.Get().Y,
-        B->Style->Position.Get().Y + (int)B->getHeight() - 1,
+        A->Style->Position.get().Y,
+        B->Style->Position.get().Y + (int)B->getHeight() - 1,
+        A->Style->Position.get().Y,
+        B->Style->Position.get().Y + (int)B->getHeight() - 1,
 
         // B->Position.Y,
         // A->Position.Y + A->Height - 1,
@@ -1675,52 +1675,52 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
         IVector3 Left = { c.X - 1, c.Y };
         IVector3 Right = { c.X + 1, c.Y };
 
-        Border_Connection Current_Masks = Border_Connection::NONE;
+        borderConnection Current_Masks = borderConnection::NONE;
 
         // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
         if (Is_In_Bounds(Above, this)){
             // Since the border above can be already processed we need to check all possible border variations.
-            Border_Connection borderAbove = A->getCustomBorderStyle().get_border_type(From(Above, Parent_Buffer, this)->Get_Unicode()) | 
-                                            B->getCustomBorderStyle().get_border_type(From(Above, Parent_Buffer, this)->Get_Unicode());
+            borderConnection borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getUnicode()) | 
+                                            B->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getUnicode());
             
-            if (borderAbove != Border_Connection::NONE)
-                Current_Masks |= Border_Connection::UP;
+            if (borderAbove != borderConnection::NONE)
+                Current_Masks |= borderConnection::UP;
         }
 
         if (Is_In_Bounds(Below, this)){
             // Since the border below can be already processed we need to check all possible border variations.
-            Border_Connection borderBelow = A->getCustomBorderStyle().get_border_type(From(Below, Parent_Buffer, this)->Get_Unicode()) | 
-                                            B->getCustomBorderStyle().get_border_type(From(Below, Parent_Buffer, this)->Get_Unicode());
+            borderConnection borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getUnicode()) | 
+                                            B->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getUnicode());
             
-            if (borderBelow != Border_Connection::NONE)
-                Current_Masks |= Border_Connection::DOWN;
+            if (borderBelow != borderConnection::NONE)
+                Current_Masks |= borderConnection::DOWN;
         }
 
         if (Is_In_Bounds(Left, this)){
             // Since the border left can be already processed we need to check all possible border variations.
-            Border_Connection borderLeft = A->getCustomBorderStyle().get_border_type(From(Left, Parent_Buffer, this)->Get_Unicode()) | 
-                                           B->getCustomBorderStyle().get_border_type(From(Left, Parent_Buffer, this)->Get_Unicode());
+            borderConnection borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getUnicode()) | 
+                                           B->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getUnicode());
             
-            if (borderLeft != Border_Connection::NONE)
-                Current_Masks |= Border_Connection::LEFT;
+            if (borderLeft != borderConnection::NONE)
+                Current_Masks |= borderConnection::LEFT;
         }
 
         if (Is_In_Bounds(Right, this)){
             // Since the border right can be already processed we need to check all possible border variations.
-            Border_Connection borderRight = A->getCustomBorderStyle().get_border_type(From(Right, Parent_Buffer, this)->Get_Unicode()) | 
-                                            B->getCustomBorderStyle().get_border_type(From(Right, Parent_Buffer, this)->Get_Unicode());
+            borderConnection borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getUnicode()) | 
+                                            B->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getUnicode());
             
-            if (borderRight != Border_Connection::NONE)
-                Current_Masks |= Border_Connection::RIGHT;
+            if (borderRight != borderConnection::NONE)
+                Current_Masks |= borderConnection::RIGHT;
         }
 
-        const char* finalBorder = A->getBorderStyle().get_border(Current_Masks);
+        const char* finalBorder = A->getBorderStyle().getBorder(Current_Masks);
 
         if (!finalBorder){
             continue;
         }
 
-        From(c, Parent_Buffer, this)->Set_Text(finalBorder);
+        From(c, Parent_Buffer, this)->setText(finalBorder);
     }
 }
 
@@ -1732,26 +1732,26 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
  *          The lambda is expected to return true if it was successful and false if it failed.
  * @param action The lambda to be called when the element is clicked.
  */
-void GGUI::element::onClick(std::function<bool(GGUI::Event*)> action){
-    auto wrapper = [this, action](GGUI::Event* e){
+void GGUI::element::onClick(std::function<bool(GGUI::event*)> job){
+    auto wrapper = [this, job](GGUI::event* e){
         // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
 
         // Construct an Action from the Event obj
-        GGUI::Action* event2actionWrapper = new GGUI::Action(e->Criteria, action, this, getName() + "::onClick");
+        GGUI::action* event2actionWrapper = new GGUI::action(e->criteria, job, this, getName() + "::onClick");
 
         //action successfully executed.
-        return action(event2actionWrapper);
+        return job(event2actionWrapper);
     };
     
-    Action* mouse = new Action(
-        Constants::MOUSE_LEFT_CLICKED,
+    action* mouse = new action(
+        constants::MOUSE_LEFT_CLICKED,
         wrapper,
         this,
         getName() + "::onClick::wrapper::mouse"
     );
 
-    Action* enter = new Action(
-        Constants::ENTER,
+    action* enter = new action(
+        constants::ENTER,
         wrapper,
         this,
         getName() + "::onClick::wrapper::enter"
@@ -1769,13 +1769,13 @@ void GGUI::element::onClick(std::function<bool(GGUI::Event*)> action){
  * @param action The lambda to be called when the element is interacted with.
  * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
  */
-void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::Event*)> action, bool GLOBAL){
-    Action* a = new Action(
+void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::event*)> job, bool GLOBAL){
+    action* a = new action(
         criteria,
-        [this, action, GLOBAL](GGUI::Event* e){
+        [this, job, GLOBAL](GGUI::event* e){
             if (Collides(this, INTERNAL::Mouse) || GLOBAL){
                 // action successfully executed.
-                return action(e);
+                return job(e);
             }
             // action failed.
             return false;
@@ -1892,7 +1892,7 @@ void GGUI::element::reOrderChilds() {
  */
 void GGUI::element::focus() {
     // Set the mouse position to the element's position.
-    GGUI::INTERNAL::Mouse = this->Style->Position.Get();
+    GGUI::INTERNAL::Mouse = this->Style->Position.get();
     // Update the focused element.
     GGUI::updateFocusedElement(this);
 }
@@ -1969,10 +1969,10 @@ bool GGUI::element::childIsShown(element* other){
     bool Border_Modifier = hasBorder() != other->hasBorder() && hasBorder() ? 1 : 0;
 
     // Calculate the minimum and maximum coordinates of the child element
-    int Minimum_X = other->Style->Position.Get().X + other->getWidth();
-    int Minimum_Y = other->Style->Position.Get().Y + other->getHeight();
-    int Maximum_X = other->Style->Position.Get().X;
-    int Maximum_Y = other->Style->Position.Get().Y;
+    int Minimum_X = other->Style->Position.get().X + other->getWidth();
+    int Minimum_Y = other->Style->Position.get().Y + other->getHeight();
+    int Maximum_X = other->Style->Position.get().X;
+    int Maximum_Y = other->Style->Position.get().Y;
 
     // Check if the child element is visible within the bounds of the parent
     bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < (signed)getWidth() - Border_Modifier;

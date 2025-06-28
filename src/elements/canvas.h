@@ -91,8 +91,8 @@ namespace GGUI{
 
         GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
-        canvas(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
-        canvas(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : canvas(s, Embed_Styles_On_Construct){}
+        canvas(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
+        canvas(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : canvas(s, Embed_Styles_On_Construct){}
         
         ~canvas() override;
 
@@ -146,7 +146,7 @@ namespace GGUI{
          * The function will then set the points in the canvas to the corresponding symbol. If flush is true, the buffer is flushed after
          * the points are set.
          */
-        void embedPoints(std::vector<bool> pixels, styled_border border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
+        void embedPoints(std::vector<bool> pixels, styledBorder border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
 
         void setOnDraw(GGUI::sprite (*on_draw)(unsigned int x, unsigned int y)){
             this->On_Draw = on_draw;

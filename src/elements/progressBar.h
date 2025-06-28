@@ -19,40 +19,40 @@ namespace GGUI{
             TAIL
         };
 
-        class part : public STYLING_INTERNAL::style_base{
+        class part : public STYLING_INTERNAL::styleBase{
         public:
-            Compact_String character = Compact_String(' ');
+            compactString character = compactString(' ');
             RGB color = COLOR::GRAY;
             partType type = partType::EMPTY;
 
-            constexpr part(partType t, RGB fillColor = COLOR::GREEN, Compact_String cs = Compact_String(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default) { type = t; color = fillColor; character = cs; }
+            constexpr part(partType t, RGB fillColor = COLOR::GREEN, compactString cs = compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
 
             constexpr part() = default;
 
-            inline ~part() override { style_base::~style_base(); }
+            inline ~part() override { styleBase::~styleBase(); }
 
-            inline style_base* Copy() const override {
+            inline styleBase* copy() const override {
                 return new part(*this);
             }
             
             constexpr part& operator=(const part& other){
                 // Only copy the information if the other is enabled.
-                if (other.Status >= Status){
+                if (other.status >= status){
                     character = other.character;
                     color = other.color;
                     type = other.type;
 
-                    Status = other.Status;
+                    status = other.status;
                 }
                 return *this;
             }
 
-            constexpr part(const part& other) : style_base(other.Status), 
+            constexpr part(const part& other) : styleBase(other.status), 
                 character(other.character), color(other.color), type(other.type) {}
 
-            STAIN_TYPE Embed_Value([[maybe_unused]] styling* host, element* owner) override;
+            STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
 
-            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };
 
 
@@ -60,10 +60,10 @@ namespace GGUI{
         protected:
             float Progress = 0; // 0.0 - 1.0
 
-            Compact_String Head = Compact_String('>');
-            Compact_String Body = Compact_String('-');
-            Compact_String Tail = Compact_String('|');
-            Compact_String Empty = Compact_String(' ');
+            compactString Head = compactString('>');
+            compactString Body = compactString('-');
+            compactString Tail = compactString('|');
+            compactString Empty = compactString(' ');
 
             RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
             RGB Body_Color = GGUI::COLOR::GRAY;
@@ -82,11 +82,11 @@ namespace GGUI{
              * @param s The style for the Progress_Bar.
              * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Progress_Bar's style. Only use if you know what you're doing!!!
              */
-            Bar(STYLING_INTERNAL::style_base& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
+            Bar(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
                 Progress = 0.0f;
             }
             
-            Bar(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : Bar(s, Embed_Styles_On_Construct){}
+            Bar(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : Bar(s, Embed_Styles_On_Construct){}
 
             /**
              * @brief Default constructor for Progress_Bar.
@@ -96,10 +96,10 @@ namespace GGUI{
              */
             Bar() = default;
 
-            void setHeadCharacter(Compact_String cs) { Head = cs; }
-            void setBodyCharacter(Compact_String cs) { Body = cs; }
-            void setTailCharacter(Compact_String cs) { Tail = cs; }
-            void setEmptyCharacter(Compact_String cs) { Empty = cs; }
+            void setHeadCharacter(compactString cs) { Head = cs; }
+            void setBodyCharacter(compactString cs) { Body = cs; }
+            void setTailCharacter(compactString cs) { Tail = cs; }
+            void setEmptyCharacter(compactString cs) { Empty = cs; }
 
             void setHeadColor(RGB color) { Head_Color = color; }
             void setBodyColor(RGB color) { Body_Color = color; }

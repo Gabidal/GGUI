@@ -18,7 +18,7 @@ namespace GGUI{
         namespace LOGGER{
 
             // File handle for logging to files for Atomic access across different threads.
-            INTERNAL::atomic::Guard<fileStream> Handle;
+            INTERNAL::atomic::guard<fileStream> Handle;
 
             // to enable default to nullptr for Guard
             class queue{
@@ -40,9 +40,9 @@ namespace GGUI{
                 }
             };
             
-            typedef INTERNAL::atomic::Guard<queue> guardedQueue;    // for tidying
+            typedef INTERNAL::atomic::guard<queue> guardedQueue;    // for tidying
             thread_local guardedQueue* localQueue = new guardedQueue();
-            INTERNAL::atomic::Guard<std::vector<guardedQueue*>> AllQueues;
+            INTERNAL::atomic::guard<std::vector<guardedQueue*>> AllQueues;
 
             /**
              * @brief Initializes the logger file stream if it is uninitialized.
@@ -767,8 +767,8 @@ namespace GGUI{
                                 // Now create the history lister
                                 History = new scrollView(
                                     width(1.0f) | height(1.0f) |
-                                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                                    flow_priority(DIRECTION::COLUMN) | name(HISTORY)
+                                    textColor(GGUI::COLOR::RED) | backgroundColor(GGUI::COLOR::BLACK) | 
+                                    flowPriority(DIRECTION::COLUMN) | name(HISTORY)
                                 );
 
                                 Error_Logger->addChild(History);
@@ -804,8 +804,8 @@ namespace GGUI{
                             Error_Logger = new element(
                                 width(0.25f) | height(0.5f) |
 
-                                text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) |
-                                border_color(GGUI::COLOR::RED) | border_background_color(GGUI::COLOR::BLACK) | 
+                                textColor(GGUI::COLOR::RED) | backgroundColor(GGUI::COLOR::BLACK) |
+                                borderColor(GGUI::COLOR::RED) | borderBackgroundColor(GGUI::COLOR::BLACK) | 
 
                                 title("LOG") | name(ERROR_LOGGER) | 
                                 
@@ -813,12 +813,12 @@ namespace GGUI{
                                     STYLES::center + STYLES::prioritize
                                 ) | 
                                 
-                                enable_border(true) | allow_overflow(true) | 
+                                enableBorder(true) | allowOverflow(true) | 
 
                                 node(new scrollView(
                                     width(1.0f) | height(1.0f) |
-                                    text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                                    flow_priority(DIRECTION::COLUMN) | name(HISTORY)
+                                    textColor(GGUI::COLOR::RED) | backgroundColor(GGUI::COLOR::BLACK) | 
+                                    flowPriority(DIRECTION::COLUMN) | name(HISTORY)
                                 ))
                             );
 
@@ -831,8 +831,8 @@ namespace GGUI{
                             scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
                             History->addChild(new listView(
-                                text_color(GGUI::COLOR::RED) | background_color(GGUI::COLOR::BLACK) | 
-                                flow_priority(DIRECTION::ROW) | 
+                                textColor(GGUI::COLOR::RED) | backgroundColor(GGUI::COLOR::BLACK) | 
+                                flowPriority(DIRECTION::ROW) | 
 
                                 name(INTERNAL::now().c_str()) | 
 
@@ -860,10 +860,10 @@ namespace GGUI{
                         if (Error_Logger->getParent() == INTERNAL::Main){
                             Error_Logger->display(true);
 
-                            INTERNAL::Remember([Error_Logger](std::vector<Memory>& rememberable){
-                                rememberable.push_back(Memory(
+                            INTERNAL::Remember([Error_Logger](std::vector<memory>& rememberable){
+                                rememberable.push_back(memory(
                                     TIME::SECOND * 30,
-                                    [Error_Logger](GGUI::Event*){
+                                    [Error_Logger](GGUI::event*){
                                         //delete tmp;
                                         Error_Logger->display(false);
                                         //job successfully done
@@ -884,7 +884,7 @@ namespace GGUI{
                         // This is for the non GGUI space errors.
                         UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
 
-                        std::cout << _error__tmp_.To_Super_String()->To_String() + Problem << std::endl;
+                        std::cout << _error__tmp_.toSuperString()->toString() + Problem << std::endl;
                     }
 
                 });

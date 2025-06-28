@@ -26,7 +26,7 @@ void update(){
 int main(){
     GGUI::GGUI(
         node(new listView(
-            flow_priority(DIRECTION::COLUMN) | width(1.0f) | height(1.0f) |     // Fullscreen, vertical list
+            flowPriority(DIRECTION::COLUMN) | width(1.0f) | height(1.0f) |     // Fullscreen, vertical list
 
             // arrow like progressbar
             node(new progress::Bar(

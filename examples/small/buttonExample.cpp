@@ -10,7 +10,7 @@ int main()
             position(STYLES::left) |    // <-- anchor the text to the left side
             text("You Can't press me") | 
             anchor(ANCHOR::CENTER) |    // <-- make the text centered
-            enable_border(true)
+            enableBorder(true)
         )) |
 
         // This one you can press because of the on_click event present
@@ -18,8 +18,8 @@ int main()
             position(STYLES::right) |   // <-- anchor the text to right side
             text("Press me") | 
             anchor(ANCHOR::CENTER) |    // <-- make the text centered
-            enable_border(true) | 
-            on_click([](element*){      // <-- Self parameter
+            enableBorder(true) | 
+            onClick([](element*){      // <-- Self parameter
                 return true;            // <-- Stop propagation of event
             })
         ))

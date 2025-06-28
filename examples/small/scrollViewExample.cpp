@@ -5,32 +5,32 @@ using namespace GGUI;
 int main(){
     GGUI::GGUI(
         node(new scrollView(
-            flow_priority(DIRECTION::ROW) |     // horizontal listView container that enabled scrolling
+            flowPriority(DIRECTION::ROW) |     // horizontal listView container that enabled scrolling
             width(1.5f) |   // 150% of the parents width
-            name("vertical scroll view") | background_color(COLOR::WHITE) | position(STYLES::center) | 
+            name("vertical scroll view") | backgroundColor(COLOR::WHITE) | position(STYLES::center) | 
 
             // When this element has done its styling configuration and is ready to be pre-rendered, this will be run
-            on_init([](element* self){
+            onInit([](element* self){
                 for (unsigned int i = 0; i < self->getWidth(); i++){
 
                     // Since elements default width and height is 1, we can just add a new element with a random background color.
-                    element* tmp = new element(background_color(RGB(rand()%255,rand()%255,rand()%255)));
+                    element* tmp = new element(backgroundColor(RGB(rand()%255,rand()%255,rand()%255)));
                     self->addChild(tmp);
                 }
             })
         )) | 
         
         node(new scrollView(
-            flow_priority(DIRECTION::COLUMN)|   // vertical listView container that enabled scrolling
+            flowPriority(DIRECTION::COLUMN)|   // vertical listView container that enabled scrolling
             height(1.5f) |  // 150% of the parents height
-            name("horizontal scroll view") | background_color(COLOR::WHITE) | position(STYLES::center) | 
+            name("horizontal scroll view") | backgroundColor(COLOR::WHITE) | position(STYLES::center) | 
             
             // When this element has done its styling configuration and is ready to be pre-rendered, this will be run
-            on_init([](element* self){
+            onInit([](element* self){
                 for (unsigned int i = 0; i < self->getHeight(); i++){
 
                     // Since elements default width and height is 1, we can just add a new element with a random background color.
-                    element* tmp = new element(background_color(RGB(rand()%255,rand()%255,rand()%255)));
+                    element* tmp = new element(backgroundColor(RGB(rand()%255,rand()%255,rand()%255)));
                     self->addChild(tmp);
                 }
             })

@@ -72,13 +72,13 @@ void GGUI::listView::addChild(element* e) {
         unsigned int Child_Needs_Minimum_Width_Of = e->getWidth() + Offset * 2;
 
         // Check if overflow wrapping is supported.
-        if (Style->Wrap.Value) {
+        if (Style->Wrap.value) {
             report("Overflow wrapping is not supported!");
             return;
         }
 
         // Determine the flow direction for the list view.
-        if (Style->Flow_Priority.Value == DIRECTION::ROW) {
+        if (Style->Flow_Priority.value == DIRECTION::ROW) {
             // Adjust for minimum width needed when borders are present.
             signed int Width_Modifier = e->hasBorder() & Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
@@ -147,7 +147,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
     unsigned int Max_Width = Current->getWidth();
     unsigned int Max_Height = Current->getHeight();
 
-    if (Style->Flow_Priority.Value == DIRECTION::ROW){
+    if (Style->Flow_Priority.value == DIRECTION::ROW){
 
         for (unsigned int i = Starting_Offset + 1; i < Style->Childs.size(); i++){
             element* Next = Style->Childs[i];
@@ -181,7 +181,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
 
     if (
         (
-        Style->Width.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.Value.Get_Type() != EVALUATION_TYPE::PERCENTAGE
+        Style->Width.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE
         ) && isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()
     ){
         setDimensions(Max_Width, Max_Height);
@@ -221,7 +221,7 @@ bool GGUI::listView::remove(element* remove){
         }
 
         // now sadly we need to branch the code into the vertical and horizontal calculations.
-        if (Style->Flow_Priority.Value == DIRECTION::ROW){
+        if (Style->Flow_Priority.value == DIRECTION::ROW){
             // represents the horizontal list
             unsigned int Gap = remove->getWidth();
 
@@ -302,7 +302,7 @@ void GGUI::scrollView::addChild(element* e) {
  */
 void GGUI::scrollView::allowScrolling(bool allow) {
     // Check the previous scrolling state
-    bool previous = Style->Allow_Scrolling.Value;
+    bool previous = Style->Allow_Scrolling.value;
     
     // Update the scrolling state if it has changed
     if (allow != previous) {
@@ -316,18 +316,18 @@ void GGUI::scrollView::allowScrolling(bool allow) {
 
     // Check if scrolling events already exist for this Scroll_View
     for (unsigned int i = 0; i < GGUI::INTERNAL::Event_Handlers.size(); i++) {
-        if (GGUI::INTERNAL::Event_Handlers[i]->Host != this)
+        if (GGUI::INTERNAL::Event_Handlers[i]->host != this)
             continue;
 
-        if (GGUI::INTERNAL::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_UP)
+        if (GGUI::INTERNAL::Event_Handlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_UP)
             Scroll_Up_Event_Exists = true;
-        else if (GGUI::INTERNAL::Event_Handlers[i]->Criteria == Constants::MOUSE_MIDDLE_SCROLL_DOWN)
+        else if (GGUI::INTERNAL::Event_Handlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_DOWN)
             Scroll_Down_Event_Exists = true;
     }
 
     // Create a scroll up event if it doesn't exist
     if (!Scroll_Up_Event_Exists) {
-        this->on(Constants::MOUSE_MIDDLE_SCROLL_UP, [this](GGUI::Event*) {
+        this->on(constants::MOUSE_MIDDLE_SCROLL_UP, [this](GGUI::event*) {
             this->scrollUp();
             return true;
         });
@@ -335,7 +335,7 @@ void GGUI::scrollView::allowScrolling(bool allow) {
 
     // Create a scroll down event if it doesn't exist
     if (!Scroll_Down_Event_Exists) {
-        this->on(Constants::MOUSE_MIDDLE_SCROLL_DOWN, [this](GGUI::Event*) {
+        this->on(constants::MOUSE_MIDDLE_SCROLL_DOWN, [this](GGUI::event*) {
             this->scrollDown();
             return true;
         });

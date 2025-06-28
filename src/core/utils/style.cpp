@@ -16,97 +16,92 @@ namespace GGUI{
      * It does this by calling the Is_Deletable() function to check if the pointer is likely to be
      * a heap-allocated object. If it is, it deletes the object using the delete keyword.
      */
-    STYLING_INTERNAL::style_base::~style_base(){
+    STYLING_INTERNAL::styleBase::~styleBase(){
         // Check if the other is closer to an stack_starting address or to heap
         // [[gnu::assume(Other != nullptr || Other == nullptr)]]; // Hint that 'Other' is initialized
         // (void)Other;
-        if (getAllocationType(Other) == ALLOCATION_TYPE::HEAP)
-            delete Other;
+        if (getAllocationType(next) == ALLOCATION_TYPE::HEAP)
+            delete next;
     }
 
     // EVALs
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
-    void position::Evaluate(const styling* self, const styling* parent){
+    void position::evaluate(const styling* self, const styling* parent){
         X.Evaluate(Max(
-            parent->Width.Get()                     // The base width of the parent
-            - (parent->Border_Enabled.Value * 2)    // Offset the width by 2 for both sides of border.
-            - self->Width.Get()                     // So that the relativity will take into count position - width. so that 1.0f doesn't put the element out of bound.
+            parent->Width.get()                     // The base width of the parent
+            - (parent->Border_Enabled.value * 2)    // Offset the width by 2 for both sides of border.
+            - self->Width.get()                     // So that the relativity will take into count position - width. so that 1.0f doesn't put the element out of bound.
         , 1));
         Y.Evaluate(Max(
-            parent->Height.Get()                    // The base height of the parent 
-            - (parent->Border_Enabled.Value * 2)    // Offset the height by 2 for both sides of border.
-            - self->Height.Get()                    // So that the relativity will take into count position - height. so that 1.0f doesn't put the element out of bound.
+            parent->Height.get()                    // The base height of the parent 
+            - (parent->Border_Enabled.value * 2)    // Offset the height by 2 for both sides of border.
+            - self->Height.get()                    // So that the relativity will take into count position - height. so that 1.0f doesn't put the element out of bound.
         , 1));
         // Z.Evaluate(parent->Position.Get().Z);    // Since child as always parent.Z+1, there is no world where this is useful.
     }
 
-    void width::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(Max(parent->Width.Get() - (parent->Border_Enabled.Value * 2), 1));
+    void width::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(Max(parent->Width.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
-    void height::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(Max(parent->Height.Get() - (parent->Border_Enabled.Value * 2), 1));
+    void height::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(Max(parent->Height.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
-    void text_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Text_Color.Value.Get<RGB>());
+    void textColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Text_Color.value.get<RGB>());
     }
 
-    void background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Background_Color.Value.Get<RGB>());
+    void backgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Background_Color.value.get<RGB>());
     }
 
-    void border_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Border_Color.Value.Get<RGB>());
+    void borderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Border_Color.value.get<RGB>());
     }
 
-    void border_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Border_Background_Color.Value.Get<RGB>());
+    void borderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Border_Background_Color.value.get<RGB>());
     }
 
-    void hover_border_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Hover_Border_Color.Value.Get<RGB>());
+    void hoverBorderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Hover_Border_Color.value.get<RGB>());
     }
 
-    void hover_text_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Hover_Text_Color.Value.Get<RGB>());
+    void hoverTextColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Hover_Text_Color.value.get<RGB>());
     }
 
-    void hover_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Hover_Background_Color.Value.Get<RGB>());
+    void hoverBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Hover_Background_Color.value.get<RGB>());
     }
 
-    void hover_border_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Hover_Border_Background_Color.Value.Get<RGB>());
+    void hoverBorderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Hover_Border_Background_Color.value.get<RGB>());
     }
 
-    void focus_border_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Focus_Border_Color.Value.Get<RGB>());
+    void focusBorderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Focus_Border_Color.value.get<RGB>());
     }
 
-    void focus_text_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Focus_Text_Color.Value.Get<RGB>());
+    void focusTextColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Focus_Text_Color.value.get<RGB>());
     }
 
-    void focus_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Focus_Background_Color.Value.Get<RGB>());
+    void focusBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Focus_Background_Color.value.get<RGB>());
     }
 
-    void focus_border_background_color::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Value.Evaluate(parent->Focus_Border_Background_Color.Value.Get<RGB>());
+    void focusBorderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        value.Evaluate(parent->Focus_Border_Background_Color.value.get<RGB>());
     }
 
-    void margin::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Top.Evaluate(parent->Margin.Top.Get<unsigned int>());
-        Bottom.Evaluate(parent->Margin.Bottom.Get<unsigned int>());
-        Left.Evaluate(parent->Margin.Left.Get<unsigned int>());
-        Right.Evaluate(parent->Margin.Right.Get<unsigned int>());
-    }
-
-    void shadow::Evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Direction.Evaluate(parent->Shadow.Direction.Get<FVector3>());
-        Color.Evaluate(parent->Shadow.Color.Get<RGB>());
+    void margin::evaluate([[maybe_unused]] const styling* self, const styling* parent){
+        Top.Evaluate(parent->Margin.Top.get<unsigned int>());
+        Bottom.Evaluate(parent->Margin.Bottom.get<unsigned int>());
+        Left.Evaluate(parent->Margin.Left.get<unsigned int>());
+        Right.Evaluate(parent->Margin.Right.get<unsigned int>());
     }
 
     // Embeds
@@ -119,7 +114,7 @@ namespace GGUI{
      * @return A STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::RGB_VALUE::Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    STAIN_TYPE STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
 
     /**
      * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
@@ -128,7 +123,7 @@ namespace GGUI{
      * @return A STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::BOOL_VALUE::Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    STAIN_TYPE STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
 
     /**
      * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
@@ -137,7 +132,7 @@ namespace GGUI{
      * @return A STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::NUMBER_VALUE::Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    STAIN_TYPE STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
 
     /**
      * @brief Embeds the value of a Vector object into a Styling object.
@@ -146,190 +141,184 @@ namespace GGUI{
      * @return A STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::Vector::Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    STAIN_TYPE STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
 
-    STAIN_TYPE position::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE position::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Position = *this;
 
         return STAIN_TYPE::MOVE;
     }
 
-    STAIN_TYPE width::Embed_Value(styling* host, element* owner){
+    STAIN_TYPE width::embedValue(styling* host, element* owner){
         host->Width = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
-        if (host->Width.Value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
-            allow_dynamic_size tmp = allow_dynamic_size(false);
-            tmp.Embed_Value(host, owner);
+        if (host->Width.value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+            allowDynamicSize tmp = allowDynamicSize(false);
+            tmp.embedValue(host, owner);
         }
 
         return STAIN_TYPE::STRETCH;
     }
 
-    STAIN_TYPE height::Embed_Value(styling* host, element* owner){
+    STAIN_TYPE height::embedValue(styling* host, element* owner){
         host->Height = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
-        if (host->Width.Value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
-            allow_dynamic_size tmp = allow_dynamic_size(false);
-            tmp.Embed_Value(host, owner);
+        if (host->Width.value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+            allowDynamicSize tmp = allowDynamicSize(false);
+            tmp.embedValue(host, owner);
         }
         
         return STAIN_TYPE::STRETCH;
     }
 
-    STAIN_TYPE enable_border::Embed_Value(styling* host, [[maybe_unused]] element* owner){
-        owner->showBorder(this->Value);
+    STAIN_TYPE enableBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
+        owner->showBorder(this->value);
 
         // If border background value has not been given, then set this background color inverted.
-        if (host->Border_Background_Color.Status < VALUE_STATE::VALUE){
-            host->Border_Background_Color.Value = host->Background_Color.Value;
-            host->Border_Color.Value.Set(!host->Background_Color.Value.Get<RGB>());
+        if (host->Border_Background_Color.status < VALUE_STATE::VALUE){
+            host->Border_Background_Color.value = host->Background_Color.value;
+            host->Border_Color.value.Set(!host->Background_Color.value.get<RGB>());
         }
 
         return STAIN_TYPE::EDGE;
     }
 
-    STAIN_TYPE text_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE textColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Text_Color = *this;
 
-        if (host->Border_Color.Status < VALUE_STATE::VALUE)
-            host->Border_Color.Value = this->Value;
+        if (host->Border_Color.status < VALUE_STATE::VALUE)
+            host->Border_Color.value = this->value;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE background_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE backgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Background_Color = *this;
 
         // If border background value has not been given, then set this background color as it.
-        if (host->Border_Background_Color.Status < VALUE_STATE::VALUE)
-            host->Border_Background_Color.Value = this->Value;
+        if (host->Border_Background_Color.status < VALUE_STATE::VALUE)
+            host->Border_Background_Color.value = this->value;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE border_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE borderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE border_background_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE borderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Background_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hover_border_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE hoverBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hover_text_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE hoverTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Text_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hover_background_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE hoverBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Background_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hover_border_background_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE hoverBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Background_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focus_border_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE focusBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focus_text_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE focusTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Text_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focus_background_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE focusBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Background_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focus_border_background_color::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE focusBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Background_Color = *this;
 
         return STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE styled_border::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE styledBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Style = *this;
 
         return STAIN_TYPE::EDGE;
     }
 
-    STAIN_TYPE flow_priority::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE flowPriority::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Flow_Priority = *this;
 
         return STAIN_TYPE::DEEP;
     }
 
-    STAIN_TYPE wrap::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE wrap::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Wrap = *this;
 
         return STAIN_TYPE::DEEP;
     }
 
-    STAIN_TYPE allow_overflow::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE allowOverflow::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Overflow = *this;
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE allow_dynamic_size::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE allowDynamicSize::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Dynamic_Size = *this;
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE margin::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE margin::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Margin = *this;
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE shadow::Embed_Value(styling* host, [[maybe_unused]] element* owner){
-        host->Shadow = *this;
-
-        return STAIN_TYPE::EDGE;
-    }
-
-    STAIN_TYPE opacity::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE opacity::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Opacity = *this;
 
         return STAIN_TYPE::STRETCH;
     }
 
-    STAIN_TYPE allow_scrolling::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE allowScrolling::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Scrolling = *this;
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE anchor::Embed_Value(styling* host, [[maybe_unused]] element* owner){
+    STAIN_TYPE anchor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Align = *this;
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE node::Embed_Value(styling* host, [[maybe_unused]]  element* owner){
+    STAIN_TYPE node::embedValue(styling* host, [[maybe_unused]]  element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
         if (Has(getAllocationType(Value), ALLOCATION_TYPE::STACK))
@@ -340,7 +329,7 @@ namespace GGUI{
         return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
     
-    STAIN_TYPE childs::Embed_Value(styling* host, [[maybe_unused]]  element* owner){
+    STAIN_TYPE childs::embedValue(styling* host, [[maybe_unused]]  element* owner){
         for (auto* c : *this){
             // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
             if (Has(getAllocationType(c), ALLOCATION_TYPE::STACK))
@@ -352,40 +341,40 @@ namespace GGUI{
         return STAIN_TYPE::DEEP;
     }
 
-    STAIN_TYPE on_init::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE onInit::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnInit(Value);
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE on_destroy::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE onDestroy::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnDestroy(Value);
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE on_hide::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE onHide::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnHide(Value);
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE on_show::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE onShow::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnShow(Value);
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE name::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
         // TODO: Remove this with 0.1.9, with de-standardization of std::string.
-        std::string tmp = Value.Is(COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, Value.Get_Ascii()) : std::string(Value.Get_Unicode());
+        std::string tmp = Value.is(COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, Value.getAscii()) : std::string(Value.getUnicode());
 
         owner->setName(tmp);
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE title::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE title::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setTitle(Value);
 
         if (owner->hasEmptyName()){
@@ -396,13 +385,13 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE display::Embed_Value([[maybe_unused]] styling* host, element* owner){
-        owner->display(Value);
+    STAIN_TYPE display::embedValue([[maybe_unused]] styling* host, element* owner){
+        owner->display(value);
 
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE on_draw::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE onDraw::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Terminal_Canvas element.
         if (dynamic_cast<canvas*>(owner))
             ((canvas*)owner)->setOnDraw(Value);
@@ -412,7 +401,7 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE text::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE text::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Text_Field element.
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->setText(Value);
@@ -424,8 +413,8 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE on_click::Embed_Value([[maybe_unused]] styling* host, element* owner){
-        owner->onClick([this, owner](Event*){
+    STAIN_TYPE onClick::embedValue([[maybe_unused]] styling* host, element* owner){
+        owner->onClick([this, owner](event*){
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
             if (dynamic_cast<switchBox*>(owner))
@@ -437,7 +426,7 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE on_input::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE onInput::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->input(Value);
         else
@@ -446,74 +435,74 @@ namespace GGUI{
         return STAIN_TYPE::CLEAN;
     }
 
-    const char* styled_border::get_border(const Border_Connection flags){
+    const char* styledBorder::getBorder(const borderConnection flags){
         // Corners
-        if (flags == (Border_Connection::DOWN | Border_Connection::RIGHT))
-            return TOP_LEFT_CORNER;
-        else if (flags == (Border_Connection::DOWN | Border_Connection::LEFT))
-            return TOP_RIGHT_CORNER;
-        else if (flags == (Border_Connection::UP | Border_Connection::RIGHT))
-            return BOTTOM_LEFT_CORNER;
-        else if (flags == (Border_Connection::UP | Border_Connection::LEFT))
-            return BOTTOM_RIGHT_CORNER;
+        if (flags == (borderConnection::DOWN | borderConnection::RIGHT))
+            return topLeftCorner;
+        else if (flags == (borderConnection::DOWN | borderConnection::LEFT))
+            return topRightCorner;
+        else if (flags == (borderConnection::UP | borderConnection::RIGHT))
+            return bottomLeftCorner;
+        else if (flags == (borderConnection::UP | borderConnection::LEFT))
+            return bottomRightCorner;
         // Vertical lines
-        else if (flags == (Border_Connection::DOWN | Border_Connection::UP))
-            return VERTICAL_LINE;
+        else if (flags == (borderConnection::DOWN | borderConnection::UP))
+            return verticalLine;
 
         // Horizontal lines
-        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT))
-            return HORIZONTAL_LINE;
+        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT))
+            return horizontalLine;
 
         // connectors
-        else if (flags == (Border_Connection::DOWN | Border_Connection::UP | Border_Connection::RIGHT))
-            return VERTICAL_RIGHT_CONNECTOR;
-        else if (flags == (Border_Connection::DOWN | Border_Connection::UP | Border_Connection::LEFT))
-            return VERTICAL_LEFT_CONNECTOR;
-        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::DOWN))
-            return HORIZONTAL_BOTTOM_CONNECTOR;
-        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP))
-            return HORIZONTAL_TOP_CONNECTOR;
+        else if (flags == (borderConnection::DOWN | borderConnection::UP | borderConnection::RIGHT))
+            return verticalRightConnector;
+        else if (flags == (borderConnection::DOWN | borderConnection::UP | borderConnection::LEFT))
+            return verticalLeftConnector;
+        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT | borderConnection::DOWN))
+            return horizontalBottomConnector;
+        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP))
+            return horizontalTopConnector;
 
         // cross connectors
-        else if (flags == (Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP | Border_Connection::DOWN))
-            return CROSS_CONNECTOR;
+        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP | borderConnection::DOWN))
+            return crossConnector;
         else
             return nullptr;
     }
 
-    Border_Connection styled_border::get_border_type(const char* border){
-        if (border == TOP_LEFT_CORNER)
-            return Border_Connection::DOWN | Border_Connection::RIGHT;
-        else if (border == TOP_RIGHT_CORNER)
-            return Border_Connection::DOWN | Border_Connection::LEFT;
-        else if (border == BOTTOM_LEFT_CORNER)
-            return Border_Connection::UP | Border_Connection::RIGHT;
-        else if (border == BOTTOM_RIGHT_CORNER)
-            return Border_Connection::UP | Border_Connection::LEFT;
-        else if (border == VERTICAL_LINE)
-            return Border_Connection::DOWN | Border_Connection::UP;
-        else if (border == HORIZONTAL_LINE)
-            return Border_Connection::LEFT | Border_Connection::RIGHT;
-        else if (border == VERTICAL_RIGHT_CONNECTOR)
-            return Border_Connection::DOWN | Border_Connection::UP | Border_Connection::RIGHT;
-        else if (border == VERTICAL_LEFT_CONNECTOR)
-            return Border_Connection::DOWN | Border_Connection::UP | Border_Connection::LEFT;
-        else if (border == HORIZONTAL_BOTTOM_CONNECTOR)
-            return Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::DOWN;
-        else if (border == HORIZONTAL_TOP_CONNECTOR)
-            return Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP;
-        else if (border == CROSS_CONNECTOR)
-            return Border_Connection::LEFT | Border_Connection::RIGHT | Border_Connection::UP | Border_Connection::DOWN;
-        else return Border_Connection::NONE;
+    borderConnection styledBorder::getBorderType(const char* border){
+        if (border == topLeftCorner)
+            return borderConnection::DOWN | borderConnection::RIGHT;
+        else if (border == topRightCorner)
+            return borderConnection::DOWN | borderConnection::LEFT;
+        else if (border == bottomLeftCorner)
+            return borderConnection::UP | borderConnection::RIGHT;
+        else if (border == bottomRightCorner)
+            return borderConnection::UP | borderConnection::LEFT;
+        else if (border == verticalLine)
+            return borderConnection::DOWN | borderConnection::UP;
+        else if (border == horizontalLine)
+            return borderConnection::LEFT | borderConnection::RIGHT;
+        else if (border == verticalRightConnector)
+            return borderConnection::DOWN | borderConnection::UP | borderConnection::RIGHT;
+        else if (border == verticalLeftConnector)
+            return borderConnection::DOWN | borderConnection::UP | borderConnection::LEFT;
+        else if (border == horizontalBottomConnector)
+            return borderConnection::LEFT | borderConnection::RIGHT | borderConnection::DOWN;
+        else if (border == horizontalTopConnector)
+            return borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP;
+        else if (border == crossConnector)
+            return borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP | borderConnection::DOWN;
+        else return borderConnection::NONE;
     }
 
-    STYLING_INTERNAL::style_base* node::Copy() const {
+    STYLING_INTERNAL::styleBase* node::copy() const {
         node* new_one = new node(*this);
         new_one->Value = new_one->Value->copy();
         return new_one;
     }
             
-    STYLING_INTERNAL::style_base* childs::Copy() const {
+    STYLING_INTERNAL::styleBase* childs::copy() const {
         childs* new_one = new childs(*this);
 
         for (int i = 0; i < length(); i++){
@@ -523,7 +512,7 @@ namespace GGUI{
         return new_one;
     }
 
-    styling* styling::Get_Reference(element* owner){
+    styling* styling::getReference(element* owner){
         // Determine the point of interest for style evaluation
         element* point_of_interest = owner;
 
@@ -547,113 +536,112 @@ namespace GGUI{
      * @param owner The element whose dynamic attributes are to be evaluated.
      * @return True if there wae changes in the attributes evaluated, false otherwise.
      */
-    bool styling::Evaluate_Dynamic_Attribute_Values(element* owner) {
+    bool styling::evaluateDynamicAttributeValues(element* owner) {
 
         bool Changed_Attributes = false;
 
         // Use the retrieved style as a reference for evaluation
-        styling* reference_style = Get_Reference(owner);
+        styling* reference_style = getReference(owner);
 
         // Evaluate each dynamic attribute against the reference style
-        Changed_Attributes |= Evaluate_Dynamic_Dimensions(owner, reference_style);
-        Changed_Attributes |= Evaluate_Dynamic_Position(owner, reference_style);
-        Changed_Attributes |= Evaluate_Dynamic_Border(owner, reference_style);
-        Changed_Attributes |= Evaluate_Dynamic_Colors(owner, reference_style);
+        Changed_Attributes |= evaluateDynamicDimensions(owner, reference_style);
+        Changed_Attributes |= evaluateDynamicPosition(owner, reference_style);
+        Changed_Attributes |= evaluateDynamicBorder(owner, reference_style);
+        Changed_Attributes |= evaluateDynamicColors(owner, reference_style);
 
-        Margin.Evaluate(owner->getDirectStyle(), reference_style);
-        Shadow.Evaluate(owner->getDirectStyle(), reference_style);
-        Opacity.Evaluate(owner->getDirectStyle(), reference_style);
-        Allow_Scrolling.Evaluate(owner->getDirectStyle(), reference_style);
-        Align.Evaluate(owner->getDirectStyle(), reference_style);
+        Margin.evaluate(owner->getDirectStyle(), reference_style);
+        Opacity.evaluate(owner->getDirectStyle(), reference_style);
+        Allow_Scrolling.evaluate(owner->getDirectStyle(), reference_style);
+        Align.evaluate(owner->getDirectStyle(), reference_style);
 
         return Changed_Attributes;
     }
 
-    bool styling::Evaluate_Dynamic_Position(element* owner, styling* reference){
+    bool styling::evaluateDynamicPosition(element* owner, styling* reference){
         if (!reference){
-            reference = Get_Reference(owner);
+            reference = getReference(owner);
         }
 
         position previous_value = Position;
 
-        Position.Evaluate(owner->getDirectStyle(), reference);
+        Position.evaluate(owner->getDirectStyle(), reference);
 
         // check if position is still the same
         return previous_value != Position;
     }
 
-    bool styling::Evaluate_Dynamic_Dimensions(element* owner, styling* reference){
+    bool styling::evaluateDynamicDimensions(element* owner, styling* reference){
         if (!reference){
-            reference = Get_Reference(owner);
+            reference = getReference(owner);
         }
 
         width previous_width = Width;
         height previous_height = Height;
 
-        Width.Evaluate(owner->getDirectStyle(), reference);
-        Height.Evaluate(owner->getDirectStyle(), reference);
+        Width.evaluate(owner->getDirectStyle(), reference);
+        Height.evaluate(owner->getDirectStyle(), reference);
 
         // check if width or height is still the same
         return previous_width != Width || previous_height != Height;
     }
 
-    bool styling::Evaluate_Dynamic_Border(element* owner, styling* reference){
+    bool styling::evaluateDynamicBorder(element* owner, styling* reference){
         if (!reference){
-            reference = Get_Reference(owner);
+            reference = getReference(owner);
         }
 
-        enable_border previous_value = Border_Enabled;
+        enableBorder previous_value = Border_Enabled;
 
-        Border_Enabled.Evaluate(owner->getDirectStyle(), reference);
+        Border_Enabled.evaluate(owner->getDirectStyle(), reference);
 
         // check if border is still the same
         return previous_value != Border_Enabled;
     }
 
-    bool styling::Evaluate_Dynamic_Colors(element* owner, styling* reference){
+    bool styling::evaluateDynamicColors(element* owner, styling* reference){
         if (!reference){
-            reference = Get_Reference(owner);
+            reference = getReference(owner);
         }
 
-        RGB previous_text_color = Text_Color.Value.Get<RGB>();
-        RGB previous_background_color = Background_Color.Value.Get<RGB>();
-        RGB previous_border_color = Border_Color.Value.Get<RGB>();
-        RGB previous_border_background_color = Border_Background_Color.Value.Get<RGB>();
-        RGB previous_hover_border_color = Hover_Border_Color.Value.Get<RGB>();
-        RGB previous_hover_text_color = Hover_Text_Color.Value.Get<RGB>();
-        RGB previous_hover_background_color = Hover_Background_Color.Value.Get<RGB>();
-        RGB previous_hover_border_background_color = Hover_Border_Background_Color.Value.Get<RGB>();
-        RGB previous_focus_border_color = Focus_Border_Color.Value.Get<RGB>();
-        RGB previous_focus_text_color = Focus_Text_Color.Value.Get<RGB>();
-        RGB previous_focus_background_color = Focus_Background_Color.Value.Get<RGB>();
-        RGB previous_focus_border_background_color = Focus_Border_Background_Color.Value.Get<RGB>();
+        RGB previous_text_color = Text_Color.value.get<RGB>();
+        RGB previous_background_color = Background_Color.value.get<RGB>();
+        RGB previous_border_color = Border_Color.value.get<RGB>();
+        RGB previous_border_background_color = Border_Background_Color.value.get<RGB>();
+        RGB previous_hover_border_color = Hover_Border_Color.value.get<RGB>();
+        RGB previous_hover_text_color = Hover_Text_Color.value.get<RGB>();
+        RGB previous_hover_background_color = Hover_Background_Color.value.get<RGB>();
+        RGB previous_hover_border_background_color = Hover_Border_Background_Color.value.get<RGB>();
+        RGB previous_focus_border_color = Focus_Border_Color.value.get<RGB>();
+        RGB previous_focus_text_color = Focus_Text_Color.value.get<RGB>();
+        RGB previous_focus_background_color = Focus_Background_Color.value.get<RGB>();
+        RGB previous_focus_border_background_color = Focus_Border_Background_Color.value.get<RGB>();
 
-        Text_Color.Evaluate(owner->getDirectStyle(), reference);
-        Background_Color.Evaluate(owner->getDirectStyle(), reference);
-        Border_Color.Evaluate(owner->getDirectStyle(), reference);
-        Border_Background_Color.Evaluate(owner->getDirectStyle(), reference);
-        Hover_Border_Color.Evaluate(owner->getDirectStyle(), reference);
-        Hover_Text_Color.Evaluate(owner->getDirectStyle(), reference);
-        Hover_Background_Color.Evaluate(owner->getDirectStyle(), reference);
-        Hover_Border_Background_Color.Evaluate(owner->getDirectStyle(), reference);
-        Focus_Border_Color.Evaluate(owner->getDirectStyle(), reference);
-        Focus_Text_Color.Evaluate(owner->getDirectStyle(), reference);
-        Focus_Background_Color.Evaluate(owner->getDirectStyle(), reference);
-        Focus_Border_Background_Color.Evaluate(owner->getDirectStyle(), reference);
+        Text_Color.evaluate(owner->getDirectStyle(), reference);
+        Background_Color.evaluate(owner->getDirectStyle(), reference);
+        Border_Color.evaluate(owner->getDirectStyle(), reference);
+        Border_Background_Color.evaluate(owner->getDirectStyle(), reference);
+        Hover_Border_Color.evaluate(owner->getDirectStyle(), reference);
+        Hover_Text_Color.evaluate(owner->getDirectStyle(), reference);
+        Hover_Background_Color.evaluate(owner->getDirectStyle(), reference);
+        Hover_Border_Background_Color.evaluate(owner->getDirectStyle(), reference);
+        Focus_Border_Color.evaluate(owner->getDirectStyle(), reference);
+        Focus_Text_Color.evaluate(owner->getDirectStyle(), reference);
+        Focus_Background_Color.evaluate(owner->getDirectStyle(), reference);
+        Focus_Border_Background_Color.evaluate(owner->getDirectStyle(), reference);
 
         // check if any of the colors are still the same
-        return previous_text_color                      != Text_Color.Value.Get<RGB>()                       ||
-               previous_background_color                != Background_Color.Value.Get<RGB>()                 ||
-               previous_border_color                    != Border_Color.Value.Get<RGB>()                     ||
-               previous_border_background_color         != Border_Background_Color.Value.Get<RGB>()          ||
-               previous_hover_border_color              != Hover_Border_Color.Value.Get<RGB>()               ||
-               previous_hover_text_color                != Hover_Text_Color.Value.Get<RGB>()                 ||
-               previous_hover_background_color          != Hover_Background_Color.Value.Get<RGB>()           ||
-               previous_hover_border_background_color   != Hover_Border_Background_Color.Value.Get<RGB>()    ||
-               previous_focus_border_color              != Focus_Border_Color.Value.Get<RGB>()               ||
-               previous_focus_text_color                != Focus_Text_Color.Value.Get<RGB>()                 ||
-               previous_focus_background_color          != Focus_Background_Color.Value.Get<RGB>()           || 
-               previous_focus_border_background_color   != Focus_Border_Background_Color.Value.Get<RGB>();
+        return previous_text_color                      != Text_Color.value.get<RGB>()                       ||
+               previous_background_color                != Background_Color.value.get<RGB>()                 ||
+               previous_border_color                    != Border_Color.value.get<RGB>()                     ||
+               previous_border_background_color         != Border_Background_Color.value.get<RGB>()          ||
+               previous_hover_border_color              != Hover_Border_Color.value.get<RGB>()               ||
+               previous_hover_text_color                != Hover_Text_Color.value.get<RGB>()                 ||
+               previous_hover_background_color          != Hover_Background_Color.value.get<RGB>()           ||
+               previous_hover_border_background_color   != Hover_Border_Background_Color.value.get<RGB>()    ||
+               previous_focus_border_color              != Focus_Border_Color.value.get<RGB>()               ||
+               previous_focus_text_color                != Focus_Text_Color.value.get<RGB>()                 ||
+               previous_focus_background_color          != Focus_Background_Color.value.get<RGB>()           || 
+               previous_focus_border_background_color   != Focus_Border_Background_Color.value.get<RGB>();
     }
 
     /**
@@ -663,7 +651,7 @@ namespace GGUI{
      *
      * @param other The Styling object to copy from.
      */
-    void GGUI::styling::Copy(const styling& other){
+    void GGUI::styling::copy(const styling& other){
         Position = other.Position;
         Width = other.Width;
         Height = other.Height;
@@ -686,7 +674,6 @@ namespace GGUI{
         Allow_Overflow = other.Allow_Overflow;
         Allow_Dynamic_Size = other.Allow_Dynamic_Size;
         Margin = other.Margin;
-        Shadow = other.Shadow;
         Opacity = other.Opacity;
         Allow_Scrolling = other.Allow_Scrolling;
         Align = other.Align;
@@ -695,49 +682,49 @@ namespace GGUI{
         Childs.insert(Childs.end(), other.Childs.begin(), other.Childs.end());
         
         // Copy the un_parsed_styles
-        Copy_Un_Parsed_Styles(&other);
+        copyUnParsedStyles(&other);
     }
 
-    void GGUI::styling::Copy_Un_Parsed_Styles(){
+    void GGUI::styling::copyUnParsedStyles(){
         // deep copies the 'Other' members and uses their respective Copy virtual functions.
-        STYLING_INTERNAL::style_base* current_attribute = un_parsed_styles;
+        STYLING_INTERNAL::styleBase* current_attribute = unParsedStyles;
 
-        STYLING_INTERNAL::style_base* previous_attribute = nullptr;
+        STYLING_INTERNAL::styleBase* previous_attribute = nullptr;
 
         while (current_attribute){
             // Shallow copy the current attribute from stack into heap.
-            STYLING_INTERNAL::style_base* anchor = current_attribute->Copy();
+            STYLING_INTERNAL::styleBase* anchor = current_attribute->copy();
 
             // Then set the current_attribute into the nested one
             if (previous_attribute)
-                previous_attribute->Other = anchor;
+                previous_attribute->next = anchor;
             else    // this means that this is the first occurrence, so set it as the new head
-                un_parsed_styles = anchor;
+                unParsedStyles = anchor;
 
             // Then set the current_attribute into the nested one
             previous_attribute = anchor;
 
             // Then set the current_attribute into the nested one
-            current_attribute = current_attribute->Other;
+            current_attribute = current_attribute->next;
         }
     }
 
-    void styling::Copy_Un_Parsed_Styles(const styling* other){
-        STYLING_INTERNAL::style_base* reader = other->un_parsed_styles;
-        STYLING_INTERNAL::style_base* writer = un_parsed_styles;
+    void styling::copyUnParsedStyles(const styling* other){
+        STYLING_INTERNAL::styleBase* reader = other->unParsedStyles;
+        STYLING_INTERNAL::styleBase* writer = unParsedStyles;
 
         if (reader){
-            writer = reader->Copy(); // Copy the first element from the other styling object
-            reader = reader->Other; // Move to the next element in the other styling object
+            writer = reader->copy(); // Copy the first element from the other styling object
+            reader = reader->next; // Move to the next element in the other styling object
         }
 
         // Anchor the first written as starting point
-        un_parsed_styles = writer;
+        unParsedStyles = writer;
 
         while (reader){
-            writer->Other = reader->Copy(); // Copy the current element from the other styling object
-            writer = writer->Other; // Move to the next element in the writer styling object
-            reader = reader->Other; // Move to the next element in the other styling object
+            writer->next = reader->copy(); // Copy the current element from the other styling object
+            writer = writer->next; // Move to the next element in the writer styling object
+            reader = reader->next; // Move to the next element in the other styling object
         }
     }
 
@@ -753,8 +740,8 @@ namespace GGUI{
      * The function returns nothing.
      * @param owner The element to which the styles will be embedded.
      */
-    void styling::Embed_Styles(element* owner){
-        STYLING_INTERNAL::style_base* current_attribute = un_parsed_styles;
+    void styling::embedStyles(element* owner){
+        STYLING_INTERNAL::styleBase* current_attribute = unParsedStyles;
 
         STAIN changes;
 
@@ -762,30 +749,30 @@ namespace GGUI{
         // Loop until no further nested attributes.
         while (current_attribute){
 
-            if (current_attribute->Order == EMBED_ORDER::INSTANT)
+            if (current_attribute->order == EMBED_ORDER::INSTANT)
                 // First embed the current attribute
-                changes.Dirty(current_attribute->Embed_Value(this, owner));
+                changes.Dirty(current_attribute->embedValue(this, owner));
 
             // Then set the current_attribute into the nested one
-            current_attribute = current_attribute->Other;
+            current_attribute = current_attribute->next;
         }
 
         // This is the second pass for the DELAYED ordered style_bases:
-        current_attribute = un_parsed_styles;
+        current_attribute = unParsedStyles;
         
         // Loop until no further nested attributes.
         while (current_attribute){
 
-            if (current_attribute->Order == EMBED_ORDER::DELAYED)
+            if (current_attribute->order == EMBED_ORDER::DELAYED)
                 // First embed the current attribute
-                changes.Dirty(current_attribute->Embed_Value(this, owner));
+                changes.Dirty(current_attribute->embedValue(this, owner));
 
             // Then set the current_attribute into the nested one
-            current_attribute = current_attribute->Other;
+            current_attribute = current_attribute->next;
         }
 
         // Evaluate itself
-        bool Changes_After_Eval = Evaluate_Dynamic_Attribute_Values(owner);
+        bool Changes_After_Eval = evaluateDynamicAttributeValues(owner);
 
         if (Changes_After_Eval)
             owner->fullyStain();
@@ -796,20 +783,20 @@ namespace GGUI{
         Childs.clear();
 
         // For global variables to work, we need to clean each and every 'Other' member from the un_parsed_styles, so that the next user of global styles doesn't start parse unallocated stuff.
-        current_attribute = un_parsed_styles;
+        current_attribute = unParsedStyles;
 
         // Wash dishes
         while (current_attribute){
             // add an anchor
-            STYLING_INTERNAL::style_base* dish = current_attribute;
+            STYLING_INTERNAL::styleBase* dish = current_attribute;
 
             // Then set the current_attribute into the nested one
-            current_attribute = current_attribute->Other;
+            current_attribute = current_attribute->next;
 
             // check if this was the last dish and so no 'Other's in it.
             if (dish)
                 // now we can release the anchor
-                dish->Other = nullptr;
+                dish->next = nullptr;
         }
 
         // Now we can one by one add them back via the official channel

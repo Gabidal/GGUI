@@ -61,10 +61,10 @@ namespace GGUI{
         extern unsigned int Max_Width;
         extern unsigned int Max_Height;
 
-        extern atomic::Guard<std::vector<Memory>> Remember;
+        extern atomic::guard<std::vector<memory>> Remember;
 
-        extern std::vector<Action*> Event_Handlers;
-        extern std::vector<Input*> Inputs;
+        extern std::vector<action*> Event_Handlers;
+        extern std::vector<input*> Inputs;
         
         extern std::unordered_map<std::string, element*> Element_Names;
 
@@ -85,7 +85,7 @@ namespace GGUI{
         extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
         extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
 
-        extern atomic::Guard<std::unordered_map<int, styling>> Classes;
+        extern atomic::guard<std::unordered_map<int, styling>> Classes;
         extern std::unordered_map<std::string, int> Class_Names;
 
         extern element* Main;  
@@ -239,7 +239,7 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    extern std::vector<Compact_String>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
+    extern std::vector<compactString>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
 
     /**
      * @brief Updates the frame.
@@ -349,7 +349,7 @@ namespace GGUI{
      * @param App The whole GGUI Application that GGUI holds.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    extern void GGUI(STYLING_INTERNAL::style_base& App, unsigned long long Sleep_For = 0);
+    extern void GGUI(STYLING_INTERNAL::styleBase& App, unsigned long long Sleep_For = 0);
 
     /**
      * @brief Calls the GGUI function with the provided style and sleep duration.
@@ -361,7 +361,7 @@ namespace GGUI{
      * @param App An rvalue reference to a STYLING_INTERNAL::style_base object representing the application's style.
      * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
      */
-    extern void GGUI(STYLING_INTERNAL::style_base&& App, unsigned long long Sleep_For = 0);
+    extern void GGUI(STYLING_INTERNAL::styleBase&& App, unsigned long long Sleep_For = 0);
 
     /**
      * @brief Handles the pressing of the tab key.

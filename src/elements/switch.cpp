@@ -7,7 +7,7 @@
 
 namespace GGUI{
 
-    STAIN_TYPE visualState::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE visualState::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
             ((switchBox*)owner)->setStateString(Off, On);
         else
@@ -16,7 +16,7 @@ namespace GGUI{
         return STAIN_TYPE::STATE;
     }
 
-    STAIN_TYPE singleSelect::Embed_Value([[maybe_unused]] styling* host, element* owner){
+    STAIN_TYPE singleSelect::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
             ((switchBox*)owner)->enableSingleSelect();
         else 
@@ -33,7 +33,7 @@ namespace GGUI{
      * @param s The styling for the switch.
      */
     switchBox::switchBox(
-        STYLING_INTERNAL::style_base& s,
+        STYLING_INTERNAL::styleBase& s,
         bool Embed_Styles_On_Construct
     ) : element(s, Embed_Styles_On_Construct) {
         // Enable text overflow and set initial text
@@ -47,7 +47,7 @@ namespace GGUI{
         Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STATE);
     }
 
-    void switchBox::setStateString(const Compact_String* off, const Compact_String* on) {
+    void switchBox::setStateString(const compactString* off, const compactString* on) {
         Off = off;
         On = on;
 
@@ -62,19 +62,19 @@ namespace GGUI{
      * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the switch element.
      */
-    void switchBox::setText(Compact_String text) { 
+    void switchBox::setText(compactString text) { 
         
         pauseGGUI([this, &text](){
-            Compact_String Symbol = " ";   // This is where the switchbox symbol will replace to.
-            Compact_String Space = ' ';
+            compactString Symbol = " ";   // This is where the switchbox symbol will replace to.
+            compactString Space = ' ';
             
-            Super_String<3> container{Symbol, Space, text};
+            superString<3> container{Symbol, Space, text};
             
             // Mark the element as needing a deep state update
             Dirty.Dirty(STAIN_TYPE::DEEP);
             
             // Set the text with a space character added to the beginning
-            Text.setText(container.To_String());
+            Text.setText(container.toString());
             setName(To_String(text));
 
             // Update the switch element's dimensions to fit the new text
@@ -84,16 +84,16 @@ namespace GGUI{
     }
 
     void switchBox::showBorder(bool b){
-        if (b != Style->Border_Enabled.Value) {
+        if (b != Style->Border_Enabled.value) {
             Style->Border_Enabled = b;
 
             // Adjust the width and height of the progress bar based on the border state
             if (b) {
-                Style->Width.Direct() += 2;
-                Style->Height.Direct() += 2;
+                Style->Width.direct() += 2;
+                Style->Height.direct() += 2;
             }else {
-                Style->Width.Direct() -= 2;
-                Style->Height.Direct() -= 2;
+                Style->Width.direct() -= 2;
+                Style->Height.direct() -= 2;
             }
 
             // Mark the element as dirty for border changes
@@ -111,19 +111,19 @@ namespace GGUI{
      * @return A vector of UTF objects representing the rendered switch element.
      */
     std::vector<GGUI::UTF>& switchBox::render(){
-        std::vector<GGUI::UTF>& Result = Render_Buffer;
+        std::vector<GGUI::UTF>& Result = renderBuffer;
         
         // Check for Dynamic attributes
-        if(Style->Evaluate_Dynamic_Dimensions(this))
+        if(Style->evaluateDynamicDimensions(this))
             Dirty.Dirty(STAIN_TYPE::STRETCH);
 
-        if (Style->Evaluate_Dynamic_Position(this))
+        if (Style->evaluateDynamicPosition(this))
             Dirty.Dirty(STAIN_TYPE::MOVE);
 
-        if (Style->Evaluate_Dynamic_Colors(this))
+        if (Style->evaluateDynamicColors(this))
             Dirty.Dirty(STAIN_TYPE::COLOR);
 
-        if (Style->Evaluate_Dynamic_Border(this))
+        if (Style->evaluateDynamicBorder(this))
             Dirty.Dirty(STAIN_TYPE::EDGE);
 
         if (Dirty.is(STAIN_TYPE::CLEAN))
@@ -132,7 +132,7 @@ namespace GGUI{
         if (Dirty.is(STAIN_TYPE::RESET)){
             Dirty.Clean(STAIN_TYPE::RESET);
 
-            std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
+            std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
             
             Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
         }

@@ -5,7 +5,7 @@ using namespace GGUI;
 int main(){
     GGUI::GGUI(
         node(new listView(
-            flow_priority(DIRECTION::ROW) |     // Horizontal list view
+            flowPriority(DIRECTION::ROW) |     // Horizontal list view
             width(1.0f) | height(1.0f) |    // Fullscreen width and height
 
             node(new textField(

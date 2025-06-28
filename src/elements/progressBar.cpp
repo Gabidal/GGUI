@@ -10,7 +10,7 @@ using namespace std;
 namespace GGUI{
 
     namespace progress{
-        STAIN_TYPE part::Embed_Value([[maybe_unused]] styling* host, element* owner){
+        STAIN_TYPE part::embedValue([[maybe_unused]] styling* host, element* owner){
             if (dynamic_cast<Bar*>(owner)){
                 Bar* castedOwner = ((Bar*)owner);
 
@@ -84,19 +84,19 @@ namespace GGUI{
          * @return A vector of UTF objects representing the rendered progress bar.
          */
         std::vector<UTF>& Bar::render() {
-            std::vector<UTF>& Result = Render_Buffer;
+            std::vector<UTF>& Result = renderBuffer;
 
             // Check for Dynamic attributes
-            if(Style->Evaluate_Dynamic_Dimensions(this))
+            if(Style->evaluateDynamicDimensions(this))
                 Dirty.Dirty(STAIN_TYPE::STRETCH);
 
-            if (Style->Evaluate_Dynamic_Position(this))
+            if (Style->evaluateDynamicPosition(this))
                 Dirty.Dirty(STAIN_TYPE::MOVE);
 
-            if (Style->Evaluate_Dynamic_Colors(this))
+            if (Style->evaluateDynamicColors(this))
                 Dirty.Dirty(STAIN_TYPE::COLOR);
 
-            if (Style->Evaluate_Dynamic_Border(this))
+            if (Style->evaluateDynamicBorder(this))
                 Dirty.Dirty(STAIN_TYPE::EDGE);
 
             // If the progress bar is clean, return the current render buffer.
@@ -106,7 +106,7 @@ namespace GGUI{
             if (Dirty.is(STAIN_TYPE::RESET)){
                 Dirty.Clean(STAIN_TYPE::RESET);
 
-                std::fill(Render_Buffer.begin(), Render_Buffer.end(), SYMBOLS::EMPTY_UTF);
+                std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
                 
                 Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
             }
@@ -216,12 +216,12 @@ namespace GGUI{
          * @param b The desired state of the border visibility.
          */
         void Bar::showBorder(bool b) {
-            if (b != Style->Border_Enabled.Value) {
+            if (b != Style->Border_Enabled.value) {
                 Style->Border_Enabled = b;
 
                 // Adjust the width and height of the progress bar based on the border state
-                if (b) Style->Width.Direct() += 2;
-                else Style->Height.Direct() -= 2;
+                if (b) Style->Width.direct() += 2;
+                else Style->Height.direct() -= 2;
 
                 // Mark the element as dirty for border changes
                 Dirty.Dirty(STAIN_TYPE::EDGE);

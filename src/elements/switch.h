@@ -13,59 +13,59 @@
 
 namespace GGUI{
 
-    class visualState : public STYLING_INTERNAL::style_base {
+    class visualState : public STYLING_INTERNAL::styleBase {
     public:
-        const Compact_String *Off, *On;
+        const compactString *Off, *On;
 
-        constexpr visualState(const Compact_String& off, const Compact_String& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Off(&off), On(&on) {}
+        constexpr visualState(const compactString& off, const compactString& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Off(&off), On(&on) {}
 
-        constexpr visualState(const GGUI::visualState& other) : style_base(other.Status), Off(other.Off), On(other.On) {}
+        constexpr visualState(const GGUI::visualState& other) : styleBase(other.status), Off(other.Off), On(other.On) {}
 
-        inline ~visualState() override { style_base::~style_base(); }
+        inline ~visualState() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new visualState(*this);
         }
 
         constexpr visualState& operator=(const visualState& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Off = other.Off;
                 On = other.On;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class singleSelect : public STYLING_INTERNAL::style_base {
+    class singleSelect : public STYLING_INTERNAL::styleBase {
     public:
-        constexpr singleSelect(const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default) {}
+        constexpr singleSelect(const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) {}
 
-        constexpr singleSelect(const GGUI::singleSelect& other) : style_base(other.Status) {}
+        constexpr singleSelect(const GGUI::singleSelect& other) : styleBase(other.status) {}
 
-        inline ~singleSelect() override { style_base::~style_base(); }
+        inline ~singleSelect() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new singleSelect(*this);
         }
 
         constexpr singleSelect& operator=(const singleSelect& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
-                Status = other.Status;
+            if (other.status >= status){
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class switchBox : public element{
@@ -74,7 +74,7 @@ namespace GGUI{
         bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
 
         //Contains the unchecked version of the symbol and the checked version.
-        const Compact_String *Off = nullptr, *On = nullptr;
+        const compactString *Off = nullptr, *On = nullptr;
 
         textField Text;
     public:
@@ -83,8 +83,8 @@ namespace GGUI{
          * @param s The styling for the switch.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the switch's style. Only use if you know what you're doing!!!
          */
-        switchBox(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
-        switchBox(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : switchBox(s, Embed_Styles_On_Construct){}
+        switchBox(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        switchBox(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : switchBox(s, Embed_Styles_On_Construct){}
 
         ~switchBox() override{
             // call the base destructor.
@@ -119,7 +119,7 @@ namespace GGUI{
          * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
          * @param text The new text for the switch element.
          */
-        void setText(Compact_String text);
+        void setText(compactString text);
 
         void showBorder(bool b) override;
         
@@ -144,11 +144,11 @@ namespace GGUI{
             return "switchBox<" + Name + ">";
         }
 
-        constexpr Compact_String getStateString() const {
+        constexpr compactString getStateString() const {
             return State ? *On : *Off;
         }
 
-        void setStateString(const Compact_String* off, const Compact_String* on);
+        void setStateString(const compactString* off, const compactString* on);
     };
 
     class radioButton : public switchBox{
@@ -162,9 +162,9 @@ namespace GGUI{
          * @param s The style to apply to the radioButton. Defaults to STYLES::CONSTANTS::Default.
          * @param Embed_Styles_On_Construct If true, embeds the styles during construction. Defaults to false.
          */
-        radioButton(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
+        radioButton(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
             switchBox(s | visualState(SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON), Embed_Styles_On_Construct) {}
-        radioButton(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : radioButton(s, Embed_Styles_On_Construct){}
+        radioButton(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : radioButton(s, Embed_Styles_On_Construct){}
 
         /**
          * @brief Returns the state of the Radio_Button.
@@ -205,9 +205,9 @@ namespace GGUI{
          * @param s The style to apply to the checkBox. Defaults to STYLES::CONSTANTS::Default.
          * @param Embed_Styles_On_Construct If true, embeds styles during construction. Defaults to false.
          */
-        checkBox(STYLING_INTERNAL::style_base& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
+        checkBox(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
             switchBox(s | visualState({SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}), Embed_Styles_On_Construct) {}
-        checkBox(STYLING_INTERNAL::style_base&& s, bool Embed_Styles_On_Construct = false) : checkBox(s, Embed_Styles_On_Construct) {}
+        checkBox(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : checkBox(s, Embed_Styles_On_Construct) {}
 
         /**
          * @brief Returns the current state of the Check_Box.

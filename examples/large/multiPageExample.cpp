@@ -31,12 +31,12 @@ void switchDisplayedElements(const char* From, const char* To){
 
 node initMenu(){
     return node(new listView(
-        flow_priority(DIRECTION::COLUMN) |
+        flowPriority(DIRECTION::COLUMN) |
         width(1.0f) | height(1.0f) | 
         name(MENU_NAME) | 
         node(new button(
             text(CAMPAIGN_NAME) | 
-            on_click([]([[maybe_unused]] element* self){
+            onClick([]([[maybe_unused]] element* self){
                 self->focus();
                 switchDisplayedElements(MENU_NAME, CAMPAIGN_NAME);
                 return true;
@@ -44,7 +44,7 @@ node initMenu(){
         )) | 
         node(new button(
             text(EXIT_NAME) | 
-            on_click([]([[maybe_unused]] element* self){
+            onClick([]([[maybe_unused]] element* self){
                 EXIT();
                 return true;
             })
@@ -62,7 +62,7 @@ node initCampaign(){
         // Top right canvas
         node(new canvas(
             width(0.5f) | height(0.5f) | position(STYLES::top + STYLES::right) | name(CANVAS_NAME) | 
-            on_draw([](unsigned int x, unsigned int y){
+            onDraw([](unsigned int x, unsigned int y){
                 return sprite({
                     UTF(' ', {RGB(x*10, x*10, y*10), RGB(y*10, x*10, x*10)}),
                     UTF(' ', {RGB(x*10, y*10, x*10), RGB(y*10, y*10, x*10)}),
@@ -73,9 +73,9 @@ node initCampaign(){
         // Bottom left, text input field
         node(new textField(
             width(0.5f) | height(inputFieldHeight) | 
-            name(TEXT_INPUT_NAME) | enable_border(true) | 
-            position(STYLES::bottom + STYLES::left) | allow_overflow(true) | 
-            on_input([](textField* self, char input){
+            name(TEXT_INPUT_NAME) | enableBorder(true) | 
+            position(STYLES::bottom + STYLES::left) | allowOverflow(true) | 
+            onInput([](textField* self, char input){
                 if (input == '\n'){
                     string text = self->getText();
                     self->setText("");
@@ -89,7 +89,7 @@ node initCampaign(){
 
         // top left, input history
         node(new textField(
-            width(0.5f) | height(0.95f) | enable_border(true) | allow_overflow(true) | name(INPUT_HISTORY)
+            width(0.5f) | height(0.95f) | enableBorder(true) | allowOverflow(true) | name(INPUT_HISTORY)
         )) 
     ));
 }

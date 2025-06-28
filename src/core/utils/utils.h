@@ -169,54 +169,6 @@ namespace GGUI{
     extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
 
     /**
-     * @brief Finds the upper element relative to the current element's position.
-     * 
-     * This function retrieves the current element based on the mouse position and 
-     * attempts to find an element directly above it by moving one pixel up. If an 
-     * upper element is found and it is not the main element, the position of the 
-     * upper element is returned. Otherwise, the position of the current element is returned.
-     * 
-     * @return IVector3 The position of the upper element if found, otherwise the position of the current element.
-     */
-    extern IVector3 Find_Upper_Element();
-
-    /**
-     * @brief Finds the lower element relative to the current element.
-     * 
-     * This function retrieves the current element based on the mouse position
-     * and then attempts to find an element that is positioned directly below it.
-     * 
-     * @return IVector3 The position of the lower element if found, otherwise the position of the current element.
-     */
-    extern IVector3 Find_Lower_Element();
-
-    /**
-     * @brief Finds the element to the left of the current element.
-     *
-     * This function retrieves the current element based on the mouse position
-     * and attempts to find an element one pixel to the left of it. If such an
-     * element is found, its position is returned. If no left element is found,
-     * the position of the current element is returned.
-     *
-     * @return IVector3 The position of the left element if found, otherwise the position of the current element.
-     */
-    extern IVector3 Find_Left_Element();
-
-    /**
-     * @brief Finds the element to the right of the current element.
-     * 
-     * This function first retrieves the current element based on the mouse position
-     * and the main internal context. If the current element is found, it calculates
-     * the position of the element to the right by moving one pixel to the right of
-     * the current element's position. It then attempts to retrieve the element at
-     * this new position.
-     * 
-     * @return IVector3 The position of the element to the right if found, otherwise
-     *                  the position of the current element.
-     */
-    extern IVector3 Find_Right_Element();
-
-    /**
      * @brief Returns the smaller of two signed long long integers.
      * 
      * This function compares two signed long long integers and returns the smaller of the two.
@@ -357,7 +309,7 @@ namespace GGUI{
      */
     extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
 
-    inline std::string* To_String(std::vector<Compact_String>* Data, unsigned int Liquefied_Size) {
+    inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
         static std::string result;  // an internal cache container between renders.
 
         if (result.empty() || Liquefied_Size != result.size()){
@@ -368,37 +320,37 @@ namespace GGUI{
         // Copy the contents of the Data vector into the std::string.
         unsigned int Current_UTF_Insert_Index = 0;
         for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
-            const Compact_String& data = Data->at(i);
+            const compactString& data = Data->at(i);
 
             // Size of ones are always already loaded from memory into a char.
-            if (data.Size > 1){
+            if (data.size > 1){
                 // Replace the current contents of the string with the contents of the Unicode data.
-                result.replace(Current_UTF_Insert_Index, data.Size, data.Get_Unicode());
+                result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
 
-                Current_UTF_Insert_Index += data.Size;
+                Current_UTF_Insert_Index += data.size;
             }
             else{
                 // Add the single character to the string.
-                result[Current_UTF_Insert_Index++] = data.Get_Ascii();
+                result[Current_UTF_Insert_Index++] = data.getAscii();
             }
         }
 
         return &result;
     }
 
-    inline std::string To_String(Compact_String& cstr){
+    inline std::string To_String(compactString& cstr){
         // Resize a std::string to the total size.
         std::string result;
-        result.resize(cstr.Size);
+        result.resize(cstr.size);
 
         // Copy the contents of the Compact_String into the std::string.
-        if (cstr.Size > 1){
+        if (cstr.size > 1){
             // Replace the current contents of the string with the contents of the Unicode data.
-            result.replace(0, cstr.Size, cstr.Get_Unicode());
+            result.replace(0, cstr.size, cstr.getUnicode());
         }
         else{
             // Add the single character to the string.
-            result[0] = cstr.Get_Ascii();
+            result[0] = cstr.getAscii();
         }
 
         return result;

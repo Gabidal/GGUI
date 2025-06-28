@@ -33,10 +33,10 @@ namespace GGUI{
         unsigned int Max_Width = 0;
         unsigned int Max_Height = 0;
 
-        atomic::Guard<std::vector<Memory>> Remember;
+        atomic::guard<std::vector<memory>> Remember;
 
-        std::vector<Action*> Event_Handlers;
-        std::vector<Input*> Inputs;
+        std::vector<action*> Event_Handlers;
+        std::vector<input*> Inputs;
         std::chrono::system_clock::time_point Last_Input_Clear_Time;
 
         std::unordered_map<std::string, element*> Element_Names;
@@ -66,7 +66,7 @@ namespace GGUI{
         unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
         unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
 
-        inline atomic::Guard<std::unordered_map<int, styling>> Classes;
+        inline atomic::guard<std::unordered_map<int, styling>> Classes;
 
         inline std::unordered_map<std::string, int> Class_Names;
 
@@ -77,7 +77,7 @@ namespace GGUI{
 
         element* Main = nullptr;
 
-        atomic::Guard<Carry> Carry_Flags; 
+        atomic::guard<Carry> Carry_Flags; 
 
         /**
          * @brief Temporary function to return the current date and time in a string.
@@ -108,7 +108,7 @@ namespace GGUI{
 
     #if _WIN32
 
-    namespace Constants{
+    namespace constants{
         namespace ANSI{
             inline int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
         }
@@ -168,9 +168,9 @@ namespace GGUI{
             SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
 
             // Disable specific ANSI features and restore screen
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR).To_String();
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::SCREEN_CAPTURE, false).To_String();
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
             std::cout << std::flush; // Ensure all output is flushed to console
         }
 
@@ -189,7 +189,7 @@ namespace GGUI{
          * @param signum The exit code to be used when terminating the application.
          */
         void EXIT(int signum){
-            if (!Carry_Flags.Read().Terminate){
+            if (!Carry_Flags.read().Terminate){
                 waitForThreadTermination();
 
                 // Join the threads
@@ -421,50 +421,50 @@ namespace GGUI{
                     bool Pressed = Raw_Input[i].Event.KeyEvent.bKeyDown;
 
                     if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_UP){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::UP));
+                        INTERNAL::Inputs.push_back(new GGUI::input(0, GGUI::constants::UP));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::UP] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_DOWN){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::DOWN));
+                        INTERNAL::Inputs.push_back(new GGUI::input(0, GGUI::constants::DOWN));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::DOWN] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::LEFT));
+                        INTERNAL::Inputs.push_back(new GGUI::input(0, GGUI::constants::LEFT));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::LEFT] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RIGHT){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(0, GGUI::Constants::RIGHT));
+                        INTERNAL::Inputs.push_back(new GGUI::input(0, GGUI::constants::RIGHT));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::RIGHT] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_RETURN){
-                        INTERNAL::Inputs.push_back(new GGUI::Input('\n', GGUI::Constants::ENTER));
+                        INTERNAL::Inputs.push_back(new GGUI::input('\n', GGUI::constants::ENTER));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_SHIFT){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::SHIFT));
+                        INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::SHIFT));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_CONTROL){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::CONTROL));
+                        INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::CONTROL));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_BACK){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::BACKSPACE));
+                        INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::BACKSPACE));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = INTERNAL::buttonState(Pressed);
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::ESCAPE));
+                        INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::ESCAPE));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ESC] = INTERNAL::buttonState(Pressed);
                         handleEscape();
                     }
                     else if (Raw_Input[i].Event.KeyEvent.wVirtualKeyCode == VK_TAB){
-                        INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::TAB));
+                        INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::TAB));
                         INTERNAL::KEYBOARD_STATES[BUTTON_STATES::TAB] = INTERNAL::buttonState(Pressed);
                         handleTabulator();
                     }
                     else if (Raw_Input[i].Event.KeyEvent.uChar.AsciiChar != 0 && Pressed){
                         char Result = Reverse_Engineer_Keybinds(Raw_Input[i].Event.KeyEvent.uChar.AsciiChar);
-                        INTERNAL::Inputs.push_back(new GGUI::Input(Result, GGUI::Constants::KEY_PRESS));
+                        INTERNAL::Inputs.push_back(new GGUI::input(Result, GGUI::constants::KEY_PRESS));
                     }
                 }
                 else if (Raw_Input[i].EventType == WINDOW_BUFFER_SIZE_EVENT){
@@ -552,12 +552,12 @@ namespace GGUI{
             SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_PROCESSED_INPUT);
 
             // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String() 
-                    << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR, false).To_String();
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString() 
+                    << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
             std::cout.flush();
 
             // Set the console output code page to UTF-8 mode.
-            SetConsoleOutputCP(Constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
+            SetConsoleOutputCP(constants::ANSI::ENABLE_UTF8_MODE_FOR_WINDOWS);
 
             // Critical error handlers.
             SetUnhandledExceptionFilter(Critical_Error_Handler);
@@ -1346,7 +1346,7 @@ namespace GGUI{
                 // Check if the input already exists
                 bool Found = false;
                 for (auto input : INTERNAL::Inputs) {
-                    if (input->Criteria == Constant_Key) {
+                    if (input->criteria == Constant_Key) {
                         Found = true;
                         break;
                     }
@@ -1354,7 +1354,7 @@ namespace GGUI{
 
                 // If not found, create a new input
                 if (!Found)
-                    INTERNAL::Inputs.push_back(new Input((char)0, Constant_Key));
+                    INTERNAL::Inputs.push_back(new input((char)0, Constant_Key));
             }
         }
     }
@@ -1374,11 +1374,11 @@ namespace GGUI{
 
         // Check if the left mouse button is pressed and for how long
         if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_PRESSED));
+            INTERNAL::Inputs.push_back(new GGUI::input(0, constants::MOUSE_LEFT_PRESSED));
         } 
         // Check if the left mouse button was previously pressed and now released
         else if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State && INTERNAL::PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State != INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State) {
-            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_LEFT_CLICKED));
+            INTERNAL::Inputs.push_back(new GGUI::input(0, constants::MOUSE_LEFT_CLICKED));
         }
 
         // Get the duration the right mouse button has been pressed
@@ -1387,11 +1387,11 @@ namespace GGUI{
 
         // Check if the right mouse button is pressed and for how long
         if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_PRESSED));
+            INTERNAL::Inputs.push_back(new GGUI::input(0, constants::MOUSE_RIGHT_PRESSED));
         }
         // Check if the right mouse button was previously pressed and now released
         else if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State && INTERNAL::PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State != INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State) {
-            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_RIGHT_CLICKED));
+            INTERNAL::Inputs.push_back(new GGUI::input(0, constants::MOUSE_RIGHT_CLICKED));
         }
 
         // Get the duration the middle mouse button has been pressed
@@ -1400,11 +1400,11 @@ namespace GGUI{
 
         // Check if the middle mouse button is pressed and for how long
         if (INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
-            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_PRESSED));
+            INTERNAL::Inputs.push_back(new GGUI::input(0, constants::MOUSE_MIDDLE_PRESSED));
         }
         // Check if the middle mouse button was previously pressed and now released
         else if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State && INTERNAL::PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State != INTERNAL::KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State) {
-            INTERNAL::Inputs.push_back(new GGUI::Input(0, Constants::MOUSE_MIDDLE_CLICKED));
+            INTERNAL::Inputs.push_back(new GGUI::input(0, constants::MOUSE_MIDDLE_CLICKED));
         }
     }
 
@@ -1480,13 +1480,13 @@ namespace GGUI{
         if (Current){
             // Find the first occurrence of the event handlers with this Current being their Host.
             for (;(unsigned int)Current_Index < INTERNAL::Event_Handlers.size(); Current_Index++){
-                if (INTERNAL::Event_Handlers[Current_Index]->Host == Current)
+                if (INTERNAL::Event_Handlers[Current_Index]->host == Current)
                     break;
             }
 
             // Now, we need to find the last occurrence of this Current in the event handlers
             for (int i = Current_Index + 1; i < (int)INTERNAL::Event_Handlers.size(); i++){
-                if (INTERNAL::Event_Handlers[i]->Host == Current){
+                if (INTERNAL::Event_Handlers[i]->host == Current){
                     Current_Index = i; // Update the index to the last occurrence
                     temporary_way_of_calculating_how_far_back_we_should_go_with_shift++;
                 }
@@ -1506,7 +1506,7 @@ namespace GGUI{
 
         // Now update the focused element with the new index
         unHoverElement();
-        updateFocusedElement(INTERNAL::Event_Handlers[Current_Index]->Host);
+        updateFocusedElement(INTERNAL::Event_Handlers[Current_Index]->host);
     }
 
     // Returns the length of a Unicode character based on the first byte.
@@ -1566,12 +1566,12 @@ namespace GGUI{
     }
 
     namespace INTERNAL{
-        static std::vector<Compact_String> LIQUIFY_UTF_TEXT_RESULT_CACHE;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Over_Head> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
-        static Super_String<GGUI::Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Color> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
+        static std::vector<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
+        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
+        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
+        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
+        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
     }
 
     /**
@@ -1582,27 +1582,27 @@ namespace GGUI{
      * @param Height The height of the window.
      * @return A pointer to the resulting Super_String.
      */
-    std::vector<Compact_String>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
-        const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String + !SETTINGS::Word_Wrapping * (Height - 1));
+    std::vector<compactString>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
+        const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * constants::ANSI::maximumNeededPreAllocationForEncodedSuperString + !SETTINGS::Word_Wrapping * (Height - 1));
         
         // Since they are located as globals we need to remember to restart the starting offset.
         unsigned int LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX = 0;
         Liquefied_Size = 0;
 
-        INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();
-        INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.Clear();
-        INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.Clear();
-        INTERNAL::LIQUIFY_UTF_TEXT_TEXT_COLOUR.Clear();
-        INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.Clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_TEXT_COLOUR.clear();
+        INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.clear();
         
         // We need to dynamically resize this, since the window size will be potentially re-sized.
         if (INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.size() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
-            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer, Compact_String());
+            INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer, compactString());
         }
  
         for (int y = 0; y < Height; y++){
             for (int x = 0; x < Width; x++){
-                Text->at(y * Width + x).To_Encoded_Super_String(
+                Text->at(y * Width + x).toEncodedSuperString(
                     &INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER,
                     &INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD,
                     &INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD,
@@ -1610,23 +1610,23 @@ namespace GGUI{
                     &INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR
                 );
                 
-                for (unsigned int i = 0; i < INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Current_Index; i++){
-                    INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Data[i];
+                for (unsigned int i = 0; i < INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.currentIndex; i++){
+                    INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.data[i];
                 }
 
-                Liquefied_Size += INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Liquefied_Size;
+                Liquefied_Size += INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.liquefiedSize;
 
                 // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
-                INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.Clear();
-                INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.Clear();
-                INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.Clear();   
-                INTERNAL::LIQUIFY_UTF_TEXT_TEXT_COLOUR.Clear();
-                INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.Clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.clear();   
+                INTERNAL::LIQUIFY_UTF_TEXT_TEXT_COLOUR.clear();
+                INTERNAL::LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.clear();
             }
 
             // the system doesn't have word wrapping enabled then, use newlines as replacement.
             if (!SETTINGS::Word_Wrapping){
-                INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = Compact_String('\n'); // the system is word wrapped.
+                INTERNAL::LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = compactString('\n'); // the system is word wrapped.
                 Liquefied_Size += 1;
             }
         }
@@ -1722,7 +1722,7 @@ namespace GGUI{
      *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
      */
     void recallMemories(){
-        INTERNAL::Remember([](std::vector<Memory>& rememberable){
+        INTERNAL::Remember([](std::vector<memory>& rememberable){
             std::chrono::high_resolution_clock::time_point Current_Time = std::chrono::high_resolution_clock::now();
 
             // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
@@ -1730,11 +1730,11 @@ namespace GGUI{
             // Prolong prolongable memories.
             for (unsigned int i = 0; i < rememberable.size(); i++){
                 for (unsigned int j = i + 1; j < rememberable.size(); j++){
-                    if (rememberable.at(i).Is(MEMORY_FLAGS::PROLONG_MEMORY) && rememberable.at(j).Is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
+                    if (rememberable.at(i).is(MEMORY_FLAGS::PROLONG_MEMORY) && rememberable.at(j).is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
                         // Check if the Job at I is same as the one at J.
-                        if (rememberable.at(i).Job.target<bool(*)(GGUI::Event*)>() == rememberable.at(j).Job.target<bool(*)(GGUI::Event*)>()){
+                        if (rememberable.at(i).Job.target<bool(*)(GGUI::event*)>() == rememberable.at(j).Job.target<bool(*)(GGUI::event*)>()){
                             // Since J will always be one later than I, J will contain the prolonging memory if there is one. 
-                            rememberable.at(i).Start_Time = rememberable.at(j).Start_Time;
+                            rememberable.at(i).startTime = rememberable.at(j).startTime;
 
                             rememberable.erase(rememberable.begin() + j--);
                             break;
@@ -1744,23 +1744,23 @@ namespace GGUI{
 
             for (unsigned int i = 0; i < rememberable.size(); i++){
                 //first calculate the time difference between the start if the task and the end task
-                size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - rememberable.at(i).Start_Time).count();
+                size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - rememberable.at(i).startTime).count();
 
-                size_t Time_Left = rememberable.at(i).End_Time - Time_Difference;
+                size_t Time_Left = rememberable.at(i).endTime - Time_Difference;
 
                 if (Time_Left < Shortest_Time)
                     Shortest_Time = Time_Left;
 
                 //if the time difference is greater than the time limit, then delete the memory
-                if (Time_Difference > rememberable.at(i).End_Time){
+                if (Time_Difference > rememberable.at(i).endTime){
                     try{
-                        bool Success = rememberable.at(i).Job((Event*)&rememberable.at(i));
+                        bool Success = rememberable.at(i).Job((event*)&rememberable.at(i));
 
                         // If job is a re-trigger it will ignore whether the job was successful or not.
-                        if (rememberable.at(i).Is(MEMORY_FLAGS::RETRIGGER)){
+                        if (rememberable.at(i).is(MEMORY_FLAGS::RETRIGGER)){
 
                             // May need to change this into more accurate version of time capturing.
-                            rememberable.at(i).Start_Time = Current_Time;
+                            rememberable.at(i).startTime = Current_Time;
 
                         }
                         else if (Success){
@@ -1795,7 +1795,7 @@ namespace GGUI{
 
         // Check if the current element is an event handler
         for (auto i : INTERNAL::Event_Handlers){
-            if (i->Host == current){
+            if (i->host == current){
                 Is_An_Event_handler = true;
                 break;
             }
@@ -1828,7 +1828,7 @@ namespace GGUI{
         bool Is_An_Event_handler = false;
 
         for (auto i : INTERNAL::Event_Handlers){
-            if (i->Host == current){
+            if (i->host == current){
                 Is_An_Event_handler = true;
                 break;
             }
@@ -1956,14 +1956,14 @@ namespace GGUI{
             bool Has_Enter_Press_Event = false;
 
             for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
-                Has_Mouse_Left_Click_Event = Has(INTERNAL::Inputs[j]->Criteria, Constants::MOUSE_LEFT_CLICKED);
-                Has_Enter_Press_Event = Has(INTERNAL::Inputs[j]->Criteria, Constants::ENTER) && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER].State == true;
+                Has_Mouse_Left_Click_Event = Has(INTERNAL::Inputs[j]->criteria, constants::MOUSE_LEFT_CLICKED);
+                Has_Enter_Press_Event = Has(INTERNAL::Inputs[j]->criteria, constants::ENTER) && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER].State == true;
 
                 // Criteria must be identical for more accurate criteria listing.
                 if (
-                    INTERNAL::Event_Handlers[i]->Criteria == INTERNAL::Inputs[j]->Criteria && (
-                        (Collides(INTERNAL::Event_Handlers[i]->Host, GGUI::INTERNAL::Mouse) && Has_Mouse_Left_Click_Event) || 
-                        (INTERNAL::Event_Handlers[i]->Host->isFocused() && Has_Enter_Press_Event)
+                    INTERNAL::Event_Handlers[i]->criteria == INTERNAL::Inputs[j]->criteria && (
+                        (Collides(INTERNAL::Event_Handlers[i]->host, GGUI::INTERNAL::Mouse) && Has_Mouse_Left_Click_Event) || 
+                        (INTERNAL::Event_Handlers[i]->host->isFocused() && Has_Enter_Press_Event)
                     )
                 ){
                     try{
@@ -1987,18 +1987,18 @@ namespace GGUI{
                 break;
 
             // Hosted branches
-            if (INTERNAL::Event_Handlers[i]->Host){
-                if (!INTERNAL::Event_Handlers[i]->Host->isDisplayed())
+            if (INTERNAL::Event_Handlers[i]->host){
+                if (!INTERNAL::Event_Handlers[i]->host->isDisplayed())
                     continue;
 
                 //update the focused
-                if (Collides(INTERNAL::Event_Handlers[i]->Host, GGUI::INTERNAL::Mouse)){
+                if (Collides(INTERNAL::Event_Handlers[i]->host, GGUI::INTERNAL::Mouse)){
                     if (Has_Mouse_Left_Click_Event){
-                        updateFocusedElement(INTERNAL::Event_Handlers[i]->Host);
+                        updateFocusedElement(INTERNAL::Event_Handlers[i]->host);
                         unHoverElement();
                     }
                     else{
-                        updateHoveredElement(INTERNAL::Event_Handlers[i]->Host);
+                        updateHoveredElement(INTERNAL::Event_Handlers[i]->host);
                     }
                 }
             }
@@ -2014,14 +2014,14 @@ namespace GGUI{
 
             // TODO: Do better you dum!
             // GO through the inputs and check if they contain all the flags required
-            unsigned long long Remaining_Flags = INTERNAL::Event_Handlers[i]->Criteria;
-            std::vector<GGUI::Input *> Accepted_Inputs;
+            unsigned long long Remaining_Flags = INTERNAL::Event_Handlers[i]->criteria;
+            std::vector<GGUI::input *> Accepted_Inputs;
 
             // if an input has flags that meet the criteria, then remove the criteria from the remaining flags and continue until the remaining flags are equal to zero.
             for (auto* j : INTERNAL::Inputs){
 
-                if (Contains(Remaining_Flags, j->Criteria)){
-                    Remaining_Flags &= ~j->Criteria;
+                if (Contains(Remaining_Flags, j->criteria)){
+                    Remaining_Flags &= ~j->criteria;
                     Accepted_Inputs.push_back(j);
                 }
 
@@ -2031,10 +2031,10 @@ namespace GGUI{
 
             if (Remaining_Flags == 0){
                 // Now we need to find the information to send to the event handler.
-                Input* Best_Candidate = Accepted_Inputs[0];
+                input* Best_Candidate = Accepted_Inputs[0];
 
                 for (auto* j : Accepted_Inputs){
-                    if (j->Data > Best_Candidate->Data){
+                    if (j->data > Best_Candidate->data){
                         Best_Candidate = j;
                     }
                 }
@@ -2226,7 +2226,7 @@ namespace GGUI{
      * @param DOM The elements to add to the root window.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    void GGUI(STYLING_INTERNAL::style_base& App, unsigned long long Sleep_For){
+    void GGUI(STYLING_INTERNAL::styleBase& App, unsigned long long Sleep_For){
         INTERNAL::Read_Start_Addresses();
 
         pauseGGUI([&App](){
@@ -2262,7 +2262,7 @@ namespace GGUI{
      * @param App An rvalue reference to a STYLING_INTERNAL::style_base object representing the application's style.
      * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
      */
-    void GGUI(STYLING_INTERNAL::style_base&& App, unsigned long long Sleep_For) { GGUI(App, Sleep_For); }
+    void GGUI(STYLING_INTERNAL::styleBase&& App, unsigned long long Sleep_For) { GGUI(App, Sleep_For); }
 
     /**
      * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
@@ -2277,45 +2277,45 @@ namespace GGUI{
         if (Count == 0) return;
 
         // Set START flag for the first element
-        Buffer->front().Set_Flag(ENCODING_FLAG::START);
+        Buffer->front().setFlag(ENCODING_FLAG::START);
 
         // If only one element, also mark as END
         if (Count == 1) {
-            Buffer->front().Set_Flag(ENCODING_FLAG::END);
+            Buffer->front().setFlag(ENCODING_FLAG::END);
             return;
         }
 
         // Calculate the relative size difference between the non-encoded and the encoded buffers.
-        INTERNAL::BEFORE_ENCODE_BUFFER_SIZE = Buffer->size() *  Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Encoded_Super_String;
+        INTERNAL::BEFORE_ENCODE_BUFFER_SIZE = Buffer->size() *  constants::ANSI::maximumNeededPreAllocationForEncodedSuperString;
         INTERNAL::AFTER_ENCODE_BUFFER_SIZE = 0;
 
         // Cache previous colors
-        auto PrevFg = Buffer->front().Foreground;
-        auto PrevBg = Buffer->front().Background;
+        auto PrevFg = Buffer->front().foreground;
+        auto PrevBg = Buffer->front().background;
 
         for (size_t i = 1; i < Count - 1; i++) {
             auto& Curr = Buffer->at(i);
             const auto& Next = Buffer->at(i + 1);
 
-            bool SameAsPrev = (Curr.Foreground == PrevFg) && (Curr.Background == PrevBg);
-            bool SameAsNext = (Curr.Foreground == Next.Foreground) && (Curr.Background == Next.Background);
+            bool SameAsPrev = (Curr.foreground == PrevFg) && (Curr.background == PrevBg);
+            bool SameAsNext = (Curr.foreground == Next.foreground) && (Curr.background == Next.background);
 
             if (!SameAsPrev){
-                Curr.Set_Flag(ENCODING_FLAG::START);
+                Curr.setFlag(ENCODING_FLAG::START);
 
                 // for logging:
-                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Overhead;
+                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
             }
             
             if (!SameAsNext){
-                Curr.Set_Flag(ENCODING_FLAG::END);
+                Curr.setFlag(ENCODING_FLAG::END);
                 
                 // for logging:
-                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += Constants::ANSI::Maximum_Needed_Pre_Allocation_For_Reset;
+                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForReset;
             }
             
-            PrevFg = Curr.Foreground;
-            PrevBg = Curr.Background;
+            PrevFg = Curr.foreground;
+            PrevBg = Curr.background;
 
             // for logging:
             INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
@@ -2323,12 +2323,12 @@ namespace GGUI{
 
         // Handle the last element
         auto& Last = Buffer->back();
-        Last.Set_Flag(ENCODING_FLAG::END);
+        Last.setFlag(ENCODING_FLAG::END);
 
         // Compare last with second-last for possible START flag
         const auto& SecondLast = Buffer->at(Count - 2);
-        if (!(Last.Foreground == SecondLast.Foreground) || !(Last.Background == SecondLast.Background)) {
-            Last.Set_Flag(ENCODING_FLAG::START);
+        if (!(Last.foreground == SecondLast.foreground) || !(Last.background == SecondLast.background)) {
+            Last.setFlag(ENCODING_FLAG::START);
         }
     }
 

@@ -74,17 +74,17 @@ namespace GGUI{
     namespace STYLING_INTERNAL{
 
         template<typename P>
-        constexpr bool Is_Non_Discriminant_Scalar(const P value, const float scalar);
+        constexpr bool isNonDiscriminantScalar(const P value, const float scalar);
 
         template<typename P>
-        constexpr std::string To_String(const P value);
+        constexpr std::string toString(const P value);
 
         template<typename T>
         class value {
         protected:
             T data;
             float percentage;   // This will be changed later on into an std::variant holding different scaling types.
-            EVALUATION_TYPE evaluation_type = EVALUATION_TYPE::DEFAULT;
+            EVALUATION_TYPE evaluationType = EVALUATION_TYPE::DEFAULT;
 
         public:
             /**
@@ -94,7 +94,7 @@ namespace GGUI{
              * @param use_constexpr Whether to use constexpr or not
              */
             constexpr value(const T d, const EVALUATION_TYPE type = EVALUATION_TYPE::DEFAULT)
-                : data(d), percentage(0.0f), evaluation_type(type) {}
+                : data(d), percentage(0.0f), evaluationType(type) {}
 
             /**
              * Constructor for value class
@@ -107,7 +107,7 @@ namespace GGUI{
              * use a constexpr constructor or not.
              */
             constexpr value(const float f, const EVALUATION_TYPE type = EVALUATION_TYPE::PERCENTAGE)
-                : data{}, percentage(f), evaluation_type(type) {}
+                : data{}, percentage(f), evaluationType(type) {}
 
             /**
              * Copy constructor
@@ -117,7 +117,7 @@ namespace GGUI{
              * The data and the evaluation type are copied from the other object.
              */
             constexpr value(const value<T>& other)
-                : data(other.data), percentage(other.percentage), evaluation_type(other.evaluation_type) {}
+                : data(other.data), percentage(other.percentage), evaluationType(other.evaluationType) {}
 
 
             /**
@@ -132,7 +132,7 @@ namespace GGUI{
                 // Copy the data and the evaluation type from the other object
                 data = other.data;
                 percentage = other.percentage;
-                evaluation_type = other.evaluation_type;
+                evaluationType = other.evaluationType;
                 // Return the object itself, for chaining
                 return *this;
             }
@@ -149,7 +149,7 @@ namespace GGUI{
                 // Set the data to the value passed in
                 data = initialization_data;
                 // Set the evaluation type to DEFAULT
-                evaluation_type = EVALUATION_TYPE::DEFAULT;
+                evaluationType = EVALUATION_TYPE::DEFAULT;
                 // Return the object itself, for chaining
                 return *this;
             }
@@ -166,26 +166,26 @@ namespace GGUI{
                 // Set the data to the float value passed in
                 percentage = initialization_data;
                 // Set the evaluation type to PERCENTAGE
-                evaluation_type = EVALUATION_TYPE::PERCENTAGE;
+                evaluationType = EVALUATION_TYPE::PERCENTAGE;
                 // Return the object itself, for chaining
                 return *this;
             }
 
             constexpr bool operator==(const value<T>& other) const {
-                // if (evaluation_type != other.evaluation_type){
+                // if (evaluationType != other.evaluationType){
                 //     INTERNAL::reportStack("Cannot compare two different eval type values!");
                 //     INTERNAL::EXIT(1);
                 //     return false;   // for warnings.
                 // }
                 // else{
-                //     switch (evaluation_type)
+                //     switch (evaluationType)
                 //     {
                 //     case EVALUATION_TYPE::DEFAULT:
                         return data == other.data;
                 //     case EVALUATION_TYPE::PERCENTAGE:
                 //         return percentage == other.percentage;
                 //     default:
-                //         INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                //         INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
                 //         INTERNAL::EXIT(1);
                 //         return false;   // for warnings.
                 //     }
@@ -193,20 +193,20 @@ namespace GGUI{
             }
 
             constexpr value<T> operator+(const value<T>& other){
-                if (evaluation_type != other.evaluation_type){
+                if (evaluationType != other.evaluationType){
                     INTERNAL::reportStack("Cannot add two different eval type values!");
                     INTERNAL::EXIT(1);
                     return false;   // for warnings.
                 }
                 else{
-                    switch (evaluation_type)
+                    switch (evaluationType)
                     {
                     case EVALUATION_TYPE::DEFAULT:
                         return value<T>(data + other.data);
                     case EVALUATION_TYPE::PERCENTAGE:
                         return value<T>(percentage + other.percentage);
                     default:
-                        INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
                         INTERNAL::EXIT(1);
                         return value<T>(0);
                     }
@@ -214,21 +214,21 @@ namespace GGUI{
             }
 
             constexpr value<T> operator-(const value<T>& other){
-                if (evaluation_type != other.evaluation_type){
+                if (evaluationType != other.evaluationType){
                     // TODO: add capability to call reportStack in Styles.h
                     INTERNAL::LOGGER::Log("Cannot substract two different eval type values!");
                     INTERNAL::EXIT(1);
                     return false;   // for warnings.
                 }
                 else{
-                    switch (evaluation_type)
+                    switch (evaluationType)
                     {
                     case EVALUATION_TYPE::DEFAULT:
                         return value<T>(data - other.data);
                     case EVALUATION_TYPE::PERCENTAGE:
                         return value<T>(percentage - other.percentage);
                     default:
-                        INTERNAL::LOGGER::Log("Evaluation type: " + std::to_string((int)evaluation_type) + " not supported!");
+                        INTERNAL::LOGGER::Log("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
                         INTERNAL::EXIT(1);
                         return value<T>(0);
                     }
@@ -245,7 +245,7 @@ namespace GGUI{
              * If the evaluation type is not supported, an error message is printed and the data is returned without any modification.
              */
             constexpr void Evaluate(const T parental_value) {
-                switch (evaluation_type) {
+                switch (evaluationType) {
                     case EVALUATION_TYPE::DEFAULT:
                         // If the evaluation type is DEFAULT then just return the data without any modification
                         return;
@@ -254,8 +254,8 @@ namespace GGUI{
                         data = static_cast<T>(static_cast<T>(parental_value) * percentage);
 
                         #if GGUI_DEBUG
-                        if (Is_Non_Discriminant_Scalar<T>(parental_value, percentage)){
-                            INTERNAL::LOGGER::Log("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + To_String(parental_value) + "'.");
+                        if (isNonDiscriminantScalar<T>(parental_value, percentage)){
+                            INTERNAL::LOGGER::Log("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + toString(parental_value) + "'.");
                         }
                         #endif
 
@@ -274,7 +274,7 @@ namespace GGUI{
              * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
              */
             template<typename P>
-            constexpr P Get() const {
+            constexpr P get() const {
                 return data;
             }
 
@@ -285,7 +285,7 @@ namespace GGUI{
              * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
              */
             template<typename P>
-            constexpr P Get() {                
+            constexpr P get() {                
                 return data;
             }
 
@@ -293,13 +293,13 @@ namespace GGUI{
              * Get the evaluation type of the variant.
              * @return The evaluation type of the variant.
              */
-            constexpr EVALUATION_TYPE Get_Type() { return evaluation_type; }
+            constexpr EVALUATION_TYPE Get_Type() { return evaluationType; }
 
             /**
              * Get the evaluation type of the variant.
              * @return The evaluation type of the variant.
              */
-            constexpr EVALUATION_TYPE Get_Type() const { return evaluation_type; }
+            constexpr EVALUATION_TYPE Get_Type() const { return evaluationType; }
 
             /**
              * @brief Direct access to the underlying data of the variant.
@@ -321,7 +321,7 @@ namespace GGUI{
              */
             constexpr void Set(const T d) {
                 data = d;
-                evaluation_type = EVALUATION_TYPE::DEFAULT;
+                evaluationType = EVALUATION_TYPE::DEFAULT;
             }
 
             /**
@@ -331,27 +331,27 @@ namespace GGUI{
              */
             constexpr void Set(const float f){
                 percentage = f;
-                evaluation_type = EVALUATION_TYPE::PERCENTAGE;
+                evaluationType = EVALUATION_TYPE::PERCENTAGE;
             }
         };
 
-        class style_base{
+        class styleBase{
         public:
             // This is used to prevent accidental overwrites.
-            VALUE_STATE Status;
+            VALUE_STATE status;
 
             // Represents when the value is embedded.
-            EMBED_ORDER Order;
+            EMBED_ORDER order;
 
             // This is used to store all appended style_bases through the operator|.
-            style_base* Other;
+            styleBase* next;
 
             /**
              * @brief Construct a new constexpr style_base object.
              * @param status The status to initialize the style_base with.
              * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
              */
-            constexpr style_base(VALUE_STATE status = VALUE_STATE::UNINITIALIZED, EMBED_ORDER order = EMBED_ORDER::INSTANT) : Status(status), Order(order), Other(nullptr) {}
+            constexpr styleBase(VALUE_STATE Status = VALUE_STATE::UNINITIALIZED, EMBED_ORDER Order = EMBED_ORDER::INSTANT) : status(Status), order(Order), next(nullptr) {}
 
             /**
              * @brief Destructor of the style_base class.
@@ -360,9 +360,9 @@ namespace GGUI{
              * It does this by calling the Is_Deletable() function to check if the pointer is likely to be
              * a heap-allocated object. If it is, it deletes the object using the delete keyword.
              */
-            virtual ~style_base();
+            virtual ~styleBase();
 
-            virtual style_base* Copy() const = 0;
+            virtual styleBase* copy() const = 0;
 
             /**
              * @brief Overload the | operator to allow for appending of style_bases.
@@ -370,8 +370,8 @@ namespace GGUI{
              * @return A pointer to the style_base that was appended to.
              * @note This bind the two objects indefinefly!
              */
-            constexpr style_base* operator|(style_base* other){
-                other->Other = this;
+            constexpr styleBase* operator|(styleBase* other){
+                other->next = this;
 
                 return other;
             }
@@ -382,8 +382,8 @@ namespace GGUI{
              * @return A reference to the style_base that was appended to.
              * @note This bind the two objects indefinefly!
              */
-            constexpr style_base& operator|(style_base& other){
-                other.Other = this;
+            constexpr styleBase& operator|(styleBase& other){
+                other.next = this;
 
                 return other;
             }
@@ -399,8 +399,8 @@ namespace GGUI{
              *       it will produce "ac" and not "abc". Thus, we return the secondary object so that: 
              *       "a | b | c" -> "b(a) | c" -> "c(b(a))".
              */
-            constexpr style_base& operator|(style_base&& other){
-                other.Other = this;
+            constexpr styleBase& operator|(styleBase&& other){
+                other.next = this;
 
                 return other;
             }
@@ -414,7 +414,7 @@ namespace GGUI{
              *          The function is also responsible for setting the Value variable to the evaluated value.
              *          The function should be implemented by the derived classes to perform the evaluation.
              */
-            virtual void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* host) {};
+            virtual void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* host) {};
 
             /**
              * @brief Imprints the style's identity into the Styling object.
@@ -424,12 +424,12 @@ namespace GGUI{
              * @details This function allows single style classes to incorporate their unique characteristics into a Styling object. 
              *          It should be implemented by derived classes to define how the style affects the Styling and Element objects.
              */
-            virtual STAIN_TYPE Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+            virtual STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
         };
 
-        class RGB_VALUE : public style_base{
+        class RGBValue : public styleBase{
         public:
-            value<RGB> Value = RGB(0, 0, 0);
+            value<RGB> value = RGB(0, 0, 0);
 
             /**
              * @brief Construct a new RGB_VALUE object using constexpr.
@@ -439,8 +439,8 @@ namespace GGUI{
              * @details This constructor initializes an RGB_VALUE object with the given parameters,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr RGB_VALUE(const GGUI::RGB value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
-                : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT) {}
+            constexpr RGBValue(const GGUI::RGB Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
+                : styleBase(Default), value(Value, EVALUATION_TYPE::DEFAULT) {}
 
             /**
              * @brief Construct a new RGB_VALUE object using constexpr.
@@ -450,19 +450,19 @@ namespace GGUI{
              * @details This constructor initializes an RGB_VALUE object with the given parameters,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr RGB_VALUE(const float value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
-                : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE) {}
+            constexpr RGBValue(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
+                : styleBase(Default), value(Value, EVALUATION_TYPE::PERCENTAGE) {}
             
-            constexpr RGB_VALUE() = default;
+            constexpr RGBValue() = default;
 
             /**
              * @brief Destructor for the RGB_VALUE class.
              * @details This destructor is necessary to ensure that the base class destructor is called.
              */
-            inline ~RGB_VALUE() override { style_base::~style_base(); }
+            inline ~RGBValue() override { styleBase::~styleBase(); }
 
-            inline style_base* Copy() const override {
-                return new RGB_VALUE(*this);
+            inline styleBase* copy() const override {
+                return new RGBValue(*this);
             }
 
             /**
@@ -472,12 +472,12 @@ namespace GGUI{
              * @details This function assigns the value and status of the other RGB_VALUE object to this one.
              *          It only copies the information if the other object is enabled.
              */
-            constexpr RGB_VALUE& operator=(const RGB_VALUE& other){
+            constexpr RGBValue& operator=(const RGBValue& other){
                 // Only copy the information if the other is enabled.
-                if (other.Status >= Status){
-                    Value = other.Value;
+                if (other.status >= status){
+                    value = other.value;
 
-                    Status = other.Status;
+                    status = other.status;
                 }
                 return *this;
             }
@@ -489,9 +489,9 @@ namespace GGUI{
              * @details This function assigns the RGB value of the other RGB_VALUE object to this one.
              *          It sets the status of the object to VALUE_STATE::VALUE after the assignment.
              */
-            constexpr RGB_VALUE& operator=(const GGUI::RGB other){
-                Value = other;
-                Status = VALUE_STATE::VALUE;
+            constexpr RGBValue& operator=(const GGUI::RGB other){
+                value = other;
+                status = VALUE_STATE::VALUE;
                 return *this;
             }
         
@@ -501,8 +501,8 @@ namespace GGUI{
              * @return A boolean indicating whether the two RGB_VALUE objects are equal.
              * @details This function compares the value and status of the two RGB_VALUE objects.
              */
-            constexpr bool operator==(const RGB_VALUE& other) const{
-                return Value.Get<RGB>() == other.Value.Get<RGB>();
+            constexpr bool operator==(const RGBValue& other) const{
+                return value.get<RGB>() == other.value.get<RGB>();
             }
 
             /**
@@ -511,8 +511,8 @@ namespace GGUI{
              * @return A boolean indicating whether the two RGB_VALUE objects are not equal.
              * @details This function compares the value and status of the two RGB_VALUE objects.
              */
-            constexpr bool operator!=(const RGB_VALUE& other) const{
-                return !(Value.Get<RGB>() == other.Value.Get<RGB>());
+            constexpr bool operator!=(const RGBValue& other) const{
+                return !(value.get<RGB>() == other.value.get<RGB>());
             }
 
             /**
@@ -521,7 +521,7 @@ namespace GGUI{
              * @details This constructor creates a new RGB_VALUE object that is a copy of the other one.
              *          It copies the value and status of the other object, and sets the status to VALUE_STATE::VALUE.
              */
-            constexpr RGB_VALUE(const GGUI::STYLING_INTERNAL::RGB_VALUE& other) : style_base(other.Status), Value(other.Value){}
+            constexpr RGBValue(const GGUI::STYLING_INTERNAL::RGBValue& other) : styleBase(other.status), value(other.value){}
 
             /**
              * @brief Embeds the value of an RGB_VALUE object into a Styling object.
@@ -530,19 +530,19 @@ namespace GGUI{
              * @return A STAIN_TYPE indicating the type of stain that was embedded.
              * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
              */
-            STAIN_TYPE Embed_Value([[maybe_unused]] styling* host, element* owner) override;
+            STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
 
             /**
              * @brief Evaluate the RGB_VALUE.
              * @param owner The styling owner to evaluate against.
              * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
              */
-            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };
 
-        class BOOL_VALUE : public style_base{
+        class boolValue : public styleBase{
         public:
-            bool Value = false;
+            bool value = false;
 
             /**
              * @brief Construct a new constexpr BOOL_VALUE object.
@@ -550,20 +550,20 @@ namespace GGUI{
              * @param Default The default value state to use.
              * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
              */
-            constexpr BOOL_VALUE(const bool value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
-                : style_base(Default), Value(value) {}
+            constexpr boolValue(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
+                : styleBase(Default), value(Value) {}
             
-            constexpr BOOL_VALUE() = default;
+            constexpr boolValue() = default;
 
             /**
              * @brief Destructor for the BOOL_VALUE class.
              * @details This destructor is responsible for properly deallocating all the memory
              * allocated by the BOOL_VALUE object, including its parent class resources.
              */
-            inline ~BOOL_VALUE() override { style_base::~style_base(); }
+            inline ~boolValue() override { styleBase::~styleBase(); }
 
-            inline style_base* Copy() const override {
-                return new BOOL_VALUE(*this);
+            inline styleBase* copy() const override {
+                return new boolValue(*this);
             }
 
             /**
@@ -573,12 +573,12 @@ namespace GGUI{
              * @details This function assigns the value and status of the other BOOL_VALUE object to this one.
              *          It only copies the information if the other object is enabled.
              */
-            constexpr BOOL_VALUE& operator=(const BOOL_VALUE& other){
+            constexpr boolValue& operator=(const boolValue& other){
                 // Only copy the information if the other is enabled.
-                if (other.Status >= Status){
-                    Value = other.Value; // Copy the value from the other object
+                if (other.status >= status){
+                    value = other.value; // Copy the value from the other object
                     
-                    Status = other.Status; // Update the status to the other object's status
+                    status = other.status; // Update the status to the other object's status
                 }
                 return *this; // Return a reference to this object
             }
@@ -590,9 +590,9 @@ namespace GGUI{
              * @details This function assigns the boolean value to the BOOL_VALUE object,
              *          setting the status to VALUE_STATE::VALUE.
              */
-            constexpr BOOL_VALUE& operator=(const bool other){
-                Value = other; // Assign the boolean value to the Value member
-                Status = VALUE_STATE::VALUE; // Set the status to indicate a valid value
+            constexpr boolValue& operator=(const bool other){
+                value = other; // Assign the boolean value to the Value member
+                status = VALUE_STATE::VALUE; // Set the status to indicate a valid value
                 return *this; // Return a reference to this object
             }
         
@@ -602,15 +602,15 @@ namespace GGUI{
              * @details This constructor creates a new BOOL_VALUE object that is a copy of the other one.
              *          It copies the value and status of the other object.
              */
-            constexpr BOOL_VALUE(const GGUI::STYLING_INTERNAL::BOOL_VALUE& other) 
-                : style_base(other.Status), Value(other.Value) {}
+            constexpr boolValue(const GGUI::STYLING_INTERNAL::boolValue& other) 
+                : styleBase(other.status), value(other.value) {}
             
             /**
              * @brief Evaluate the BOOL_VALUE.
              * @param owner The styling owner to evaluate against.
              * @details This function is a no-op for BOOL_VALUE, as it does not have any dynamically computable values.
              */
-            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
             
             /**
              * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
@@ -619,12 +619,12 @@ namespace GGUI{
              * @return A STAIN_TYPE indicating the type of stain that was embedded.
              * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
              */
-            STAIN_TYPE Embed_Value([[maybe_unused]] styling* host,  element* owner) override;
+            STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
         };
         
-        class NUMBER_VALUE : public style_base{
+        class numberValue : public styleBase{
         public:
-            value<int> Value = 0;
+            value<int> value = 0;
 
             /**
              * @brief Construct a new NUMBER_VALUE object from a float.
@@ -633,7 +633,7 @@ namespace GGUI{
              * @details This constructor initializes the NUMBER_VALUE with the provided float value and default state.
              *          The value is converted to a percentage (multiplying by 0.01) and stored as a float in the Value member.
              */
-            constexpr NUMBER_VALUE(float value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::PERCENTAGE){}
+            constexpr numberValue(float Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value, EVALUATION_TYPE::PERCENTAGE){}
 
             /**
              * @brief Construct a new NUMBER_VALUE object from an integer using constexpr.
@@ -643,21 +643,21 @@ namespace GGUI{
              * @details This constructor initializes a NUMBER_VALUE object with the provided integer value and default state,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr NUMBER_VALUE(int value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value, EVALUATION_TYPE::DEFAULT){}
+            constexpr numberValue(int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value, EVALUATION_TYPE::DEFAULT){}
             
-            constexpr NUMBER_VALUE(unsigned int value, VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value((signed int)value, EVALUATION_TYPE::DEFAULT){}
+            constexpr numberValue(unsigned int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value((signed int)Value, EVALUATION_TYPE::DEFAULT){}
 
-            constexpr NUMBER_VALUE() = default;
+            constexpr numberValue() = default;
 
             /**
              * @brief Destructor for NUMBER_VALUE.
              * @details This destructor is responsible for cleaning up the resources allocated by the NUMBER_VALUE object.
              *          It is marked as `override` to ensure that it is called when the object is destroyed.
              */
-            inline ~NUMBER_VALUE() override { style_base::~style_base(); }
+            inline ~numberValue() override { styleBase::~styleBase(); }
 
-            inline style_base* Copy() const override {
-                return new NUMBER_VALUE(*this);
+            inline styleBase* copy() const override {
+                return new numberValue(*this);
             }
 
             /**
@@ -667,12 +667,12 @@ namespace GGUI{
              * @details This function assigns the value and status of the other NUMBER_VALUE object to this one.
              *          It only copies the information if the other object is enabled.
              */
-            constexpr NUMBER_VALUE& operator=(const NUMBER_VALUE& other){
+            constexpr numberValue& operator=(const numberValue& other){
                 // Only copy the information if the other is enabled.
-                if (other.Status >= Status){
-                    Value = other.Value;
+                if (other.status >= status){
+                    value = other.value;
 
-                    Status = other.Status;
+                    status = other.status;
                 }
                 return *this;
             }
@@ -684,9 +684,9 @@ namespace GGUI{
              * @details This function assigns the value of the other number to this NUMBER_VALUE object.
              *          It sets the status to VALUE_STATE::VALUE and returns the modified object.
              */
-            constexpr NUMBER_VALUE& operator=(const int other){
-                Value = other;
-                Status = VALUE_STATE::VALUE;
+            constexpr numberValue& operator=(const int other){
+                value = other;
+                status = VALUE_STATE::VALUE;
                 return *this;
             }
 
@@ -696,8 +696,8 @@ namespace GGUI{
              * @return true if the two objects are equal; false otherwise.
              * @details This function compares the value and status of the two NUMBER_VALUE objects.
              */
-            constexpr bool operator==(const NUMBER_VALUE& other) const{
-                return Value.Get<int>() == other.Value.Get<int>();
+            constexpr bool operator==(const numberValue& other) const{
+                return value.get<int>() == other.value.get<int>();
             }
 
             /**
@@ -706,8 +706,8 @@ namespace GGUI{
              * @return true if the two objects are not equal; false otherwise.
              * @details This function compares the value and status of the two NUMBER_VALUE objects.
              */
-            constexpr bool operator!=(const NUMBER_VALUE& other) const{
-                return Value.Get<int>() != other.Value.Get<int>();
+            constexpr bool operator!=(const numberValue& other) const{
+                return value.get<int>() != other.value.get<int>();
             }
         
             /**
@@ -715,7 +715,7 @@ namespace GGUI{
              * @param other The other NUMBER_VALUE object to construct from.
              * @details This constructor initializes a new NUMBER_VALUE object with the same value and status as the given object.
              */
-            constexpr NUMBER_VALUE(const GGUI::STYLING_INTERNAL::NUMBER_VALUE& other) : style_base(other.Status), Value(other.Value){}
+            constexpr numberValue(const GGUI::STYLING_INTERNAL::numberValue& other) : styleBase(other.status), value(other.value){}
             
             /**
              * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
@@ -724,7 +724,7 @@ namespace GGUI{
              * @return A STAIN_TYPE indicating the type of stain that was embedded.
              * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
              */
-            STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+            STAIN_TYPE embedValue(styling* host, element* owner) override;
             
             /**
              * @brief Evaluate the RGB_VALUE.
@@ -732,20 +732,20 @@ namespace GGUI{
              * @details This is a pure virtual function that subclasses must implement to define how the RGB value is evaluated.
              *          When called, the function should evaluate the RGB value based on the owner object and set the Value property accordingly.
              */
-            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
             /**
              * @brief Directly access the value of this NUMBER_VALUE object.
              * @return A reference to the value of this NUMBER_VALUE object.
              * @details This function returns a reference to the value of this NUMBER_VALUE object, allowing it to be directly accessed and modified.
              */
-            constexpr int& Direct() { return Value.Direct<int>(); }
+            constexpr int& direct() { return value.Direct<int>(); }
         };
 
         template<typename T>
-        class ENUM_VALUE : public style_base{
+        class enumValue : public styleBase{
         public:
-            T Value;
+            T value;
 
             /**
              * @brief Construct a new ENUM_VALUE object using constexpr.
@@ -754,19 +754,19 @@ namespace GGUI{
              * @details This constructor initializes an ENUM_VALUE object with the given enum value and default state,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr ENUM_VALUE(const T value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+            constexpr enumValue(const T Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
 
-            constexpr ENUM_VALUE() = default;
+            constexpr enumValue() = default;
 
             /**
              * @brief Destructor for ENUM_VALUE.
              * @details This destructor is responsible for cleaning up the resources allocated by the ENUM_VALUE object.
              *          It is marked as `override` to ensure that it is called when the object is destroyed.
              */
-            inline ~ENUM_VALUE() override { style_base::~style_base(); }
+            inline ~enumValue() override { styleBase::~styleBase(); }
 
-            inline style_base* Copy() const override {
-                return new ENUM_VALUE(*this);
+            inline styleBase* copy() const override {
+                return new enumValue(*this);
             }
 
             /**
@@ -776,12 +776,12 @@ namespace GGUI{
              * @details This function assigns the value and status of the other ENUM_VALUE object to this one.
              *          It only copies the information if the other object is enabled.
              */
-            constexpr ENUM_VALUE& operator=(const ENUM_VALUE& other){
+            constexpr enumValue& operator=(const enumValue& other){
                 // Only copy the information if the other is enabled.
-                if (other.Status >= Status){
-                    Value = other.Value;
+                if (other.status >= status){
+                    value = other.value;
 
-                    Status = other.Status;
+                    status = other.status;
                 }
                 return *this;
             }
@@ -793,9 +793,9 @@ namespace GGUI{
              * @details This function assigns the value and status of the other ENUM_VALUE object to this one.
              *          It only copies the information if the other object is enabled.
              */
-            constexpr ENUM_VALUE& operator=(const T other){
-                Value = other;
-                Status = VALUE_STATE::VALUE;
+            constexpr enumValue& operator=(const T other){
+                value = other;
+                status = VALUE_STATE::VALUE;
                 return *this;
             }
         
@@ -805,8 +805,8 @@ namespace GGUI{
              * @details This constructor creates a new ENUM_VALUE object that is a copy of the other one.
              *          It copies the value and status of the other object.
              */
-            constexpr ENUM_VALUE(const GGUI::STYLING_INTERNAL::ENUM_VALUE<T>& other) 
-                : style_base(other.Status), Value(other.Value) {}
+            constexpr enumValue(const GGUI::STYLING_INTERNAL::enumValue<T>& other) 
+                : styleBase(other.status), value(other.value) {}
                         
             /**
              * @brief Evaluate the style.
@@ -815,7 +815,7 @@ namespace GGUI{
              *          It is used to support dynamic values like percentage depended values.
              *          The function does not do anything as of now.
              */
-            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
             /**
              * @brief Embed the value of this style into the given Styling object.
@@ -827,10 +827,10 @@ namespace GGUI{
              *          It is used to support dynamic values like percentage depended values.
              *          The function does not do anything as of now.
              */
-            inline STAIN_TYPE Embed_Value([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) override { return STAIN_TYPE::CLEAN; };
+            inline STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) override { return STAIN_TYPE::CLEAN; };
         };
         
-        class Vector : public style_base{
+        class vectorValue : public styleBase{
         public:
             value<int> X = 0;
             value<int> Y = 0;
@@ -844,12 +844,12 @@ namespace GGUI{
              * @details This constructor initializes a Vector object with the given parameters,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr Vector(const GGUI::IVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), 
+            constexpr vectorValue(const GGUI::IVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), 
                 X(value.X, EVALUATION_TYPE::DEFAULT), Y(value.Y, EVALUATION_TYPE::DEFAULT), Z(value.Z, EVALUATION_TYPE::DEFAULT){}
             
-            constexpr Vector(const value<int> x, const value<int> y, const value<int> z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), X(x), Y(y), Z(z){}
+            constexpr vectorValue(const value<int> x, const value<int> y, const value<int> z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), X(x), Y(y), Z(z){}
 
-            constexpr Vector() = default;
+            constexpr vectorValue() = default;
 
             /**
              * @brief Destructor for Vector.
@@ -857,10 +857,10 @@ namespace GGUI{
              *          It calls the base class destructor (style_base::~style_base()) to ensure all parent class resources
              *          are properly cleaned up.
              */
-            inline ~Vector() override { style_base::~style_base(); }
+            inline ~vectorValue() override { styleBase::~styleBase(); }
 
-            inline style_base* Copy() const override {
-                return new Vector(*this);
+            inline styleBase* copy() const override {
+                return new vectorValue(*this);
             }
 
             /**
@@ -870,14 +870,14 @@ namespace GGUI{
              * @details This function assigns the value and status of the other Vector object to this one.
              *          It only copies the information if the other object is enabled.
              */
-            constexpr Vector& operator=(const Vector& other){
+            constexpr vectorValue& operator=(const vectorValue& other){
                 // Only copy the information if the other is enabled.
-                if (other.Status >= Status){
+                if (other.status >= status){
                     X = other.X;
                     Y = other.Y;
                     Z = other.Z;
 
-                    Status = other.Status;
+                    status = other.status;
                 }
                 return *this;
             }
@@ -889,11 +889,11 @@ namespace GGUI{
              * @details This function assigns the value and status of the other IVector3 object to this one.
              *          It sets the status to VALUE_STATE::VALUE and the value to the given IVector3 object.
              */
-            constexpr Vector& operator=(const GGUI::IVector3 other){
+            constexpr vectorValue& operator=(const GGUI::IVector3 other){
                 X = other.X;
                 Y = other.Y;
                 Z = other.Z;
-                Status = VALUE_STATE::VALUE;
+                status = VALUE_STATE::VALUE;
                 return *this;
             }
 
@@ -902,7 +902,7 @@ namespace GGUI{
              * @param other The other Vector object to compare with.
              * @return A boolean indicating whether the two Vector objects are equal.
              */
-            constexpr bool operator==(const Vector& other) const {
+            constexpr bool operator==(const vectorValue& other) const {
                 return X == other.X && Y == other.Y && Z == other.Z;
             }
 
@@ -911,7 +911,7 @@ namespace GGUI{
              * @param other The other Vector object to compare with.
              * @return A boolean indicating whether the two Vector objects are not equal.
              */
-            constexpr bool operator!=(const Vector& other) const {
+            constexpr bool operator!=(const vectorValue& other) const {
                 return !(*this == other);
             }
 
@@ -921,16 +921,16 @@ namespace GGUI{
              * @details This constructor initializes a Vector object using the status and value from another Vector object,
              *          utilizing constexpr for compile-time evaluation.
              */
-            constexpr Vector(const GGUI::STYLING_INTERNAL::Vector& other) 
-                : style_base(other.Status), X(other.X), Y(other.Y), Z(other.Z) {}
+            constexpr vectorValue(const GGUI::STYLING_INTERNAL::vectorValue& other) 
+                : styleBase(other.status), X(other.X), Y(other.Y), Z(other.Z) {}
             
             /**
              * @brief Get the current value of the Vector.
              * @return The current IVector3 value.
              * @details Packs the values into an IVector3; Returns it.
              */
-            constexpr IVector3 Get() { 
-                return IVector3(X.Get<int>(), Y.Get<int>(), Z.Get<int>());
+            constexpr IVector3 get() { 
+                return IVector3(X.get<int>(), Y.get<int>(), Z.get<int>());
             }
 
             /**
@@ -939,7 +939,7 @@ namespace GGUI{
              * @details This function returns the current value stored in the Vector.
              *          This value can be used to get the current value of the Vector as an IVector3 object.
              */
-            constexpr IVector3 Get() const { return IVector3(X.Get<int>(), Y.Get<int>(), Z.Get<int>()); }
+            constexpr IVector3 get() const { return IVector3(X.get<int>(), Y.get<int>(), Z.get<int>()); }
 
             /**
              * @brief Set the current value of the Vector.
@@ -947,14 +947,14 @@ namespace GGUI{
              * @details This function sets the current value of the Vector to the given IVector3 object.
              *          It also sets the Status of the Vector to VALUE_STATE::VALUE.
              */
-            constexpr void Set(const IVector3 value){
+            constexpr void set(const IVector3 value){
                 X = value.X;
                 Y = value.Y;
                 Z = value.Z;
-                Status = VALUE_STATE::VALUE;
+                status = VALUE_STATE::VALUE;
             }
 
-            inline Vector operator+(const Vector& other) {
+            inline vectorValue operator+(const vectorValue& other) {
                 // check if debug mode is on
                 #ifdef GGUI_DEBUG
                 assert(X.Get_Type() == other.X.Get_Type() && "two different evaluation types for X");
@@ -962,10 +962,10 @@ namespace GGUI{
                 assert(Z.Get_Type() == other.Z.Get_Type() && "two different evaluation types for Z");
                 #endif
 
-                return Vector(X + other.X, Y + other.Y, Z + other.Z);
+                return vectorValue(X + other.X, Y + other.Y, Z + other.Z);
             }
 
-            inline Vector operator-(const Vector& other){
+            inline vectorValue operator-(const vectorValue& other){
                 // check if debug mode is on
                 #ifdef GGUI_DEBUG
                 assert(X.Get_Type() != other.X.Get_Type() && "two different evaluation types for X");
@@ -973,7 +973,7 @@ namespace GGUI{
                 assert(Z.Get_Type() != other.Z.Get_Type() && "two different evaluation types for Z");
                 #endif
 
-                return Vector(X - other.X, Y - other.Y, Z - other.Z);
+                return vectorValue(X - other.X, Y - other.Y, Z - other.Z);
             }
         
             inline void operator+=(const IVector3 v){
@@ -997,7 +997,7 @@ namespace GGUI{
              *          Currently it covers:
              *          - screen space
              */
-            inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
             
             /**
              * @brief Embeds the value of a Vector object into a Styling object.
@@ -1006,7 +1006,7 @@ namespace GGUI{
              * @return A STAIN_TYPE indicating the type of stain that was embedded.
              * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
              */
-            STAIN_TYPE Embed_Value([[maybe_unused]] styling* host,  element* owner) override;
+            STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
         };
     
         /**
@@ -1022,7 +1022,7 @@ namespace GGUI{
          * @return true if there is a leftover, false otherwise.
          */
         template<typename P>
-        constexpr bool Has_Left_Over(const P A, const float B){
+        constexpr bool hasLeftover(const P A, const float B){
             return (static_cast<int>(A) * static_cast<int>(B)) - (static_cast<float>(A) * B) != 0;
         }
 
@@ -1036,7 +1036,7 @@ namespace GGUI{
          * @note Supported types: float | int | unsigned char | unsigned int | RGB | RGBA | FVector2 | FVector3 | IVector3 | GGUI::STYLING_INTERNAL::Vector | RGB_VALUE | NUMBER_VALUE
          */
         template<typename P>
-        constexpr bool Is_Non_Discriminant_Scalar(const P value, const float scalar){
+        constexpr bool isNonDiscriminantScalar(const P value, const float scalar){
             // Skip checking for redundant scalars.
             if (scalar == 1.0f || scalar == 0.0f){
                 return false;
@@ -1044,28 +1044,28 @@ namespace GGUI{
 
             // For types of int and float, we can use basic std::fmod
             if constexpr (std::is_same_v<P, float> || std::is_same_v<P, int> || std::is_same_v<P, unsigned char> || std::is_same_v<P, unsigned int>){
-                return Has_Left_Over<P>(value, scalar);
+                return hasLeftover<P>(value, scalar);
             }
             else if constexpr (std::is_same_v<P, RGB>){
-                return Is_Non_Discriminant_Scalar<unsigned char>(value.Red, scalar) && Is_Non_Discriminant_Scalar<unsigned char>(value.Green, scalar) && Is_Non_Discriminant_Scalar<unsigned char>(value.Blue, scalar);
+                return isNonDiscriminantScalar<unsigned char>(value.Red, scalar) && isNonDiscriminantScalar<unsigned char>(value.Green, scalar) && isNonDiscriminantScalar<unsigned char>(value.Blue, scalar);
             }
             else if constexpr (std::is_same_v<P, FVector2>){
-                return Is_Non_Discriminant_Scalar<float>(value.X, scalar) && Is_Non_Discriminant_Scalar<float>(value.Y, scalar);
+                return isNonDiscriminantScalar<float>(value.X, scalar) && isNonDiscriminantScalar<float>(value.Y, scalar);
             }
             else if constexpr (std::is_same_v<P, FVector3>){
-                return Is_Non_Discriminant_Scalar<float>(value.Z, scalar) && Is_Non_Discriminant_Scalar<FVector2>(value, scalar);
+                return isNonDiscriminantScalar<float>(value.Z, scalar) && isNonDiscriminantScalar<FVector2>(value, scalar);
             }
             else if constexpr (std::is_same_v<P, IVector3>){
-                return Is_Non_Discriminant_Scalar<int>(value.X, scalar) && Is_Non_Discriminant_Scalar<int>(value.Y, scalar) && Is_Non_Discriminant_Scalar<int>(value.Z, scalar);
+                return isNonDiscriminantScalar<int>(value.X, scalar) && isNonDiscriminantScalar<int>(value.Y, scalar) && isNonDiscriminantScalar<int>(value.Z, scalar);
             }
-            else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::Vector>){
-                return Is_Non_Discriminant_Scalar<IVector3>(value.Get(), scalar);
+            else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::vectorValue>){
+                return isNonDiscriminantScalar<IVector3>(value.Get(), scalar);
             }
-            else if constexpr (std::is_same_v<P, RGB_VALUE>){
-                return Is_Non_Discriminant_Scalar<RGB>(static_cast<RGB_VALUE>(value).Value.Get<RGB>(), scalar);
+            else if constexpr (std::is_same_v<P, RGBValue>){
+                return isNonDiscriminantScalar<RGB>(static_cast<RGBValue>(value).value.get<RGB>(), scalar);
             }
-            else if constexpr (std::is_same_v<P, NUMBER_VALUE>){
-                return Is_Non_Discriminant_Scalar<int>(static_cast<NUMBER_VALUE>(value).Value.Get<int>(), scalar);
+            else if constexpr (std::is_same_v<P, numberValue>){
+                return isNonDiscriminantScalar<int>(static_cast<numberValue>(value).value.get<int>(), scalar);
             }
             else {
                 static_assert(!std::is_same_v<P, P>, "Unsupported type!");
@@ -1073,7 +1073,7 @@ namespace GGUI{
         }
 
         template<typename P>
-        constexpr std::string To_String(const P value){
+        constexpr std::string toString(const P value){
             if constexpr (std::is_same_v<P, std::string> || std::is_same_v<P, const char*> || std::is_same_v<P, char*>){
                 // These are already strings
                 return value;
@@ -1082,79 +1082,79 @@ namespace GGUI{
                 return std::to_string(value);
             }
             else if constexpr (std::is_same_v<P, RGB>){
-                return To_String(value.Red) + ", " + To_String(value.Green) + ", " + To_String(value.Blue);
+                return toString(value.Red) + ", " + toString(value.Green) + ", " + toString(value.Blue);
             }
             else if constexpr (std::is_same_v<P, FVector2>){
-                return To_String(value.X) + ", " + To_String(value.Y);
+                return toString(value.X) + ", " + toString(value.Y);
             }
             else if constexpr (std::is_same_v<P, FVector3>){
-                return To_String(static_cast<FVector2>(value)) + ", " + To_String(value.Z);
+                return toString(static_cast<FVector2>(value)) + ", " + toString(value.Z);
             }
             else if constexpr (std::is_same_v<P, IVector3>){
-                return To_String(value.X) + ", " + To_String(value.Y) + ", " + To_String(value.Z);
+                return toString(value.X) + ", " + toString(value.Y) + ", " + toString(value.Z);
             }
-            else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::Vector>){
-                return To_String(value.Get());
+            else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::vectorValue>){
+                return toString(value.Get());
             }
-            else if constexpr (std::is_same_v<P, RGB_VALUE>){
-                return To_String(static_cast<RGB_VALUE>(value).Value.Get<RGB>());
+            else if constexpr (std::is_same_v<P, RGBValue>){
+                return toString(static_cast<RGBValue>(value).value.get<RGB>());
             }
-            else if constexpr (std::is_same_v<P, NUMBER_VALUE>){
-                return To_String(static_cast<NUMBER_VALUE>(value).Value.Get<int>());
+            else if constexpr (std::is_same_v<P, numberValue>){
+                return toString(static_cast<numberValue>(value).value.get<int>());
             }
             else {
                 static_assert(!std::is_same_v<P, P>, "Unsupported type!");
             }
         }
     
-        class empty : public style_base{
+        class empty : public styleBase{
         public:
             constexpr empty() = default;
 
-            inline ~empty() override { style_base::~style_base(); }
+            inline ~empty() override { styleBase::~styleBase(); }
 
-            inline style_base* Copy() const override {
+            inline styleBase* copy() const override {
                 return new empty(*this);
             }
         };
     }
 
-    class position : public STYLING_INTERNAL::Vector{
+    class position : public STYLING_INTERNAL::vectorValue{
     public:
-        constexpr position(const IVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
+        constexpr position(const IVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : vectorValue(value, Default){}
 
-        constexpr position(const FVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
-            Transform_Center_To_Top_Left_Origin();
+        constexpr position(const FVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : vectorValue(value.X, value.Y, value.Z, Default){
+            transformCenterToTopLeftOrigin();
         }
 
-        constexpr position(const Vector&& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
-            Transform_Center_To_Top_Left_Origin();
+        constexpr position(const vectorValue&& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : vectorValue(value.X, value.Y, value.Z, Default){
+            transformCenterToTopLeftOrigin();
         }
 
-        constexpr position(const Vector& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
-            Transform_Center_To_Top_Left_Origin();
+        constexpr position(const vectorValue& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : vectorValue(value.X, value.Y, value.Z, Default){
+            transformCenterToTopLeftOrigin();
         }
 
-        constexpr position(const STYLING_INTERNAL::value<int> x, const STYLING_INTERNAL::value<int> y, const STYLING_INTERNAL::value<int> z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(x, y, z, Default){
-            Transform_Center_To_Top_Left_Origin();
+        constexpr position(const STYLING_INTERNAL::value<int> x, const STYLING_INTERNAL::value<int> y, const STYLING_INTERNAL::value<int> z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : vectorValue(x, y, z, Default){
+            transformCenterToTopLeftOrigin();
         }
 
-        inline ~position() override { style_base::~style_base(); }
+        inline ~position() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new position(*this);
         }
 
-        constexpr position(const GGUI::position& other) : Vector(other){}
+        constexpr position(const GGUI::position& other) : vectorValue(other){}
 
         constexpr position& operator=(const position& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     protected:
         /**
          * @brief Transforms the position from center origin to top-left origin.
@@ -1165,7 +1165,7 @@ namespace GGUI{
          *
          * @note The Z coordinate is not affected by this transformation.
          */
-        constexpr void Transform_Center_To_Top_Left_Origin(){
+        constexpr void transformCenterToTopLeftOrigin(){
             // Add 0.5f offset to the vectors
             if (X.Get_Type() == EVALUATION_TYPE::PERCENTAGE)
                 X = X + 0.5f;
@@ -1175,400 +1175,400 @@ namespace GGUI{
         }
     };
 
-    class width : public STYLING_INTERNAL::NUMBER_VALUE{
+    class width : public STYLING_INTERNAL::numberValue{
     public:
-        constexpr width(const int value, const VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
-        constexpr width(const unsigned int value, const VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+        constexpr width(const int Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
+        constexpr width(const unsigned int Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
 
         // When this is used we should automatically disable AllowDynamicSize
-        constexpr width(const float value, const VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+        constexpr width(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
 
-        inline ~width() override { style_base::~style_base(); }
+        inline ~width() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new width(*this);
         }
 
-        constexpr width(const GGUI::width& other) : NUMBER_VALUE(other){}
+        constexpr width(const GGUI::width& other) : numberValue(other){}
 
         constexpr width& operator=(const width& other) = default;
 
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        constexpr int Get() const { return Value.Get<int>(); }
+        constexpr int get() const { return value.get<int>(); }
 
-        constexpr void Set(const int value){
-            Value = value;
-            Status = VALUE_STATE::VALUE;
+        constexpr void Set(const int Value){
+            value = Value;
+            status = VALUE_STATE::VALUE;
         }
     };
 
-    class height : public STYLING_INTERNAL::NUMBER_VALUE{
+    class height : public STYLING_INTERNAL::numberValue{
     public:
-        constexpr height(const int value, const VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
-        constexpr height(const unsigned int value, const VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+        constexpr height(const int Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
+        constexpr height(const unsigned int Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
 
         // When this is used we should automatically disable AllowDynamicSize
-        constexpr height(const float value, const VALUE_STATE Default = VALUE_STATE::VALUE) : NUMBER_VALUE(value, Default){}
+        constexpr height(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
 
-        inline ~height() override { style_base::~style_base(); }
+        inline ~height() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new height(*this);
         }
 
-        constexpr height(const GGUI::height& other) : NUMBER_VALUE(other){}
+        constexpr height(const GGUI::height& other) : numberValue(other){}
 
         constexpr height& operator=(const height& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        constexpr int Get() const { return Value.Get<int>(); }
+        constexpr int get() const { return value.get<int>(); }
 
-        constexpr void Set(const int value){
-            Value = value;
-            Status = VALUE_STATE::VALUE;
+        constexpr void Set(const int Value){
+            value = Value;
+            status = VALUE_STATE::VALUE;
         }
     };
 
-    class enable_border : public STYLING_INTERNAL::BOOL_VALUE{
+    class enableBorder : public STYLING_INTERNAL::boolValue{
     public:
-        constexpr enable_border(const bool value, const VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+        constexpr enableBorder(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        constexpr enable_border(const GGUI::enable_border& other) : BOOL_VALUE(other.Value, other.Status){}
+        constexpr enableBorder(const GGUI::enableBorder& other) : boolValue(other.value, other.status){}
 
-        inline ~enable_border() override { style_base::~style_base(); }
+        inline ~enableBorder() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new enable_border(*this);
+        inline styleBase* copy() const override {
+            return new enableBorder(*this);
         }
 
-        constexpr enable_border& operator=(const enable_border& other) = default;
+        constexpr enableBorder& operator=(const enableBorder& other) = default;
 
-        constexpr bool operator==(const enable_border& other) const{
-            return Value == other.Value;
+        constexpr bool operator==(const enableBorder& other) const{
+            return value == other.value;
         }
 
-        constexpr bool operator!=(const enable_border& other) const{
-            return Value != other.Value;
+        constexpr bool operator!=(const enableBorder& other) const{
+            return value != other.value;
         }
 
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class text_color : public STYLING_INTERNAL::RGB_VALUE{
+    class textColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr text_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr textColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr text_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr textColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~text_color() override { style_base::~style_base(); }
+        inline ~textColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new text_color(*this);
+        inline styleBase* copy() const override {
+            return new textColor(*this);
         }
 
-        constexpr text_color(const GGUI::text_color& other) : RGB_VALUE(other){}
+        constexpr textColor(const GGUI::textColor& other) : RGBValue(other){}
 
-        constexpr text_color& operator=(const text_color& other) = default;
+        constexpr textColor& operator=(const textColor& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class background_color : public STYLING_INTERNAL::RGB_VALUE{
+    class backgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr background_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr backgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr background_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr backgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~background_color() override { style_base::~style_base(); }
+        inline ~backgroundColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new background_color(*this);
+        inline styleBase* copy() const override {
+            return new backgroundColor(*this);
         }
 
-        constexpr background_color(const GGUI::background_color& other) : RGB_VALUE(other){}
+        constexpr backgroundColor(const GGUI::backgroundColor& other) : RGBValue(other){}
 
-        constexpr background_color& operator=(const background_color& other) = default;
+        constexpr backgroundColor& operator=(const backgroundColor& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class border_color : public STYLING_INTERNAL::RGB_VALUE{
+    class borderColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr border_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr borderColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr border_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr borderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~border_color() override { style_base::~style_base(); }
+        inline ~borderColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new border_color(*this);
+        inline styleBase* copy() const override {
+            return new borderColor(*this);
         }
 
-        constexpr border_color(const GGUI::border_color& other) : RGB_VALUE(other){}
+        constexpr borderColor(const GGUI::borderColor& other) : RGBValue(other){}
 
-        constexpr border_color& operator=(const border_color& other) = default;
+        constexpr borderColor& operator=(const borderColor& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class border_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    class borderBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr border_background_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr borderBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr border_background_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr borderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~border_background_color() override { style_base::~style_base(); }
+        inline ~borderBackgroundColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new border_background_color(*this);
+        inline styleBase* copy() const override {
+            return new borderBackgroundColor(*this);
         }
 
-        constexpr border_background_color(const GGUI::border_background_color& other) : RGB_VALUE(other){}
+        constexpr borderBackgroundColor(const GGUI::borderBackgroundColor& other) : RGBValue(other){}
 
-        constexpr border_background_color& operator=(const border_background_color& other) = default;
+        constexpr borderBackgroundColor& operator=(const borderBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class hover_border_color : public STYLING_INTERNAL::RGB_VALUE{
+    class hoverBorderColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hover_border_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr hoverBorderColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr hover_border_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr hoverBorderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hover_border_color() override { style_base::~style_base(); }
+        inline ~hoverBorderColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new hover_border_color(*this);
+        inline styleBase* copy() const override {
+            return new hoverBorderColor(*this);
         }
 
-        constexpr hover_border_color(const GGUI::hover_border_color& other) : RGB_VALUE(other){}
+        constexpr hoverBorderColor(const GGUI::hoverBorderColor& other) : RGBValue(other){}
 
-        constexpr hover_border_color& operator=(const hover_border_color& other) = default;
+        constexpr hoverBorderColor& operator=(const hoverBorderColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class hover_text_color : public STYLING_INTERNAL::RGB_VALUE{
+    class hoverTextColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hover_text_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr hoverTextColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr hover_text_color(const float  relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr hoverTextColor(const float  relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hover_text_color() override { style_base::~style_base(); }
+        inline ~hoverTextColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new hover_text_color(*this);
+        inline styleBase* copy() const override {
+            return new hoverTextColor(*this);
         }
 
-        constexpr hover_text_color(const GGUI::hover_text_color& other) : RGB_VALUE(other){}
+        constexpr hoverTextColor(const GGUI::hoverTextColor& other) : RGBValue(other){}
 
-        constexpr hover_text_color& operator=(const hover_text_color& other) = default;
+        constexpr hoverTextColor& operator=(const hoverTextColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class hover_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    class hoverBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hover_background_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr hoverBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr hover_background_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr hoverBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hover_background_color() override { style_base::~style_base(); }
+        inline ~hoverBackgroundColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new hover_background_color(*this);
+        inline styleBase* copy() const override {
+            return new hoverBackgroundColor(*this);
         }
 
-        constexpr hover_background_color(const GGUI::hover_background_color& other) : RGB_VALUE(other){}
+        constexpr hoverBackgroundColor(const GGUI::hoverBackgroundColor& other) : RGBValue(other){}
 
-        constexpr hover_background_color& operator=(const hover_background_color& other) = default;
+        constexpr hoverBackgroundColor& operator=(const hoverBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class hover_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    class hoverBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hover_border_background_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr hoverBorderBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr hover_border_background_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr hoverBorderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hover_border_background_color() override { style_base::~style_base(); }
+        inline ~hoverBorderBackgroundColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new hover_border_background_color(*this);
+        inline styleBase* copy() const override {
+            return new hoverBorderBackgroundColor(*this);
         }
 
-        constexpr hover_border_background_color(const GGUI::hover_border_background_color& other) : RGB_VALUE(other){}
+        constexpr hoverBorderBackgroundColor(const GGUI::hoverBorderBackgroundColor& other) : RGBValue(other){}
 
-        constexpr hover_border_background_color& operator=(const hover_border_background_color& other) = default;
+        constexpr hoverBorderBackgroundColor& operator=(const hoverBorderBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class focus_border_color : public STYLING_INTERNAL::RGB_VALUE{
+    class focusBorderColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focus_border_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr focusBorderColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr focus_border_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr focusBorderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focus_border_color() override { style_base::~style_base(); }
+        inline ~focusBorderColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new focus_border_color(*this);
+        inline styleBase* copy() const override {
+            return new focusBorderColor(*this);
         }
 
-        constexpr focus_border_color(const GGUI::focus_border_color& other) : RGB_VALUE(other){}
+        constexpr focusBorderColor(const GGUI::focusBorderColor& other) : RGBValue(other){}
 
-        constexpr focus_border_color& operator=(const focus_border_color& other) = default;
+        constexpr focusBorderColor& operator=(const focusBorderColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class focus_text_color : public STYLING_INTERNAL::RGB_VALUE{
+    class focusTextColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focus_text_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr focusTextColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr focus_text_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr focusTextColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focus_text_color() override { style_base::~style_base(); }
+        inline ~focusTextColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new focus_text_color(*this);
+        inline styleBase* copy() const override {
+            return new focusTextColor(*this);
         }
 
-        constexpr focus_text_color(const GGUI::focus_text_color& other) : RGB_VALUE(other){}
+        constexpr focusTextColor(const GGUI::focusTextColor& other) : RGBValue(other){}
 
-        constexpr focus_text_color& operator=(const focus_text_color& other) = default;
+        constexpr focusTextColor& operator=(const focusTextColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class focus_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    class focusBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focus_background_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr focusBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr focus_background_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr focusBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focus_background_color() override { style_base::~style_base(); }
+        inline ~focusBackgroundColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new focus_background_color(*this);
+        inline styleBase* copy() const override {
+            return new focusBackgroundColor(*this);
         }
 
-        constexpr focus_background_color(const GGUI::focus_background_color& other) : RGB_VALUE(other){}
+        constexpr focusBackgroundColor(const GGUI::focusBackgroundColor& other) : RGBValue(other){}
 
-        constexpr focus_background_color& operator=(const focus_background_color& other) = default;
+        constexpr focusBackgroundColor& operator=(const focusBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class focus_border_background_color : public STYLING_INTERNAL::RGB_VALUE{
+    class focusBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focus_border_background_color(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(color, Default){}
+        constexpr focusBorderBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
 
-        constexpr focus_border_background_color(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGB_VALUE(relative_percentage, Default){}
+        constexpr focusBorderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focus_border_background_color() override { style_base::~style_base(); }
+        inline ~focusBorderBackgroundColor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new focus_border_background_color(*this);
+        inline styleBase* copy() const override {
+            return new focusBorderBackgroundColor(*this);
         }
 
-        constexpr focus_border_background_color(const GGUI::focus_border_background_color& other) : RGB_VALUE(other){}
+        constexpr focusBorderBackgroundColor(const GGUI::focusBorderBackgroundColor& other) : RGBValue(other){}
 
-        constexpr focus_border_background_color& operator=(const focus_border_background_color& other) = default;
+        constexpr focusBorderBackgroundColor& operator=(const focusBorderBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class styled_border : public STYLING_INTERNAL::style_base{
+    class styledBorder : public STYLING_INTERNAL::styleBase{
     public:
-        const char* TOP_LEFT_CORNER             = "┌";//"\e(0\x6c\e(B";
-        const char* BOTTOM_LEFT_CORNER          = "└";//"\e(0\x6d\e(B";
-        const char* TOP_RIGHT_CORNER            = "┐";//"\e(0\x6b\e(B";
-        const char* BOTTOM_RIGHT_CORNER         = "┘";//"\e(0\x6a\e(B";
-        const char* VERTICAL_LINE               = "│";//"\e(0\x78\e(B";
-        const char* HORIZONTAL_LINE             = "─";//"\e(0\x71\e(B";
-        const char* VERTICAL_RIGHT_CONNECTOR    = "├";//"\e(0\x74\e(B";
-        const char* VERTICAL_LEFT_CONNECTOR     = "┤";//"\e(0\x75\e(B";
-        const char* HORIZONTAL_BOTTOM_CONNECTOR = "┬";//"\e(0\x76\e(B";
-        const char* HORIZONTAL_TOP_CONNECTOR    = "┴";//"\e(0\x77\e(B";
-        const char* CROSS_CONNECTOR             = "┼";//"\e(0\x6e\e(B";
+        const char* topLeftCorner             = "┌";//"\e(0\x6c\e(B";
+        const char* bottomLeftCorner          = "└";//"\e(0\x6d\e(B";
+        const char* topRightCorner            = "┐";//"\e(0\x6b\e(B";
+        const char* bottomRightCorner         = "┘";//"\e(0\x6a\e(B";
+        const char* verticalLine               = "│";//"\e(0\x78\e(B";
+        const char* horizontalLine             = "─";//"\e(0\x71\e(B";
+        const char* verticalRightConnector    = "├";//"\e(0\x74\e(B";
+        const char* verticalLeftConnector     = "┤";//"\e(0\x75\e(B";
+        const char* horizontalBottomConnector = "┬";//"\e(0\x76\e(B";
+        const char* horizontalTopConnector    = "┴";//"\e(0\x77\e(B";
+        const char* crossConnector             = "┼";//"\e(0\x6e\e(B";
     
         /**
          * @brief A structure to hold the border style of a widget.
@@ -1588,386 +1588,341 @@ namespace GGUI{
          * - 9: Horizontal top connector
          * - 10: Cross connector
          */
-        constexpr styled_border(const std::array<const char*, 11> values, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
-            TOP_LEFT_CORNER = values[0];
-            BOTTOM_LEFT_CORNER = values[1];
-            TOP_RIGHT_CORNER = values[2];
-            BOTTOM_RIGHT_CORNER = values[3];
-            VERTICAL_LINE = values[4];
-            HORIZONTAL_LINE = values[5];
-            VERTICAL_RIGHT_CONNECTOR = values[6];
-            VERTICAL_LEFT_CONNECTOR = values[7];
-            HORIZONTAL_BOTTOM_CONNECTOR = values[8];
-            HORIZONTAL_TOP_CONNECTOR = values[9];
-            CROSS_CONNECTOR = values[10];
+        constexpr styledBorder(const std::array<const char*, 11> values, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default){
+            topLeftCorner = values[0];
+            bottomLeftCorner = values[1];
+            topRightCorner = values[2];
+            bottomRightCorner = values[3];
+            verticalLine = values[4];
+            horizontalLine = values[5];
+            verticalRightConnector = values[6];
+            verticalLeftConnector = values[7];
+            horizontalBottomConnector = values[8];
+            horizontalTopConnector = values[9];
+            crossConnector = values[10];
         }
 
-        constexpr styled_border() = default;
+        constexpr styledBorder() = default;
 
-        inline ~styled_border() override { style_base::~style_base(); }
+        inline ~styledBorder() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new styled_border(*this);
+        inline styleBase* copy() const override {
+            return new styledBorder(*this);
         }
 
-        constexpr styled_border& operator=(const styled_border& other){
-            if (other.Status >= Status){
-                TOP_LEFT_CORNER = other.TOP_LEFT_CORNER;
-                BOTTOM_LEFT_CORNER = other.BOTTOM_LEFT_CORNER;
-                TOP_RIGHT_CORNER = other.TOP_RIGHT_CORNER;
-                BOTTOM_RIGHT_CORNER = other.BOTTOM_RIGHT_CORNER;
-                VERTICAL_LINE = other.VERTICAL_LINE;
-                HORIZONTAL_LINE = other.HORIZONTAL_LINE;
-                VERTICAL_RIGHT_CONNECTOR = other.VERTICAL_RIGHT_CONNECTOR;
-                VERTICAL_LEFT_CONNECTOR = other.VERTICAL_LEFT_CONNECTOR;
-                HORIZONTAL_BOTTOM_CONNECTOR = other.HORIZONTAL_BOTTOM_CONNECTOR;
-                HORIZONTAL_TOP_CONNECTOR = other.HORIZONTAL_TOP_CONNECTOR;
-                CROSS_CONNECTOR = other.CROSS_CONNECTOR;
+        constexpr styledBorder& operator=(const styledBorder& other){
+            if (other.status >= status){
+                topLeftCorner = other.topLeftCorner;
+                bottomLeftCorner = other.bottomLeftCorner;
+                topRightCorner = other.topRightCorner;
+                bottomRightCorner = other.bottomRightCorner;
+                verticalLine = other.verticalLine;
+                horizontalLine = other.horizontalLine;
+                verticalRightConnector = other.verticalRightConnector;
+                verticalLeftConnector = other.verticalLeftConnector;
+                horizontalBottomConnector = other.horizontalBottomConnector;
+                horizontalTopConnector = other.horizontalTopConnector;
+                crossConnector = other.crossConnector;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
     
-        constexpr styled_border(const GGUI::styled_border& other) : style_base(other.Status){
-            TOP_LEFT_CORNER = other.TOP_LEFT_CORNER;
-            BOTTOM_LEFT_CORNER = other.BOTTOM_LEFT_CORNER;
-            TOP_RIGHT_CORNER = other.TOP_RIGHT_CORNER;
-            BOTTOM_RIGHT_CORNER = other.BOTTOM_RIGHT_CORNER;
-            VERTICAL_LINE = other.VERTICAL_LINE;
-            HORIZONTAL_LINE = other.HORIZONTAL_LINE;
-            VERTICAL_RIGHT_CONNECTOR = other.VERTICAL_RIGHT_CONNECTOR;
-            VERTICAL_LEFT_CONNECTOR = other.VERTICAL_LEFT_CONNECTOR;
-            HORIZONTAL_BOTTOM_CONNECTOR = other.HORIZONTAL_BOTTOM_CONNECTOR;
-            HORIZONTAL_TOP_CONNECTOR = other.HORIZONTAL_TOP_CONNECTOR;
-            CROSS_CONNECTOR = other.CROSS_CONNECTOR;
+        constexpr styledBorder(const GGUI::styledBorder& other) : styleBase(other.status){
+            topLeftCorner = other.topLeftCorner;
+            bottomLeftCorner = other.bottomLeftCorner;
+            topRightCorner = other.topRightCorner;
+            bottomRightCorner = other.bottomRightCorner;
+            verticalLine = other.verticalLine;
+            horizontalLine = other.horizontalLine;
+            verticalRightConnector = other.verticalRightConnector;
+            verticalLeftConnector = other.verticalLeftConnector;
+            horizontalBottomConnector = other.horizontalBottomConnector;
+            horizontalTopConnector = other.horizontalTopConnector;
+            crossConnector = other.crossConnector;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        const char* get_border(const Border_Connection flags);
+        const char* getBorder(const borderConnection flags);
 
-        Border_Connection get_border_type(const char* border);
+        borderConnection getBorderType(const char* border);
     };
 
-    class flow_priority : public STYLING_INTERNAL::ENUM_VALUE<DIRECTION>{
+    class flowPriority : public STYLING_INTERNAL::enumValue<DIRECTION>{
     public:
-        constexpr flow_priority(const DIRECTION value, const VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
+        constexpr flowPriority(const DIRECTION Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : enumValue(Value, Default){}
 
-        inline ~flow_priority() override { style_base::~style_base(); }
+        inline ~flowPriority() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new flow_priority(*this);
+        inline styleBase* copy() const override {
+            return new flowPriority(*this);
         }
 
-        constexpr flow_priority(const GGUI::flow_priority& other) : ENUM_VALUE(other.Value, other.Status){}
+        constexpr flowPriority(const GGUI::flowPriority& other) : enumValue(other.value, other.status){}
 
-        constexpr flow_priority& operator=(const flow_priority& other) = default;
+        constexpr flowPriority& operator=(const flowPriority& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class wrap : public STYLING_INTERNAL::BOOL_VALUE{
+    class wrap : public STYLING_INTERNAL::boolValue{
     public:
-        constexpr wrap(const bool value, const VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+        constexpr wrap(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~wrap() override { style_base::~style_base(); }
+        inline ~wrap() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new wrap(*this);
         }
 
-        constexpr wrap(const GGUI::wrap& other) : BOOL_VALUE(other.Value, other.Status){}
+        constexpr wrap(const GGUI::wrap& other) : boolValue(other.value, other.status){}
 
         constexpr wrap& operator=(const wrap& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class allow_overflow : public STYLING_INTERNAL::BOOL_VALUE{
+    class allowOverflow : public STYLING_INTERNAL::boolValue{
     public:
-        constexpr allow_overflow(const bool value, const VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+        constexpr allowOverflow(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~allow_overflow() override { style_base::~style_base(); }
+        inline ~allowOverflow() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new allow_overflow(*this);
+        inline styleBase* copy() const override {
+            return new allowOverflow(*this);
         }
 
-        constexpr allow_overflow(const GGUI::allow_overflow& other) : BOOL_VALUE(other.Value, other.Status){}
+        constexpr allowOverflow(const GGUI::allowOverflow& other) : boolValue(other.value, other.status){}
 
-        constexpr allow_overflow& operator=(const allow_overflow& other) = default;
+        constexpr allowOverflow& operator=(const allowOverflow& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class allow_dynamic_size : public STYLING_INTERNAL::BOOL_VALUE{
+    class allowDynamicSize : public STYLING_INTERNAL::boolValue{
     public:
-        constexpr allow_dynamic_size(const bool value, const VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+        constexpr allowDynamicSize(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~allow_dynamic_size() override { style_base::~style_base(); }
+        inline ~allowDynamicSize() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new allow_dynamic_size(*this);
+        inline styleBase* copy() const override {
+            return new allowDynamicSize(*this);
         }
 
-        constexpr allow_dynamic_size(const GGUI::allow_dynamic_size& other) : BOOL_VALUE(other.Value, other.Status){}
+        constexpr allowDynamicSize(const GGUI::allowDynamicSize& other) : boolValue(other.value, other.status){}
 
-        constexpr allow_dynamic_size& operator=(const allow_dynamic_size& other) = default;
+        constexpr allowDynamicSize& operator=(const allowDynamicSize& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class margin : public STYLING_INTERNAL::style_base{
+    class margin : public STYLING_INTERNAL::styleBase{
     public:
         STYLING_INTERNAL::value<unsigned int> Top = (unsigned)0;
         STYLING_INTERNAL::value<unsigned int> Bottom = (unsigned)0;
         STYLING_INTERNAL::value<unsigned int> Left = (unsigned)0;
         STYLING_INTERNAL::value<unsigned int> Right = (unsigned)0;
 
-        constexpr margin(const unsigned int top, const unsigned int bottom, const unsigned int left, const unsigned int right, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Top(top), Bottom(bottom), Left(left), Right(right){}
+        constexpr margin(const unsigned int top, const unsigned int bottom, const unsigned int left, const unsigned int right, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Top(top), Bottom(bottom), Left(left), Right(right){}
 
         constexpr margin() = default;
 
-        inline ~margin() override { style_base::~style_base(); }
+        inline ~margin() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new margin(*this);
         }
 
         // operator overload for copy operator
         constexpr margin& operator=(const margin& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Top = other.Top;
                 Bottom = other.Bottom;
                 Left = other.Left;
                 Right = other.Right;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        constexpr margin(const GGUI::margin& other) : style_base(other.Status), Top(other.Top), Bottom(other.Bottom), Left(other.Left), Right(other.Right){}
+        constexpr margin(const GGUI::margin& other) : styleBase(other.status), Top(other.Top), Bottom(other.Bottom), Left(other.Left), Right(other.Right){}
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
+        void evaluate(const styling* self, const styling* owner) override;
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class shadow : public STYLING_INTERNAL::style_base{
-    public:
-        STYLING_INTERNAL::value<FVector3> Direction = FVector3{0, 0, 0.5};
-        STYLING_INTERNAL::value<RGB> Color = RGB{};
-        float Opacity = 1;
-        bool Enabled = false;
-
-        constexpr shadow(const FVector3 direction, const RGB color, const float opacity, const bool enabled, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default){
-            Direction = direction;
-            Color = color;
-            Opacity = opacity;
-            Enabled = enabled;
-        }
-
-        constexpr shadow() = default;
-
-        inline ~shadow() override { style_base::~style_base(); }
-
-        inline style_base* Copy() const override {
-            return new shadow(*this);
-        }
-
-        constexpr shadow& operator=(const shadow& other){
-            // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
-                Direction = other.Direction;
-                Color = other.Color;
-                Opacity = other.Opacity;
-                Enabled = other.Enabled;
-
-                Status = other.Status;
-            }
-            return *this;
-        }
-    
-        constexpr shadow(const GGUI::shadow& other) : style_base(other.Status), Direction(other.Direction), Color(other.Color), Opacity(other.Opacity), Enabled(other.Enabled){}
-    
-        // for dynamically computable values like percentage depended
-        // currently covers:
-        // - screen space
-        void Evaluate(const styling* self, const styling* owner) override;
-        
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
-    };
-
-    class opacity : public STYLING_INTERNAL::style_base{
+    class opacity : public STYLING_INTERNAL::styleBase{
     protected:
         float Value = 1.0f;
     public:
-        constexpr opacity(const float value, const VALUE_STATE state = VALUE_STATE::VALUE) : style_base(state), Value(value){}
+        constexpr opacity(const float value, const VALUE_STATE state = VALUE_STATE::VALUE) : styleBase(state), Value(value){}
 
-        inline ~opacity() override { style_base::~style_base(); }
+        inline ~opacity() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new opacity(*this);
         }
 
         constexpr opacity& operator=(const opacity& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        constexpr opacity(const GGUI::opacity& other) : style_base(other.Status), Value(other.Value){}
+        constexpr opacity(const GGUI::opacity& other) : styleBase(other.status), Value(other.Value){}
 
         // Since opacity always represents an percentile of its self being displayed on top of its parent.
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         constexpr float Get() const { return Value; }
 
         constexpr void Set(const float value){
             Value = value;
-            Status = VALUE_STATE::VALUE;
+            status = VALUE_STATE::VALUE;
         }
     };
 
-    class allow_scrolling : public STYLING_INTERNAL::BOOL_VALUE{
+    class allowScrolling : public STYLING_INTERNAL::boolValue{
     public:
-        constexpr allow_scrolling(const bool value, const VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+        constexpr allowScrolling(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~allow_scrolling() override { style_base::~style_base(); }
+        inline ~allowScrolling() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new allow_scrolling(*this);
+        inline styleBase* copy() const override {
+            return new allowScrolling(*this);
         }
 
-        constexpr allow_scrolling(const GGUI::allow_scrolling& other) : BOOL_VALUE(other.Value, other.Status){}
+        constexpr allowScrolling(const GGUI::allowScrolling& other) : boolValue(other.value, other.status){}
 
-        constexpr allow_scrolling& operator=(const allow_scrolling& other) = default;
+        constexpr allowScrolling& operator=(const allowScrolling& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class anchor : public STYLING_INTERNAL::ENUM_VALUE<ANCHOR>{
+    class anchor : public STYLING_INTERNAL::enumValue<ANCHOR>{
     public:
-        constexpr anchor(const ANCHOR value, const VALUE_STATE Default = VALUE_STATE::VALUE) : ENUM_VALUE(value, Default){}
+        constexpr anchor(const ANCHOR Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : enumValue(Value, Default){}
 
-        inline ~anchor() override { style_base::~style_base(); }
+        inline ~anchor() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new anchor(*this);
         }
 
-        constexpr anchor(const GGUI::anchor& other) : ENUM_VALUE(other.Value, other.Status){}
+        constexpr anchor(const GGUI::anchor& other) : enumValue(other.value, other.status){}
 
         constexpr anchor& operator=(const anchor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
         // - screen space
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class node : public STYLING_INTERNAL::style_base{
+    class node : public STYLING_INTERNAL::styleBase{
     public:
         element* Value;
 
-        constexpr node(element* value = nullptr, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
+        constexpr node(element* value = nullptr, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, EMBED_ORDER::DELAYED), Value(value){}
         
-        constexpr node(const GGUI::node& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
+        constexpr node(const GGUI::node& other) : styleBase(other.status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
-        inline ~node() override { style_base::~style_base(); }
+        inline ~node() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override;
+        inline styleBase* copy() const override;
 
         constexpr node& operator=(const node& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
 
-                Order = other.Order;
+                order = other.order;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class childs : public STYLING_INTERNAL::style_base{
+    class childs : public STYLING_INTERNAL::styleBase{
     protected:
         std::array<element*, INT8_MAX> Value;
     public:
-        constexpr childs(const std::initializer_list<element*> value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value{}{
+        constexpr childs(const std::initializer_list<element*> value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, EMBED_ORDER::DELAYED), Value{}{
             assert(value.size() <= INT8_MAX);
             for (size_t i = 0; i < value.size(); i++){
                 Value[i] = *(value.begin() + i);
             }
         }
 
-        constexpr childs(const GGUI::childs& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
+        constexpr childs(const GGUI::childs& other) : styleBase(other.status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
-        inline ~childs() override { style_base::~style_base(); }
+        inline ~childs() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override;
+        inline styleBase* copy() const override;
 
         constexpr childs& operator=(const childs& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
 
-                Order = other.Order;
+                order = other.order;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         // -----< UTILS >-----
 
@@ -1986,368 +1941,367 @@ namespace GGUI{
         }
     };
 
-    class on_init : public STYLING_INTERNAL::style_base{
+    class onInit : public STYLING_INTERNAL::styleBase{
     public:
         void (*Value)(element* self);
 
-        constexpr on_init(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr onInit(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
 
-        constexpr on_init(const GGUI::on_init& other) : style_base(other.Status), Value(other.Value){}
+        constexpr onInit(const GGUI::onInit& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~on_init() override { style_base::~style_base(); }
+        inline ~onInit() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new on_init(*this);
+        inline styleBase* copy() const override {
+            return new onInit(*this);
         }
 
-        constexpr on_init& operator=(const on_init& other){
+        constexpr onInit& operator=(const onInit& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class on_destroy : public STYLING_INTERNAL::style_base{
+    class onDestroy : public STYLING_INTERNAL::styleBase{
     public:
         void (*Value)(element* self);
 
-        constexpr on_destroy(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr onDestroy(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
 
-        constexpr on_destroy(const GGUI::on_destroy& other) : style_base(other.Status), Value(other.Value){}
+        constexpr onDestroy(const GGUI::onDestroy& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~on_destroy() override { style_base::~style_base(); }
+        inline ~onDestroy() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new on_destroy(*this);
+        inline styleBase* copy() const override {
+            return new onDestroy(*this);
         }
 
-        constexpr on_destroy& operator=(const on_destroy& other){
+        constexpr onDestroy& operator=(const onDestroy& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class on_hide : public STYLING_INTERNAL::style_base{
+    class onHide : public STYLING_INTERNAL::styleBase{
     public:
         void (*Value)(element* self);
 
-        constexpr on_hide(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr onHide(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
 
-        constexpr on_hide(const GGUI::on_hide& other) : style_base(other.Status), Value(other.Value){}
+        constexpr onHide(const GGUI::onHide& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~on_hide() override { style_base::~style_base(); }
+        inline ~onHide() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new on_hide(*this);
+        inline styleBase* copy() const override {
+            return new onHide(*this);
         }
 
-        constexpr on_hide& operator=(const on_hide& other){
+        constexpr onHide& operator=(const onHide& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class on_show : public STYLING_INTERNAL::style_base{
+    class onShow : public STYLING_INTERNAL::styleBase{
     public:
         void (*Value)(element* self);
 
-        constexpr on_show(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr onShow(void (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
 
-        constexpr on_show(const GGUI::on_show& other) : style_base(other.Status), Value(other.Value){}
+        constexpr onShow(const GGUI::onShow& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~on_show() override { style_base::~style_base(); }
+        inline ~onShow() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new on_show(*this);
+        inline styleBase* copy() const override {
+            return new onShow(*this);
         }
 
-        constexpr on_show& operator=(const on_show& other){
+        constexpr onShow& operator=(const onShow& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class name : public STYLING_INTERNAL::style_base{
+    class name : public STYLING_INTERNAL::styleBase{
     public:
-        Compact_String Value;
+        compactString Value;
 
-        constexpr name(Compact_String value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr name(compactString value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
 
-        constexpr name(const GGUI::name& other) : style_base(other.Status), Value(other.Value){}
+        constexpr name(const GGUI::name& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~name() override { style_base::~style_base(); }
+        inline ~name() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new name(*this);
         }
 
         constexpr name& operator=(const name& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class title : public name{
     public:
-        constexpr title(const Compact_String&& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : name(value, Default){}
+        constexpr title(const compactString&& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : name(value, Default){}
 
-        inline ~title() override { style_base::~style_base(); }
+        inline ~title() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new title(*this);
         }
 
-        constexpr title(const GGUI::title& other) : name(other.Value, other.Status){}
+        constexpr title(const GGUI::title& other) : name(other.Value, other.status){}
 
         constexpr title& operator=(const title& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         constexpr bool empty(){
-            return Value.Empty();
+            return Value.empty();
         }
     };
 
-    class display : public STYLING_INTERNAL::BOOL_VALUE{
+    class display : public STYLING_INTERNAL::boolValue{
     public:
-        constexpr display(const bool value, const VALUE_STATE Default = VALUE_STATE::VALUE) : BOOL_VALUE(value, Default){}
+        constexpr display(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~display() override { style_base::~style_base(); }
+        inline ~display() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new display(*this);
         }
 
-        constexpr display(const GGUI::display& other) : BOOL_VALUE(other.Value, other.Status){}
+        constexpr display(const GGUI::display& other) : boolValue(other.value, other.status){}
 
         constexpr display& operator=(const display& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
-                Value = other.Value;
+            if (other.status >= status){
+                value = other.value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class sprite;
-    class on_draw : public STYLING_INTERNAL::style_base{
+    class onDraw : public STYLING_INTERNAL::styleBase{
     public:
         GGUI::sprite (*Value)(unsigned int x, unsigned int y);
 
-        constexpr on_draw(GGUI::sprite (*value)(unsigned int x, unsigned int y), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr onDraw(GGUI::sprite (*value)(unsigned int x, unsigned int y), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
         
-        constexpr on_draw(const GGUI::on_draw& other) : style_base(other.Status), Value(other.Value){}
+        constexpr onDraw(const GGUI::onDraw& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~on_draw() override { style_base::~style_base(); }
+        inline ~onDraw() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new on_draw(*this);
+        inline styleBase* copy() const override {
+            return new onDraw(*this);
         }
 
-        constexpr on_draw& operator=(const on_draw& other){
+        constexpr onDraw& operator=(const onDraw& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class text : public STYLING_INTERNAL::style_base{
+    class text : public STYLING_INTERNAL::styleBase{
     public:
         const char* Value;
 
-        constexpr text(const char* value, const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr text(const char* value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
 
-        constexpr text(const GGUI::text& other) : style_base(other.Status), Value(other.Value){}
+        constexpr text(const GGUI::text& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~text() override { style_base::~style_base(); }
+        inline ~text() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
+        inline styleBase* copy() const override {
             return new text(*this);
         }
 
         constexpr text& operator=(const text& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class on_click : public STYLING_INTERNAL::style_base{
+    class onClick : public STYLING_INTERNAL::styleBase{
     public:
         bool (*Value)(element* self);
 
-        constexpr on_click(bool (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default, EMBED_ORDER::DELAYED), Value(value){}
+        constexpr onClick(bool (*value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, EMBED_ORDER::DELAYED), Value(value){}
 
-        constexpr on_click(const GGUI::on_click& other) : style_base(other.Status, EMBED_ORDER::DELAYED), Value(other.Value){}
+        constexpr onClick(const GGUI::onClick& other) : styleBase(other.status, EMBED_ORDER::DELAYED), Value(other.Value){}
 
-        inline ~on_click() override { style_base::~style_base(); }
+        inline ~onClick() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new on_click(*this);
+        inline styleBase* copy() const override {
+            return new onClick(*this);
         }
 
-        constexpr on_click& operator=(const on_click& other){
+        constexpr onClick& operator=(const onClick& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
                 
-                Order = other.Order;
+                order = other.order;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class on_input : public STYLING_INTERNAL::style_base{
+    class onInput : public STYLING_INTERNAL::styleBase{
     public:
         void (*Value)(textField* self, char c);
 
-        constexpr on_input(void (*value)(textField* self, char c), const VALUE_STATE Default = VALUE_STATE::VALUE) : style_base(Default), Value(value){}
+        constexpr onInput(void (*value)(textField* self, char c), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Value(value){}
 
-        constexpr on_input(const GGUI::on_input& other) : style_base(other.Status), Value(other.Value){}
+        constexpr onInput(const GGUI::onInput& other) : styleBase(other.status), Value(other.Value){}
 
-        inline ~on_input() override { style_base::~style_base(); }
+        inline ~onInput() override { styleBase::~styleBase(); }
 
-        inline style_base* Copy() const override {
-            return new on_input(*this);
+        inline styleBase* copy() const override {
+            return new onInput(*this);
         }
 
-        constexpr on_input& operator=(const on_input& other){
+        constexpr onInput& operator=(const onInput& other){
             // Only copy the information if the other is enabled.
-            if (other.Status >= Status){
+            if (other.status >= status){
                 Value = other.Value;
 
-                Status = other.Status;
+                status = other.status;
             }
             return *this;
         }
 
-        inline void Evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE Embed_Value(styling* host, element* owner) override;
+        STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class styling{
     public:
-        position                        Position                        = position(IVector3(0, 0, 0), VALUE_STATE::INITIALIZED);
+        position                      Position                        = position(IVector3(0, 0, 0), VALUE_STATE::INITIALIZED);
 
-        width                           Width                           = width(1, VALUE_STATE::INITIALIZED);
-        height                          Height                          = height(1, VALUE_STATE::INITIALIZED);
+        width                         Width                           = width(1, VALUE_STATE::INITIALIZED);
+        height                        Height                          = height(1, VALUE_STATE::INITIALIZED);
 
-        title                           Title                           = title(Compact_String(nullptr, 0, true), VALUE_STATE::INITIALIZED);
+        title                         Title                           = title(compactString(nullptr, 0, true), VALUE_STATE::INITIALIZED);
 
-        enable_border                   Border_Enabled                  = enable_border(false, VALUE_STATE::INITIALIZED);
-        text_color                      Text_Color                      = text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        background_color                Background_Color                = background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        border_color                    Border_Color                    = border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        border_background_color         Border_Background_Color         = border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        enableBorder                  Border_Enabled                  = enableBorder(false, VALUE_STATE::INITIALIZED);
+        textColor                     Text_Color                      = textColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        backgroundColor               Background_Color                = backgroundColor(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        borderColor                   Border_Color                    = borderColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        borderBackgroundColor         Border_Background_Color         = borderBackgroundColor(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         
-        hover_border_color              Hover_Border_Color              = hover_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        hover_text_color                Hover_Text_Color                = hover_text_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        hover_background_color          Hover_Background_Color          = hover_background_color(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
-        hover_border_background_color   Hover_Border_Background_Color   = hover_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        hoverBorderColor              Hover_Border_Color              = hoverBorderColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        hoverTextColor                Hover_Text_Color                = hoverTextColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        hoverBackgroundColor          Hover_Background_Color          = hoverBackgroundColor(COLOR::DARK_GRAY, VALUE_STATE::INITIALIZED);
+        hoverBorderBackgroundColor    Hover_Border_Background_Color   = hoverBorderBackgroundColor(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        focus_border_color              Focus_Border_Color              = focus_border_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        focus_text_color                Focus_Text_Color                = focus_text_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
-        focus_background_color          Focus_Background_Color          = focus_background_color(COLOR::WHITE, VALUE_STATE::INITIALIZED);
-        focus_border_background_color   Focus_Border_Background_Color   = focus_border_background_color(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        focusBorderColor              Focus_Border_Color              = focusBorderColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        focusTextColor                Focus_Text_Color                = focusTextColor(COLOR::BLACK, VALUE_STATE::INITIALIZED);
+        focusBackgroundColor          Focus_Background_Color          = focusBackgroundColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
+        focusBorderBackgroundColor    Focus_Border_Background_Color   = focusBorderBackgroundColor(COLOR::BLACK, VALUE_STATE::INITIALIZED);
 
-        styled_border                   Border_Style;
+        styledBorder                  Border_Style;
         
-        flow_priority                   Flow_Priority                   = flow_priority(DIRECTION::ROW, VALUE_STATE::INITIALIZED);
-        wrap                            Wrap                            = wrap(false, VALUE_STATE::INITIALIZED);
+        flowPriority                  Flow_Priority                   = flowPriority(DIRECTION::ROW, VALUE_STATE::INITIALIZED);
+        wrap                          Wrap                            = wrap(false, VALUE_STATE::INITIALIZED);
 
-        allow_overflow                  Allow_Overflow                  = allow_overflow(false, VALUE_STATE::INITIALIZED);
-        allow_dynamic_size              Allow_Dynamic_Size              = allow_dynamic_size(false, VALUE_STATE::INITIALIZED);
-        margin                          Margin;
+        allowOverflow                 Allow_Overflow                  = allowOverflow(false, VALUE_STATE::INITIALIZED);
+        allowDynamicSize              Allow_Dynamic_Size              = allowDynamicSize(false, VALUE_STATE::INITIALIZED);
+        margin                        Margin;
 
-        shadow                          Shadow;
-        opacity                         Opacity                         = opacity(1.0f, VALUE_STATE::INITIALIZED);  // 100%
+        opacity                       Opacity                         = opacity(1.0f, VALUE_STATE::INITIALIZED);  // 100%
 
-        allow_scrolling                 Allow_Scrolling                 = allow_scrolling(false, VALUE_STATE::INITIALIZED);
+        allowScrolling                Allow_Scrolling                 = allowScrolling(false, VALUE_STATE::INITIALIZED);
 
-        anchor                          Align                           = anchor(ANCHOR::LEFT, VALUE_STATE::INITIALIZED);
+        anchor                        Align                           = anchor(ANCHOR::LEFT, VALUE_STATE::INITIALIZED);
 
-        std::vector<element*>           Childs;
+        std::vector<element*>         Childs;
 
         /**
          * @brief Default constructor for the Styling class.
@@ -2361,8 +2315,8 @@ namespace GGUI{
          * 
          * @param attributes A pointer to a style_base object containing the style attributes.
          */
-        styling(STYLING_INTERNAL::style_base* attributes){
-            un_parsed_styles = attributes;
+        styling(STYLING_INTERNAL::styleBase* attributes){
+            unParsedStyles = attributes;
         }
 
         /**
@@ -2370,8 +2324,8 @@ namespace GGUI{
          * 
          * @param attributes A reference to a style_base object containing the style attributes.
          */
-        styling(STYLING_INTERNAL::style_base& attributes){
-            un_parsed_styles = &attributes;
+        styling(STYLING_INTERNAL::styleBase& attributes){
+            unParsedStyles = &attributes;
         }
 
         /**
@@ -2379,8 +2333,8 @@ namespace GGUI{
          * 
          * @param attributes A style_base object containing the style attributes.
          */
-        styling(STYLING_INTERNAL::style_base&& attributes){
-            un_parsed_styles = &attributes;
+        styling(STYLING_INTERNAL::styleBase&& attributes){
+            unParsedStyles = &attributes;
         }
 
         /**
@@ -2391,8 +2345,8 @@ namespace GGUI{
          *
          * @param attributes Reference to a style_base object containing the style attributes to be added.
          */
-        void Add(STYLING_INTERNAL::style_base& attributes){
-            un_parsed_styles = &attributes;
+        void add(STYLING_INTERNAL::styleBase& attributes){
+            unParsedStyles = &attributes;
         }
 
         /**
@@ -2403,8 +2357,8 @@ namespace GGUI{
          *
          * @param attributes Rvalue reference to a style_base object containing style attributes.
          */
-        void Add(STYLING_INTERNAL::style_base&& attributes){
-            un_parsed_styles = &attributes;
+        void add(STYLING_INTERNAL::styleBase&& attributes){
+            unParsedStyles = &attributes;
         }
 
         /**
@@ -2419,7 +2373,7 @@ namespace GGUI{
          * The function returns nothing.
          * @param owner The element to which the styles will be embedded.
          */
-        void Embed_Styles(element* owner);
+        void embedStyles(element* owner);
 
         /**
          * @brief Copies the values of the given Styling object to the current object.
@@ -2428,7 +2382,7 @@ namespace GGUI{
          *
          * @param other The Styling object to copy from.
          */
-        void Copy(const styling& other);
+        void copy(const styling& other);
 
         /**
          * @brief Copies the styling information from another Styling object.
@@ -2439,17 +2393,17 @@ namespace GGUI{
          * 
          * @param other A pointer to the Styling object from which to copy the styling information.
          */
-        void Copy(const styling* other){
+        void copy(const styling* other){
             // use the reference one
-            Copy(*other);
+            copy(*other);
         }
 
-        void Copy_Un_Parsed_Styles();
+        void copyUnParsedStyles();
         
-        void Copy_Un_Parsed_Styles(const styling* other);
+        void copyUnParsedStyles(const styling* other);
 
         // Returns the pointer of whom this evaluation is to reference.
-        styling* Get_Reference(element* owner);
+        styling* getReference(element* owner);
 
         /**
          * @brief Evaluates all dynamic attribute values for the owner element.
@@ -2462,40 +2416,40 @@ namespace GGUI{
          * @param owner The element whose dynamic attributes are to be evaluated.
          * @return True if there wae changes in the attributes evaluated, false otherwise.
          */
-        bool Evaluate_Dynamic_Attribute_Values(element* owner);
+        bool evaluateDynamicAttributeValues(element* owner);
 
-        bool Evaluate_Dynamic_Position(element* owner, styling* reference = nullptr);
+        bool evaluateDynamicPosition(element* owner, styling* reference = nullptr);
 
-        bool Evaluate_Dynamic_Dimensions(element* owner, styling* reference = nullptr);
+        bool evaluateDynamicDimensions(element* owner, styling* reference = nullptr);
 
-        bool Evaluate_Dynamic_Border(element* owner, styling* reference = nullptr);
+        bool evaluateDynamicBorder(element* owner, styling* reference = nullptr);
     
-        bool Evaluate_Dynamic_Colors(element* owner, styling* reference = nullptr);
+        bool evaluateDynamicColors(element* owner, styling* reference = nullptr);
     protected:
     
         // The construction time given styles are first put here, before embedding them into this class.
-        STYLING_INTERNAL::style_base* un_parsed_styles = nullptr;
+        STYLING_INTERNAL::styleBase* unParsedStyles = nullptr;
     };
 
     namespace STYLES{
         namespace BORDER{
-            inline styled_border Double = std::array<const char*, 11>{
+            inline styledBorder Double = std::array<const char*, 11>{
                 "╔", "╚", "╗", "╝", "║", "═", "╠", "╣", "╦", "╩", "╬"
             };
 
-            inline styled_border Round = std::array<const char*, 11>{
+            inline styledBorder Round = std::array<const char*, 11>{
                 "╭", "╰", "╮", "╯", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            inline styled_border Single = std::array<const char*, 11>{
+            inline styledBorder Single = std::array<const char*, 11>{
                 "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            inline styled_border Bold = std::array<const char*, 11>{
+            inline styledBorder Bold = std::array<const char*, 11>{
                 "▛", "▙", "▜", "▟", "█", "▅", "▉", "▉", "▉", "▉", "▉"
             };
 
-            inline styled_border Modern = std::array<const char*, 11>{
+            inline styledBorder Modern = std::array<const char*, 11>{
                 "/", "\\", "\\", "/", "|", "-", "|", "|", "-", "-", "+"
             };
         }
@@ -2507,17 +2461,17 @@ namespace GGUI{
         }
 
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector left = GGUI::STYLING_INTERNAL::Vector(-0.5f, 0.0f);
+        inline GGUI::STYLING_INTERNAL::vectorValue left = GGUI::STYLING_INTERNAL::vectorValue(-0.5f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector top = GGUI::STYLING_INTERNAL::Vector(0.0f, -0.5f);
+        inline GGUI::STYLING_INTERNAL::vectorValue top = GGUI::STYLING_INTERNAL::vectorValue(0.0f, -0.5f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector right = GGUI::STYLING_INTERNAL::Vector(0.5f, 0.0f);
+        inline GGUI::STYLING_INTERNAL::vectorValue right = GGUI::STYLING_INTERNAL::vectorValue(0.5f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector bottom = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.5f);
+        inline GGUI::STYLING_INTERNAL::vectorValue bottom = GGUI::STYLING_INTERNAL::vectorValue(0.0f, 0.5f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector center = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f);
+        inline GGUI::STYLING_INTERNAL::vectorValue center = GGUI::STYLING_INTERNAL::vectorValue(0.0f, 0.0f);
         // CAUTION!: These anchoring vector presets, are made to work where the origin is at the center (0, 0).
-        inline GGUI::STYLING_INTERNAL::Vector prioritize = GGUI::STYLING_INTERNAL::Vector(0.0f, 0.0f, std::numeric_limits<short>::max());
+        inline GGUI::STYLING_INTERNAL::vectorValue prioritize = GGUI::STYLING_INTERNAL::vectorValue(0.0f, 0.0f, std::numeric_limits<short>::max());
     };
 
 }

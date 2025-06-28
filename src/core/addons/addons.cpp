@@ -70,7 +70,7 @@ namespace GGUI{
      * @return True if the update was successful, false otherwise.
      * @details This function should be called by the main event loop to update the stats panel.
      */
-    bool Update_Stats([[maybe_unused]] GGUI::Event* Event){
+    bool Update_Stats([[maybe_unused]] GGUI::event* Event){
         // Check if the inspect tool is displayed
         element* Inspect_Tool = INTERNAL::Main->getElement("Inspect");
 
@@ -103,9 +103,9 @@ namespace GGUI{
 
         Addons.push_back(new GGUI::listView(
             width(0.5f) | height(1.0f) | 
-            text_color(1.0f) | background_color(GGUI::COLOR::BLACK) |
+            textColor(1.0f) | backgroundColor(GGUI::COLOR::BLACK) |
             // Set the flow direction to column so the elements stack vertically
-            flow_priority(DIRECTION::COLUMN) | 
+            flowPriority(DIRECTION::COLUMN) | 
             // Set the position of the list view to the right side of the main window
             position(
                 STYLES::top + STYLES::right + STYLES::prioritize
@@ -120,12 +120,12 @@ namespace GGUI{
             // Add the error logger kidnapper:
             node(new element(
                 width(1.0f) | height(0.5f) |
-                enable_border(true) | 
+                enableBorder(true) | 
                 title("LOG: ") | 
                 // Set the name of the window to "LOG"
                 name(ERROR_LOGGER) | 
                 // Allow the window to overflow, so that the text can be seen even if it is longer than the window
-                allow_overflow(true)
+                allowOverflow(true)
             )) | 
                         
             // Add a count for how many UTF are being streamed.
@@ -141,13 +141,13 @@ namespace GGUI{
             // Hide the inspect tool by default
             display(false) | 
 
-            on_init([](element* self){
+            onInit([](element* self){
                 // Register an event handler to toggle the inspect tool on and off
-                GGUI::INTERNAL::Main->on(Constants::SHIFT | Constants::CONTROL | Constants::KEY_PRESS, [self](GGUI::Event* e){
-                    GGUI::Input* input = (GGUI::Input*)e;
+                GGUI::INTERNAL::Main->on(constants::SHIFT | constants::CONTROL | constants::KEY_PRESS, [self](GGUI::event* e){
+                    GGUI::input* input = (GGUI::input*)e;
 
                     // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
-                    if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->Data != 'i' && input->Data != 'I') 
+                    if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->data != 'i' && input->data != 'I') 
                         return false;
 
                     // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
@@ -158,9 +158,9 @@ namespace GGUI{
                 }, true);
 
                 // Remember the inspect tool, so it will be updated every second
-                INTERNAL::Remember([](std::vector<Memory>& rememberable){
+                INTERNAL::Remember([](std::vector<memory>& rememberable){
                     rememberable.push_back(
-                        GGUI::Memory(
+                        GGUI::memory(
                             TIME::SECOND,
                             Update_Stats,
                             MEMORY_FLAGS::RETRIGGER,

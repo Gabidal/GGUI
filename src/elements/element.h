@@ -23,15 +23,14 @@ namespace GGUI{
     class element{
     protected:
         // Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
-        IVector3 Absolute_Position_Cache;
+        IVector3 absolutePositionCache;
 
         class element* Parent = nullptr;
 
         // Determines if the element is rendered or not.
         bool Show = true;
         
-        std::vector<UTF> Render_Buffer;
-        std::vector<UTF> Post_Process_Buffer;
+        std::vector<UTF> renderBuffer;
 
         // State machine for render pipeline only focus on changed aspects.
         STAIN Dirty;
@@ -63,8 +62,8 @@ namespace GGUI{
          */
         // element(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
-        element(STYLING_INTERNAL::style_base& style = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
-        element(STYLING_INTERNAL::style_base&& style, bool Embed_Styles_On_Construct = false) : element(style, Embed_Styles_On_Construct) {}
+        element(STYLING_INTERNAL::styleBase& style = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        element(STYLING_INTERNAL::styleBase&& style, bool Embed_Styles_On_Construct = false) : element(style, Embed_Styles_On_Construct) {}
 
         /**
          * @brief For correctly copying data between elements, try the Copy() function.
@@ -133,7 +132,7 @@ namespace GGUI{
          * @param s Reference to a styling object containing the new style properties to apply.
          */
         void addStyling(styling& s){
-            Style->Copy(s);
+            Style->copy(s);
         }
 
         /**
@@ -145,9 +144,9 @@ namespace GGUI{
          *
          * @param s Reference to a style_base object containing the styling information to add.
          */
-        void addStyling(STYLING_INTERNAL::style_base& s){
-            Style->Add(s);
-            Style->Embed_Styles(this);
+        void addStyling(STYLING_INTERNAL::styleBase& s){
+            Style->add(s);
+            Style->embedStyles(this);
         }
         
         /**
@@ -159,7 +158,7 @@ namespace GGUI{
          *
          * @param s An rvalue reference to a style_base object representing the style to add.
          */
-        void addStyling(STYLING_INTERNAL::style_base&& s){
+        void addStyling(STYLING_INTERNAL::styleBase&& s){
             addStyling(s);
         }
 
@@ -233,7 +232,7 @@ namespace GGUI{
         constexpr void check(STATE s){
             if (s == STATE::INIT && On_Init){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
-                Style->Evaluate_Dynamic_Attribute_Values(this);
+                Style->evaluateDynamicAttributeValues(this);
 
                 On_Init(this);
             }
@@ -304,7 +303,7 @@ namespace GGUI{
          *          connector, and cross connector.
          * @return The current border style of the element.
          */
-        styled_border getBorderStyle() const {
+        styledBorder getBorderStyle() const {
             return Style->Border_Style;
         }
 
@@ -483,14 +482,14 @@ namespace GGUI{
          * @details This function returns the width of the element.
          * @return The width of the element.
          */
-        constexpr unsigned int getWidth(){ return Style->Width.Get(); }
+        constexpr unsigned int getWidth(){ return Style->Width.get(); }
 
         /**
          * @brief Get the height of the element.
          * @details This function returns the height of the element.
          * @return The height of the element.
          */
-        constexpr unsigned int getHeight() { return Style->Height.Get(); }
+        constexpr unsigned int getHeight() { return Style->Height.get(); }
 
         /**
          * @brief Set the width of the element.
@@ -518,7 +517,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        EVALUATION_TYPE getWidthType() { return Style->Width.Value.Get_Type(); }
+        EVALUATION_TYPE getWidthType() { return Style->Width.value.Get_Type(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -527,7 +526,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        EVALUATION_TYPE getHeightType() { return Style->Height.Value.Get_Type(); }
+        EVALUATION_TYPE getHeightType() { return Style->Height.value.Get_Type(); }
 
         /**
          * @brief Set the position of the element.
@@ -561,7 +560,7 @@ namespace GGUI{
          * @details This function retrieves the position of the element from its style.
          * @return The position of the element as an IVector3 object.
          */
-        constexpr IVector3 getPosition() { return Style->Position.Get(); }
+        constexpr IVector3 getPosition() { return Style->Position.get(); }
 
         /**
          * @brief Get the absolute position of the element.
@@ -569,7 +568,7 @@ namespace GGUI{
          *          The absolute position is the position of the element in the context of the entire document or window.
          * @return The absolute position of the element as an IVector3 object.
          */
-        constexpr IVector3 getAbsolutePosition() { return Absolute_Position_Cache; }
+        constexpr IVector3 getAbsolutePosition() { return absolutePositionCache; }
 
         /**
          * @brief Update the absolute position cache of the element.
@@ -585,14 +584,14 @@ namespace GGUI{
          * 
          * @param t The new title for the window.
          */
-        void setTitle(Compact_String t);
+        void setTitle(compactString t);
 
         /**
          * @brief Returns the title of the window.
          * 
          * @return The title of the window as a string.
          */
-        Compact_String getTitle();
+        compactString getTitle();
 
         /**
          * @brief Set the margin of the element.
@@ -629,7 +628,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's background.
          */
-        constexpr RGB getBackgroundColor() { return Style->Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getBackgroundColor() { return Style->Background_Color.value.get<RGB>(); }
         
         /**
          * @brief Sets the border color of the element.
@@ -648,7 +647,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border.
          */
-        constexpr RGB getBorderColor(){ return Style->Border_Color.Value.Get<RGB>(); }
+        constexpr RGB getBorderColor(){ return Style->Border_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the border background color of the element.
@@ -668,7 +667,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border background.
          */
-        constexpr RGB getBorderBackgroundColor(){ return Style->Border_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getBorderBackgroundColor(){ return Style->Border_Background_Color.value.get<RGB>(); }
         
         /**
          * @brief Sets the text color of the element.
@@ -688,7 +687,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's text.
          */
-        constexpr RGB getTextColor(){ return Style->Text_Color.Value.Get<RGB>(); }
+        constexpr RGB getTextColor(){ return Style->Text_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the hover border color of the element.
@@ -709,7 +708,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border.
          */
-        constexpr RGB getHoverBorderColor(){ return Style->Hover_Border_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverBorderColor(){ return Style->Hover_Border_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the hover background color of the element.
@@ -730,7 +729,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover background.
          */
-        constexpr RGB getHoverBackgroundColor(){ return Style->Hover_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverBackgroundColor(){ return Style->Hover_Background_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the hover text color of the element.
@@ -751,7 +750,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover text.
          */
-        constexpr RGB getHoverTextColor(){ return Style->Hover_Text_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverTextColor(){ return Style->Hover_Text_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the hover border background color of the element.
@@ -772,7 +771,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border background.
          */
-        constexpr RGB getHoverBorderBackgroundColor(){ return Style->Hover_Border_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getHoverBorderBackgroundColor(){ return Style->Hover_Border_Background_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the focus border color of the element.
@@ -791,7 +790,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border.
          */
-        constexpr RGB getFocusBorderColor(){ return Style->Focus_Border_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusBorderColor(){ return Style->Focus_Border_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the focus background color of the element.
@@ -810,7 +809,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus background.
          */
-        constexpr RGB getFocusBackgroundColor(){ return Style->Focus_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusBackgroundColor(){ return Style->Focus_Background_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the focus text color of the element.
@@ -829,7 +828,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus text.
          */
-        constexpr RGB getFocusTextColor(){ return Style->Focus_Text_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusTextColor(){ return Style->Focus_Text_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the focus border background color of the element.
@@ -849,7 +848,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border background.
          */
-        constexpr RGB getFocusBorderBackgroundColor(){ return Style->Focus_Border_Background_Color.Value.Get<RGB>(); }
+        constexpr RGB getFocusBorderBackgroundColor(){ return Style->Focus_Border_Background_Color.value.get<RGB>(); }
 
         /**
          * @brief Sets the alignment of the element.
@@ -867,7 +866,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        constexpr ANCHOR getAlign(){ return Style->Align.Value; }
+        constexpr ANCHOR getAlign(){ return Style->Align.value; }
 
         /**
          * @brief Sets the flow priority of the element.
@@ -887,7 +886,7 @@ namespace GGUI{
          * 
          * @return The flow priority value of the element.
          */
-        constexpr DIRECTION getFlowPriority(){ return Style->Flow_Priority.Value; }
+        constexpr DIRECTION getFlowPriority(){ return Style->Flow_Priority.value; }
 
         /**
          * @brief Sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
@@ -908,7 +907,7 @@ namespace GGUI{
          * 
          * @return True if the element will wrap its contents, false otherwise.
          */
-        constexpr bool getWrap(){ return Style->Wrap.Value; }
+        constexpr bool getWrap(){ return Style->Wrap.value; }
 
         /**
          * @brief Sets whether the element is allowed to dynamically resize.
@@ -928,7 +927,7 @@ namespace GGUI{
          * 
          * @return True if the element is allowed to dynamically resize, false otherwise.
          */
-        constexpr bool isDynamicSizeAllowed(){ return Style->Allow_Dynamic_Size.Value; }
+        constexpr bool isDynamicSizeAllowed(){ return Style->Allow_Dynamic_Size.value; }
 
         /**
          * @brief Sets whether the element allows overflow.
@@ -948,7 +947,7 @@ namespace GGUI{
          * 
          * @return True if the element allows overflow, false otherwise.
          */
-        constexpr bool isOverflowAllowed(){ return Style->Allow_Overflow.Value; }
+        constexpr bool isOverflowAllowed(){ return Style->Allow_Overflow.value; }
         
         /**
          * @brief Gets the fitting area for a child element in its parent.
@@ -1056,13 +1055,13 @@ namespace GGUI{
          * @details This function sets the custom border style for the element, marks the element's edges as dirty, and ensures that the border is visible.
          * @param style The custom border style to set.
          */
-        void setCustomBorderStyle(GGUI::styled_border style);
+        void setCustomBorderStyle(GGUI::styledBorder style);
 
         /**
          * @brief Gets the custom border style of the element.
          * @return The custom border style of the element.
          */
-        GGUI::styled_border getCustomBorderStyle(){ return Style->Border_Style; }
+        GGUI::styledBorder getCustomBorderStyle(){ return Style->Border_Style; }
 
         /**
          * @brief Posts a process that handles the intersection of borders between two elements and their parent.
@@ -1091,13 +1090,13 @@ namespace GGUI{
          */
         constexpr std::pair<RGB, RGB>  composeAllTextRGBValues(){
             if (Focused){
-                return {Style->Focus_Text_Color.Value.Get<RGB>(), Style->Focus_Background_Color.Value.Get<RGB>()};
+                return {Style->Focus_Text_Color.value.get<RGB>(), Style->Focus_Background_Color.value.get<RGB>()};
             }
             else if (Hovered){
-                return {Style->Hover_Text_Color.Value.Get<RGB>(), Style->Hover_Background_Color.Value.Get<RGB>()};
+                return {Style->Hover_Text_Color.value.get<RGB>(), Style->Hover_Background_Color.value.get<RGB>()};
             }
             else{
-                return {Style->Text_Color.Value.Get<RGB>(), Style->Background_Color.Value.Get<RGB>()};
+                return {Style->Text_Color.value.get<RGB>(), Style->Background_Color.value.get<RGB>()};
             }
         }
 
@@ -1111,13 +1110,13 @@ namespace GGUI{
          */
         constexpr std::pair<RGB, RGB> composeAllBorderRGBValues(){
             if (Focused){
-                return {Style->Focus_Border_Color.Value.Get<RGB>(), Style->Focus_Border_Background_Color.Value.Get<RGB>()};
+                return {Style->Focus_Border_Color.value.get<RGB>(), Style->Focus_Border_Background_Color.value.get<RGB>()};
             }
             else if (Hovered){
-                return {Style->Hover_Border_Color.Value.Get<RGB>(), Style->Hover_Border_Background_Color.Value.Get<RGB>()};
+                return {Style->Hover_Border_Color.value.get<RGB>(), Style->Hover_Border_Background_Color.value.get<RGB>()};
             }
             else{
-                return {Style->Border_Color.Value.Get<RGB>(), Style->Border_Background_Color.Value.Get<RGB>()};
+                return {Style->Border_Color.value.get<RGB>(), Style->Border_Background_Color.value.get<RGB>()};
             }
         }
 
@@ -1163,7 +1162,7 @@ namespace GGUI{
          *          The lambda is expected to return true if it was successful and false if it failed.
          * @param action The lambda to be called when the element is clicked.
          */
-        void onClick(std::function<bool(GGUI::Event*)> action);
+        void onClick(std::function<bool(GGUI::event*)> action);
 
         /**
          * @brief A function that registers a lambda to be executed when the element is interacted with in any way.
@@ -1173,7 +1172,7 @@ namespace GGUI{
          * @param action The lambda to be called when the element is interacted with.
          * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
          */
-        void on(unsigned long long criteria, std::function<bool(GGUI::Event*)> action, bool GLOBAL = false);
+        void on(unsigned long long criteria, std::function<bool(GGUI::event*)> action, bool GLOBAL = false);
 
         /**
          * @brief Retrieves an element by its name.
@@ -1329,7 +1328,7 @@ namespace GGUI{
 
         inline void forceStyleEvaluation(){
             if (Style)
-                Style->Evaluate_Dynamic_Attribute_Values(this);
+                Style->evaluateDynamicAttributeValues(this);
         }
     };
 }

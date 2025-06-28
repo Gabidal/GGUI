@@ -563,7 +563,7 @@ namespace GGUI{
         IVector2 end;
     };
 
-    enum class Border_Connection{
+    enum class borderConnection{
         NONE    = 0 << 0,
         UP      = 1 << 0,
         DOWN    = 1 << 1,
@@ -571,62 +571,62 @@ namespace GGUI{
         RIGHT   = 1 << 3
     };
 
-    constexpr bool operator==(const Border_Connection lhs, const Border_Connection rhs) {
+    constexpr bool operator==(const borderConnection lhs, const borderConnection rhs) {
         return static_cast<int>(lhs) == static_cast<int>(rhs);
     }
 
-    constexpr Border_Connection operator|(const Border_Connection lhs, const Border_Connection rhs) {
-        return static_cast<Border_Connection>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    constexpr borderConnection operator|(const borderConnection lhs, const borderConnection rhs) {
+        return static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
     }
 
-    constexpr void operator|=(Border_Connection& lhs, const Border_Connection rhs) {
-        lhs = static_cast<Border_Connection>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    constexpr void operator|=(borderConnection& lhs, const borderConnection rhs) {
+        lhs = static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
     }
 
-    class Event{
+    class event{
     public:
-        unsigned long long Criteria;
+        unsigned long long criteria;
     };
 
-    class Input : public Event{
+    class input : public event{
     public:
         unsigned short X = 0;
         unsigned short Y = 0;
-        char Data = 0;
+        char data = 0;
 
         // The input information like the character written.
-        Input(char d, unsigned long long t){
-            Data = d;
-            Criteria = t;
+        input(char d, unsigned long long t){
+            data = d;
+            criteria = t;
         }
 
-        Input(IVector3 c, unsigned long long t){
+        input(IVector3 c, unsigned long long t){
             X = (unsigned short )c.X;
             Y = (unsigned short )c.Y;
-            Criteria = t;
+            criteria = t;
         }
     };
 
-    class Action : public Event{
+    class action : public event{
     public:
-        class element* Host = nullptr;
+        class element* host = nullptr;
 
-        std::function<bool(GGUI::Event*)> Job;
+        std::function<bool(GGUI::event*)> Job;
         
         std::string ID; 
     
-        Action() = default;
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, std::string id){
-            Criteria = criteria;
+        action() = default;
+        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, std::string id){
+            criteria = Criteria;
             Job = job;
-            Host = nullptr;
+            host = nullptr;
             ID = id;
         }
 
-        Action(unsigned long long criteria, std::function<bool(GGUI::Event*)> job, class element* host, std::string id){
-            Criteria = criteria;
+        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, class element* Host, std::string id){
+            criteria = Criteria;
             Job = job;
-            Host = host;
+            host = Host;
             ID = id;
         }
     };
@@ -636,29 +636,29 @@ namespace GGUI{
         inline unsigned char RETRIGGER          = 1 << 1;
     };
 
-    class Memory : public Action{
+    class memory : public action{
     public:
-        std::chrono::high_resolution_clock::time_point Start_Time;
-        size_t End_Time = 0;
+        std::chrono::high_resolution_clock::time_point startTime;
+        size_t endTime = 0;
 
         // By default all memories automatically will not prolong each other similar memories.
-        unsigned char Flags = 0x0;
+        unsigned char flags = 0x0;
 
         // When the job starts, job, prolong previous similar job by this time.
-        Memory(size_t end, std::function<bool(GGUI::Event*)>job, unsigned char flags = 0x0, std::string id = ""){
-            Start_Time = std::chrono::high_resolution_clock::now();
-            End_Time = end;
+        memory(size_t end, std::function<bool(GGUI::event*)>job, unsigned char Flags = 0x0, std::string id = ""){
+            startTime = std::chrono::high_resolution_clock::now();
+            endTime = end;
             Job = job;
-            Flags = flags;
+            flags = Flags;
             ID = id;
         }
 
-        bool Is(const unsigned char f) const{
-            return (Flags & f) > 0;
+        bool is(const unsigned char f) const{
+            return (flags & f) > 0;
         }
 
-        void Set(const unsigned char f){
-            Flags |= f;
+        void set(const unsigned char f){
+            flags |= f;
         }
     };
 
@@ -814,58 +814,6 @@ namespace GGUI{
         return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
     }
 
-    enum class Flags{
-        Empty = 0,
-        Border = 1 << 0,
-        Text_Input = 1 << 1,
-        Overflow = 1 << 2,
-        Dynamic = 1 << 3,
-        Horizontal = 1 << 4,
-        Vertical = 1 << 5,
-        Align_Left = 1 << 6,
-        Align_Right = 1 << 7,
-        Align_Center = 1 << 8,
-    };
-    
-    /**
-     * @brief Operator to combine two flags.
-     * @details
-     * This function takes two flags and returns a new flag that is the result of a
-     * binary OR operation on the two input flags.
-     * @param[in] a The first flag.
-     * @param[in] b The second flag.
-     * @return The result of the binary OR operation on the two input flags.
-     */
-    inline Flags operator|(Flags a, Flags b){
-        return static_cast<Flags>(static_cast<int>(a) | static_cast<int>(b));
-    }
-
-    /**
-     * @brief Checks if all the flags in 'b' are set in 'a'.
-     * @details
-     * This function takes two flags and returns true if all the flags in 'b'
-     * are set in 'a'. Otherwise, it returns false.
-     * @param[in] a The first flag.
-     * @param[in] b The second flag.
-     * @return True if all the flags in 'b' are set in 'a', false otherwise.
-     */
-    inline bool Is(Flags a, Flags b){
-        return ((int)a & (int)b) == (int)b;
-    }
-
-    /**
-     * @brief Checks if any of the flags in 'b' are set in 'a'.
-     * @details
-     * This function takes two flags and returns true if any of the flags in 'b'
-     * are set in 'a'. Otherwise, it returns false.
-     * @param[in] a The first flag.
-     * @param[in] b The second flag.
-     * @return True if any of the flags in 'b' are set in 'a', false otherwise.
-     */
-    inline bool Has(Flags a, Flags b){
-        return ((int)a & (int)b) != 0;
-    }
-
     enum class STATE{
         UNKNOWN,
 
@@ -890,10 +838,10 @@ namespace GGUI{
 
         namespace atomic{
             template<typename T>
-            class Guard {
+            class guard {
             public:
-                std::mutex Shared; // Mutex to guard shared data
-                std::unique_ptr<T> Data;
+                std::mutex shared; // Mutex to guard shared data
+                std::unique_ptr<T> data;
 
                 /**
                  * @brief Constructs a Guard object and initializes its Data member.
@@ -901,7 +849,7 @@ namespace GGUI{
                  * This constructor creates a unique pointer to an instance of type T
                  * and assigns it to the Data member of the Guard object.
                  */
-                Guard() : Data(std::make_unique<T>()) {}
+                guard() : data(std::make_unique<T>()) {}
 
                 /**
                  * @brief Functor to execute a job with thread safety.
@@ -915,9 +863,9 @@ namespace GGUI{
                  * @throws Any exception thrown by the job function will be caught and reported.
                  */
                 void operator()(std::function<void(T&)> job) {
-                    std::lock_guard<std::mutex> lock(Shared); // Automatically manages mutex locking and unlocking
+                    std::lock_guard<std::mutex> lock(shared); // Automatically manages mutex locking and unlocking
                     try {
-                        job(*Data);
+                        job(*data);
                     } catch (...) {
                         INTERNAL::LOGGER::Log("Failed to execute the function!");
                     }
@@ -931,9 +879,9 @@ namespace GGUI{
                  * 
                  * @return T A copy of the data.
                  */
-                T Read() {
-                    std::lock_guard<std::mutex> lock(Shared);
-                    return *Data;
+                T read() {
+                    std::lock_guard<std::mutex> lock(shared);
+                    return *data;
                 }
 
                 /**
@@ -944,9 +892,9 @@ namespace GGUI{
                  * The use of std::lock_guard ensures that the mutex is automatically
                  * released when the destructor exits, preventing potential deadlocks.
                  */
-                ~Guard() {
-                    std::lock_guard<std::mutex> lock(Shared);
-                    Data.reset(); // Ensures proper destruction
+                ~guard() {
+                    std::lock_guard<std::mutex> lock(shared);
+                    data.reset(); // Ensures proper destruction
                 }
             };   
         }

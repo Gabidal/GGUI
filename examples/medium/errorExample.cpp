@@ -53,27 +53,27 @@ int main(){
             new element(
                 title("A") |
                 width(20) | height(10) |
-                background_color(COLOR::MAGENTA) | text_color(COLOR::RED) |
+                backgroundColor(COLOR::MAGENTA) | textColor(COLOR::RED) |
                 opacity(0.5f) |
                 position(10, 10)
             ),
             new element(
                 title("B") |
                 width(20) | height(10) |
-                background_color(COLOR::YELLOW) | text_color(COLOR::GREEN) |
+                backgroundColor(COLOR::YELLOW) | textColor(COLOR::GREEN) |
                 opacity(0.5f) |
                 position(30, 10)
             ),
             new element( 
                 title("C") |
                 width(20) | height(10) |
-                background_color(COLOR::CYAN) | text_color(COLOR::BLUE) |
+                backgroundColor(COLOR::CYAN) | textColor(COLOR::BLUE) |
                 opacity(0.5f) |
                 position(20, 15)
             )
         }) | 
 
-        on_init([](element* self){
+        onInit([](element* self){
             foo(self);
         }) | 
 

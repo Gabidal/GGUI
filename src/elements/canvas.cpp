@@ -147,19 +147,19 @@ namespace GGUI{
      * @return A vector of UTF objects representing the rendered canvas.
      */
     std::vector<GGUI::UTF>& canvas::render() {
-        std::vector<GGUI::UTF>& Result = Render_Buffer;
+        std::vector<GGUI::UTF>& Result = renderBuffer;
 
         // Check for Dynamic attributes
-        if(Style->Evaluate_Dynamic_Dimensions(this))
+        if(Style->evaluateDynamicDimensions(this))
             Dirty.Dirty(STAIN_TYPE::STRETCH);
 
-        if (Style->Evaluate_Dynamic_Position(this))
+        if (Style->evaluateDynamicPosition(this))
             Dirty.Dirty(STAIN_TYPE::MOVE);
 
-        if (Style->Evaluate_Dynamic_Colors(this))
+        if (Style->evaluateDynamicColors(this))
             Dirty.Dirty(STAIN_TYPE::COLOR);
 
-        if (Style->Evaluate_Dynamic_Border(this))
+        if (Style->evaluateDynamicBorder(this))
             Dirty.Dirty(STAIN_TYPE::EDGE);
 
         // Since canvas does not utilize DEEP flag, we can just clean it away
@@ -266,21 +266,21 @@ namespace GGUI{
 
         // now interpolate the foreground color between the two points
         GGUI::RGB foreground = Lerp(
-            Frames[Frame_Below].Foreground, 
-            Frames[Frame_Above].Foreground, 
+            Frames[Frame_Below].foreground, 
+            Frames[Frame_Above].foreground, 
             (float)Modulo / (float)Frame_Distance
         );
 
         // do same for background
         GGUI::RGB background = Lerp(
-            Frames[Frame_Below].Background, 
-            Frames[Frame_Above].Background, 
+            Frames[Frame_Below].background, 
+            Frames[Frame_Above].background, 
             (float)Modulo / (float)Frame_Distance
         );
 
         GGUI::UTF Result = Frames[Frame_Below];
-        Result.Set_Foreground(foreground);
-        Result.Set_Background(background);
+        Result.setForeground(foreground);
+        Result.setBackground(background);
 
         return Result;
     }
@@ -299,7 +299,7 @@ namespace GGUI{
      * The function will then set the points in the canvas to the corresponding symbol. If flush is true, the buffer is flushed after
      * the points are set.
      */
-    void GGUI::canvas::embedPoints(std::vector<bool> pixels, styled_border border_style, bool forceFlush){
+    void GGUI::canvas::embedPoints(std::vector<bool> pixels, styledBorder border_style, bool forceFlush){
 
         unsigned int Usable_Width = getWidth() - 2 * hasBorder();
         unsigned int Usable_Height = getHeight() - 2 * hasBorder();
@@ -312,21 +312,21 @@ namespace GGUI{
         // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
         for (unsigned int Y = 0; Y < Usable_Height; Y++){
             for (unsigned int X = 0; X < Usable_Width; X++){
-                Border_Connection Current_Masks = Border_Connection::NONE;
+                borderConnection Current_Masks = borderConnection::NONE;
 
                 if ((signed)Y - 1 < 0 && pixels[X + ((signed)Y - 1) * Usable_Width])
-                    Current_Masks |= Border_Connection::UP;
+                    Current_Masks |= borderConnection::UP;
 
                 if (Y >= Usable_Height && pixels[X + (Y + 1) * Usable_Width])
-                    Current_Masks |= Border_Connection::DOWN;
+                    Current_Masks |= borderConnection::DOWN;
 
                 if ((signed)X - 1 < 0 && pixels[(signed)X - 1 + Y * Usable_Width])
-                    Current_Masks |= Border_Connection::LEFT;
+                    Current_Masks |= borderConnection::LEFT;
 
                 if (X >= Usable_Width && pixels[(X + 1) + Y * Usable_Width])
-                    Current_Masks |= Border_Connection::RIGHT;
+                    Current_Masks |= borderConnection::RIGHT;
 
-                const char* currentBorder = border_style.get_border(Current_Masks);
+                const char* currentBorder = border_style.getBorder(Current_Masks);
 
                 if (!currentBorder) {
                     continue;

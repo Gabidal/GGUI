@@ -24,7 +24,7 @@ namespace GGUI{
         extern std::chrono::high_resolution_clock::time_point Previous_Time;
         extern std::chrono::high_resolution_clock::time_point Current_Time;
 
-        extern atomic::Guard<Carry> Carry_Flags;
+        extern atomic::guard<Carry> Carry_Flags;
 
         extern void Translate_Inputs();
 
@@ -62,7 +62,7 @@ namespace GGUI{
                 INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (Carry_Flags.Read().Terminate){
+                if (Carry_Flags.read().Terminate){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
@@ -87,7 +87,7 @@ namespace GGUI{
                         encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
 
                         unsigned int Liquefied_Size = 0;
-                        std::vector<Compact_String>* CS_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, Liquefied_Size, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight());
+                        std::vector<compactString>* CS_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, Liquefied_Size, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight());
                         
                         INTERNAL::Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
                         

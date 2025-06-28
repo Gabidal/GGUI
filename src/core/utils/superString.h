@@ -37,17 +37,17 @@ namespace GGUI{
      *   to the class remains valid for the lifetime of the Compact_String instance.
      * - The class is constexpr-friendly for compile-time usage where possible.
      */
-    class Compact_String{
+    class compactString{
     public:
-        std::variant<char, const char*> Text;
-        unsigned int Size = 0;
+        std::variant<char, const char*> text;
+        unsigned int size = 0;
 
         /**
          * @brief Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
          * @warning Do not use this constructor directly, as it will not initialize the Data property.
          * This constructor initializes a Compact_String object with default values.
          */
-        constexpr Compact_String() = default;
+        constexpr compactString() = default;
 
         /**
          * @brief Default copy constructor for Compact_String.
@@ -57,7 +57,7 @@ namespace GGUI{
          *
          * @param other The Compact_String instance to copy from.
          */
-        constexpr Compact_String(const Compact_String&) = default;
+        constexpr compactString(const compactString&) = default;
 
         /**
          * @brief Move constructor for Compact_String.
@@ -67,7 +67,7 @@ namespace GGUI{
          *
          * @param other The Compact_String instance to move from.
          */
-        constexpr Compact_String(Compact_String&&) = default;
+        constexpr compactString(compactString&&) = default;
 
         /**
          * @brief Default copy assignment operator for Compact_String.
@@ -78,7 +78,7 @@ namespace GGUI{
          * @param other The Compact_String instance to copy from.
          * @return Reference to this Compact_String after assignment.
          */
-        constexpr Compact_String& operator=(const Compact_String&) = default;
+        constexpr compactString& operator=(const compactString&) = default;
 
         /**
          * @brief Default move assignment operator for Compact_String.
@@ -89,7 +89,7 @@ namespace GGUI{
          *
          * @return Reference to this Compact_String after assignment.
          */
-        constexpr Compact_String& operator=(Compact_String&&) = default;
+        constexpr compactString& operator=(compactString&&) = default;
 
         /**
          * @brief Constructs a Compact_String object from a C-style string.
@@ -100,12 +100,12 @@ namespace GGUI{
          * 
          * @param data A pointer to a null-terminated C-style string.
          */
-        constexpr Compact_String(const char* data){
+        constexpr compactString(const char* data){
             // Store the string as Unicode data if its length is greater than 1.
             // Store the single character as ASCII data.
-            Get_Length(data) > 1 ? 
-                Set_Unicode(data) : 
-                Set_Ascii(data[0]);
+            getLength(data) > 1 ? 
+                setUnicode(data) : 
+                setAscii(data[0]);
         }
 
         /**
@@ -117,8 +117,8 @@ namespace GGUI{
          * 
          * @param data The ASCII character to initialize the Compact_String with.
          */
-        constexpr Compact_String(const char data) : Text(data){
-            Size = 1;
+        constexpr compactString(const char data) : text(data){
+            size = 1;
         }
 
         /**
@@ -135,17 +135,17 @@ namespace GGUI{
          * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
          * Otherwise, the data is stored as a single ASCII character.
          */
-        constexpr Compact_String(const char* data, const unsigned int size, const bool Force_Unicode = false){
+        constexpr compactString(const char* data, const unsigned int Size, const bool forceUnicode = false){
             // Determine data storage based on size and Force_Unicode flag.
             // Store as Unicode data if size is greater than 1 or forced.
             // Store as a single ASCII character.
-            (size > 1 || Force_Unicode) ? 
-            Set_Unicode(data) : 
-            Set_Ascii(data[0]);
+            (size > 1 || forceUnicode) ? 
+            setUnicode(data) : 
+            setAscii(data[0]);
 
             // If force unicode has been issued, then the size is probably a non-unicode standard size of zero or one, so we need to override the size.
-            if (Force_Unicode)
-                Size = size;
+            if (forceUnicode)
+                size = Size;
         }
 
         /**
@@ -153,18 +153,18 @@ namespace GGUI{
          * @param cs_flag The UTF flag to check.
          * @return True if the flag is set, otherwise false.
          */
-        constexpr bool Is(unsigned char cs_flag) const {
-            return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && Size == 1) || (cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && Size > 1) ? true : false;
+        constexpr bool is(unsigned char cs_flag) const {
+            return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && size == 1) || (cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && size > 1) ? true : false;
         }
 
         // Fast comparison of type and content
-        constexpr bool Is(const char* other) const {
-            return Is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::strcmp(std::get<const char*>(Text), other) == 0 : false;
+        constexpr bool is(const char* other) const {
+            return is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::strcmp(std::get<const char*>(text), other) == 0 : false;
         }
 
         // Fast comparison of type and content
-        constexpr bool Is(char other) const {
-            return Is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(Text) == other : false;
+        constexpr bool is(char other) const {
+            return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == other : false;
         }
 
         /**
@@ -178,51 +178,51 @@ namespace GGUI{
          * @return char The character at the specified index.
          */
         constexpr char operator[](int index) const {
-            return ((unsigned)index > Size || index < 0) ? 
+            return ((unsigned)index > size || index < 0) ? 
                 '\0' : // Return null character if index is out of bounds.
-                (Size > 1 ? std::get<const char*>(Text)[index] : std::get<char>(Text));  // Return the character from Unicode or ASCII data.
+                (size > 1 ? std::get<const char*>(text)[index] : std::get<char>(text));  // Return the character from Unicode or ASCII data.
         }
 
-        constexpr const char* Get_Unicode(bool force = false) const {
+        constexpr const char* getUnicode(bool force = false) const {
             // If the size is greater than 1, return the Unicode data.
             // Otherwise, return a pointer to the ASCII data.
-            return Size > 1 || force ? 
-                std::get<const char*>(Text) : 
+            return size > 1 || force ? 
+                std::get<const char*>(text) : 
                 nullptr;
         }
 
-        constexpr char Get_Ascii() const {
+        constexpr char getAscii() const {
             // If the size is 1, return the ASCII data.
             // Otherwise, return a null character.
-            return Size == 1 ? 
-                std::get<char>(Text) : 
+            return size == 1 ? 
+                std::get<char>(text) : 
                 '\0';
         }
 
-        constexpr void Set_Unicode(const char* text) {
+        constexpr void setUnicode(const char* Text) {
             // Set the Text to the Unicode data.
-            Text = std::variant<char, const char*>(text);
-            Size = Get_Length(text); // Update the size based on the new string.
+            text = std::variant<char, const char*>(Text);
+            size = getLength(Text); // Update the size based on the new string.
         }
 
-        constexpr void Set_Ascii(const char text) {
+        constexpr void setAscii(const char Text) {
             // Set the Text to the ASCII data.
-            Text = std::variant<char, const char*>(text);
-            Size = 1; // Update the size to 1 since it's a single character.
+            text = std::variant<char, const char*>(Text);
+            size = 1; // Update the size to 1 since it's a single character.
         }
         
         /**
          * @brief Checks if the UTF object has a default text.
          * @return true if the UTF object has a default text, false otherwise.
          */
-        constexpr bool Has_Default_Text() const {
-            return Is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(Text) == ' ' : std::get<const char*>(Text)[0] == ' ';
+        constexpr bool hasDefaultText() const {
+            return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == ' ' : std::get<const char*>(text)[0] == ' ';
         }
 
-        constexpr bool Empty() const {
+        constexpr bool empty() const {
             // Check if the Compact_String is empty.
             // An empty Compact_String has a size of 0.
-            return Size == 0;
+            return size == 0;
         }
 
     protected:
@@ -235,7 +235,7 @@ namespace GGUI{
          * @param str Pointer to the null-terminated C-string.
          * @return The number of characters in the string, excluding the null terminator.
          */
-        constexpr size_t Get_Length(const char* str) {
+        constexpr size_t getLength(const char* str) {
             size_t length = 0;
 
             if (!str) {
@@ -258,17 +258,17 @@ namespace GGUI{
      * Super_String instances, as well as clearing its contents and converting the stored data into a single
      * std::string.
      *
-     * @tparam MaxSize The maximum number of Compact_String objects that can be stored in the Super_String.
+     * @tparam maxSize The maximum number of Compact_String objects that can be stored in the Super_String.
      *
      * @note This class is designed for performance and memory efficiency, making it suitable for scenarios
      *       where frequent string concatenation and manipulation are required.
      */
-    template<std::size_t MaxSize>
-    class Super_String{
+    template<std::size_t maxSize>
+    class superString{
     public:
-        std::array<Compact_String, MaxSize> Data;
-        unsigned int Current_Index = 0;
-        unsigned int Liquefied_Size = 0;
+        std::array<compactString, maxSize> data;
+        unsigned int currentIndex = 0;
+        unsigned int liquefiedSize = 0;
 
         /**
          * @brief Default constexpr constructor for the Super_String class.
@@ -276,7 +276,7 @@ namespace GGUI{
          * Initializes a Super_String object with default values at compile time.
          * This constructor does not perform any custom initialization logic.
          */
-        constexpr Super_String() = default;
+        constexpr superString() = default;
 
         /**
          * @brief Constructs a Super_String from an initializer list of Compact_String objects.
@@ -286,9 +286,9 @@ namespace GGUI{
          *
          * @param data An initializer list containing Compact_String objects to be added to the Super_String.
          */
-        constexpr Super_String(const std::initializer_list<Compact_String>& data) {
-            for (const auto& item : data) {
-                Add(item);
+        constexpr superString(const std::initializer_list<compactString>& Data) {
+            for (const auto& item : Data) {
+                add(item);
             }
         }
 
@@ -298,10 +298,10 @@ namespace GGUI{
          * This function resets the current index back to the start of the vector,
          * effectively clearing any stored data.
          */
-        constexpr void Clear(){
+        constexpr void clear(){
             // Set the current index back to the start of the vector.
-            Current_Index = 0;
-            Liquefied_Size = 0;
+            currentIndex = 0;
+            liquefiedSize = 0;
         }
 
         /**
@@ -314,11 +314,11 @@ namespace GGUI{
          * @param data Pointer to the character array containing the string to be added.
          * @param size The size of the string to be added.
          */
-        constexpr void Add(const char* data, const int size){
-            // Store the string in the data vector.
-            Compact_String tmp = Compact_String(data, size);
-            Data[Current_Index++] = tmp;
-            Liquefied_Size += tmp.Size; // Update the liquefied size with the size of the new string.
+        constexpr void add(const char* Data, const int size){
+            // Store the string in the Data vector.
+            compactString tmp = compactString(Data, size);
+            data[currentIndex++] = tmp;
+            liquefiedSize += tmp.size; // Update the liquefied size with the size of the new string.
         }
 
         /**
@@ -329,10 +329,10 @@ namespace GGUI{
          * 
          * @param data The character to be added to the Super_String.
          */
-        constexpr void Add(const char data){
+        constexpr void add(const char Data){
             // Store the character in the data vector.
-            Data[Current_Index++] = Compact_String(data);
-            Liquefied_Size += 1; // Update the liquefied size with the size of the new character.
+            data[currentIndex++] = compactString(Data);
+            liquefiedSize += 1; // Update the liquefied size with the size of the new character.
         }
 
         /**
@@ -347,13 +347,13 @@ namespace GGUI{
          *                 expected to be sufficient. If false, the Data vector will be resized.
          */
         template<std::size_t OtherMaxSize>
-        constexpr void Add(const Super_String<OtherMaxSize>* other){
+        constexpr void add(const superString<OtherMaxSize>* other){
             // Copy the contents of the other Super_String into the Data vector.
-            for (unsigned int i = 0; i < other->Current_Index; i++){
-                Data[Current_Index++] = other->Data[i];
+            for (unsigned int i = 0; i < other->currentIndex; i++){
+                data[currentIndex++] = other->data[i];
             }
 
-            Liquefied_Size += other->Liquefied_Size; // Update the liquefied size with the size of the new string.
+            liquefiedSize += other->liquefiedSize; // Update the liquefied size with the size of the new string.
         }
         
         /**
@@ -363,13 +363,13 @@ namespace GGUI{
          * @details This function is used to concatenate Super_Strings.
          */
         template<std::size_t OtherMaxSize>
-        constexpr void Add(const Super_String<OtherMaxSize>& other){
+        constexpr void add(const superString<OtherMaxSize>& other){
             // Copy the contents of the other Super_String into the Data vector.
-            for (unsigned int i = 0; i < other.Current_Index; i++){
-                Data[Current_Index++] = other.Data[i];
+            for (unsigned int i = 0; i < other.currentIndex; i++){
+                data[currentIndex++] = other.data[i];
             }
             
-            Liquefied_Size += other.Liquefied_Size; // Update the liquefied size with the size of the new string.
+            liquefiedSize += other.liquefiedSize; // Update the liquefied size with the size of the new string.
         }
 
         /**
@@ -380,10 +380,10 @@ namespace GGUI{
          * 
          * @param other The Compact_String to add to the data vector.
          */
-        constexpr void Add(const Compact_String& other){
+        constexpr void add(const compactString& other){
             // Store the Compact_String in the data vector.
-            Data[Current_Index++] = other;
-            Liquefied_Size += other.Size; // Update the liquefied size with the size of the new Compact_String.
+            data[currentIndex++] = other;
+            liquefiedSize += other.size; // Update the liquefied size with the size of the new Compact_String.
         }
 
         /**
@@ -395,29 +395,29 @@ namespace GGUI{
          * 
          * @return A std::string that contains all the strings stored in the Data vector.
          */
-        std::string To_String() {
+        std::string toString() {
             // Resize a std::string to the total size.
             std::string result;
-            result.resize(Liquefied_Size);
+            result.resize(liquefiedSize);
 
             // Copy the contents of the Data vector into the std::string.
             int Current_UTF_Insert_Index = 0;
-            for(unsigned int i = 0; i < Current_Index; i++){
-                const Compact_String& data = Data[i];
+            for(unsigned int i = 0; i < currentIndex; i++){
+                const compactString& Data = data[i];
 
-                if (data.Size == 0)
+                if (Data.size == 0)
                     break;
 
                 // Size of ones are always already loaded from memory into a char.
-                if (data.Size > 1){
-                    // Replace the current contents of the string with the contents of the Unicode data.
-                    result.replace(Current_UTF_Insert_Index, data.Size, data.Get_Unicode());
+                if (Data.size > 1){
+                    // Replace the current contents of the string with the contents of the Unicode Data.
+                    result.replace(Current_UTF_Insert_Index, Data.size, Data.getUnicode());
 
-                    Current_UTF_Insert_Index += data.Size;
+                    Current_UTF_Insert_Index += Data.size;
                 }
                 else{
                     // Add the single character to the string.
-                    result[Current_UTF_Insert_Index++] = data.Get_Ascii();
+                    result[Current_UTF_Insert_Index++] = Data.getAscii();
                 }
             }
             return result;
