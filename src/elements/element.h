@@ -349,35 +349,6 @@ namespace GGUI{
         unsigned int getProcessedHeight();
 
         /**
-         * @brief Configures and displays the shadow for the element.
-         * @details This function sets the shadow properties such as direction, color, opacity, 
-         *          and length, and applies the shadow effect to the element. It adjusts the 
-         *          element's position to account for the shadow and marks the element as dirty 
-         *          for a visual update.
-         * @param Direction The direction vector of the shadow.
-         * @param Shadow_Color The color of the shadow.
-         * @param Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
-         * @param Length The length of the shadow.
-         */
-        void showShadow(FVector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
-
-        /**
-         * @brief Displays the shadow for the element.
-         * @details This function sets the shadow properties such as direction, color, opacity, and length, and applies the shadow effect to the element. It adjusts the element's position to account for the shadow and marks the element as dirty for a visual update. The direction vector of the shadow is set to (0, 0) by default, which means the shadow will appear directly below the element.
-         * @param Shadow_Color The color of the shadow.
-         * @param Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
-         * @param Length The length of the shadow.
-         */
-        void showShadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
-
-        /**
-         * @brief Sets the shadow properties for the element.
-         * @details This function sets the shadow properties such as direction, color, opacity, and length, and applies the shadow effect to the element. It also marks the element as dirty for a visual update.
-         * @param s The shadow properties to set.
-         */
-        void setShadow(shadow s);
-
-        /**
          * @brief Retrieves the parent element.
          * @details This function returns the parent element of the current element.
          *          If the element has no parent, it will return nullptr.
@@ -1088,7 +1059,7 @@ namespace GGUI{
          * @param Dest The destination element to which the source element will be blended.
          * @param Source The source element which will be blended to the destination element.
          */
-        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source);
+        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, float childOpacity);
 
         /**
          * @brief Nests a child element into a parent element.
@@ -1338,36 +1309,6 @@ namespace GGUI{
          * @param job The handler function to be executed
          */
         void onState(STATE s, void (*job)(element* self));
-
-        /**
-         * @brief Checks if the element needs postprocessing.
-         * @details This function checks if the element needs postprocessing by checking if the element has a shadow or is transparent.
-         * @return True if the element needs postprocessing; otherwise, false.
-         */
-        bool hasPostprocessingToDo();
-
-        /**
-         * @brief Process the shadow of the element.
-         * @details This function processes the shadow of the element by calculating the new buffer size and creating a new buffer with the shadow.
-         *          It then offsets the shadow box buffer by the direction and blends it with the original buffer.
-         * @param Current_Buffer The buffer to be processed.
-         */
-        void processShadow(std::vector<GGUI::UTF>& Current_Buffer);
-
-        /**
-         * @brief Applies the opacity of the element to the given buffer.
-         * @details This function will iterate over the given buffer and apply the opacity of the element to the background and foreground of each UTF character.
-         * @param Current_Buffer The buffer to be processed.
-         */
-        void processOpacity(std::vector<GGUI::UTF>& Current_Buffer);
-
-        /**
-         * @brief
-         * This function performs postprocessing on the rendered buffer of the element.
-         * It applies the shadow, and then the opacity to the rendered buffer.
-         * @return The postprocessed buffer.
-         */
-        virtual std::vector<GGUI::UTF>& postprocess();
 
         // Customization helper function
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_

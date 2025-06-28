@@ -1049,9 +1049,6 @@ namespace GGUI{
             else if constexpr (std::is_same_v<P, RGB>){
                 return Is_Non_Discriminant_Scalar<unsigned char>(value.Red, scalar) && Is_Non_Discriminant_Scalar<unsigned char>(value.Green, scalar) && Is_Non_Discriminant_Scalar<unsigned char>(value.Blue, scalar);
             }
-            else if constexpr (std::is_same_v<P, RGBA>){
-                return Is_Non_Discriminant_Scalar<unsigned char>(value.Alpha, scalar) && Is_Non_Discriminant_Scalar<RGB>(value, scalar);
-            }
             else if constexpr (std::is_same_v<P, FVector2>){
                 return Is_Non_Discriminant_Scalar<float>(value.X, scalar) && Is_Non_Discriminant_Scalar<float>(value.Y, scalar);
             }
@@ -1086,9 +1083,6 @@ namespace GGUI{
             }
             else if constexpr (std::is_same_v<P, RGB>){
                 return To_String(value.Red) + ", " + To_String(value.Green) + ", " + To_String(value.Blue);
-            }
-            else if constexpr (std::is_same_v<P, RGBA>){
-                return To_String(static_cast<RGB>(value)) + ", " + To_String(value.Alpha);
             }
             else if constexpr (std::is_same_v<P, FVector2>){
                 return To_String(value.X) + ", " + To_String(value.Y);
@@ -1129,6 +1123,10 @@ namespace GGUI{
     public:
         constexpr position(const IVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value, Default){}
 
+        constexpr position(const FVector3 value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
+            Transform_Center_To_Top_Left_Origin();
+        }
+
         constexpr position(const Vector&& value, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(value.X, value.Y, value.Z, Default){
             Transform_Center_To_Top_Left_Origin();
         }
@@ -1137,7 +1135,6 @@ namespace GGUI{
             Transform_Center_To_Top_Left_Origin();
         }
 
-        // WARNING: Uses zero origin based coordinates!!!
         constexpr position(const STYLING_INTERNAL::value<int> x, const STYLING_INTERNAL::value<int> y, const STYLING_INTERNAL::value<int> z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : Vector(x, y, z, Default){
             Transform_Center_To_Top_Left_Origin();
         }

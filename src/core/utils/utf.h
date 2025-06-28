@@ -13,8 +13,8 @@ namespace GGUI{
     public:
         ENCODING_FLAG Flags = ENCODING_FLAG::NONE;
 
-        RGBA Foreground;
-        RGBA Background;
+        RGB Foreground;
+        RGB Background;
 
         constexpr UTF() {}
 

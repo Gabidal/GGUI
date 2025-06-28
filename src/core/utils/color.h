@@ -83,84 +83,16 @@ namespace GGUI{
         constexpr RGB operator!() const{
             return RGB(UINT8_MAX - Red, UINT8_MAX - Green, UINT8_MAX - Blue);
         }
-    };
 
-    class RGBA : public RGB{
-    public:
-        unsigned char Alpha = UINT8_MAX;
+        constexpr void Add(const RGB& other, float opacity){
+            // Calculate the reverse alpha
+            float Reverse_Alpha = 1.0f - opacity;
 
-        constexpr RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : RGB(r, g, b){
-            Alpha = a;
+            // Blend the colors based on the opacity
+            Red = (unsigned char)((float)Red * Reverse_Alpha + (float)other.Red * opacity);
+            Green = (unsigned char)((float)Green * Reverse_Alpha + (float)other.Green * opacity);
+            Blue = (unsigned char)((float)Blue * Reverse_Alpha + (float)other.Blue * opacity);
         }
-
-        constexpr RGBA() = default;
-
-        constexpr RGBA(RGB primal) : RGB(primal){}
-    
-        // For float API's
-        constexpr void Set_Alpha(float a){
-            Alpha = (unsigned char)(a * UINT8_MAX);
-        }
-
-        constexpr float Get_Alpha() const{
-            return (float)Alpha / UINT8_MAX;
-        }
-
-        constexpr bool operator==(const RGBA& Other) const {    // Compile with -O3 to reduce into single 32b cmp
-            return Red == Other.Red && Green == Other.Green &&
-                Blue == Other.Blue && Alpha == Other.Alpha;
-        }
-
-        constexpr RGBA operator*(const RGBA& Other) const{
-            float Decimal_Alpha = Other.Get_Alpha();
-            // Make the reverse alpha
-            float Reverse_Alpha = 1 - Decimal_Alpha;
-            
-            return RGBA(
-                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Decimal_Alpha), 
-                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Decimal_Alpha), 
-                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Decimal_Alpha),
-                Alpha
-            );
-        }
-
-        constexpr RGBA operator+(const RGBA& Other) const{
-            float Decimal_Alpha = Other.Get_Alpha();
-            // Make the reverse alpha
-            float Reverse_Alpha = 1 - Decimal_Alpha;
-
-            return RGBA(
-                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Decimal_Alpha), 
-                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Decimal_Alpha), 
-                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Decimal_Alpha),
-                Alpha
-            );
-        }
-
-        constexpr RGBA operator*=(const RGBA& Other){
-            float Decimal_Alpha = Other.Get_Alpha();
-            // Make the reverse alpha
-            float Reverse_Alpha = 1 - Decimal_Alpha;
-
-            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Decimal_Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Decimal_Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Decimal_Alpha);
-
-            return *this;
-        }
-
-        constexpr RGBA operator+=(const RGBA& Other){
-            float Decimal_Alpha = Other.Get_Alpha();
-            // Make the reverse alpha
-            float Reverse_Alpha = 1 - Decimal_Alpha;
-
-            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Decimal_Alpha);
-            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Decimal_Alpha);
-            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Decimal_Alpha);
-
-            return *this;
-        }
-
     };
 
     namespace COLOR{

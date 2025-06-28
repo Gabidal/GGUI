@@ -4,18 +4,18 @@ using namespace GGUI;
 
 int main(){
     GGUI::GGUI(
-        background_color(COLOR::GREEN) | // <-- This will be our base color
+        background_color(COLOR::WHITE) | // <-- This will be our base color
         
-        // This element should look like Red + Green = Yellow
+        // This element should look like Red + White = Pink
         node(new element(
             width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
             background_color(COLOR::RED) |          // base color is red, but 50% of its value is given from its parent
             opacity(0.5f) | position(STYLES::top)   // positioned at the top of the parent element
         )) | 
 
-        // <-- The overlap between the two elements will produce Yellow + Cyan = brown.
+        // <-- The overlap between the two elements will produce Pink + Cyan = Magenta.
 
-        // This element should look like Blue + Green = Cyan
+        // This element should look like Blue + White = Cyan
         node(new element(
             width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
             background_color(COLOR::BLUE) |      // base color is blue, but 50% of its value is given from its parent

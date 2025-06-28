@@ -280,9 +280,6 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
 
             std::vector<UTF>* tmp = &c->render();
 
-            if (c->hasPostprocessingToDo())
-                tmp = &c->postprocess();
-
             nestElement(this, c, Render_Buffer, *tmp);
         }
     }
@@ -403,89 +400,6 @@ unsigned int GGUI::element::getProcessedHeight() {
         return Post_Process_Height;
     }
     return getHeight();
-}
-
-/**
- * @brief Configures and displays the shadow for the element.
- * @details This function sets the shadow properties such as direction, color, opacity, 
- *          and length, and applies the shadow effect to the element. It adjusts the 
- *          element's position to account for the shadow and marks the element as dirty 
- *          for a visual update.
- * @param[in] Direction The direction vector of the shadow.
- * @param[in] Shadow_Color The color of the shadow.
- * @param[in] Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
- * @param[in] Length The length of the shadow.
- */
-void GGUI::element::showShadow(FVector2 Direction, RGB Shadow_Color, float Opacity, float Length) {
-    shadow* properties = &Style->Shadow;
-
-    // Set shadow properties
-    properties->Color = Shadow_Color;
-    properties->Direction = {Direction.X, Direction.Y, Length};
-    properties->Opacity = Opacity;
-
-    IVector3 tmp = Style->Position.Get();
-
-    // Adjust element's position based on shadow length and opacity
-    tmp.X -= Length * Opacity;
-    tmp.Y -= Length * Opacity;
-
-    // Apply the inverse of the direction to the element's position
-    (IVector2)tmp += Direction * -1;
-    
-    // Set the new position of the element
-    Style->Position.Set(tmp);
-
-    // Mark shadow properties as evaluated
-    properties->Status = VALUE_STATE::VALUE;
-
-    // Mark the element as dirty for a visual update
-    Dirty.Dirty(STAIN_TYPE::RESET);
-    updateFrame();
-}
-
-/**
- * @brief Displays the shadow for the element.
- * @details This function sets the shadow properties such as direction, color, opacity, and length, and applies the shadow effect to the element. It adjusts the element's position to account for the shadow and marks the element as dirty for a visual update. The direction vector of the shadow is set to (0, 0) by default, which means the shadow will appear directly below the element.
- * @param[in] Shadow_Color The color of the shadow.
- * @param[in] Opacity The opacity of the shadow, between 0.0f (fully transparent) and 1.0f (fully opaque).
- * @param[in] Length The length of the shadow.
- */
-void GGUI::element::showShadow(RGB Shadow_Color, float Opacity, float Length){
-    shadow* properties = &Style->Shadow;
-
-    // Set shadow properties
-    properties->Color = Shadow_Color;
-    properties->Direction = {0, 0, Length};
-    properties->Opacity = Opacity;
-
-    IVector3 tmp = Style->Position.Get();
-
-    // Adjust element's position based on shadow length and opacity
-    tmp.X -= Length * Opacity;
-    tmp.Y -= Length * Opacity;
-
-    Style->Position.Set(tmp);
-
-    // Mark shadow properties as evaluated
-    properties->Status = VALUE_STATE::VALUE;
-
-    // Mark the element as dirty for a visual update
-    Dirty.Dirty(STAIN_TYPE::RESET);
-    updateFrame();
-}
-
-/**
- * @brief Sets the shadow properties for the element.
- * @details This function sets the shadow properties such as direction, color, opacity, and length, and applies the shadow effect to the element. It also marks the element as dirty for a visual update.
- * @param[in] s The shadow properties to set.
- */
-void GGUI::element::setShadow(shadow s){
-    Style->Shadow = s;
-
-    // Mark the element as dirty for a visual update
-    Dirty.Dirty(STAIN_TYPE::RESET);
-    updateFrame();
 }
 
 /**
@@ -1592,23 +1506,22 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
  * @param Dest The destination element to which the source element will be blended.
  * @param Source The source element which will be blended to the destination element.
  */
-void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source){
+void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, float childOpacity){
     // If the Source element has full opacity, then the destination gets fully rewritten over.
-    if (Source.Background.Alpha == UINT8_MAX){
+    if (childOpacity == 1.0f){
         Dest = Source;
         return;
     }
-    
-    if (Source.Background.Alpha == std::numeric_limits<unsigned char>::min()) return;         // Dont need to do anything.
+    else if (childOpacity == 0.0f) return;         // Dont need to do anything.
 
     // Color the Destination UTF by the Source UTF background color.
-    Dest.Background += Source.Background;
-    Dest.Foreground += Source.Background;
+    Dest.Background.Add(Source.Background, childOpacity);
+    Dest.Foreground.Add(Source.Background, childOpacity);
 
     // Check if source has text
     if (!Source.Has_Default_Text()){
         Dest.Set_Text(Source);
-        Dest.Foreground += Source.Foreground; 
+        Dest.Foreground.Add(Source.Foreground, childOpacity); 
     }
 }
 
@@ -1666,7 +1579,7 @@ void GGUI::element::nestElement(GGUI::element* parent, GGUI::element* child, std
             // Calculate the position of the child element in its own buffer.
             int Child_Buffer_Y = (y - Limits.start.Y + Limits.negativeOffset.Y) * child->getProcessedWidth();
             int Child_Buffer_X = (x - Limits.start.X + Limits.negativeOffset.X); 
-            computeAlphaToNesting(Parent_Buffer[y * getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X]);
+            computeAlphaToNesting(Parent_Buffer[y * getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacity());
         }
     }
 }
@@ -2069,191 +1982,6 @@ std::vector<GGUI::IVector3> Get_Surrounding_Indicies(int Width, int Height, GGUI
 
     return Result;
 
-}
-
-/**
- * @brief Checks if the element needs postprocessing.
- * @details This function checks if the element needs postprocessing by checking if the element has a shadow or is transparent.
- * @return True if the element needs postprocessing; otherwise, false.
- */
-bool GGUI::element::hasPostprocessingToDo() {
-    // Check if the element has a shadow that needs to be processed.
-    bool Has_Shadow_Processing = Style->Shadow.Enabled;
-
-    // Check if the element is transparent and needs to be processed.
-    bool Has_Opacity_Processing = isTransparent();
-
-    // Return true if the element needs postprocessing; otherwise, false.
-    return Has_Shadow_Processing || Has_Opacity_Processing;
-}
-
-/**
- * @brief Process the shadow of the element.
- * @details This function processes the shadow of the element by calculating the new buffer size and creating a new buffer with the shadow.
- *          It then offsets the shadow box buffer by the direction and blends it with the original buffer.
- * @param Current_Buffer The buffer to be processed.
- */
-void GGUI::element::processShadow(std::vector<GGUI::UTF>& Current_Buffer){
-    if (!Style->Shadow.Enabled)
-        return;
-
-    shadow& properties = Style->Shadow;
-
-    // First calculate the new buffer size.
-    // This is going to be the new two squares overlapping minus buffer.
-
-    // Calculate the zero origin when the equation is: -properties.Direction.Z * X + properties.Opacity = 0
-    // -a * x + o = 0
-    // x = o / a
-
-    int Shadow_Length = properties.Direction.Get<FVector3>().Z * properties.Opacity;
-
-    unsigned int Shadow_Box_Width = getWidth() + (Shadow_Length * 2);
-    unsigned int Shadow_Box_Height = getHeight() + (Shadow_Length * 2);
-
-    std::vector<GGUI::UTF> Shadow_Box;
-    Shadow_Box.resize(Shadow_Box_Width * Shadow_Box_Height);
-
-    unsigned char Current_Alpha = properties.Opacity * UINT8_MAX;;
-    float previous_opacity = properties.Opacity;
-    int Current_Box_Start_X = Shadow_Length;
-    int Current_Box_Start_Y = Shadow_Length;
-
-    int Current_Shadow_Width = getWidth();
-    int Current_Shadow_Height = getHeight();
-
-    for (int i = 0; i < Shadow_Length; i++){
-        std::vector<IVector3> Shadow_Indicies = Get_Surrounding_Indicies(
-            Current_Shadow_Width,
-            Current_Shadow_Height,
-            { 
-                Current_Box_Start_X--,
-                Current_Box_Start_Y--
-            },
-            properties.Direction.Get<FVector3>()
-        );
-
-        Current_Shadow_Width += 2;
-        Current_Shadow_Height += 2;
-
-        UTF shadow_pixel;
-        shadow_pixel.Background = properties.Color.Get<RGB>();
-        shadow_pixel.Background.Alpha = Current_Alpha;
-
-        for (auto& index : Shadow_Indicies){
-            Shadow_Box[index.Y * Shadow_Box_Width + index.X] = shadow_pixel;
-        }
-
-        previous_opacity *= GGUI::Min(0.9f, (float)properties.Direction.Get<FVector3>().Z);
-        Current_Alpha = previous_opacity * UINT8_MAX;;
-    }
-
-    // Now offset the shadow box buffer by the direction.
-    int Offset_Box_Width = Shadow_Box_Width + abs((int)properties.Direction.Get<FVector3>().X);
-    int Offset_Box_Height = Shadow_Box_Height + abs((int)properties.Direction.Get<FVector3>().Y);
-
-    std::vector<GGUI::UTF> Swapped_Buffer = Current_Buffer;
-
-    Current_Buffer.resize(Offset_Box_Width * Offset_Box_Height);
-
-    IVector3 Shadow_Box_Start = {
-        GGUI::Max(0, (int)properties.Direction.Get<FVector3>().X),
-        GGUI::Max(0, (int)properties.Direction.Get<FVector3>().Y)
-    };
-
-    IVector3 Original_Box_Start = {
-        Shadow_Box_Start.X - properties.Direction.Get<FVector3>().X + Shadow_Length,
-        Shadow_Box_Start.Y - properties.Direction.Get<FVector3>().Y + Shadow_Length
-    };
-
-    IVector3 Original_Box_End = {
-        Original_Box_Start.X + getWidth(),
-        Original_Box_Start.Y + getHeight()
-    };
-
-    IVector3 Shadow_Box_End = {
-        Shadow_Box_Start.X + Shadow_Box_Width,
-        Shadow_Box_Start.Y + Shadow_Box_Height
-    };
-
-    // Start mixing the shadow box and the original box buffers.
-    unsigned int Original_Buffer_Index = 0;
-    unsigned int Shadow_Buffer_Index = 0;
-    unsigned int Final_Index = 0;
-
-    for (int Raw_Y = 0; Raw_Y < Offset_Box_Height; Raw_Y++){
-        for (int Raw_X = 0; Raw_X < Offset_Box_Width; Raw_X++){
-
-            bool Is_Inside_Original_Area = Raw_X >= Original_Box_Start.X &&
-                Raw_X < Original_Box_End.X &&
-                Raw_Y >= Original_Box_Start.Y &&
-                Raw_Y < Original_Box_End.Y;
-
-
-            bool Is_Inside_Shadow_Box = Raw_X >= Shadow_Box_Start.X &&
-                Raw_X < Shadow_Box_End.X &&
-                Raw_Y >= Shadow_Box_Start.Y &&
-                Raw_Y < Shadow_Box_End.Y;
-
-            if (Is_Inside_Original_Area){
-                Current_Buffer[Final_Index++] = Swapped_Buffer[Original_Buffer_Index++];
-            }
-            else if (Is_Inside_Shadow_Box) {
-                Current_Buffer[Final_Index++] = Shadow_Box[Original_Buffer_Index + Shadow_Buffer_Index++];
-            }
-        }
-    }
-
-    Post_Process_Width = Offset_Box_Width;
-    Post_Process_Height = Offset_Box_Height;
-}
-
-/**
- * @brief Applies the opacity of the element to the given buffer.
- * @details This function will iterate over the given buffer and apply the opacity of the element to the background and foreground of each UTF character.
- * @param Current_Buffer The buffer to be processed.
- */
-void GGUI::element::processOpacity(std::vector<GGUI::UTF>& Current_Buffer)
-{
-    if (!isTransparent())
-        return;
-
-    // Get the current opacity value of the element.
-    float fast_opacity = Style->Opacity.Get();
-
-    // Iterate over each character in the buffer.
-    for (unsigned int Y = 0; Y < getProcessedHeight(); Y++)
-    {
-        for (unsigned int X = 0; X < getProcessedWidth(); X++)
-        {
-            // Get the current UTF character.
-            UTF& tmp = Current_Buffer[Y * getProcessedWidth() + X];
-
-            // Apply the opacity to the background and foreground of the character.
-            tmp.Background.Alpha = tmp.Background.Alpha * fast_opacity;
-            tmp.Foreground.Alpha = tmp.Foreground.Alpha * fast_opacity;
-        }
-    }
-}
-
-/**
- * @brief
- * This function performs postprocessing on the rendered buffer of the element.
- * It applies the shadow, and then the opacity to the rendered buffer.
- * @return The postprocessed buffer.
- */
-std::vector<GGUI::UTF>& GGUI::element::postprocess(){
-    // Save the rendered buffer to the postprocessed buffer.
-    Post_Process_Buffer = Render_Buffer;
-
-    // Process the shadow of the element.
-    processShadow(Post_Process_Buffer);
-
-    // Process the opacity of the element.
-    processOpacity(Post_Process_Buffer);
-
-    // Return the postprocessed buffer.
-    return Post_Process_Buffer;
 }
 
 /**
