@@ -375,34 +375,6 @@ bool GGUI::element::isTransparent() const {
 }
 
 /**
- * @brief Gets the processed width of the element.
- * @details This function returns the width of the element after any post-processing
- *          has been applied. If the element has not been post-processed, the
- *          original width of the element is returned.
- * @return The processed width of the element.
- */
-unsigned int GGUI::element::getProcessedWidth() {
-    if (Post_Process_Width != 0){
-        return Post_Process_Width;
-    }
-    return getWidth();
-}
-
-/**
- * @brief Gets the processed height of the element.
- * @details This function returns the height of the element after any post-processing
- *          has been applied. If the element has not been post-processed, the
- *          original height of the element is returned.
- * @return The processed height of the element.
- */
-unsigned int GGUI::element::getProcessedHeight() {
-    if (Post_Process_Height != 0){
-        return Post_Process_Height;
-    }
-    return getHeight();
-}
-
-/**
  * @brief Sets the parent of this element.
  * @details This function sets the parent of this element to the given element.
  *          If the given element is nullptr, it will clear the parent of this
@@ -1554,8 +1526,8 @@ GGUI::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::ele
 
     // Drawable box end, within the bounding box.
     IVector2 childEnd = {
-        GGUI::Min(childStart.X + Child->getProcessedWidth() - negativeOffset.X, parentEnd.X),
-        GGUI::Min(childStart.Y + Child->getProcessedHeight() - negativeOffset.Y, parentEnd.Y)
+        GGUI::Min(childStart.X + Child->getWidth() - negativeOffset.X, parentEnd.X),
+        GGUI::Min(childStart.Y + Child->getHeight() - negativeOffset.Y, parentEnd.Y)
     };
 
     return {negativeOffset, childStart, childEnd };
@@ -1577,7 +1549,7 @@ void GGUI::element::nestElement(GGUI::element* parent, GGUI::element* child, std
     for (int y = Limits.start.Y; y < Limits.end.Y; y++){
         for (int x = Limits.start.X; x < Limits.end.X; x++){
             // Calculate the position of the child element in its own buffer.
-            int Child_Buffer_Y = (y - Limits.start.Y + Limits.negativeOffset.Y) * child->getProcessedWidth();
+            int Child_Buffer_Y = (y - Limits.start.Y + Limits.negativeOffset.Y) * child->getWidth();
             int Child_Buffer_X = (x - Limits.start.X + Limits.negativeOffset.X); 
             computeAlphaToNesting(Parent_Buffer[y * getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacity());
         }
@@ -1997,10 +1969,10 @@ bool GGUI::element::childIsShown(element* other){
     bool Border_Modifier = hasBorder() != other->hasBorder() && hasBorder() ? 1 : 0;
 
     // Calculate the minimum and maximum coordinates of the child element
-    int Minimum_X = other->Style->Position.Get().X + other->getProcessedWidth();
-    int Minimum_Y = other->Style->Position.Get().Y + other->getProcessedHeight();
-    int Maximum_X = other->Style->Position.Get().X - (other->getWidth() - other->getProcessedWidth());
-    int Maximum_Y = other->Style->Position.Get().Y - (other->getHeight() - other->getProcessedHeight());
+    int Minimum_X = other->Style->Position.Get().X + other->getWidth();
+    int Minimum_Y = other->Style->Position.Get().Y + other->getHeight();
+    int Maximum_X = other->Style->Position.Get().X;
+    int Maximum_Y = other->Style->Position.Get().Y;
 
     // Check if the child element is visible within the bounds of the parent
     bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < (signed)getWidth() - Border_Modifier;

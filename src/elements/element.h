@@ -22,10 +22,6 @@
 namespace GGUI{
     class element{
     protected:
-        // Shadows and some other postprocessing effects can have an impact on the final width and height of the element.
-        unsigned int Post_Process_Width = 0;
-        unsigned int Post_Process_Height = 0;
-
         // Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
         IVector3 Absolute_Position_Cache;
 
@@ -329,25 +325,7 @@ namespace GGUI{
          * @return True if the element is transparent; otherwise, false.
          */
         bool isTransparent() const;
-
-        /**
-         * @brief Gets the processed width of the element.
-         * @details This function returns the width of the element after any post-processing
-         *          has been applied. If the element has not been post-processed, the
-         *          original width of the element is returned.
-         * @return The processed width of the element.
-         */
-        unsigned int getProcessedWidth();
-
-        /**
-         * @brief Gets the processed height of the element.
-         * @details This function returns the height of the element after any post-processing
-         *          has been applied. If the element has not been post-processed, the
-         *          original height of the element is returned.
-         * @return The processed height of the element.
-         */
-        unsigned int getProcessedHeight();
-
+        
         /**
          * @brief Retrieves the parent element.
          * @details This function returns the parent element of the current element.
