@@ -294,7 +294,7 @@ namespace GGUI{
             "250", "251", "252", "253", "254", "255"
         };
 
-        constexpr compactString toCompactTable[256] = {
+        constexpr const compactString toCompactTable[256] = {
             compactString("0", 1), compactString("1", 1), compactString("2", 1), compactString("3", 1), compactString("4", 1), compactString("5", 1), compactString("6", 1), compactString("7", 1), compactString("8", 1), compactString("9", 1),
             compactString("10", 2), compactString("11", 2), compactString("12", 2), compactString("13", 2), compactString("14", 2), compactString("15", 2), compactString("16", 2), compactString("17", 2), compactString("18", 2), compactString("19", 2),
             compactString("20", 2), compactString("21", 2), compactString("22", 2), compactString("23", 2), compactString("24", 2), compactString("25", 2), compactString("26", 2), compactString("27", 2), compactString("28", 2), compactString("29", 2),

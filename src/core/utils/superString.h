@@ -139,7 +139,7 @@ namespace GGUI{
             // Determine data storage based on size and Force_Unicode flag.
             // Store as Unicode data if size is greater than 1 or forced.
             // Store as a single ASCII character.
-            (size > 1 || forceUnicode) ? 
+            (Size > 1 || forceUnicode) ? 
             setUnicode(data) : 
             setAscii(data[0]);
 
