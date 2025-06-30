@@ -15,9 +15,9 @@ namespace GGUI{
 
     class visualState : public STYLING_INTERNAL::styleBase {
     public:
-        const compactString *Off, *On;
+        const INTERNAL::compactString *Off, *On;
 
-        constexpr visualState(const compactString& off, const compactString& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Off(&off), On(&on) {}
+        constexpr visualState(const INTERNAL::compactString& off, const INTERNAL::compactString& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Off(&off), On(&on) {}
 
         constexpr visualState(const GGUI::visualState& other) : styleBase(other.status), Off(other.Off), On(other.On) {}
 
@@ -40,7 +40,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE embedValue(styling* host, element* owner) override;
+        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class singleSelect : public STYLING_INTERNAL::styleBase {
@@ -65,7 +65,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        STAIN_TYPE embedValue(styling* host, element* owner) override;
+        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class switchBox : public element{
@@ -74,7 +74,7 @@ namespace GGUI{
         bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
 
         //Contains the unchecked version of the symbol and the checked version.
-        const compactString *Off = nullptr, *On = nullptr;
+        const INTERNAL::compactString *Off = nullptr, *On = nullptr;
 
         textField Text;
     public:
@@ -119,7 +119,7 @@ namespace GGUI{
          * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
          * @param text The new text for the switch element.
          */
-        void setText(compactString text);
+        void setText(INTERNAL::compactString text);
 
         void showBorder(bool b) override;
         
@@ -144,11 +144,11 @@ namespace GGUI{
             return "switchBox<" + Name + ">";
         }
 
-        constexpr compactString getStateString() const {
+        constexpr INTERNAL::compactString getStateString() const {
             return State ? *On : *Off;
         }
 
-        void setStateString(const compactString* off, const compactString* on);
+        void setStateString(const INTERNAL::compactString* off, const INTERNAL::compactString* on);
     };
 
     class radioButton : public switchBox{
@@ -235,7 +235,9 @@ namespace GGUI{
         // }
     };
 
-    void DisableOthers(switchBox* keepOn);
+    namespace INTERNAL{
+        void DisableOthers(switchBox* keepOn);
+    }
 }
 
 #endif

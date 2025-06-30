@@ -73,289 +73,288 @@ namespace GGUI{
          *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
          */
         extern void inputThread();
-    }
 
-    namespace SETTINGS{
-        // How fast for a detection of hold down situation.
-        extern unsigned long long Mouse_Press_Down_Cooldown;
-        
-        extern bool Word_Wrapping;
+        namespace SETTINGS{
+            // How fast for a detection of hold down situation.
+            extern unsigned long long Mouse_Press_Down_Cooldown;
+            
+            extern bool Word_Wrapping;
 
-        extern std::chrono::milliseconds Thread_Timeout;
+            extern std::chrono::milliseconds Thread_Timeout;
 
-        extern bool ENABLE_GAMMA_CORRECTION;
+            extern bool ENABLE_GAMMA_CORRECTION;
 
-        namespace LOGGER{
-            extern std::string File_Name;
+            namespace LOGGER{
+                extern std::string File_Name;
+            }
+
+            /**
+             * @brief Initializes the settings for the application.
+             *
+             * This function sets up the necessary configurations for the application
+             * by initializing the logger file name using the internal logger file name
+             * construction method.
+             */
+            extern void initSettings();
+        };
+
+        /**
+         * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
+         * 
+         * This function takes an unsigned long long integer and formats it as a hexadecimal string
+         * in uppercase. The resulting string does not include a "0x" prefix.
+         * 
+         * @param value The unsigned long long integer to be converted to a hexadecimal string.
+         * @return A std::string containing the uppercase hexadecimal representation of the input value.
+         */
+        extern std::string Hex(unsigned long long value);
+
+        /**
+         * @brief Checks if two rectangles collide.
+         *
+         * This function determines whether two rectangles, defined by their top-left
+         * corners and dimensions, overlap in a 2D space.
+         *
+         * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
+         * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
+         * @param A_Width The width of the first rectangle.
+         * @param A_Height The height of the first rectangle.
+         * @param B_Width The width of the second rectangle.
+         * @param B_Height The height of the second rectangle.
+         * @return true if the rectangles overlap, false otherwise.
+         */
+        extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
+
+        /**
+         * @brief Checks if two GGUI elements collide.
+         * 
+         * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
+         * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
+         * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
+         * 
+         * @param a Pointer to the first GGUI element.
+         * @param b Pointer to the second GGUI element.
+         * @param Identity Boolean value to return if the elements are the same.
+         * @return true if the elements collide, false otherwise.
+         */
+        extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
+
+        /**
+         * @brief Checks if a given point collides with a specified element.
+         * 
+         * This function determines if the point `b` collides with the element `a` by 
+         * calling another `Collides` function with the element's absolute position, 
+         * width, height, and the point's assumed dimensions of 1x1.
+         * 
+         * @param a Pointer to the GGUI::Element to check for collision.
+         * @param b The point (as GGUI::IVector3) to check for collision with the element.
+         * @return true if the point collides with the element, false otherwise.
+         */
+        extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
+
+        /**
+         * @brief Recursively finds the most accurate element that contains the given position.
+         * 
+         * This function checks if the given position is within the bounds of the parent element.
+         * If it is, it then checks all the child elements of the parent to see if any of them
+         * contain the position. If a child element contains the position, the function is called
+         * recursively on that child element. If no child element contains the position, the parent
+         * element is returned.
+         * 
+         * @param c The position to check, represented as an IVector3.
+         * @param Parent The parent element to start the search from.
+         * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
+         */
+        extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
+
+        /**
+         * @brief Returns the smaller of two signed long long integers.
+         * 
+         * This function compares two signed long long integers and returns the smaller of the two.
+         * 
+         * @param a The first signed long long integer to compare.
+         * @param b The second signed long long integer to compare.
+         * @return The smaller of the two signed long long integers.
+         */
+        extern signed long long Min(signed long long a, signed long long b);
+
+        /**
+         * @brief Returns the maximum of two signed long long integers.
+         *
+         * This function compares two signed long long integers and returns the greater of the two.
+         *
+         * @param a The first signed long long integer to compare.
+         * @param b The second signed long long integer to compare.
+         * @return The greater of the two signed long long integers.
+         */
+        extern signed long long Max(signed long long a, signed long long b);
+
+        /**
+         * @brief Checks if a bit is set in a char.
+         * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
+         *          It returns true if the bit is set and false if it is not.
+         *
+         * @param val The char to check the bit in.
+         * @param i The index of the bit to check.
+         *
+         * @return True if the bit is set, false if it is not.
+         */
+        extern bool Has_Bit_At(char val, int i);
+
+        /**
+         * @brief Gets the contents of a given position in the buffer.
+         * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
+         * @param Absolute_Position The position to get the contents of.
+         * @return The contents of the given position, or nullptr if the position is out of bounds.
+         */
+        extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
+
+        /**
+         * @brief Calculates the current load of the GGUI thread based on the given current position.
+         * @param Min The minimum value the load can have.
+         * @param Max The maximum value the load can have.
+         * @param Position The current position of the load.
+         * @return The current load of the GGUI thread from 0 to 1.
+         */
+        extern float Lerp(int Min, int Max, int Position);
+
+        /**
+         * @brief Checks if the given flag is set in the given flags.
+         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+         *
+         * @param f The flags to check.
+         * @param Flag The flag to check for.
+         * @return True if the flag is set, otherwise false.
+         */
+        extern bool Is(unsigned long long f, unsigned long long Flag);
+
+        /**
+         * @brief Checks if a flag is set in a set of flags.
+         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+         *
+         * @param f The flags to check.
+         * @param flag The flag to check for.
+         * @return True if the flag is set, otherwise false.
+         */
+        extern bool Has(unsigned long long f, unsigned long long flag);
+
+        extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
+
+        /**
+         * @brief Checks if all flags in small are set in big.
+         * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
+         *
+         * @param big The flags to check against.
+         * @param small The flags to check.
+         * @return True if all flags in small are set in big, otherwise false.
+         */
+        extern bool Contains(unsigned long long big, unsigned long long Small);
+
+        extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
+
+        /**
+         * @brief Determines if a given pointer is likely deletable (heap-allocated).
+         *
+         * This function assesses whether a pointer may belong to the heap by comparing its
+         * position relative to known memory sections such as the stack, heap, and data segments.
+         *
+         * @param ptr Pointer to be evaluated.
+         * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
+         */
+        extern ALLOCATION_TYPE getAllocationType(const void* ptr);
+
+        /**
+         * Linear interpolation function
+         * @param a The start value
+         * @param b The end value
+         * @param t The interpolation value, between 0 and 1
+         * @return The interpolated value
+         */
+        template<typename T>
+        constexpr T lerp(T a, T b, T t) {
+            // Clamp t between a and b
+            return a + t * (b - a);
         }
 
         /**
-         * @brief Initializes the settings for the application.
-         *
-         * This function sets up the necessary configurations for the application
-         * by initializing the logger file name using the internal logger file name
-         * construction method.
+         * @brief Performs gamma-corrected linear interpolation between two values.
+         * 
+         * @tparam T The type of the input values.
+         * @tparam P The type of the interpolation factor.
+         * @param a The start value.
+         * @param b The end value.
+         * @param t The interpolation factor, typically between 0 and 1.
+         * @return The interpolated value, gamma-corrected and cast back to type T.
          */
-        extern void initSettings();
-    };
+        template<typename T, typename P>
+        constexpr T Interpolate(T a, T b, P t) {
+            // Define gamma value for correction
+            constexpr float gamma = 2.2F;
 
-    /**
-     * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
-     * 
-     * This function takes an unsigned long long integer and formats it as a hexadecimal string
-     * in uppercase. The resulting string does not include a "0x" prefix.
-     * 
-     * @param value The unsigned long long integer to be converted to a hexadecimal string.
-     * @return A std::string containing the uppercase hexadecimal representation of the input value.
-     */
-    extern std::string Hex(unsigned long long value);
+            // Apply gamma correction to input values and perform linear interpolation
+            const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
 
-    /**
-     * @brief Checks if two rectangles collide.
-     *
-     * This function determines whether two rectangles, defined by their top-left
-     * corners and dimensions, overlap in a 2D space.
-     *
-     * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
-     * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
-     * @param A_Width The width of the first rectangle.
-     * @param A_Height The height of the first rectangle.
-     * @param B_Width The width of the second rectangle.
-     * @param B_Height The height of the second rectangle.
-     * @return true if the rectangles overlap, false otherwise.
-     */
-    extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
-
-    /**
-     * @brief Checks if two GGUI elements collide.
-     * 
-     * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
-     * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
-     * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
-     * 
-     * @param a Pointer to the first GGUI element.
-     * @param b Pointer to the second GGUI element.
-     * @param Identity Boolean value to return if the elements are the same.
-     * @return true if the elements collide, false otherwise.
-     */
-    extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
-
-    /**
-     * @brief Checks if a given point collides with a specified element.
-     * 
-     * This function determines if the point `b` collides with the element `a` by 
-     * calling another `Collides` function with the element's absolute position, 
-     * width, height, and the point's assumed dimensions of 1x1.
-     * 
-     * @param a Pointer to the GGUI::Element to check for collision.
-     * @param b The point (as GGUI::IVector3) to check for collision with the element.
-     * @return true if the point collides with the element, false otherwise.
-     */
-    extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
-
-    /**
-     * @brief Recursively finds the most accurate element that contains the given position.
-     * 
-     * This function checks if the given position is within the bounds of the parent element.
-     * If it is, it then checks all the child elements of the parent to see if any of them
-     * contain the position. If a child element contains the position, the function is called
-     * recursively on that child element. If no child element contains the position, the parent
-     * element is returned.
-     * 
-     * @param c The position to check, represented as an IVector3.
-     * @param Parent The parent element to start the search from.
-     * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
-     */
-    extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
-
-    /**
-     * @brief Returns the smaller of two signed long long integers.
-     * 
-     * This function compares two signed long long integers and returns the smaller of the two.
-     * 
-     * @param a The first signed long long integer to compare.
-     * @param b The second signed long long integer to compare.
-     * @return The smaller of the two signed long long integers.
-     */
-    extern signed long long Min(signed long long a, signed long long b);
-
-    /**
-     * @brief Returns the maximum of two signed long long integers.
-     *
-     * This function compares two signed long long integers and returns the greater of the two.
-     *
-     * @param a The first signed long long integer to compare.
-     * @param b The second signed long long integer to compare.
-     * @return The greater of the two signed long long integers.
-     */
-    extern signed long long Max(signed long long a, signed long long b);
-
-    /**
-     * @brief Checks if a bit is set in a char.
-     * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
-     *          It returns true if the bit is set and false if it is not.
-     *
-     * @param val The char to check the bit in.
-     * @param i The index of the bit to check.
-     *
-     * @return True if the bit is set, false if it is not.
-     */
-    extern bool Has_Bit_At(char val, int i);
-
-    /**
-     * @brief Gets the contents of a given position in the buffer.
-     * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
-     * @param Absolute_Position The position to get the contents of.
-     * @return The contents of the given position, or nullptr if the position is out of bounds.
-     */
-    extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
-
-    /**
-     * @brief Calculates the current load of the GGUI thread based on the given current position.
-     * @param Min The minimum value the load can have.
-     * @param Max The maximum value the load can have.
-     * @param Position The current position of the load.
-     * @return The current load of the GGUI thread from 0 to 1.
-     */
-    extern float Lerp(int Min, int Max, int Position);
-
-    /**
-     * @brief Checks if the given flag is set in the given flags.
-     * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-     *
-     * @param f The flags to check.
-     * @param Flag The flag to check for.
-     * @return True if the flag is set, otherwise false.
-     */
-    extern bool Is(unsigned long long f, unsigned long long Flag);
-
-    /**
-     * @brief Checks if a flag is set in a set of flags.
-     * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-     *
-     * @param f The flags to check.
-     * @param flag The flag to check for.
-     * @return True if the flag is set, otherwise false.
-     */
-    extern bool Has(unsigned long long f, unsigned long long flag);
-
-    extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
-
-    /**
-     * @brief Checks if all flags in small are set in big.
-     * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
-     *
-     * @param big The flags to check against.
-     * @param small The flags to check.
-     * @return True if all flags in small are set in big, otherwise false.
-     */
-    extern bool Contains(unsigned long long big, unsigned long long Small);
-
-    extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
-
-    /**
-     * @brief Determines if a given pointer is likely deletable (heap-allocated).
-     *
-     * This function assesses whether a pointer may belong to the heap by comparing its
-     * position relative to known memory sections such as the stack, heap, and data segments.
-     *
-     * @param ptr Pointer to be evaluated.
-     * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
-     */
-    extern ALLOCATION_TYPE getAllocationType(const void* ptr);
-
-    /**
-     * Linear interpolation function
-     * @param a The start value
-     * @param b The end value
-     * @param t The interpolation value, between 0 and 1
-     * @return The interpolated value
-     */
-    template<typename T>
-    constexpr T lerp(T a, T b, T t) {
-        // Clamp t between a and b
-        return a + t * (b - a);
-    }
-
-    /**
-     * @brief Performs gamma-corrected linear interpolation between two values.
-     * 
-     * @tparam T The type of the input values.
-     * @tparam P The type of the interpolation factor.
-     * @param a The start value.
-     * @param b The end value.
-     * @param t The interpolation factor, typically between 0 and 1.
-     * @return The interpolated value, gamma-corrected and cast back to type T.
-     */
-    template<typename T, typename P>
-    constexpr T Interpolate(T a, T b, P t) {
-        // Define gamma value for correction
-        constexpr float gamma = 2.2F;
-
-        // Apply gamma correction to input values and perform linear interpolation
-        const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
-
-        // Reverse gamma correction and cast back to original type
-        return static_cast<T>(std::pow(c_f, 1.F / gamma));
-    }
-
-    /**
-     * @brief Interpolates between two RGB colors using linear interpolation.
-     * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
-     * @param A The start RGB color.
-     * @param B The end RGB color.
-     * @param Distance The interpolation factor, typically between 0 and 1.
-     * @return The interpolated RGB color.
-     */
-    extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
-
-    inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
-        static std::string result;  // an internal cache container between renders.
-
-        if (result.empty() || Liquefied_Size != result.size()){
-            // Resize a std::string to the total size.
-            result.resize(Liquefied_Size, '\0');
+            // Reverse gamma correction and cast back to original type
+            return static_cast<T>(std::pow(c_f, 1.F / gamma));
         }
 
-        // Copy the contents of the Data vector into the std::string.
-        unsigned int Current_UTF_Insert_Index = 0;
-        for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
-            const compactString& data = Data->at(i);
+        /**
+         * @brief Interpolates between two RGB colors using linear interpolation.
+         * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
+         * @param A The start RGB color.
+         * @param B The end RGB color.
+         * @param Distance The interpolation factor, typically between 0 and 1.
+         * @return The interpolated RGB color.
+         */
+        extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
 
-            // Size of ones are always already loaded from memory into a char.
-            if (data.size > 1){
+        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
+            static std::string result;  // an internal cache container between renders.
+
+            if (result.empty() || Liquefied_Size != result.size()){
+                // Resize a std::string to the total size.
+                result.resize(Liquefied_Size, '\0');
+            }
+
+            // Copy the contents of the Data vector into the std::string.
+            unsigned int Current_UTF_Insert_Index = 0;
+            for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
+                const compactString& data = Data->at(i);
+
+                // Size of ones are always already loaded from memory into a char.
+                if (data.size > 1){
+                    // Replace the current contents of the string with the contents of the Unicode data.
+                    result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
+
+                    Current_UTF_Insert_Index += data.size;
+                }
+                else{
+                    // Add the single character to the string.
+                    result[Current_UTF_Insert_Index++] = data.getAscii();
+                }
+            }
+
+            return &result;
+        }
+
+        inline std::string To_String(compactString& cstr){
+            // Resize a std::string to the total size.
+            std::string result;
+            result.resize(cstr.size);
+
+            // Copy the contents of the Compact_String into the std::string.
+            if (cstr.size > 1){
                 // Replace the current contents of the string with the contents of the Unicode data.
-                result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
-
-                Current_UTF_Insert_Index += data.size;
+                result.replace(0, cstr.size, cstr.getUnicode());
             }
             else{
                 // Add the single character to the string.
-                result[Current_UTF_Insert_Index++] = data.getAscii();
+                result[0] = cstr.getAscii();
             }
-        }
 
-        return &result;
+            return result;
+        }
     }
-
-    inline std::string To_String(compactString& cstr){
-        // Resize a std::string to the total size.
-        std::string result;
-        result.resize(cstr.size);
-
-        // Copy the contents of the Compact_String into the std::string.
-        if (cstr.size > 1){
-            // Replace the current contents of the string with the contents of the Unicode data.
-            result.replace(0, cstr.size, cstr.getUnicode());
-        }
-        else{
-            // Add the single character to the string.
-            result[0] = cstr.getAscii();
-        }
-
-        return result;
-    }
-
 }
 
 #endif

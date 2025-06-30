@@ -20,7 +20,7 @@ namespace GGUI{
         // Check if the other is closer to an stack_starting address or to heap
         // [[gnu::assume(Other != nullptr || Other == nullptr)]]; // Hint that 'Other' is initialized
         // (void)Other;
-        if (getAllocationType(next) == ALLOCATION_TYPE::HEAP)
+        if (INTERNAL::getAllocationType(next) == INTERNAL::ALLOCATION_TYPE::HEAP)
             delete next;
     }
 
@@ -28,12 +28,12 @@ namespace GGUI{
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
     void position::evaluate(const styling* self, const styling* parent){
-        X.Evaluate(Max(
+        X.Evaluate(INTERNAL::Max(
             parent->Width.get()                     // The base width of the parent
             - (parent->Border_Enabled.value * 2)    // Offset the width by 2 for both sides of border.
             - self->Width.get()                     // So that the relativity will take into count position - width. so that 1.0f doesn't put the element out of bound.
         , 1));
-        Y.Evaluate(Max(
+        Y.Evaluate(INTERNAL::Max(
             parent->Height.get()                    // The base height of the parent 
             - (parent->Border_Enabled.value * 2)    // Offset the height by 2 for both sides of border.
             - self->Height.get()                    // So that the relativity will take into count position - height. so that 1.0f doesn't put the element out of bound.
@@ -42,11 +42,11 @@ namespace GGUI{
     }
 
     void width::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        value.Evaluate(Max(parent->Width.get() - (parent->Border_Enabled.value * 2), 1));
+        value.Evaluate(INTERNAL::Max(parent->Width.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
     void height::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        value.Evaluate(Max(parent->Height.get() - (parent->Border_Enabled.value * 2), 1));
+        value.Evaluate(INTERNAL::Max(parent->Height.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
     void textColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
@@ -111,69 +111,69 @@ namespace GGUI{
      * @brief Embeds the value of an RGB_VALUE object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
 
     /**
      * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
 
     /**
      * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
 
     /**
      * @brief Embeds the value of a Vector object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns STAIN_TYPE::CLEAN.
+     * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    STAIN_TYPE STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
 
-    STAIN_TYPE position::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE position::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Position = *this;
 
-        return STAIN_TYPE::MOVE;
+        return INTERNAL::STAIN_TYPE::MOVE;
     }
 
-    STAIN_TYPE width::embedValue(styling* host, element* owner){
+    INTERNAL::STAIN_TYPE width::embedValue(styling* host, element* owner){
         host->Width = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
-        if (host->Width.value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+        if (host->Width.value.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
             allowDynamicSize tmp = allowDynamicSize(false);
             tmp.embedValue(host, owner);
         }
 
-        return STAIN_TYPE::STRETCH;
+        return INTERNAL::STAIN_TYPE::STRETCH;
     }
 
-    STAIN_TYPE height::embedValue(styling* host, element* owner){
+    INTERNAL::STAIN_TYPE height::embedValue(styling* host, element* owner){
         host->Height = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
-        if (host->Width.value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+        if (host->Width.value.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
             allowDynamicSize tmp = allowDynamicSize(false);
             tmp.embedValue(host, owner);
         }
         
-        return STAIN_TYPE::STRETCH;
+        return INTERNAL::STAIN_TYPE::STRETCH;
     }
 
-    STAIN_TYPE enableBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE enableBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
         owner->showBorder(this->value);
 
         // If border background value has not been given, then set this background color inverted.
@@ -182,226 +182,226 @@ namespace GGUI{
             host->Border_Color.value.Set(!host->Background_Color.value.get<RGB>());
         }
 
-        return STAIN_TYPE::EDGE;
+        return INTERNAL::STAIN_TYPE::EDGE;
     }
 
-    STAIN_TYPE textColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE textColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Text_Color = *this;
 
         if (host->Border_Color.status < VALUE_STATE::VALUE)
             host->Border_Color.value = this->value;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE backgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE backgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Background_Color = *this;
 
         // If border background value has not been given, then set this background color as it.
         if (host->Border_Background_Color.status < VALUE_STATE::VALUE)
             host->Border_Background_Color.value = this->value;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE borderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE borderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE borderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE borderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Background_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hoverBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE hoverBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hoverTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE hoverTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Text_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hoverBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE hoverBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Background_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE hoverBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE hoverBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Background_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focusBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE focusBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focusTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE focusTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Text_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focusBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE focusBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Background_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE focusBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE focusBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Background_Color = *this;
 
-        return STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::COLOR;
     }
 
-    STAIN_TYPE styledBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE styledBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Style = *this;
 
-        return STAIN_TYPE::EDGE;
+        return INTERNAL::STAIN_TYPE::EDGE;
     }
 
-    STAIN_TYPE flowPriority::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE flowPriority::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Flow_Priority = *this;
 
-        return STAIN_TYPE::DEEP;
+        return INTERNAL::STAIN_TYPE::DEEP;
     }
 
-    STAIN_TYPE wrap::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE wrap::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Wrap = *this;
 
-        return STAIN_TYPE::DEEP;
+        return INTERNAL::STAIN_TYPE::DEEP;
     }
 
-    STAIN_TYPE allowOverflow::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE allowOverflow::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Overflow = *this;
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE allowDynamicSize::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE allowDynamicSize::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Dynamic_Size = *this;
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE margin::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE margin::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Margin = *this;
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE opacity::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE opacity::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Opacity = *this;
 
-        return STAIN_TYPE::STRETCH;
+        return INTERNAL::STAIN_TYPE::STRETCH;
     }
 
-    STAIN_TYPE allowScrolling::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE allowScrolling::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Scrolling = *this;
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE anchor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    INTERNAL::STAIN_TYPE anchor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Align = *this;
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE node::embedValue(styling* host, [[maybe_unused]]  element* owner){
+    INTERNAL::STAIN_TYPE node::embedValue(styling* host, [[maybe_unused]]  element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
-        if (Has(getAllocationType(Value), ALLOCATION_TYPE::STACK))
+        if (Has(INTERNAL::getAllocationType(Value), INTERNAL::ALLOCATION_TYPE::STACK))
             Value = Value->copy();
 
         host->Childs.push_back(Value);
 
-        return STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
+        return INTERNAL::STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
     
-    STAIN_TYPE childs::embedValue(styling* host, [[maybe_unused]]  element* owner){
+    INTERNAL::STAIN_TYPE childs::embedValue(styling* host, [[maybe_unused]]  element* owner){
         for (auto* c : *this){
             // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
-            if (Has(getAllocationType(c), ALLOCATION_TYPE::STACK))
+            if (Has(INTERNAL::getAllocationType(c), INTERNAL::ALLOCATION_TYPE::STACK))
                 c = c->copy();
 
             host->Childs.push_back(c);
         }
 
-        return STAIN_TYPE::DEEP;
+        return INTERNAL::STAIN_TYPE::DEEP;
     }
 
-    STAIN_TYPE onInit::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE onInit::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnInit(Value);
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE onDestroy::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE onDestroy::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnDestroy(Value);
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE onHide::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE onHide::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnHide(Value);
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE onShow::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE onShow::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnShow(Value);
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
         // TODO: Remove this with 0.1.9, with de-standardization of std::string.
-        std::string tmp = Value.is(COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, Value.getAscii()) : std::string(Value.getUnicode());
+        std::string tmp = Value.is(INTERNAL::COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, Value.getAscii()) : std::string(Value.getUnicode());
 
         owner->setName(tmp);
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE title::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE title::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setTitle(Value);
 
         if (owner->hasEmptyName()){
             // If the name is empty, then set the name to the title.
-            owner->setName(To_String(Value));
+            owner->setName(INTERNAL::To_String(Value));
         }
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE display::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE display::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->display(value);
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE onDraw::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE onDraw::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Terminal_Canvas element.
         if (dynamic_cast<canvas*>(owner))
             ((canvas*)owner)->setOnDraw(Value);
         else
             throw std::runtime_error("The on_draw attribute can only be used on Terminal_Canvas type elements.");
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE text::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE text::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Text_Field element.
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->setText(Value);
@@ -410,90 +410,90 @@ namespace GGUI{
         else
             throw std::runtime_error("The text attribute can only be used on textField type elements.");
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE onClick::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE onClick::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->onClick([this, owner](event*){
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
             if (dynamic_cast<switchBox*>(owner))
-                DisableOthers((switchBox*)owner);
+                INTERNAL::DisableOthers((switchBox*)owner);
 
             return this->Value(owner);
         });
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    STAIN_TYPE onInput::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE onInput::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->input(Value);
         else
             throw std::runtime_error("The on_input attribute can only be used on textField type elements.");
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
-    const char* styledBorder::getBorder(const borderConnection flags){
+    const char* styledBorder::getBorder(const INTERNAL::borderConnection flags){
         // Corners
-        if (flags == (borderConnection::DOWN | borderConnection::RIGHT))
+        if (flags == (INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::RIGHT))
             return topLeftCorner;
-        else if (flags == (borderConnection::DOWN | borderConnection::LEFT))
+        else if (flags == (INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::LEFT))
             return topRightCorner;
-        else if (flags == (borderConnection::UP | borderConnection::RIGHT))
+        else if (flags == (INTERNAL::borderConnection::UP | INTERNAL::borderConnection::RIGHT))
             return bottomLeftCorner;
-        else if (flags == (borderConnection::UP | borderConnection::LEFT))
+        else if (flags == (INTERNAL::borderConnection::UP | INTERNAL::borderConnection::LEFT))
             return bottomRightCorner;
         // Vertical lines
-        else if (flags == (borderConnection::DOWN | borderConnection::UP))
+        else if (flags == (INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::UP))
             return verticalLine;
 
         // Horizontal lines
-        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT))
+        else if (flags == (INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT))
             return horizontalLine;
 
         // connectors
-        else if (flags == (borderConnection::DOWN | borderConnection::UP | borderConnection::RIGHT))
+        else if (flags == (INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::UP | INTERNAL::borderConnection::RIGHT))
             return verticalRightConnector;
-        else if (flags == (borderConnection::DOWN | borderConnection::UP | borderConnection::LEFT))
+        else if (flags == (INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::UP | INTERNAL::borderConnection::LEFT))
             return verticalLeftConnector;
-        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT | borderConnection::DOWN))
+        else if (flags == (INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT | INTERNAL::borderConnection::DOWN))
             return horizontalBottomConnector;
-        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP))
+        else if (flags == (INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT | INTERNAL::borderConnection::UP))
             return horizontalTopConnector;
 
         // cross connectors
-        else if (flags == (borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP | borderConnection::DOWN))
+        else if (flags == (INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT | INTERNAL::borderConnection::UP | INTERNAL::borderConnection::DOWN))
             return crossConnector;
         else
             return nullptr;
     }
 
-    borderConnection styledBorder::getBorderType(const char* border){
+    INTERNAL::borderConnection styledBorder::getBorderType(const char* border){
         if (border == topLeftCorner)
-            return borderConnection::DOWN | borderConnection::RIGHT;
+            return INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::RIGHT;
         else if (border == topRightCorner)
-            return borderConnection::DOWN | borderConnection::LEFT;
+            return INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::LEFT;
         else if (border == bottomLeftCorner)
-            return borderConnection::UP | borderConnection::RIGHT;
+            return INTERNAL::borderConnection::UP | INTERNAL::borderConnection::RIGHT;
         else if (border == bottomRightCorner)
-            return borderConnection::UP | borderConnection::LEFT;
+            return INTERNAL::borderConnection::UP | INTERNAL::borderConnection::LEFT;
         else if (border == verticalLine)
-            return borderConnection::DOWN | borderConnection::UP;
+            return INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::UP;
         else if (border == horizontalLine)
-            return borderConnection::LEFT | borderConnection::RIGHT;
+            return INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT;
         else if (border == verticalRightConnector)
-            return borderConnection::DOWN | borderConnection::UP | borderConnection::RIGHT;
+            return INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::UP | INTERNAL::borderConnection::RIGHT;
         else if (border == verticalLeftConnector)
-            return borderConnection::DOWN | borderConnection::UP | borderConnection::LEFT;
+            return INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::UP | INTERNAL::borderConnection::LEFT;
         else if (border == horizontalBottomConnector)
-            return borderConnection::LEFT | borderConnection::RIGHT | borderConnection::DOWN;
+            return INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT | INTERNAL::borderConnection::DOWN;
         else if (border == horizontalTopConnector)
-            return borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP;
+            return INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT | INTERNAL::borderConnection::UP;
         else if (border == crossConnector)
-            return borderConnection::LEFT | borderConnection::RIGHT | borderConnection::UP | borderConnection::DOWN;
-        else return borderConnection::NONE;
+            return INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT | INTERNAL::borderConnection::UP | INTERNAL::borderConnection::DOWN;
+        else return INTERNAL::borderConnection::NONE;
     }
 
     STYLING_INTERNAL::styleBase* node::copy() const {
@@ -743,13 +743,13 @@ namespace GGUI{
     void styling::embedStyles(element* owner){
         STYLING_INTERNAL::styleBase* current_attribute = unParsedStyles;
 
-        STAIN changes;
+        INTERNAL::STAIN changes;
 
         // This is the first pass for the INSTANT ordered style_bases:
         // Loop until no further nested attributes.
         while (current_attribute){
 
-            if (current_attribute->order == EMBED_ORDER::INSTANT)
+            if (current_attribute->order == INTERNAL::EMBED_ORDER::INSTANT)
                 // First embed the current attribute
                 changes.Dirty(current_attribute->embedValue(this, owner));
 
@@ -763,7 +763,7 @@ namespace GGUI{
         // Loop until no further nested attributes.
         while (current_attribute){
 
-            if (current_attribute->order == EMBED_ORDER::DELAYED)
+            if (current_attribute->order == INTERNAL::EMBED_ORDER::DELAYED)
                 // First embed the current attribute
                 changes.Dirty(current_attribute->embedValue(this, owner));
 

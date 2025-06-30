@@ -21,11 +21,11 @@ namespace GGUI{
 
         class part : public STYLING_INTERNAL::styleBase{
         public:
-            compactString character = compactString(' ');
+            INTERNAL::compactString character = INTERNAL::compactString(' ');
             RGB color = COLOR::GRAY;
             partType type = partType::EMPTY;
 
-            constexpr part(partType t, RGB fillColor = COLOR::GREEN, compactString cs = compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
+            constexpr part(partType t, RGB fillColor = COLOR::GREEN, INTERNAL::compactString cs = INTERNAL::compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
 
             constexpr part() = default;
 
@@ -50,7 +50,7 @@ namespace GGUI{
             constexpr part(const part& other) : styleBase(other.status), 
                 character(other.character), color(other.color), type(other.type) {}
 
-            STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
+            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
 
             inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };
@@ -60,10 +60,10 @@ namespace GGUI{
         protected:
             float Progress = 0; // 0.0 - 1.0
 
-            compactString Head = compactString('>');
-            compactString Body = compactString('-');
-            compactString Tail = compactString('|');
-            compactString Empty = compactString(' ');
+            INTERNAL::compactString Head = INTERNAL::compactString('>');
+            INTERNAL::compactString Body = INTERNAL::compactString('-');
+            INTERNAL::compactString Tail = INTERNAL::compactString('|');
+            INTERNAL::compactString Empty = INTERNAL::compactString(' ');
 
             RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
             RGB Body_Color = GGUI::COLOR::GRAY;
@@ -96,10 +96,10 @@ namespace GGUI{
              */
             Bar() = default;
 
-            void setHeadCharacter(compactString cs) { Head = cs; }
-            void setBodyCharacter(compactString cs) { Body = cs; }
-            void setTailCharacter(compactString cs) { Tail = cs; }
-            void setEmptyCharacter(compactString cs) { Empty = cs; }
+            void setHeadCharacter(INTERNAL::compactString cs) { Head = cs; }
+            void setBodyCharacter(INTERNAL::compactString cs) { Body = cs; }
+            void setTailCharacter(INTERNAL::compactString cs) { Tail = cs; }
+            void setEmptyCharacter(INTERNAL::compactString cs) { Empty = cs; }
 
             void setHeadColor(RGB color) { Head_Color = color; }
             void setBodyColor(RGB color) { Body_Color = color; }

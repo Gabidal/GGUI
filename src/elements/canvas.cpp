@@ -66,7 +66,7 @@ namespace GGUI{
 
         Buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -93,7 +93,7 @@ namespace GGUI{
 
         Buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -119,7 +119,7 @@ namespace GGUI{
             Multi_Frame = true;
         }
 
-        Dirty.Dirty(STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -133,7 +133,7 @@ namespace GGUI{
      */
     void canvas::flush(bool Force_Flush){
         if (Force_Flush){
-            Dirty.Dirty(STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
         }
 
         updateFrame();
@@ -151,28 +151,28 @@ namespace GGUI{
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
-            Dirty.Dirty(STAIN_TYPE::STRETCH);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
 
         if (Style->evaluateDynamicPosition(this))
-            Dirty.Dirty(STAIN_TYPE::MOVE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
         if (Style->evaluateDynamicColors(this))
-            Dirty.Dirty(STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
 
         if (Style->evaluateDynamicBorder(this))
-            Dirty.Dirty(STAIN_TYPE::EDGE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
         // Since canvas does not utilize DEEP flag, we can just clean it away
-        if (Dirty.is(STAIN_TYPE::DEEP))
-            Dirty.Clean(STAIN_TYPE::DEEP);
+        if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP))
+            Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
 
-        if (Dirty.is(STAIN_TYPE::CLEAN))
+        if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
             return Result;
 
         unsigned int fittingWidth = getWidth() - hasBorder()*2;
         unsigned int fittingHeight = getHeight() - hasBorder()*2;
         
-        if (Dirty.is(STAIN_TYPE::STRETCH)) {
+        if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
 
@@ -180,12 +180,12 @@ namespace GGUI{
             Buffer.clear();
             Buffer.resize(fittingWidth * fittingHeight);
 
-            Dirty.Clean(STAIN_TYPE::STRETCH);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
 
-            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::RESET);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET);
         }
 
-        if (Dirty.is(STAIN_TYPE::RESET)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
                 for (unsigned int y = 0; y < fittingHeight; y++) {
@@ -198,19 +198,19 @@ namespace GGUI{
                 report(getName() + " is missing On_Draw call!");
             }
 
-            Dirty.Clean(STAIN_TYPE::RESET);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
         }
 
-        if (Dirty.is(STAIN_TYPE::MOVE)) {
-            Dirty.Clean(STAIN_TYPE::MOVE);
+        if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)) {
+            Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.is(STAIN_TYPE::COLOR)) {
+        if (Dirty.is(INTERNAL::STAIN_TYPE::COLOR)) {
 
-            Dirty.Clean(STAIN_TYPE::COLOR);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
             unsigned int Start_X = hasBorder();
             unsigned int Start_Y = hasBorder();
@@ -227,7 +227,7 @@ namespace GGUI{
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.is(STAIN_TYPE::EDGE)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
             renderBorders(Result);
             renderTitle(Result);
         }
@@ -265,14 +265,14 @@ namespace GGUI{
         int Frame_Above = (Frame_Below + 1) % Frame_Count;
 
         // now interpolate the foreground color between the two points
-        GGUI::RGB foreground = Lerp(
+        GGUI::RGB foreground = INTERNAL::Lerp(
             Frames[Frame_Below].foreground, 
             Frames[Frame_Above].foreground, 
             (float)Modulo / (float)Frame_Distance
         );
 
         // do same for background
-        GGUI::RGB background = Lerp(
+        GGUI::RGB background = INTERNAL::Lerp(
             Frames[Frame_Below].background, 
             Frames[Frame_Above].background, 
             (float)Modulo / (float)Frame_Distance
@@ -312,19 +312,19 @@ namespace GGUI{
         // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
         for (unsigned int Y = 0; Y < Usable_Height; Y++){
             for (unsigned int X = 0; X < Usable_Width; X++){
-                borderConnection Current_Masks = borderConnection::NONE;
+                INTERNAL::borderConnection Current_Masks = INTERNAL::borderConnection::NONE;
 
                 if ((signed)Y - 1 < 0 && pixels[X + ((signed)Y - 1) * Usable_Width])
-                    Current_Masks |= borderConnection::UP;
+                    Current_Masks |= INTERNAL::borderConnection::UP;
 
                 if (Y >= Usable_Height && pixels[X + (Y + 1) * Usable_Width])
-                    Current_Masks |= borderConnection::DOWN;
+                    Current_Masks |= INTERNAL::borderConnection::DOWN;
 
                 if ((signed)X - 1 < 0 && pixels[(signed)X - 1 + Y * Usable_Width])
-                    Current_Masks |= borderConnection::LEFT;
+                    Current_Masks |= INTERNAL::borderConnection::LEFT;
 
                 if (X >= Usable_Width && pixels[(X + 1) + Y * Usable_Width])
-                    Current_Masks |= borderConnection::RIGHT;
+                    Current_Masks |= INTERNAL::borderConnection::RIGHT;
 
                 const char* currentBorder = border_style.getBorder(Current_Masks);
 

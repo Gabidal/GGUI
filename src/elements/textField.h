@@ -15,7 +15,7 @@ namespace GGUI{
         std::string Text = "";
 
         // This will hold the text by lines, and does not re-allocate memory for whole text, only for indicies.
-        std::vector<compactString> Text_Cache; 
+        std::vector<INTERNAL::compactString> Text_Cache; 
 
         /**
          * @brief Updates the text cache list by newlines, and if no found then set the Text as the zeroth index.

@@ -24,21 +24,21 @@ namespace GGUI{
          *
          * @param Result The result string.
          */
-        constexpr void getColourAsSuperString(superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
+        constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
             // Add the red value to the string
-            Result->add(constants::toCompactTable[Red]);
+            Result->add(constants::ANSI::toCompactTable[Red]);
             
             // Add the separator to the string
             Result->add(constants::ANSI::SEPARATE);
             
             // Add the green value to the string
-            Result->add(constants::toCompactTable[Green]);
+            Result->add(constants::ANSI::toCompactTable[Green]);
             
             // Add the separator to the string
             Result->add(constants::ANSI::SEPARATE);
             
             // Add the blue value to the string
-            Result->add(constants::toCompactTable[Blue]);
+            Result->add(constants::ANSI::toCompactTable[Blue]);
         }
     
         /**
@@ -50,7 +50,7 @@ namespace GGUI{
          * @param Result A pointer to the Super_String to populate with escape codes.
          * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
          */
-        constexpr void getOverHeadAsSuperString(superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Result, const bool Is_Text_Color = true) const {
+        constexpr void getOverHeadAsSuperString(INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Result, const bool Is_Text_Color = true) const {
             Result->add(constants::ANSI::ESC_CODE);
             
             Is_Text_Color ? 

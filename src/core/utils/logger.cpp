@@ -851,7 +851,7 @@ namespace GGUI{
                             // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                             // We can assume that the singular error is at least one tall.
                             // -1, since the border takes one.
-                            if (GGUI::Min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight() - 1){
+                            if (GGUI::INTERNAL::Min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight() - 1){
                                 History->scrollDown();
                             }
                         }

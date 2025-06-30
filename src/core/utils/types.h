@@ -557,31 +557,6 @@ namespace GGUI{
         }
     };
 
-    struct fittingArea{
-        IVector2 negativeOffset;
-        IVector2 start;
-        IVector2 end;
-    };
-
-    enum class borderConnection{
-        NONE    = 0 << 0,
-        UP      = 1 << 0,
-        DOWN    = 1 << 1,
-        LEFT    = 1 << 2,
-        RIGHT   = 1 << 3
-    };
-
-    constexpr bool operator==(const borderConnection lhs, const borderConnection rhs) {
-        return static_cast<int>(lhs) == static_cast<int>(rhs);
-    }
-
-    constexpr borderConnection operator|(const borderConnection lhs, const borderConnection rhs) {
-        return static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
-    }
-
-    constexpr void operator|=(borderConnection& lhs, const borderConnection rhs) {
-        lhs = static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
-    }
 
     class event{
     public:
@@ -662,176 +637,202 @@ namespace GGUI{
         }
     };
 
-    enum class STAIN_TYPE{
-        CLEAN = 0,              // No change
-        COLOR = 1 << 0,         // BG and other color related changes
-        EDGE = 1 << 1,          // Title and border changes.
-        DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
-        STRETCH = 1 << 3,       // Width and or height changes.
-        STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently.
-        MOVE = 1 << 5,          // Enabled, to signal absolute position caching.
-        FINALIZE = 1 << 6,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
-        RESET = 1 << 7,         // This is to remove redundant STRETCH flagging.
-    };
-
-    /**
-     * @brief Performs bitwise OR operation on two STAIN_TYPE values.
-     * @details This operator allows combining two STAIN_TYPE values using a bitwise OR operation.
-     *          It returns the result as an unsigned integer.
-     *
-     * @param a The first STAIN_TYPE value.
-     * @param b The second STAIN_TYPE value.
-     * @return The result of the bitwise OR operation as an unsigned integer.
-     */
-    constexpr unsigned int operator|(const STAIN_TYPE a, const STAIN_TYPE b) {
-        // Cast both STAIN_TYPE values to unsigned integers and perform the bitwise OR operation.
-        return static_cast<unsigned int>(a) | static_cast<unsigned int>(b);
-    }
-
-    /**
-     * @brief Performs bitwise OR operation on a STAIN_TYPE value and an unsigned integer.
-     * @details This operator allows combining a STAIN_TYPE value with an unsigned integer using a bitwise OR operation.
-     *          It returns the result as an unsigned integer.
-     *
-     * @param a The STAIN_TYPE value.
-     * @param b The unsigned integer.
-     * @return The result of the bitwise OR operation as an unsigned integer.
-     */
-    constexpr unsigned int operator|(const STAIN_TYPE a, const unsigned int b){
-        return static_cast<unsigned int>(a) | b;
-    }
-
-    /**
-     * @brief Performs bitwise OR operation on an unsigned integer and a STAIN_TYPE value.
-     * @details This operator allows combining an unsigned integer with a STAIN_TYPE value using a bitwise OR operation.
-     *          It returns the result as an unsigned integer.
-     *
-     * @param a The unsigned integer.
-     * @param b The STAIN_TYPE value.
-     * @return The result of the bitwise OR operation as an unsigned integer.
-     */
-    constexpr unsigned int operator|(const unsigned int a, const STAIN_TYPE b){
-        return a | static_cast<unsigned int>(b);
-    }
-
-    class STAIN{
-    public:
-        STAIN_TYPE Type = STAIN_TYPE::CLEAN;
-
-        /**
-         * @brief Checks if the specified STAIN_TYPE is set in the current STAIN object.
-         * @details This function checks if a given STAIN_TYPE flag is set in the current
-         *          STAIN object. For the CLEAN flag, it checks if the type is less than
-         *          or equal to CLEAN. For other flags, it performs a bitwise AND operation.
-         *
-         * @param f The STAIN_TYPE flag to check.
-         * @return true if the specified flag is set; false otherwise.
-         */
-        constexpr bool is(const STAIN_TYPE f) const {
-            // Special handling for the CLEAN flag
-            if (f == STAIN_TYPE::CLEAN) {
-                return Type <= f;
-            }
-            // Check if the specified flag is set using bitwise AND
-            return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) == static_cast<unsigned int>(f);
-        }
-
-        constexpr bool has(const unsigned int f) const {
-            return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) != 0;
-        }
-
-        /**
-         * @brief Clears a STAIN_TYPE flag from the current STAIN object.
-         * @details This function clears a given STAIN_TYPE flag from the current
-         *          STAIN object. It performs a bitwise AND operation with the
-         *          bitwise compliment of the specified flag.
-         *
-         * @param f The STAIN_TYPE flag to clear.
-         */
-        constexpr void Clean(const STAIN_TYPE f){
-            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~static_cast<unsigned int>(f));
-        }
-
-        /**
-         * @brief Clears a STAIN_TYPE flag from the current STAIN object.
-         * @details This function clears a given STAIN_TYPE flag from the current
-         *          STAIN object. It performs a bitwise AND operation with the
-         *          bitwise compliment of the specified flag.
-         *
-         * @param f The STAIN_TYPE flag to clear.
-         */
-        constexpr void Clean(const unsigned int f){
-            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~f);
-        }
-
-        /**
-         * @brief Marks the specified STAIN_TYPE flag as dirty.
-         * @details This function sets a given STAIN_TYPE flag on the current
-         *          STAIN object, indicating that the element needs to be reprocessed
-         *          for the specified attributes.
-         *
-         * @param f The STAIN_TYPE flag to set.
-         */
-        constexpr void Dirty(const STAIN_TYPE f) {
-            // Set the specified flag using bitwise OR
-            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | static_cast<unsigned int>(f));
-        }
-
-        /**
-         * @brief Marks the specified STAIN_TYPE flag as dirty.
-         * @details This function sets a given STAIN_TYPE flag on the current
-         *          STAIN object, indicating that the element needs to be reprocessed
-         *          for the specified attributes.
-         *
-         * @param f The STAIN_TYPE flag to set.
-         */
-        constexpr void Dirty(const unsigned int f){
-            // Set the specified flag using bitwise OR
-            Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | f);
-        }
-
-    };
-
-    enum class ENCODING_FLAG{
-        NONE        = 0 << 0,
-        START       = 1 << 0,
-        END         = 1 << 1
-    };
-
-    constexpr bool operator== (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-        return static_cast<unsigned char>(a) == static_cast<unsigned char>(b);
-    }
-
-    constexpr void operator|= (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-        a = static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
-    }
-
-    constexpr ENCODING_FLAG operator&(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-        return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) & static_cast<unsigned char>(b));
-    }
-
-    constexpr ENCODING_FLAG operator|(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-        return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
-    }
-
-    enum class STATE{
-        UNKNOWN,
-
-        INIT,
-        DESTROYED,
-        HIDDEN,
-        SHOWN
-
-    };
-
-    enum class ALLOCATION_TYPE{
-        UNKNOWN         = 0 << 0,
-        STACK           = 1 << 0,
-        HEAP            = 1 << 1,
-        DATA            = 1 << 2
-    };
-
     namespace INTERNAL{
+        struct fittingArea{
+            IVector2 negativeOffset;
+            IVector2 start;
+            IVector2 end;
+        };
+
+        enum class borderConnection{
+            NONE    = 0 << 0,
+            UP      = 1 << 0,
+            DOWN    = 1 << 1,
+            LEFT    = 1 << 2,
+            RIGHT   = 1 << 3
+        };
+
+        constexpr bool operator==(const borderConnection lhs, const borderConnection rhs) {
+            return static_cast<int>(lhs) == static_cast<int>(rhs);
+        }
+
+        constexpr borderConnection operator|(const borderConnection lhs, const borderConnection rhs) {
+            return static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
+        }
+
+        constexpr void operator|=(borderConnection& lhs, const borderConnection rhs) {
+            lhs = static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
+        }
+
+        enum class STAIN_TYPE{
+            CLEAN = 0,              // No change
+            COLOR = 1 << 0,         // BG and other color related changes
+            EDGE = 1 << 1,          // Title and border changes.
+            DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
+            STRETCH = 1 << 3,       // Width and or height changes.
+            STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently.
+            MOVE = 1 << 5,          // Enabled, to signal absolute position caching.
+            FINALIZE = 1 << 6,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
+            RESET = 1 << 7,         // This is to remove redundant STRETCH flagging.
+        };
+
+        /**
+         * @brief Performs bitwise OR operation on two STAIN_TYPE values.
+         * @details This operator allows combining two STAIN_TYPE values using a bitwise OR operation.
+         *          It returns the result as an unsigned integer.
+         *
+         * @param a The first STAIN_TYPE value.
+         * @param b The second STAIN_TYPE value.
+         * @return The result of the bitwise OR operation as an unsigned integer.
+         */
+        constexpr unsigned int operator|(const STAIN_TYPE a, const STAIN_TYPE b) {
+            // Cast both STAIN_TYPE values to unsigned integers and perform the bitwise OR operation.
+            return static_cast<unsigned int>(a) | static_cast<unsigned int>(b);
+        }
+
+        /**
+         * @brief Performs bitwise OR operation on a STAIN_TYPE value and an unsigned integer.
+         * @details This operator allows combining a STAIN_TYPE value with an unsigned integer using a bitwise OR operation.
+         *          It returns the result as an unsigned integer.
+         *
+         * @param a The STAIN_TYPE value.
+         * @param b The unsigned integer.
+         * @return The result of the bitwise OR operation as an unsigned integer.
+         */
+        constexpr unsigned int operator|(const STAIN_TYPE a, const unsigned int b){
+            return static_cast<unsigned int>(a) | b;
+        }
+
+        /**
+         * @brief Performs bitwise OR operation on an unsigned integer and a STAIN_TYPE value.
+         * @details This operator allows combining an unsigned integer with a STAIN_TYPE value using a bitwise OR operation.
+         *          It returns the result as an unsigned integer.
+         *
+         * @param a The unsigned integer.
+         * @param b The STAIN_TYPE value.
+         * @return The result of the bitwise OR operation as an unsigned integer.
+         */
+        constexpr unsigned int operator|(const unsigned int a, const STAIN_TYPE b){
+            return a | static_cast<unsigned int>(b);
+        }
+
+        class STAIN{
+        public:
+            STAIN_TYPE Type = STAIN_TYPE::CLEAN;
+
+            /**
+             * @brief Checks if the specified STAIN_TYPE is set in the current STAIN object.
+             * @details This function checks if a given STAIN_TYPE flag is set in the current
+             *          STAIN object. For the CLEAN flag, it checks if the type is less than
+             *          or equal to CLEAN. For other flags, it performs a bitwise AND operation.
+             *
+             * @param f The STAIN_TYPE flag to check.
+             * @return true if the specified flag is set; false otherwise.
+             */
+            constexpr bool is(const STAIN_TYPE f) const {
+                // Special handling for the CLEAN flag
+                if (f == STAIN_TYPE::CLEAN) {
+                    return Type <= f;
+                }
+                // Check if the specified flag is set using bitwise AND
+                return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) == static_cast<unsigned int>(f);
+            }
+
+            constexpr bool has(const unsigned int f) const {
+                return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) != 0;
+            }
+
+            /**
+             * @brief Clears a STAIN_TYPE flag from the current STAIN object.
+             * @details This function clears a given STAIN_TYPE flag from the current
+             *          STAIN object. It performs a bitwise AND operation with the
+             *          bitwise compliment of the specified flag.
+             *
+             * @param f The STAIN_TYPE flag to clear.
+             */
+            constexpr void Clean(const STAIN_TYPE f){
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~static_cast<unsigned int>(f));
+            }
+
+            /**
+             * @brief Clears a STAIN_TYPE flag from the current STAIN object.
+             * @details This function clears a given STAIN_TYPE flag from the current
+             *          STAIN object. It performs a bitwise AND operation with the
+             *          bitwise compliment of the specified flag.
+             *
+             * @param f The STAIN_TYPE flag to clear.
+             */
+            constexpr void Clean(const unsigned int f){
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~f);
+            }
+
+            /**
+             * @brief Marks the specified STAIN_TYPE flag as dirty.
+             * @details This function sets a given STAIN_TYPE flag on the current
+             *          STAIN object, indicating that the element needs to be reprocessed
+             *          for the specified attributes.
+             *
+             * @param f The STAIN_TYPE flag to set.
+             */
+            constexpr void Dirty(const STAIN_TYPE f) {
+                // Set the specified flag using bitwise OR
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | static_cast<unsigned int>(f));
+            }
+
+            /**
+             * @brief Marks the specified STAIN_TYPE flag as dirty.
+             * @details This function sets a given STAIN_TYPE flag on the current
+             *          STAIN object, indicating that the element needs to be reprocessed
+             *          for the specified attributes.
+             *
+             * @param f The STAIN_TYPE flag to set.
+             */
+            constexpr void Dirty(const unsigned int f){
+                // Set the specified flag using bitwise OR
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | f);
+            }
+
+        };
+
+        enum class ENCODING_FLAG{
+            NONE        = 0 << 0,
+            START       = 1 << 0,
+            END         = 1 << 1
+        };
+
+        constexpr bool operator== (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            return static_cast<unsigned char>(a) == static_cast<unsigned char>(b);
+        }
+
+        constexpr void operator|= (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            a = static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
+        }
+
+        constexpr ENCODING_FLAG operator&(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) & static_cast<unsigned char>(b));
+        }
+
+        constexpr ENCODING_FLAG operator|(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
+        }
+
+        enum class STATE{
+            UNKNOWN,
+
+            INIT,
+            DESTROYED,
+            HIDDEN,
+            SHOWN
+
+        };
+
+        enum class ALLOCATION_TYPE{
+            UNKNOWN         = 0 << 0,
+            STACK           = 1 << 0,
+            HEAP            = 1 << 1,
+            DATA            = 1 << 2
+        };
+
         namespace LOGGER{
             extern void Log(std::string Text);
         }

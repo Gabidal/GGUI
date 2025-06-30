@@ -17,12 +17,12 @@ namespace GGUI{
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
         // The textField::render() will take care of this if percentage is used.
-        if (innerWidth == 0 && Style->Width.value.Get_Type() == EVALUATION_TYPE::PERCENTAGE){
+        if (innerWidth == 0 && Style->Width.value.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
             return;
         }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
-        compactString current_line(Text.data(), 0, true);
+        INTERNAL::compactString current_line(Text.data(), 0, true);
         unsigned int Longest_Line = 0;
 
         // This is for the remaining liners to determine if they can append into the previous line or not.
@@ -68,7 +68,7 @@ namespace GGUI{
                     Longest_Line = current_line.size;
 
                 // reset current
-                current_line = compactString(Text.data() + i + 1, 0, true);
+                current_line = INTERNAL::compactString(Text.data() + i + 1, 0, true);
             }
         }
 
@@ -94,11 +94,11 @@ namespace GGUI{
                 Text_Cache.back().size += current_line.size;
             }
 
-            Longest_Line = Max(Longest_Line, Text_Cache.back().size);
+            Longest_Line = INTERNAL::Max(Longest_Line, Text_Cache.back().size);
         }
 
         // now we need to go through each compact string and make sure that those that are enforced as unicode's but are still 1 long, need to be transformed into the char bearing.
-        for (compactString& line : Text_Cache){
+        for (INTERNAL::compactString& line : Text_Cache){
             // We need to take care of the "Force Unicode" shenanigans before we add it to this list.
             if (line.size == 1){
                 line.setAscii(line.getUnicode(true)[0]);
@@ -108,8 +108,8 @@ namespace GGUI{
         // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
         if (isDynamicSizeAllowed()){
             // Set the new size
-            setWidth(Max(Longest_Line + borderOffset, getWidth()));
-            setHeight(Max(Text_Cache.size() + borderOffset, getHeight()));
+            setWidth(INTERNAL::Max(Longest_Line + borderOffset, getWidth()));
+            setHeight(INTERNAL::Max(Text_Cache.size() + borderOffset, getHeight()));
         }
     }
 
@@ -125,60 +125,60 @@ namespace GGUI{
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
-            Dirty.Dirty(STAIN_TYPE::STRETCH);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
 
         if (Style->evaluateDynamicPosition(this))
-            Dirty.Dirty(STAIN_TYPE::MOVE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
         if (Style->evaluateDynamicColors(this))
-            Dirty.Dirty(STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
 
         if (Style->evaluateDynamicBorder(this))
-            Dirty.Dirty(STAIN_TYPE::EDGE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
         // If the text field is clean, return the current render buffer
-        if (Dirty.is(STAIN_TYPE::CLEAN))
+        if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
             return Result;
 
         // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
-        if (Dirty.is(STAIN_TYPE::DEEP)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)){
             updateTextCache();
         }
 
-        if (Dirty.is(STAIN_TYPE::RESET)){
-            Dirty.Clean(STAIN_TYPE::RESET);
+        if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
+            Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
             std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
             
-            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
-        if (Dirty.is(STAIN_TYPE::STRETCH)) {
+        if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
-            Dirty.Clean(STAIN_TYPE::STRETCH);
-            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
         }
 
         // Update the absolute position cache if the MOVE stain is detected.
-        if (Dirty.is(STAIN_TYPE::MOVE)) {
-            Dirty.Clean(STAIN_TYPE::MOVE);
+        if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)) {
+            Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.is(STAIN_TYPE::COLOR)){        
+        if (Dirty.is(INTERNAL::STAIN_TYPE::COLOR)){        
             // Clean the color stain after applying the color system.
-            Dirty.Clean(STAIN_TYPE::COLOR);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
             applyColors(Result);
         }
 
         // Align text and add child windows to the Result buffer if the DEEP stain is detected
-        if (Dirty.is(STAIN_TYPE::DEEP)) {
-            Dirty.Clean(STAIN_TYPE::DEEP);
+        if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)) {
+            Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
 
             if (Style->Align.value == ANCHOR::LEFT)
                 alignTextLeft(Result);
@@ -189,7 +189,7 @@ namespace GGUI{
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.is(STAIN_TYPE::EDGE)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
             renderBorders(Result);
             renderTitle(Result);
         }
@@ -208,7 +208,7 @@ namespace GGUI{
         if (hasEmptyName())
             setName(text);
 
-        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::RESET);
 
         updateTextCache();
 
@@ -227,7 +227,7 @@ namespace GGUI{
         unsigned int writableWidth = getWidth() - hasBorder();
         unsigned int writableHeight = getHeight() - hasBorder();
 
-        for (compactString line : Text_Cache) {
+        for (INTERNAL::compactString line : Text_Cache) {
             unsigned int Row_Index = 0;  // To track characters within the line.
 
             if (Line_Index >= writableHeight)
@@ -266,7 +266,7 @@ namespace GGUI{
         unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
         unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
 
-        for (compactString line : Text_Cache) {
+        for (INTERNAL::compactString line : Text_Cache) {
             int Row_Index = line.size - 1;  // Start from the end of the line
 
             if (Line_Index >= writableHeight)
@@ -303,7 +303,7 @@ namespace GGUI{
         unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
         unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
 
-        for (compactString line : Text_Cache) {
+        for (INTERNAL::compactString line : Text_Cache) {
             unsigned int Row_Index = 0;  // Start from the beginning of the line
             unsigned int Start_Pos = (getWidth()- hasBorder()*2 - line.size) / 2;  // Calculate the starting position
 
@@ -366,7 +366,7 @@ namespace GGUI{
         action* enter = new action(
             constants::ENTER,
             [this, Then](GGUI::event* e) {
-                if (Focused && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ENTER].State) {
+                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].State) {
                     //We know the event was gifted as Input*
                     GGUI::input* input = (GGUI::input*)e;
 
@@ -387,14 +387,14 @@ namespace GGUI{
         action* back_space = new action(
             constants::BACKSPACE,
             [this](GGUI::event*) {
-                if (Focused && INTERNAL::KEYBOARD_STATES[BUTTON_STATES::BACKSPACE].State) {
+                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE].State) {
                     //If the text field is empty, there is nothing to do
                     if (Text.size() > 0) {
                         Text.pop_back();
 
                         updateTextCache();
 
-                        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::RESET);
+                        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::RESET);
                         updateFrame();
                     }
 

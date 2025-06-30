@@ -9,9 +9,9 @@
 #include "types.h"
 
 namespace GGUI{
-    class UTF : public compactString {
+    class UTF : public INTERNAL::compactString {
     public:
-        ENCODING_FLAG flags = ENCODING_FLAG::NONE;
+        INTERNAL::ENCODING_FLAG flags = INTERNAL::ENCODING_FLAG::NONE;
 
         RGB foreground;
         RGB background;
@@ -26,7 +26,7 @@ namespace GGUI{
          * @param other The UTF object to copy.
          */
         constexpr UTF(const GGUI::UTF& other)
-            : compactString(other),
+            : INTERNAL::compactString(other),
               foreground(other.foreground),
               background(other.background) {}
 
@@ -65,7 +65,7 @@ namespace GGUI{
          * @param utf_flag The UTF flag to check.
          * @return True if the flag is set, otherwise false.
          */
-        constexpr bool is(const ENCODING_FLAG flag) const {
+        constexpr bool is(const INTERNAL::ENCODING_FLAG flag) const {
             return (flags & flag) == flag;
         }
 
@@ -92,7 +92,7 @@ namespace GGUI{
          * @brief Sets a specific UTF flag.
          * @param utf_flag The UTF flag to set.
          */
-        constexpr void setFlag(const ENCODING_FLAG flag) {
+        constexpr void setFlag(const INTERNAL::ENCODING_FLAG flag) {
             flags |= flag;
         }
 
@@ -154,15 +154,15 @@ namespace GGUI{
          * @param Background_Colour The background colour as a string.
          */
         void toSuperString(
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead = new superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* BackgroundOverhead = new superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* TextColour = new superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>(),
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* BackgroundColour = new superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>()
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* BackgroundOverhead = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* TextColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>(),
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* BackgroundColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>()
         ) const;
 
-        superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* toSuperString() const {
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result = new superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>();
+        INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* toSuperString() const {
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>();
 
             toSuperString(Result);
 
@@ -178,11 +178,11 @@ namespace GGUI{
          * @param Background_Colour The Super_String where the background colour will be stored.
          */
         void toEncodedSuperString(
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
-            superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
         ) const;
 
         /**

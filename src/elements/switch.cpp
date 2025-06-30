@@ -7,22 +7,22 @@
 
 namespace GGUI{
 
-    STAIN_TYPE visualState::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE visualState::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
             ((switchBox*)owner)->setStateString(Off, On);
         else
             throw std::runtime_error("The visualState attribute can only be used on switchBox, radioButton or checkBox type elements.");
 
-        return STAIN_TYPE::STATE;
+        return INTERNAL::STAIN_TYPE::STATE;
     }
 
-    STAIN_TYPE singleSelect::embedValue([[maybe_unused]] styling* host, element* owner){
+    INTERNAL::STAIN_TYPE singleSelect::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<switchBox*>(owner) || dynamic_cast<radioButton*>(owner) || dynamic_cast<checkBox*>(owner))
             ((switchBox*)owner)->enableSingleSelect();
         else 
             throw std::runtime_error("The group attribute can only be used on switchBox, radioButton or checkBox type elements.");
 
-        return STAIN_TYPE::CLEAN;
+        return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
     /**
@@ -44,15 +44,15 @@ namespace GGUI{
         setHeight(Text.getHeight());
 
         // Mark the element as needing a deep state update
-        Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::STATE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::STATE);
     }
 
-    void switchBox::setStateString(const compactString* off, const compactString* on) {
+    void switchBox::setStateString(const INTERNAL::compactString* off, const INTERNAL::compactString* on) {
         Off = off;
         On = on;
 
         // Mark the switch as needing a state update
-        Dirty.Dirty(STAIN_TYPE::STATE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::STATE);
 
         updateFrame();
     }
@@ -62,20 +62,20 @@ namespace GGUI{
      * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the switch element.
      */
-    void switchBox::setText(compactString text) { 
+    void switchBox::setText(INTERNAL::compactString text) { 
         
         pauseGGUI([this, &text](){
-            compactString Symbol = " ";   // This is where the switchbox symbol will replace to.
-            compactString Space = ' ';
+            INTERNAL::compactString Symbol = " ";   // This is where the switchbox symbol will replace to.
+            INTERNAL::compactString Space = ' ';
             
-            superString<3> container{Symbol, Space, text};
+            INTERNAL::superString<3> container{Symbol, Space, text};
             
             // Mark the element as needing a deep state update
-            Dirty.Dirty(STAIN_TYPE::DEEP);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
             
             // Set the text with a space character added to the beginning
             Text.setText(container.toString());
-            setName(To_String(text));
+            setName(INTERNAL::To_String(text));
 
             // Update the switch element's dimensions to fit the new text
             setWidth(Text.getWidth() + hasBorder() * 2);
@@ -97,7 +97,7 @@ namespace GGUI{
             }
 
             // Mark the element as dirty for border changes
-            Dirty.Dirty(STAIN_TYPE::EDGE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
@@ -115,57 +115,57 @@ namespace GGUI{
         
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
-            Dirty.Dirty(STAIN_TYPE::STRETCH);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
 
         if (Style->evaluateDynamicPosition(this))
-            Dirty.Dirty(STAIN_TYPE::MOVE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
         if (Style->evaluateDynamicColors(this))
-            Dirty.Dirty(STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
 
         if (Style->evaluateDynamicBorder(this))
-            Dirty.Dirty(STAIN_TYPE::EDGE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
-        if (Dirty.is(STAIN_TYPE::CLEAN))
+        if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
             return Result;
 
-        if (Dirty.is(STAIN_TYPE::RESET)){
-            Dirty.Clean(STAIN_TYPE::RESET);
+        if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
+            Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
             std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
             
-            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
-        if (Dirty.is(STAIN_TYPE::STRETCH)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)){
             Result.clear();
             Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
-            Dirty.Clean(STAIN_TYPE::STRETCH);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
             
-            Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
         }
 
         // Update the absolute position cache if the MOVE stain is detected.
-        if (Dirty.is(STAIN_TYPE::MOVE)) {
-            Dirty.Clean(STAIN_TYPE::MOVE);
+        if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)) {
+            Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Check if the text has been changed.
-        if (Dirty.is(STAIN_TYPE::DEEP)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)){
             nestElement(this, &Text, Result, Text.render());
 
             // Clean text update notice and state change notice.
             // NOTE: Cleaning STATE flag without checking it's existence might lead to unexpected results.
-            Dirty.Clean(STAIN_TYPE::DEEP);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
 
-            Dirty.Dirty(STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
         }
 
         // Update the state of the switch.
-        if (Dirty.is(STAIN_TYPE::STATE)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::STATE)){
             int State_Location_X = hasBorder();
             int State_Location_Y = hasBorder();
             
@@ -174,20 +174,20 @@ namespace GGUI{
             else
                 INTERNAL::reportStack(getName() + " Missing visual state strings!");
 
-            Dirty.Clean(STAIN_TYPE::STATE);
-            Dirty.Dirty(STAIN_TYPE::COLOR);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::STATE);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.is(STAIN_TYPE::COLOR)){        
+        if (Dirty.is(INTERNAL::STAIN_TYPE::COLOR)){        
             // Clean the color stain after applying the color system.
-            Dirty.Clean(STAIN_TYPE::COLOR);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
             applyColors(Result);
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.is(STAIN_TYPE::EDGE)){
+        if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
             renderBorders(Result);
             renderTitle(Result);
         }
@@ -200,7 +200,7 @@ namespace GGUI{
         State = !State;
 
         // Mark the switch as needing a state update
-        Dirty.Dirty(STAIN_TYPE::STATE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::STATE);
 
         updateFrame();
     }
@@ -208,7 +208,7 @@ namespace GGUI{
     void switchBox::setState(bool b){
         State = b;
 
-        Dirty.Dirty(STAIN_TYPE::STATE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::STATE);
 
         updateFrame();
     }
@@ -217,20 +217,22 @@ namespace GGUI{
         SingleSelect = true;
     }
 
-    void DisableOthers(switchBox* keepOn){
-        // If this is in switch group, disable other grouped switches
-        if (keepOn->isSingleSelect()){
-            keepOn->setState(true);
+    namespace INTERNAL{
+        void DisableOthers(switchBox* keepOn){
+            // If this is in switch group, disable other grouped switches
+            if (keepOn->isSingleSelect()){
+                keepOn->setState(true);
 
-            if (!keepOn->getParent())
-                return;
+                if (!keepOn->getParent())
+                    return;
 
-            for (auto* c : keepOn->getParent()->getElements<switchBox>())
-                if (c != keepOn && c->isSingleSelect())
-                    c->setState(false);
-        }
-        else{
-            keepOn->toggle();
+                for (auto* c : keepOn->getParent()->getElements<switchBox>())
+                    if (c != keepOn && c->isSingleSelect())
+                        c->setState(false);
+            }
+            else{
+                keepOn->toggle();
+            }
         }
     }
 }

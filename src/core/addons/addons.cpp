@@ -49,7 +49,7 @@ namespace GGUI{
      * @return A formatted string containing the collected statistics.
      */
     std::string Get_Stats_Text(){
-        std::string optimized = std::to_string((float)(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE - INTERNAL::AFTER_ENCODE_BUFFER_SIZE) / (float)Max(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE, 1) * 100.0f);
+        std::string optimized = std::to_string((float)(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE - INTERNAL::AFTER_ENCODE_BUFFER_SIZE) / (float)INTERNAL::Max(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE, 1) * 100.0f);
 
         // cut from the decimal point
         optimized = optimized.substr(0, optimized.find('.'));
@@ -147,7 +147,7 @@ namespace GGUI{
                     GGUI::input* input = (GGUI::input*)e;
 
                     // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
-                    if (!INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT].State && !INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL].State && input->data != 'i' && input->data != 'I') 
+                    if (!INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT].State && !INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL].State && input->data != 'i' && input->data != 'I') 
                         return false;
 
                     // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it

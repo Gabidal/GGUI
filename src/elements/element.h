@@ -33,7 +33,7 @@ namespace GGUI{
         std::vector<UTF> renderBuffer;
 
         // State machine for render pipeline only focus on changed aspects.
-        STAIN Dirty;
+        INTERNAL::STAIN Dirty;
 
         bool Focused = false;
         bool Hovered = false;
@@ -172,10 +172,10 @@ namespace GGUI{
             // Mark the element as dirty for all possible stain types to ensure
             // complete re-evaluation and rendering.
             this->Dirty.Dirty(
-                STAIN_TYPE::STRETCH | 
-                STAIN_TYPE::COLOR | STAIN_TYPE::DEEP | 
-                STAIN_TYPE::EDGE | STAIN_TYPE::MOVE
-                // STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
+                INTERNAL::STAIN_TYPE::STRETCH | 
+                INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::DEEP | 
+                INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::MOVE
+                // INTERNAL::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
             );
         }
 
@@ -186,7 +186,7 @@ namespace GGUI{
          *          Element when it is asked to render.
          * @return A reference to the Dirty object.
          */
-        constexpr STAIN& getDirty(){
+        constexpr INTERNAL::STAIN& getDirty(){
             return Dirty;
         }
 
@@ -229,18 +229,18 @@ namespace GGUI{
          *          If a handler exists, it invokes the handler function.
          * @param s The state for which the handler should be executed.
          */
-        constexpr void check(STATE s){
-            if (s == STATE::INIT && On_Init){
+        constexpr void check(INTERNAL::STATE s){
+            if (s == INTERNAL::STATE::INIT && On_Init){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
                 Style->evaluateDynamicAttributeValues(this);
 
                 On_Init(this);
             }
-            else if (s == STATE::DESTROYED && On_Destroy)
+            else if (s == INTERNAL::STATE::DESTROYED && On_Destroy)
                 On_Destroy(this);
-            else if (s == STATE::HIDDEN && On_Hide)
+            else if (s == INTERNAL::STATE::HIDDEN && On_Hide)
                 On_Hide(this);
-            else if (s == STATE::SHOWN && On_Show)
+            else if (s == INTERNAL::STATE::SHOWN && On_Show)
                 On_Show(this);
         }
 
@@ -517,7 +517,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        EVALUATION_TYPE getWidthType() { return Style->Width.value.Get_Type(); }
+        INTERNAL::EVALUATION_TYPE getWidthType() { return Style->Width.value.Get_Type(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -526,7 +526,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        EVALUATION_TYPE getHeightType() { return Style->Height.value.Get_Type(); }
+        INTERNAL::EVALUATION_TYPE getHeightType() { return Style->Height.value.Get_Type(); }
 
         /**
          * @brief Set the position of the element.
@@ -584,14 +584,14 @@ namespace GGUI{
          * 
          * @param t The new title for the window.
          */
-        void setTitle(compactString t);
+        void setTitle(INTERNAL::compactString t);
 
         /**
          * @brief Returns the title of the window.
          * 
          * @return The title of the window as a string.
          */
-        compactString getTitle();
+        INTERNAL::compactString getTitle();
 
         /**
          * @brief Set the margin of the element.
@@ -959,7 +959,7 @@ namespace GGUI{
          * @param Child The child element.
          * @return A pair of pairs containing the fitting area for the child element within the parent element.
          */
-        static fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
+        static INTERNAL::fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
                 
         /**
          * @brief Recursively computes the size of the element based on its children.
@@ -985,7 +985,7 @@ namespace GGUI{
          *
          * @note If the parent element does not have a valid render buffer (i.e., its
          *       `Is_Displayed()` function returns false), this function marks the parent
-         *       element as dirty with the `STAIN_TYPE::DEEP` and `STAIN_TYPE::COLOR` stains.
+         *       element as dirty with the `INTERNAL::STAIN_TYPE::DEEP` and `INTERNAL::STAIN_TYPE::COLOR` stains.
          *       This ensures that the parent element is re-rendered from scratch when the
          *       rendering thread is updated.
          */
@@ -1285,7 +1285,7 @@ namespace GGUI{
          * @param s The state for which the handler should be executed.
          * @param job The handler function to be executed
          */
-        void onState(STATE s, void (*job)(element* self));
+        void onState(INTERNAL::STATE s, void (*job)(element* self));
 
         // Customization helper function
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -1297,7 +1297,7 @@ namespace GGUI{
          *          The function takes a STAIN_TYPE as a parameter and adds it to the list of stains.
          * @param s The stain to be added.
          */
-        void addStain(STAIN_TYPE s){
+        void addStain(INTERNAL::STAIN_TYPE s){
             Dirty.Dirty(s);
         }
 

@@ -54,8 +54,8 @@ GGUI::IVector3 GGUI::listView::getDimensionLimit(){
 void GGUI::listView::addChild(element* e) {
     pauseGGUI([this, e]() {
         // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
-        STAIN& dirty = e->getDirty();
-        if (dirty.is(STAIN_TYPE::FINALIZE)){
+        INTERNAL::STAIN& dirty = e->getDirty();
+        if (dirty.is(INTERNAL::STAIN_TYPE::FINALIZE)){
             // Finalize flag is cleaned Style Embedding with On_Init Call.
             // Give an early access to the parent, so that parent dependant attributes work properly.
             e->setParent(this);
@@ -82,13 +82,13 @@ void GGUI::listView::addChild(element* e) {
             // Adjust for minimum width needed when borders are present.
             signed int Width_Modifier = e->hasBorder() & Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
-                unsigned long long Proposed_Height = Max(Child_Needs_Minimum_Height_Of, getHeight());
-                unsigned long long Proposed_Width = Max(Last_Child->getPosition().X + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
+                unsigned long long Proposed_Height = INTERNAL::Max(Child_Needs_Minimum_Height_Of, getHeight());
+                unsigned long long Proposed_Width = INTERNAL::Max(Last_Child->getPosition().X + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
 
                 // Check if the parent allows stretching or overflow.
-                setHeight(Min(limits.Y, Proposed_Height));
-                setWidth(Min(limits.X, Proposed_Width));
-                Dirty.Dirty(STAIN_TYPE::STRETCH);
+                setHeight(INTERNAL::Min(limits.Y, Proposed_Height));
+                setWidth(INTERNAL::Min(limits.X, Proposed_Width));
+                Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
             }
 
             // Set positions for the child and last child elements.
@@ -99,13 +99,13 @@ void GGUI::listView::addChild(element* e) {
             // Adjust for minimum height needed when borders are present.
             signed int Height_Modifier = e->hasBorder() & Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
-                unsigned long long Proposed_Width = Max(Child_Needs_Minimum_Width_Of, getWidth());
-                unsigned long long Proposed_Height = Max(Last_Child->getPosition().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
+                unsigned long long Proposed_Width = INTERNAL::Max(Child_Needs_Minimum_Width_Of, getWidth());
+                unsigned long long Proposed_Height = INTERNAL::Max(Last_Child->getPosition().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
 
                 // Check if the parent allows stretching or overflow.
-                setWidth(Min(limits.X, Proposed_Width));
-                setHeight(Min(limits.Y, Proposed_Height));
-                Dirty.Dirty(STAIN_TYPE::STRETCH);
+                setWidth(INTERNAL::Min(limits.X, Proposed_Width));
+                setHeight(INTERNAL::Min(limits.Y, Proposed_Height));
+                Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
             }
 
             // Set positions for the child and last child elements.
@@ -118,7 +118,7 @@ void GGUI::listView::addChild(element* e) {
         Last_Child->showBorder(e->hasBorder());
 
         // Mark the list view as deeply dirty.
-        Dirty.Dirty(STAIN_TYPE::DEEP);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
 
         // Add the child element to the internal structures.
         INTERNAL::Element_Names.insert({e->getNameAsRaw(), e});
@@ -138,7 +138,7 @@ void GGUI::listView::addChild(element* e) {
  */
 void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
     // If the childs are already clean then there is nothing to do here
-    if (Dirty.Type == STAIN_TYPE::CLEAN || Style->Childs.size() == 0)
+    if (Dirty.Type == INTERNAL::STAIN_TYPE::CLEAN || Style->Childs.size() == 0)
         return;
 
     // Out mission is quite similar to the Remove(Element* c) like behaviour.
@@ -181,7 +181,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
 
     if (
         (
-        Style->Width.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE
+        Style->Width.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE
         ) && isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()
     ){
         setDimensions(Max_Width, Max_Height);
@@ -288,7 +288,7 @@ bool GGUI::listView::remove(element* remove){
  */
 void GGUI::scrollView::addChild(element* e) {
     // Mark the Scroll_View as dirty with the DEEP stain because we are adding a new child element.
-    Dirty.Dirty(STAIN_TYPE::DEEP);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
 
     // Add the child element to the List_View that is being used as the container.
     getContainer()->addChild(e);
@@ -411,31 +411,6 @@ void GGUI::scrollView::scrollDown() {
 
     Container->setPosition(newPosition);
 }
-
-GGUI::element* Translate_List(GGUI::HTMLNode* input){
-    GGUI::listView* Result = new GGUI::listView();
-
-    // Parse the following information given by the HTML_NODE:
-    // - Childs Recursive Nesting
-    // |-> Parent Linking
-    // - Position written inheriting
-    // - RAW ptr set to get link to origin  (no need to do anything)
-    // - Type (no need to do anything)
-    // - Attribute parsing: Styles, Width, Height, BG_Color, Front_Color, Border, Border color, etc.. (All CSS attributes)
-
-    std::string Name = "";
-
-    GGUI::translateChildsToElement(Result, input, &Name);
-
-    GGUI::translateAttributesToElement(Result, input);
-
-    return Result;
-}
-
-GGUIAddTranslator("ul", Translate_List);
-GGUIAddTranslator("ol", Translate_List);
-GGUIAddTranslator("dl", Translate_List);
-GGUIAddTranslator("select", Translate_List);
 
 /**
  * @brief Gets the name of the scroll view.

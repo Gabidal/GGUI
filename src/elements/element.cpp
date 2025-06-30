@@ -24,11 +24,11 @@
  * @param Background_Colour The background colour as a string.
  */
 void GGUI::UTF::toSuperString(
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
 ) const{
     // Get the foreground colour and style as a string
     foreground.getOverHeadAsSuperString(Text_Overhead, true);
@@ -45,7 +45,7 @@ void GGUI::UTF::toSuperString(
     Result->add(Background_Overhead);
     Result->add(Background_Colour);
 
-    if (is(COMPACT_STRING_FLAG::IS_UNICODE)){
+    if (is(INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE)){
         // Add the const char* to the Result
         Result->add(std::get<const char*>(text), size);
     }
@@ -71,14 +71,14 @@ void GGUI::UTF::toSuperString(
  * @param Background_Colour The Super_String where the background colour will be stored.
  */
 void GGUI::UTF::toEncodedSuperString(
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
-    superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
 ) const{
 
-    if (is(ENCODING_FLAG::START)) {
+    if (is(INTERNAL::ENCODING_FLAG::START)) {
         // Add the foreground and background colour and style to the result
         foreground.getOverHeadAsSuperString(Text_Overhead, true);
         foreground.getColourAsSuperString(Text_Colour);
@@ -93,7 +93,7 @@ void GGUI::UTF::toEncodedSuperString(
         Result->add(constants::ANSI::END_COMMAND);
     }
 
-    if (is(COMPACT_STRING_FLAG::IS_UNICODE)) {
+    if (is(INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE)) {
         // Append the Unicode character to the result
         Result->add(getUnicode(), size);
     } else {
@@ -101,7 +101,7 @@ void GGUI::UTF::toEncodedSuperString(
         Result->add(getAscii());
     }
 
-    if (is(ENCODING_FLAG::END)) {
+    if (is(INTERNAL::ENCODING_FLAG::END)) {
         // Add the reset ANSI code to the end of the string
         Result->add(constants::ANSI::RESET_COLOR);
     }
@@ -110,17 +110,17 @@ void GGUI::UTF::toEncodedSuperString(
 GGUI::element::element(STYLING_INTERNAL::styleBase& style, bool Embed_Styles_On_Construct){
     fullyStain();
 
-    Dirty.Dirty(STAIN_TYPE::FINALIZE);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::FINALIZE);
 
     Style = new styling(style);
 
     if (Embed_Styles_On_Construct){
         Style->embedStyles(this);
 
-        check(STATE::INIT);
+        check(INTERNAL::STATE::INIT);
 
         // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
-        Dirty.Clean(STAIN_TYPE::FINALIZE);
+        Dirty.Clean(INTERNAL::STAIN_TYPE::FINALIZE);
     }
     else{
         // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
@@ -140,7 +140,7 @@ GGUI::element::element(STYLING_INTERNAL::styleBase& style, bool Embed_Styles_On_
  */
 GGUI::element::~element(){
     // Call handler for on destroying moment.
-    check(STATE::DESTROYED);
+    check(INTERNAL::STATE::DESTROYED);
 
     // Make sure this element is not listed in the parent element.
     // And if it does, then remove it from the parent element.
@@ -151,7 +151,7 @@ GGUI::element::~element(){
                 Parent->Style->Childs.erase(Parent->Style->Childs.begin() + i);
 
                 // This may not be enough for the parent to know where to resample the buffer where this child used to be.
-                Parent->Dirty.Dirty(STAIN_TYPE::DEEP);
+                Parent->Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
 
                 break;  // There should be no possibility, that there are appended two or more of this exact same element, they should be copied!!!
             }
@@ -194,68 +194,68 @@ GGUI::element::~element(){
 std::vector<GGUI::UTF>& GGUI::element::render(){
     // Check for Dynamic attributes
     if(Style->evaluateDynamicDimensions(this))
-        Dirty.Dirty(STAIN_TYPE::STRETCH);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
 
     if (Style->evaluateDynamicPosition(this))
-        Dirty.Dirty(STAIN_TYPE::MOVE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
     if (Style->evaluateDynamicColors(this))
-        Dirty.Dirty(STAIN_TYPE::COLOR);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
 
     if (Style->evaluateDynamicBorder(this))
-        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
     calculateChildsHitboxes();    // Normally elements will NOT order their content by hitbox system.
 
     computeDynamicSize();
 
     //if inned children have changed without this changing, then this will trigger.
-    if (!Dirty.has(STAIN_TYPE::STRETCH | STAIN_TYPE::RESET)){
+    if (!Dirty.has(INTERNAL::STAIN_TYPE::STRETCH | INTERNAL::STAIN_TYPE::RESET)){
         bool tmp = childrenChanged();
 
-        if (!tmp && Dirty.is(STAIN_TYPE::CLEAN)){
+        if (!tmp && Dirty.is(INTERNAL::STAIN_TYPE::CLEAN)){
             return renderBuffer;
         }
         else if (tmp || hasTransparentChildren()){
-            Dirty.Dirty(STAIN_TYPE::RESET);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::RESET);
         }
     }
 
     // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
-    if (this == GGUI::INTERNAL::Main && !Dirty.is(STAIN_TYPE::CLEAN)){
+    if (this == GGUI::INTERNAL::Main && !Dirty.is(INTERNAL::STAIN_TYPE::CLEAN)){
         GGUI::INTERNAL::Identical_Frame = false;
     }
 
-    if (Dirty.is(STAIN_TYPE::CLEAN))
+    if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
         return renderBuffer;
 
-    if (Dirty.is(STAIN_TYPE::MOVE)){
-        Dirty.Clean(STAIN_TYPE::MOVE);
+    if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)){
+        Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
 
         updateAbsolutePositionCache();
     }
 
-    if (Dirty.is(STAIN_TYPE::RESET)){
-        Dirty.Clean(STAIN_TYPE::RESET);
+    if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
+        Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
         std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
         
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
     }
 
-    if (Dirty.is(STAIN_TYPE::STRETCH)){
-        Dirty.Clean(STAIN_TYPE::STRETCH);
+    if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)){
+        Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
         
         renderBuffer.clear();
         renderBuffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
 
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
     }
 
     // Apply the color system to the resized result list
-    if (Dirty.is(STAIN_TYPE::COLOR)){
+    if (Dirty.is(INTERNAL::STAIN_TYPE::COLOR)){
         // Clean the color stain after applying the color system.
-        Dirty.Clean(STAIN_TYPE::COLOR);
+        Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
         applyColors(renderBuffer);
     }
@@ -264,8 +264,8 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     unsigned int Childs_With_Borders = 0;
 
     //This will add the child windows to the Result buffer
-    if (Dirty.is(STAIN_TYPE::DEEP)){
-        Dirty.Clean(STAIN_TYPE::DEEP);
+    if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)){
+        Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
 
         for (auto c : this->Style->Childs){
             if (!c->isDisplayed())
@@ -285,10 +285,10 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     }
 
     if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
-        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
     //This will add the borders if necessary and the title of the window.
-    if (Dirty.is(STAIN_TYPE::EDGE)){
+    if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
         renderBorders(renderBuffer);
         renderTitle(renderBuffer);
     }
@@ -326,7 +326,7 @@ void GGUI::element::setOpacity(float Opacity){
 
     Style->Opacity.Set(Opacity);
 
-    Dirty.Dirty(STAIN_TYPE::RESET);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::RESET);
     updateFrame();
 }
 
@@ -347,7 +347,7 @@ void GGUI::element::setOpacity(unsigned int Opacity) {
     Style->Opacity.Set((float)Opacity / 100.f);
 
     // Mark the element as dirty to trigger a visual update
-    Dirty.Dirty(STAIN_TYPE::RESET);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::RESET);
     updateFrame(); // Update the frame to reflect the changes
 }
 
@@ -398,7 +398,7 @@ void GGUI::element::setParent(element* parent){
 void GGUI::element::setFocus(bool f){
     if (f != Focused){
         // If the focus state has changed, dirty the element and update the frame.
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE);
 
         Focused = f;
 
@@ -415,7 +415,7 @@ void GGUI::element::setFocus(bool f){
 void GGUI::element::setHoverState(bool h){
     if (h != Hovered){
         // If the hover state has changed, dirty the element and update the frame.
-        Dirty.Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE);
 
         Hovered = h;
 
@@ -465,7 +465,7 @@ void GGUI::element::setStyle(styling css){
 void GGUI::element::showBorder(bool b){
     if (b != Style->Border_Enabled.value){
         Style->Border_Enabled = b;
-        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
         updateFrame();
     }
 }
@@ -484,7 +484,7 @@ void GGUI::element::showBorder(bool b, bool Previous_State) {
         Style->Border_Enabled = b;
 
         // Mark the element as dirty for border changes
-        Dirty.Dirty(STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
         // Refresh the element's frame to reflect changes
         updateFrame();
@@ -512,7 +512,7 @@ bool GGUI::element::hasBorder(){
  */
 void GGUI::element::addChild(element* Child){
     // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
-    if (Child->Dirty.is(STAIN_TYPE::FINALIZE)){
+    if (Child->Dirty.is(INTERNAL::STAIN_TYPE::FINALIZE)){
         // Finalize flag is cleaned Style Embedding with On_Init Call.
         // Give an early access to the parent, so that parent dependant attributes work properly.
         Child->Parent = this;
@@ -528,8 +528,8 @@ void GGUI::element::addChild(element* Child){
     ){
         if (Style->Allow_Dynamic_Size.value){
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = GGUI::Max(Child->Style->Position.get().X + Child->getWidth() + Border_Offset*2, getWidth());
-            unsigned int New_Height = GGUI::Max(Child->Style->Position.get().Y + Child->getHeight() + Border_Offset*2, getHeight());
+            unsigned int New_Width = GGUI::INTERNAL::Max(Child->Style->Position.get().X + Child->getWidth() + Border_Offset*2, getWidth());
+            unsigned int New_Height = GGUI::INTERNAL::Max(Child->Style->Position.get().Y + Child->getHeight() + Border_Offset*2, getHeight());
 
             // Resize the parent element to fit the child element
             setHeight(New_Height);
@@ -550,7 +550,7 @@ void GGUI::element::addChild(element* Child){
     }
 
     // Mark the parent element as dirty with the DEEP stain
-    Dirty.Dirty(STAIN_TYPE::DEEP);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
 
     // Add the child element to the parent's child list
     INTERNAL::Element_Names.insert({Child->getNameAsRaw(), Child});
@@ -576,7 +576,7 @@ void GGUI::element::setChilds(std::vector<element*> childs){
         for (auto& Child : childs){
             addChild(Child);
         }
-        Dirty.Dirty(STAIN_TYPE::DEEP);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
     });
 }
 
@@ -611,7 +611,7 @@ bool GGUI::element::remove(element* handle){
 
             delete handle;
 
-            Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::COLOR);
 
             return true;
         }
@@ -628,21 +628,21 @@ bool GGUI::element::remove(element* handle){
  *
  * @note If the parent element does not have a valid render buffer (i.e., its
  *       `Is_Displayed()` function returns false), this function marks the parent
- *       element as dirty with the `STAIN_TYPE::DEEP` and `STAIN_TYPE::COLOR` stains.
+ *       element as dirty with the `INTERNAL::STAIN_TYPE::DEEP` and `INTERNAL::STAIN_TYPE::COLOR` stains.
  *       This ensures that the parent element is re-rendered from scratch when the
  *       rendering thread is updated.
  */
 void GGUI::element::updateParent(element* New_Element){
     // Normally elements don't do anything
     if (!New_Element->isDisplayed()){
-        // Mark the parent element as dirty with the STAIN_TYPE::DEEP and STAIN_TYPE::COLOR stains
+        // Mark the parent element as dirty with the INTERNAL::STAIN_TYPE::DEEP and INTERNAL::STAIN_TYPE::COLOR stains
         fullyStain();
     }
 
     // When the child is unable to flag changes on parent Render(), like on removal-
     // Then ask the parent to discard the previous buffer and render from scratch.
     if (Parent){
-        // Mark the parent element as dirty with the STAIN_TYPE::DEEP and STAIN_TYPE::COLOR stains
+        // Mark the parent element as dirty with the INTERNAL::STAIN_TYPE::DEEP and INTERNAL::STAIN_TYPE::COLOR stains
         fullyStain();
         // Request a render update
         updateFrame();
@@ -662,14 +662,14 @@ void GGUI::element::display(bool f){
         Show = f;
         
         if (f){
-            check(STATE::SHOWN);
+            check(INTERNAL::STATE::SHOWN);
         }
         else{
-            check(STATE::HIDDEN);
+            check(INTERNAL::STATE::HIDDEN);
             
             // Ask the parent to flush its buffer from this.
             if (Parent){
-                Parent->Dirty.Dirty(STAIN_TYPE::RESET);
+                Parent->Dirty.Dirty(INTERNAL::STAIN_TYPE::RESET);
             }
         }
 
@@ -717,7 +717,7 @@ bool GGUI::element::remove(unsigned int index){
     delete tmp;
 
     // Mark the element as dirty, so that it will be re-rendered on the next frame.
-    Dirty.Dirty(STAIN_TYPE::DEEP | STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::COLOR);
 
     return true;
 }
@@ -755,7 +755,7 @@ void GGUI::element::setDimensions(unsigned int width, unsigned int height){
         setWidth(width);
         setHeight(height);
         //Fully_Stain();
-        Dirty.Dirty(STAIN_TYPE::STRETCH);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
         updateFrame();
     }
 }
@@ -806,7 +806,7 @@ void GGUI::element::setPosition(IVector3 c) {
     Style->Position.set(c);
     
     // Mark the element as dirty for movement updates
-    this->Dirty.Dirty(STAIN_TYPE::MOVE);
+    this->Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
     // Update the frame to reflect the position change
     updateFrame();
@@ -836,7 +836,7 @@ void GGUI::element::setPosition(IVector3* c){
 void GGUI::element::updatePosition(IVector3 v){
     Style->Position += v;
 
-    Dirty.Dirty(STAIN_TYPE::MOVE);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
     updateFrame();
 }
@@ -860,11 +860,11 @@ void GGUI::element::updateAbsolutePositionCache(){
     absolutePositionCache += getPosition() + Border_Offset;
 }
 
-void GGUI::element::setTitle(compactString t){
+void GGUI::element::setTitle(INTERNAL::compactString t){
     Style->Title.Value = t;
 }
 
-GGUI::compactString GGUI::element::getTitle(){
+GGUI::INTERNAL::compactString GGUI::element::getTitle(){
     // Return the title of the element
     return Style->Title.Value;
 }
@@ -935,7 +935,7 @@ GGUI::element* GGUI::element::copy() const {
     new_element->Hovered = false;
 
     // Call the potentially un_parsed_styles to clone them too if not initialized yet.
-    if (Dirty.is(STAIN_TYPE::FINALIZE)){
+    if (Dirty.is(INTERNAL::STAIN_TYPE::FINALIZE)){
         new_element->Style->copyUnParsedStyles();
     }
 
@@ -949,10 +949,10 @@ void GGUI::element::embedStyles(){
 
     Style->embedStyles(this);
     
-    if (Dirty.is(STAIN_TYPE::FINALIZE)){
-        Dirty.Clean(STAIN_TYPE::FINALIZE);
+    if (Dirty.is(INTERNAL::STAIN_TYPE::FINALIZE)){
+        Dirty.Clean(INTERNAL::STAIN_TYPE::FINALIZE);
 
-        check(STATE::INIT);
+        check(INTERNAL::STATE::INIT);
     }
 }
 
@@ -1011,7 +1011,7 @@ std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(elemen
         // Check if the child element is colliding with any other child elements.
         for (auto c : Style->Childs) {
             // Use local positioning since this is a civil dispute :)
-            if (child != c && Collides(c->getPosition(), Current_Position, c->getWidth(), c->getHeight(), Result_Width, Result_Height)) {
+            if (child != c && INTERNAL::Collides(c->getPosition(), Current_Position, c->getWidth(), c->getHeight(), Result_Width, Result_Height)) {
                 // If the child element is colliding with another child element, then we can stop here.
                 return {Result_Width, Result_Height};
             }
@@ -1056,7 +1056,7 @@ void GGUI::element::setBackgroundColor(RGB color) {
     }
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1074,7 +1074,7 @@ void GGUI::element::setBorderColor(RGB color){
     Style->Border_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1093,7 +1093,7 @@ void GGUI::element::setBorderBackgroundColor(RGB color) {
     Style->Border_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1110,7 +1110,7 @@ void GGUI::element::setBorderBackgroundColor(RGB color) {
 void GGUI::element::setTextColor(RGB color){
     Style->Text_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1125,7 +1125,7 @@ void GGUI::element::setTextColor(RGB color){
  */
 void GGUI::element::allowDynamicSize(bool True) {
     // Since dynamic size and percentage based size are two incompatible systems.
-    if (Style->Width.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != EVALUATION_TYPE::PERCENTAGE){
+    if (Style->Width.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE){
         Style->Allow_Dynamic_Size = True; 
     }
     // Set the Allow_Dynamic_Size property in the element's style
@@ -1158,7 +1158,7 @@ void GGUI::element::allowOverflow(bool True) {
 void GGUI::element::setHoverBorderColor(RGB color){
     Style->Hover_Border_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1177,7 +1177,7 @@ void GGUI::element::setHoverBackgroundColor(RGB color) {
     Style->Hover_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1197,7 +1197,7 @@ void GGUI::element::setHoverTextColor(RGB color) {
     Style->Hover_Text_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1217,7 +1217,7 @@ void GGUI::element::setHoverBorderBackgroundColor(RGB color) {
     Style->Hover_Border_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1234,7 +1234,7 @@ void GGUI::element::setFocusBorderColor(RGB color){
     Style->Focus_Border_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1252,7 +1252,7 @@ void GGUI::element::setFocusBackgroundColor(RGB color){
     Style->Focus_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1268,7 +1268,7 @@ void GGUI::element::setFocusBackgroundColor(RGB color){
 void GGUI::element::setFocusTextColor(RGB color){
     Style->Focus_Text_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1284,7 +1284,7 @@ void GGUI::element::setFocusTextColor(RGB color){
 void GGUI::element::setFocusBorderBackgroundColor(RGB color){
     Style->Focus_Border_Background_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1359,17 +1359,17 @@ void GGUI::element::computeDynamicSize(){
             int Border_Offset = hasBorder() != c->hasBorder() && hasBorder() ? 1 * 2 : 0;
 
             // If the width is an percentage value, then it is always smaller or equal to this's width.
-            int Enable_Width_Modification = (c->getWidthType() != EVALUATION_TYPE::PERCENTAGE && getWidthType() != EVALUATION_TYPE::PERCENTAGE) ? 1 : 0;  // Enable checking width if the width attribute type is an relative one
+            int Enable_Width_Modification = (c->getWidthType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && getWidthType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE) ? 1 : 0;  // Enable checking width if the width attribute type is an relative one
             // Do the same for the Height attribute
-            int Enable_Height_Modification = (c->getHeightType() != EVALUATION_TYPE::PERCENTAGE && getHeightType() != EVALUATION_TYPE::PERCENTAGE) ? 1 : 0; // Enable checking height if the height attribute type is an relative one
+            int Enable_Height_Modification = (c->getHeightType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && getHeightType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE) ? 1 : 0; // Enable checking height if the height attribute type is an relative one
 
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = (unsigned int)GGUI::Max(
+            unsigned int New_Width = (unsigned int)GGUI::INTERNAL::Max(
                 (c->Style->Position.get().X + (signed int)c->getWidth() + Border_Offset) * Enable_Width_Modification,
                 (signed int)getWidth()
             );
 
-            unsigned int New_Height = (unsigned int)GGUI::Max(
+            unsigned int New_Height = (unsigned int)GGUI::INTERNAL::Max(
                 (c->Style->Position.get().Y + (signed int)c->getHeight() + Border_Offset) * Enable_Height_Modification,
                 (signed int)getHeight()
             );
@@ -1378,7 +1378,7 @@ void GGUI::element::computeDynamicSize(){
             if (New_Width != getWidth() || New_Height != getHeight()){
                 setHeight(New_Height);
                 setWidth(New_Width);
-                Dirty.Dirty(STAIN_TYPE::STRETCH);
+                Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
             }
         }
     }
@@ -1411,7 +1411,7 @@ void GGUI::element::applyColors(std::vector<UTF>& Result){
  * @param Result The string to add the border to.
  */
 void GGUI::element::renderBorders(std::vector<UTF>& Result){
-    Dirty.Clean(STAIN_TYPE::EDGE);
+    Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
     if (!hasBorder()) return;
 
     const unsigned int Width  = getWidth();
@@ -1445,10 +1445,10 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
 
     unsigned int Title_Length = Style->Title.Value.size; // +1 for trailing, since COmpact_Strings do not include trailing characters in their size.
     unsigned int Horizontal_Offset = hasBorder();
-    compactString Ellipsis = "...";
+    INTERNAL::compactString Ellipsis = "...";
     bool Enable_Ellipsis = false;
 
-    unsigned int Writable_Length = Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.size - 1);
+    unsigned int Writable_Length = INTERNAL::Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.size - 1);
 
     if (Writable_Length < Title_Length)
         Enable_Ellipsis = true;
@@ -1505,7 +1505,7 @@ void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Sour
  * @param Parent The parent element.
  * @param Child The child element.
  */
-GGUI::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::element* Child){
+GGUI::INTERNAL::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::element* Child){
     // If both dont have same border setup and parent has a border, then the child needs to be offsetted by one in every direction.
     int Border_Offset = Parent->hasBorder() != Child->hasBorder() && Parent->hasBorder() ? 1 : 0;
     
@@ -1521,14 +1521,14 @@ GGUI::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::ele
 
     // Drawable box start, within the bounding box.
     IVector2 childStart = IVector2{
-        GGUI::Max(Child->Style->Position.get().X, 0),
-        GGUI::Max(Child->Style->Position.get().Y, 0)
+        GGUI::INTERNAL::Max(Child->Style->Position.get().X, 0),
+        GGUI::INTERNAL::Max(Child->Style->Position.get().Y, 0)
     } + parentStart;
 
     // Drawable box end, within the bounding box.
     IVector2 childEnd = {
-        GGUI::Min(childStart.X + Child->getWidth() - negativeOffset.X, parentEnd.X),
-        GGUI::Min(childStart.Y + Child->getHeight() - negativeOffset.Y, parentEnd.Y)
+        GGUI::INTERNAL::Min(childStart.X + Child->getWidth() - negativeOffset.X, parentEnd.X),
+        GGUI::INTERNAL::Min(childStart.Y + Child->getHeight() - negativeOffset.Y, parentEnd.Y)
     };
 
     return {negativeOffset, childStart, childEnd };
@@ -1545,7 +1545,7 @@ GGUI::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::ele
  * @param Child_Buffer The child element's buffer.
  */
 void GGUI::element::nestElement(GGUI::element* parent, GGUI::element* child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF>& Child_Buffer){
-    fittingArea Limits = getFittingArea(parent, child);
+    INTERNAL::fittingArea Limits = getFittingArea(parent, child);
 
     for (int y = Limits.start.Y; y < Limits.end.Y; y++){
         for (int x = Limits.start.X; x < Limits.end.X; x++){
@@ -1579,7 +1579,7 @@ void GGUI::element::setCustomBorderStyle(GGUI::styledBorder style) {
     Style->Border_Style = style;
     
     // Mark the border as needing an update
-    Dirty.Dirty(STAIN_TYPE::EDGE);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
 
     // Ensure the border is visible
     showBorder(true);
@@ -1676,43 +1676,43 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
         IVector3 Left = { c.X - 1, c.Y };
         IVector3 Right = { c.X + 1, c.Y };
 
-        borderConnection Current_Masks = borderConnection::NONE;
+        INTERNAL::borderConnection Current_Masks = INTERNAL::borderConnection::NONE;
 
         // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
         if (Is_In_Bounds(Above, this)){
             // Since the border above can be already processed we need to check all possible border variations.
-            borderConnection borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getUnicode()) | 
+            INTERNAL::borderConnection borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getUnicode()) | 
                                             B->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getUnicode());
             
-            if (borderAbove != borderConnection::NONE)
-                Current_Masks |= borderConnection::UP;
+            if (borderAbove != INTERNAL::borderConnection::NONE)
+                Current_Masks |= INTERNAL::borderConnection::UP;
         }
 
         if (Is_In_Bounds(Below, this)){
             // Since the border below can be already processed we need to check all possible border variations.
-            borderConnection borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getUnicode()) | 
+            INTERNAL::borderConnection borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getUnicode()) | 
                                             B->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getUnicode());
             
-            if (borderBelow != borderConnection::NONE)
-                Current_Masks |= borderConnection::DOWN;
+            if (borderBelow != INTERNAL::borderConnection::NONE)
+                Current_Masks |= INTERNAL::borderConnection::DOWN;
         }
 
         if (Is_In_Bounds(Left, this)){
             // Since the border left can be already processed we need to check all possible border variations.
-            borderConnection borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getUnicode()) | 
+            INTERNAL::borderConnection borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getUnicode()) | 
                                            B->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getUnicode());
             
-            if (borderLeft != borderConnection::NONE)
-                Current_Masks |= borderConnection::LEFT;
+            if (borderLeft != INTERNAL::borderConnection::NONE)
+                Current_Masks |= INTERNAL::borderConnection::LEFT;
         }
 
         if (Is_In_Bounds(Right, this)){
             // Since the border right can be already processed we need to check all possible border variations.
-            borderConnection borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getUnicode()) | 
+            INTERNAL::borderConnection borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getUnicode()) | 
                                             B->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getUnicode());
             
-            if (borderRight != borderConnection::NONE)
-                Current_Masks |= borderConnection::RIGHT;
+            if (borderRight != INTERNAL::borderConnection::NONE)
+                Current_Masks |= INTERNAL::borderConnection::RIGHT;
         }
 
         const char* finalBorder = A->getBorderStyle().getBorder(Current_Masks);
@@ -1774,7 +1774,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
     action* a = new action(
         criteria,
         [this, job, GLOBAL](GGUI::event* e){
-            if (Collides(this, INTERNAL::Mouse) || GLOBAL){
+            if (INTERNAL::Collides(this, INTERNAL::Mouse) || GLOBAL){
                 // action successfully executed.
                 return job(e);
             }
@@ -1794,7 +1794,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
  */
 bool GGUI::element::childrenChanged(){
     for (auto* e : Style->Childs){
-        if (e->getDirty().is(STAIN_TYPE::FINALIZE)){
+        if (e->getDirty().is(INTERNAL::STAIN_TYPE::FINALIZE)){
             GGUI::INTERNAL::reportStack("Child element passthrough Finalization stage!");
         }
 
@@ -1802,7 +1802,7 @@ bool GGUI::element::childrenChanged(){
         if (!e->Show)
             return false;
 
-        if (e->getDirty().Type != STAIN_TYPE::CLEAN)
+        if (e->getDirty().Type != INTERNAL::STAIN_TYPE::CLEAN)
             return true;
 
         if (e->childrenChanged())
@@ -1895,7 +1895,7 @@ void GGUI::element::focus() {
     // Set the mouse position to the element's position.
     GGUI::INTERNAL::Mouse = this->Style->Position.get();
     // Update the focused element.
-    GGUI::updateFocusedElement(this);
+    GGUI::INTERNAL::updateFocusedElement(this);
 }
 
 /**
@@ -1905,14 +1905,14 @@ void GGUI::element::focus() {
  * @param s The state for which the handler should be executed.
  * @param job The handler function to be executed
  */
-void GGUI::element::onState(STATE s, void (*job)(element* self)){
-    if (s == STATE::INIT)
+void GGUI::element::onState(INTERNAL::STATE s, void (*job)(element* self)){
+    if (s == INTERNAL::STATE::INIT)
         On_Init = job;
-    else if (s == STATE::DESTROYED)
+    else if (s == INTERNAL::STATE::DESTROYED)
         On_Destroy = job;
-    else if (s == STATE::HIDDEN)
+    else if (s == INTERNAL::STATE::HIDDEN)
         On_Hide = job;
-    else if (s == STATE::SHOWN)
+    else if (s == INTERNAL::STATE::SHOWN)
         On_Show = job;
 }
 
@@ -1936,11 +1936,11 @@ std::vector<GGUI::IVector3> Get_Surrounding_Indicies(int Width, int Height, GGUI
     int Bigger_Square_End_X = start_offset.X + Width + 1;
     int Bigger_Square_End_Y = start_offset.Y + Height + 1;
 
-    int Smaller_Square_Start_X = start_offset.X + (Offset.X * GGUI::Min(0, (int)Offset.X));
-    int Smaller_Square_Start_Y = start_offset.Y + (Offset.Y * GGUI::Min(0, (int)Offset.Y));
+    int Smaller_Square_Start_X = start_offset.X + (Offset.X * GGUI::INTERNAL::Min(0, (int)Offset.X));
+    int Smaller_Square_Start_Y = start_offset.Y + (Offset.Y * GGUI::INTERNAL::Min(0, (int)Offset.Y));
 
-    int Smaller_Square_End_X = start_offset.X + Width - (Offset.X * GGUI::Max(0, (int)Offset.X));
-    int Smaller_Square_End_Y = start_offset.Y + Height - (Offset.Y * GGUI::Max(0, (int)Offset.Y));
+    int Smaller_Square_End_X = start_offset.X + Width - (Offset.X * GGUI::INTERNAL::Max(0, (int)Offset.X));
+    int Smaller_Square_End_Y = start_offset.Y + Height - (Offset.Y * GGUI::INTERNAL::Max(0, (int)Offset.Y));
 
     for (int y = Bigger_Square_Start_Y; y < Bigger_Square_End_Y; y++){
         for (int x = Bigger_Square_Start_X; x < Bigger_Square_End_X; x++){
@@ -1982,29 +1982,3 @@ bool GGUI::element::childIsShown(element* other){
     // Return true if the child element is visible within the bounds of the parent
     return X_Is_Inside && Y_Is_Inside;
 }
-
-// UTILS : -_-_-_-_-_-_-_-_-_
-
-GGUI::element* Translate_Element(GGUI::HTMLNode* input){
-    GGUI::element* Result = new GGUI::element();
-
-    // Parse the following information given by the HTML_NODE:
-    // - Childs Recursive Nesting
-    // |-> Parent Linking
-    // - Position written inheriting
-    // - RAW ptr set to get link to origin  (no need to do anything)
-    // - Type (no need to do anything)
-    // - Attribute parsing: Styles, Width, Height, BG_Color, Front_Color, Border, Border color, etc.. (All CSS attributes)
-
-    std::string Name = "";
-
-    GGUI::translateChildsToElement(Result, input, &Name);
-
-    GGUI::translateAttributesToElement(Result, input);
-
-    return Result;
-}
-
-GGUIAddTranslator("element", Translate_Element);
-GGUIAddTranslator("div", Translate_Element);
-GGUIAddTranslator("li", Translate_Element);
