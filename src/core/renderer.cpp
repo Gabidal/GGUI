@@ -2104,7 +2104,8 @@ namespace GGUI{
 
         INTERNAL::Main = new element(
             width(INTERNAL::Max_Width) |
-            height(INTERNAL::Max_Height)
+            height(INTERNAL::Max_Height) | 
+            name("Main")
         , true);
 
         INTERNAL::Sub_Threads.emplace_back([](){

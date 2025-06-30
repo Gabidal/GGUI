@@ -667,8 +667,9 @@ void GGUI::element::display(bool f){
         else{
             check(STATE::HIDDEN);
             
+            // Ask the parent to flush its buffer from this.
             if (Parent){
-                Dirty.Dirty(STAIN_TYPE::RESET);
+                Parent->Dirty.Dirty(STAIN_TYPE::RESET);
             }
         }
 
