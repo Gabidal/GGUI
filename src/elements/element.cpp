@@ -1051,7 +1051,7 @@ void GGUI::element::setBackgroundColor(RGB color) {
     Style->Background_Color = color;
     
     // If the border background color matches the current background color, update it
-    if (Style->Border_Background_Color.value.get<RGB>() == Style->Background_Color.value.get<RGB>()) {
+    if (Style->Border_Background_Color.color.get<RGB>() == Style->Background_Color.color.get<RGB>()) {
         Style->Border_Background_Color = color;
     }
     
@@ -1125,7 +1125,7 @@ void GGUI::element::setTextColor(RGB color){
  */
 void GGUI::element::allowDynamicSize(bool True) {
     // Since dynamic size and percentage based size are two incompatible systems.
-    if (Style->Width.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE){
+    if (Style->Width.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE){
         Style->Allow_Dynamic_Size = True; 
     }
     // Set the Allow_Dynamic_Size property in the element's style

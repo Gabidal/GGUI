@@ -517,7 +517,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        INTERNAL::EVALUATION_TYPE getWidthType() { return Style->Width.value.Get_Type(); }
+        INTERNAL::EVALUATION_TYPE getWidthType() { return Style->Width.number.Get_Type(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -526,7 +526,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        INTERNAL::EVALUATION_TYPE getHeightType() { return Style->Height.value.Get_Type(); }
+        INTERNAL::EVALUATION_TYPE getHeightType() { return Style->Height.number.Get_Type(); }
 
         /**
          * @brief Set the position of the element.
@@ -628,7 +628,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's background.
          */
-        constexpr RGB getBackgroundColor() { return Style->Background_Color.value.get<RGB>(); }
+        constexpr RGB getBackgroundColor() { return Style->Background_Color.color.get<RGB>(); }
         
         /**
          * @brief Sets the border color of the element.
@@ -647,7 +647,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border.
          */
-        constexpr RGB getBorderColor(){ return Style->Border_Color.value.get<RGB>(); }
+        constexpr RGB getBorderColor(){ return Style->Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the border background color of the element.
@@ -667,7 +667,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border background.
          */
-        constexpr RGB getBorderBackgroundColor(){ return Style->Border_Background_Color.value.get<RGB>(); }
+        constexpr RGB getBorderBackgroundColor(){ return Style->Border_Background_Color.color.get<RGB>(); }
         
         /**
          * @brief Sets the text color of the element.
@@ -687,7 +687,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's text.
          */
-        constexpr RGB getTextColor(){ return Style->Text_Color.value.get<RGB>(); }
+        constexpr RGB getTextColor(){ return Style->Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover border color of the element.
@@ -708,7 +708,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border.
          */
-        constexpr RGB getHoverBorderColor(){ return Style->Hover_Border_Color.value.get<RGB>(); }
+        constexpr RGB getHoverBorderColor(){ return Style->Hover_Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover background color of the element.
@@ -729,7 +729,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover background.
          */
-        constexpr RGB getHoverBackgroundColor(){ return Style->Hover_Background_Color.value.get<RGB>(); }
+        constexpr RGB getHoverBackgroundColor(){ return Style->Hover_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover text color of the element.
@@ -750,7 +750,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover text.
          */
-        constexpr RGB getHoverTextColor(){ return Style->Hover_Text_Color.value.get<RGB>(); }
+        constexpr RGB getHoverTextColor(){ return Style->Hover_Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover border background color of the element.
@@ -771,7 +771,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border background.
          */
-        constexpr RGB getHoverBorderBackgroundColor(){ return Style->Hover_Border_Background_Color.value.get<RGB>(); }
+        constexpr RGB getHoverBorderBackgroundColor(){ return Style->Hover_Border_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus border color of the element.
@@ -790,7 +790,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border.
          */
-        constexpr RGB getFocusBorderColor(){ return Style->Focus_Border_Color.value.get<RGB>(); }
+        constexpr RGB getFocusBorderColor(){ return Style->Focus_Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus background color of the element.
@@ -809,7 +809,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus background.
          */
-        constexpr RGB getFocusBackgroundColor(){ return Style->Focus_Background_Color.value.get<RGB>(); }
+        constexpr RGB getFocusBackgroundColor(){ return Style->Focus_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus text color of the element.
@@ -828,7 +828,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus text.
          */
-        constexpr RGB getFocusTextColor(){ return Style->Focus_Text_Color.value.get<RGB>(); }
+        constexpr RGB getFocusTextColor(){ return Style->Focus_Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus border background color of the element.
@@ -848,7 +848,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border background.
          */
-        constexpr RGB getFocusBorderBackgroundColor(){ return Style->Focus_Border_Background_Color.value.get<RGB>(); }
+        constexpr RGB getFocusBorderBackgroundColor(){ return Style->Focus_Border_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the alignment of the element.
@@ -1090,13 +1090,13 @@ namespace GGUI{
          */
         constexpr std::pair<RGB, RGB>  composeAllTextRGBValues(){
             if (Focused){
-                return {Style->Focus_Text_Color.value.get<RGB>(), Style->Focus_Background_Color.value.get<RGB>()};
+                return {Style->Focus_Text_Color.color.get<RGB>(), Style->Focus_Background_Color.color.get<RGB>()};
             }
             else if (Hovered){
-                return {Style->Hover_Text_Color.value.get<RGB>(), Style->Hover_Background_Color.value.get<RGB>()};
+                return {Style->Hover_Text_Color.color.get<RGB>(), Style->Hover_Background_Color.color.get<RGB>()};
             }
             else{
-                return {Style->Text_Color.value.get<RGB>(), Style->Background_Color.value.get<RGB>()};
+                return {Style->Text_Color.color.get<RGB>(), Style->Background_Color.color.get<RGB>()};
             }
         }
 
@@ -1110,13 +1110,13 @@ namespace GGUI{
          */
         constexpr std::pair<RGB, RGB> composeAllBorderRGBValues(){
             if (Focused){
-                return {Style->Focus_Border_Color.value.get<RGB>(), Style->Focus_Border_Background_Color.value.get<RGB>()};
+                return {Style->Focus_Border_Color.color.get<RGB>(), Style->Focus_Border_Background_Color.color.get<RGB>()};
             }
             else if (Hovered){
-                return {Style->Hover_Border_Color.value.get<RGB>(), Style->Hover_Border_Background_Color.value.get<RGB>()};
+                return {Style->Hover_Border_Color.color.get<RGB>(), Style->Hover_Border_Background_Color.color.get<RGB>()};
             }
             else{
-                return {Style->Border_Color.value.get<RGB>(), Style->Border_Background_Color.value.get<RGB>()};
+                return {Style->Border_Color.color.get<RGB>(), Style->Border_Background_Color.color.get<RGB>()};
             }
         }
 

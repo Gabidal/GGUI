@@ -17,7 +17,7 @@ namespace GGUI{
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
         // The textField::render() will take care of this if percentage is used.
-        if (innerWidth == 0 && Style->Width.value.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
+        if (innerWidth == 0 && Style->Width.number.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
             return;
         }
 

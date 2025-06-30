@@ -181,7 +181,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
 
     if (
         (
-        Style->Width.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.value.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE
+        Style->Width.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE
         ) && isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()
     ){
         setDimensions(Max_Width, Max_Height);

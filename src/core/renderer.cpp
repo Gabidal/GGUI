@@ -2,6 +2,7 @@
 #include "./utils/fileStreamer.h"
 #include "./utils/logger.h"
 #include "./utils/utils.h"
+#include "./utils/constants.h"
 #include "./addons/addons.h"
 
 #include <string>
@@ -474,22 +475,22 @@ namespace GGUI{
                     }
                     // Handle mouse clicks
                     if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
-                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                        //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State = true;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                     }
                     else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
-                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State;
+                        //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State = false;
                     }
 
                     if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
-                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                        //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State = true;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                     }
                     else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
-                        //PREVIOUS_KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State;
+                        //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State = false;
                     }
                 
@@ -703,13 +704,13 @@ namespace GGUI{
             File_Streamer_Handles.clear();
 
             // Restore default cursor visibility
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::MOUSE_CURSOR).To_String();
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
 
             // Disable mouse event reporting
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).To_String();
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
 
             // Disable screen capture
-            std::cout << GGUI::Constants::ANSI::Enable_Private_SGR_Feature(GGUI::Constants::ANSI::SCREEN_CAPTURE, false).To_String();  // restores the screen.
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();  // restores the screen.
             std::cout << std::flush;
 
             // Restore previous file descriptor flags
@@ -720,7 +721,7 @@ namespace GGUI{
         }
 
         void Cleanup(){
-            if (!Carry_Flags.Read().Terminate){
+            if (!Carry_Flags.read().Terminate){
                 waitForThreadTermination();
 
                 // Join the threads
@@ -783,7 +784,7 @@ namespace GGUI{
          */
         void renderFrame() {
             // Move the cursor to the top-left corner of the terminal
-            printf("%s", GGUI::Constants::ANSI::SET_CURSOR_TO_START.Get_Unicode());
+            printf("%s", GGUI::constants::ANSI::SET_CURSOR_TO_START.getUnicode());
 
             // Flush the output buffer to ensure it's written immediately
             fflush(stdout);
@@ -901,9 +902,9 @@ namespace GGUI{
         /**
          * @brief Translate the input events stored in Raw_Input into Input objects.
          * @details This function is used to translate the input events stored in Raw_Input into Input objects. 
-         * It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding Constants:: value. 
-         * If the key is not a special key, it creates an Input object with the key's ASCII value and Constants::KEY_PRESS. 
-         * If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding Constants:: value. 
+         * It checks if the event is a key event, and if so, it checks if the key is a special key (up, down, left, right, enter, shift, control, backspace, escape, tab) and if so, it creates an Input object with the corresponding constants:: value. 
+         * If the key is not a special key, it creates an Input object with the key's ASCII value and constants::KEY_PRESS. 
+         * If the event is not a key event, it checks if the event is a mouse event and if so, it checks if the mouse event is a movement, click or scroll event and if so, it creates an Input object with the corresponding constants:: value. 
          * Finally, it resets the Raw_Input_Size to 0.
          */
         void Translate_Inputs(){
@@ -915,51 +916,45 @@ namespace GGUI{
             // Unlike in Windows we wont be getting an indication per Key information, whether it was pressed in or out.
             KEYBOARD_STATES.clear();
 
-            for (ssize_t i = 0; i < Raw_Input_Size; i++) {
-
-                // Check if SHIFT has been modifying the keys
+            for (ssize_t i = 0; i < Raw_Input_Size; i++) {                // Check if SHIFT has been modifying the keys
                 if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')) {
                     // SHIFT key is pressed
-                    Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                    KEYBOARD_STATES[BUTTON_STATES::SHIFT] = buttonState(true);
+                    Inputs.push_back(new GGUI::input(' ', constants::SHIFT));
+                    KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT] = buttonState(true);
                 }
 
                 // ACC ASCII character handlers.
                 else if (Raw_Input[i] >= START_OF_CTRL && Raw_Input[i] <= END_OF_CTRL) {
-                    // This is a CTRL key
-
-                    // The CTRL domain contains multiple useful keys to check for
-                    if (Raw_Input[i] == Constants::ANSI::BACKSPACE) {
+                    // This is a CTRL key                    // The CTRL domain contains multiple useful keys to check for
+                    if (Raw_Input[i] == constants::ANSI::BACKSPACE) {
                         // This is a backspace key
-                        Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
-                        KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = buttonState(true);
+                        Inputs.push_back(new GGUI::input(' ', constants::BACKSPACE));
+                        KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE] = buttonState(true);
                     }
-                    else if (Raw_Input[i] == Constants::ANSI::HORIZONTAL_TAB) {
+                    else if (Raw_Input[i] == constants::ANSI::HORIZONTAL_TAB) {
                         // This is a tab key
-                        Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
-                        KEYBOARD_STATES[BUTTON_STATES::TAB] = buttonState(true);
+                        Inputs.push_back(new GGUI::input(' ', constants::TAB));
+                        KEYBOARD_STATES[KEYBOARD_BUTTONS::TAB] = buttonState(true);
                         handleTabulator();
                     }
-                    else if (Raw_Input[i] == Constants::ANSI::LINE_FEED) {
+                    else if (Raw_Input[i] == constants::ANSI::LINE_FEED) {
                         // This is an enter key
-                        Inputs.push_back(new GGUI::Input('\n', Constants::ENTER));
-                        KEYBOARD_STATES[BUTTON_STATES::ENTER] = buttonState(true);
+                        Inputs.push_back(new GGUI::input('\n', constants::ENTER));
+                        KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER] = buttonState(true);
                     }
                     else{
                         // Since we cannot discern between ACC and ctrl+characters, we'll just yolo it for now and assume it works.
                         Raw_Input[i] += 'A'-1;  // Since A is encoded as 1, we need to subtract 1 to get the correct ASCII value.
                         // This is an ctrl key
-                        Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                        KEYBOARD_STATES[BUTTON_STATES::CONTROL] = buttonState(true);
+                        Inputs.push_back(new GGUI::input(' ', constants::CONTROL));
+                        KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = buttonState(true);
                     }
-                }
-
-                if (Raw_Input[i] == Constants::ANSI::ESC_CODE[0]) {
+                }                if (Raw_Input[i] == constants::ANSI::ESC_CODE[0]) {
                     // check if there are stuff after this escape code
                     if (i + 1 >= Raw_Input_Size) {
                         // Clearly the escape key was invoked
-                        Inputs.push_back(new GGUI::Input(' ', Constants::ESCAPE));
-                        KEYBOARD_STATES[BUTTON_STATES::ESC] = buttonState(true);
+                        Inputs.push_back(new GGUI::input(' ', constants::ESCAPE));
+                        KEYBOARD_STATES[KEYBOARD_BUTTONS::ESC] = buttonState(true);
                         handleEscape();
                         continue;
                     }
@@ -968,7 +963,7 @@ namespace GGUI{
                     i++;
 
                     // The current data can either be an ALT key initiative or an escape sequence followed by '['
-                    if (Raw_Input[i] == Constants::ANSI::ESC_CODE[1]) {
+                    if (Raw_Input[i] == constants::ANSI::ESC_CODE[1]) {
                         // Escape sequence codes:
 
                         // Check for modifiers with base [1;
@@ -979,23 +974,23 @@ namespace GGUI{
 
                             switch (Modifier) {
                                 case (unsigned char)VTTermModifiers::SHIFT:
-                                    Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                                    KEYBOARD_STATES[BUTTON_STATES::SHIFT] = buttonState(true);
+                                    Inputs.push_back(new GGUI::input(' ', constants::SHIFT));
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT] = buttonState(true);
                                     break;
 
                                 case (unsigned char)VTTermModifiers::ALT:
-                                    Inputs.push_back(new GGUI::Input(' ', Constants::ALT));
-                                    KEYBOARD_STATES[BUTTON_STATES::ALT] = buttonState(true);
+                                    Inputs.push_back(new GGUI::input(' ', constants::ALT));
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::ALT] = buttonState(true);
                                     break;
 
                                 case (unsigned char)VTTermModifiers::CONTROL:
-                                    Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                                    KEYBOARD_STATES[BUTTON_STATES::CONTROL] = buttonState(true);
+                                    Inputs.push_back(new GGUI::input(' ', constants::CONTROL));
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = buttonState(true);
                                     break;
 
                                 case (unsigned char)VTTermModifiers::SUPER:
-                                    Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
-                                    KEYBOARD_STATES[BUTTON_STATES::SUPER] = buttonState(true);
+                                    Inputs.push_back(new GGUI::input(' ', constants::SUPER));
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::SUPER] = buttonState(true);
                                     break;
 
                                 default:
@@ -1008,23 +1003,23 @@ namespace GGUI{
 
                         // UP, DOWN LEFT, RIGHT keys
                         if (Raw_Input[i + 1] == 'A') {
-                            Inputs.push_back(new GGUI::Input(0, Constants::UP));
-                            KEYBOARD_STATES[BUTTON_STATES::UP] = buttonState(true);
+                            Inputs.push_back(new GGUI::input(0, constants::UP));
+                            KEYBOARD_STATES[KEYBOARD_BUTTONS::UP] = buttonState(true);
                             i++;
                         }
                         else if (Raw_Input[i + 1] == 'B') {
-                            Inputs.push_back(new GGUI::Input(0, Constants::DOWN));
-                            KEYBOARD_STATES[BUTTON_STATES::DOWN] = buttonState(true);
+                            Inputs.push_back(new GGUI::input(0, constants::DOWN));
+                            KEYBOARD_STATES[KEYBOARD_BUTTONS::DOWN] = buttonState(true);
                             i++;
                         }
                         else if (Raw_Input[i + 1] == 'C') {
-                            Inputs.push_back(new GGUI::Input(0, Constants::RIGHT));
-                            KEYBOARD_STATES[BUTTON_STATES::RIGHT] = buttonState(true);
+                            Inputs.push_back(new GGUI::input(0, constants::RIGHT));
+                            KEYBOARD_STATES[KEYBOARD_BUTTONS::RIGHT] = buttonState(true);
                             i++;
                         }
                         else if (Raw_Input[i + 1] == 'D') {
-                            Inputs.push_back(new GGUI::Input(0, Constants::LEFT));
-                            KEYBOARD_STATES[BUTTON_STATES::LEFT] = buttonState(true);
+                            Inputs.push_back(new GGUI::input(0, constants::LEFT));
+                            KEYBOARD_STATES[KEYBOARD_BUTTONS::LEFT] = buttonState(true);
                             i++;
                         }
                         else if (Raw_Input[i + 1] == 'M') {  // Decode X10 Mouse handling
@@ -1033,24 +1028,24 @@ namespace GGUI{
 
                             // Check if the bit 2'rd has been set, is so then the SHIFT has been pressed
                             if (Bit_Mask & 4) {
-                                Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                                KEYBOARD_STATES[BUTTON_STATES::SHIFT] = buttonState(true);
+                                Inputs.push_back(new GGUI::input(' ', constants::SHIFT));
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT] = buttonState(true);
                                 // also remove the bit from the bitmask
                                 Bit_Mask &= ~4;
                             }
 
                             // Check if the 3'th bit has been set, is so then the SUPER has been pressed
                             if (Bit_Mask & 8) {
-                                Inputs.push_back(new GGUI::Input(' ', Constants::SUPER));
-                                KEYBOARD_STATES[BUTTON_STATES::SUPER] = buttonState(true);
+                                Inputs.push_back(new GGUI::input(' ', constants::SUPER));
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::SUPER] = buttonState(true);
                                 // also remove the bit from the bitmask
                                 Bit_Mask &= ~8;
                             }
 
                             // Check if the 4'th bit has been set, is so then the CTRL has been pressed
                             if (Bit_Mask & 16) {
-                                Inputs.push_back(new GGUI::Input(' ', Constants::CONTROL));
-                                KEYBOARD_STATES[BUTTON_STATES::CONTROL] = buttonState(true);
+                                Inputs.push_back(new GGUI::input(' ', constants::CONTROL));
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = buttonState(true);
                                 // also remove the bit from the bitmask
                                 Bit_Mask &= ~16;
                             }
@@ -1074,32 +1069,32 @@ namespace GGUI{
                             Bit_Mask &= ~(128);
 
                             if (Bit_Mask == 0) {
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = buttonState(true);
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT] = buttonState(true);
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                             }
                             else if (Bit_Mask == 1) {
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = buttonState(true);
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE] = buttonState(true);
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
                             }
                             else if (Bit_Mask == 2) {
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = buttonState(true);
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT] = buttonState(true);
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                             }
                             else if (Bit_Mask == 3) {
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].State = false;
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].State = false;
-                                KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].State = false;
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State = false;
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].State = false;
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State = false;
                             }
 
                             i += 4;
                         }
                         else if (Raw_Input[i + 1] == 'Z') {
                             // SHIFT + TAB => Z
-                            Inputs.push_back(new GGUI::Input(' ', Constants::SHIFT));
-                            Inputs.push_back(new GGUI::Input(' ', Constants::TAB));
+                            Inputs.push_back(new GGUI::input(' ', constants::SHIFT));
+                            Inputs.push_back(new GGUI::input(' ', constants::TAB));
 
-                            KEYBOARD_STATES[BUTTON_STATES::SHIFT] = buttonState(true);
-                            KEYBOARD_STATES[BUTTON_STATES::TAB] = buttonState(true);
+                            KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT] = buttonState(true);
+                            KEYBOARD_STATES[KEYBOARD_BUTTONS::TAB] = buttonState(true);
 
                             handleTabulator();
 
@@ -1143,16 +1138,16 @@ namespace GGUI{
                             bool control = (mask & 16) != 0;
 
                             if (shift) {
-                                INTERNAL::KEYBOARD_STATES[BUTTON_STATES::SHIFT] = buttonState(true);
-                                INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::SHIFT));
+                                INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT] = buttonState(true);
+                                INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::SHIFT));
                             }
                             if (alt) {
-                                INTERNAL::KEYBOARD_STATES[BUTTON_STATES::ALT] = buttonState(true);
-                                INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::ALT));
+                                INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ALT] = buttonState(true);
+                                INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::ALT));
                             }
                             if (control) {
-                                INTERNAL::KEYBOARD_STATES[BUTTON_STATES::CONTROL] = buttonState(true);
-                                INTERNAL::Inputs.push_back(new GGUI::Input(' ', GGUI::Constants::CONTROL));
+                                INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = buttonState(true);
+                                INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::CONTROL));
                             }
 
                             // Button ID: low two bits
@@ -1161,22 +1156,22 @@ namespace GGUI{
 
                             switch (btn) {
                                 case 0: // left
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT] = buttonState(pressed);
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT] = buttonState(pressed);
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].Capture_Time = std::chrono::high_resolution_clock::now();
                                     break;
                                 case 1: // middle
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = buttonState(pressed);
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE] = buttonState(pressed);
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].Capture_Time = std::chrono::high_resolution_clock::now();
                                     break;
                                 case 2: // right
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT] = buttonState(pressed);
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT] = buttonState(pressed);
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].Capture_Time = std::chrono::high_resolution_clock::now();
                                     break;
                                 case 3: // release all buttons
                                     // you may want to clear all three
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_LEFT]   = buttonState(false);
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_MIDDLE] = buttonState(false);
-                                    KEYBOARD_STATES[BUTTON_STATES::MOUSE_RIGHT]  = buttonState(false);
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT]   = buttonState(false);
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE] = buttonState(false);
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT]  = buttonState(false);
                                     break;
                             }
 
@@ -1188,17 +1183,17 @@ namespace GGUI{
                     }
                     else {
                         // This is an ALT key
-                        Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::ALT));
-                        KEYBOARD_STATES[BUTTON_STATES::ALT] = buttonState(true);
+                        Inputs.push_back(new GGUI::input(Raw_Input[i], constants::ALT));
+                        KEYBOARD_STATES[KEYBOARD_BUTTONS::ALT] = buttonState(true);
                     }
                 }
                 else if (Raw_Input[i] >= ' ' && Raw_Input[i] <= '~') {
                     // Normal character data
-                    Inputs.push_back(new GGUI::Input(Raw_Input[i], Constants::KEY_PRESS));
+                    Inputs.push_back(new GGUI::input(Raw_Input[i], constants::KEY_PRESS));
                 }
-                else if (Raw_Input[i] == Constants::ANSI::DELETE){
-                    Inputs.push_back(new GGUI::Input(' ', Constants::BACKSPACE));
-                    KEYBOARD_STATES[BUTTON_STATES::BACKSPACE] = buttonState(true);
+                else if (Raw_Input[i] == constants::ANSI::DELETE){
+                    Inputs.push_back(new GGUI::input(' ', constants::BACKSPACE));
+                    KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE] = buttonState(true);
                 }
             }
 
@@ -1214,11 +1209,11 @@ namespace GGUI{
          */
         void initPlatformStuff(){
             // Initialize the console for mouse and window input, and set UTF-8 mode for output.
-            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::REPORT_MOUSE_ALL_EVENTS).To_String();
-            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::MOUSE_CURSOR, false).To_String();
-            std::cout << Constants::ANSI::Enable_Private_SGR_Feature(Constants::ANSI::SCREEN_CAPTURE).To_String();   // for on exit to restore
-            // std::cout << Constants::RESET_CONSOLE;
-            // std::cout << Constants::EnableFeature(Constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
+            std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+            std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::MOUSE_CURSOR, false).toString();
+            std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
+            // std::cout << constants::RESET_CONSOLE;
+            // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
             std::cout << std::flush;
 
             // Save the current flags and take an snapshot of the flags before GGUI

@@ -429,7 +429,7 @@ namespace GGUI{
 
         class RGBValue : public styleBase{
         public:
-            value<RGB> value = RGB(0, 0, 0);
+            value<RGB> color = RGB(0, 0, 0);
 
             /**
              * @brief Construct a new RGB_VALUE object using constexpr.
@@ -440,7 +440,7 @@ namespace GGUI{
              *          using constexpr for compile-time evaluation.
              */
             constexpr RGBValue(const GGUI::RGB Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
-                : styleBase(Default), value(Value, INTERNAL::EVALUATION_TYPE::DEFAULT) {}
+                : styleBase(Default), color(Value, INTERNAL::EVALUATION_TYPE::DEFAULT) {}
 
             /**
              * @brief Construct a new RGB_VALUE object using constexpr.
@@ -451,7 +451,7 @@ namespace GGUI{
              *          using constexpr for compile-time evaluation.
              */
             constexpr RGBValue(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
-                : styleBase(Default), value(Value, INTERNAL::EVALUATION_TYPE::PERCENTAGE) {}
+                : styleBase(Default), color(Value, INTERNAL::EVALUATION_TYPE::PERCENTAGE) {}
             
             constexpr RGBValue() = default;
 
@@ -475,7 +475,7 @@ namespace GGUI{
             constexpr RGBValue& operator=(const RGBValue& other){
                 // Only copy the information if the other is enabled.
                 if (other.status >= status){
-                    value = other.value;
+                    color = other.color;
 
                     status = other.status;
                 }
@@ -490,7 +490,7 @@ namespace GGUI{
              *          It sets the status of the object to VALUE_STATE::VALUE after the assignment.
              */
             constexpr RGBValue& operator=(const GGUI::RGB other){
-                value = other;
+                color = other;
                 status = VALUE_STATE::VALUE;
                 return *this;
             }
@@ -502,7 +502,7 @@ namespace GGUI{
              * @details This function compares the value and status of the two RGB_VALUE objects.
              */
             constexpr bool operator==(const RGBValue& other) const{
-                return value.get<RGB>() == other.value.get<RGB>();
+                return color.get<RGB>() == other.color.get<RGB>();
             }
 
             /**
@@ -512,7 +512,7 @@ namespace GGUI{
              * @details This function compares the value and status of the two RGB_VALUE objects.
              */
             constexpr bool operator!=(const RGBValue& other) const{
-                return !(value.get<RGB>() == other.value.get<RGB>());
+                return !(color.get<RGB>() == other.color.get<RGB>());
             }
 
             /**
@@ -521,7 +521,7 @@ namespace GGUI{
              * @details This constructor creates a new RGB_VALUE object that is a copy of the other one.
              *          It copies the value and status of the other object, and sets the status to VALUE_STATE::VALUE.
              */
-            constexpr RGBValue(const GGUI::STYLING_INTERNAL::RGBValue& other) : styleBase(other.status), value(other.value){}
+            constexpr RGBValue(const GGUI::STYLING_INTERNAL::RGBValue& other) : styleBase(other.status), color(other.color){}
 
             /**
              * @brief Embeds the value of an RGB_VALUE object into a Styling object.
@@ -624,7 +624,7 @@ namespace GGUI{
         
         class numberValue : public styleBase{
         public:
-            value<int> value = 0;
+            value<int> number = 0;
 
             /**
              * @brief Construct a new NUMBER_VALUE object from a float.
@@ -633,7 +633,7 @@ namespace GGUI{
              * @details This constructor initializes the NUMBER_VALUE with the provided float value and default state.
              *          The value is converted to a percentage (multiplying by 0.01) and stored as a float in the Value member.
              */
-            constexpr numberValue(float Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value, INTERNAL::EVALUATION_TYPE::PERCENTAGE){}
+            constexpr numberValue(float Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number(Value, INTERNAL::EVALUATION_TYPE::PERCENTAGE){}
 
             /**
              * @brief Construct a new NUMBER_VALUE object from an integer using constexpr.
@@ -643,9 +643,9 @@ namespace GGUI{
              * @details This constructor initializes a NUMBER_VALUE object with the provided integer value and default state,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr numberValue(int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value, INTERNAL::EVALUATION_TYPE::DEFAULT){}
+            constexpr numberValue(int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number(Value, INTERNAL::EVALUATION_TYPE::DEFAULT){}
             
-            constexpr numberValue(unsigned int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value((signed int)Value, INTERNAL::EVALUATION_TYPE::DEFAULT){}
+            constexpr numberValue(unsigned int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number((signed int)Value, INTERNAL::EVALUATION_TYPE::DEFAULT){}
 
             constexpr numberValue() = default;
 
@@ -670,7 +670,7 @@ namespace GGUI{
             constexpr numberValue& operator=(const numberValue& other){
                 // Only copy the information if the other is enabled.
                 if (other.status >= status){
-                    value = other.value;
+                    number = other.number;
 
                     status = other.status;
                 }
@@ -685,7 +685,7 @@ namespace GGUI{
              *          It sets the status to VALUE_STATE::VALUE and returns the modified object.
              */
             constexpr numberValue& operator=(const int other){
-                value = other;
+                number = other;
                 status = VALUE_STATE::VALUE;
                 return *this;
             }
@@ -697,7 +697,7 @@ namespace GGUI{
              * @details This function compares the value and status of the two NUMBER_VALUE objects.
              */
             constexpr bool operator==(const numberValue& other) const{
-                return value.get<int>() == other.value.get<int>();
+                return number.get<int>() == other.number.get<int>();
             }
 
             /**
@@ -707,7 +707,7 @@ namespace GGUI{
              * @details This function compares the value and status of the two NUMBER_VALUE objects.
              */
             constexpr bool operator!=(const numberValue& other) const{
-                return value.get<int>() != other.value.get<int>();
+                return number.get<int>() != other.number.get<int>();
             }
         
             /**
@@ -715,7 +715,7 @@ namespace GGUI{
              * @param other The other NUMBER_VALUE object to construct from.
              * @details This constructor initializes a new NUMBER_VALUE object with the same value and status as the given object.
              */
-            constexpr numberValue(const GGUI::STYLING_INTERNAL::numberValue& other) : styleBase(other.status), value(other.value){}
+            constexpr numberValue(const GGUI::STYLING_INTERNAL::numberValue& other) : styleBase(other.status), number(other.number){}
             
             /**
              * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
@@ -739,7 +739,7 @@ namespace GGUI{
              * @return A reference to the value of this NUMBER_VALUE object.
              * @details This function returns a reference to the value of this NUMBER_VALUE object, allowing it to be directly accessed and modified.
              */
-            constexpr int& direct() { return value.Direct<int>(); }
+            constexpr int& direct() { return number.Direct<int>(); }
         };
 
         template<typename T>
@@ -1062,10 +1062,10 @@ namespace GGUI{
                 return isNonDiscriminantScalar<IVector3>(value.Get(), scalar);
             }
             else if constexpr (std::is_same_v<P, RGBValue>){
-                return isNonDiscriminantScalar<RGB>(static_cast<RGBValue>(value).value.get<RGB>(), scalar);
+                return isNonDiscriminantScalar<RGB>(static_cast<RGBValue>(value).color.get<RGB>(), scalar);
             }
             else if constexpr (std::is_same_v<P, numberValue>){
-                return isNonDiscriminantScalar<int>(static_cast<numberValue>(value).value.get<int>(), scalar);
+                return isNonDiscriminantScalar<int>(static_cast<numberValue>(value).number.get<int>(), scalar);
             }
             else {
                 static_assert(!std::is_same_v<P, P>, "Unsupported type!");
@@ -1097,10 +1097,10 @@ namespace GGUI{
                 return toString(value.Get());
             }
             else if constexpr (std::is_same_v<P, RGBValue>){
-                return toString(static_cast<RGBValue>(value).value.get<RGB>());
+                return toString(static_cast<RGBValue>(value).color.get<RGB>());
             }
             else if constexpr (std::is_same_v<P, numberValue>){
-                return toString(static_cast<numberValue>(value).value.get<int>());
+                return toString(static_cast<numberValue>(value).number.get<int>());
             }
             else {
                 static_assert(!std::is_same_v<P, P>, "Unsupported type!");
@@ -1197,10 +1197,10 @@ namespace GGUI{
 
         INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        constexpr int get() const { return value.get<int>(); }
+        constexpr int get() const { return number.get<int>(); }
 
         constexpr void Set(const int Value){
-            value = Value;
+            number = Value;
             status = VALUE_STATE::VALUE;
         }
     };
@@ -1230,10 +1230,10 @@ namespace GGUI{
         
         INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        constexpr int get() const { return value.get<int>(); }
+        constexpr int get() const { return number.get<int>(); }
 
         constexpr void Set(const int Value){
-            value = Value;
+            number = Value;
             status = VALUE_STATE::VALUE;
         }
     };
@@ -1270,7 +1270,7 @@ namespace GGUI{
 
     class textColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr textColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr textColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr textColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1294,7 +1294,7 @@ namespace GGUI{
 
     class backgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr backgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr backgroundColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr backgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1318,7 +1318,7 @@ namespace GGUI{
 
     class borderColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr borderColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr borderColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr borderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1342,7 +1342,7 @@ namespace GGUI{
 
     class borderBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr borderBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr borderBackgroundColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr borderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1366,7 +1366,7 @@ namespace GGUI{
 
     class hoverBorderColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hoverBorderColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr hoverBorderColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr hoverBorderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1390,7 +1390,7 @@ namespace GGUI{
 
     class hoverTextColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hoverTextColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr hoverTextColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr hoverTextColor(const float  relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1414,7 +1414,7 @@ namespace GGUI{
 
     class hoverBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hoverBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr hoverBackgroundColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr hoverBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1438,7 +1438,7 @@ namespace GGUI{
 
     class hoverBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr hoverBorderBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr hoverBorderBackgroundColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr hoverBorderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1462,7 +1462,7 @@ namespace GGUI{
 
     class focusBorderColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focusBorderColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr focusBorderColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr focusBorderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1486,7 +1486,7 @@ namespace GGUI{
 
     class focusTextColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focusTextColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr focusTextColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr focusTextColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1510,7 +1510,7 @@ namespace GGUI{
 
     class focusBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focusBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr focusBackgroundColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr focusBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
@@ -1534,7 +1534,7 @@ namespace GGUI{
 
     class focusBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
     public:
-        constexpr focusBorderBackgroundColor(const RGB color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(color, Default){}
+        constexpr focusBorderBackgroundColor(const RGB Color, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(Color, Default){}
 
         constexpr focusBorderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
