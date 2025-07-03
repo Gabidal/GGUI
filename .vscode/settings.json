@@ -119,6 +119,7 @@
         "stdfloat": "cpp",
         "syncstream": "cpp",
         "text_encoding": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "__nullptr": "cpp"
     }
 }

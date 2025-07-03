@@ -4,6 +4,7 @@
 #include "fileStreamer.h"
 #include "utils.h"
 #include "../renderer.h"
+#include "settings.h"
 
 #include <functional>
 #include <vector>

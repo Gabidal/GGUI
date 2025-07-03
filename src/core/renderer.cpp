@@ -4,6 +4,8 @@
 #include "./utils/utils.h"
 #include "./utils/constants.h"
 #include "./addons/addons.h"
+#include "./utils/settings.h"
+#include "./utils/drm.h"
 
 #include <string>
 #include <cassert>
@@ -2310,6 +2312,10 @@ namespace GGUI{
             
             // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
             initAddons();
+
+            if (SETTINGS::enableDRMBackend) {
+                INTERNAL::DRM::connectDRMBackend();
+            }
         });
         
         // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();

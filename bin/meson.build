@@ -31,6 +31,8 @@ sources = [
   '../src/core/utils/logger.cpp',
   '../src/core/utils/utils.cpp',
   '../src/core/utils/fileStreamer.cpp',
+  '../src/core/utils/settings.cpp',
+  '../src/core/utils/drm.cpp',
   
   # Elements
   '../src/elements/element.cpp',

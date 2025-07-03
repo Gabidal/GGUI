@@ -4,6 +4,7 @@
 #include "../../elements/element.h"
 #include "fileStreamer.h"
 #include "../renderer.h"
+#include "settings.h"
 
 namespace GGUI{
     namespace INTERNAL{
@@ -274,32 +275,6 @@ namespace GGUI{
          */
         std::string constructLoggerFileName(){
             return GGUI::INTERNAL::Get_Executable_Directory(GGUI::INTERNAL::Get_Executable_Path()) + std::string("/log.txt");
-        }
-
-        namespace SETTINGS{
-
-            unsigned long long Mouse_Press_Down_Cooldown = 365;
-
-            bool Word_Wrapping = true;
-
-            std::chrono::milliseconds Thread_Timeout = std::chrono::milliseconds(256);
-
-            bool ENABLE_GAMMA_CORRECTION = false;
-
-            namespace LOGGER{
-                std::string File_Name = "";
-            }
-
-            /**
-             * @brief Initializes the settings for the application.
-             *
-             * This function sets up the necessary configurations for the application
-             * by initializing the logger file name using the internal logger file name
-             * construction method.
-             */
-            void initSettings(){
-                LOGGER::File_Name = INTERNAL::constructLoggerFileName();
-            }
         }
 
         /**

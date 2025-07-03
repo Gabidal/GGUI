@@ -1,6 +1,9 @@
 #include "./utils/utils.h"
 #include "./renderer.h"
 #include "./utils/fileStreamer.h"
+#include "./utils/settings.h"
+
+#include "./utils/drm.h"
 
 #include <thread>
 #include <memory>
@@ -52,46 +55,51 @@ namespace GGUI{
         void renderer(){
             while (true){
                 {
-                    std::unique_lock lock(INTERNAL::atomic::Mutex);
-                    INTERNAL::atomic::Condition.wait(lock, [&](){ return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::REQUESTING_RENDERING; });
+                    std::unique_lock lock(atomic::Mutex);
+                    atomic::Condition.wait(lock, [&](){ return atomic::Pause_Render_Thread == atomic::status::REQUESTING_RENDERING; });
 
-                    INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::RENDERING;
+                    atomic::Pause_Render_Thread = atomic::status::RENDERING;
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
-                INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
+                Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
                 if (Carry_Flags.read().Terminate){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
-                if (INTERNAL::Main){
+                if (Main){
 
                     // Process the previous carry flags
-                    INTERNAL::Carry_Flags([](GGUI::INTERNAL::Carry& previous_carry){
+                    Carry_Flags([](Carry& previous_carry){
                         if (previous_carry.Resize){
                             // Clear the previous carry flag
                             previous_carry.Resize = false;
 
-                            INTERNAL::updateMaxWidthAndHeight();
+                            updateMaxWidthAndHeight();
                         }
                     });
 
                     Identical_Frame = true; // Assume that the incoming frame will be identical.
 
-                    INTERNAL::Abstract_Frame_Buffer = &INTERNAL::Main->render();
+                    Abstract_Frame_Buffer = &Main->render();
 
                     if (!Identical_Frame){
-                        // ENCODE for optimize
-                        encodeBuffer(INTERNAL::Abstract_Frame_Buffer);
+                        if (SETTINGS::enableDRMBackend) {
+                            DRM::sendBuffer(Abstract_Frame_Buffer, Main->getWidth(), Main->getHeight());
+                        } 
+                        else {
+                            // ENCODE for optimize
+                            encodeBuffer(Abstract_Frame_Buffer);
 
-                        unsigned int Liquefied_Size = 0;
-                        std::vector<compactString>* CS_Buffer = liquifyUTFText(INTERNAL::Abstract_Frame_Buffer, Liquefied_Size, INTERNAL::Main->getWidth(), INTERNAL::Main->getHeight());
-                        
-                        INTERNAL::Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
-                        
-                        INTERNAL::renderFrame();
+                            unsigned int Liquefied_Size = 0;
+                            std::vector<compactString>* CS_Buffer = liquifyUTFText(Abstract_Frame_Buffer, Liquefied_Size, Main->getWidth(), Main->getHeight());
+                            
+                            Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
+                            
+                            renderFrame();
+                        }
                     }
                     else{
                         LOGGER::Log("Saved frame");
@@ -99,25 +107,25 @@ namespace GGUI{
                 }
 
                 // Check the difference of the time captured before render and now after render
-                INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
+                Current_Time = std::chrono::high_resolution_clock::now();
 
-                INTERNAL::Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
+                Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 {
-                    std::unique_lock lock(INTERNAL::atomic::Mutex);
+                    std::unique_lock lock(atomic::Mutex);
                     // Now for itself set it to sleep.
-                    INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::PAUSED;
-                    INTERNAL::atomic::Condition.notify_all();
+                    atomic::Pause_Render_Thread = atomic::status::PAUSED;
+                    atomic::Condition.notify_all();
                 }
             }
 
             LOGGER::Log("Render thread terminated!");
         
             // Give signal to other threads this one has paused for good.
-            std::unique_lock lock(INTERNAL::atomic::Mutex);
+            std::unique_lock lock(atomic::Mutex);
             // Now for itself set it to sleep.
-            INTERNAL::atomic::Pause_Render_Thread = INTERNAL::atomic::status::TERMINATED;
-            INTERNAL::atomic::Condition.notify_all();
+            atomic::Pause_Render_Thread = atomic::status::TERMINATED;
+            atomic::Condition.notify_all();
         }
 
         /**
@@ -144,7 +152,7 @@ namespace GGUI{
          */
         void Refresh_Multi_Frame_Canvas() {
             // Iterate over each multi-frame canvas
-            for (auto i : INTERNAL::Multi_Frame_Canvas) {
+            for (auto i : Multi_Frame_Canvas) {
                 // Advance the animation to the next frame
                 i.first->setNextAnimationFrame();
 
@@ -153,8 +161,8 @@ namespace GGUI{
             }
 
             // Adjust the event thread load if there are canvases to update
-            if (INTERNAL::Multi_Frame_Canvas.size() > 0) {
-                INTERNAL::Event_Thread_Load = Lerp(INTERNAL::MIN_UPDATE_SPEED, INTERNAL::MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
+            if (Multi_Frame_Canvas.size() > 0) {
+                Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
             }
         }
 
@@ -176,20 +184,20 @@ namespace GGUI{
         void eventThread(){
             while (true){
                 {
-                    std::unique_lock lock(INTERNAL::atomic::Mutex);
+                    std::unique_lock lock(atomic::Mutex);
 
-                    INTERNAL::atomic::Condition.wait(lock, [&](){ 
-                        return INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::PAUSED || INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::TERMINATED; 
+                    atomic::Condition.wait(lock, [&](){ 
+                        return atomic::Pause_Render_Thread == atomic::status::PAUSED || atomic::Pause_Render_Thread == atomic::status::TERMINATED; 
                     });
 
-                    if (INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::TERMINATED){
+                    if (atomic::Pause_Render_Thread == atomic::status::TERMINATED){
                         break;
                     }
                 }
 
                 // Reset the thread load counter
-                INTERNAL::Event_Thread_Load = 0;
-                INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
+                Event_Thread_Load = 0;
+                Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Order independent --------------
                 recallMemories();
@@ -203,18 +211,18 @@ namespace GGUI{
                 */  
                 // Resume_GGUI();
 
-                INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
+                Current_Time = std::chrono::high_resolution_clock::now();
 
                 // Calculate the delta time.
-                INTERNAL::Event_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
+                Event_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
-                INTERNAL::CURRENT_UPDATE_SPEED = INTERNAL::MIN_UPDATE_SPEED + (INTERNAL::MAX_UPDATE_SPEED - INTERNAL::MIN_UPDATE_SPEED) * (1 - INTERNAL::Event_Thread_Load);
+                CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
 
                 // If ya want uncapped FPS, disable this sleep code:
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(
-                        INTERNAL::CURRENT_UPDATE_SPEED - INTERNAL::Event_Delay, 
-                        INTERNAL::MIN_UPDATE_SPEED
+                        CURRENT_UPDATE_SPEED - Event_Delay, 
+                        MIN_UPDATE_SPEED
                     )
                 ));
             }
@@ -226,25 +234,25 @@ namespace GGUI{
          * @brief Function that continuously handles user input in a separate thread.
          *
          * This function runs an infinite loop where it performs the following steps:
-         * 1. Waits for user input by calling INTERNAL::Query_Inputs().
+         * 1. Waits for user input by calling Query_Inputs().
          * 2. Pauses the GGUI system and performs the following actions:
-         *    - Records the current time as INTERNAL::Previous_Time.
-         *    - Translates the queried inputs using INTERNAL::Translate_Inputs().
+         *    - Records the current time as Previous_Time.
+         *    - Translates the queried inputs using Translate_Inputs().
          *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
          *    - Calls the event handlers to react to the parsed input using Event_Handler().
-         *    - Records the current time as INTERNAL::Current_Time.
-         *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
+         *    - Records the current time as Current_Time.
+         *    - Calculates the delta time (input delay) and stores it in Input_Delay.
          */
         void inputThread(){
             while (true){
                 // Wait for user input.
-                INTERNAL::queryInputs();
+                queryInputs();
 
                 pauseGGUI([&](){
-                    INTERNAL::Previous_Time = std::chrono::high_resolution_clock::now();
+                    Previous_Time = std::chrono::high_resolution_clock::now();
 
                     // Translate the Queried inputs.
-                    INTERNAL::Translate_Inputs();
+                    Translate_Inputs();
 
                     // Translate the movements thingies to better usable for user.
                     scrollAPI();
@@ -253,10 +261,10 @@ namespace GGUI{
                     // Now call upon event handlers which may react to the parsed input.
                     eventHandler();
 
-                    INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
+                    Current_Time = std::chrono::high_resolution_clock::now();
 
                     // Calculate the delta time.
-                    INTERNAL::Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(INTERNAL::Current_Time - INTERNAL::Previous_Time).count();
+                    Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
                 });
             }
         
