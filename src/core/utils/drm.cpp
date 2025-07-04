@@ -6,6 +6,32 @@ namespace GGUI {
         namespace DRM {
             const char* handshakePortLocation = "/tmp/GGDirect.gateway";
         
+            std::vector<cell>* packAbstractBuffer(std::vector<UTF>& abstractBuffer) {
+                std::vector<cell>* result = new std::vector<cell>();
+                result->resize(abstractBuffer.size());
+
+                for (int i = 0; i < abstractBuffer.size(); i++) {
+
+                    cell currentCell = {{}, abstractBuffer[i].foreground, abstractBuffer[i].background};
+
+                    // now we need to unpack the UTF compactString
+                    if (abstractBuffer[i].is(COMPACT_STRING_FLAG::IS_ASCII))
+                        currentCell.utf[0] = abstractBuffer[i].getAscii();
+                    else {
+                        if (abstractBuffer[i].size > sizeof(currentCell.utf)) {
+                            reportStack("UTF data: " + std::string(abstractBuffer[i].getUnicode()) + " is too large for cell. Size: " + std::to_string(abstractBuffer[i].size) + ", max size: " + std::to_string(sizeof(currentCell.utf)));
+                        } else {
+                            memcpy(currentCell.utf, abstractBuffer[i].getUnicode(), abstractBuffer[i].size);
+                        }
+
+                    }
+
+                    (*result)[i] = currentCell;
+                }
+
+                return result;
+            }
+
             #if _WIN32
             void connectDRMBackend() {}  // Currently DRM is only supported on linux side of GGUI
             void sendBuffer(std::vector<UTF>* abstractBuffer, unsigned int width, unsigned int height) {}
@@ -61,9 +87,9 @@ namespace GGUI {
                 }
             }
             
-            void sendBuffer(std::vector<UTF>* abstractBuffer, unsigned int width, unsigned int height) {
+            void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height) {
                 // Validate input parameters
-                if (!abstractBuffer) {
+                if (abstractBuffer.empty()) {
                     GGUI::INTERNAL::LOGGER::Log("Cannot send null buffer to DRM backend");
                     return;
                 }
@@ -86,9 +112,26 @@ namespace GGUI {
                     return;
                 }
 
+                // Now we need to pack the abstract buffer into a vector of cells
+                std::vector<cell>* packedBuffer = packAbstractBuffer(abstractBuffer);
+
                 // Now send the actual buffer data (send abstractBuffer->size() UTF elements)
-                if (!abstractBuffer->empty() && !DRMConnection.Send(abstractBuffer->data(), abstractBuffer->size())) {
+                if (!abstractBuffer.empty() && !DRMConnection.Send(packedBuffer->data(), packedBuffer->size())) {
                     GGUI::INTERNAL::LOGGER::Log("Failed to send buffer data to DRM backend");
+                    return;
+                }
+            }
+
+            void sendEmptyBuffer() {
+                // Pack dimensions into a structure
+                struct {
+                    unsigned int x;
+                    unsigned int y;
+                } dimensions = {0, 0};
+
+                // Send the dimensions of this empty buffer (send 1 structure)
+                if (!DRMConnection.Send(&dimensions, 1)) {
+                    GGUI::INTERNAL::LOGGER::Log("Failed to send dimensions of empty buffer to DRM backend");
                     return;
                 }
             }

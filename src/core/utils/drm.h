@@ -23,6 +23,15 @@ namespace GGUI {
         namespace DRM {
             extern const char* handshakePortLocation;
 
+            struct cell {
+                char utf[4];    // Not null terminal, since we already know its size, leftovers are nulled out.
+
+                RGB foregroundColor;
+                RGB backgroundColor;
+            };
+
+            extern std::vector<cell>* packAbstractBuffer(std::vector<UTF>& abstractBuffer);
+
             #if _WIN32
             extern void connectDRMBackend();  // Currently DRmis only supported on linux side of GGUI
             extern void sendBuffer(std::vector<UTF>* abstractBuffer, unsigned int width, unsigned int height);
@@ -363,7 +372,9 @@ namespace GGUI {
 
             extern void connectDRMBackend();
             
-            extern void sendBuffer(std::vector<UTF>* abstractBuffer, unsigned int width, unsigned int height);
+            extern void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height);
+
+            extern void sendEmptyBuffer();
 
             #endif
 
