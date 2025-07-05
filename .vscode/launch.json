@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debuggarna",
+      "name": "win",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/bin/Build/GGUI.exe",
@@ -28,11 +28,37 @@
       ]
     },
     {
-      "name": "Debuggarna-unix",
+      "name": "unix",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/bin/Build/GGUI",
       "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "preLaunchTask": "Buildarna",
+      "setupCommands": [
+          {
+              "description": "Enable pretty-printing for gdb",
+              "text": "-enable-pretty-printing",
+              "ignoreFailures": true
+          },
+          {
+              "description":  "Set Disassembly Flavor to Intel",
+              "text": "-gdb-set disassembly-flavor intel",
+              "ignoreFailures": true
+          }
+      ]
+    },
+    {
+      "name": "unix-DRM",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/Build/GGUI",
+      "args": ["--enableDRM"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

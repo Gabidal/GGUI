@@ -88,8 +88,8 @@ namespace GGUI {
             extern std::string File_Name;
         }
 
-        // Given as --enableDRMBackend
-        extern bool enableDRMBackend;
+        // Given as --enableDRM
+        extern bool enableDRM;
 
         extern void parseCommandLineArguments(int argc, char** argv);
 

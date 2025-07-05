@@ -96,6 +96,12 @@ namespace GGUI{
 
                     // Write the time and the text into the log file.
                     self.Append(now + Text);
+
+                    // Check if DRM is enabled.
+                    if (SETTINGS::enableDRM) {
+                        // We can std out text since the ouput buffer is not written into the terminal
+                        std::cout << Text << std::endl;
+                    }
                 });
             }
         

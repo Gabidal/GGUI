@@ -9,6 +9,7 @@
 #include "./elements/canvas.h"
 #include "./elements/progressBar.h"
 #include "./elements/HTML.h"
+#include "./core/utils/settings.h"
 
 
 #endif

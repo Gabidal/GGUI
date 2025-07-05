@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <stdexcept>
 #include <cstring>
+#include <cctype>
+
+#include "logger.h"
 
 namespace GGUI {
     namespace SETTINGS {
@@ -14,10 +17,16 @@ namespace GGUI {
         unsigned long long Mouse_Press_Down_Cooldown = 365;  // Milliseconds
         bool Word_Wrapping = true;
         bool ENABLE_GAMMA_CORRECTION = false;
-        bool enableDRMBackend = true;
+        bool enableDRM = false;
         
         namespace LOGGER {
             std::string File_Name = "";
+        }
+
+        static std::string toLower(const std::string& in) {
+            std::string out = in;
+            std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) { return std::tolower(c); });
+            return out;
         }
 
         /**
@@ -76,28 +85,28 @@ namespace GGUI {
          * @param descriptors Vector of argument descriptors to display help for
          */
         static void displayHelp(const std::vector<ArgumentDescriptor>& descriptors) {
-            std::cout << "GGUI - Professional Command Line Interface\n";
-            std::cout << "==========================================\n\n";
-            std::cout << "Usage: GGUI [OPTIONS]\n\n";
-            std::cout << "Available Options:\n";
+            INTERNAL::LOGGER::Log("GGUI - Professional Command Line Interface\n");
+            INTERNAL::LOGGER::Log("==========================================\n\n");
+            INTERNAL::LOGGER::Log("Usage: GGUI [OPTIONS]\n\n");
+            INTERNAL::LOGGER::Log("Available Options:\n");
             
             for (const auto& desc : descriptors) {
-                std::cout << "  --" << desc.name;
+                INTERNAL::LOGGER::Log("  --" + desc.name);
                 
                 if (desc.requiresValue()) {
-                    std::cout << "=<" << desc.getTypeName() << ">";
+                    INTERNAL::LOGGER::Log("=<" + desc.getTypeName() + ">");
                 }
                 
                 // Align descriptions
                 std::string spacing(std::max(1, 30 - static_cast<int>(desc.name.length() + 
                     (desc.requiresValue() ? desc.getTypeName().length() + 3 : 0))), ' ');
-                std::cout << spacing << desc.description << "\n";
+                INTERNAL::LOGGER::Log(spacing + desc.description + "\n");
             }
             
-            std::cout << "\nExamples:\n";
-            std::cout << "  GGUI --enableDRMBackend --mousePressCooldown=500\n";
-            std::cout << "  GGUI -enableGammaCorrection --loggerFileName=\"debug.log\"\n";
-            std::cout << "  GGUI enableWordWrapping mousePressCooldown=1000\n\n";
+            INTERNAL::LOGGER::Log("\nExamples:\n");
+            INTERNAL::LOGGER::Log("  GGUI --enableDRM --mousePressCooldown=500\n");
+            INTERNAL::LOGGER::Log("  GGUI -enableGammaCorrection --loggerFileName=\"debug.log\"\n");
+            INTERNAL::LOGGER::Log("  GGUI enableWordWrapping mousePressCooldown=1000\n\n");
         }
 
         void parseCommandLineArguments(int argc, char** argv) {
@@ -111,8 +120,8 @@ namespace GGUI {
                         try {
                             Mouse_Press_Down_Cooldown = std::stoull(value);
                         } catch (const std::exception& e) {
-                            std::cerr << "Error: Invalid value for mousePressCooldown: " << value << std::endl;
-                            std::cerr << "Expected an unsigned integer value." << std::endl;
+                            INTERNAL::LOGGER::Log("Error: Invalid value for mousePressCooldown: " + value);
+                            INTERNAL::LOGGER::Log("Expected an unsigned integer value.");
                         }
                     }
                 ),
@@ -150,11 +159,11 @@ namespace GGUI {
                 ),
                 
                 ArgumentDescriptor(
-                    "enableDRMBackend",
+                    "enableDRM",
                     ArgumentType::FLAG,
                     "Enable DRM backend for hardware acceleration (default: false)",
                     [](const std::string&) {
-                        enableDRMBackend = true;
+                        enableDRM = true;
                     }
                 ),
                 
@@ -200,7 +209,7 @@ namespace GGUI {
                 // Find matching argument descriptor
                 auto descriptorIt = std::find_if(argumentDescriptors.begin(), argumentDescriptors.end(),
                     [&argName](const ArgumentDescriptor& desc) {
-                        return desc.name == argName;
+                        return toLower(desc.name) == toLower(argName);
                     });
 
                 if (descriptorIt != argumentDescriptors.end()) {
@@ -214,13 +223,13 @@ namespace GGUI {
                             std::string nextToken = tokens[++i];
                             // Don't consume if next token looks like another argument
                             if (!nextToken.empty() && nextToken[0] == '-' && nextToken.length() > 1) {
-                                std::cerr << "Error: Argument --" << argName << " requires a value." << std::endl;
+                                INTERNAL::LOGGER::Log("Error: Argument --" + argName + " requires a value.");
                                 i--; // Back up so this token gets processed
                             } else {
                                 descriptorIt->handler(nextToken);
                             }
                         } else {
-                            std::cerr << "Error: Argument --" << argName << " requires a value." << std::endl;
+                            INTERNAL::LOGGER::Log("Error: Argument --" + argName + " requires a value.");
                         }
                     } else {
                         // Flag argument
@@ -229,7 +238,7 @@ namespace GGUI {
                 } else {
                     // Unknown argument
                     if (!argName.empty()) {
-                        std::cerr << "Warning: Unknown argument '" << argName << "'. Use --help for available options." << std::endl;
+                        INTERNAL::LOGGER::Log("Warning: Unknown argument '" + argName + "'. Use --help for available options.");
                     }
                 }
             }

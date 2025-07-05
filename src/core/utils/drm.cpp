@@ -1,5 +1,7 @@
 #include "drm.h"
 #include <cstdio>
+#include <thread>
+#include <chrono>
 
 namespace GGUI {
     namespace INTERNAL {
@@ -10,7 +12,7 @@ namespace GGUI {
                 std::vector<cell>* result = new std::vector<cell>();
                 result->resize(abstractBuffer.size());
 
-                for (int i = 0; i < abstractBuffer.size(); i++) {
+                for (unsigned int i = 0; i < abstractBuffer.size(); i++) {
 
                     cell currentCell = {{}, abstractBuffer[i].foreground, abstractBuffer[i].background};
 
@@ -33,8 +35,11 @@ namespace GGUI {
             }
 
             #if _WIN32
-            void connectDRMBackend() {}  // Currently DRM is only supported on linux side of GGUI
-            void sendBuffer(std::vector<UTF>* abstractBuffer, unsigned int width, unsigned int height) {}
+            void connectDRMBackend() {}
+            
+            void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height) {}
+
+            void sendEmptyBuffer() {}
             #else
             
             // This will contain the open connection between DRM and this client.
@@ -48,7 +53,7 @@ namespace GGUI {
                     fscanf(file, "%hu", &DRMHandshakePort);
                     fclose(file);
                 } else {
-                    GGUI::INTERNAL::LOGGER::Log("Failed to open handshake file for reading");
+                    GGUI::INTERNAL::LOGGER::Log("Could not locate handshake file: " + std::string(handshakePortLocation));
                     return;
                 }
 
@@ -78,7 +83,7 @@ namespace GGUI {
 
                     // Verify the confirmation port matches what we sent
                     if (confirmationPort != gguiPort) {
-                        GGUI::INTERNAL::LOGGER::Log("Port confirmation mismatch from DRM backend");
+                        GGUI::INTERNAL::LOGGER::Log("Port confirmation mismatch. Expected: " + std::to_string(gguiPort) + ", got: " + std::to_string(confirmationPort));
                         return;
                     }
                 } catch (const std::exception& e) {
@@ -90,7 +95,7 @@ namespace GGUI {
             void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height) {
                 // Validate input parameters
                 if (abstractBuffer.empty()) {
-                    GGUI::INTERNAL::LOGGER::Log("Cannot send null buffer to DRM backend");
+                    GGUI::INTERNAL::LOGGER::Log("Abstract buffer empty!");
                     return;
                 }
 
@@ -133,6 +138,22 @@ namespace GGUI {
                 if (!DRMConnection.Send(&dimensions, 1)) {
                     GGUI::INTERNAL::LOGGER::Log("Failed to send dimensions of empty buffer to DRM backend");
                     return;
+                }
+            }
+
+            void retryDRMConnect() {
+                while (DRMConnection.getHandle() < 0) {
+                    // Attempt to reconnect
+                    GGUI::INTERNAL::LOGGER::Log("Retrying DRM connection...");
+
+                    connectDRMBackend();
+
+                    if (DRMConnection.getHandle() < 0) {
+                        GGUI::INTERNAL::LOGGER::Log("DRM connection failed, retrying in 5 seconds...");
+                        std::this_thread::sleep_for(std::chrono::seconds(5));
+                    } else {
+                        GGUI::INTERNAL::LOGGER::Log("DRM connection established successfully");
+                    }
                 }
             }
 

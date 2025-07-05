@@ -33,8 +33,12 @@ namespace GGUI {
             extern std::vector<cell>* packAbstractBuffer(std::vector<UTF>& abstractBuffer);
 
             #if _WIN32
-            extern void connectDRMBackend();  // Currently DRmis only supported on linux side of GGUI
-            extern void sendBuffer(std::vector<UTF>* abstractBuffer, unsigned int width, unsigned int height);
+            // No windows support for DRM backend.
+            extern void connectDRMBackend();
+            
+            extern void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height);
+
+            extern void sendEmptyBuffer();
             #else
 
             namespace tcp {
@@ -375,6 +379,8 @@ namespace GGUI {
             extern void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height);
 
             extern void sendEmptyBuffer();
+
+            extern void retryDRMConnect();
 
             #endif
 

@@ -2,7 +2,9 @@
 
 using namespace GGUI;
 
-int main(){
+int main(int argc, char* argv[]){
+    GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
+
     GGUI::GGUI(
         backgroundColor(COLOR::WHITE) | // <-- This will be our base color
         

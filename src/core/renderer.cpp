@@ -1210,32 +1210,37 @@ namespace GGUI{
          *          handling specific ANSI features.
          */
         void initPlatformStuff(){
-            // Initialize the console for mouse and window input, and set UTF-8 mode for output.
-            std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
-            std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::MOUSE_CURSOR, false).toString();
-            std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
-            // std::cout << constants::RESET_CONSOLE;
-            // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
-            std::cout << std::flush;
+            if (!SETTINGS::enableDRM) {
+                // Initialize the console for mouse and window input, and set UTF-8 mode for output.
+                std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+                std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::MOUSE_CURSOR, false).toString();
+                std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
+                // std::cout << constants::RESET_CONSOLE;
+                // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
+                std::cout << std::flush;
 
-            // Save the current flags and take an snapshot of the flags before GGUI
-            Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+                // Save the current flags and take an snapshot of the flags before GGUI
+                Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 
-            // Set non-blocking flag
-            int flags = O_RDONLY | O_CLOEXEC;
-            fcntl(STDIN_FILENO, F_SETFL, flags);
+                // Set non-blocking flag
+                int flags = O_RDONLY | O_CLOEXEC;
+                fcntl(STDIN_FILENO, F_SETFL, flags);
 
-            // Save the current terminal settings
-            struct termios Term_Handle;
-            tcgetattr(STDIN_FILENO, &Term_Handle);
+                // Save the current terminal settings
+                struct termios Term_Handle;
+                tcgetattr(STDIN_FILENO, &Term_Handle);
 
-            Previous_Raw = Term_Handle;
+                Previous_Raw = Term_Handle;
 
-            // Set the terminal to raw mode
-            Term_Handle.c_lflag &= ~(ECHO | ICANON);
-            Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
-            Term_Handle.c_cc[VTIME] = 0;    // Suppress automatic returning, since we want the Input_Query() to await until the user has given an input.  
-            tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
+                // Set the terminal to raw mode
+                Term_Handle.c_lflag &= ~(ECHO | ICANON);
+                Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
+                Term_Handle.c_cc[VTIME] = 0;    // Suppress automatic returning, since we want the Input_Query() to await until the user has given an input.  
+                tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
+
+                // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
+                Add_Automatic_Terminal_Size_Update_Handler();
+            }
 
             /*
             SIGINT -> This is on by default, if then user makes an element to be focused with capabilities to capture this, then well remove it from the Exit codes.
@@ -1269,9 +1274,6 @@ namespace GGUI{
             if (atexit([](){Cleanup();})){
                 LOGGER::Log("Failed to register exit handler.");
             }
-        
-            // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
-            Add_Automatic_Terminal_Size_Update_Handler();
         }
 
 
@@ -2012,7 +2014,7 @@ namespace GGUI{
             INTERNAL::updateMaxWidthAndHeight();
             
             if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
-                INTERNAL::reportStack("Width/Height is zero!");
+                INTERNAL::LOGGER::Log("Width/Height is zero!");
                 return nullptr;
             }
 
@@ -2313,19 +2315,13 @@ namespace GGUI{
             // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
             initAddons();
 
-            if (SETTINGS::enableDRMBackend) {
-                INTERNAL::DRM::connectDRMBackend();
+            if (SETTINGS::enableDRM) {
+                INTERNAL::DRM::retryDRMConnect();
             }
         });
         
         // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
         INTERNAL::Main->check(INTERNAL::STATE::INIT);
-
-        // Since 0.1.8 the Rendering_Paused Atomic value is initialized with PAUSED.
-        // resumeGGUI();
-
-        // TODO: remove this:
-        // updateFrame();
 
         // Sleep for the given amount of milliseconds.
         INTERNAL::SLEEP(Sleep_For);
