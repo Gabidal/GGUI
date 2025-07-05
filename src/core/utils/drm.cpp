@@ -102,8 +102,8 @@ namespace GGUI {
 
                 // Pack dimensions into a structure
                 struct {
-                    unsigned int x;
-                    unsigned int y;
+                    int x;
+                    int y;
                 } dimensions = {width, height};
 
                 // First send the dimensions of this buffer (send 1 structure)
@@ -116,7 +116,7 @@ namespace GGUI {
                 std::vector<cell>* packedBuffer = packAbstractBuffer(abstractBuffer);
 
                 // Now send the actual buffer data (send abstractBuffer->size() UTF elements)
-                if (!abstractBuffer.empty() && !DRMConnection.Send(packedBuffer->data(), packedBuffer->size())) {
+                if (!packedBuffer->empty() && !DRMConnection.Send(packedBuffer->data(), packedBuffer->size())) {
                     GGUI::INTERNAL::LOGGER::Log("Failed to send buffer data to DRM backend");
                     return;
                 }
