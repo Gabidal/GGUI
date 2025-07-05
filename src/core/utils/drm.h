@@ -362,8 +362,9 @@ namespace GGUI {
                         // Connect to the remote host
                         if (connect(sockFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
                             ::close(sockFd);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to connect to " + std::string(host) + ":" + 
-                                                std::to_string(port) + " - " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::Log("Failed to connect to " + std::string(host) + ":" + std::to_string(port) + " - " + std::string(strerror(errno)));
+
+                            return connection();    // Return an empty connection with -1 as fd
                         }
                         
                         return connection(sockFd);

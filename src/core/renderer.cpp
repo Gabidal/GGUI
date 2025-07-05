@@ -705,21 +705,23 @@ namespace GGUI{
             
             File_Streamer_Handles.clear();
 
-            // Restore default cursor visibility
-            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
+            if (!SETTINGS::enableDRM) {
+                // Restore default cursor visibility
+                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
 
-            // Disable mouse event reporting
-            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+                // Disable mouse event reporting
+                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
 
-            // Disable screen capture
-            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();  // restores the screen.
-            std::cout << std::flush;
+                // Disable screen capture
+                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();  // restores the screen.
+                std::cout << std::flush;
 
-            // Restore previous file descriptor flags
-            fcntl(STDIN_FILENO, F_SETFL, Previous_Flags); // set non-blocking flag
+                // Restore previous file descriptor flags
+                fcntl(STDIN_FILENO, F_SETFL, Previous_Flags); // set non-blocking flag
 
-            // Restore previous terminal attributes
-            tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
+                // Restore previous terminal attributes
+                tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
+            }
         }
 
         void Cleanup(){

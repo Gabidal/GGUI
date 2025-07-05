@@ -61,6 +61,11 @@ namespace GGUI {
                     // Connect to the DRM backend's handshake port
                     tcp::connection handshakeConnection = tcp::sender::getConnection(DRMHandshakePort);
 
+                    if (handshakeConnection.getHandle() < 0) {
+                        GGUI::INTERNAL::LOGGER::Log("DRM port: " + std::to_string(DRMHandshakePort) + " is not open.");
+                        return;
+                    }
+
                     // Create our own listener on any available port for the DRM backend to connect back to
                     tcp::listener gguiListener(0); // 0 means system assigns an available port
                     uint16_t gguiPort = gguiListener.getPort();
