@@ -179,7 +179,7 @@ namespace GGUI {
                      * @throws std::runtime_error if the socket is invalid or closed
                      */
                     template<typename T>
-                    bool Receive(T* data, size_t count) {
+                    bool Receive(T* data, size_t count = 1) {
                         if (handle < 0) {
                             GGUI::INTERNAL::LOGGER::Log("Cannot receive on closed socket");
                         }

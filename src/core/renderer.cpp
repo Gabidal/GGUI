@@ -2024,7 +2024,6 @@ namespace GGUI{
                 }
             }
 
-
             // Save the state before the init
             INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
             INTERNAL::Previous_Time = INTERNAL::Current_Time;

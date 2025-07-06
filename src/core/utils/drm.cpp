@@ -1,4 +1,6 @@
 #include "drm.h"
+#include "../renderer.h"
+
 #include <cstdio>
 #include <thread>
 #include <chrono>
@@ -69,7 +71,7 @@ namespace GGUI {
                     uint16_t gguiPort = gguiListener.getPort();
 
                     // Send our port to the DRM backend
-                    if (!handshakeConnection.Send(&gguiPort, 1)) {
+                    if (!handshakeConnection.Send(&gguiPort)) {
                         GGUI::INTERNAL::LOGGER::Log("Failed to send GGUI port to DRM backend");
                         return;
                     }
@@ -79,7 +81,7 @@ namespace GGUI {
 
                     // Receive confirmation from the DRM backend
                     uint16_t confirmationPort;
-                    if (!DRMConnection.Receive(&confirmationPort, 1)) {
+                    if (!DRMConnection.Receive(&confirmationPort)) {
                         GGUI::INTERNAL::LOGGER::Log("Failed to receive confirmation from DRM backend");
                         return;
                     }
@@ -89,6 +91,29 @@ namespace GGUI {
                         GGUI::INTERNAL::LOGGER::Log("Port confirmation mismatch. Expected: " + std::to_string(gguiPort) + ", got: " + std::to_string(confirmationPort));
                         return;
                     }
+
+                    // The DRM will send straightaway the initial fullscreen dimensions for our client.
+                    packet::type initialDimensionsPacket;
+
+                    if (!DRMConnection.Receive(&initialDimensionsPacket)) {
+                        GGUI::INTERNAL::LOGGER::Log("Failed to receive initial dimensions packet from DRM backend");
+                        return;
+                    }
+
+                    if (initialDimensionsPacket != packet::type::RESIZE) {
+                        GGUI::INTERNAL::LOGGER::Log("Expected initial dimensions packet, got: " + std::to_string(static_cast<int>(initialDimensionsPacket)));
+                        return;
+                    }
+
+                    packet::resize initialDimensions;
+
+                    if (!DRMConnection.Receive(&initialDimensions)) {
+                        GGUI::INTERNAL::LOGGER::Log("Failed to receive initial dimensions from DRM backend");
+                        return;
+                    }
+
+                    Main->setDimensions(initialDimensions.size.X, initialDimensions.size.Y);
+
                 } catch (const std::exception& e) {
                     GGUI::INTERNAL::LOGGER::Log("DRM connection failed: " + std::string(e.what()));
                     return;
@@ -105,7 +130,7 @@ namespace GGUI {
                 packet::type inform = packet::type::DRAW_BUFFER;
 
                 if (abstractBuffer.empty()) {
-                    packet::type inform = packet::type::NOTIFY;
+                    inform = packet::type::NOTIFY;
 
                     DRMConnection.Send(&inform);    // Tell DRM to expect an notify packet
 
