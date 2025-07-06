@@ -87,7 +87,7 @@ namespace GGUI{
 
                     if (!Identical_Frame){
                         if (SETTINGS::enableDRM) {
-                            DRM::sendBuffer(*Abstract_Frame_Buffer, Main->getWidth(), Main->getHeight());
+                            DRM::sendBuffer(*Abstract_Frame_Buffer);
                         }
                         else {
                             // ENCODE for optimize
@@ -103,9 +103,10 @@ namespace GGUI{
                     }
                     else{
                         LOGGER::Log("Saved frame");
-                    
+
                         if (SETTINGS::enableDRM) {
-                            DRM::sendEmptyBuffer();
+                            std::vector<UTF> empty;
+                            DRM::sendBuffer(empty);
                         }
                     }
                 }

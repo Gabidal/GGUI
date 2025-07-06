@@ -37,9 +37,7 @@ namespace GGUI {
             #if _WIN32
             void connectDRMBackend() {}
             
-            void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height) {}
-
-            void sendEmptyBuffer() {}
+            void sendBuffer(std::vector<UTF>& abstractBuffer) {}
             #else
             
             // This will contain the open connection between DRM and this client.
@@ -97,52 +95,35 @@ namespace GGUI {
                 }
             }
             
-            void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height) {
-                // Validate input parameters
-                if (abstractBuffer.empty()) {
-                    GGUI::INTERNAL::LOGGER::Log("Abstract buffer empty!");
-                    return;
-                }
-
+            void sendBuffer(std::vector<UTF>& abstractBuffer) {
                 // Check if DRM connection is valid
                 if (DRMConnection.getHandle() < 0) {
                     GGUI::INTERNAL::LOGGER::Log("DRM connection is not established");
                     return;
                 }
 
-                // Pack dimensions into a structure
-                struct {
-                    int x;
-                    int y;
-                } dimensions = {width, height};
+                packet::type inform = packet::type::DRAW_BUFFER;
 
-                // First send the dimensions of this buffer (send 1 structure)
-                if (!DRMConnection.Send(&dimensions, 1)) {
-                    GGUI::INTERNAL::LOGGER::Log("Failed to send dimensions to DRM backend");
-                    return;
+                if (abstractBuffer.empty()) {
+                    packet::type inform = packet::type::NOTIFY;
+
+                    DRMConnection.Send(&inform);    // Tell DRM to expect an notify packet
+
+                    packet::notify data = packet::notify::EMPTY_BUFFER;
+
+                    DRMConnection.Send(&data);
                 }
+                else {
+                    DRMConnection.Send(&inform);    // Tell DRM to expect an draw buffer
 
-                // Now we need to pack the abstract buffer into a vector of cells
-                std::vector<cell>* packedBuffer = packAbstractBuffer(abstractBuffer);
+                    // Now we need to pack the abstract buffer into a vector of cells
+                    std::vector<cell>* packedBuffer = packAbstractBuffer(abstractBuffer);
 
-                // Now send the actual buffer data (send abstractBuffer->size() UTF elements)
-                if (!packedBuffer->empty() && !DRMConnection.Send(packedBuffer->data(), packedBuffer->size())) {
-                    GGUI::INTERNAL::LOGGER::Log("Failed to send buffer data to DRM backend");
-                    return;
-                }
-            }
-
-            void sendEmptyBuffer() {
-                // Pack dimensions into a structure
-                struct {
-                    unsigned int x;
-                    unsigned int y;
-                } dimensions = {0, 0};
-
-                // Send the dimensions of this empty buffer (send 1 structure)
-                if (!DRMConnection.Send(&dimensions, 1)) {
-                    GGUI::INTERNAL::LOGGER::Log("Failed to send dimensions of empty buffer to DRM backend");
-                    return;
+                    // Now send the actual buffer data (send abstractBuffer->size() UTF elements)
+                    if (!packedBuffer->empty() && !DRMConnection.Send(packedBuffer->data(), packedBuffer->size())) {
+                        GGUI::INTERNAL::LOGGER::Log("Failed to send buffer data to DRM backend");
+                        return;
+                    }
                 }
             }
 

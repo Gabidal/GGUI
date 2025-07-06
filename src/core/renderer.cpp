@@ -809,18 +809,20 @@ namespace GGUI{
          * @note The height is reduced by 1 to account for the one line of console space taken by the GGUI status bar.
          */
         void updateMaxWidthAndHeight(){
-            struct winsize w;
-            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1){
-                INTERNAL::reportStack("Failed to get console info!");
-                return;
+            if (!SETTINGS::enableDRM){  // window size comes from DRM is DRM is enabled.
+                struct winsize w;
+                if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1){
+                    INTERNAL::reportStack("Failed to get console info!");
+                    return;
+                }
+
+                Max_Width = w.ws_col;
+                Max_Height = w.ws_row - 1;
+
+                // Convenience sake :)
+                if (Main)
+                    Main->setDimensions(Max_Width, Max_Height);
             }
-
-            Max_Width = w.ws_col;
-            Max_Height = w.ws_row - 1;
-
-            // Convenience sake :)
-            if (Main)
-                Main->setDimensions(Max_Width, Max_Height);
         }
 
         /**
@@ -2015,10 +2017,13 @@ namespace GGUI{
 
             INTERNAL::updateMaxWidthAndHeight();
             
-            if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
-                INTERNAL::LOGGER::Log("Width/Height is zero!");
-                return nullptr;
+            if (!SETTINGS::enableDRM){
+                if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
+                    INTERNAL::LOGGER::Log("Width/Height is zero!");
+                    return nullptr;
+                }
             }
+
 
             // Save the state before the init
             INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();

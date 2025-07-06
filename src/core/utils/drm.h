@@ -32,13 +32,55 @@ namespace GGUI {
 
             extern std::vector<cell>* packAbstractBuffer(std::vector<UTF>& abstractBuffer);
 
+            namespace packet {
+                enum class type {
+                    UNKNOWN,
+                    DRAW_BUFFER,    // For sending/receiving cells
+                    INPUT,          // Fer sending/receiving input data
+                    NOTIFY,         // Contains an notify flag sending like empty buffers, for optimized polling.
+                    RESIZE,         // For sending/receiving GGUI resize
+                };
+
+                enum class notify {
+                    UNKNOWN         = 0 << 0,
+                    EMPTY_BUFFER    = 1 << 0,
+                };
+
+                enum class controlKey {
+                    UNKNOWN         = 0 << 0,
+                    SHIFT           = 1 << 0,
+                    CTRL            = 1 << 1,
+                    SUPER           = 1 << 2,
+                    ALT             = 1 << 3,
+                    ALTGR           = 1 << 4,
+                    FN              = 1 << 5
+                };
+
+                enum class additionalKey {
+                    UNKNOWN,
+                    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+                    ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
+                    HOME, END, PAGE_UP, PAGE_DOWN,
+                    INSERT, DELETE,
+                };
+
+                struct input {
+                    IVector2 mouse;             // Mouse position in the terminal   
+                    controlKey modifiers;       // Control keys pressed
+                    additionalKey additional;   // Additional keys pressed, which are not declared in ASCII
+                    unsigned char key;          // ASCII key pressed, if any
+                };
+
+                struct resize {
+                    IVector2 size;
+                };
+            }
+
             #if _WIN32
             // No windows support for DRM backend.
             extern void connectDRMBackend();
             
-            extern void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height);
-
-            extern void sendEmptyBuffer();
+            extern void sendBuffer(std::vector<UTF>& abstractBuffer);
             #else
 
             namespace tcp {
@@ -105,7 +147,7 @@ namespace GGUI {
                      * @throws std::runtime_error if the socket is invalid or closed
                      */
                     template<typename T>
-                    bool Send(const T* data, size_t count) {
+                    bool Send(const T* data, size_t count = 1) {
                         if (handle < 0) {
                             GGUI::INTERNAL::LOGGER::Log("Cannot send on closed socket");
                         }
@@ -370,6 +412,7 @@ namespace GGUI {
                         return connection(sockFd);
                     }
                 };
+            
             }
 
             // This will contain the open connection between DRM and this client.
@@ -377,9 +420,7 @@ namespace GGUI {
 
             extern void connectDRMBackend();
             
-            extern void sendBuffer(std::vector<UTF>& abstractBuffer, unsigned int width, unsigned int height);
-
-            extern void sendEmptyBuffer();
+            extern void sendBuffer(std::vector<UTF>& abstractBuffer);
 
             extern void retryDRMConnect();
 
