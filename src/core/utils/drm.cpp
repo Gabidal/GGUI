@@ -112,7 +112,7 @@ namespace GGUI {
                         return;
                     }
 
-                    Main->setDimensions(initialDimensions.size.X, initialDimensions.size.Y);
+                    Main->setDimensions(initialDimensions.x, initialDimensions.y);
 
                 } catch (const std::exception& e) {
                     GGUI::INTERNAL::LOGGER::Log("DRM connection failed: " + std::string(e.what()));

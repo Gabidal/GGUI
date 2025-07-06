@@ -72,7 +72,8 @@ namespace GGUI {
                 };
 
                 struct resize {
-                    IVector2 size;
+                    int x;
+                    int y;
                 };
             }
 
