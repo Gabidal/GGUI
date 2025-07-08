@@ -93,26 +93,23 @@ namespace GGUI {
                     }
 
                     // The DRM will send straightaway the initial fullscreen dimensions for our client.
-                    packet::type initialDimensionsPacket;
+                    char packetBuffer[packet::size];
 
-                    if (!DRMConnection.Receive(&initialDimensionsPacket)) {
+                    if (!DRMConnection.Receive(&packetBuffer, packet::size)) {
                         GGUI::INTERNAL::LOGGER::Log("Failed to receive initial dimensions packet from DRM backend");
                         return;
                     }
 
-                    if (initialDimensionsPacket != packet::type::RESIZE) {
-                        GGUI::INTERNAL::LOGGER::Log("Expected initial dimensions packet, got: " + std::to_string(static_cast<int>(initialDimensionsPacket)));
+                    packet::base* basePacket = reinterpret_cast<packet::base*>(packetBuffer);
+
+                    if (basePacket->packetType != packet::type::RESIZE) {
+                        GGUI::INTERNAL::LOGGER::Log("Expected initial dimensions packet, got: " + std::to_string(static_cast<int>(basePacket->packetType)));
                         return;
                     }
 
-                    packet::resize initialDimensions;
+                    packet::resize::base* resizePacket = reinterpret_cast<packet::resize::base*>(packetBuffer);
 
-                    if (!DRMConnection.Receive(&initialDimensions)) {
-                        GGUI::INTERNAL::LOGGER::Log("Failed to receive initial dimensions from DRM backend");
-                        return;
-                    }
-
-                    Main->setDimensions(initialDimensions.x, initialDimensions.y);
+                    Main->setDimensions(resizePacket->size.X, resizePacket->size.Y);
 
                 } catch (const std::exception& e) {
                     GGUI::INTERNAL::LOGGER::Log("DRM connection failed: " + std::string(e.what()));
@@ -127,19 +124,22 @@ namespace GGUI {
                     return;
                 }
 
-                packet::type inform = packet::type::DRAW_BUFFER;
+                char packetBuffer[packet::size];
 
                 if (abstractBuffer.empty()) {
-                    inform = packet::type::NOTIFY;
+                    packet::notify::base inform(packet::notify::type::EMPTY_BUFFER);
+                    // we write the inform into the packet buffer
+                    memcpy(packetBuffer, &inform, sizeof(inform));
 
-                    DRMConnection.Send(&inform);    // Tell DRM to expect an notify packet
-
-                    packet::notify data = packet::notify::EMPTY_BUFFER;
-
-                    DRMConnection.Send(&data);
+                    // Now we send the inform packet to the DRM backend
+                    DRMConnection.Send(packetBuffer, packet::size);
                 }
                 else {
-                    DRMConnection.Send(&inform);    // Tell DRM to expect an draw buffer
+                    packet::base inform(packet::type::DRAW_BUFFER);
+                    // we write the inform into the packet buffer
+                    memcpy(packetBuffer, &inform, sizeof(inform));
+
+                    DRMConnection.Send(packetBuffer, packet::size);    // Tell DRM to expect an draw buffer
 
                     // Now we need to pack the abstract buffer into a vector of cells
                     std::vector<cell>* packedBuffer = packAbstractBuffer(abstractBuffer);
@@ -166,6 +166,31 @@ namespace GGUI {
                         GGUI::INTERNAL::LOGGER::Log("DRM connection established successfully");
                     }
                 }
+            }
+
+            void close() {
+                // Send INFORM::CLOSED to the DRM backend
+                char packetBuffer[packet::size];
+
+                // Check if DRM connection is valid before attempting to close
+                if (DRMConnection.getHandle() < 0) {
+                    GGUI::INTERNAL::LOGGER::Log("DRM connection is not established, cannot send close notification");
+                    return;
+                }
+
+                // Create a notification packet to inform DRM backend that we're closing
+                packet::notify::base inform(packet::notify::type::CLOSED);
+                
+                // Copy the packet to the buffer
+                memcpy(packetBuffer, &inform, sizeof(inform));
+
+                // Send the close notification to the DRM backend
+                if (!DRMConnection.Send(packetBuffer, packet::size)) {
+                    GGUI::INTERNAL::LOGGER::Log("Failed to send close notification to DRM backend");
+                }
+
+                // Close the connection
+                DRMConnection.close();
             }
 
             #endif

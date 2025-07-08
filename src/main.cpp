@@ -6,25 +6,71 @@ int main(int argc, char* argv[]){
     GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
 
     GGUI::GGUI(
-        backgroundColor(COLOR::WHITE) | // <-- This will be our base color
-        
-        // This element should look like Red + White = Pink
-        node(new element(
-            width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
-            backgroundColor(COLOR::RED) |          // base color is red, but 50% of its value is given from its parent
-            opacity(0.5f) | position(STYLES::top)   // positioned at the top of the parent element
+        // Animated canvas
+        node(new canvas(
+            // Set the canvas to third of screen size. 30%
+            width(0.33f) | height(0.5f) | position(STYLES::left) |
+
+            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
+            onDraw([](unsigned int x, unsigned int y){
+                // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
+                return GGUI::sprite(
+                    {
+                        // UTF A
+                        {' ', {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
+                        // UTF B
+                        {' ', {GGUI::COLOR::BLUE /*text color*/, GGUI::COLOR::BLUE /*background color*/}} 
+                    },
+                    x+y,  // <-- Animation offset, you can use perlin noise to make some nice wind styled animations
+                    1   // <-- Animation speed of the linear interpolation
+                );
+            })
         )) | 
 
-        // <-- The overlap between the two elements will produce Pink + Cyan = Magenta.
+        // Non-animated canvas with unicode emojis
+        node(new canvas(
+            // Set the canvas to third of screen size. 30%
+            width(0.33f) | height(0.5f) | position(STYLES::center) |
 
-        // This element should look like Blue + White = Cyan
-        node(new element(
-            width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
-            backgroundColor(COLOR::BLUE) |      // base color is blue, but 50% of its value is given from its parent
-            opacity(0.5f) | position(STYLES::bottom) // positioned at the bottom of the parent element
+            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
+            onDraw([](unsigned int x, unsigned int y){
+                // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
+                return GGUI::sprite(UTF(
+                    "🗲",   // <-- Unicode characters are supported, but don't use too wide ones, since they currently break GGUI.
+                    {
+                        COLOR::WHITE,       // <-- Text color
+                        COLOR::BLACK        // <-- back. 
+                    }
+                ));
+            })
+        )) | 
+
+        node(new canvas(
+            // Set the canvas to third of screen size. 30%
+            width(0.33f) | height(0.5f) | position(STYLES::right) |
+
+            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
+            onDraw([](unsigned int x, unsigned int y){
+                // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
+                return GGUI::sprite(
+                    {
+                        // UTF A
+                        {' ', {COLOR::BLACK /*text color*/, COLOR::BLACK /*background color*/}}, 
+                        // UTF B
+                        {' ', {COLOR::LIGHT_GRAY /*text color*/, COLOR::LIGHT_GRAY /*background color*/}}, 
+
+                        {"A", {COLOR::LIGHT_RED /*text color*/, COLOR::LIGHT_GREEN /*background color*/}}, 
+
+                        {' ', {COLOR::BLACK /*text color*/, COLOR::BLACK /*background color*/}}
+                    },
+                    x-y*y,  // <-- Animation offset, you can use perlin noise to make some nice wind styled animations
+                    1+x   // <-- Animation speed of the linear interpolation
+                );
+            })
         ))
     );
 
-    // You can also use the GGUI's internal sleep function to wait.
-    GGUI::INTERNAL::SLEEP(INT32_MAX);
+    while (true) {
+        // ... 
+    }
 }

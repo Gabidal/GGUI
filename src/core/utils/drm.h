@@ -41,40 +41,77 @@ namespace GGUI {
                     RESIZE,         // For sending/receiving GGUI resize
                 };
 
-                enum class notify {
-                    UNKNOWN         = 0 << 0,
-                    EMPTY_BUFFER    = 1 << 0,
+                class base {
+                public:
+                    type packetType = type::UNKNOWN;
+
+                    base(type t) : packetType(t) {}
                 };
 
-                enum class controlKey {
-                    UNKNOWN         = 0 << 0,
-                    SHIFT           = 1 << 0,
-                    CTRL            = 1 << 1,
-                    SUPER           = 1 << 2,
-                    ALT             = 1 << 3,
-                    ALTGR           = 1 << 4,
-                    FN              = 1 << 5
+                namespace notify {
+                    enum class type {
+                        UNKNOWN         = 0 << 0,
+                        EMPTY_BUFFER    = 1 << 0,
+                        CLOSED          = 1 << 1,   // When GGUI client has shutdown
+                    };
+
+                    class base : public packet::base {
+                    public:
+                        type notifyType = type::UNKNOWN;
+
+                        base(type t) : packet::base(packet::type::NOTIFY), notifyType(t) {}
+                    };
+                }
+
+                namespace input {
+                    enum class controlKey {
+                        UNKNOWN         = 0 << 0,
+                        SHIFT           = 1 << 0,
+                        CTRL            = 1 << 1,
+                        SUPER           = 1 << 2,
+                        ALT             = 1 << 3,
+                        ALTGR           = 1 << 4,
+                        FN              = 1 << 5,
+                        PRESSED_DOWN    = 1 << 6,   // Always on/off to indicate if the key is being pressed down or not.
+                    };
+
+                    enum class additionalKey {
+                        UNKNOWN,
+                        F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+                        ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
+                        HOME, END, PAGE_UP, PAGE_DOWN,
+                        INSERT, DELETE,
+                        LEFT_CLICK, MIDDLE_CLICK, RIGHT_CLICK, SCROLL_UP, SCROLL_DOWN,
+                    };
+
+                    class base : public packet::base {
+                    public:
+                        IVector2 mouse;             // Mouse position in the terminal   
+                        controlKey modifiers;       // Control keys pressed
+                        additionalKey additional;   // Additional keys pressed, which are not declared in ASCII
+                        unsigned char key;          // ASCII key pressed, if any
+
+                        base() : packet::base(packet::type::INPUT), mouse(), modifiers(controlKey::UNKNOWN), additional(additionalKey::UNKNOWN), key(0) {}
+                    };
+                }
+
+                namespace resize {
+                    class base : public packet::base {
+                    public:
+                        IVector2 size;
+
+                        base(int width, int height) : packet::base(packet::type::RESIZE), size(width, height) {}
+                    };
+                }
+
+                union maxSizetype {
+                    notify::base n;
+                    input::base i;
+                    resize::base r;
                 };
 
-                enum class additionalKey {
-                    UNKNOWN,
-                    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
-                    ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
-                    HOME, END, PAGE_UP, PAGE_DOWN,
-                    INSERT, DELETE,
-                };
-
-                struct input {
-                    IVector2 mouse;             // Mouse position in the terminal   
-                    controlKey modifiers;       // Control keys pressed
-                    additionalKey additional;   // Additional keys pressed, which are not declared in ASCII
-                    unsigned char key;          // ASCII key pressed, if any
-                };
-
-                struct resize {
-                    int x;
-                    int y;
-                };
+                // Computes at compile time the maximum needed buffer length for a packet.
+                constexpr int size = sizeof(maxSizetype);
             }
 
             #if _WIN32
@@ -424,6 +461,8 @@ namespace GGUI {
             extern void sendBuffer(std::vector<UTF>& abstractBuffer);
 
             extern void retryDRMConnect();
+
+            extern void close();
 
             #endif
 

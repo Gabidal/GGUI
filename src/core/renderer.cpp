@@ -737,6 +737,9 @@ namespace GGUI{
 
                 LOGGER::Log("Reverting to normal console mode...");
 
+                // Close DRM connection if it was established
+                DRM::close();
+
                 // Clean up platform-specific resources and settings
                 De_Initialize();
 
