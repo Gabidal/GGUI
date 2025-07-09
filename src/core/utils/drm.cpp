@@ -95,7 +95,7 @@ namespace GGUI {
                     // The DRM will send straightaway the initial fullscreen dimensions for our client.
                     char packetBuffer[packet::size];
 
-                    if (!DRMConnection.Receive(&packetBuffer, packet::size)) {
+                    if (!DRMConnection.Receive(packetBuffer, packet::size)) {
                         GGUI::INTERNAL::LOGGER::Log("Failed to receive initial dimensions packet from DRM backend");
                         return;
                     }
