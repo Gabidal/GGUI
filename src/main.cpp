@@ -70,7 +70,11 @@ int main(int argc, char* argv[]){
         ))
     );
 
-    while (true) {
-        // ... 
-    }
+    INTERNAL::SLEEP(20000);
+
+    INTERNAL::EXIT();
+
+    // while (true) {
+    //     // ... 
+    // }
 }

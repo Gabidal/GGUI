@@ -10,9 +10,8 @@ namespace GGUI {
         namespace DRM {
             const char* handshakePortLocation = "/tmp/GGDirect.gateway";
         
-            std::vector<cell>* packAbstractBuffer(std::vector<UTF>& abstractBuffer) {
-                std::vector<cell>* result = new std::vector<cell>();
-                result->resize(abstractBuffer.size());
+            void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer) {
+                cell* result = (cell*)destinationBuffer; // Static container
 
                 for (unsigned int i = 0; i < abstractBuffer.size(); i++) {
 
@@ -30,10 +29,8 @@ namespace GGUI {
 
                     }
 
-                    (*result)[i] = currentCell;
+                    result[i] = currentCell;
                 }
-
-                return result;
             }
 
             #if _WIN32
@@ -126,40 +123,28 @@ namespace GGUI {
 
                 size_t maximumBufferSize = INTERNAL::Main->getWidth() * INTERNAL::Main->getHeight() * sizeof(cell);
 
-                char* packetBuffer = new char[packet::size + maximumBufferSize];
+                static std::vector<char> packetBuffer = std::vector<char>();
+                
+                if (packetBuffer.size() != packet::size + maximumBufferSize)
+                    packetBuffer.resize(packet::size + maximumBufferSize);
 
                 if (abstractBuffer.empty()) {
                     packet::notify::base inform(packet::notify::type::EMPTY_BUFFER);
                     // we write the inform into the packet buffer
-                    memcpy(packetBuffer, &inform, sizeof(inform));
+                    memcpy(packetBuffer.data(), &inform, sizeof(inform));
                 }
                 else {
                     packet::base inform(packet::type::DRAW_BUFFER);
                     // we write the inform into the packet buffer
-                    memcpy(packetBuffer, &inform, sizeof(inform));
+                    memcpy(packetBuffer.data(), &inform, sizeof(inform));
 
                     // Now we need to pack the abstract buffer into a vector of cells
-                    std::vector<cell>* packedBuffer = packAbstractBuffer(abstractBuffer);
-                    
-                    if (packedBuffer->empty()) {
-                        GGUI::INTERNAL::LOGGER::Log("Buffer packing failed");
-                        delete packedBuffer; // Clean up the allocated vector
-                        delete[] packetBuffer;
-                        return;
-                    }
-                    
-                    // Now we write the packedBuffer into the packetBuffer
-                    memcpy(packetBuffer + packet::size, packedBuffer->data(), packedBuffer->size() * sizeof(cell));
-                    
-                    // Clean up the allocated vector
-                    delete packedBuffer;
+                    packAbstractBuffer(packetBuffer.data() + packet::size, abstractBuffer);
                 }
                 
-                if (!DRMConnection.Send(packetBuffer, packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
+                if (!DRMConnection.Send(packetBuffer.data(), packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
                     GGUI::INTERNAL::LOGGER::Log("Failed to send draw buffer header");
                 }
-
-                delete[] packetBuffer;
             }
 
             void retryDRMConnect() {

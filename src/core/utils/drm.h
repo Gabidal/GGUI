@@ -30,7 +30,7 @@ namespace GGUI {
                 RGB backgroundColor;
             };
 
-            extern std::vector<cell>* packAbstractBuffer(std::vector<UTF>& abstractBuffer);
+            extern void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer);
 
             namespace packet {
                 enum class type {

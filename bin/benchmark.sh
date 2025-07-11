@@ -10,8 +10,9 @@
 #   $0 [OPTION]
 # 
 # Options:
-#   -F, -f     Enable maximum profiling (simulates cache, collects jumps, etc.).
-#   -h, --help Display this help message.
+#   -F, -f          Enable maximum profiling (simulates cache, collects jumps, etc.).
+#   --enableDRM     Enable DRM mode for GGUI.
+#   -h, --help      Display this help message.
 # ----------------------------------------------------------------------------
 
 # Function to display the help message.
@@ -20,8 +21,9 @@ show_help() {
     echo "Profiling script for the GGUI project with Valgrind and Callgrind."
     echo
     echo "Options:"
-    echo "  -F, -f     Enable maximum profiling (simulates cache, collects jumps, etc.)."
-    echo "  -h, --help Display this help message."
+    echo "  -F, -f          Enable maximum profiling (simulates cache, collects jumps, etc.)."
+    echo "  --enableDRM     Enable DRM mode for GGUI."
+    echo "  -h, --help      Display this help message."
     exit 0
 }
 
@@ -58,15 +60,33 @@ echo "Running GGUI with Valgrind and Callgrind enabled..."
 DEFAULT_SETTINGS="--tool=callgrind --dump-instr=yes -s"
 FULL_SETTINGS="--tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes"
 
+# Parse command line arguments
+ENABLE_DRM=""
+PROFILING_MODE="default"
+
+for arg in "$@"; do
+    case $arg in
+        -F|-f)
+            PROFILING_MODE="full"
+            ;;
+        --enableDRM)
+            ENABLE_DRM="--enableDRM"
+            ;;
+        -h|--help|--h|-help)
+            show_help
+            ;;
+    esac
+done
+
 # Select profiling settings based on user input. 
-if [[ "$1" =~ ^(-F|-f)$ ]]; then
+if [[ "$PROFILING_MODE" == "full" ]]; then
     CURRENT_FLAG=$FULL_SETTINGS
 else
     CURRENT_FLAG=$DEFAULT_SETTINGS
 fi
 
 # Step 4: Run the application with Valgrind profiling.
-valgrind $CURRENT_FLAG --callgrind-out-file=callgrind.out "$current_dir/bin/Build/GGUI" || handle_error "Valgrind profiling failed."
+valgrind $CURRENT_FLAG --callgrind-out-file=callgrind.out "$current_dir/bin/Build/GGUI" $ENABLE_DRM || handle_error "Valgrind profiling failed."
 
 # Step 5: Open the profiling results in KCachegrind.
 echo "Opening the profile file with KCachegrind..."

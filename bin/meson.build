@@ -11,9 +11,9 @@ project(
   'GGUI', 'cpp',
   version : '0.1.8',
   #DEBUG
-  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
+  default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
   #RELEASE
-  default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=false', 'buildtype=release', 'optimization=3']
+  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=false', 'buildtype=release', 'optimization=3']
   #PROFILE
   #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug', 'b_ndebug=false', 'b_lto=false']
 )
@@ -22,7 +22,7 @@ project(
 DEBUG = 1
 RELEASE = 2
 PROFILE = 3
-TYPE = RELEASE  # Change this to RELEASE or PROFILE for different build types
+TYPE = DEBUG  # Change this to RELEASE or PROFILE for different build types
 
 # Source files for the project
 sources = [
@@ -100,8 +100,8 @@ link_args = []
 
 # Add custom flags based on build type
 if TYPE == DEBUG
-  cpp_args += ['-DGGUI_DEBUG']
-  link_args += []
+  cpp_args += ['-DGGUI_DEBUG', '-Og', '-flto', '-fwhole-program']
+  link_args += ['-flto', '-fwhole-program']
 elif TYPE == RELEASE
   cpp_args += ['-DGGUI_RELEASE', '-march=native', '-flto', '-fwhole-program']
   link_args += ['-flto', '-fwhole-program']
