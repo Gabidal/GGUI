@@ -124,31 +124,34 @@ namespace GGUI {
                     return;
                 }
 
-                char packetBuffer[packet::size];
+                size_t maximumBufferSize = INTERNAL::Main->getWidth() * INTERNAL::Main->getHeight() * sizeof(cell);
+
+                char* packetBuffer = new char[packet::size + maximumBufferSize];
 
                 if (abstractBuffer.empty()) {
                     packet::notify::base inform(packet::notify::type::EMPTY_BUFFER);
                     // we write the inform into the packet buffer
                     memcpy(packetBuffer, &inform, sizeof(inform));
-
-                    // Now we send the inform packet to the DRM backend
-                    DRMConnection.Send(packetBuffer, packet::size);
                 }
                 else {
                     packet::base inform(packet::type::DRAW_BUFFER);
                     // we write the inform into the packet buffer
                     memcpy(packetBuffer, &inform, sizeof(inform));
 
-                    DRMConnection.Send(packetBuffer, packet::size);    // Tell DRM to expect an draw buffer
-
                     // Now we need to pack the abstract buffer into a vector of cells
                     std::vector<cell>* packedBuffer = packAbstractBuffer(abstractBuffer);
-
-                    // Now send the actual buffer data (send abstractBuffer->size() UTF elements)
-                    if (!packedBuffer->empty() && !DRMConnection.Send(packedBuffer->data(), packedBuffer->size())) {
-                        GGUI::INTERNAL::LOGGER::Log("Failed to send buffer data to DRM backend");
+                    
+                    if (packedBuffer->empty()) {
+                        GGUI::INTERNAL::LOGGER::Log("Buffer packing failed");
                         return;
                     }
+                    
+                    // Now we write the packedBuffer into the packetBuffer
+                    memcpy(packetBuffer + packet::size, packedBuffer->data(), packedBuffer->size() * sizeof(cell));
+                }
+                
+                if (!DRMConnection.Send(packetBuffer, packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
+                    GGUI::INTERNAL::LOGGER::Log("Failed to send draw buffer header");
                 }
             }
 
