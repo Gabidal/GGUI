@@ -143,6 +143,7 @@ namespace GGUI {
                     
                     if (packedBuffer->empty()) {
                         GGUI::INTERNAL::LOGGER::Log("Buffer packing failed");
+                        delete[] packetBuffer;
                         return;
                     }
                     
@@ -153,6 +154,8 @@ namespace GGUI {
                 if (!DRMConnection.Send(packetBuffer, packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
                     GGUI::INTERNAL::LOGGER::Log("Failed to send draw buffer header");
                 }
+
+                delete[] packetBuffer;
             }
 
             void retryDRMConnect() {
