@@ -143,12 +143,16 @@ namespace GGUI {
                     
                     if (packedBuffer->empty()) {
                         GGUI::INTERNAL::LOGGER::Log("Buffer packing failed");
+                        delete packedBuffer; // Clean up the allocated vector
                         delete[] packetBuffer;
                         return;
                     }
                     
                     // Now we write the packedBuffer into the packetBuffer
                     memcpy(packetBuffer + packet::size, packedBuffer->data(), packedBuffer->size() * sizeof(cell));
+                    
+                    // Clean up the allocated vector
+                    delete packedBuffer;
                 }
                 
                 if (!DRMConnection.Send(packetBuffer, packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
