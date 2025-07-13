@@ -250,14 +250,24 @@ namespace GGUI{
          */
         void inputThread(){
             while (true){
-                // Wait for user input.
-                queryInputs();
+                if (SETTINGS::enableDRM) {
+                    DRM::pollInputs();
+                }
+                else {
+                    // Wait for user input.
+                    queryInputs();
+                }
 
                 pauseGGUI([&](){
                     Previous_Time = std::chrono::high_resolution_clock::now();
 
-                    // Translate the Queried inputs.
-                    Translate_Inputs();
+                    if (SETTINGS::enableDRM) {
+                        DRM::translateInputs();
+                    }
+                    else {
+                        // Translate the Queried inputs.
+                        Translate_Inputs();
+                    }
 
                     // Translate the movements thingies to better usable for user.
                     scrollAPI();

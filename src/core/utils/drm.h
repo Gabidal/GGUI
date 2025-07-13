@@ -75,6 +75,23 @@ namespace GGUI {
                         PRESSED_DOWN    = 1 << 6,   // Always on/off to indicate if the key is being pressed down or not.
                     };
 
+                    // Bitwise operators for controlKey enum class
+                    inline controlKey operator&(controlKey lhs, controlKey rhs) {
+                        return static_cast<controlKey>(static_cast<int>(lhs) & static_cast<int>(rhs));
+                    }
+                    
+                    inline controlKey operator|(controlKey lhs, controlKey rhs) {
+                        return static_cast<controlKey>(static_cast<int>(lhs) | static_cast<int>(rhs));
+                    }
+                    
+                    inline controlKey operator^(controlKey lhs, controlKey rhs) {
+                        return static_cast<controlKey>(static_cast<int>(lhs) ^ static_cast<int>(rhs));
+                    }
+                    
+                    inline controlKey operator~(controlKey key) {
+                        return static_cast<controlKey>(~static_cast<int>(key));
+                    }
+
                     enum class additionalKey {
                         UNKNOWN,
                         F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
@@ -93,6 +110,8 @@ namespace GGUI {
 
                         base() : packet::base(packet::type::INPUT), mouse(), modifiers(controlKey::UNKNOWN), additional(additionalKey::UNKNOWN), key(0) {}
                     };
+                
+                    extern void translatePacketInputToGGUIInput(input::base* packetInput);
                 }
 
                 namespace resize {
@@ -463,6 +482,11 @@ namespace GGUI {
             extern void retryDRMConnect();
 
             extern void close();
+
+            // Called via the input thread.
+            extern void pollInputs();
+
+            extern void translateInputs();
 
             #endif
 
