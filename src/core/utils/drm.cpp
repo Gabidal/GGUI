@@ -417,7 +417,7 @@ namespace GGUI {
             void pollInputs() {
                 // We wait here until the DRM connection has been established:
                 while (DRMConnection.getHandle() < 0) {
-                    std::this_thread::sleep_for(std::chrono::seconds(failRetryWaitTime));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(failRetryWaitTime));
                 }
 
                 // First we will wait for incoming packets
