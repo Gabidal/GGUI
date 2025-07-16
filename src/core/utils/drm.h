@@ -32,6 +32,8 @@ namespace GGUI {
 
             extern void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer);
 
+            constexpr int failRetryWaitTime = TIME::SECOND * 5;
+
             namespace packet {
                 enum class type {
                     UNKNOWN,
