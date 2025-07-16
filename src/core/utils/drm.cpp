@@ -369,7 +369,11 @@ namespace GGUI {
                 
                 if (!DRMConnection.Send(packetBuffer.data(), packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
                     GGUI::INTERNAL::LOGGER::Log("Failed to send draw buffer header");
+
+                    SLEEP(TIME::SECOND);    // Wait for the cleanup of tcp packages in the DRM backend
                 }
+
+                SLEEP(tcp::pollingRate);
             }
 
             void retryDRMConnect() {

@@ -143,6 +143,8 @@ namespace GGUI {
             #else
 
             namespace tcp {
+                constexpr size_t pollingRate = TIME::MILLISECOND * 32;
+
                 /**
                  * @brief Represents a TCP connection for sending and receiving data.
                  * 
