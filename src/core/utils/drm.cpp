@@ -380,7 +380,7 @@ namespace GGUI {
                     connectDRMBackend();
 
                     if (DRMConnection.getHandle() < 0) {
-                        GGUI::INTERNAL::LOGGER::Log("DRM connection failed, retrying in " + std::to_string(failRetryWaitTime) + " seconds...");
+                        GGUI::INTERNAL::LOGGER::Log("DRM connection failed, retrying in " + std::to_string(failRetryWaitTime/TIME::SECOND) + " seconds...");
                         std::this_thread::sleep_for(std::chrono::milliseconds(failRetryWaitTime));
                     } else {
                         GGUI::INTERNAL::LOGGER::Log("DRM connection established successfully");
