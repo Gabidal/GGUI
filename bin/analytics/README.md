@@ -48,6 +48,8 @@ Memory leak detection and error analysis using Valgrind's Memcheck tool.
 ./leaks.sh --help            # Display help information
 ```
 
+#### When using `-F`, valgrind.log will report so called `on exit` memory leaks, these are ok. As long as no runtime memory leaks exist. 
+
 **Output:**
 - `valgrind.log` - Detailed memory analysis results
 - Console summary with error counts and recommendations
@@ -139,19 +141,3 @@ kcachegrind --version
 - **Ratio ≈ 0**: Stable performance (good)
 - **Ratio > 0.1**: Possible memory leak or performance degradation
 - **Ratio < -0.1**: Performance improvement or reduced workload
-
-### Debug Mode
-Enable verbose output by setting:
-```bash
-export GGUI_ANALYTICS_DEBUG=1
-```
-
-### Integration with CI/CD
-Scripts can be integrated into automated testing:
-```bash
-# Memory leak check in CI
-if ! ./bin/analytics/leaks.sh -F; then
-    echo "Memory issues detected"
-    exit 1
-fi
-```

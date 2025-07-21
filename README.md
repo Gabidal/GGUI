@@ -59,3 +59,5 @@ int main()
 ./bin/analytics/benchmark2.sh -a    # Multi-event perf analysis
 ./bin/analytics/time.sh 15 120      # Extended growth analysis
 ```
+### More about scripts at [bin/analytics/README.md](./bin/analytics/README.md)
+
