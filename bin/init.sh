@@ -55,21 +55,21 @@ if [ -z "$CXX" ]; then
     echo "CXX environment variable was not set. Defaulting to 'g++'."
 fi
 
-# Step 1: Set up the Build directory (wipe existing if necessary)
-echo "Setting up the Build directory..."
-if [ -d "./Build" ]; then
-    meson setup --wipe Build || exit 1
+# Step 1: Set up the build directory (wipe existing if necessary)
+echo "Setting up the build directory..."
+if [ -d "./build" ]; then
+    meson setup --wipe build || exit 1
 else
-    meson setup Build || exit 1
+    meson setup build || exit 1
 fi
 
 # Step 2: Compile the project using meson
 echo "Compiling the project..."
-meson compile -C Build || exit 1
+meson compile -C build || exit 1
 
 # Step 3: Ensure necessary scripts have the correct permissions
 echo "Setting execution permissions on build scripts..."
-chmod 755 build.sh benchmark.sh check.sh || exit 1
+chmod 755 build.sh ./analytics/benchmark* ./analytics/check.sh ./analytics/time.sh || exit 1
 
 # Completion message
-echo "Build process completed successfully!"
+echo "build process completed successfully!"

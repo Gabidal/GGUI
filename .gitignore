@@ -17,3 +17,6 @@ callgrind.*
 *.gcda
 /bin/GGUI.p/
 *~
+*.data
+*.old
+*.log

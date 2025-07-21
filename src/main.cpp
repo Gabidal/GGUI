@@ -2,9 +2,8 @@
 
 using namespace GGUI;
 
-int main(int argc, char* argv[]){
-    GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
-
+int main() 
+{
     GGUI::GGUI(
         // Animated canvas
         node(new canvas(
@@ -70,11 +69,6 @@ int main(int argc, char* argv[]){
         ))
     );
 
-    // INTERNAL::SLEEP(20000);
+    INTERNAL::SLEEP(10000);
 
-    // INTERNAL::EXIT();
-
-    while (true) {
-        // ... 
-    }
 }

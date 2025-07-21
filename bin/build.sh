@@ -60,7 +60,7 @@ fi
 
 # Compile the project using meson
 echo "Compiling the project..."
-meson compile -C Build || exit 1
+meson compile -C build || exit 1
 
 # Completion message
-echo "Build completed successfully!"
+echo "build completed successfully!"

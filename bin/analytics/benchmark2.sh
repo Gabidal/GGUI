@@ -62,9 +62,38 @@ elif [[ "$1" =~ ^(-b|--branch)$ ]]; then
     PERF_EVENT="branch-misses"
 fi
 
+# Function to check if the script is run from the project root directory or a subdirectory.
+check_directory() {
+    local current_dir=$(pwd)
+    local project_root_name="GGUI"
+    local bin_dir_name="bin"
+
+    # Find the project root directory by looking for the .git directory
+    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+    # If git is not found or the project root is not determined
+    if [ -z "$project_root" ]; then
+        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
+        exit 1
+    fi
+
+    # If we're in the project root, change to the 'bin' directory
+    if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
+        echo "Project root directory detected. Changing to the 'bin' directory."
+        cd "$project_root/$bin_dir_name" || exit 1
+    # Otherwise, navigate to the 'bin' directory from anywhere in the project
+    elif [[ "$current_dir" != *"$project_root/$bin_dir_name"* ]]; then
+        echo "Navigating to the 'bin' directory within the project."
+        cd "$project_root/$bin_dir_name" || exit 1
+    fi
+}
+
+# Call the check_directory function to ensure we're in the correct directory
+check_directory
+
 # Step 1: Verify and build the project.
 current_dir=$(pwd)
-build_script="$current_dir/bin/build.sh"
+build_script="$current_dir/build.sh"
 
 if [[ ! -f "$build_script" ]]; then
     handle_error "Build script '$build_script' not found."
@@ -81,7 +110,7 @@ sleep 3
 echo "Profiling GGUI using perf with event(s): $PERF_EVENT"
 # The -g flag enables call-graph (stack trace) recording.
 # The -o option directs the output to a file named 'perf.data'.
-/usr/local/bin/perf record -e "$PERF_EVENT" -g $EXTRA_OPTIONS -o perf.data "$current_dir/bin/Build/GGUI" \
+/usr/local/bin/perf record -e "$PERF_EVENT" -g $EXTRA_OPTIONS -o perf.data "$current_dir/build/GGUI" \
     || handle_error "Perf recording failed."
 
 # Step 3: Configure the environment for the perf_data_converter.
@@ -92,7 +121,7 @@ export PATH="/root/perf_data_converter/bazel-bin/src:$PATH"
 # The command syntax typically requires the target binary and the profiling data.
 export BROWSER=wslview
 echo "Launching pprof web interface on port 8080..."
-/root/go/bin/pprof -http=:8080 "$current_dir/bin/Build/GGUI" perf.data \
+/root/go/bin/pprof -http=:8080 "$current_dir/build/GGUI" perf.data \
     || handle_error "Failed to launch pprof analysis."
 
 # Step 5: Ask the user whether to preserve or delete the profiling output.

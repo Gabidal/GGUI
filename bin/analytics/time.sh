@@ -44,9 +44,38 @@ if [[ "$#" -lt 1 || "$1" =~ ^(-h|--help)$ ]]; then
     show_help
 fi
 
+# Function to check if the script is run from the project root directory or a subdirectory.
+check_directory() {
+    local current_dir=$(pwd)
+    local project_root_name="GGUI"
+    local bin_dir_name="bin"
+
+    # Find the project root directory by looking for the .git directory
+    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+    # If git is not found or the project root is not determined
+    if [ -z "$project_root" ]; then
+        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
+        exit 1
+    fi
+
+    # If we're in the project root, change to the 'bin' directory
+    if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
+        echo "Project root directory detected. Changing to the 'bin' directory."
+        cd "$project_root/$bin_dir_name" || exit 1
+    # Otherwise, navigate to the 'bin' directory from anywhere in the project
+    elif [[ "$current_dir" != *"$project_root/$bin_dir_name"* ]]; then
+        echo "Navigating to the 'bin' directory within the project."
+        cd "$project_root/$bin_dir_name" || exit 1
+    fi
+}
+
+# Call the check_directory function to ensure we're in the correct directory
+check_directory
+
 # Step 1: Verify and build the project.
 current_dir=$(pwd)
-build_script="$current_dir/bin/build.sh"
+build_script="$current_dir/build.sh"
 
 if [[ ! -f "$build_script" ]]; then
     handle_error "Build script '$build_script' not found."
@@ -56,7 +85,7 @@ echo "Building the project..."
 "$build_script" || handle_error "Build process failed."
 
 # Retrieve the program and its arguments.
-PROGRAM="$current_dir/bin/Build/GGUI"
+PROGRAM="$current_dir/build/GGUI"
 
 # Define run durations (in seconds).
 TIME_SHORT=$1           # Short run duration.
