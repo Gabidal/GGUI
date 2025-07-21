@@ -1,136 +1,71 @@
 #!/bin/bash
 
-# ----------------------------------------------------------------------------
-# This script automates profiling for the GGUI project using Valgrind (with 
-# Callgrind) and then opens the results in KCachegrind for analysis.
-# It provides an option to enable maximum profiling and gives the user an 
-# opportunity to preserve or delete the profiling output.
-# 
-# Usage:
-#   $0 [OPTION]
-# 
-# Options:
-#   -F, -f          Enable maximum profiling (simulates cache, collects jumps, etc.).
-#   --enableDRM     Enable DRM mode for GGUI.
-#   -h, --help      Display this help message.
-# ----------------------------------------------------------------------------
+# =============================================================================
+# GGUI Valgrind Callgrind Profiling Script
+# =============================================================================
+# This script automates CPU profiling for the GGUI project using Valgrind's
+# Callgrind tool. It provides comprehensive call graph analysis, instruction-
+# level profiling, and optional cache simulation for detailed performance
+# analysis.
+#
+# Features:
+# - Automated project building and environment setup
+# - Multiple profiling modes (basic and comprehensive)
+# - KCachegrind integration for visual analysis
+# - Profile data management with backup options
+# - DRM mode support for hardware acceleration testing
+#
+# Author: GGUI Analytics Team
+# Version: 2.0 (Refactored with modular utilities)
+# =============================================================================
 
-# Function to display the help message.
+# Source utility modules
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/utils/common.sh"
+source "$SCRIPT_DIR/utils/valgrind.sh"
+source "$SCRIPT_DIR/utils/help.sh"
+
+# Function to display help message
 show_help() {
-    echo "Usage: $0 [OPTION]"
-    echo "Profiling script for the GGUI project with Valgrind and Callgrind."
-    echo
-    echo "Options:"
-    echo "  -F, -f          Enable maximum profiling (simulates cache, collects jumps, etc.)."
-    echo "  --enableDRM     Enable DRM mode for GGUI."
-    echo "  -h, --help      Display this help message."
+    generate_valgrind_help "$(basename "$0")" "Callgrind"
     exit 0
 }
 
-# Function to handle errors and exit gracefully with a message.
-handle_error() {
-    echo "Error: $1" >&2
-    # exit 1
-}
+# Parse command line arguments
+parse_common_options "$@"
 
-# Display help message if requested.
-if [[ "$1" =~ ^(-help|--help|-h|--h)$ ]]; then
+# Display help if requested
+if [[ "$HELP_REQUESTED" == "true" ]]; then
     show_help
 fi
 
-# Step 1: Verify and build the project.
-echo "Building the project..."
+# =============================================================================
+# Main Execution
+# =============================================================================
 
-# Function to check if the script is run from the project root directory or a subdirectory.
-check_directory() {
-    local current_dir=$(pwd)
-    local project_root_name="GGUI"
-    local bin_dir_name="bin"
+# Setup environment and build project
+log_info "Setting up environment for Callgrind profiling..."
+ensure_bin_directory
+executable=$(ensure_executable)
 
-    # Find the project root directory by looking for the .git directory
-    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+# Validate Valgrind installation
+validate_valgrind_installation
 
-    # If git is not found or the project root is not determined
-    if [ -z "$project_root" ]; then
-        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
-        exit 1
-    fi
+# User preparation countdown
+countdown_timer 3 "Starting Callgrind profiling in"
 
-    # If we're in the project root, change to the 'bin' directory
-    if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
-        echo "Project root directory detected. Changing to the 'bin' directory."
-        cd "$project_root/$bin_dir_name" || exit 1
-    # Otherwise, navigate to the 'bin' directory from anywhere in the project
-    elif [[ "$current_dir" != *"$project_root/$bin_dir_name"* ]]; then
-        echo "Navigating to the 'bin' directory within the project."
-        cd "$project_root/$bin_dir_name" || exit 1
-    fi
-}
+# Configure profiling mode based on arguments
+output_file="callgrind.out"
+log_info "Profiling mode: $PROFILING_MODE"
+log_info "DRM mode: ${ENABLE_DRM:-disabled}"
 
-# Call the check_directory function to ensure we're in the correct directory
-check_directory
+# Run Callgrind profiling
+run_callgrind_profile "$executable" "$PROFILING_MODE" "$output_file" "$ENABLE_DRM"
 
-current_dir=$(pwd)
-build_script="$current_dir/build.sh"
+# Open results in KCachegrind for analysis
+open_profile_in_kcachegrind "$output_file"
 
-if [[ ! -f "$build_script" ]]; then
-    handle_error "Build script '$build_script' not found."
-fi
+# Manage profile cleanup with user confirmation
+manage_profile_cleanup "$output_file" "Callgrind profile"
 
-"$build_script" || handle_error "Build process failed."
-
-# Step 2: Allow user to read the output before starting profiling.
-echo "Starting benchmark... You have a few seconds to read the output before profiling starts."
-sleep 3
-
-# Step 3: Determine the appropriate Valgrind profiling settings.
-echo "Running GGUI with Valgrind and Callgrind enabled..."
-
-DEFAULT_SETTINGS="--tool=callgrind --dump-instr=yes -s"
-FULL_SETTINGS="--tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes"
-
-# Parse command line arguments
-ENABLE_DRM=""
-PROFILING_MODE="default"
-
-for arg in "$@"; do
-    case $arg in
-        -F|-f)
-            PROFILING_MODE="full"
-            ;;
-        --enableDRM)
-            ENABLE_DRM="--enableDRM"
-            ;;
-        -h|--help|--h|-help)
-            show_help
-            ;;
-    esac
-done
-
-# Select profiling settings based on user input. 
-if [[ "$PROFILING_MODE" == "full" ]]; then
-    CURRENT_FLAG=$FULL_SETTINGS
-else
-    CURRENT_FLAG=$DEFAULT_SETTINGS
-fi
-
-# Step 4: Run the application with Valgrind profiling.
-valgrind $CURRENT_FLAG --callgrind-out-file=callgrind.out "$current_dir/build/GGUI" $ENABLE_DRM || handle_error "Valgrind profiling failed."
-
-# Step 5: Open the profiling results in KCachegrind.
-echo "Opening the profile file with KCachegrind..."
-kcachegrind callgrind.out || handle_error "Failed to open KCachegrind."
-
-# Step 6: Ask the user whether to preserve or delete the profile output.
-echo "Do you want to preserve the current profile? [Y/n]"
-read -r answer
-
-# Default action is to delete the file if no input is provided.
-if [[ "$answer" =~ ^(Y|y)$ ]]; then
-    current_date=$(date '+%Y-%m-%d_%H-%M-%S')
-    mv callgrind.out "callgrind.out.$current_date.backup"
-    echo "Profile saved as 'callgrind.out.$current_date.backup'."
-else
-    rm -f callgrind.out
-    echo "Profile deleted."
-fi
+log_info "Callgrind profiling session completed."

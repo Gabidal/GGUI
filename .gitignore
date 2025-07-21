@@ -2,7 +2,7 @@
 *.o
 *.lib
 *.out
-Build/
+build/
 callgrind.*
 *.backup
 *.txt

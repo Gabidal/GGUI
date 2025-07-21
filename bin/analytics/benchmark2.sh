@@ -1,138 +1,84 @@
 #!/bin/bash
-# ----------------------------------------------------------------------------
-# This script automates benchmarking for the GGUI project using perf, pprof,
-# and perf_data_converter. It supports various profiling events and launches
-# a web interface for analysis.
-#
-# Usage:
-#   $0 [OPTION]
-#
-# Options:
-#   -h, --help            Display this help message.
-#   -b, --branch          Profile using branch-misses event (default).
-#   -c, --cycles          Profile using cpu-cycles event.
-#   -i, --instructions    Profile using instructions event.
-#   -a, --all             Profile using branch-misses, cpu-cycles, and instructions.
-#   -F, -f                Enable maximum profiling (alias for --all with extra options).
-#
-# ----------------------------------------------------------------------------
 
-# Function to display the help message.
+# =============================================================================
+# GGUI Linux Perf Performance Analysis Script
+# =============================================================================
+# This script automates performance analysis for the GGUI project using Linux
+# perf tools with pprof web interface integration. It supports multiple
+# performance events and provides comprehensive CPU performance insights.
+#
+# Features:
+# - Multiple performance counter support (branches, cycles, instructions)
+# - Automated project building and environment setup
+# - pprof web interface for interactive analysis
+# - Profile data management with backup options
+# - Configurable performance events and sampling rates
+#
+# Author: GGUI Analytics Team
+# Version: 2.0 (Refactored with modular utilities)
+# =============================================================================
+
+# Source utility modules
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/utils/common.sh"
+source "$SCRIPT_DIR/utils/perf.sh"
+source "$SCRIPT_DIR/utils/help.sh"
+
+# Function to display help message
 show_help() {
-    echo "Usage: $0 [OPTION]"
-    echo "Benchmarking script for the GGUI project using perf, pprof, and perf_data_converter."
-    echo
-    echo "Options:"
-    echo "  -h, --help            Display this help message."
-    echo "  -b, --branch          Profile using branch-misses event (default)."
-    echo "  -c, --cycles          Profile using cpu-cycles event."
-    echo "  -i, --instructions    Profile using instructions event."
-    echo "  -a, --all             Profile using branch-misses, cpu-cycles, and instructions."
-    echo "  -F, -f                Enable maximum profiling (alias for --all with extra options)."
+    generate_perf_help "$(basename "$0")"
     exit 0
 }
 
-# Function to handle errors gracefully.
-handle_error() {
-    echo "Error: $1" >&2
-    exit 1
-}
+# Parse command line arguments
+parse_common_options "$@"
+parse_perf_options "$@"
 
-# Process help option.
-if [[ "$1" =~ ^(-h|--help)$ ]]; then
+# Display help if requested
+if [[ "$HELP_REQUESTED" == "true" ]]; then
     show_help
 fi
 
-# Default profiling settings.
-PERF_EVENT="branch-misses"
-EXTRA_OPTIONS=""
+# =============================================================================
+# Main Execution
+# =============================================================================
 
-# Check for profiling option flags.
-if [[ "$1" =~ ^(-F|-f)$ ]]; then
-    # Maximum profiling: combine several events and add extra options.
-    PERF_EVENT="branch-misses,cpu-cycles,instructions"
-    EXTRA_OPTIONS="--freq=1000"
-elif [[ "$1" =~ ^(-c|--cycles)$ ]]; then
-    PERF_EVENT="cpu-cycles"
-elif [[ "$1" =~ ^(-i|--instructions)$ ]]; then
-    PERF_EVENT="instructions"
-elif [[ "$1" =~ ^(-a|--all)$ ]]; then
-    PERF_EVENT="branch-misses,cpu-cycles,instructions"
-elif [[ "$1" =~ ^(-b|--branch)$ ]]; then
-    PERF_EVENT="branch-misses"
+# Setup environment and build project
+log_info "Setting up environment for perf performance analysis..."
+ensure_bin_directory
+executable=$(ensure_executable)
+
+# Validate perf and pprof installations
+validate_perf_installation
+validate_pprof_installation
+
+# Setup perf data converter environment if available
+setup_perf_data_converter
+
+# User preparation countdown
+countdown_timer 3 "Starting perf profiling in"
+
+# Configure output file
+output_file="perf.data"
+log_info "Performance events: $PERF_EVENT"
+log_info "Profiling mode: $PERF_MODE"
+if [[ -n "$EXTRA_OPTIONS" ]]; then
+    log_info "Extra options: $EXTRA_OPTIONS"
 fi
 
-# Function to check if the script is run from the project root directory or a subdirectory.
-check_directory() {
-    local current_dir=$(pwd)
-    local project_root_name="GGUI"
-    local bin_dir_name="bin"
+# Run perf recording
+run_perf_record "$executable" "$PERF_MODE" "$output_file" "$PERF_EVENT" "$EXTRA_OPTIONS"
 
-    # Find the project root directory by looking for the .git directory
-    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
-
-    # If git is not found or the project root is not determined
-    if [ -z "$project_root" ]; then
-        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
-        exit 1
-    fi
-
-    # If we're in the project root, change to the 'bin' directory
-    if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
-        echo "Project root directory detected. Changing to the 'bin' directory."
-        cd "$project_root/$bin_dir_name" || exit 1
-    # Otherwise, navigate to the 'bin' directory from anywhere in the project
-    elif [[ "$current_dir" != *"$project_root/$bin_dir_name"* ]]; then
-        echo "Navigating to the 'bin' directory within the project."
-        cd "$project_root/$bin_dir_name" || exit 1
-    fi
-}
-
-# Call the check_directory function to ensure we're in the correct directory
-check_directory
-
-# Step 1: Verify and build the project.
-current_dir=$(pwd)
-build_script="$current_dir/build.sh"
-
-if [[ ! -f "$build_script" ]]; then
-    handle_error "Build script '$build_script' not found."
+# Set browser for WSL compatibility if available
+if command -v wslview >/dev/null 2>&1; then
+    export BROWSER=wslview
+    log_info "Using WSL browser integration"
 fi
 
-echo "Building the project..."
-"$build_script" || handle_error "Build process failed."
+# Launch pprof web interface
+launch_pprof_web "$executable" "$output_file" 8080
 
-# Optional pause to allow user to review output before starting profiling.
-echo "Starting benchmarking... You have a few seconds to review before profiling starts."
-sleep 3
+# Manage profile data cleanup with user confirmation
+manage_perf_data_cleanup "$output_file" "performance data"
 
-# Step 2: Run the application with perf recording.
-echo "Profiling GGUI using perf with event(s): $PERF_EVENT"
-# The -g flag enables call-graph (stack trace) recording.
-# The -o option directs the output to a file named 'perf.data'.
-/usr/local/bin/perf record -e "$PERF_EVENT" -g $EXTRA_OPTIONS -o perf.data "$current_dir/build/GGUI" \
-    || handle_error "Perf recording failed."
-
-# Step 3: Configure the environment for the perf_data_converter.
-# (Assuming bazel export is available at the specified location)
-export PATH="/root/perf_data_converter/bazel-bin/src:$PATH"
-
-# Step 4: Launch pprof's web interface for analyzing the profile.
-# The command syntax typically requires the target binary and the profiling data.
-export BROWSER=wslview
-echo "Launching pprof web interface on port 8080..."
-/root/go/bin/pprof -http=:8080 "$current_dir/build/GGUI" perf.data \
-    || handle_error "Failed to launch pprof analysis."
-
-# Step 5: Ask the user whether to preserve or delete the profiling output.
-echo "Do you want to preserve the current perf data? [Y/n]"
-read -r answer
-
-if [[ "$answer" =~ ^(Y|y)$ ]]; then
-    current_date=$(date '+%Y-%m-%d_%H-%M-%S')
-    mv perf.data "perf.data.$current_date.backup"
-    echo "Perf data saved as 'perf.data.$current_date.backup'."
-else
-    rm -f perf.data
-    echo "Perf data deleted."
-fi
+log_info "Perf performance analysis session completed."

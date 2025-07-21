@@ -49,3 +49,13 @@ int main()
 # Contributing to development of **GGUI**
 - ### Initialize project locally with the `init.*` script.
 - ### Exporting this project as library is documented in [bin/export/README.md](./bin/export/README.md).
+
+
+## Release Validation
+### Run these following commands to check if the current changes meet the stability requirements.
+```bash
+./bin/analytics/leaks.sh -F         # Full memory analysis
+./bin/analytics/benchmark.sh -F     # Full CPU profiling
+./bin/analytics/benchmark2.sh -a    # Multi-event perf analysis
+./bin/analytics/time.sh 15 120      # Extended growth analysis
+```

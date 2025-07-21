@@ -1,152 +1,171 @@
 #!/bin/bash
-# ----------------------------------------------------------------------------
-# This script automates performance benchmarking for a target application.
-# It measures the number of instructions executed over two durations using
-# Linux's "perf stat" tool and then computes:
-#
-#   - Slope1 = (instructions from short run) / TIME_SHORT
-#   - Slope2 = (instructions from long run - instructions from short run) / (TIME_LONG - TIME_SHORT)
-#   - Ratio  = Slope2 / Slope1
-#
-# The script also verifies and builds the project by invoking the build
-# script located at "$current_dir/bin/build.sh".
-#
-# Usage:
-#   ./measure_instructions.sh <program> [program_args...]
-#
-# Requirements:
-#   - The "perf" utility must be installed and available at /usr/local/bin/perf.
-#   - The "timeout" command must be available.
-#
-# ----------------------------------------------------------------------------
 
-# Function to display the help message.
+# =============================================================================
+# GGUI Performance Growth Analysis Script
+# =============================================================================
+# This script measures instruction execution over two different time periods
+# to analyze performance characteristics and detect potential issues like
+# memory leaks or performance degradation over time.
+#
+# The analysis computes:
+# - Slope1: Instructions per second during the short run
+# - Slope2: Additional instructions per second during extended execution
+# - Ratio: Slope2 / Slope1, indicating performance change over time
+#
+# A ratio significantly different from 1.0 may indicate:
+# - Memory leaks (increasing instruction counts)
+# - Performance degradation
+# - Initialization overhead vs. steady-state performance
+#
+# Author: GGUI Analytics Team
+# Version: 2.0 (Refactored with modular utilities)
+# =============================================================================
+
+# Source utility modules
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/utils/common.sh"
+source "$SCRIPT_DIR/utils/valgrind.sh"
+source "$SCRIPT_DIR/utils/help.sh"
+
+# Function to display help message
 show_help() {
-    echo "Usage: $0 time_a time_b"
-    echo
-    echo "This script runs the specified program for two durations and measures"
-    echo "the number of instructions executed using 'perf stat'. It computes:"
-    echo "  - Slope1: Instructions per second during the short run (TIME_SHORT)."
-    echo "  - Slope2: Additional instructions per second during the extended run."
-    echo "  - Ratio : Slope2 / Slope1, indicating the relative change in instruction rate."
-    echo "Give the short and long time in seconds and not in ms!"
+    generate_timing_help "$(basename "$0")"
     exit 0
 }
 
-# Function to handle errors gracefully.
-handle_error() {
-    echo "Error: $1" >&2
-    exit 1
-}
-
-# Process help option or missing argument.
-if [[ "$#" -lt 1 || "$1" =~ ^(-h|--help)$ ]]; then
+# Validate arguments
+if [[ "$#" -lt 2 || "$1" =~ ^(-h|--help)$ ]]; then
     show_help
 fi
 
-# Function to check if the script is run from the project root directory or a subdirectory.
-check_directory() {
-    local current_dir=$(pwd)
-    local project_root_name="GGUI"
-    local bin_dir_name="bin"
+# Parse timing arguments
+TIME_SHORT="$1"
+TIME_LONG="$2"
 
-    # Find the project root directory by looking for the .git directory
-    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+# Validate numeric arguments
+if ! [[ "$TIME_SHORT" =~ ^[0-9]+$ ]] || ! [[ "$TIME_LONG" =~ ^[0-9]+$ ]]; then
+    handle_error "Time arguments must be positive integers (seconds)"
+fi
 
-    # If git is not found or the project root is not determined
-    if [ -z "$project_root" ]; then
-        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
-        exit 1
+if [[ "$TIME_LONG" -le "$TIME_SHORT" ]]; then
+    handle_error "Long time ($TIME_LONG) must be greater than short time ($TIME_SHORT)"
+fi
+
+# =============================================================================
+# Performance Measurement Functions
+# =============================================================================
+
+##
+# Runs a timed instruction count measurement using Valgrind Callgrind.
+#
+# Arguments:
+#   $1 - Duration in seconds
+#   $2 - Executable path
+#
+# Sets global variable:
+#   INSTRUCTION_COUNT - The measured instruction count
+##
+measure_instruction_count() {
+    local duration="$1"
+    local executable="$2"
+    local temp_output="callgrind_temp.out"
+    
+    log_info "Measuring instruction count for ${duration}s execution..."
+    
+    # Run timed Callgrind profiling
+    run_callgrind_timed "$duration" "$executable" "full" "$temp_output"
+    
+    # Extract instruction count
+    INSTRUCTION_COUNT=$(extract_instruction_count "$temp_output")
+    
+    # Clean up temporary file
+    rm -f "$temp_output"
+    
+    log_info "Instructions executed in ${duration}s: $INSTRUCTION_COUNT"
+}
+
+##
+# Calculates and displays performance growth analysis.
+#
+# Arguments:
+#   $1 - Short run instruction count
+#   $2 - Long run instruction count
+#   $3 - Short run duration
+#   $4 - Long run duration
+##
+calculate_growth_analysis() {
+    local short_count="$1"
+    local long_count="$2"
+    local short_time="$3"
+    local long_time="$4"
+    
+    # Validate bc is available for calculations
+    validate_tools "bc"
+    
+    # Calculate slopes
+    local slope1=$(echo "scale=10; $short_count / $short_time" | bc -l)
+    
+    if [ $((long_time - short_time)) -eq 0 ]; then
+        handle_error "Time intervals are equal. Cannot compute growth analysis."
     fi
-
-    # If we're in the project root, change to the 'bin' directory
-    if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
-        echo "Project root directory detected. Changing to the 'bin' directory."
-        cd "$project_root/$bin_dir_name" || exit 1
-    # Otherwise, navigate to the 'bin' directory from anywhere in the project
-    elif [[ "$current_dir" != *"$project_root/$bin_dir_name"* ]]; then
-        echo "Navigating to the 'bin' directory within the project."
-        cd "$project_root/$bin_dir_name" || exit 1
+    
+    # Note: Original calculation had an extra factor of 1000, maintaining for compatibility
+    local slope2=$(echo "scale=10; ($long_count - $short_count) / (1000 * ($long_time - $short_time))" | bc -l)
+    local ratio=$(echo "scale=10; $slope2 / $slope1" | bc -l)
+    
+    # Display results
+    echo "=================================="
+    echo "Performance Growth Analysis Results"
+    echo "=================================="
+    echo "Short run (${short_time}s): $short_count instructions"
+    echo "Long run (${long_time}s):  $long_count instructions"
+    echo ""
+    echo "Analysis Metrics:"
+    echo "Time 1 (Instructions/sec):     $slope1"
+    echo "Time 2 (Additional rate):      $slope2"
+    echo "Growth Ratio:                  $ratio"
+    echo ""
+    
+    # Provide interpretation
+    echo "Interpretation:"
+    if (( $(echo "$ratio > 0.1" | bc -l) )); then
+        log_warning "High growth ratio detected - possible memory leak or performance degradation"
+    elif (( $(echo "$ratio < -0.1" | bc -l) )); then
+        log_info "Negative growth detected - possible optimization or reduced workload over time"
+    else
+        log_info "Stable performance - ratio close to zero indicates consistent behavior"
     fi
 }
 
-# Call the check_directory function to ensure we're in the correct directory
-check_directory
+# =============================================================================
+# Main Execution
+# =============================================================================
 
-# Step 1: Verify and build the project.
-current_dir=$(pwd)
-build_script="$current_dir/build.sh"
+# Setup environment and build project
+log_info "Setting up environment for performance growth analysis..."
+ensure_bin_directory
+executable=$(ensure_executable)
 
-if [[ ! -f "$build_script" ]]; then
-    handle_error "Build script '$build_script' not found."
-fi
+# Validate required tools
+validate_valgrind_installation
+validate_tools "timeout" "bc" "callgrind_annotate"
 
-echo "Building the project..."
-"$build_script" || handle_error "Build process failed."
+log_info "Performance growth analysis configuration:"
+log_info "Short run duration: ${TIME_SHORT}s"
+log_info "Long run duration:  ${TIME_LONG}s"
+log_info "Executable: $executable"
 
-# Retrieve the program and its arguments.
-PROGRAM="$current_dir/build/GGUI"
+# Run first measurement (short duration)
+log_info "Starting short duration measurement..."
+measure_instruction_count "$TIME_SHORT" "$executable"
+short_count="$INSTRUCTION_COUNT"
 
-# Define run durations (in seconds).
-TIME_SHORT=$1           # Short run duration.
-TIME_LONG=$2            # Long run duration.
+# Run second measurement (long duration)
+log_info "Starting long duration measurement..."
+measure_instruction_count "$TIME_LONG" "$executable"
+long_count="$INSTRUCTION_COUNT"
 
-# Verify that the perf utility exists.
-if [[ ! -x /usr/local/bin/perf ]]; then
-    handle_error "'/usr/local/bin/perf' is not installed or not executable."
-fi
+# Calculate and display analysis
+calculate_growth_analysis "$short_count" "$long_count" "$TIME_SHORT" "$TIME_LONG"
 
-get_instruction_count() {
-    # Use awk to find the header line starting with "Ir", then read the next line after the next line.
-    # Remove commas from the first field and print it.
-    callgrind_annotate callgrind.out | awk '/^Ir/ {getline; getline; gsub(/,/, "", $1); print $1; exit}' | tail -n1 | tr -d '[:space:]'
-}
-
-RESULT=""
-timer() {
-    local runFor=$1
-    echo "Running program '$PROGRAM' under Valgrind for a duration of ${runFor}s..."
-
-    # Run the program inside Valgrind's callgrind tool
-    timeout "$runFor" valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM"
-    # valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --simulate-cache=yes --collect-systime=yes --branch-sim=yes --callgrind-out-file=callgrind.out "$PROGRAM" 2>&1
-
-    # Extract total instruction count
-    result=$(get_instruction_count)
-
-    rm -f callgrind.out
-
-    if [ -z "$result" ]; then
-        handle_error "Failed to retrieve instruction count for '$PROGRAM' after running for '$runFor' seconds."
-    fi
-
-    RESULT="$result"
-}
-
-# Step 2: Run the program for the short duration and capture instruction count.
-timer $TIME_SHORT
-SHORT_COUNT="$RESULT"
-echo "Short run instructions: $SHORT_COUNT"
-
-# Step 3: Run the program for the longer duration and capture instruction count.
-timer $TIME_LONG
-LONG_COUNT="$RESULT"
-echo "Long run instructions: $LONG_COUNT"
-
-# Step 4: Compute the instruction rate slopes.
-SLOPE1=$(echo "scale=10; $SHORT_COUNT / $TIME_SHORT" | bc -l)
-
-if [ $(($TIME_LONG - $TIME_SHORT)) -eq 0 ]; then
-    echo "Error: TIME_LONG and TIME_SHORT are equal. Cannot compute SLOPE2."
-else
-    SLOPE2=$(echo "scale=10; ($LONG_COUNT - $SHORT_COUNT) / (1000 * ($TIME_LONG - $TIME_SHORT))" | bc -l)
-
-    RATIO=$(echo "scale=10; $SLOPE2 / $SLOPE1" | bc -l)
-
-    # Step 5: Output the computed results.
-    echo "-------------------------------"
-    echo "Results:"
-    echo "Time 1: $SLOPE1"
-    echo "Time 2: $SLOPE2"
-    echo "Growth: $RATIO"
-fi
+log_info "Performance growth analysis completed."

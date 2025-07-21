@@ -1,10 +1,22 @@
 #!/bin/bash
 
-# ----------------------------------------------------------------------------
-# Initializes and builds the GGUI project locally. Ensures the script is run
-# from the project root directory, checks for required tools (meson, g++), and
-# manages the build setup and compilation process.
-# ----------------------------------------------------------------------------
+# =============================================================================
+# GGUI Project Initialization Script
+# =============================================================================
+# This script initializes and builds the GGUI project locally. It validates
+# the environment, checks for required tools, manages the build setup, and
+# ensures analytics tools are properly configured.
+#
+# Features:
+# - Environment and requirements validation
+# - Automated build directory setup
+# - Project compilation with meson
+# - Analytics tools validation and setup
+# - Proper file permissions configuration
+#
+# Author: GGUI Development Team
+# Version: 2.0 (Enhanced with analytics validation)
+# =============================================================================
 
 # Function to check if the script is being run from the project root directory
 check_directory() {
@@ -45,9 +57,37 @@ check_command() {
 # Check if we're in the correct directory
 check_directory
 
-# Ensure the required tools are installed
-check_command "meson" "meson"
-check_command "g++" "g++"
+echo "=== GGUI Project Initialization ==="
+echo
+
+# Step 1: Run analytics validation
+echo "Step 1: Validating environment and analytics tools..."
+if [[ -f "./analytics/utils/validate.sh" ]]; then
+    if bash "./analytics/utils/validate.sh"; then
+        echo "✓ Environment validation completed successfully."
+    else
+        echo "✗ Environment validation failed. Please address the issues above."
+        echo "You can continue with basic build, but analytics tools may not work properly."
+        read -p "Continue anyway? [y/N]: " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Initialization cancelled."
+            exit 1
+        fi
+    fi
+else
+    echo "Warning: Analytics validation script not found. Continuing with basic checks..."
+    # Ensure the required tools are installed
+    check_command "meson" "meson"
+    check_command "g++" "g++"
+fi
+
+echo
+
+# Step 2: Set up build environment
+echo "Step 2: Setting up build environment..."
+
+# Step 2: Set up build environment
+echo "Step 2: Setting up build environment..."
 
 # Ensure the CXX variable is set (default to 'g++' if not)
 if [ -z "$CXX" ]; then
@@ -55,21 +95,50 @@ if [ -z "$CXX" ]; then
     echo "CXX environment variable was not set. Defaulting to 'g++'."
 fi
 
-# Step 1: Set up the build directory (wipe existing if necessary)
-echo "Setting up the build directory..."
+# Step 3: Set up the build directory (wipe existing if necessary)
+echo "Step 3: Setting up the build directory..."
 if [ -d "./build" ]; then
+    echo "Existing build directory found. Cleaning up..."
     meson setup --wipe build || exit 1
 else
+    echo "Creating new build directory..."
     meson setup build || exit 1
 fi
 
-# Step 2: Compile the project using meson
-echo "Compiling the project..."
+# Step 4: Compile the project using meson
+echo "Step 4: Compiling the project..."
 meson compile -C build || exit 1
 
-# Step 3: Ensure necessary scripts have the correct permissions
-echo "Setting execution permissions on build scripts..."
-chmod 755 build.sh ./analytics/benchmark* ./analytics/check.sh ./analytics/time.sh || exit 1
+# Step 5: Set up analytics tools
+echo "Step 5: Setting up analytics tools..."
+# Step 5: Set up analytics tools
+echo "Step 5: Setting up analytics tools..."
 
-# Completion message
-echo "build process completed successfully!"
+# Set execution permissions on all necessary scripts
+echo "Setting execution permissions..."
+chmod +x build.sh 2>/dev/null || true
+chmod +x ./analytics/*.sh 2>/dev/null || true
+chmod +x ./analytics/utils/*.sh 2>/dev/null || true
+
+# Verify analytics tools are working
+if [[ -f "./analytics/utils/validate.sh" ]]; then
+    echo "Re-validating analytics setup..."
+    if bash "./analytics/utils/validate.sh" >/dev/null 2>&1; then
+        echo "✓ Analytics tools are properly configured."
+    else
+        echo "⚠ Analytics tools validation has warnings. Run './analytics/utils/validate.sh' for details."
+    fi
+fi
+
+echo
+echo "=== Initialization Complete ==="
+echo "✓ Build process completed successfully!"
+echo "✓ GGUI executable: ./build/GGUI"
+echo
+echo "Next steps:"
+echo "  • Test the build: ./build/GGUI"
+echo "  • Run analytics: ./analytics/benchmark.sh --help"
+echo "  • Memory check: ./analytics/leaks.sh"
+echo "  • View examples: cd ../examples"
+echo
+echo "For analytics documentation, see: ./analytics/README.md"
