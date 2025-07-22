@@ -4,6 +4,7 @@
 #include <string>
 #include <limits>
 #include <math.h>
+#include <stdint.h>
 
 #include "superString.h"
 #include "constants.h"

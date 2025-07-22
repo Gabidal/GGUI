@@ -1,10 +1,8 @@
 #include <iostream>
 #include <string>
-#include <unordered_map>
 #include <filesystem>
 #include <vector>
 #include <fstream>
-#include <regex>
 #include <algorithm>
 #if defined(_WIN32)
 #include <intrin.h>
@@ -13,18 +11,6 @@
 #endif
 
 using namespace std;
-
-class Header_File{
-public:
-    unsigned int Use_Count = 0;
-    std::string Data = "";
-
-    Header_File(std::string Data){
-        this->Data = Data;
-    }
-
-    Header_File() = default;
-};
 
 // returns all the file names in the dir.
 std::vector<std::string> get_all_files(const std::string& directory) {
@@ -44,76 +30,53 @@ void Compile_Headers(){
     // This function goes through all the header files in the `../Elements/` and `../Core/` and `../Core/SIMD/` folders and then concatenates them with \n
     // The resulting buffer is then written into ./GGUI.h
 
-    // We need to do these two things for the automatic header combination:
-    // - Remove local #include "" lines.
-    // Order the files before combination in the including order so that the files which are included the most are at the top. 
-
     std::string Destination_File_Name = "./GGUI.h";
-    std::vector<std::string> Header_Source_Folders = {"../../src/core/utils/", "../../src/elements/", "../../src/core/", "../../src/core/SIMD/"};
+    
+    // Hardcoded header order based on dependencies
+    std::vector<std::string> Header_Files_In_Order = {
+        "../../src/core/utils/constants.h",
+        "../../src/core/utils/color.h",
+        "../../src/core/utils/superString.h",
+        "../../src/core/utils/utf.h",
+        "../../src/core/utils/types.h",
+        "../../src/core/utils/style.h",
+        "../../src/core/utils/settings.h",
+        "../../src/core/utils/utils.h",
+        "../../src/core/utils/logger.h",
+        "../../src/core/utils/fileStreamer.h",
+        "../../src/core/utils/drm.h",
+        "../../src/core/SIMD/SIMD.h",
+        "../../src/elements/element.h",
+        "../../src/elements/canvas.h",
+        "../../src/elements/HTML.h",
+        "../../src/elements/listView.h",
+        "../../src/elements/progressBar.h",
+        "../../src/elements/switch.h",
+        "../../src/elements/textField.h",
+        "../../src/core/renderer.h",
+        "../../src/core/addons/addons.h"
+    };
 
-    std::unordered_map<std::string, Header_File> Header_Files;
-
-    for (auto current_folder : Header_Source_Folders){
-        // get all the file names:
-        for(const auto& file : get_all_files(current_folder)){
-            // read the file
-            std::string File_Path = current_folder + file;
-
-            std::ifstream File(File_Path);
+    std::ofstream Output(Destination_File_Name);
+    
+    if(Output.is_open()){
+        for(const std::string& file_path : Header_Files_In_Order){
+            std::ifstream File(file_path);
             
-            std::string Data = "";
-
             if(File.is_open()){
                 std::string Line;
                 while(std::getline(File, Line)){
-                    Data += Line + "\n";
+                    // Skip local includes
+                    if(Line.find("#include \"") != std::string::npos && Line.find(".h\"") != std::string::npos){
+                        continue;
+                    }
+                    Output << Line << "\n";
                 }
+            } else {
+                std::cout << "Warning: Could not open file: " << file_path << std::endl;
             }
-
-            // add the file to the map
-            Header_Files[file] = Header_File(Data);
         }
     }
-
-    // now on each Header_Files instance we need to use regex to find the lines with local includes like: `#include "localheaderfile.h"`
-    std::regex include_regex("#include\\s+\"([^\"]+/)*([^\"/]+\\.h)\"");
-
-    // matches[1] is the file name which is included and matches[0] is the whole line.
-    for(auto& Header : Header_Files){
-        auto& File = Header.second;
-        std::smatch matches;
-        while(std::regex_search(File.Data, matches, include_regex)){
-            // now that we have a match we need to do two things:
-            // First increase the count of the header file which is named in the matches[1]
-            // Secondly remove this include line from the File.Data
-            std::string Include_File_Name = matches[2].str();
-
-            // increase the count of the header file
-            if(Header_Files.find(Include_File_Name) != Header_Files.end()){
-                Header_Files[Include_File_Name].Use_Count++;
-            }
-
-            // remove the include line from the File.Data
-            File.Data = matches.prefix().str() + matches.suffix().str();
-        }
-    }
-
-    // Transform the map into a vector
-    std::vector<std::pair<std::string, Header_File>> headers(Header_Files.begin(), Header_Files.end());
-
-    // Sort the vector by the count, where the less count is closer to zero index.
-    sort(headers.begin(), headers.end(), [](const std::pair<std::string, Header_File>& a, const std::pair<std::string, Header_File>& b){
-        return a.second.Use_Count > b.second.Use_Count;
-    });
-
-    // Now write the output file with the data in the sorted order.
-    std::ofstream Output(Destination_File_Name);
-
-    if(Output.is_open()){
-        for(auto& Header : headers){
-            Output << Header.second.Data;
-        }
-    } 
 }
 
 std::string Get_Machine_SIMD_Type(){

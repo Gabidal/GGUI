@@ -3,10 +3,12 @@
 
 #include <string>
 #include <variant>
+#include <utility>
 
 #include "superString.h"
 #include "color.h"
 #include "types.h"
+#include "constants.h"
 
 namespace GGUI{
     class UTF : public INTERNAL::compactString {
@@ -211,7 +213,7 @@ namespace GGUI{
     };
 
     namespace SYMBOLS{
-        constexpr GGUI::UTF EMPTY_UTF(' ', {GGUI::COLOR::WHITE, GGUI::COLOR::BLACK});
+        inline const UTF EMPTY_UTF(' ', {COLOR::WHITE, COLOR::BLACK});
     }
 }
 

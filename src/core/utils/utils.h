@@ -6,6 +6,7 @@
 
 #include "types.h"
 #include "superString.h"
+#include "color.h"
 
 #include <math.h>
 

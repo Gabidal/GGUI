@@ -1,658 +1,9 @@
-#ifndef _SUPER_STRING_H_
-#define _SUPER_STRING_H_
-
-#include <string>
-#include <cstring>
-#include <array>
-#include <vector>
-#include <variant>
-#include <initializer_list>
-
-namespace GGUI{
-    namespace INTERNAL{
-        namespace COMPACT_STRING_FLAG{
-            constexpr inline unsigned char IS_ASCII          = 1 << 0;
-            constexpr inline unsigned char IS_UNICODE        = 1 << 1;
-        };
-
-        /**
-         * @class Compact_String
-         * @brief A lightweight string class optimized for compact storage of ASCII and Unicode strings.
-         *
-         * The Compact_String class provides an efficient way to store and manipulate short strings,
-         * optimizing for the case where the string is a single ASCII character. For longer strings,
-         * it stores a pointer to a null-terminated C-style string. The class uses a std::variant to
-         * hold either a single character or a pointer to a string, and maintains the size of the string.
-         *
-         * Key Features:
-         * - Stores either a single ASCII character or a pointer to a C-style string.
-         * - Provides constructors for ASCII characters, C-style strings, and explicit size/force Unicode.
-         * - Offers fast type and content checks for ASCII and Unicode representations.
-         * - Supports subscript operator for character access.
-         * - Utility methods for getting and setting ASCII/Unicode data.
-         * - Designed for use in scenarios where memory efficiency and fast type checks are important.
-         *
-         * Usage Notes:
-         * - The default constructor is intended only for resizing containers and should not be used directly.
-         * - The class does not manage the lifetime of external string data; ensure that any pointer passed
-         *   to the class remains valid for the lifetime of the Compact_String instance.
-         * - The class is constexpr-friendly for compile-time usage where possible.
-         */
-        class compactString{
-        public:
-            std::variant<char, const char*> text;
-            unsigned int size = 0;
-
-            /**
-             * @brief Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
-             * @warning Do not use this constructor directly, as it will not initialize the Data property.
-             * This constructor initializes a Compact_String object with default values.
-             */
-            constexpr compactString() = default;
-
-            /**
-             * @brief Default copy constructor for Compact_String.
-             *
-             * Creates a new Compact_String object as a copy of an existing one.
-             * This constructor performs a member-wise copy of the source object.
-             *
-             * @param other The Compact_String instance to copy from.
-             */
-            constexpr compactString(const compactString&) = default;
-
-            /**
-             * @brief Move constructor for Compact_String.
-             *
-             * Constructs a new Compact_String by transferring the resources from another
-             * Compact_String instance. The source object is left in a valid but unspecified state.
-             *
-             * @param other The Compact_String instance to move from.
-             */
-            constexpr compactString(compactString&&) = default;
-
-            /**
-             * @brief Default copy assignment operator for Compact_String.
-             *
-             * Assigns the contents of another Compact_String to this one.
-             * The default implementation performs a member-wise copy of all fields.
-             *
-             * @param other The Compact_String instance to copy from.
-             * @return Reference to this Compact_String after assignment.
-             */
-            constexpr compactString& operator=(const compactString&) = default;
-
-            /**
-             * @brief Default move assignment operator for Compact_String.
-             *
-             * Allows assigning the contents of another Compact_String to this one using move semantics.
-             * The default implementation efficiently transfers resources from the source object,
-             * leaving it in a valid but unspecified state.
-             *
-             * @return Reference to this Compact_String after assignment.
-             */
-            constexpr compactString& operator=(compactString&&) = default;
-
-            /**
-             * @brief Constructs a Compact_String object from a C-style string.
-             * 
-             * This constructor initializes the Compact_String object by determining the length of the input string.
-             * If the length of the string is greater than 1, it stores the string data in Unicode_Data.
-             * If the length of the string is 1 or less, it stores the single character in Ascii_Data.
-             * 
-             * @param data A pointer to a null-terminated C-style string.
-             */
-            constexpr compactString(const char* data){
-                // Store the string as Unicode data if its length is greater than 1.
-                // Store the single character as ASCII data.
-                getLength(data) > 1 ? 
-                    setUnicode(data) : 
-                    setAscii(data[0]);
-            }
-
-            /**
-             * @brief Constructs a Compact_String object with a single ASCII character.
-             * 
-             * This constructor initializes the Compact_String with a single character.
-             * The character is stored in the Ascii_Data member of the Data union, and
-             * the Size is set to 1.
-             * 
-             * @param data The ASCII character to initialize the Compact_String with.
-             */
-            constexpr compactString(const char data) : text(data){
-                size = 1;
-            }
-
-            /**
-             * @brief Constructs a Compact_String object.
-             * 
-             * This constructor initializes a Compact_String object with the given data and size.
-             * It determines the storage format based on the size of the data and the Force_Unicode flag.
-             * 
-             * @param data A pointer to the character data to be stored.
-             * @param size The size of the character data.
-             * @param Force_Unicode A boolean flag indicating whether to force the data to be stored as Unicode.
-             *                       Defaults to false.
-             * 
-             * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
-             * Otherwise, the data is stored as a single ASCII character.
-             */
-            constexpr compactString(const char* data, const unsigned int Size, const bool forceUnicode = false){
-                // Determine data storage based on size and Force_Unicode flag.
-                // Store as Unicode data if size is greater than 1 or forced.
-                // Store as a single ASCII character.
-                (Size > 1 || forceUnicode) ? 
-                setUnicode(data) : 
-                setAscii(data[0]);
-
-                // If force unicode has been issued, then the size is probably a non-unicode standard size of zero or one, so we need to override the size.
-                if (forceUnicode)
-                    size = Size;
-            }
-
-            /**
-             * @brief Checks if a specific UTF flag is set.
-             * @param cs_flag The UTF flag to check.
-             * @return True if the flag is set, otherwise false.
-             */
-            constexpr bool is(unsigned char cs_flag) const {
-                return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && size == 1) || (cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && size > 1) ? true : false;
-            }
-
-            // Fast comparison of type and content
-            constexpr bool is(const char* other) const {
-                return is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::strcmp(std::get<const char*>(text), other) == 0 : false;
-            }
-
-            // Fast comparison of type and content
-            constexpr bool is(char other) const {
-                return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == other : false;
-            }
-
-            /**
-             * @brief Overloaded subscript operator to access character at a given index.
-             * 
-             * This operator allows access to the character at the specified index.
-             * If the size of the string is greater than 1, it returns the character
-             * from the Unicode data. If the size is 1, it returns the ASCII data.
-             * 
-             * @param index The index of the character to access.
-             * @return char The character at the specified index.
-             */
-            constexpr char operator[](int index) const {
-                return ((unsigned)index > size || index < 0) ? 
-                    '\0' : // Return null character if index is out of bounds.
-                    (size > 1 ? std::get<const char*>(text)[index] : std::get<char>(text));  // Return the character from Unicode or ASCII data.
-            }
-
-            constexpr const char* getUnicode(bool force = false) const {
-                // If the size is greater than 1, return the Unicode data.
-                // Otherwise, return a pointer to the ASCII data.
-                return size > 1 || force ? 
-                    std::get<const char*>(text) : 
-                    nullptr;
-            }
-
-            constexpr char getAscii() const {
-                // If the size is 1, return the ASCII data.
-                // Otherwise, return a null character.
-                return size == 1 ? 
-                    std::get<char>(text) : 
-                    '\0';
-            }
-
-            constexpr void setUnicode(const char* Text) {
-                // Set the Text to the Unicode data.
-                text = std::variant<char, const char*>(Text);
-                size = getLength(Text); // Update the size based on the new string.
-            }
-
-            constexpr void setAscii(const char Text) {
-                // Set the Text to the ASCII data.
-                text = std::variant<char, const char*>(Text);
-                size = 1; // Update the size to 1 since it's a single character.
-            }
-            
-            /**
-             * @brief Checks if the UTF object has a default text.
-             * @return true if the UTF object has a default text, false otherwise.
-             */
-            constexpr bool hasDefaultText() const {
-                return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == ' ' : std::get<const char*>(text)[0] == ' ';
-            }
-
-            constexpr bool empty() const {
-                // Check if the Compact_String is empty.
-                // An empty Compact_String has a size of 0.
-                return size == 0;
-            }
-
-        protected:
-            /**
-             * @brief Computes the length of a null-terminated C-string at compile time.
-             *
-             * This constexpr function iterates through the input string until it encounters
-             * the null terminator ('\0'), counting the number of characters.
-             *
-             * @param str Pointer to the null-terminated C-string.
-             * @return The number of characters in the string, excluding the null terminator.
-             */
-            constexpr size_t getLength(const char* str) {
-                size_t length = 0;
-
-                if (!str) {
-                    return length; // Return 0 if the input string is null.
-                }
-
-                while (str[length] != '\0') ++length;
-                return length;
-            }
-        };
-
-        /**
-         * @class Super_String
-         * @brief A container class for efficiently managing and concatenating multiple Compact_String objects.
-         *
-         * The Super_String class provides a fixed-size array of Compact_String objects, allowing for efficient
-         * storage, addition, and concatenation of strings and characters. It maintains an internal index to track
-         * the current number of stored elements and a liquefied size representing the total number of characters
-         * across all stored strings. The class supports various methods for adding strings, characters, and other
-         * Super_String instances, as well as clearing its contents and converting the stored data into a single
-         * std::string.
-         *
-         * @tparam maxSize The maximum number of Compact_String objects that can be stored in the Super_String.
-         *
-         * @note This class is designed for performance and memory efficiency, making it suitable for scenarios
-         *       where frequent string concatenation and manipulation are required.
-         */
-        template<std::size_t maxSize>
-        class superString{
-        public:
-            std::array<compactString, maxSize> data;
-            unsigned int currentIndex = 0;
-            unsigned int liquefiedSize = 0;
-
-            /**
-             * @brief Default constexpr constructor for the Super_String class.
-             *
-             * Initializes a Super_String object with default values at compile time.
-             * This constructor does not perform any custom initialization logic.
-             */
-            constexpr superString() = default;
-
-            /**
-             * @brief Constructs a Super_String from an initializer list of Compact_String objects.
-             *
-             * This constructor allows you to initialize a Super_String with a list of Compact_String
-             * instances. Each item in the initializer list is added to the Super_String using the Add method.
-             *
-             * @param data An initializer list containing Compact_String objects to be added to the Super_String.
-             */
-            constexpr superString(const std::initializer_list<compactString>& Data) {
-                for (const auto& item : Data) {
-                    add(item);
-                }
-            }
-
-            /**
-             * @brief Clears the contents of the Super_String.
-             * 
-             * This function resets the current index back to the start of the vector,
-             * effectively clearing any stored data.
-             */
-            constexpr void clear(){
-                // Set the current index back to the start of the vector.
-                currentIndex = 0;
-                liquefiedSize = 0;
-            }
-
-            /**
-             * @brief Adds a new string to the data vector.
-             * 
-             * This function stores the provided string in the data vector by creating a 
-             * Compact_String object from the given data and size, and then adds it to 
-             * the Data vector at the current index.
-             * 
-             * @param data Pointer to the character array containing the string to be added.
-             * @param size The size of the string to be added.
-             */
-            constexpr void add(const char* Data, const int size){
-                // Store the string in the Data vector.
-                compactString tmp = compactString(Data, size);
-                data[currentIndex++] = tmp;
-                liquefiedSize += tmp.size; // Update the liquefied size with the size of the new string.
-            }
-
-            /**
-             * @brief Adds a character to the Super_String.
-             * 
-             * This function stores the given character in the data vector
-             * and increments the current index.
-             * 
-             * @param data The character to be added to the Super_String.
-             */
-            constexpr void add(const char Data){
-                // Store the character in the data vector.
-                data[currentIndex++] = compactString(Data);
-                liquefiedSize += 1; // Update the liquefied size with the size of the new character.
-            }
-
-            /**
-             * @brief Adds the contents of another Super_String to this Super_String.
-             *
-             * This function appends the contents of the provided Super_String to the current
-             * Super_String. If the Expected parameter is false, the function will resize the
-             * Data vector to accommodate the additional characters.
-             *
-             * @param other A pointer to the Super_String to be added.
-             * @param Expected A boolean flag indicating whether the reservation size is already
-             *                 expected to be sufficient. If false, the Data vector will be resized.
-             */
-            template<std::size_t OtherMaxSize>
-            constexpr void add(const superString<OtherMaxSize>* other){
-                // Copy the contents of the other Super_String into the Data vector.
-                for (unsigned int i = 0; i < other->currentIndex; i++){
-                    data[currentIndex++] = other->data[i];
-                }
-
-                liquefiedSize += other->liquefiedSize; // Update the liquefied size with the size of the new string.
-            }
-            
-            /**
-             * @brief Add the contents of another Super_String to this one.
-             * @param other The Super_String to add.
-             * @param Expected If true, the size of the Data vector will not be changed.
-             * @details This function is used to concatenate Super_Strings.
-             */
-            template<std::size_t OtherMaxSize>
-            constexpr void add(const superString<OtherMaxSize>& other){
-                // Copy the contents of the other Super_String into the Data vector.
-                for (unsigned int i = 0; i < other.currentIndex; i++){
-                    data[currentIndex++] = other.data[i];
-                }
-                
-                liquefiedSize += other.liquefiedSize; // Update the liquefied size with the size of the new string.
-            }
-
-            /**
-             * @brief Adds a Compact_String to the data vector.
-             * 
-             * This function appends the given Compact_String to the current position
-             * in the Data vector and then increments the Current_Index.
-             * 
-             * @param other The Compact_String to add to the data vector.
-             */
-            constexpr void add(const compactString& other){
-                // Store the Compact_String in the data vector.
-                data[currentIndex++] = other;
-                liquefiedSize += other.size; // Update the liquefied size with the size of the new Compact_String.
-            }
-
-            /**
-             * @brief Converts the Super_String object to a std::string.
-             * 
-             * This function goes through the Data vector and calculates the total size of all
-             * the strings stored in the vector. It then resizes a std::string to that size and
-             * then copies the contents of the Data vector into the std::string.
-             * 
-             * @return A std::string that contains all the strings stored in the Data vector.
-             */
-            std::string toString() {
-                // Resize a std::string to the total size.
-                std::string result;
-                result.resize(liquefiedSize);
-
-                // Copy the contents of the Data vector into the std::string.
-                int Current_UTF_Insert_Index = 0;
-                for(unsigned int i = 0; i < currentIndex; i++){
-                    const compactString& Data = data[i];
-
-                    if (Data.size == 0)
-                        break;
-
-                    // Size of ones are always already loaded from memory into a char.
-                    if (Data.size > 1){
-                        // Replace the current contents of the string with the contents of the Unicode Data.
-                        result.replace(Current_UTF_Insert_Index, Data.size, Data.getUnicode());
-
-                        Current_UTF_Insert_Index += Data.size;
-                    }
-                    else{
-                        // Add the single character to the string.
-                        result[Current_UTF_Insert_Index++] = Data.getAscii();
-                    }
-                }
-                return result;
-            }
-        };
-    }
-}
-
-#endif
-#ifndef _UTF_H_
-#define _UTF_H_
-
-#include <string>
-#include <variant>
-
-
-
-
-
-namespace GGUI{
-    class UTF : public INTERNAL::compactString {
-    public:
-        INTERNAL::ENCODING_FLAG flags = INTERNAL::ENCODING_FLAG::NONE;
-
-        RGB foreground;
-        RGB background;
-
-        constexpr UTF() {}
-
-        /**
-         * @brief Copy constructor for the UTF class.
-         *
-         * This constructor initializes a new UTF object as a copy of another UTF object.
-         *
-         * @param other The UTF object to copy.
-         */
-        constexpr UTF(const GGUI::UTF& other)
-            : INTERNAL::compactString(other),
-              foreground(other.foreground),
-              background(other.background) {}
-
-        /**
-         * @brief Constructs a new UTF object from a single character and a pair of foreground and background colors.
-         * @param data The character to store in the UTF object.
-         * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
-         */
-        constexpr UTF(const char data, const std::pair<RGB, RGB> color = {{}, {}}) : compactString(data) {
-            foreground = {color.first};
-            background = {color.second};
-        }
-
-        /**
-         * @brief Constructs a new UTF object from a C-style string and a pair of foreground and background colors.
-         * @param data The C-style string to store in the UTF object.
-         * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
-         */
-        constexpr UTF(const char* data, const std::pair<RGB, RGB> color = {{}, {}}) : compactString(data) {
-            foreground = {color.first};
-            background = {color.second};
-        }
-
-        /**
-         * @brief Constructs a new UTF object from a Compact_String and a pair of foreground and background colors.
-         * @param CS The Compact_String to store in the UTF object.
-         * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
-         */
-        constexpr UTF(const compactString CS, const std::pair<RGB, RGB> color = {{}, {}}) : compactString(CS) {
-            foreground = {color.first};
-            background = {color.second};
-        }
-
-        /**
-         * @brief Checks if a specific UTF flag is set.
-         * @param utf_flag The UTF flag to check.
-         * @return True if the flag is set, otherwise false.
-         */
-        constexpr bool is(const INTERNAL::ENCODING_FLAG flag) const {
-            return (flags & flag) == flag;
-        }
-
-        /**
-         * @brief Checks if a specific UTF flag is set.
-         * @param cs_flag The UTF flag to check.
-         * @return True if the flag is set, otherwise false.
-         */
-        constexpr bool is(unsigned char cs_flag) const {
-            return compactString::is(cs_flag);
-        }
-
-        // Fast comparison of type and content
-        constexpr bool is(const char* other) const {
-            return compactString::is(other);
-        }
-
-        // Fast comparison of type and content
-        constexpr bool is(char other) const {
-            return compactString::is(other);
-        }
-
-        /**
-         * @brief Sets a specific UTF flag.
-         * @param utf_flag The UTF flag to set.
-         */
-        constexpr void setFlag(const INTERNAL::ENCODING_FLAG flag) {
-            flags |= flag;
-        }
-
-        /**
-         * @brief Sets the foreground color of the UTF element.
-         * @param color The RGB color to set as the foreground color.
-         */
-        constexpr void setForeground(const RGB color) {
-            foreground = color;
-        }
-
-        /**
-         * @brief Sets the background color of the UTF element.
-         * @param color The RGB color to set as the background color.
-         */
-        constexpr void setBackground(const RGB color) {
-            background = color;
-        }
-
-        /**
-         * @brief Sets the foreground and background color of the UTF element.
-         * @param primals A pair of RGB colors. The first element is the foreground color; the second is the background color.
-         */
-        constexpr void setColor(const std::pair<RGB, RGB>& primals) {
-            foreground = primals.first;
-            background = primals.second;
-        }
-
-        /**
-         * @brief Sets the text of the UTF element to a single character.
-         * @param data The character to set as the text.
-         */
-        constexpr void setText(const char data) {
-            compactString::setAscii(data);
-        }
-
-        /**
-         * @brief Sets the text of the UTF element to a null-terminated string.
-         * @param data The null-terminated string to set as the text.
-         */
-        constexpr void setText(const char* data) {
-            compactString::setUnicode(data);
-        }
-
-        /**
-         * @brief Sets the text of the UTF element to that of another UTF element.
-         * @param other The other UTF element to copy the text from.
-         */
-        constexpr void setText(const UTF& other) {
-            compactString::operator=(other);
-        }
-
-        /**
-         * @brief Converts the UTF character to a Super_String.
-         * @param Result The result string.
-         * @param Text_Overhead The foreground colour and style as a string.
-         * @param Background_Overhead The background colour and style as a string.
-         * @param Text_Colour The foreground colour as a string.
-         * @param Background_Colour The background colour as a string.
-         */
-        void toSuperString(
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* BackgroundOverhead = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* TextColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>(),
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* BackgroundColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>()
-        ) const;
-
-        INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* toSuperString() const {
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>();
-
-            toSuperString(Result);
-
-            return Result;
-        }
-
-        /**
-         * @brief Converts the UTF character to an encoded Super_String.
-         * @param Result The Super_String to which the encoded string will be added.
-         * @param Text_Overhead The Super_String where the foreground colour overhead will be stored.
-         * @param Background_Overhead The Super_String where the background colour overhead will be stored.
-         * @param Text_Colour The Super_String where the foreground colour will be stored.
-         * @param Background_Colour The Super_String where the background colour will be stored.
-         */
-        void toEncodedSuperString(
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
-        ) const;
-
-        /**
-         * @brief Assign a character to the UTF object.
-         * @param text The character to assign.
-         */
-        constexpr void operator=(const char Text) {
-            setText(Text);
-        }
-
-        constexpr void operator=(const char* Text) {
-            setText(Text);
-        }
-
-        /**
-         * @brief Assigns a UTF object to another UTF object.
-         * @param other The UTF object to assign.
-         * @return The assigned UTF object.
-         */
-        constexpr UTF& operator=(const UTF& other) {
-            compactString::operator=(other);
-            foreground = other.foreground;
-            background = other.background;
-            return *this;
-        }
-    };
-
-    namespace SYMBOLS{
-        constexpr GGUI::UTF EMPTY_UTF(' ', {GGUI::COLOR::WHITE, GGUI::COLOR::BLACK});
-    }
-}
-
-#endif
 #ifndef _CONSTANTS_H_
 #define _CONSTANTS_H_
 
 #include <string>
 #include <unordered_map>
 #include <chrono>
-
 
 
 namespace GGUI{
@@ -1104,8 +455,7 @@ namespace GGUI{
 #include <string>
 #include <limits>
 #include <math.h>
-
-
+#include <stdint.h>
 
 
 namespace GGUI{
@@ -1226,11 +576,1569 @@ namespace GGUI{
 }
 
 #endif
+#ifndef _SUPER_STRING_H_
+#define _SUPER_STRING_H_
+
+#include <string>
+#include <cstring>
+#include <array>
+#include <vector>
+#include <variant>
+#include <initializer_list>
+
+namespace GGUI{
+    namespace INTERNAL{
+        namespace COMPACT_STRING_FLAG{
+            constexpr inline unsigned char IS_ASCII          = 1 << 0;
+            constexpr inline unsigned char IS_UNICODE        = 1 << 1;
+        };
+
+        /**
+         * @class Compact_String
+         * @brief A lightweight string class optimized for compact storage of ASCII and Unicode strings.
+         *
+         * The Compact_String class provides an efficient way to store and manipulate short strings,
+         * optimizing for the case where the string is a single ASCII character. For longer strings,
+         * it stores a pointer to a null-terminated C-style string. The class uses a std::variant to
+         * hold either a single character or a pointer to a string, and maintains the size of the string.
+         *
+         * Key Features:
+         * - Stores either a single ASCII character or a pointer to a C-style string.
+         * - Provides constructors for ASCII characters, C-style strings, and explicit size/force Unicode.
+         * - Offers fast type and content checks for ASCII and Unicode representations.
+         * - Supports subscript operator for character access.
+         * - Utility methods for getting and setting ASCII/Unicode data.
+         * - Designed for use in scenarios where memory efficiency and fast type checks are important.
+         *
+         * Usage Notes:
+         * - The default constructor is intended only for resizing containers and should not be used directly.
+         * - The class does not manage the lifetime of external string data; ensure that any pointer passed
+         *   to the class remains valid for the lifetime of the Compact_String instance.
+         * - The class is constexpr-friendly for compile-time usage where possible.
+         */
+        class compactString{
+        public:
+            std::variant<char, const char*> text;
+            unsigned int size = 0;
+
+            /**
+             * @brief Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
+             * @warning Do not use this constructor directly, as it will not initialize the Data property.
+             * This constructor initializes a Compact_String object with default values.
+             */
+            constexpr compactString() = default;
+
+            /**
+             * @brief Default copy constructor for Compact_String.
+             *
+             * Creates a new Compact_String object as a copy of an existing one.
+             * This constructor performs a member-wise copy of the source object.
+             *
+             * @param other The Compact_String instance to copy from.
+             */
+            constexpr compactString(const compactString&) = default;
+
+            /**
+             * @brief Move constructor for Compact_String.
+             *
+             * Constructs a new Compact_String by transferring the resources from another
+             * Compact_String instance. The source object is left in a valid but unspecified state.
+             *
+             * @param other The Compact_String instance to move from.
+             */
+            constexpr compactString(compactString&&) = default;
+
+            /**
+             * @brief Default copy assignment operator for Compact_String.
+             *
+             * Assigns the contents of another Compact_String to this one.
+             * The default implementation performs a member-wise copy of all fields.
+             *
+             * @param other The Compact_String instance to copy from.
+             * @return Reference to this Compact_String after assignment.
+             */
+            constexpr compactString& operator=(const compactString&) = default;
+
+            /**
+             * @brief Default move assignment operator for Compact_String.
+             *
+             * Allows assigning the contents of another Compact_String to this one using move semantics.
+             * The default implementation efficiently transfers resources from the source object,
+             * leaving it in a valid but unspecified state.
+             *
+             * @return Reference to this Compact_String after assignment.
+             */
+            constexpr compactString& operator=(compactString&&) = default;
+
+            /**
+             * @brief Constructs a Compact_String object from a C-style string.
+             * 
+             * This constructor initializes the Compact_String object by determining the length of the input string.
+             * If the length of the string is greater than 1, it stores the string data in Unicode_Data.
+             * If the length of the string is 1 or less, it stores the single character in Ascii_Data.
+             * 
+             * @param data A pointer to a null-terminated C-style string.
+             */
+            constexpr compactString(const char* data){
+                // Store the string as Unicode data if its length is greater than 1.
+                // Store the single character as ASCII data.
+                getLength(data) > 1 ? 
+                    setUnicode(data) : 
+                    setAscii(data[0]);
+            }
+
+            /**
+             * @brief Constructs a Compact_String object with a single ASCII character.
+             * 
+             * This constructor initializes the Compact_String with a single character.
+             * The character is stored in the Ascii_Data member of the Data union, and
+             * the Size is set to 1.
+             * 
+             * @param data The ASCII character to initialize the Compact_String with.
+             */
+            constexpr compactString(const char data) : text(data){
+                size = 1;
+            }
+
+            /**
+             * @brief Constructs a Compact_String object.
+             * 
+             * This constructor initializes a Compact_String object with the given data and size.
+             * It determines the storage format based on the size of the data and the Force_Unicode flag.
+             * 
+             * @param data A pointer to the character data to be stored.
+             * @param size The size of the character data.
+             * @param Force_Unicode A boolean flag indicating whether to force the data to be stored as Unicode.
+             *                       Defaults to false.
+             * 
+             * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
+             * Otherwise, the data is stored as a single ASCII character.
+             */
+            constexpr compactString(const char* data, const unsigned int Size, const bool forceUnicode = false){
+                // Determine data storage based on size and Force_Unicode flag.
+                // Store as Unicode data if size is greater than 1 or forced.
+                // Store as a single ASCII character.
+                (Size > 1 || forceUnicode) ? 
+                setUnicode(data) : 
+                setAscii(data[0]);
+
+                // If force unicode has been issued, then the size is probably a non-unicode standard size of zero or one, so we need to override the size.
+                if (forceUnicode)
+                    size = Size;
+            }
+
+            /**
+             * @brief Checks if a specific UTF flag is set.
+             * @param cs_flag The UTF flag to check.
+             * @return True if the flag is set, otherwise false.
+             */
+            constexpr bool is(unsigned char cs_flag) const {
+                return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && size == 1) || (cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && size > 1) ? true : false;
+            }
+
+            // Fast comparison of type and content
+            constexpr bool is(const char* other) const {
+                return is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::strcmp(std::get<const char*>(text), other) == 0 : false;
+            }
+
+            // Fast comparison of type and content
+            constexpr bool is(char other) const {
+                return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == other : false;
+            }
+
+            /**
+             * @brief Overloaded subscript operator to access character at a given index.
+             * 
+             * This operator allows access to the character at the specified index.
+             * If the size of the string is greater than 1, it returns the character
+             * from the Unicode data. If the size is 1, it returns the ASCII data.
+             * 
+             * @param index The index of the character to access.
+             * @return char The character at the specified index.
+             */
+            constexpr char operator[](int index) const {
+                return ((unsigned)index > size || index < 0) ? 
+                    '\0' : // Return null character if index is out of bounds.
+                    (size > 1 ? std::get<const char*>(text)[index] : std::get<char>(text));  // Return the character from Unicode or ASCII data.
+            }
+
+            constexpr const char* getUnicode(bool force = false) const {
+                // If the size is greater than 1, return the Unicode data.
+                // Otherwise, return a pointer to the ASCII data.
+                return size > 1 || force ? 
+                    std::get<const char*>(text) : 
+                    nullptr;
+            }
+
+            constexpr char getAscii() const {
+                // If the size is 1, return the ASCII data.
+                // Otherwise, return a null character.
+                return size == 1 ? 
+                    std::get<char>(text) : 
+                    '\0';
+            }
+
+            constexpr void setUnicode(const char* Text) {
+                // Set the Text to the Unicode data.
+                text = std::variant<char, const char*>(Text);
+                size = getLength(Text); // Update the size based on the new string.
+            }
+
+            constexpr void setAscii(const char Text) {
+                // Set the Text to the ASCII data.
+                text = std::variant<char, const char*>(Text);
+                size = 1; // Update the size to 1 since it's a single character.
+            }
+            
+            /**
+             * @brief Checks if the UTF object has a default text.
+             * @return true if the UTF object has a default text, false otherwise.
+             */
+            constexpr bool hasDefaultText() const {
+                return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == ' ' : std::get<const char*>(text)[0] == ' ';
+            }
+
+            constexpr bool empty() const {
+                // Check if the Compact_String is empty.
+                // An empty Compact_String has a size of 0.
+                return size == 0;
+            }
+
+        protected:
+            /**
+             * @brief Computes the length of a null-terminated C-string at compile time.
+             *
+             * This constexpr function iterates through the input string until it encounters
+             * the null terminator ('\0'), counting the number of characters.
+             *
+             * @param str Pointer to the null-terminated C-string.
+             * @return The number of characters in the string, excluding the null terminator.
+             */
+            constexpr size_t getLength(const char* str) {
+                size_t length = 0;
+
+                if (!str) {
+                    return length; // Return 0 if the input string is null.
+                }
+
+                while (str[length] != '\0') ++length;
+                return length;
+            }
+        };
+
+        /**
+         * @class Super_String
+         * @brief A container class for efficiently managing and concatenating multiple Compact_String objects.
+         *
+         * The Super_String class provides a fixed-size array of Compact_String objects, allowing for efficient
+         * storage, addition, and concatenation of strings and characters. It maintains an internal index to track
+         * the current number of stored elements and a liquefied size representing the total number of characters
+         * across all stored strings. The class supports various methods for adding strings, characters, and other
+         * Super_String instances, as well as clearing its contents and converting the stored data into a single
+         * std::string.
+         *
+         * @tparam maxSize The maximum number of Compact_String objects that can be stored in the Super_String.
+         *
+         * @note This class is designed for performance and memory efficiency, making it suitable for scenarios
+         *       where frequent string concatenation and manipulation are required.
+         */
+        template<std::size_t maxSize>
+        class superString{
+        public:
+            std::array<compactString, maxSize> data;
+            unsigned int currentIndex = 0;
+            unsigned int liquefiedSize = 0;
+
+            /**
+             * @brief Default constexpr constructor for the Super_String class.
+             *
+             * Initializes a Super_String object with default values at compile time.
+             * This constructor does not perform any custom initialization logic.
+             */
+            constexpr superString() = default;
+
+            /**
+             * @brief Constructs a Super_String from an initializer list of Compact_String objects.
+             *
+             * This constructor allows you to initialize a Super_String with a list of Compact_String
+             * instances. Each item in the initializer list is added to the Super_String using the Add method.
+             *
+             * @param data An initializer list containing Compact_String objects to be added to the Super_String.
+             */
+            constexpr superString(const std::initializer_list<compactString>& Data) {
+                for (const auto& item : Data) {
+                    add(item);
+                }
+            }
+
+            /**
+             * @brief Clears the contents of the Super_String.
+             * 
+             * This function resets the current index back to the start of the vector,
+             * effectively clearing any stored data.
+             */
+            constexpr void clear(){
+                // Set the current index back to the start of the vector.
+                currentIndex = 0;
+                liquefiedSize = 0;
+            }
+
+            /**
+             * @brief Adds a new string to the data vector.
+             * 
+             * This function stores the provided string in the data vector by creating a 
+             * Compact_String object from the given data and size, and then adds it to 
+             * the Data vector at the current index.
+             * 
+             * @param data Pointer to the character array containing the string to be added.
+             * @param size The size of the string to be added.
+             */
+            constexpr void add(const char* Data, const int size){
+                // Store the string in the Data vector.
+                compactString tmp = compactString(Data, size);
+                data[currentIndex++] = tmp;
+                liquefiedSize += tmp.size; // Update the liquefied size with the size of the new string.
+            }
+
+            /**
+             * @brief Adds a character to the Super_String.
+             * 
+             * This function stores the given character in the data vector
+             * and increments the current index.
+             * 
+             * @param data The character to be added to the Super_String.
+             */
+            constexpr void add(const char Data){
+                // Store the character in the data vector.
+                data[currentIndex++] = compactString(Data);
+                liquefiedSize += 1; // Update the liquefied size with the size of the new character.
+            }
+
+            /**
+             * @brief Adds the contents of another Super_String to this Super_String.
+             *
+             * This function appends the contents of the provided Super_String to the current
+             * Super_String. If the Expected parameter is false, the function will resize the
+             * Data vector to accommodate the additional characters.
+             *
+             * @param other A pointer to the Super_String to be added.
+             * @param Expected A boolean flag indicating whether the reservation size is already
+             *                 expected to be sufficient. If false, the Data vector will be resized.
+             */
+            template<std::size_t OtherMaxSize>
+            constexpr void add(const superString<OtherMaxSize>* other){
+                // Copy the contents of the other Super_String into the Data vector.
+                for (unsigned int i = 0; i < other->currentIndex; i++){
+                    data[currentIndex++] = other->data[i];
+                }
+
+                liquefiedSize += other->liquefiedSize; // Update the liquefied size with the size of the new string.
+            }
+            
+            /**
+             * @brief Add the contents of another Super_String to this one.
+             * @param other The Super_String to add.
+             * @param Expected If true, the size of the Data vector will not be changed.
+             * @details This function is used to concatenate Super_Strings.
+             */
+            template<std::size_t OtherMaxSize>
+            constexpr void add(const superString<OtherMaxSize>& other){
+                // Copy the contents of the other Super_String into the Data vector.
+                for (unsigned int i = 0; i < other.currentIndex; i++){
+                    data[currentIndex++] = other.data[i];
+                }
+                
+                liquefiedSize += other.liquefiedSize; // Update the liquefied size with the size of the new string.
+            }
+
+            /**
+             * @brief Adds a Compact_String to the data vector.
+             * 
+             * This function appends the given Compact_String to the current position
+             * in the Data vector and then increments the Current_Index.
+             * 
+             * @param other The Compact_String to add to the data vector.
+             */
+            constexpr void add(const compactString& other){
+                // Store the Compact_String in the data vector.
+                data[currentIndex++] = other;
+                liquefiedSize += other.size; // Update the liquefied size with the size of the new Compact_String.
+            }
+
+            /**
+             * @brief Converts the Super_String object to a std::string.
+             * 
+             * This function goes through the Data vector and calculates the total size of all
+             * the strings stored in the vector. It then resizes a std::string to that size and
+             * then copies the contents of the Data vector into the std::string.
+             * 
+             * @return A std::string that contains all the strings stored in the Data vector.
+             */
+            std::string toString() {
+                // Resize a std::string to the total size.
+                std::string result;
+                result.resize(liquefiedSize);
+
+                // Copy the contents of the Data vector into the std::string.
+                int Current_UTF_Insert_Index = 0;
+                for(unsigned int i = 0; i < currentIndex; i++){
+                    const compactString& Data = data[i];
+
+                    if (Data.size == 0)
+                        break;
+
+                    // Size of ones are always already loaded from memory into a char.
+                    if (Data.size > 1){
+                        // Replace the current contents of the string with the contents of the Unicode Data.
+                        result.replace(Current_UTF_Insert_Index, Data.size, Data.getUnicode());
+
+                        Current_UTF_Insert_Index += Data.size;
+                    }
+                    else{
+                        // Add the single character to the string.
+                        result[Current_UTF_Insert_Index++] = Data.getAscii();
+                    }
+                }
+                return result;
+            }
+        };
+    }
+}
+
+#endif
+#ifndef _UTF_H_
+#define _UTF_H_
+
+#include <string>
+#include <variant>
+#include <utility>
+
+
+namespace GGUI{
+    class UTF : public INTERNAL::compactString {
+    public:
+        INTERNAL::ENCODING_FLAG flags = INTERNAL::ENCODING_FLAG::NONE;
+
+        RGB foreground;
+        RGB background;
+
+        constexpr UTF() {}
+
+        /**
+         * @brief Copy constructor for the UTF class.
+         *
+         * This constructor initializes a new UTF object as a copy of another UTF object.
+         *
+         * @param other The UTF object to copy.
+         */
+        constexpr UTF(const GGUI::UTF& other)
+            : INTERNAL::compactString(other),
+              foreground(other.foreground),
+              background(other.background) {}
+
+        /**
+         * @brief Constructs a new UTF object from a single character and a pair of foreground and background colors.
+         * @param data The character to store in the UTF object.
+         * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
+         */
+        constexpr UTF(const char data, const std::pair<RGB, RGB> color = {{}, {}}) : compactString(data) {
+            foreground = {color.first};
+            background = {color.second};
+        }
+
+        /**
+         * @brief Constructs a new UTF object from a C-style string and a pair of foreground and background colors.
+         * @param data The C-style string to store in the UTF object.
+         * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
+         */
+        constexpr UTF(const char* data, const std::pair<RGB, RGB> color = {{}, {}}) : compactString(data) {
+            foreground = {color.first};
+            background = {color.second};
+        }
+
+        /**
+         * @brief Constructs a new UTF object from a Compact_String and a pair of foreground and background colors.
+         * @param CS The Compact_String to store in the UTF object.
+         * @param color A pair of RGB objects representing the foreground and background colors. If not provided, defaults to {{}, {}}.
+         */
+        constexpr UTF(const compactString CS, const std::pair<RGB, RGB> color = {{}, {}}) : compactString(CS) {
+            foreground = {color.first};
+            background = {color.second};
+        }
+
+        /**
+         * @brief Checks if a specific UTF flag is set.
+         * @param utf_flag The UTF flag to check.
+         * @return True if the flag is set, otherwise false.
+         */
+        constexpr bool is(const INTERNAL::ENCODING_FLAG flag) const {
+            return (flags & flag) == flag;
+        }
+
+        /**
+         * @brief Checks if a specific UTF flag is set.
+         * @param cs_flag The UTF flag to check.
+         * @return True if the flag is set, otherwise false.
+         */
+        constexpr bool is(unsigned char cs_flag) const {
+            return compactString::is(cs_flag);
+        }
+
+        // Fast comparison of type and content
+        constexpr bool is(const char* other) const {
+            return compactString::is(other);
+        }
+
+        // Fast comparison of type and content
+        constexpr bool is(char other) const {
+            return compactString::is(other);
+        }
+
+        /**
+         * @brief Sets a specific UTF flag.
+         * @param utf_flag The UTF flag to set.
+         */
+        constexpr void setFlag(const INTERNAL::ENCODING_FLAG flag) {
+            flags |= flag;
+        }
+
+        /**
+         * @brief Sets the foreground color of the UTF element.
+         * @param color The RGB color to set as the foreground color.
+         */
+        constexpr void setForeground(const RGB color) {
+            foreground = color;
+        }
+
+        /**
+         * @brief Sets the background color of the UTF element.
+         * @param color The RGB color to set as the background color.
+         */
+        constexpr void setBackground(const RGB color) {
+            background = color;
+        }
+
+        /**
+         * @brief Sets the foreground and background color of the UTF element.
+         * @param primals A pair of RGB colors. The first element is the foreground color; the second is the background color.
+         */
+        constexpr void setColor(const std::pair<RGB, RGB>& primals) {
+            foreground = primals.first;
+            background = primals.second;
+        }
+
+        /**
+         * @brief Sets the text of the UTF element to a single character.
+         * @param data The character to set as the text.
+         */
+        constexpr void setText(const char data) {
+            compactString::setAscii(data);
+        }
+
+        /**
+         * @brief Sets the text of the UTF element to a null-terminated string.
+         * @param data The null-terminated string to set as the text.
+         */
+        constexpr void setText(const char* data) {
+            compactString::setUnicode(data);
+        }
+
+        /**
+         * @brief Sets the text of the UTF element to that of another UTF element.
+         * @param other The other UTF element to copy the text from.
+         */
+        constexpr void setText(const UTF& other) {
+            compactString::operator=(other);
+        }
+
+        /**
+         * @brief Converts the UTF character to a Super_String.
+         * @param Result The result string.
+         * @param Text_Overhead The foreground colour and style as a string.
+         * @param Background_Overhead The background colour and style as a string.
+         * @param Text_Colour The foreground colour as a string.
+         * @param Background_Colour The background colour as a string.
+         */
+        void toSuperString(
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* BackgroundOverhead = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>(),
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* TextColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>(),
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* BackgroundColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>()
+        ) const;
+
+        INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* toSuperString() const {
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>();
+
+            toSuperString(Result);
+
+            return Result;
+        }
+
+        /**
+         * @brief Converts the UTF character to an encoded Super_String.
+         * @param Result The Super_String to which the encoded string will be added.
+         * @param Text_Overhead The Super_String where the foreground colour overhead will be stored.
+         * @param Background_Overhead The Super_String where the background colour overhead will be stored.
+         * @param Text_Colour The Super_String where the foreground colour will be stored.
+         * @param Background_Colour The Super_String where the background colour will be stored.
+         */
+        void toEncodedSuperString(
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
+        ) const;
+
+        /**
+         * @brief Assign a character to the UTF object.
+         * @param text The character to assign.
+         */
+        constexpr void operator=(const char Text) {
+            setText(Text);
+        }
+
+        constexpr void operator=(const char* Text) {
+            setText(Text);
+        }
+
+        /**
+         * @brief Assigns a UTF object to another UTF object.
+         * @param other The UTF object to assign.
+         * @return The assigned UTF object.
+         */
+        constexpr UTF& operator=(const UTF& other) {
+            compactString::operator=(other);
+            foreground = other.foreground;
+            background = other.background;
+            return *this;
+        }
+    };
+
+    namespace SYMBOLS{
+        inline const UTF EMPTY_UTF(' ', {COLOR::WHITE, COLOR::BLACK});
+    }
+}
+
+#endif
+#ifndef _TYPES_H_
+#define _TYPES_H_
+
+#include <string>
+#include <functional>
+#include <chrono>
+#include <mutex>
+#include <memory>
+
+
+namespace GGUI{
+    
+    // Literal type
+    class FVector2{
+    public:
+        float X = 0;
+        float Y = 0;
+
+        /**
+         * @brief Default constructor
+         *
+         * Initializes the FVector2 with the given x and y values.
+         *
+         * @param x The x-coordinate. Default is 0.0f.
+         * @param y The y-coordinate. Default is 0.0f.
+         */
+        constexpr FVector2(float x = 0.0f, float y = 0.0f) noexcept
+            : X(x), Y(y) {}
+
+        /**
+         * @brief Copy constructor
+         *
+         * Initializes the FVector2 by copying another FVector2.
+         *
+         * @param other The FVector2 to copy.
+         */
+        constexpr FVector2(const FVector2& other) noexcept = default;
+
+        /**
+         * @brief Move constructor
+         *
+         * Initializes the FVector2 by moving another FVector2.
+         *
+         * @param other The FVector2 to move.
+         */
+        constexpr FVector2(FVector2&& other) noexcept = default;
+
+        /**
+         * @brief Copy assignment operator
+         *
+         * Assigns another FVector2 to this one by copying its values.
+         *
+         * @param other The FVector2 to copy.
+         * @return A reference to this FVector2.
+         */
+        constexpr FVector2& operator=(const FVector2& other) noexcept = default;
+
+        /**
+         * @brief Move assignment operator
+         *
+         * Moves the values from another FVector2 to this one.
+         *
+         * @param other The FVector2 to move.
+         * @return A reference to this FVector2.
+         */
+        constexpr FVector2& operator=(FVector2&& other) noexcept = default;
+
+        /**
+         * @brief + operator with a float
+         *
+         * Adds a float to FVector2, creating a new FVector2.
+         *
+         * @param num The float to add.
+         * @return A new FVector2 with the added float.
+         */
+        constexpr FVector2 operator+(float num) const noexcept {
+            return FVector2(X + num, Y + num);
+        }
+
+        /**
+         * @brief - operator with a float
+         *
+         * Subtracts a float from FVector2, creating a new FVector2.
+         *
+         * @param num The float to subtract.
+         * @return A new FVector2 with the subtracted float.
+         */
+        constexpr FVector2 operator-(float num) const noexcept {
+            return FVector2(X - num, Y - num);
+        }
+
+
+        /**
+         * @brief * operator with a float
+         *
+         * Multiplies the FVector2 by a float, creating a new FVector2.
+         *
+         * @param num The float to multiply.
+         * @return A new FVector2 with the multiplied float.
+         */
+        constexpr FVector2 operator*(float num) const noexcept {
+            return FVector2(X * num, Y * num);
+        }
+    };
+    
+    // Literal type
+    class FVector3 : public FVector2 {
+    public:
+        float Z = 0;
+
+        /**
+         * @brief Default constructor
+         *
+         * Initializes the FVector3 with the given x, y, and z values.
+         *
+         * @param x The x-coordinate. Default is 0.0f.
+         * @param y The y-coordinate. Default is 0.0f.
+         * @param z The z-coordinate. Default is 0.0f.
+         */
+        constexpr FVector3(float x = 0.0f, float y = 0.0f, float z = 0.0f) noexcept
+            : FVector2(x, y), Z(z) {}
+
+        /**
+         * @brief Copy constructor
+         *
+         * Initializes the FVector3 by copying another FVector3.
+         *
+         * @param other The FVector3 to copy.
+         */
+        constexpr FVector3(const FVector3& other) noexcept = default;
+
+        /**
+         * @brief Move constructor
+         *
+         * Initializes the FVector3 by moving another FVector3.
+         *
+         * @param other The FVector3 to move.
+         */
+        constexpr FVector3(FVector3&& other) noexcept = default;
+
+        /**
+         * @brief Copy assignment operator
+         *
+         * Assigns another FVector3 to this one by copying its values.
+         *
+         * @param other The FVector3 to copy.
+         * @return A reference to this FVector3.
+         */
+        constexpr FVector3& operator=(const FVector3& other) noexcept = default;
+
+        /**
+         * @brief Move assignment operator
+         *
+         * Assigns another FVector3 to this one by moving its values.
+         *
+         * @param other The FVector3 to move.
+         * @return A reference to this FVector3.
+         */
+        constexpr FVector3& operator=(FVector3&& other) noexcept = default;
+
+        /**
+         * @brief + operator with a float
+         *
+         * Adds a float to FVector3, creating a new FVector3.
+         *
+         * @param num The float to add.
+         * @return A new FVector3 with the added float.
+         */
+        constexpr FVector3 operator+(float num) const noexcept {
+            return FVector3(X + num, Y + num, Z + num);
+        }
+
+
+        /**
+         * @brief - operator with a float
+         *
+         * Subtracts a float from FVector3, creating a new FVector3.
+         *
+         * @param num The float to subtract.
+         * @return A new FVector3 with the subtracted float.
+         */
+        constexpr FVector3 operator-(float num) const noexcept {
+            return FVector3(X - num, Y - num, Z - num);
+        }
+
+        /**
+         * @brief * operator with a float
+         *
+         * Multiplies the FVector3 by a float, creating a new FVector3.
+         *
+         * @param num The float to multiply.
+         * @return A new FVector3 with the multiplied float.
+         */
+        constexpr FVector3 operator*(float num) const noexcept {
+            return FVector3(X * num, Y * num, Z * num);
+        }
+
+        /**
+         * @brief + operator with another FVector3
+         *
+         * Adds another FVector3 to this one, creating a new FVector3.
+         *
+         * @param other The FVector3 to add.
+         * @return A new FVector3 with the added values.
+         */
+        constexpr FVector3 operator+(const FVector3& other) const noexcept {
+            return FVector3(X + other.X, Y + other.Y, Z + other.Z);
+        }
+
+        /**
+         * @brief - operator with another FVector3
+         *
+         * Subtracts another FVector3 from this one, creating a new FVector3.
+         *
+         * @param other The FVector3 to subtract.
+         * @return A new FVector3 with the subtracted values.
+         */
+        constexpr FVector3 operator-(const FVector3& other) const noexcept {
+            return FVector3(X - other.X, Y - other.Y, Z - other.Z);
+        }
+
+        /**
+         * @brief * operator with another FVector3 (component-wise multiplication)
+         *
+         * Performs component-wise multiplication with another FVector3, creating a new FVector3.
+         *
+         * @param other The FVector3 to multiply.
+         * @return A new FVector3 with the component-wise multiplied values.
+         */
+        constexpr FVector3 operator*(const FVector3& other) const noexcept {
+            return FVector3(X * other.X, Y * other.Y, Z * other.Z);
+        }
+    };
+
+    class IVector2{
+    public:
+        short X = 0;  //Horizontal
+        short Y = 0;  //Vertical
+
+        /**
+         * @brief Default constructor
+         *
+         * Initializes the IVector2 with the given x and y values.
+         *
+         * @param x The x-coordinate. Default is 0.
+         * @param y The y-coordinate. Default is 0.
+         */
+        constexpr IVector2(short x = 0, short y = 0) noexcept
+            : X(x), Y(y) {}
+
+        /**
+         * @brief Copy constructor
+         * 
+         * Initializes the IVector2 by copying another IVector2.
+         * @param other The IVector2 to copy.
+         */
+        constexpr IVector2(const IVector2& other) noexcept = default;
+
+        /**
+         * @brief Move constructor
+         * 
+         * Initializes the IVector2 by moving another IVector2.
+         * @param other The IVector2 to move.
+         */
+        constexpr IVector2(IVector2&& other) noexcept = default;
+
+        /**
+         * @brief Copy assignment operator
+         *
+         * Assigns another IVector2 to this one by copying its values.
+         *
+         * @param other The IVector2 to copy.
+         * @return A reference to this IVector2.
+         */
+        constexpr IVector2& operator=(const IVector2& other) noexcept = default;
+
+        /**
+         * @brief Move assignment operator
+         *
+         * Moves the values from another IVector2 to this one.
+         *
+         * @param other The IVector2 to move.
+         * @return A reference to this IVector2.
+         */
+        constexpr IVector2& operator=(IVector2&& other) noexcept = default;
+
+        /**
+         * @brief += operator with a pointer to an IVector2
+         *
+         * Adds the values of the IVector2 pointed to by the pointer to this IVector2.
+         *
+         * @param other The pointer to the IVector2 to add.
+         */
+        constexpr void operator+=(IVector2* other) noexcept {
+            X += other->X;
+            Y += other->Y;
+        }
+
+        /**
+         * @brief += operator with an FVector2
+         *
+         * Adds the values of the FVector2 to this IVector2.
+         *
+         * @param other The FVector2 to add.
+         */
+        constexpr void operator+=(FVector2 other) noexcept {
+            X += static_cast<short>(other.X);
+            Y += static_cast<short>(other.Y);
+        }
+
+        /**
+         * @brief += operator with another IVector2
+         *
+         * Adds the values of another IVector2 to this one.
+         *
+         * @param other The IVector2 to add.
+         */
+        constexpr void operator+=(IVector2 other) noexcept {
+            X += other.X;  // Add the x-coordinate
+            Y += other.Y;  // Add the y-coordinate
+        }
+
+        /**
+         * @brief + operator with another IVector2
+         *
+         * Creates a new IVector2 with the added values of this IVector2 and the other IVector2.
+         *
+         * @param other The IVector2 to add.
+         * @return A new IVector2 with the added values.
+         */
+        constexpr IVector2 operator+(const IVector2& other) const noexcept {
+            return IVector2(X + other.X, Y + other.Y);
+        }
+
+        /**
+         * @brief - operator with another IVector2
+         *
+         * Creates a new IVector2 with the subtracted values of this IVector2 and the other IVector2.
+         *
+         * @param other The IVector2 to subtract.
+         * @return A new IVector2 with the subtracted values.
+         */
+        constexpr IVector2 operator-(const IVector2& other) const noexcept {
+            return IVector2(X - other.X, Y - other.Y);
+        }
+
+        /**
+         * @brief * operator with a float
+         *
+         * Multiplies the IVector2 by a float, creating a new IVector2.
+         *
+         * @param num The float to multiply.
+         * @return A new IVector2 with the multiplied float.
+         */
+        constexpr IVector2 operator*(float num) const noexcept {
+            return IVector2(static_cast<short>(X * num), static_cast<short>(Y * num)); // Multiply each coordinate by num
+        }
+
+        /**
+         * @brief == operator with another IVector2
+         * 
+         * Compares the IVector2 with another IVector2.
+         * 
+         * @param other The IVector2 to compare with.
+         * @return True if the IVector2s are equal, otherwise false.
+         */
+        constexpr bool operator==(const IVector2& other) const noexcept {
+            return X == other.X && Y == other.Y; // Check if the coordinates are equal
+        }
+
+        /**
+         * @brief != operator with another IVector2
+         * 
+         * Compares the IVector2 with another IVector2.
+         * 
+         * @param other The IVector2 to compare with.
+         * @return False if the IVector2s are equal, otherwise true.
+         */
+        constexpr bool operator!=(const IVector2& other) const noexcept {
+            return X != other.X || Y != other.Y; // Check if the coordinates are not equal
+        }
+
+        /**
+         * @brief Converts the IVector2 to a string
+         *
+         * Converts the IVector2 to a string representation.
+         *
+         * @return A string representation of the IVector2.
+         */
+        std::string To_String() const {
+            return std::to_string(X) + ", " + std::to_string(Y);
+        }
+    };
+
+    class IVector3 : public IVector2{
+    public:
+        short Z = 0;  //priority (the higher the more likely it will be at top).
+
+        /**
+         * @brief Default constructor
+         *
+         * Initializes the IVector3 with the given x, y and z values.
+         *
+         * @param x The x-coordinate. Default is 0.
+         * @param y The y-coordinate. Default is 0.
+         * @param z The z-coordinate. Default is 0.
+         */
+        constexpr IVector3(short x = 0, short y = 0, short z = 0) noexcept
+            : IVector2(x, y), Z(z) {}
+
+        /**
+         * @brief Copy constructor
+         *
+         * Initializes the IVector3 by copying another IVector3.
+         *
+         * @param other The IVector3 to copy.
+         */
+        constexpr IVector3(const IVector3& other) noexcept = default;
+
+        /**
+         * @brief Move constructor
+         *
+         * Initializes the IVector3 by moving another IVector3.
+         *
+         * @param other The IVector3 to move.
+         */
+        constexpr IVector3(IVector3&& other) noexcept = default;
+
+        /**
+         * @brief Copy assignment operator
+         *
+         * Assigns another IVector3 to this one by copying its values.
+         *
+         * @param other The IVector3 to copy.
+         * @return A reference to this IVector3.
+         */
+        constexpr IVector3& operator=(const IVector3& other) noexcept = default;
+
+        /**
+         * @brief Move assignment operator
+         *
+         * Moves the values from another IVector3 to this one.
+         *
+         * @param other The IVector3 to move.
+         * @return A reference to this IVector3.
+         */
+        constexpr IVector3& operator=(IVector3&& other) noexcept = default;
+
+        /**
+         * @brief += operator with a pointer to an IVector3
+         *
+         * Adds the values of the IVector3 pointed to by the pointer to this IVector3.
+         *
+         * @param other The pointer to the IVector3 to add.
+         */
+        constexpr void operator+=(IVector3* other) noexcept {
+            X += other->X;
+            Y += other->Y;
+            Z += other->Z;
+        }
+
+        /**
+         * @brief += operator with another IVector3
+         *
+         * Adds the values of another IVector3 to this one.
+         *
+         * @param other The IVector3 to add.
+         */
+        constexpr void operator+=(IVector3 other) noexcept {
+            X += other.X;  // Add the x-coordinate
+            Y += other.Y;  // Add the y-coordinate
+            Z += other.Z;  // Add the z-coordinate
+        }
+
+        /**
+         * @brief + operator with another IVector3
+         *
+         * Creates a new IVector3 with the added values of this IVector3 and the other IVector3.
+         *
+         * @param other The IVector3 to add.
+         * @return A new IVector3 with the added values.
+         */
+        constexpr IVector3 operator+(const IVector3& other) const noexcept {
+            return IVector3(X + other.X, Y + other.Y, Z + other.Z);
+        }
+
+        constexpr IVector3 operator-(const IVector3& other) const noexcept {
+            return IVector3(X - other.X, Y - other.Y, Z - other.Z);
+        }
+
+        constexpr IVector3 operator+(int constant) const noexcept {
+            return IVector3(X + constant, Y + constant, Z + constant); // Add the constant to each coordinate
+        }
+
+        constexpr IVector3 operator-(int constant) const noexcept {
+            return IVector3(X - constant, Y - constant, Z - constant); // Subtract the constant from each coordinate
+        }
+
+
+        /**
+         * @brief * operator with a float
+         *
+         * Multiplies the IVector3 by a float, creating a new IVector3.
+         *
+         * @param num The float to multiply.
+         * @return A new IVector3 with the multiplied float.
+         */
+        constexpr IVector3 operator*(float num) const noexcept {
+            return IVector3(X * num, Y * num, Z * num); // Multiply each coordinate by num
+        }
+
+        /**
+         * @brief == operator with another IVector3
+         * 
+         * Compares the IVector3 with another IVector3.
+         * 
+         * @param other The IVector3 to compare with.
+         * @return True if the IVector3s are equal, otherwise false.
+         */
+        constexpr bool operator==(const IVector3& other) const noexcept {
+            return X == other.X && Y == other.Y && Z == other.Z; // Check if the coordinates are equal
+        }
+
+        /**
+         * @brief != operator with another IVector3
+         * 
+         * Compares the IVector3 with another IVector3.
+         * 
+         * @param other The IVector3 to compare with.
+         * @return False if the IVector3s are equal, otherwise true.
+         */
+        constexpr bool operator!=(const IVector3& other) const noexcept {
+            return X != other.X || Y != other.Y || Z != other.Z; // Check if the coordinates are not equal
+        }
+
+        /**
+         * @brief Converts the IVector3 to a string.
+         * 
+         * This function returns a string in the format "X, Y, Z" where X, Y, and Z are the coordinates of the IVector3.
+         * The output string is designed to be human-readable, and is not designed to be efficient for serialization or other purposes.
+         * 
+         * @return A string representation of the IVector3.
+         */
+        std::string To_String(){
+            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
+        }
+    
+        /**
+         * @brief Converts the IVector3 to a string.
+         * 
+         * This function returns a string in the format "X, Y, Z" where X, Y, and Z are the coordinates of the IVector3.
+         * The output string is designed to be human-readable, and is not designed to be efficient for serialization or other purposes.
+         * 
+         * @return A string representation of the IVector3.
+         */
+        std::string To_String() const {
+            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
+        }
+    };
+
+
+    class event{
+    public:
+        unsigned long long criteria;
+    };
+
+    class input : public event{
+    public:
+        unsigned short X = 0;
+        unsigned short Y = 0;
+        char data = 0;
+
+        // The input information like the character written.
+        input(char d, unsigned long long t){
+            data = d;
+            criteria = t;
+        }
+
+        input(IVector3 c, unsigned long long t){
+            X = (unsigned short )c.X;
+            Y = (unsigned short )c.Y;
+            criteria = t;
+        }
+    };
+
+    class action : public event{
+    public:
+        class element* host = nullptr;
+
+        std::function<bool(GGUI::event*)> Job;
+        
+        std::string ID; 
+    
+        action() = default;
+        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, std::string id){
+            criteria = Criteria;
+            Job = job;
+            host = nullptr;
+            ID = id;
+        }
+
+        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, class element* Host, std::string id){
+            criteria = Criteria;
+            Job = job;
+            host = Host;
+            ID = id;
+        }
+    };
+
+    namespace MEMORY_FLAGS{
+        inline unsigned char PROLONG_MEMORY     = 1 << 0;
+        inline unsigned char RETRIGGER          = 1 << 1;
+    };
+
+    class memory : public action{
+    public:
+        std::chrono::high_resolution_clock::time_point startTime;
+        size_t endTime = 0;
+
+        // By default all memories automatically will not prolong each other similar memories.
+        unsigned char flags = 0x0;
+
+        // When the job starts, job, prolong previous similar job by this time.
+        memory(size_t end, std::function<bool(GGUI::event*)>job, unsigned char Flags = 0x0, std::string id = ""){
+            startTime = std::chrono::high_resolution_clock::now();
+            endTime = end;
+            Job = job;
+            flags = Flags;
+            ID = id;
+        }
+
+        bool is(const unsigned char f) const{
+            return (flags & f) > 0;
+        }
+
+        void set(const unsigned char f){
+            flags |= f;
+        }
+    };
+
+    namespace INTERNAL{
+        struct fittingArea{
+            IVector2 negativeOffset;
+            IVector2 start;
+            IVector2 end;
+        };
+
+        enum class borderConnection{
+            NONE    = 0 << 0,
+            UP      = 1 << 0,
+            DOWN    = 1 << 1,
+            LEFT    = 1 << 2,
+            RIGHT   = 1 << 3
+        };
+
+        constexpr bool operator==(const borderConnection lhs, const borderConnection rhs) {
+            return static_cast<int>(lhs) == static_cast<int>(rhs);
+        }
+
+        constexpr borderConnection operator|(const borderConnection lhs, const borderConnection rhs) {
+            return static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
+        }
+
+        constexpr void operator|=(borderConnection& lhs, const borderConnection rhs) {
+            lhs = static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
+        }
+
+        enum class STAIN_TYPE{
+            CLEAN = 0,              // No change
+            COLOR = 1 << 0,         // BG and other color related changes
+            EDGE = 1 << 1,          // Title and border changes.
+            DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
+            STRETCH = 1 << 3,       // Width and or height changes.
+            STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently.
+            MOVE = 1 << 5,          // Enabled, to signal absolute position caching.
+            FINALIZE = 1 << 6,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
+            RESET = 1 << 7,         // This is to remove redundant STRETCH flagging.
+        };
+
+        /**
+         * @brief Performs bitwise OR operation on two STAIN_TYPE values.
+         * @details This operator allows combining two STAIN_TYPE values using a bitwise OR operation.
+         *          It returns the result as an unsigned integer.
+         *
+         * @param a The first STAIN_TYPE value.
+         * @param b The second STAIN_TYPE value.
+         * @return The result of the bitwise OR operation as an unsigned integer.
+         */
+        constexpr unsigned int operator|(const STAIN_TYPE a, const STAIN_TYPE b) {
+            // Cast both STAIN_TYPE values to unsigned integers and perform the bitwise OR operation.
+            return static_cast<unsigned int>(a) | static_cast<unsigned int>(b);
+        }
+
+        /**
+         * @brief Performs bitwise OR operation on a STAIN_TYPE value and an unsigned integer.
+         * @details This operator allows combining a STAIN_TYPE value with an unsigned integer using a bitwise OR operation.
+         *          It returns the result as an unsigned integer.
+         *
+         * @param a The STAIN_TYPE value.
+         * @param b The unsigned integer.
+         * @return The result of the bitwise OR operation as an unsigned integer.
+         */
+        constexpr unsigned int operator|(const STAIN_TYPE a, const unsigned int b){
+            return static_cast<unsigned int>(a) | b;
+        }
+
+        /**
+         * @brief Performs bitwise OR operation on an unsigned integer and a STAIN_TYPE value.
+         * @details This operator allows combining an unsigned integer with a STAIN_TYPE value using a bitwise OR operation.
+         *          It returns the result as an unsigned integer.
+         *
+         * @param a The unsigned integer.
+         * @param b The STAIN_TYPE value.
+         * @return The result of the bitwise OR operation as an unsigned integer.
+         */
+        constexpr unsigned int operator|(const unsigned int a, const STAIN_TYPE b){
+            return a | static_cast<unsigned int>(b);
+        }
+
+        class STAIN{
+        public:
+            STAIN_TYPE Type = STAIN_TYPE::CLEAN;
+
+            /**
+             * @brief Checks if the specified STAIN_TYPE is set in the current STAIN object.
+             * @details This function checks if a given STAIN_TYPE flag is set in the current
+             *          STAIN object. For the CLEAN flag, it checks if the type is less than
+             *          or equal to CLEAN. For other flags, it performs a bitwise AND operation.
+             *
+             * @param f The STAIN_TYPE flag to check.
+             * @return true if the specified flag is set; false otherwise.
+             */
+            constexpr bool is(const STAIN_TYPE f) const {
+                // Special handling for the CLEAN flag
+                if (f == STAIN_TYPE::CLEAN) {
+                    return Type <= f;
+                }
+                // Check if the specified flag is set using bitwise AND
+                return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) == static_cast<unsigned int>(f);
+            }
+
+            constexpr bool has(const unsigned int f) const {
+                return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) != 0;
+            }
+
+            /**
+             * @brief Clears a STAIN_TYPE flag from the current STAIN object.
+             * @details This function clears a given STAIN_TYPE flag from the current
+             *          STAIN object. It performs a bitwise AND operation with the
+             *          bitwise compliment of the specified flag.
+             *
+             * @param f The STAIN_TYPE flag to clear.
+             */
+            constexpr void Clean(const STAIN_TYPE f){
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~static_cast<unsigned int>(f));
+            }
+
+            /**
+             * @brief Clears a STAIN_TYPE flag from the current STAIN object.
+             * @details This function clears a given STAIN_TYPE flag from the current
+             *          STAIN object. It performs a bitwise AND operation with the
+             *          bitwise compliment of the specified flag.
+             *
+             * @param f The STAIN_TYPE flag to clear.
+             */
+            constexpr void Clean(const unsigned int f){
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~f);
+            }
+
+            /**
+             * @brief Marks the specified STAIN_TYPE flag as dirty.
+             * @details This function sets a given STAIN_TYPE flag on the current
+             *          STAIN object, indicating that the element needs to be reprocessed
+             *          for the specified attributes.
+             *
+             * @param f The STAIN_TYPE flag to set.
+             */
+            constexpr void Dirty(const STAIN_TYPE f) {
+                // Set the specified flag using bitwise OR
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | static_cast<unsigned int>(f));
+            }
+
+            /**
+             * @brief Marks the specified STAIN_TYPE flag as dirty.
+             * @details This function sets a given STAIN_TYPE flag on the current
+             *          STAIN object, indicating that the element needs to be reprocessed
+             *          for the specified attributes.
+             *
+             * @param f The STAIN_TYPE flag to set.
+             */
+            constexpr void Dirty(const unsigned int f){
+                // Set the specified flag using bitwise OR
+                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | f);
+            }
+
+        };
+
+        enum class ENCODING_FLAG{
+            NONE        = 0 << 0,
+            START       = 1 << 0,
+            END         = 1 << 1
+        };
+
+        constexpr bool operator== (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            return static_cast<unsigned char>(a) == static_cast<unsigned char>(b);
+        }
+
+        constexpr void operator|= (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            a = static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
+        }
+
+        constexpr ENCODING_FLAG operator&(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) & static_cast<unsigned char>(b));
+        }
+
+        constexpr ENCODING_FLAG operator|(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
+            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
+        }
+
+        enum class STATE{
+            UNKNOWN,
+
+            INIT,
+            DESTROYED,
+            HIDDEN,
+            SHOWN
+
+        };
+
+        enum class ALLOCATION_TYPE{
+            UNKNOWN         = 0 << 0,
+            STACK           = 1 << 0,
+            HEAP            = 1 << 1,
+            DATA            = 1 << 2
+        };
+
+        namespace LOGGER{
+            extern void Log(std::string Text);
+        }
+
+        namespace atomic{
+            template<typename T>
+            class guard {
+            public:
+                std::mutex shared; // Mutex to guard shared data
+                std::unique_ptr<T> data;
+
+                /**
+                 * @brief Constructs a Guard object and initializes its Data member.
+                 * 
+                 * This constructor creates a unique pointer to an instance of type T
+                 * and assigns it to the Data member of the Guard object.
+                 */
+                guard() : data(std::make_unique<T>()) {}
+
+                /**
+                 * @brief Functor to execute a job with thread safety.
+                 * 
+                 * This operator() function takes a std::function that operates on a reference to a T object.
+                 * It ensures that the job is executed with mutual exclusion by using a std::lock_guard to lock
+                 * the mutex. If the job throws an exception, it catches it and reports the failure.
+                 * 
+                 * @param job A std::function that takes a reference to a T object and performs some operation.
+                 * 
+                 * @throws Any exception thrown by the job function will be caught and reported.
+                 */
+                void operator()(std::function<void(T&)> job) {
+                    std::lock_guard<std::mutex> lock(shared); // Automatically manages mutex locking and unlocking
+                    try {
+                        job(*data);
+                    } catch (...) {
+                        INTERNAL::LOGGER::Log("Failed to execute the function!");
+                    }
+                }
+
+                /**
+                 * @brief Reads the data in a thread-safe manner.
+                 * 
+                 * This function acquires a lock on the shared mutex to ensure that the data
+                 * is read in a thread-safe manner. It returns a copy of the data.
+                 * 
+                 * @return T A copy of the data.
+                 */
+                T read() {
+                    std::lock_guard<std::mutex> lock(shared);
+                    return *data;
+                }
+
+                /**
+                 * @brief Destructor for the Guard class.
+                 *
+                 * This destructor ensures that the Data object is properly destroyed
+                 * by acquiring a lock on the Shared mutex before resetting the Data.
+                 * The use of std::lock_guard ensures that the mutex is automatically
+                 * released when the destructor exits, preventing potential deadlocks.
+                 */
+                ~guard() {
+                    std::lock_guard<std::mutex> lock(shared);
+                    data.reset(); // Ensures proper destruction
+                }
+            };   
+        }
+    
+        // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
+        class Carry{
+        public:
+            bool Resize = false;
+            bool Terminate = false;     // Signals the shutdown of subthreads.
+
+            ~Carry() = default;
+        };
+    }
+}
+
+#endif
 #ifndef _STYLE_H_
 #define _STYLE_H_
-
-
-
 
 
 #include <variant>
@@ -3705,6 +4613,1538 @@ namespace GGUI{
 }
 
 #endif
+#ifndef _SETTINGS_H_
+#define _SETTINGS_H_
+
+#include <chrono>
+#include <string>
+#include <vector>
+#include <functional>
+
+namespace GGUI {
+    namespace INTERNAL {
+        extern std::string constructLoggerFileName();
+    }
+
+    namespace SETTINGS{
+        /**
+         * @brief Enumeration of supported argument types for command line parsing.
+         */
+        enum class ArgumentType {
+            FLAG,           ///< Boolean flag argument (no value expected)
+            STRING,         ///< String value argument
+            INTEGER,        ///< Integer value argument
+            UNSIGNED_LONG   ///< Unsigned long value argument
+        };
+
+        /**
+         * @brief Descriptor class for command line arguments.
+         * 
+         * This class encapsulates information about a command line argument including
+         * its name, type, description, and a callback function to handle the parsed value.
+         */
+        class ArgumentDescriptor {
+        public:
+            std::string name;                                    ///< Argument name (without dashes)
+            ArgumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
+            std::string description;                             ///< Human-readable description for help text
+            std::function<void(const std::string&)> handler;    ///< Callback function to handle parsed value
+
+            /**
+             * @brief Constructs an ArgumentDescriptor.
+             * 
+             * @param argName The name of the argument (without leading dashes)
+             * @param argType The type of the argument
+             * @param argDescription Description of the argument for help text
+             * @param argHandler Callback function to handle the parsed value
+             */
+            ArgumentDescriptor(const std::string& argName, 
+                             ArgumentType argType, 
+                             const std::string& argDescription,
+                             std::function<void(const std::string&)> argHandler)
+                : name(argName), type(argType), description(argDescription), handler(argHandler) {}
+
+            /**
+             * @brief Checks if this argument requires a value.
+             * 
+             * @return true if the argument type requires a value, false for flags
+             */
+            bool requiresValue() const {
+                return type != ArgumentType::FLAG;
+            }
+
+            /**
+             * @brief Gets the type name as a string for help text.
+             * 
+             * @return String representation of the argument type
+             */
+            std::string getTypeName() const {
+                switch (type) {
+                    case ArgumentType::FLAG: return "flag";
+                    case ArgumentType::STRING: return "string";
+                    case ArgumentType::INTEGER: return "integer";
+                    case ArgumentType::UNSIGNED_LONG: return "unsigned long";
+                    default: return "unknown";
+                }
+            }
+        };
+
+        // Given as --mousePressCooldown = 123
+        extern unsigned long long Mouse_Press_Down_Cooldown;  // Milliseconds
+
+        // Given as --enableWordWrapping
+        extern bool Word_Wrapping;
+
+        // Given as --enableGammaCorrection
+        extern bool ENABLE_GAMMA_CORRECTION;
+
+        namespace LOGGER{
+            // Given as --loggerFileName = "GGUI.log"
+            extern std::string File_Name;
+        }
+
+        // Given as --enableDRM
+        extern bool enableDRM;
+
+        extern void parseCommandLineArguments(int argc, char** argv);
+
+        /**
+         * @brief Initializes the settings for the application.
+         *
+         * This function sets up the necessary configurations for the application
+         * by initializing the logger file name using the internal logger file name
+         * construction method.
+         */
+        extern void initSettings();
+    }
+}
+
+#endif
+#ifndef _UTILS_H_
+#define _UTILS_H_
+/**
+ * This is an Utils file made for the Renderer.cpp to use internally, these are just removed to clean up the source code.
+ */
+
+
+#include <math.h>
+
+namespace GGUI{
+    class element;
+    class UTF;
+    class RGB;
+
+    namespace INTERNAL{
+        extern std::string constructLoggerFileName();
+
+        extern bool Identical_Frame;
+
+        extern void De_Initialize();
+
+        extern int BEFORE_ENCODE_BUFFER_SIZE;
+        extern int AFTER_ENCODE_BUFFER_SIZE;
+        
+        /**
+         * @brief The Renderer function is responsible for managing the rendering loop.
+         * It waits for a condition to resume rendering, processes rendering tasks, and
+         * then pauses itself until the condition is met again.
+         * 
+         * The function performs the following steps:
+         * 1. Waits for the render thread to be resumed.
+         * 2. Saves the current time.
+         * 3. Checks if the rendering scheduler needs to be terminated.
+         * 4. Processes carry flags and updates the maximum width and height if needed.
+         * 5. Renders the main frame buffer.
+         * 6. Encodes the buffer for optimization.
+         * 7. Converts the abstract frame buffer to a string and renders the frame.
+         * 8. Calculates the render delay.
+         * 9. Pauses the render thread and notifies all waiting threads.
+         */
+        extern void renderer();
+
+        /**
+         * @brief Event_Thread is a function that runs an infinite loop to handle various events and tasks.
+         * 
+         * This function performs the following tasks in each iteration of the loop:
+         * - Resets the thread load counter and updates the previous time.
+         * - Calls functions to recall memories, go through file streams, and refresh the multi-frame canvas.
+         * - Checks for termination signals and breaks out of the loop if the terminate flag is set.
+         * - Updates the current time and calculates the delta time.
+         * - Adjusts the current update speed based on the event thread load.
+         * - Sleeps for a calculated duration to control the update speed.
+         * 
+         * The function is designed to be used in a multi-threaded environment where it can be paused and resumed as needed.
+         * 
+         * @note If uncapped FPS is desired, the sleep code can be disabled.
+         */
+        extern void eventThread();
+
+        /**
+         * @brief Function that continuously handles user input in a separate thread.
+         *
+         * This function runs an infinite loop where it performs the following steps:
+         * 1. Waits for user input by calling INTERNAL::Query_Inputs().
+         * 2. Pauses the GGUI system and performs the following actions:
+         *    - Records the current time as INTERNAL::Previous_Time.
+         *    - Translates the queried inputs using INTERNAL::Translate_Inputs().
+         *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
+         *    - Calls the event handlers to react to the parsed input using Event_Handler().
+         *    - Records the current time as INTERNAL::Current_Time.
+         *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
+         */
+        extern void inputThread();
+
+        /**
+         * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
+         * 
+         * This function takes an unsigned long long integer and formats it as a hexadecimal string
+         * in uppercase. The resulting string does not include a "0x" prefix.
+         * 
+         * @param value The unsigned long long integer to be converted to a hexadecimal string.
+         * @return A std::string containing the uppercase hexadecimal representation of the input value.
+         */
+        extern std::string Hex(unsigned long long value);
+
+        /**
+         * @brief Checks if two rectangles collide.
+         *
+         * This function determines whether two rectangles, defined by their top-left
+         * corners and dimensions, overlap in a 2D space.
+         *
+         * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
+         * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
+         * @param A_Width The width of the first rectangle.
+         * @param A_Height The height of the first rectangle.
+         * @param B_Width The width of the second rectangle.
+         * @param B_Height The height of the second rectangle.
+         * @return true if the rectangles overlap, false otherwise.
+         */
+        extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
+
+        /**
+         * @brief Checks if two GGUI elements collide.
+         * 
+         * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
+         * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
+         * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
+         * 
+         * @param a Pointer to the first GGUI element.
+         * @param b Pointer to the second GGUI element.
+         * @param Identity Boolean value to return if the elements are the same.
+         * @return true if the elements collide, false otherwise.
+         */
+        extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
+
+        /**
+         * @brief Checks if a given point collides with a specified element.
+         * 
+         * This function determines if the point `b` collides with the element `a` by 
+         * calling another `Collides` function with the element's absolute position, 
+         * width, height, and the point's assumed dimensions of 1x1.
+         * 
+         * @param a Pointer to the GGUI::Element to check for collision.
+         * @param b The point (as GGUI::IVector3) to check for collision with the element.
+         * @return true if the point collides with the element, false otherwise.
+         */
+        extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
+
+        /**
+         * @brief Recursively finds the most accurate element that contains the given position.
+         * 
+         * This function checks if the given position is within the bounds of the parent element.
+         * If it is, it then checks all the child elements of the parent to see if any of them
+         * contain the position. If a child element contains the position, the function is called
+         * recursively on that child element. If no child element contains the position, the parent
+         * element is returned.
+         * 
+         * @param c The position to check, represented as an IVector3.
+         * @param Parent The parent element to start the search from.
+         * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
+         */
+        extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
+
+        /**
+         * @brief Returns the smaller of two signed long long integers.
+         * 
+         * This function compares two signed long long integers and returns the smaller of the two.
+         * 
+         * @param a The first signed long long integer to compare.
+         * @param b The second signed long long integer to compare.
+         * @return The smaller of the two signed long long integers.
+         */
+        extern signed long long Min(signed long long a, signed long long b);
+
+        /**
+         * @brief Returns the maximum of two signed long long integers.
+         *
+         * This function compares two signed long long integers and returns the greater of the two.
+         *
+         * @param a The first signed long long integer to compare.
+         * @param b The second signed long long integer to compare.
+         * @return The greater of the two signed long long integers.
+         */
+        extern signed long long Max(signed long long a, signed long long b);
+
+        /**
+         * @brief Checks if a bit is set in a char.
+         * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
+         *          It returns true if the bit is set and false if it is not.
+         *
+         * @param val The char to check the bit in.
+         * @param i The index of the bit to check.
+         *
+         * @return True if the bit is set, false if it is not.
+         */
+        extern bool Has_Bit_At(char val, int i);
+
+        /**
+         * @brief Gets the contents of a given position in the buffer.
+         * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
+         * @param Absolute_Position The position to get the contents of.
+         * @return The contents of the given position, or nullptr if the position is out of bounds.
+         */
+        extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
+
+        /**
+         * @brief Calculates the current load of the GGUI thread based on the given current position.
+         * @param Min The minimum value the load can have.
+         * @param Max The maximum value the load can have.
+         * @param Position The current position of the load.
+         * @return The current load of the GGUI thread from 0 to 1.
+         */
+        extern float Lerp(int Min, int Max, int Position);
+
+        /**
+         * @brief Checks if the given flag is set in the given flags.
+         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+         *
+         * @param f The flags to check.
+         * @param Flag The flag to check for.
+         * @return True if the flag is set, otherwise false.
+         */
+        extern bool Is(unsigned long long f, unsigned long long Flag);
+
+        /**
+         * @brief Checks if a flag is set in a set of flags.
+         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+         *
+         * @param f The flags to check.
+         * @param flag The flag to check for.
+         * @return True if the flag is set, otherwise false.
+         */
+        extern bool Has(unsigned long long f, unsigned long long flag);
+
+        extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
+
+        /**
+         * @brief Checks if all flags in small are set in big.
+         * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
+         *
+         * @param big The flags to check against.
+         * @param small The flags to check.
+         * @return True if all flags in small are set in big, otherwise false.
+         */
+        extern bool Contains(unsigned long long big, unsigned long long Small);
+
+        extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
+
+        /**
+         * @brief Determines if a given pointer is likely deletable (heap-allocated).
+         *
+         * This function assesses whether a pointer may belong to the heap by comparing its
+         * position relative to known memory sections such as the stack, heap, and data segments.
+         *
+         * @param ptr Pointer to be evaluated.
+         * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
+         */
+        extern ALLOCATION_TYPE getAllocationType(const void* ptr);
+
+        /**
+         * Linear interpolation function
+         * @param a The start value
+         * @param b The end value
+         * @param t The interpolation value, between 0 and 1
+         * @return The interpolated value
+         */
+        template<typename T>
+        constexpr T lerp(T a, T b, T t) {
+            // Clamp t between a and b
+            return a + t * (b - a);
+        }
+
+        /**
+         * @brief Performs gamma-corrected linear interpolation between two values.
+         * 
+         * @tparam T The type of the input values.
+         * @tparam P The type of the interpolation factor.
+         * @param a The start value.
+         * @param b The end value.
+         * @param t The interpolation factor, typically between 0 and 1.
+         * @return The interpolated value, gamma-corrected and cast back to type T.
+         */
+        template<typename T, typename P>
+        constexpr T Interpolate(T a, T b, P t) {
+            // Define gamma value for correction
+            constexpr float gamma = 2.2F;
+
+            // Apply gamma correction to input values and perform linear interpolation
+            const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
+
+            // Reverse gamma correction and cast back to original type
+            return static_cast<T>(std::pow(c_f, 1.F / gamma));
+        }
+
+        /**
+         * @brief Interpolates between two RGB colors using linear interpolation.
+         * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
+         * @param A The start RGB color.
+         * @param B The end RGB color.
+         * @param Distance The interpolation factor, typically between 0 and 1.
+         * @return The interpolated RGB color.
+         */
+        extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
+
+        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
+            static std::string result;  // an internal cache container between renders.
+
+            if (result.empty() || Liquefied_Size != result.size()){
+                // Resize a std::string to the total size.
+                result.resize(Liquefied_Size, '\0');
+            }
+
+            // Copy the contents of the Data vector into the std::string.
+            unsigned int Current_UTF_Insert_Index = 0;
+            for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
+                const compactString& data = Data->at(i);
+
+                // Size of ones are always already loaded from memory into a char.
+                if (data.size > 1){
+                    // Replace the current contents of the string with the contents of the Unicode data.
+                    result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
+
+                    Current_UTF_Insert_Index += data.size;
+                }
+                else{
+                    // Add the single character to the string.
+                    result[Current_UTF_Insert_Index++] = data.getAscii();
+                }
+            }
+
+            return &result;
+        }
+
+        inline std::string To_String(compactString& cstr){
+            // Resize a std::string to the total size.
+            std::string result;
+            result.resize(cstr.size);
+
+            // Copy the contents of the Compact_String into the std::string.
+            if (cstr.size > 1){
+                // Replace the current contents of the string with the contents of the Unicode data.
+                result.replace(0, cstr.size, cstr.getUnicode());
+            }
+            else{
+                // Add the single character to the string.
+                result[0] = cstr.getAscii();
+            }
+
+            return result;
+        }
+    }
+}
+
+#endif
+#ifndef _LOGGER_H_
+#define _LOGGER_H_
+
+#include <queue>
+
+
+namespace GGUI{
+
+    class fileStream;
+
+    namespace INTERNAL{
+        // Contains Logging utils.
+        namespace LOGGER{
+            // File handle for logging to files for Atomic access across different threads.
+            extern atomic::guard<fileStream> Handle;
+            extern thread_local std::queue<std::string>* Queue;
+
+            extern void Init();
+
+            extern void Log(std::string Text);
+
+            extern void RegisterCurrentThread();
+        };
+        
+        extern void reportStack(const std::string& problemDescription);
+
+        extern void loggerThread();
+    }
+    
+    /**
+     * @brief Reports an error to the user.
+     * @param Problem The error message to display.
+     * @note If the main window is not created yet, the error will be printed to the console.
+     * @note This function is thread safe.
+     */
+    extern void report(const std::string& problem);
+}
+
+#endif
+#ifndef _FILE_STREAMER_H_
+#define _FILE_STREAMER_H_
+
+
+#include <fstream>
+#include <functional>
+#include <unordered_map>
+#include <stdio.h>
+#include <deque>
+#include <fcntl.h>
+
+#if _WIN32
+    #include <io.h>
+#else
+    #include <unistd.h>
+#endif
+
+namespace GGUI{
+
+    /*
+        Utilities to manage file streams.
+    */
+
+    class fileStream;
+
+    extern std::unordered_map<std::string, fileStream*> File_Streamer_Handles;
+
+    /**
+     * @brief Adds an event handler that is called when the file is changed.
+     * @param File_Name The name of the file to add the event handler for.
+     * @param Handle The event handler to be called when the file is changed.
+     *
+     * If there is already a file handle for this file name, the event handler is
+     * added to the list of event handlers for that file. If not, a new file
+     * handle is created and the event handler is added to the list of event
+     * handlers for that file.
+     */
+    extern void addFileStreamHandle(std::string File_Handle, std::function<void()> Handle);
+
+    /**
+     * @brief Returns the file stream handle associated with the given file name.
+     * @param File_Name The name of the file to retrieve the handle for.
+     * @return The file stream handle associated with the given file name, or nullptr if no handle exists.
+     */
+    extern fileStream* getFileStreamHandle(std::string File_Name);
+
+    /**
+     * @brief Returns the current working directory of the program.
+     * @return The current working directory as a string.
+     *
+     * This function returns the current working directory of the program
+     * as a string. This is useful for finding the location of configuration
+     * files, data files, and other resources that need to be accessed from
+     * the program.
+     */
+    extern std::string getCurrentLocation();
+ 
+    /**
+     * @brief Pulls the current contents of STDIN as a string.
+     * @return The contents of STDIN as a string.
+     *
+     * This function pulls the current contents of STDIN as a string. This is
+     * useful for applications that need to access the output of a previous
+     * process. Note that this function will only work if the application was
+     * started as a non TTY enabled application. If the application was started
+     * as a TTY enabled application, this function will fail.
+     */
+    extern std::string pullSTDIN();
+    
+    /**
+     * @brief Checks if the application was started from a TTY
+     * @return True if the application was started from a TTY, false otherwise
+     *
+     * This function checks if the application was started from a TTY
+     * by checking if STDIN is a TTY.
+     */
+    extern bool hasStartedAsTTY();
+
+    namespace INTERNAL{
+        // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
+        // These black boxes work like Stack Frames, where the data collected will be deleted when the current "Frame" capturer is destructed.
+        class bufferCapture : public std::streambuf{
+        private:
+            std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
+            std::string Current_Line = "";
+            std::deque<std::string> Console_History;
+
+            // Multiple handlers.
+            std::vector<std::function<void()>> On_Change = {};
+
+            // For speeding up.
+            std::unordered_map<bufferCapture*, bool> Synced;
+
+            std::string Name = "";
+        public:
+            // We could just search it from the global listing, but that would be slow.
+            // Stuck into the constructed position.
+            const bool Is_Global = false;
+
+            /**
+             * @brief Construct a BUFFER_CAPTURE
+             * @param on_change Function which will be called when the BUFFER_CAPTURE had changed.
+             * @param Name Name of the BUFFER_CAPTURE
+             * @param Global If true, this BUFFER_CAPTURE will inform all other global BUFFER_CAPTURES about the change.
+             *
+             * Construct a BUFFER_CAPTURE
+             * This will store the previous handle of std::cout.
+             * This will also insert this as the new cout output stream.
+             * If Global is true, this BUFFER_CAPTURE will inform all other global BUFFER_CAPTURES about the change.
+             */
+            bufferCapture(std::function<void()> on_change, std::string Name = "", bool Global = false);
+
+            /**
+             * @brief Default constructor
+             *
+             * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
+             * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
+             */
+            bufferCapture() = default;
+
+            /**
+             * @brief Destructor
+             *
+             * Called when the BUFFER_CAPTURE is going out of scope.
+             * This will call the Close() method to restore the original std::cout stream.
+             */
+            ~bufferCapture() {
+                close();
+            }
+            
+            /**
+             * @brief Handles character overflow for BUFFER_CAPTURE.
+             * @param c Character to be added to the current line.
+             * @return The result of writing the character to the original std::cout buffer.
+             *
+             * This function is called whenever the buffer overflows, typically when a new character is inserted. 
+             * It handles new lines by storing the current line in the console history and notifying all registered 
+             * change handlers. If this BUFFER_CAPTURE is global, it informs all other global BUFFER_CAPTURES about 
+             * the change.
+             */
+            int overflow(int c) override;
+            
+            /**
+             * @brief Close the BUFFER_CAPTURE and restore the original std::cout stream.
+             *
+             * This function is called when the BUFFER_CAPTURE is going out of scope, typically when it is destructed.
+             * It checks if the STD_COUT_RESTORATION_HANDLE is nullptr to avoid a double-close of the BUFFER_CAPTURE.
+             * If not nullptr, it sets the original std::cout stream back to the previous handle.
+             */
+            void close();
+
+            /**
+             * @brief Reads the console history and returns it as a single string.
+             *
+             * This function concatenates all lines stored in the console history
+             * and returns them as a single string, with each line separated by a newline character.
+             * 
+             * @return A string containing the entire console history.
+             */
+            std::string read();
+
+            /**
+             * @brief Adds a change handler function to the list.
+             * 
+             * This function will be called whenever a change occurs. 
+             * It appends the provided change handler function to the 
+             * internal list of change handlers.
+             *
+             * @param on_change The function to be called on change.
+             */
+            void addOnChangeHandler(std::function<void()> on_change){                
+                // Append the change handler function to the list
+                On_Change.push_back(on_change);
+            }
+
+            /**
+             * @brief Synchronizes this BUFFER_CAPTURE with the provided informer.
+             * 
+             * This function attempts to synchronize the current BUFFER_CAPTURE with another
+             * by sharing the latest console history lines. If the BUFFER_CAPTUREs have previously
+             * been synchronized, only the latest line is shared. Otherwise, it checks compatibility
+             * and synchronizes the entire history as needed.
+             * 
+             * @param Informer The BUFFER_CAPTURE containing the latest data to synchronize with.
+             * @return True if synchronization was successful, false otherwise.
+             */
+            bool sync(bufferCapture* Informer);
+
+            /**
+             * @brief Gets the name of this BUFFER_CAPTURE.
+             * 
+             * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
+             * @return The name of this BUFFER_CAPTURE.
+             */
+            std::string getName();
+
+            /**
+             * @brief Sets the name of this BUFFER_CAPTURE.
+             * @param Name The new name of this BUFFER_CAPTURE.
+             *
+             * This function sets the name of this BUFFER_CAPTURE.
+             * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
+             * @see Get_Name()
+             */
+            void setName(std::string name){
+                this->Name = name;
+            }
+        };
+
+    }
+
+    enum class FILE_STREAM_TYPE{
+        UN_INITIALIZED  = 0 << 0,
+        READ            = 1 << 0,
+        WRITE           = 1 << 1,
+        STD_CAPTURE     = 1 << 2
+    };
+
+    class fileStream{
+    private:
+        INTERNAL::bufferCapture* Buffer_Capture = nullptr;
+        std::fstream Handle;
+        std::vector<std::function<void()>> On_Change = {};
+        std::string Previous_Content = "";
+        unsigned long long Previous_Hash = 0;
+        FILE_STREAM_TYPE Type = FILE_STREAM_TYPE::UN_INITIALIZED;
+    public:
+        std::string Name = "";
+
+        /**
+         * @brief Constructor of the FILE_STREAM class.
+         * @param file_name The name of the file to open.
+         * @param on_change The event handler to be called when the file is changed.
+         * @param type describes the pipe method, READ/WRITE/STD_CAPTURE
+         * @param atomic If set will not add the file stream to the amassed file stream handle service.
+         *
+         * If read_from_std_cout is true, a new file is created where the std::cout is piped into.
+         * If there is already a file handle for this file name, the event handler is added to the list of event
+         * handlers for that file. If not, a new file handle is created and the event handler is added to the list
+         * of event handlers for the new file.
+         */
+        fileStream(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
+
+        /**
+         * @brief Intended for Logger Atomic::Guard, do not use as User!
+         */
+        fileStream() = default;
+
+        fileStream(const fileStream&) = delete;
+        fileStream& operator=(const fileStream&) = delete;
+
+        fileStream(fileStream&&) = default;  // Allow move
+        fileStream& operator=(fileStream&&) = default;
+
+        /**
+         * @brief Destructor for the FILE_STREAM class.
+         *
+         * This destructor ensures that resources are properly released
+         * when a FILE_STREAM object is destroyed. It closes the associated
+         * BUFFER_CAPTURE if it exists and also closes the file handle.
+         */
+        ~fileStream();
+
+        /**
+         * @brief Read the content of the file.
+         * @return The content of the file as a string.
+         * 
+         * This function will read the content of the file and return it as a string.
+         * If the file is empty, this function will return an empty string.
+         * If the file does not exist, or any other error occurs, this function will return an empty string and print an error message to the console.
+         * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
+         */
+        std::string Read();
+
+        /**
+         * @brief overwrites the given buffer into the file, clearing the previous content of said file.
+         * @param Buffer The buffer to write into the file.
+         */
+        void Write(std::string Buffer);
+
+        /**
+         * @brief Append line of text to the end of the file.
+         * @param Line The line of text to append to the file.
+         */
+        void Append(std::string Line);
+    
+        /**
+         * @brief Read the content of the file quickly without checking if the file has changed.
+         * @return The content of the file as a string.
+         *
+         * This function is faster than the normal Read() function, but it does not check if the file has changed.
+         * If the file has changed since the last call to Read(), this function will return the old content.
+         * If the file does not exist, or any other error occurs, this function will return an empty string and print an error message to the console.
+         * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
+         */
+        std::string Fast_Read() { return Previous_Content; }
+
+        /**
+         * @brief Checks if the file has changed and notifies the event handlers if so.
+         *
+         * This function is called by the FILE_STREAM class when it wants to check if the file has changed.
+         * It reads the new content from the file, calculates the hash of the new content, and compares it with the previous hash.
+         * If the hash has changed, it notifies all the event handlers by calling them.
+         */
+        void Changed();
+
+        /**
+         * @brief Adds a new event handler to the list of event handlers for this file.
+         * @param on_change The function to be called when the file changes.
+         * 
+         * This function adds a new event handler to the list of event handlers for this file.
+         * If read_from_std_cout is true, the event handler is added to the list of event handlers of the Buffer_Capture object.
+         * Otherwise, the event handler is added to the list of event handlers of this FILE_STREAM object.
+         */
+        void Add_On_Change_Handler(std::function<void()> on_change){
+            if (Buffer_Capture)
+                Buffer_Capture->addOnChangeHandler(on_change);
+            else
+                On_Change.push_back(on_change);
+        }
+
+        /**
+         * @brief Checks if the file stream is a std::cout stream.
+         * @return True if the file stream is a std::cout stream, false otherwise.
+         *
+         * This function checks if the file stream is a std::cout stream, i.e. if it is a stream that is
+         * associated with the BUFFER_CAPTURE class. If it is, it returns true, otherwise it returns false.
+         */
+        bool Is_Cout_Stream(){
+            return Buffer_Capture != nullptr;
+        }
+
+        FILE_STREAM_TYPE Get_type(){
+            return Type;
+        }
+    };
+
+    class filePosition{
+    public:
+        std::string File_Name = "";     // Originated.
+        unsigned int Line_Number = 0;   // Y
+        unsigned int Character = 0;     // X
+
+        /**
+         * @brief Constructor for the FILE_POSITION class.
+         * @param File_Name The name of the file that the position is in.
+         * @param Line_Number The line number of the position.
+         * @param Character The character number of the position.
+         * 
+         * This constructor creates a new FILE_POSITION object with the given file name, line number and character number.
+         */
+        filePosition(std::string file_name, unsigned int line_number, unsigned int character){
+            this->File_Name = file_name;
+            this->Line_Number = line_number;
+            this->Character = character;
+        }
+
+        /**
+         * @brief Default constructor for the FILE_POSITION class.
+         * @details This constructor creates a new FILE_POSITION object with default values for the file name, line number and character number.
+         */
+        filePosition() = default;
+
+        /**
+         * @brief Converts the FILE_POSITION object to a string.
+         * @return A string that represents the FILE_POSITION object in the format "File_Name:Line_Number:Character".
+         *
+         * This function converts the FILE_POSITION object to a string by concatenating the file name, line number and character number with a colon in between.
+         * The resulting string can be used to log or display the position of the file stream.
+         */
+        std::string To_String(){
+            return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
+        }
+    };
+
+    #if _WIN32
+        class CMD{
+        private:
+            void* In;
+            void* Out;
+        public:
+            /**
+             * @brief Constructor for the CMD class
+             * @details Initializes a pipe for inter-process communication.
+             *          The pipe is created with security attributes that allow
+             *          the handles to be inherited by child processes.
+             */
+            CMD();
+
+            /**
+             * @brief Destructor for the CMD class
+             * @details Closes the handles created by the constructor and releases
+             *          any resources associated with the pipe.
+             */
+            ~CMD() = default;
+
+            /**
+             * @brief Runs a command in a shell and returns its output as a string
+             * @param Command The command to execute
+             * @return The output of the command as a string
+             *
+             * This function runs a command in a shell and captures its output. It
+             * then returns the output as a string.
+             */
+            std::string Run(std::string command);
+        };
+    #else
+        class CMD{  // Unix implementation:
+        private:
+            union __INTERNAL_CMD_FILE_DESCRIPTOR__ {
+                struct __INTERNAL_CMD_WAY__ {
+                    int In;
+                    int Out;
+                } Way;
+                int FDS[2];
+            } File_Descriptor;
+        public:
+
+            /**
+             * @brief Constructor for the CMD class
+             *
+             * This function creates a pipe and stores the file descriptors in the
+             * File_Descriptor structure. The constructor is used to create a new
+             * object of the CMD class.
+             */
+            CMD();
+            
+            /**
+             * @brief Destructor for the CMD class
+             * @details Closes the handles created by the constructor and releases
+             *          any resources associated with the pipe.
+             */
+            ~CMD() = default;
+
+            /**
+             * @brief Run a command using the system shell and capture its output.
+             * @param Command The command to be executed.
+             * @return The output of the command as a string.
+             * 
+             * This function forks a new process to execute the specified command
+             * using the system shell. The output of the command is redirected to
+             * a pipe and captured by the parent process. The function returns the
+             * captured output as a string.
+             */
+            std::string Run(std::string command);
+        };
+    #endif
+}
+
+#endif
+#ifndef _DRM_H_
+#define _DRM_H_
+
+
+#if _WIN32
+
+#else
+#include <unistd.h>
+#include <cstdint>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <stdexcept>
+#include <string>
+#endif
+
+namespace GGUI {
+    namespace INTERNAL {
+        namespace DRM {
+            extern const char* handshakePortLocation;
+
+            struct cell {
+                char utf[4];    // Not null terminal, since we already know its size, leftovers are nulled out.
+
+                RGB foregroundColor;
+                RGB backgroundColor;
+            };
+
+            extern void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer);
+
+            constexpr int failRetryWaitTime = TIME::SECOND * 5;
+
+            namespace packet {
+                enum class type {
+                    UNKNOWN,
+                    DRAW_BUFFER,    // For sending/receiving cells
+                    INPUT,          // Fer sending/receiving input data
+                    NOTIFY,         // Contains an notify flag sending like empty buffers, for optimized polling.
+                    RESIZE,         // For sending/receiving GGUI resize
+                };
+
+                class base {
+                public:
+                    type packetType = type::UNKNOWN;
+
+                    base(type t) : packetType(t) {}
+                };
+
+                namespace notify {
+                    enum class type {
+                        UNKNOWN         = 0 << 0,
+                        EMPTY_BUFFER    = 1 << 0,
+                        CLOSED          = 1 << 1,   // When GGUI client has shutdown
+                    };
+
+                    class base : public packet::base {
+                    public:
+                        type notifyType = type::UNKNOWN;
+
+                        base(type t) : packet::base(packet::type::NOTIFY), notifyType(t) {}
+                    };
+                }
+
+                namespace input {
+                    enum class controlKey {
+                        UNKNOWN         = 0 << 0,
+                        SHIFT           = 1 << 0,
+                        CTRL            = 1 << 1,
+                        SUPER           = 1 << 2,
+                        ALT             = 1 << 3,
+                        ALTGR           = 1 << 4,
+                        FN              = 1 << 5,
+                        PRESSED_DOWN    = 1 << 6,   // Always on/off to indicate if the key is being pressed down or not.
+                    };
+
+                    // Bitwise operators for controlKey enum class
+                    inline controlKey operator&(controlKey lhs, controlKey rhs) {
+                        return static_cast<controlKey>(static_cast<int>(lhs) & static_cast<int>(rhs));
+                    }
+                    
+                    inline controlKey operator|(controlKey lhs, controlKey rhs) {
+                        return static_cast<controlKey>(static_cast<int>(lhs) | static_cast<int>(rhs));
+                    }
+                    
+                    inline controlKey operator^(controlKey lhs, controlKey rhs) {
+                        return static_cast<controlKey>(static_cast<int>(lhs) ^ static_cast<int>(rhs));
+                    }
+                    
+                    inline controlKey operator~(controlKey key) {
+                        return static_cast<controlKey>(~static_cast<int>(key));
+                    }
+
+                    enum class additionalKey {
+                        UNKNOWN,
+                        F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+                        ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
+                        HOME, END, PAGE_UP, PAGE_DOWN,
+                        INSERT, DEL,
+                        LEFT_CLICK, MIDDLE_CLICK, RIGHT_CLICK, SCROLL_UP, SCROLL_DOWN,
+                    };
+
+                    class base : public packet::base {
+                    public:
+                        IVector2 mouse;             // Mouse position in the terminal   
+                        controlKey modifiers;       // Control keys pressed
+                        additionalKey additional;   // Additional keys pressed, which are not declared in ASCII
+                        unsigned char key;          // ASCII key pressed, if any
+
+                        base() : packet::base(packet::type::INPUT), mouse(), modifiers(controlKey::UNKNOWN), additional(additionalKey::UNKNOWN), key(0) {}
+                    };
+                
+                    extern void translatePacketInputToGGUIInput(input::base* packetInput);
+                }
+
+                namespace resize {
+                    class base : public packet::base {
+                    public:
+                        IVector2 size;
+
+                        base(int width, int height) : packet::base(packet::type::RESIZE), size(width, height) {}
+                    };
+                }
+
+                union maxSizetype {
+                    notify::base n;
+                    input::base i;
+                    resize::base r;
+                };
+
+                // Computes at compile time the maximum needed buffer length for a packet.
+                constexpr int size = sizeof(maxSizetype);
+            }
+
+            #if _WIN32
+            extern void connectDRMBackend();
+            
+            extern void sendBuffer(std::vector<UTF>&);
+
+            extern void pollInputs();
+
+            extern void translateInputs();
+
+            extern void retryDRMConnect();
+            #else
+
+            namespace tcp {
+                constexpr size_t pollingRate = TIME::MILLISECOND * 32;
+
+                /**
+                 * @brief Represents a TCP connection for sending and receiving data.
+                 * 
+                 * This class wraps a socket file descriptor and provides methods for
+                 * sending and receiving typed data over a TCP connection.
+                 */
+                class connection {
+                    int handle;
+                public:
+                    /**
+                     * @brief Constructs a connection from an existing socket file descriptor.
+                     * 
+                     * @param socketFd The socket file descriptor to wrap. Must be a valid TCP socket.
+                     * @throws std::invalid_argument if socketFd is negative (invalid).
+                     */
+                    explicit connection(int socketFd) : handle(socketFd) {
+                        if (socketFd < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Invalid socket file descriptor provided to connection constructor");
+                        }
+                    }
+
+                    explicit connection() : handle(-1) {}  // Initialize to invalid state
+
+                    // destructors are called via the handle manager and thus not needed to be called here
+
+                    /**
+                     * @brief Destructor that closes the connection if still open.
+                     */
+                    ~connection() {
+                        close();
+                    }
+
+                    // Disable copy constructor and assignment operator to prevent double-close
+                    connection(const connection&) = delete;
+                    connection& operator=(const connection&) = delete;
+
+                    // Enable move constructor and assignment operator
+                    connection(connection&& other) noexcept : handle(other.handle) {
+                        other.handle = -1;
+                    }
+
+                    connection& operator=(connection&& other) noexcept {
+                        if (this != &other) {
+                            close();
+                            handle = other.handle;
+                            other.handle = -1;
+                        }
+                        return *this;
+                    }
+
+                    /**
+                     * @brief Sends typed data over the TCP connection.
+                     * 
+                     * This template method sends count elements of type T over the connection.
+                     * It ensures all data is sent by checking the return value against the expected size.
+                     * 
+                     * @tparam T The type of data to send
+                     * @param data Pointer to the data buffer to send
+                     * @param count Number of elements of type T to send
+                     * @return true if all data was successfully sent, false otherwise
+                     * @throws std::runtime_error if the socket is invalid or closed
+                     */
+                    template<typename T>
+                    bool Send(const T* data, size_t count = 1) {
+                        if (handle < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Cannot send on closed socket");
+                        }
+                        if (!data && count > 0) {
+                            return false;
+                        }
+                        
+                        size_t totalBytes = count * sizeof(T);
+                        ssize_t sent = send(handle, data, totalBytes, 0);
+                        
+                        if (sent < 0) {
+                            // Send failed due to error
+                            return false;
+                        }
+                        
+                        return sent == static_cast<ssize_t>(totalBytes);
+                    }
+
+                    /**
+                     * @brief Receives typed data from the TCP connection.
+                     * 
+                     * This template method receives count elements of type T from the connection.
+                     * It ensures all expected data is received by checking the return value.
+                     * 
+                     * @tparam T The type of data to receive
+                     * @param data Pointer to the buffer where received data will be stored
+                     * @param count Number of elements of type T to receive
+                     * @return true if all expected data was successfully received, false otherwise
+                     * @throws std::runtime_error if the socket is invalid or closed
+                     */
+                    template<typename T>
+                    bool Receive(T* data, size_t count = 1) {
+                        if (handle < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Cannot receive on closed socket");
+                        }
+                        if (!data && count > 0) {
+                            return false;
+                        }
+                        
+                        size_t totalBytes = count * sizeof(T);
+                        ssize_t recvd = recv(handle, data, totalBytes, 0);
+                        
+                        if (recvd < 0) {
+                            // Receive failed due to error
+                            return false;
+                        }
+                        if (recvd == 0) {
+                            // Connection closed by peer
+                            return false;
+                        }
+                        
+                        return recvd == static_cast<ssize_t>(totalBytes);
+                    }
+
+                    /**
+                     * @brief Gets the underlying socket file descriptor.
+                     * 
+                     * @return The socket file descriptor, or -1 if the connection is closed
+                     */
+                    int getHandle() const { return handle; }
+
+                    /**
+                     * @brief Closes the TCP connection.
+                     * 
+                     * This method closes the underlying socket and marks the connection as invalid.
+                     * It's safe to call this method multiple times.
+                     */
+                    void close() {
+                        if (handle >= 0) {
+                            ::close(handle);
+                            handle = -1; // Mark as closed
+                        }
+                    }
+                };
+
+                /**
+                 * @brief TCP listener for accepting incoming connections.
+                 * 
+                 * This class creates a TCP server socket that can listen for and accept
+                 * incoming connections on a specified port.
+                 */
+                class listener {
+                    int handle;
+                public:
+                    /**
+                     * @brief Default constructor that creates an uninitialized listener.
+                     * 
+                     * Creates a listener with an invalid handle. Must be assigned or moved
+                     * from a properly constructed listener before use.
+                     */
+                    listener() : handle(-1) {}
+
+                    /**
+                     * @brief Constructs a TCP listener on the specified port.
+                     * 
+                     * Creates a TCP socket, binds it to the specified port (or any available port if 0),
+                     * and starts listening for incoming connections.
+                     * 
+                     * @param port The port number to listen on. Use 0 to let the system assign an available port.
+                     * @throws std::runtime_error if socket creation, binding, or listening fails
+                     */
+                    explicit listener(uint16_t port) : handle(-1) {
+                        // Create socket
+                        handle = socket(AF_INET, SOCK_STREAM, 0);
+                        if (handle < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Failed to create socket: " + std::string(strerror(errno)));
+                        }
+
+                        // Set socket option to reuse address
+                        int opt = 1;
+                        if (setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+                            ::close(handle);
+                            GGUI::INTERNAL::LOGGER::Log("Failed to set socket option SO_REUSEADDR: " + std::string(strerror(errno)));
+                        }
+
+                        // Bind socket to address
+                        sockaddr_in addr{};
+                        addr.sin_family = AF_INET;
+                        addr.sin_addr.s_addr = INADDR_ANY;
+                        addr.sin_port = htons(port);
+                        
+                        if (bind(handle, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
+                            ::close(handle);
+                            GGUI::INTERNAL::LOGGER::Log("Failed to bind socket to port " + std::to_string(port) + ": " + std::string(strerror(errno)));
+                        }
+
+                        // Start listening
+                        if (listen(handle, 5) < 0) {
+                            ::close(handle);
+                            GGUI::INTERNAL::LOGGER::Log("Failed to start listening on socket: " + std::string(strerror(errno)));
+                        }
+                    }
+
+                    /**
+                     * @brief Destructor that properly closes the listener socket.
+                     */
+                    ~listener() {
+                        if (handle >= 0) {
+                            ::close(handle);
+                        }
+                    }
+
+                    // Disable copy constructor and assignment operator to prevent double-close
+                    listener(const listener&) = delete;
+                    listener& operator=(const listener&) = delete;
+
+                    // Enable move constructor and assignment operator
+                    listener(listener&& other) noexcept : handle(other.handle) {
+                        other.handle = -1;
+                    }
+
+                    listener& operator=(listener&& other) noexcept {
+                        if (this != &other) {
+                            if (handle >= 0) {
+                                ::close(handle);
+                            }
+                            handle = other.handle;
+                            other.handle = -1;
+                        }
+                        return *this;
+                    }
+
+                    /**
+                     * @brief Accepts an incoming connection.
+                     * 
+                     * This method blocks until a client connects to the listener.
+                     * 
+                     * @return A connection object representing the accepted client connection
+                     * @throws std::runtime_error if the listener socket is closed or accept fails
+                     */
+                    connection Accept() {
+                        if (handle < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Cannot accept on closed listener");
+                        }
+
+                        int connFd = accept(handle, nullptr, nullptr);
+                        if (connFd < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Failed to accept connection: " + std::string(strerror(errno)));
+                        }
+                        
+                        return connection(connFd);
+                    }
+
+                    /**
+                     * @brief Gets the port number this listener is bound to.
+                     * 
+                     * This is particularly useful when the listener was created with port 0,
+                     * as it returns the actual port assigned by the system.
+                     * 
+                     * @return The port number this listener is bound to
+                     * @throws std::runtime_error if getting the socket name fails
+                     */
+                    uint16_t getPort() {
+                        if (handle < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Cannot get port of closed listener");
+                        }
+
+                        sockaddr_in actual{};
+                        socklen_t len = sizeof(actual);
+                        
+                        if (getsockname(handle, reinterpret_cast<sockaddr*>(&actual), &len) < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Failed to get socket name: " + std::string(strerror(errno)));
+                        }
+
+                        return ntohs(actual.sin_port);
+                    }
+                };
+
+                /**
+                 * @brief Utility class for creating outgoing TCP connections.
+                 * 
+                 * This class provides static methods to establish TCP connections to remote hosts.
+                 */
+                class sender {
+                public:
+                    /**
+                     * @brief Creates a TCP connection to the specified host and port.
+                     * 
+                     * Establishes a TCP connection to the given host and port. This method
+                     * creates a socket, resolves the host address, and connects to the remote endpoint.
+                     * 
+                     * @param port The port number to connect to
+                     * @param host The hostname or IP address to connect to (defaults to localhost)
+                     * @return A connection object representing the established connection
+                     * @throws std::runtime_error if socket creation, address resolution, or connection fails
+                     */
+                    static connection getConnection(uint16_t port, const char* host = "127.0.0.1") {
+                        if (!host) {
+                            throw std::invalid_argument("Host cannot be null");
+                        }
+
+                        // Create socket
+                        int sockFd = socket(AF_INET, SOCK_STREAM, 0);
+                        if (sockFd < 0) {
+                            GGUI::INTERNAL::LOGGER::Log("Failed to create socket: " + std::string(strerror(errno)));
+                        }
+
+                        // Prepare address structure
+                        sockaddr_in addr{};
+                        addr.sin_family = AF_INET;
+                        addr.sin_port = htons(port);
+                        
+                        // Convert IP address from text to binary form
+                        int result = inet_pton(AF_INET, host, &addr.sin_addr);
+                        if (result <= 0) {
+                            ::close(sockFd);
+                            if (result == 0) {
+                                GGUI::INTERNAL::LOGGER::Log("Invalid IP address format: " + std::string(host));
+                            } else {
+                                GGUI::INTERNAL::LOGGER::Log("inet_pton failed: " + std::string(strerror(errno)));
+                            }
+                        }
+
+                        // Connect to the remote host
+                        if (connect(sockFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
+                            ::close(sockFd);
+                            GGUI::INTERNAL::LOGGER::Log("Failed to connect to " + std::string(host) + ":" + std::to_string(port) + " - " + std::string(strerror(errno)));
+
+                            return connection();    // Return an empty connection with -1 as fd
+                        }
+                        
+                        return connection(sockFd);
+                    }
+                };
+            
+            }
+
+            // This will contain the open connection between DRM and this client.
+            extern tcp::connection DRMConnection;
+
+            extern void connectDRMBackend();
+            
+            extern void sendBuffer(std::vector<UTF>& abstractBuffer);
+
+            extern void retryDRMConnect();
+
+            extern void close();
+
+            // Called via the input thread.
+            extern void pollInputs();
+
+            extern void translateInputs();
+
+            #endif
+
+        }
+    }
+}
+
+#endif
+#ifndef _SIMD_H_
+#define _SIMD_H_
+
+
+namespace GGUI{
+
+    #if defined(__AVX512F__)
+        #include <immintrin.h>
+
+        inline const unsigned int MAX_SIMD_SIZE = 16;
+    #elif defined(__AVX__)
+        #include <immintrin.h>
+
+        inline const unsigned int MAX_SIMD_SIZE = 8;
+    #elif defined(__SSE__)
+        #include <xmmintrin.h>
+
+        inline const unsigned int MAX_SIMD_SIZE = 4;
+    #else
+        inline const unsigned int MAX_SIMD_SIZE = 1;
+    #endif
+
+    // The number represents how many 32 bit float value pairs can it calculate at the same time.
+    void simdDivision4(float* a, float* b, float* c);
+    void simdDivision8(float* a, float* b, float* c);
+    void simdDivision16(float* a, float* b, float* c);
+
+    // Calls the right division SIMD operator depending on the length
+    void operateSIMDDivision(float* dividend, float* divider, float* result, int length){
+        if(length == 4){
+            simdDivision4(dividend, divider, result);
+        }else if(length == 8){
+            simdDivision8(dividend, divider, result);
+        }else if(length == 16){
+            simdDivision16(dividend, divider, result);
+        }else{
+            INTERNAL::reportStack("Calling SIMD division with longer sequence than allowed: " + std::to_string(length) + " elements.");
+        }
+    }
+
+    void operateSIMDModulo(float* dividend, float* divider, float* result, int length){
+        // Uses the division variants and then calculates for each the modulo
+        operateSIMDDivision(dividend, divider, result, length);
+
+        for(int i = 0; i < length; i++){
+            // by the formula: a - b * floor(a / b)
+            result[i] = dividend[i] - divider[i] * floor(result[i]);
+        }
+    }
+
+    #if defined(__SSE__)
+        void simdDivision4(float* a, float* b, float* c) {
+            __m128 va = _mm_loadu_ps(a);
+            __m128 vb = _mm_loadu_ps(b);
+            __m128 vc = _mm_div_ps(va, vb);
+            _mm_storeu_ps(c, vc);
+        }
+    #else
+        void simdDivision4(float* a, float* b, float* c) {
+            *c = *a / *b;
+            *(c + 1) = *(a + 1) / *(b + 1);
+            *(c + 2) = *(a + 2) / *(b + 2);
+            *(c + 3) = *(a + 3) / *(b + 3);
+        }
+    #endif
+
+    #if defined(__AVX__)
+        void simdDivision8(float* a, float* b, float* c) {
+            __m256 va = _mm256_loadu_ps(a);
+            __m256 vb = _mm256_loadu_ps(b);
+            __m256 vc = _mm256_div_ps(va, vb);
+            _mm256_storeu_ps(c, vc);
+        }
+    #else
+        void simdDivision8(float* a, float* b, float* c) {
+            // use the one stage lower SIMD function variant.
+            simdDivision4(a, b, c);
+            simdDivision4(a + 4, b + 4, c + 4);
+        }
+    #endif
+
+    #if defined(__AVX512F__)
+        void simdDivision16(float* a, float* b, float* c) {
+            __m512 va = _mm512_loadu_ps(a);
+            __m512 vb = _mm512_loadu_ps(b);
+            __m512 vc = _mm512_div_ps(va, vb);
+            _mm512_storeu_ps(c, vc);
+        }
+    #else
+        void simdDivision16(float* a, float* b, float* c) {
+            // use the one stage lower SIMD function variant.
+            simdDivision8(a, b, c);
+            simdDivision8(a + 8, b + 8, c + 8);
+        }
+    #endif
+}
+
+#endif
 #ifndef _ELEMENT_H_
 #define _ELEMENT_H_
 
@@ -3719,11 +6159,6 @@ namespace GGUI{
 #include <limits>
 
 #include <iostream>
-
-
-
-
-
 
 
 namespace GGUI{
@@ -5041,1505 +7476,8 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _TYPES_H_
-#define _TYPES_H_
-
-#include <string>
-#include <functional>
-#include <chrono>
-#include <mutex>
-#include <memory>
-
-namespace GGUI{
-    
-    // Literal type
-    class FVector2{
-    public:
-        float X = 0;
-        float Y = 0;
-
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the FVector2 with the given x and y values.
-         *
-         * @param x The x-coordinate. Default is 0.0f.
-         * @param y The y-coordinate. Default is 0.0f.
-         */
-        constexpr FVector2(float x = 0.0f, float y = 0.0f) noexcept
-            : X(x), Y(y) {}
-
-        /**
-         * @brief Copy constructor
-         *
-         * Initializes the FVector2 by copying another FVector2.
-         *
-         * @param other The FVector2 to copy.
-         */
-        constexpr FVector2(const FVector2& other) noexcept = default;
-
-        /**
-         * @brief Move constructor
-         *
-         * Initializes the FVector2 by moving another FVector2.
-         *
-         * @param other The FVector2 to move.
-         */
-        constexpr FVector2(FVector2&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another FVector2 to this one by copying its values.
-         *
-         * @param other The FVector2 to copy.
-         * @return A reference to this FVector2.
-         */
-        constexpr FVector2& operator=(const FVector2& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Moves the values from another FVector2 to this one.
-         *
-         * @param other The FVector2 to move.
-         * @return A reference to this FVector2.
-         */
-        constexpr FVector2& operator=(FVector2&& other) noexcept = default;
-
-        /**
-         * @brief + operator with a float
-         *
-         * Adds a float to FVector2, creating a new FVector2.
-         *
-         * @param num The float to add.
-         * @return A new FVector2 with the added float.
-         */
-        constexpr FVector2 operator+(float num) const noexcept {
-            return FVector2(X + num, Y + num);
-        }
-
-        /**
-         * @brief - operator with a float
-         *
-         * Subtracts a float from FVector2, creating a new FVector2.
-         *
-         * @param num The float to subtract.
-         * @return A new FVector2 with the subtracted float.
-         */
-        constexpr FVector2 operator-(float num) const noexcept {
-            return FVector2(X - num, Y - num);
-        }
-
-
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the FVector2 by a float, creating a new FVector2.
-         *
-         * @param num The float to multiply.
-         * @return A new FVector2 with the multiplied float.
-         */
-        constexpr FVector2 operator*(float num) const noexcept {
-            return FVector2(X * num, Y * num);
-        }
-    };
-    
-    // Literal type
-    class FVector3 : public FVector2 {
-    public:
-        float Z = 0;
-
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the FVector3 with the given x, y, and z values.
-         *
-         * @param x The x-coordinate. Default is 0.0f.
-         * @param y The y-coordinate. Default is 0.0f.
-         * @param z The z-coordinate. Default is 0.0f.
-         */
-        constexpr FVector3(float x = 0.0f, float y = 0.0f, float z = 0.0f) noexcept
-            : FVector2(x, y), Z(z) {}
-
-        /**
-         * @brief Copy constructor
-         *
-         * Initializes the FVector3 by copying another FVector3.
-         *
-         * @param other The FVector3 to copy.
-         */
-        constexpr FVector3(const FVector3& other) noexcept = default;
-
-        /**
-         * @brief Move constructor
-         *
-         * Initializes the FVector3 by moving another FVector3.
-         *
-         * @param other The FVector3 to move.
-         */
-        constexpr FVector3(FVector3&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another FVector3 to this one by copying its values.
-         *
-         * @param other The FVector3 to copy.
-         * @return A reference to this FVector3.
-         */
-        constexpr FVector3& operator=(const FVector3& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Assigns another FVector3 to this one by moving its values.
-         *
-         * @param other The FVector3 to move.
-         * @return A reference to this FVector3.
-         */
-        constexpr FVector3& operator=(FVector3&& other) noexcept = default;
-
-        /**
-         * @brief + operator with a float
-         *
-         * Adds a float to FVector3, creating a new FVector3.
-         *
-         * @param num The float to add.
-         * @return A new FVector3 with the added float.
-         */
-        constexpr FVector3 operator+(float num) const noexcept {
-            return FVector3(X + num, Y + num, Z + num);
-        }
-
-
-        /**
-         * @brief - operator with a float
-         *
-         * Subtracts a float from FVector3, creating a new FVector3.
-         *
-         * @param num The float to subtract.
-         * @return A new FVector3 with the subtracted float.
-         */
-        constexpr FVector3 operator-(float num) const noexcept {
-            return FVector3(X - num, Y - num, Z - num);
-        }
-
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the FVector3 by a float, creating a new FVector3.
-         *
-         * @param num The float to multiply.
-         * @return A new FVector3 with the multiplied float.
-         */
-        constexpr FVector3 operator*(float num) const noexcept {
-            return FVector3(X * num, Y * num, Z * num);
-        }
-
-        /**
-         * @brief + operator with another FVector3
-         *
-         * Adds another FVector3 to this one, creating a new FVector3.
-         *
-         * @param other The FVector3 to add.
-         * @return A new FVector3 with the added values.
-         */
-        constexpr FVector3 operator+(const FVector3& other) const noexcept {
-            return FVector3(X + other.X, Y + other.Y, Z + other.Z);
-        }
-
-        /**
-         * @brief - operator with another FVector3
-         *
-         * Subtracts another FVector3 from this one, creating a new FVector3.
-         *
-         * @param other The FVector3 to subtract.
-         * @return A new FVector3 with the subtracted values.
-         */
-        constexpr FVector3 operator-(const FVector3& other) const noexcept {
-            return FVector3(X - other.X, Y - other.Y, Z - other.Z);
-        }
-
-        /**
-         * @brief * operator with another FVector3 (component-wise multiplication)
-         *
-         * Performs component-wise multiplication with another FVector3, creating a new FVector3.
-         *
-         * @param other The FVector3 to multiply.
-         * @return A new FVector3 with the component-wise multiplied values.
-         */
-        constexpr FVector3 operator*(const FVector3& other) const noexcept {
-            return FVector3(X * other.X, Y * other.Y, Z * other.Z);
-        }
-    };
-
-    class IVector2{
-    public:
-        short X = 0;  //Horizontal
-        short Y = 0;  //Vertical
-
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the IVector2 with the given x and y values.
-         *
-         * @param x The x-coordinate. Default is 0.
-         * @param y The y-coordinate. Default is 0.
-         */
-        constexpr IVector2(short x = 0, short y = 0) noexcept
-            : X(x), Y(y) {}
-
-        /**
-         * @brief Copy constructor
-         * 
-         * Initializes the IVector2 by copying another IVector2.
-         * @param other The IVector2 to copy.
-         */
-        constexpr IVector2(const IVector2& other) noexcept = default;
-
-        /**
-         * @brief Move constructor
-         * 
-         * Initializes the IVector2 by moving another IVector2.
-         * @param other The IVector2 to move.
-         */
-        constexpr IVector2(IVector2&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another IVector2 to this one by copying its values.
-         *
-         * @param other The IVector2 to copy.
-         * @return A reference to this IVector2.
-         */
-        constexpr IVector2& operator=(const IVector2& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Moves the values from another IVector2 to this one.
-         *
-         * @param other The IVector2 to move.
-         * @return A reference to this IVector2.
-         */
-        constexpr IVector2& operator=(IVector2&& other) noexcept = default;
-
-        /**
-         * @brief += operator with a pointer to an IVector2
-         *
-         * Adds the values of the IVector2 pointed to by the pointer to this IVector2.
-         *
-         * @param other The pointer to the IVector2 to add.
-         */
-        constexpr void operator+=(IVector2* other) noexcept {
-            X += other->X;
-            Y += other->Y;
-        }
-
-        /**
-         * @brief += operator with an FVector2
-         *
-         * Adds the values of the FVector2 to this IVector2.
-         *
-         * @param other The FVector2 to add.
-         */
-        constexpr void operator+=(FVector2 other) noexcept {
-            X += static_cast<short>(other.X);
-            Y += static_cast<short>(other.Y);
-        }
-
-        /**
-         * @brief += operator with another IVector2
-         *
-         * Adds the values of another IVector2 to this one.
-         *
-         * @param other The IVector2 to add.
-         */
-        constexpr void operator+=(IVector2 other) noexcept {
-            X += other.X;  // Add the x-coordinate
-            Y += other.Y;  // Add the y-coordinate
-        }
-
-        /**
-         * @brief + operator with another IVector2
-         *
-         * Creates a new IVector2 with the added values of this IVector2 and the other IVector2.
-         *
-         * @param other The IVector2 to add.
-         * @return A new IVector2 with the added values.
-         */
-        constexpr IVector2 operator+(const IVector2& other) const noexcept {
-            return IVector2(X + other.X, Y + other.Y);
-        }
-
-        /**
-         * @brief - operator with another IVector2
-         *
-         * Creates a new IVector2 with the subtracted values of this IVector2 and the other IVector2.
-         *
-         * @param other The IVector2 to subtract.
-         * @return A new IVector2 with the subtracted values.
-         */
-        constexpr IVector2 operator-(const IVector2& other) const noexcept {
-            return IVector2(X - other.X, Y - other.Y);
-        }
-
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the IVector2 by a float, creating a new IVector2.
-         *
-         * @param num The float to multiply.
-         * @return A new IVector2 with the multiplied float.
-         */
-        constexpr IVector2 operator*(float num) const noexcept {
-            return IVector2(static_cast<short>(X * num), static_cast<short>(Y * num)); // Multiply each coordinate by num
-        }
-
-        /**
-         * @brief == operator with another IVector2
-         * 
-         * Compares the IVector2 with another IVector2.
-         * 
-         * @param other The IVector2 to compare with.
-         * @return True if the IVector2s are equal, otherwise false.
-         */
-        constexpr bool operator==(const IVector2& other) const noexcept {
-            return X == other.X && Y == other.Y; // Check if the coordinates are equal
-        }
-
-        /**
-         * @brief != operator with another IVector2
-         * 
-         * Compares the IVector2 with another IVector2.
-         * 
-         * @param other The IVector2 to compare with.
-         * @return False if the IVector2s are equal, otherwise true.
-         */
-        constexpr bool operator!=(const IVector2& other) const noexcept {
-            return X != other.X || Y != other.Y; // Check if the coordinates are not equal
-        }
-
-        /**
-         * @brief Converts the IVector2 to a string
-         *
-         * Converts the IVector2 to a string representation.
-         *
-         * @return A string representation of the IVector2.
-         */
-        std::string To_String() const {
-            return std::to_string(X) + ", " + std::to_string(Y);
-        }
-    };
-
-    class IVector3 : public IVector2{
-    public:
-        short Z = 0;  //priority (the higher the more likely it will be at top).
-
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the IVector3 with the given x, y and z values.
-         *
-         * @param x The x-coordinate. Default is 0.
-         * @param y The y-coordinate. Default is 0.
-         * @param z The z-coordinate. Default is 0.
-         */
-        constexpr IVector3(short x = 0, short y = 0, short z = 0) noexcept
-            : IVector2(x, y), Z(z) {}
-
-        /**
-         * @brief Copy constructor
-         *
-         * Initializes the IVector3 by copying another IVector3.
-         *
-         * @param other The IVector3 to copy.
-         */
-        constexpr IVector3(const IVector3& other) noexcept = default;
-
-        /**
-         * @brief Move constructor
-         *
-         * Initializes the IVector3 by moving another IVector3.
-         *
-         * @param other The IVector3 to move.
-         */
-        constexpr IVector3(IVector3&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another IVector3 to this one by copying its values.
-         *
-         * @param other The IVector3 to copy.
-         * @return A reference to this IVector3.
-         */
-        constexpr IVector3& operator=(const IVector3& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Moves the values from another IVector3 to this one.
-         *
-         * @param other The IVector3 to move.
-         * @return A reference to this IVector3.
-         */
-        constexpr IVector3& operator=(IVector3&& other) noexcept = default;
-
-        /**
-         * @brief += operator with a pointer to an IVector3
-         *
-         * Adds the values of the IVector3 pointed to by the pointer to this IVector3.
-         *
-         * @param other The pointer to the IVector3 to add.
-         */
-        constexpr void operator+=(IVector3* other) noexcept {
-            X += other->X;
-            Y += other->Y;
-            Z += other->Z;
-        }
-
-        /**
-         * @brief += operator with another IVector3
-         *
-         * Adds the values of another IVector3 to this one.
-         *
-         * @param other The IVector3 to add.
-         */
-        constexpr void operator+=(IVector3 other) noexcept {
-            X += other.X;  // Add the x-coordinate
-            Y += other.Y;  // Add the y-coordinate
-            Z += other.Z;  // Add the z-coordinate
-        }
-
-        /**
-         * @brief + operator with another IVector3
-         *
-         * Creates a new IVector3 with the added values of this IVector3 and the other IVector3.
-         *
-         * @param other The IVector3 to add.
-         * @return A new IVector3 with the added values.
-         */
-        constexpr IVector3 operator+(const IVector3& other) const noexcept {
-            return IVector3(X + other.X, Y + other.Y, Z + other.Z);
-        }
-
-        constexpr IVector3 operator-(const IVector3& other) const noexcept {
-            return IVector3(X - other.X, Y - other.Y, Z - other.Z);
-        }
-
-        constexpr IVector3 operator+(int constant) const noexcept {
-            return IVector3(X + constant, Y + constant, Z + constant); // Add the constant to each coordinate
-        }
-
-        constexpr IVector3 operator-(int constant) const noexcept {
-            return IVector3(X - constant, Y - constant, Z - constant); // Subtract the constant from each coordinate
-        }
-
-
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the IVector3 by a float, creating a new IVector3.
-         *
-         * @param num The float to multiply.
-         * @return A new IVector3 with the multiplied float.
-         */
-        constexpr IVector3 operator*(float num) const noexcept {
-            return IVector3(X * num, Y * num, Z * num); // Multiply each coordinate by num
-        }
-
-        /**
-         * @brief == operator with another IVector3
-         * 
-         * Compares the IVector3 with another IVector3.
-         * 
-         * @param other The IVector3 to compare with.
-         * @return True if the IVector3s are equal, otherwise false.
-         */
-        constexpr bool operator==(const IVector3& other) const noexcept {
-            return X == other.X && Y == other.Y && Z == other.Z; // Check if the coordinates are equal
-        }
-
-        /**
-         * @brief != operator with another IVector3
-         * 
-         * Compares the IVector3 with another IVector3.
-         * 
-         * @param other The IVector3 to compare with.
-         * @return False if the IVector3s are equal, otherwise true.
-         */
-        constexpr bool operator!=(const IVector3& other) const noexcept {
-            return X != other.X || Y != other.Y || Z != other.Z; // Check if the coordinates are not equal
-        }
-
-        /**
-         * @brief Converts the IVector3 to a string.
-         * 
-         * This function returns a string in the format "X, Y, Z" where X, Y, and Z are the coordinates of the IVector3.
-         * The output string is designed to be human-readable, and is not designed to be efficient for serialization or other purposes.
-         * 
-         * @return A string representation of the IVector3.
-         */
-        std::string To_String(){
-            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
-        }
-    
-        /**
-         * @brief Converts the IVector3 to a string.
-         * 
-         * This function returns a string in the format "X, Y, Z" where X, Y, and Z are the coordinates of the IVector3.
-         * The output string is designed to be human-readable, and is not designed to be efficient for serialization or other purposes.
-         * 
-         * @return A string representation of the IVector3.
-         */
-        std::string To_String() const {
-            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
-        }
-    };
-
-
-    class event{
-    public:
-        unsigned long long criteria;
-    };
-
-    class input : public event{
-    public:
-        unsigned short X = 0;
-        unsigned short Y = 0;
-        char data = 0;
-
-        // The input information like the character written.
-        input(char d, unsigned long long t){
-            data = d;
-            criteria = t;
-        }
-
-        input(IVector3 c, unsigned long long t){
-            X = (unsigned short )c.X;
-            Y = (unsigned short )c.Y;
-            criteria = t;
-        }
-    };
-
-    class action : public event{
-    public:
-        class element* host = nullptr;
-
-        std::function<bool(GGUI::event*)> Job;
-        
-        std::string ID; 
-    
-        action() = default;
-        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, std::string id){
-            criteria = Criteria;
-            Job = job;
-            host = nullptr;
-            ID = id;
-        }
-
-        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, class element* Host, std::string id){
-            criteria = Criteria;
-            Job = job;
-            host = Host;
-            ID = id;
-        }
-    };
-
-    namespace MEMORY_FLAGS{
-        inline unsigned char PROLONG_MEMORY     = 1 << 0;
-        inline unsigned char RETRIGGER          = 1 << 1;
-    };
-
-    class memory : public action{
-    public:
-        std::chrono::high_resolution_clock::time_point startTime;
-        size_t endTime = 0;
-
-        // By default all memories automatically will not prolong each other similar memories.
-        unsigned char flags = 0x0;
-
-        // When the job starts, job, prolong previous similar job by this time.
-        memory(size_t end, std::function<bool(GGUI::event*)>job, unsigned char Flags = 0x0, std::string id = ""){
-            startTime = std::chrono::high_resolution_clock::now();
-            endTime = end;
-            Job = job;
-            flags = Flags;
-            ID = id;
-        }
-
-        bool is(const unsigned char f) const{
-            return (flags & f) > 0;
-        }
-
-        void set(const unsigned char f){
-            flags |= f;
-        }
-    };
-
-    namespace INTERNAL{
-        struct fittingArea{
-            IVector2 negativeOffset;
-            IVector2 start;
-            IVector2 end;
-        };
-
-        enum class borderConnection{
-            NONE    = 0 << 0,
-            UP      = 1 << 0,
-            DOWN    = 1 << 1,
-            LEFT    = 1 << 2,
-            RIGHT   = 1 << 3
-        };
-
-        constexpr bool operator==(const borderConnection lhs, const borderConnection rhs) {
-            return static_cast<int>(lhs) == static_cast<int>(rhs);
-        }
-
-        constexpr borderConnection operator|(const borderConnection lhs, const borderConnection rhs) {
-            return static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
-        }
-
-        constexpr void operator|=(borderConnection& lhs, const borderConnection rhs) {
-            lhs = static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
-        }
-
-        enum class STAIN_TYPE{
-            CLEAN = 0,              // No change
-            COLOR = 1 << 0,         // BG and other color related changes
-            EDGE = 1 << 1,          // Title and border changes.
-            DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
-            STRETCH = 1 << 3,       // Width and or height changes.
-            STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently.
-            MOVE = 1 << 5,          // Enabled, to signal absolute position caching.
-            FINALIZE = 1 << 6,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
-            RESET = 1 << 7,         // This is to remove redundant STRETCH flagging.
-        };
-
-        /**
-         * @brief Performs bitwise OR operation on two STAIN_TYPE values.
-         * @details This operator allows combining two STAIN_TYPE values using a bitwise OR operation.
-         *          It returns the result as an unsigned integer.
-         *
-         * @param a The first STAIN_TYPE value.
-         * @param b The second STAIN_TYPE value.
-         * @return The result of the bitwise OR operation as an unsigned integer.
-         */
-        constexpr unsigned int operator|(const STAIN_TYPE a, const STAIN_TYPE b) {
-            // Cast both STAIN_TYPE values to unsigned integers and perform the bitwise OR operation.
-            return static_cast<unsigned int>(a) | static_cast<unsigned int>(b);
-        }
-
-        /**
-         * @brief Performs bitwise OR operation on a STAIN_TYPE value and an unsigned integer.
-         * @details This operator allows combining a STAIN_TYPE value with an unsigned integer using a bitwise OR operation.
-         *          It returns the result as an unsigned integer.
-         *
-         * @param a The STAIN_TYPE value.
-         * @param b The unsigned integer.
-         * @return The result of the bitwise OR operation as an unsigned integer.
-         */
-        constexpr unsigned int operator|(const STAIN_TYPE a, const unsigned int b){
-            return static_cast<unsigned int>(a) | b;
-        }
-
-        /**
-         * @brief Performs bitwise OR operation on an unsigned integer and a STAIN_TYPE value.
-         * @details This operator allows combining an unsigned integer with a STAIN_TYPE value using a bitwise OR operation.
-         *          It returns the result as an unsigned integer.
-         *
-         * @param a The unsigned integer.
-         * @param b The STAIN_TYPE value.
-         * @return The result of the bitwise OR operation as an unsigned integer.
-         */
-        constexpr unsigned int operator|(const unsigned int a, const STAIN_TYPE b){
-            return a | static_cast<unsigned int>(b);
-        }
-
-        class STAIN{
-        public:
-            STAIN_TYPE Type = STAIN_TYPE::CLEAN;
-
-            /**
-             * @brief Checks if the specified STAIN_TYPE is set in the current STAIN object.
-             * @details This function checks if a given STAIN_TYPE flag is set in the current
-             *          STAIN object. For the CLEAN flag, it checks if the type is less than
-             *          or equal to CLEAN. For other flags, it performs a bitwise AND operation.
-             *
-             * @param f The STAIN_TYPE flag to check.
-             * @return true if the specified flag is set; false otherwise.
-             */
-            constexpr bool is(const STAIN_TYPE f) const {
-                // Special handling for the CLEAN flag
-                if (f == STAIN_TYPE::CLEAN) {
-                    return Type <= f;
-                }
-                // Check if the specified flag is set using bitwise AND
-                return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) == static_cast<unsigned int>(f);
-            }
-
-            constexpr bool has(const unsigned int f) const {
-                return (static_cast<unsigned int>(Type) & static_cast<unsigned int>(f)) != 0;
-            }
-
-            /**
-             * @brief Clears a STAIN_TYPE flag from the current STAIN object.
-             * @details This function clears a given STAIN_TYPE flag from the current
-             *          STAIN object. It performs a bitwise AND operation with the
-             *          bitwise compliment of the specified flag.
-             *
-             * @param f The STAIN_TYPE flag to clear.
-             */
-            constexpr void Clean(const STAIN_TYPE f){
-                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~static_cast<unsigned int>(f));
-            }
-
-            /**
-             * @brief Clears a STAIN_TYPE flag from the current STAIN object.
-             * @details This function clears a given STAIN_TYPE flag from the current
-             *          STAIN object. It performs a bitwise AND operation with the
-             *          bitwise compliment of the specified flag.
-             *
-             * @param f The STAIN_TYPE flag to clear.
-             */
-            constexpr void Clean(const unsigned int f){
-                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) & ~f);
-            }
-
-            /**
-             * @brief Marks the specified STAIN_TYPE flag as dirty.
-             * @details This function sets a given STAIN_TYPE flag on the current
-             *          STAIN object, indicating that the element needs to be reprocessed
-             *          for the specified attributes.
-             *
-             * @param f The STAIN_TYPE flag to set.
-             */
-            constexpr void Dirty(const STAIN_TYPE f) {
-                // Set the specified flag using bitwise OR
-                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | static_cast<unsigned int>(f));
-            }
-
-            /**
-             * @brief Marks the specified STAIN_TYPE flag as dirty.
-             * @details This function sets a given STAIN_TYPE flag on the current
-             *          STAIN object, indicating that the element needs to be reprocessed
-             *          for the specified attributes.
-             *
-             * @param f The STAIN_TYPE flag to set.
-             */
-            constexpr void Dirty(const unsigned int f){
-                // Set the specified flag using bitwise OR
-                Type = (STAIN_TYPE)(static_cast<unsigned int>(Type) | f);
-            }
-
-        };
-
-        enum class ENCODING_FLAG{
-            NONE        = 0 << 0,
-            START       = 1 << 0,
-            END         = 1 << 1
-        };
-
-        constexpr bool operator== (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            return static_cast<unsigned char>(a) == static_cast<unsigned char>(b);
-        }
-
-        constexpr void operator|= (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            a = static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
-        }
-
-        constexpr ENCODING_FLAG operator&(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) & static_cast<unsigned char>(b));
-        }
-
-        constexpr ENCODING_FLAG operator|(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
-        }
-
-        enum class STATE{
-            UNKNOWN,
-
-            INIT,
-            DESTROYED,
-            HIDDEN,
-            SHOWN
-
-        };
-
-        enum class ALLOCATION_TYPE{
-            UNKNOWN         = 0 << 0,
-            STACK           = 1 << 0,
-            HEAP            = 1 << 1,
-            DATA            = 1 << 2
-        };
-
-        namespace LOGGER{
-            extern void Log(std::string Text);
-        }
-
-        namespace atomic{
-            template<typename T>
-            class guard {
-            public:
-                std::mutex shared; // Mutex to guard shared data
-                std::unique_ptr<T> data;
-
-                /**
-                 * @brief Constructs a Guard object and initializes its Data member.
-                 * 
-                 * This constructor creates a unique pointer to an instance of type T
-                 * and assigns it to the Data member of the Guard object.
-                 */
-                guard() : data(std::make_unique<T>()) {}
-
-                /**
-                 * @brief Functor to execute a job with thread safety.
-                 * 
-                 * This operator() function takes a std::function that operates on a reference to a T object.
-                 * It ensures that the job is executed with mutual exclusion by using a std::lock_guard to lock
-                 * the mutex. If the job throws an exception, it catches it and reports the failure.
-                 * 
-                 * @param job A std::function that takes a reference to a T object and performs some operation.
-                 * 
-                 * @throws Any exception thrown by the job function will be caught and reported.
-                 */
-                void operator()(std::function<void(T&)> job) {
-                    std::lock_guard<std::mutex> lock(shared); // Automatically manages mutex locking and unlocking
-                    try {
-                        job(*data);
-                    } catch (...) {
-                        INTERNAL::LOGGER::Log("Failed to execute the function!");
-                    }
-                }
-
-                /**
-                 * @brief Reads the data in a thread-safe manner.
-                 * 
-                 * This function acquires a lock on the shared mutex to ensure that the data
-                 * is read in a thread-safe manner. It returns a copy of the data.
-                 * 
-                 * @return T A copy of the data.
-                 */
-                T read() {
-                    std::lock_guard<std::mutex> lock(shared);
-                    return *data;
-                }
-
-                /**
-                 * @brief Destructor for the Guard class.
-                 *
-                 * This destructor ensures that the Data object is properly destroyed
-                 * by acquiring a lock on the Shared mutex before resetting the Data.
-                 * The use of std::lock_guard ensures that the mutex is automatically
-                 * released when the destructor exits, preventing potential deadlocks.
-                 */
-                ~guard() {
-                    std::lock_guard<std::mutex> lock(shared);
-                    data.reset(); // Ensures proper destruction
-                }
-            };   
-        }
-    
-        // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
-        class Carry{
-        public:
-            bool Resize = false;
-            bool Terminate = false;     // Signals the shutdown of subthreads.
-
-            ~Carry() = default;
-        };
-    }
-}
-
-#endif
-#ifndef _LOGGER_H_
-#define _LOGGER_H_
-
-#include <queue>
-
-
-
-namespace GGUI{
-
-    class fileStream;
-
-    namespace INTERNAL{
-        // Contains Logging utils.
-        namespace LOGGER{
-            // File handle for logging to files for Atomic access across different threads.
-            extern atomic::guard<fileStream> Handle;
-            extern thread_local std::queue<std::string>* Queue;
-
-            extern void Init();
-
-            extern void Log(std::string Text);
-
-            extern void RegisterCurrentThread();
-        };
-        
-        extern void reportStack(const std::string& problemDescription);
-
-        extern void loggerThread();
-    }
-    
-    /**
-     * @brief Reports an error to the user.
-     * @param Problem The error message to display.
-     * @note If the main window is not created yet, the error will be printed to the console.
-     * @note This function is thread safe.
-     */
-    extern void report(const std::string& problem);
-}
-
-#endif
-#ifndef _TEXT_FIELD_H_
-#define _TEXT_FIELD_H_
-
-
-
-
-
-
-
-
-
-namespace GGUI{
-    class textField : public element{
-    protected:
-        std::string Text = "";
-
-        // This will hold the text by lines, and does not re-allocate memory for whole text, only for indicies.
-        std::vector<INTERNAL::compactString> Text_Cache; 
-
-        /**
-         * @brief Updates the text cache list by newlines, and if no found then set the Text as the zeroth index.
-         * @details This function will also determine the longest line length and store it in the class.
-         * @note This function will also check if the lines can be appended to the previous line or not.
-         */
-        void updateTextCache();
-    public:
-
-        /**
-         * @brief Constructor for the Text_Field class.
-         * @details This constructor takes an optional Styling parameter, and an optional string parameter.
-         *          If the string parameter is not given, it defaults to an empty string.
-         *          If the Styling parameter is not given, it defaults to a Styling object with
-         *          the default values for the Height and Width properties.
-         *          The Styling parameter is used to set the style of the Text_Field object.
-         * @param text The text to be displayed in the Text_Field object.
-         * @param s The Styling object to use for the Text_Field object.
-         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Text_Field's style. Only use if you know what you're doing!!!
-         */
-        textField(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
-
-            // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
-            Text_Cache.reserve(getHeight());
-
-            if (getWidth() == 1 && getHeight() == 1){
-                allowDynamicSize(true);
-            }
-
-            // Update the text cache list by newlines, and if no found then set the Text as the zeroth index.
-            if (Embed_Styles_On_Construct)
-                updateTextCache();
-        }
-        
-        textField(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : textField(s, Embed_Styles_On_Construct){}
-
-        /**
-         * @brief Sets the text of the text field.
-         * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
-         * @param text The new text for the text field.
-         */
-        void setText(std::string text);
-
-        /**
-         * @brief Gets the text of the text field.
-         * @details This function returns the string containing the text of the text field.
-         * @return The text of the text field as a string.
-         */
-        std::string getText(){
-            return Text;
-        }
-
-        /**
-         * @brief Renders the text field into the Render_Buffer.
-         * @details This function processes the text field to generate a vector of UTF objects representing the current state.
-         * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
-         * @return A vector of UTF objects representing the rendered text field.
-         */
-        std::vector<GGUI::UTF>& render() override;
-
-        /**
-         * @brief Aligns text to the left within the text field.
-         * @param Result A vector of UTF objects to store the aligned text.
-         * @details This function iterates over each line in the Text_Cache and aligns them to the left side 
-         *          of the text field. The function respects the maximum height and width of the text field 
-         *          and handles overflow according to the Style settings.
-         */
-        void alignTextLeft(std::vector<UTF>& Result);
-        
-        /**
-         * @brief Aligns text to the right within the text field.
-         * @param Result A vector of UTF objects to store the aligned text.
-         * @details This function iterates over each line in the Text_Cache and aligns them to the right side
-         *          of the text field. The function respects the maximum height and width of the text field
-         *          and handles overflow according to the Style settings.
-         */
-        void alignTextRight(std::vector<UTF>& Result);
-        
-        /**
-         * @brief Aligns text to the center within the text field.
-         * @param Result A vector of UTF objects to store the aligned text.
-         * @details This function iterates over each line in the Text_Cache and aligns them to the center of the text field. The function respects the maximum height and width of the text field
-         *          and handles overflow according to the Style settings.
-         */
-        void alignTextCenter(std::vector<UTF>& Result);
-
-        /**
-         * @brief Listens for input and calls a function when user presses any key.
-         * @param Then A function that takes a character as input and does something with it.
-         * @details This function creates three actions (for key press, enter, and backspace) that listen for input when the text field is focused. If the event is a key press or enter, it
-         *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
-         *          dirty and updates the frame.
-         */
-        void input(std::function<void(textField*, char)> Then);
-
-        element* safeMove() const override {
-            return new textField();
-        }
-    };
-}
-
-#endif
-#ifndef _RENDERER_H_
-#define _RENDERER_H_
-
-#undef min
-#undef max
-
-#include <functional>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
-
-
-
-
-
-
-
-
-
-
-
-//GGUI uses the ANSI escape code
-//https://en.wikipedia.org/wiki/ANSI_escape_code
-namespace GGUI{
-
-    namespace INTERNAL{
-        class bufferCapture;
-
-        namespace atomic{
-            enum class status{
-                PAUSED,
-                REQUESTING_RENDERING,
-                RENDERING,
-                TERMINATED,
-                NOT_INITIALIZED
-            };
-
-            extern int LOCKED;
-
-            extern std::mutex Mutex;
-            extern std::condition_variable Condition;
-
-            extern status Pause_Render_Thread;
-        }
-
-        // Inits with 'NOW()' when created
-        class buttonState {
-        public:
-            bool State;
-            std::chrono::high_resolution_clock::time_point Capture_Time;
-
-            buttonState(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
-        };
-
-        extern std::vector<UTF>* Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
-        extern std::string* Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
-
-        extern std::vector<INTERNAL::bufferCapture*> Global_Buffer_Captures;
-
-        extern unsigned int Max_Width;
-        extern unsigned int Max_Height;
-
-        extern atomic::guard<std::vector<memory>> Remember;
-
-        extern std::vector<action*> Event_Handlers;
-        extern std::vector<input*> Inputs;
-        
-        extern std::unordered_map<std::string, element*> Element_Names;
-
-        extern element* Focused_On;
-        extern element* Hovered_On;
-
-        extern bool Platform_Initialized;
-
-        extern IVector3 Mouse;    
-        extern bool Mouse_Movement_Enabled;
-
-        extern std::unordered_map<std::string, buttonState> KEYBOARD_STATES;
-
-        extern time_t MAX_UPDATE_SPEED;
-        extern int Inputs_Per_Second;
-        extern int Inputs_Per_Query;
-
-        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
-
-        extern atomic::guard<std::unordered_map<int, styling>> Classes;
-        extern std::unordered_map<std::string, int> Class_Names;
-
-        extern element* Main;  
-
-        extern std::unordered_map<GGUI::canvas*, bool> Multi_Frame_Canvas;
-
-        // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
-        extern time_t MAX_UPDATE_SPEED;
-        extern time_t MIN_UPDATE_SPEED;    // Close approximation to 60 fps.
-        extern time_t CURRENT_UPDATE_SPEED;
-        extern float Event_Thread_Load;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
-
-        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
-        extern unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
-
-        extern std::string now();
-
-        extern std::string constructLoggerFileName();
-
-        /**
-         * @brief Initializes platform-specific settings for console handling.
-         * @details This function sets up the console handles and modes required for input and output operations.
-         *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
-         *          handling specific ANSI features.
-         */
-        extern void initPlatformStuff();
-        
-        
-        /**
-         * @brief Sleep for the specified amount of milliseconds.
-         * @details This function is used to pause the execution of the program for a specified amount of time.
-         *          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
-         *          while on Linux and macOS it calls the usleep function.
-         * @param mm The number of milliseconds to sleep.
-         */
-        void SLEEP(unsigned int milliseconds);
-        
-        /**
-         * @brief Renders the current frame to the console.
-         * 
-         * This function moves the console cursor to the top left corner of the screen
-         * and writes the contents of the Frame_Buffer to the console.
-         * 
-         * @note The number of bytes written to the console is stored in a temporary
-         * variable but is not used elsewhere in the function.
-         */
-        extern void renderFrame();
-
-        /**
-         * @brief Updates the maximum width and height of the console window.
-         * 
-         * This function retrieves the current console screen buffer information and updates
-         * the maximum width and height based on the console window dimensions. If the console
-         * information is not retrieved correctly, an error message is reported. Additionally,
-         * if the main window is active, its dimensions are set to the updated maximum width
-         * and height.
-         */
-        extern void updateMaxWidthAndHeight();
-        
-        /**
-         * @brief Queries and appends new input records to the existing buffered input.
-         *
-         * This function reads input records from the console and appends them to the 
-         * existing buffered input which has not yet been processed. It uses the previous 
-         * size of the raw input buffer to determine the starting point for new input records.
-         *
-         * @note The function ensures that negative numbers do not create overflows by 
-         *       using the maximum of the remaining capacity and the total capacity.
-         *
-         * @param None
-         * @return None
-         */
-        extern void queryInputs();
-        
-        /**
-         * @brief Gracefully shuts down the application.
-         *
-         * This function performs a series of steps to gracefully shut down the application:
-         * 1. Logs the initiation of the termination process.
-         * 2. Signals subthreads to terminate.
-         * 3. Waits for all subthreads to join.
-         * 4. Reverts the console to its normal mode.
-         * 5. Cleans up platform-specific resources and settings.
-         * 6. Logs the successful shutdown of the application.
-         * 7. Exits the application with the specified exit code.
-         *
-         * @param signum The exit code to be used when terminating the application.
-         */
-        extern void EXIT(int Signum = 0);
-
-        extern void waitForThreadTermination();
-
-        /**
-         * @brief Processes mouse input events and updates the input list.
-         * @details This function checks the state of mouse buttons (left, right, and middle)
-         *          and determines if they have been pressed or clicked. It compares the current
-         *          state with the previous state and the duration the button has been pressed.
-         *          Based on these checks, it creates corresponding input objects and adds them
-         *          to the Inputs list.
-         */
-        extern void mouseAPI();
-
-        /**
-         * @brief Handles mouse scroll events.
-         * @details This function checks if the mouse scroll up or down button has been pressed and if the focused element is not null.
-         *          If the focused element is not null, it calls the scroll up or down function on the focused element.
-         */
-        extern void scrollAPI();
-
-        /**
-         * @brief Returns the length of a Unicode character based on the first byte.
-         * @details This function takes the first byte of a Unicode character and returns its length in bytes.
-         *          If the character is not a Unicode character, it returns 1.
-         * @param first_char The first byte of the character.
-         * @return The length of the character in bytes.
-         */
-        extern int getUnicodeLength(char first_char);
-
-        /**
-         * @brief Gets the current maximum width of the terminal.
-         * @details This function returns the current maximum width of the terminal. If the width is 0, it will set the carry flag to indicate that a resize is needed to be performed.
-         *
-         * @return The current maximum width of the terminal.
-         */
-        extern int getMaxWidth();
-
-        /**
-         * @brief Gets the current maximum height of the terminal.
-         * @details This function returns the current maximum height of the terminal. If the height is 0, it will set the carry flag to indicate that a resize is needed to be performed.
-         *
-         * @return The current maximum height of the terminal.
-         */
-        extern int getMaxHeight();
-
-        /**
-         * @brief Converts a vector of UTFs into a Super_String.
-         * @details This function takes a vector of UTFs, and converts it into a Super_String. The resulting Super_String is stored in a cache, and the cache is resized if the window size has changed.
-         * @param Text The vector of UTFs to convert.
-         * @param Width The width of the window.
-         * @param Height The height of the window.
-         * @return A pointer to the resulting Super_String.
-         */
-        extern std::vector<compactString>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
-        
-        /**
-         * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
-         * @details This function is a lambda function that is used by the Atomic::Guard class to prolong or delete memories in the smart memory system.
-         *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
-         */
-        extern void recallMemories();
-
-        /**
-         * @brief Removes focus from the currently focused element and its children.
-         * @details This function checks if there is a currently focused element.
-         *          If there is, it sets the focus state on the element and its children to false.
-         *          Focus is only removed if the element's current focus state differs from the desired state.
-         */
-        extern void unFocusElement();
-
-        /**
-         * @brief Removes the hover state from the currently hovered element and its children.
-         * @details This function checks if there is a currently hovered element.
-         *          If there is, it sets the hover state on the element and its children to false.
-         *          Hover is only removed if the element's current hover state differs from the desired state.
-         */
-        extern void unHoverElement();
-
-        /**
-         * @brief Updates the currently focused element to a new candidate.
-         * @details This function checks if the new candidate is the same as the current focused element.
-         *          If not, it removes the focus from the current element and all its children.
-         *          Then, it sets the focus on the new candidate element and all its children.
-         * @param new_candidate The new element to focus on.
-         */
-        extern void updateFocusedElement(GGUI::element* new_candidate);
-
-        /**
-         * @brief Updates the currently hovered element to a new candidate.
-         * @details This function checks if the new candidate is the same as the current hovered element.
-         *          If not, it removes the hover state from the current element and all its children.
-         *          Then, it sets the hover state on the new candidate element and all its children.
-         * @param new_candidate The new element to hover on.
-         */
-        extern void updateHoveredElement(GGUI::element* new_candidate);
-
-        /**
-         * @brief Handles all events in the system.
-         * @details This function goes through all event handlers and checks if the event criteria matches any of the inputs.
-         *          If a match is found, it calls the event handler job with the input as an argument.
-         *          If the job is successful, it removes the input from the list of inputs.
-         *          If the job is unsuccessful, it reports an error.
-         */
-        extern void eventHandler();
-
-        /**
-         * Get the ID of a class by name, assigning a new ID if it doesn't exist.
-         * 
-         * @param n The name of the class.
-         * @return The ID of the class.
-         */
-        extern int getFreeClassID(std::string n);
-
-        /**
-         * @brief Initializes the GGUI system and returns the main window.
-         * 
-         * @return The main window of the GGUI system.
-         */
-        extern GGUI::element* initGGUI();
-
-        /**
-         * @brief Nests a text buffer into a parent buffer while considering the childs position and size.
-         * 
-         * @param Parent The parent element which the text is being nested into.
-         * @param child The child element which's text is being nested.
-         * @param Text The text buffer to be nested.
-         * @param Parent_Buffer The parent buffer which the text is being nested into.
-         */
-        extern void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
-
-        /**
-         * @brief Handles the pressing of the tab key.
-         * @details This function selects the next tabbed element as focused and not hovered.
-         *          If the shift key is pressed, it goes backwards in the list of tabbed elements.
-         */
-        extern void handleTabulator();
-
-        /**
-         * @brief Handles escape key press events.
-         * @details This function checks if the escape key has been pressed and if the focused element is not null.
-         *          If the focused element is not null, it calls the Un_Focus_Element function to remove the focus.
-         *          If the focused element is null but the hovered element is not null, it calls the Un_Hover_Element
-         *          function to remove the hover.
-         */
-        extern void handleEscape();
-
-        /**
-         * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
-         * 
-         * @param Buffer A vector of UTF elements to be encoded.
-         * @details The function marks the beginning and end of color strips within the buffer. 
-         *          It checks each UTF element's foreground and background colors with its adjacent elements
-         *          to determine where encoding strips start and end.
-         */
-        extern void encodeBuffer(std::vector<GGUI::UTF>* Buffer);
-
-        /**
-         * @brief Notifies all global buffer capturers about the latest data to be captured.
-         *
-         * This function is used to inform all global buffer capturers about the latest data to be captured.
-         * It iterates over all global buffer capturers and calls their Sync() method to update their data.
-         *
-         * @param informer Pointer to the buffer capturer with the latest data.
-         */
-        extern void informAllGlobalBufferCaptures(bufferCapture* informer);
-    }
-
-    /**
-     * @brief Updates the frame.
-     * @details This function updates the frame. It's the main entry point for the rendering thread.
-     * @note This function will return immediately if the rendering thread is paused.
-     */
-    extern void updateFrame();
-    
-    /**
-     * @brief Pauses the rendering thread.
-     * @details This function pauses the rendering thread. The thread will wait until the rendering thread is resumed.
-     */
-    extern void pauseGGUI();
-
-    /**
-     * @brief Resumes the rendering thread.
-     * @details This function resumes the rendering thread after it has been paused.
-     * @param restore_render_to The status to restore the rendering thread to.
-     */
-    extern void resumeGGUI();
-
-    /**
-     * @brief Pauses all other GGUI internal threads and calls the given function.
-     * @details This function will pause all other GGUI internal threads and call the given function.
-     * @param f The function to call.
-     */
-    extern void pauseGGUI(std::function<void()> f);
-
-    /**
-     * @brief Use GGUI in a simple way.
-     * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, add all the elements to the root window, sleep for the given amount of milliseconds, and then exit GGUI.
-     * @param App The whole GGUI Application that GGUI holds.
-     * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
-     */
-    extern void GGUI(STYLING_INTERNAL::styleBase& App, unsigned long long Sleep_For = 0);
-
-    /**
-     * @brief Calls the GGUI function with the provided style and sleep duration.
-     *
-     * This function forwards the given style object and sleep duration to another
-     * overload of the GGUI function. It is typically used to initialize or update
-     * the graphical user interface with specific styling and timing parameters.
-     *
-     * @param App An rvalue reference to a STYLING_INTERNAL::style_base object representing the application's style.
-     * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
-     */
-    extern void GGUI(STYLING_INTERNAL::styleBase&& App, unsigned long long Sleep_For = 0);
-
-    /**
-    * @brief Retrieves an element by name.
-    * @details This function takes a string argument representing the name of the element
-    *          and returns a pointer to the element if it exists in the global Element_Names map.
-    * @param name The name of the element to retrieve.
-    * @return A pointer to the element if it exists; otherwise, nullptr.
-    */
-    extern element* getElement(std::string name);
-
-    /**
-     * @brief Retrieves a vector of pointers to elements of type T.
-     * 
-     * This template function delegates the retrieval of elements to the INTERNAL::Main object.
-     * It returns a std::vector containing pointers to elements of the specified type T.
-     * 
-     * @tparam T The type of elements to retrieve.
-     * @return std::vector<T*> A vector of pointers to elements of type T.
-     */
-    template<typename T>
-    std::vector<T*> getElements(){
-        return INTERNAL::Main->getElements<T>();
-    }
-}
-
-#endif
 #ifndef _CANVAS_H_
 #define _CANVAS_H_
-
-
-
-
-
-
 
 
 
@@ -6800,1805 +7738,8 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _FILE_STREAMER_H_
-#define _FILE_STREAMER_H_
-
-
-
-
-
-
-#include <fstream>
-#include <functional>
-#include <unordered_map>
-#include <stdio.h>
-#include <deque>
-#include <fcntl.h>
-
-#if _WIN32
-    #include <io.h>
-#else
-    #include <unistd.h>
-#endif
-
-namespace GGUI{
-
-    /*
-        Utilities to manage file streams.
-    */
-
-    class fileStream;
-
-    extern std::unordered_map<std::string, fileStream*> File_Streamer_Handles;
-
-    /**
-     * @brief Adds an event handler that is called when the file is changed.
-     * @param File_Name The name of the file to add the event handler for.
-     * @param Handle The event handler to be called when the file is changed.
-     *
-     * If there is already a file handle for this file name, the event handler is
-     * added to the list of event handlers for that file. If not, a new file
-     * handle is created and the event handler is added to the list of event
-     * handlers for that file.
-     */
-    extern void addFileStreamHandle(std::string File_Handle, std::function<void()> Handle);
-
-    /**
-     * @brief Returns the file stream handle associated with the given file name.
-     * @param File_Name The name of the file to retrieve the handle for.
-     * @return The file stream handle associated with the given file name, or nullptr if no handle exists.
-     */
-    extern fileStream* getFileStreamHandle(std::string File_Name);
-
-    /**
-     * @brief Returns the current working directory of the program.
-     * @return The current working directory as a string.
-     *
-     * This function returns the current working directory of the program
-     * as a string. This is useful for finding the location of configuration
-     * files, data files, and other resources that need to be accessed from
-     * the program.
-     */
-    extern std::string getCurrentLocation();
- 
-    /**
-     * @brief Pulls the current contents of STDIN as a string.
-     * @return The contents of STDIN as a string.
-     *
-     * This function pulls the current contents of STDIN as a string. This is
-     * useful for applications that need to access the output of a previous
-     * process. Note that this function will only work if the application was
-     * started as a non TTY enabled application. If the application was started
-     * as a TTY enabled application, this function will fail.
-     */
-    extern std::string pullSTDIN();
-    
-    /**
-     * @brief Checks if the application was started from a TTY
-     * @return True if the application was started from a TTY, false otherwise
-     *
-     * This function checks if the application was started from a TTY
-     * by checking if STDIN is a TTY.
-     */
-    extern bool hasStartedAsTTY();
-
-    namespace INTERNAL{
-        // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
-        // These black boxes work like Stack Frames, where the data collected will be deleted when the current "Frame" capturer is destructed.
-        class bufferCapture : public std::streambuf{
-        private:
-            std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
-            std::string Current_Line = "";
-            std::deque<std::string> Console_History;
-
-            // Multiple handlers.
-            std::vector<std::function<void()>> On_Change = {};
-
-            // For speeding up.
-            std::unordered_map<bufferCapture*, bool> Synced;
-
-            std::string Name = "";
-        public:
-            // We could just search it from the global listing, but that would be slow.
-            // Stuck into the constructed position.
-            const bool Is_Global = false;
-
-            /**
-             * @brief Construct a BUFFER_CAPTURE
-             * @param on_change Function which will be called when the BUFFER_CAPTURE had changed.
-             * @param Name Name of the BUFFER_CAPTURE
-             * @param Global If true, this BUFFER_CAPTURE will inform all other global BUFFER_CAPTURES about the change.
-             *
-             * Construct a BUFFER_CAPTURE
-             * This will store the previous handle of std::cout.
-             * This will also insert this as the new cout output stream.
-             * If Global is true, this BUFFER_CAPTURE will inform all other global BUFFER_CAPTURES about the change.
-             */
-            bufferCapture(std::function<void()> on_change, std::string Name = "", bool Global = false);
-
-            /**
-             * @brief Default constructor
-             *
-             * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
-             * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
-             */
-            bufferCapture() = default;
-
-            /**
-             * @brief Destructor
-             *
-             * Called when the BUFFER_CAPTURE is going out of scope.
-             * This will call the Close() method to restore the original std::cout stream.
-             */
-            ~bufferCapture() {
-                close();
-            }
-            
-            /**
-             * @brief Handles character overflow for BUFFER_CAPTURE.
-             * @param c Character to be added to the current line.
-             * @return The result of writing the character to the original std::cout buffer.
-             *
-             * This function is called whenever the buffer overflows, typically when a new character is inserted. 
-             * It handles new lines by storing the current line in the console history and notifying all registered 
-             * change handlers. If this BUFFER_CAPTURE is global, it informs all other global BUFFER_CAPTURES about 
-             * the change.
-             */
-            int overflow(int c) override;
-            
-            /**
-             * @brief Close the BUFFER_CAPTURE and restore the original std::cout stream.
-             *
-             * This function is called when the BUFFER_CAPTURE is going out of scope, typically when it is destructed.
-             * It checks if the STD_COUT_RESTORATION_HANDLE is nullptr to avoid a double-close of the BUFFER_CAPTURE.
-             * If not nullptr, it sets the original std::cout stream back to the previous handle.
-             */
-            void close();
-
-            /**
-             * @brief Reads the console history and returns it as a single string.
-             *
-             * This function concatenates all lines stored in the console history
-             * and returns them as a single string, with each line separated by a newline character.
-             * 
-             * @return A string containing the entire console history.
-             */
-            std::string read();
-
-            /**
-             * @brief Adds a change handler function to the list.
-             * 
-             * This function will be called whenever a change occurs. 
-             * It appends the provided change handler function to the 
-             * internal list of change handlers.
-             *
-             * @param on_change The function to be called on change.
-             */
-            void addOnChangeHandler(std::function<void()> on_change){                
-                // Append the change handler function to the list
-                On_Change.push_back(on_change);
-            }
-
-            /**
-             * @brief Synchronizes this BUFFER_CAPTURE with the provided informer.
-             * 
-             * This function attempts to synchronize the current BUFFER_CAPTURE with another
-             * by sharing the latest console history lines. If the BUFFER_CAPTUREs have previously
-             * been synchronized, only the latest line is shared. Otherwise, it checks compatibility
-             * and synchronizes the entire history as needed.
-             * 
-             * @param Informer The BUFFER_CAPTURE containing the latest data to synchronize with.
-             * @return True if synchronization was successful, false otherwise.
-             */
-            bool sync(bufferCapture* Informer);
-
-            /**
-             * @brief Gets the name of this BUFFER_CAPTURE.
-             * 
-             * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
-             * @return The name of this BUFFER_CAPTURE.
-             */
-            std::string getName();
-
-            /**
-             * @brief Sets the name of this BUFFER_CAPTURE.
-             * @param Name The new name of this BUFFER_CAPTURE.
-             *
-             * This function sets the name of this BUFFER_CAPTURE.
-             * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
-             * @see Get_Name()
-             */
-            void setName(std::string name){
-                this->Name = name;
-            }
-        };
-
-    }
-
-    enum class FILE_STREAM_TYPE{
-        UN_INITIALIZED  = 0 << 0,
-        READ            = 1 << 0,
-        WRITE           = 1 << 1,
-        STD_CAPTURE     = 1 << 2
-    };
-
-    class fileStream{
-    private:
-        INTERNAL::bufferCapture* Buffer_Capture = nullptr;
-        std::fstream Handle;
-        std::vector<std::function<void()>> On_Change = {};
-        std::string Previous_Content = "";
-        unsigned long long Previous_Hash = 0;
-        FILE_STREAM_TYPE Type = FILE_STREAM_TYPE::UN_INITIALIZED;
-    public:
-        std::string Name = "";
-
-        /**
-         * @brief Constructor of the FILE_STREAM class.
-         * @param file_name The name of the file to open.
-         * @param on_change The event handler to be called when the file is changed.
-         * @param type describes the pipe method, READ/WRITE/STD_CAPTURE
-         * @param atomic If set will not add the file stream to the amassed file stream handle service.
-         *
-         * If read_from_std_cout is true, a new file is created where the std::cout is piped into.
-         * If there is already a file handle for this file name, the event handler is added to the list of event
-         * handlers for that file. If not, a new file handle is created and the event handler is added to the list
-         * of event handlers for the new file.
-         */
-        fileStream(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
-
-        /**
-         * @brief Intended for Logger Atomic::Guard, do not use as User!
-         */
-        fileStream() = default;
-
-        fileStream(const fileStream&) = delete;
-        fileStream& operator=(const fileStream&) = delete;
-
-        fileStream(fileStream&&) = default;  // Allow move
-        fileStream& operator=(fileStream&&) = default;
-
-        /**
-         * @brief Destructor for the FILE_STREAM class.
-         *
-         * This destructor ensures that resources are properly released
-         * when a FILE_STREAM object is destroyed. It closes the associated
-         * BUFFER_CAPTURE if it exists and also closes the file handle.
-         */
-        ~fileStream();
-
-        /**
-         * @brief Read the content of the file.
-         * @return The content of the file as a string.
-         * 
-         * This function will read the content of the file and return it as a string.
-         * If the file is empty, this function will return an empty string.
-         * If the file does not exist, or any other error occurs, this function will return an empty string and print an error message to the console.
-         * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
-         */
-        std::string Read();
-
-        /**
-         * @brief overwrites the given buffer into the file, clearing the previous content of said file.
-         * @param Buffer The buffer to write into the file.
-         */
-        void Write(std::string Buffer);
-
-        /**
-         * @brief Append line of text to the end of the file.
-         * @param Line The line of text to append to the file.
-         */
-        void Append(std::string Line);
-    
-        /**
-         * @brief Read the content of the file quickly without checking if the file has changed.
-         * @return The content of the file as a string.
-         *
-         * This function is faster than the normal Read() function, but it does not check if the file has changed.
-         * If the file has changed since the last call to Read(), this function will return the old content.
-         * If the file does not exist, or any other error occurs, this function will return an empty string and print an error message to the console.
-         * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
-         */
-        std::string Fast_Read() { return Previous_Content; }
-
-        /**
-         * @brief Checks if the file has changed and notifies the event handlers if so.
-         *
-         * This function is called by the FILE_STREAM class when it wants to check if the file has changed.
-         * It reads the new content from the file, calculates the hash of the new content, and compares it with the previous hash.
-         * If the hash has changed, it notifies all the event handlers by calling them.
-         */
-        void Changed();
-
-        /**
-         * @brief Adds a new event handler to the list of event handlers for this file.
-         * @param on_change The function to be called when the file changes.
-         * 
-         * This function adds a new event handler to the list of event handlers for this file.
-         * If read_from_std_cout is true, the event handler is added to the list of event handlers of the Buffer_Capture object.
-         * Otherwise, the event handler is added to the list of event handlers of this FILE_STREAM object.
-         */
-        void Add_On_Change_Handler(std::function<void()> on_change){
-            if (Buffer_Capture)
-                Buffer_Capture->addOnChangeHandler(on_change);
-            else
-                On_Change.push_back(on_change);
-        }
-
-        /**
-         * @brief Checks if the file stream is a std::cout stream.
-         * @return True if the file stream is a std::cout stream, false otherwise.
-         *
-         * This function checks if the file stream is a std::cout stream, i.e. if it is a stream that is
-         * associated with the BUFFER_CAPTURE class. If it is, it returns true, otherwise it returns false.
-         */
-        bool Is_Cout_Stream(){
-            return Buffer_Capture != nullptr;
-        }
-
-        FILE_STREAM_TYPE Get_type(){
-            return Type;
-        }
-    };
-
-    class filePosition{
-    public:
-        std::string File_Name = "";     // Originated.
-        unsigned int Line_Number = 0;   // Y
-        unsigned int Character = 0;     // X
-
-        /**
-         * @brief Constructor for the FILE_POSITION class.
-         * @param File_Name The name of the file that the position is in.
-         * @param Line_Number The line number of the position.
-         * @param Character The character number of the position.
-         * 
-         * This constructor creates a new FILE_POSITION object with the given file name, line number and character number.
-         */
-        filePosition(std::string file_name, unsigned int line_number, unsigned int character){
-            this->File_Name = file_name;
-            this->Line_Number = line_number;
-            this->Character = character;
-        }
-
-        /**
-         * @brief Default constructor for the FILE_POSITION class.
-         * @details This constructor creates a new FILE_POSITION object with default values for the file name, line number and character number.
-         */
-        filePosition() = default;
-
-        /**
-         * @brief Converts the FILE_POSITION object to a string.
-         * @return A string that represents the FILE_POSITION object in the format "File_Name:Line_Number:Character".
-         *
-         * This function converts the FILE_POSITION object to a string by concatenating the file name, line number and character number with a colon in between.
-         * The resulting string can be used to log or display the position of the file stream.
-         */
-        std::string To_String(){
-            return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
-        }
-    };
-
-    #if _WIN32
-        class CMD{
-        private:
-            void* In;
-            void* Out;
-        public:
-            /**
-             * @brief Constructor for the CMD class
-             * @details Initializes a pipe for inter-process communication.
-             *          The pipe is created with security attributes that allow
-             *          the handles to be inherited by child processes.
-             */
-            CMD();
-
-            /**
-             * @brief Destructor for the CMD class
-             * @details Closes the handles created by the constructor and releases
-             *          any resources associated with the pipe.
-             */
-            ~CMD() = default;
-
-            /**
-             * @brief Runs a command in a shell and returns its output as a string
-             * @param Command The command to execute
-             * @return The output of the command as a string
-             *
-             * This function runs a command in a shell and captures its output. It
-             * then returns the output as a string.
-             */
-            std::string Run(std::string command);
-        };
-    #else
-        class CMD{  // Unix implementation:
-        private:
-            union __INTERNAL_CMD_FILE_DESCRIPTOR__ {
-                struct __INTERNAL_CMD_WAY__ {
-                    int In;
-                    int Out;
-                } Way;
-                int FDS[2];
-            } File_Descriptor;
-        public:
-
-            /**
-             * @brief Constructor for the CMD class
-             *
-             * This function creates a pipe and stores the file descriptors in the
-             * File_Descriptor structure. The constructor is used to create a new
-             * object of the CMD class.
-             */
-            CMD();
-            
-            /**
-             * @brief Destructor for the CMD class
-             * @details Closes the handles created by the constructor and releases
-             *          any resources associated with the pipe.
-             */
-            ~CMD() = default;
-
-            /**
-             * @brief Run a command using the system shell and capture its output.
-             * @param Command The command to be executed.
-             * @return The output of the command as a string.
-             * 
-             * This function forks a new process to execute the specified command
-             * using the system shell. The output of the command is redirected to
-             * a pipe and captured by the parent process. The function returns the
-             * captured output as a string.
-             */
-            std::string Run(std::string command);
-        };
-    #endif
-}
-
-#endif
-#ifndef _LIST_VIEW_H_
-#define _LIST_VIEW_H_
-
-
-
-
-
-
-
-
-
-namespace GGUI{
-    class listView : public element{
-    public:
-        //We can always assume that the list starts from the upper left corner, right?
-        element* Last_Child = new element(position(0, 0) | width(0) | height(0));
-
-        /**
-         * @brief Default constructor for List_View.
-         * 
-         * This constructor calls the default constructor of Element and sets the Allow_Dynamic_Size property to true.
-         */
-        listView() : element(){ allowDynamicSize(true); }
-
-        /**
-         * @brief Constructor for List_View.
-         * 
-         * This constructor calls the Element constructor with the given style and then sets the Allow_Dynamic_Size property to true.
-         * This is so that the list view can automatically resize itself based on the elements it contains.
-         * 
-         * @param s The style for the list view.
-         */
-        listView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
-        listView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
-
-        /**
-         * @brief Destructor for the List_View class.
-         *
-         * This destructor is responsible for properly deallocating all the memory
-         * allocated by the List_View object, including its child elements.
-         */
-        ~listView() override {
-            // Delete all child elements to avoid memory leaks.
-            for (element* e : Style->Childs) {
-                delete e;
-            }
-
-            // Call the base class destructor to ensure all parent class resources are cleaned up.
-            element::~element();
-        }
-
-        //End of user constructors.
-
-        IVector3 getDimensionLimit();
-
-        /**
-         * @brief Adds a child element to the list view.
-         * @details This function adds a child element to the list view and manages the positioning and sizing
-         *          of the child element within the list view. It takes into account the list's flow direction,
-         *          border offsets, and dynamic sizing capabilities.
-         * @param e The child element to be added.
-         */
-        void addChild(element* e) override;
-        
-        /**
-         * @brief Calculates the hitboxes of all child elements of the list view.
-         * @details This function is similar to the Remove(Element* c) like behaviour.
-         *          It takes into account the border offsets of both the current and the next element as well as their positions.
-         *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
-         *          For a vertical list, it checks if the next element's height is greater than the current element's height.
-         *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
-         *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
-         * @param Starting_Offset The starting offset into the child array.
-         */
-        void calculateChildsHitboxes(unsigned int Starting_Offset = 0) override;
-
-        /**
-         * @brief Gets the name of the list view.
-         * @details This function returns the name of the list view in the format "List_View<Name>".
-         * @return The name of the list view.
-         */
-        std::string getName() const override;
-
-        /**
-         * @brief Removes a child element from the list view.
-         * @param remove The child element to be removed.
-         * @return true if the element was successfully removed, false if not.
-         *
-         * This function removes a child element from the list view and updates the position of all elements following the removed element.
-         * It also recalculates the width and height of the list view and updates the dimensions of the list view if it is dynamically sized.
-         */
-        bool remove(element* e) override;
-
-        /**
-         * @brief Sets the flow direction of the list view.
-         * @details This function sets the flow priority of the list view to the specified direction.
-         *          The flow direction determines how the child elements are arranged within the list view.
-         * @param gd The direction to set as the flow priority.
-         */
-        void setFlowDirection(DIRECTION gd){
-            Style->Flow_Priority = gd;
-        }
-
-        /**
-         * @brief Gets the current flow direction of the list view.
-         * @details This function returns the current flow direction of the list view.
-         * @return The flow direction of the list view.
-         */
-        DIRECTION getFlowDirection(){
-            return (DIRECTION)Style->Flow_Priority.value;
-        }
-
-        /**
-         * @brief Gets a child element from the list view by its index.
-         * @details This function returns a pointer to the child element at the specified index.
-         *          The index is checked to be within the range of the child array.
-         * @param index The index of the child element to retrieve.
-         * @return The child element at the specified index, or nullptr if the index is out of range.
-         */
-        template<typename  T>
-        T* get(int index){
-            if (index > (signed)Style->Childs.size() - 1)
-                return nullptr;
-
-            if (index < 0)
-                index = (signed)Style->Childs.size() + index - 1;
-
-            return (T*)this->Style->Childs[index];
-        }
-
-        /**
-         * @brief Creates a deep copy of the List_View object.
-         * @details This function creates a new List_View object and copies all the data from the current List_View object to the new one.
-         * @return A pointer to the new List_View object.
-         */
-        element* safeMove() const override {
-            return new listView();
-        }
-    };
-
-    class scrollView : public element{
-    protected:
-        int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
-    public:
-
-        /**
-         * @brief Default constructor for the scrollView class.
-         * 
-         * This constructor initializes a scrollView object by calling the base class
-         * element's default constructor.
-         */
-        scrollView() : element() { allowOverflow(true); }
-
-        /**
-         * @brief Constructor for the Scroll_View class.
-         * @details This constructor initializes a Scroll_View object with the specified styling.
-         * @param s The styling to be applied to the Scroll_View.
-         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
-         */
-        scrollView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allowOverflow(true); }
-        scrollView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
-
-        /**
-         * @brief Constructor for the Scroll_View class.
-         * @details This constructor initializes a Scroll_View object with a reference to a List_View object.
-         * @param container The List_View object to be used as the container for the Scroll_View.
-         */
-        scrollView(listView& container);
-
-        /**
-         * @brief Adds a child element to the Scroll_View.
-         * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
-         * @param e The child element to be added.
-         */
-        void addChild(element* e) override;
-
-        /**
-         * @brief Enables or disables scrolling for the Scroll_View.
-         * @details This function updates the scrolling capability of the Scroll_View.
-         *          If scrolling is enabled, it ensures that scrolling events are registered.
-         * @param allow A boolean indicating whether to enable or disable scrolling.
-         */
-        void allowScrolling(bool allow);
-    
-        /**
-         * @brief Checks if the scrolling is enabled for the Scroll_View.
-         * @details This function checks the value of the Allow_Scrolling property of the Scroll_View's styling.
-         * @return A boolean indicating whether the scrolling is enabled for the Scroll_View.
-         */
-        bool isScrollingEnabled(){
-            return Style->Allow_Scrolling.value;
-        }
-
-        /**
-         * @brief Scrolls the view up by one index.
-         * @details Decreases the scroll index if it is greater than zero and updates the container's position based on the growth direction.
-         * Marks the view as dirty for a deep update.
-         */
-        void scrollUp() override;
-
-        /**
-         * @brief Scrolls the view down by one index.
-         * @details Increases the scroll index by one and updates the container's position based on the growth direction.
-         * Marks the view as dirty for a deep update.
-         */
-        void scrollDown() override;
-
-        /**
-         * @brief Removes a child element from the scroll view.
-         * @details This function forwards the request to the Remove(Element* remove) function of the container.
-         * @param remove The element to be removed.
-         * @return true if the element was successfully removed, false if not.
-         */
-        bool remove(element* e) override;
-
-        /**
-         * @brief Gets the name of the scroll view.
-         * @details This function returns the name of the scroll view.
-         * @return The name of the scroll view.
-         */
-        std::string getName() const override;
-
-        /**
-         * @brief Sets the growth direction of the scroll view.
-         * @details This function forwards the request to the Set_Flow_Direction(DIRECTION gd) function of the container.
-         * @param gd The direction value to set as the growth direction.
-         */
-        void setGrowthDirection(DIRECTION gd){
-            ((listView*)Style->Childs[0])->setFlowDirection(gd);
-        }
-
-        /**
-         * @brief Gets the current growth direction of the scroll view.
-         * @details This function retrieves the current growth direction of the scroll view.
-         * @return The current growth direction of the scroll view.
-         */
-        DIRECTION getGrowthDirection(){
-            return ((listView*)Style->Childs[0])->getFlowDirection();
-        }
-
-        /**
-         * @brief Gets a child element from the scroll view by its index.
-         * @details This function forwards the request to the Get(int index) function of the container.
-         * @param index The index of the child element to retrieve.
-         * @return The child element at the specified index, or nullptr if the index is out of range.
-         */
-        template<typename  T>
-        T* get(int index){
-            return ((listView*)Style->Childs[0])->get<T>(index);
-        }
-
-        /**
-         * @brief Gets the container of the scroll view.
-         * @details This function retrieves the container of the scroll view, which is a List_View.
-         * @return The container of the scroll view.
-         */
-        listView* getContainer(){
-            // If the container has not been yet initialized, do so.
-            if (getChilds().size() == 0){
-                allowOverflow(true);
-                element::addChild(new listView(
-                    name((getName() + "::container").c_str()) | 
-                    flowPriority(element::getFlowPriority())
-                ));
-            }
-
-            return (listView*)Style->Childs[0];
-        }
-        
-        /**
-         * @brief Safely moves the current element to a new scrollView element.
-         * 
-         * This function overrides the safeMove method from the base class and 
-         * creates a new instance of the scrollView element.
-         * 
-         * @return A pointer to the newly created scrollView element.
-         */
-        element* safeMove() const override {
-            return new scrollView();
-        }
-    };
-}
-
-#endif
-#ifndef _PROGRESS_BAR_H_
-#define _PROGRESS_BAR_H_
-
-
-
-
-
-
-
-
-
-namespace GGUI{
-
-    namespace progress{
-        enum class partType{
-            EMPTY,
-            HEAD,
-            BODY,
-            TAIL
-        };
-
-        class part : public STYLING_INTERNAL::styleBase{
-        public:
-            INTERNAL::compactString character = INTERNAL::compactString(' ');
-            RGB color = COLOR::GRAY;
-            partType type = partType::EMPTY;
-
-            constexpr part(partType t, RGB fillColor = COLOR::GREEN, INTERNAL::compactString cs = INTERNAL::compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
-
-            constexpr part() = default;
-
-            inline ~part() override { styleBase::~styleBase(); }
-
-            inline styleBase* copy() const override {
-                return new part(*this);
-            }
-            
-            constexpr part& operator=(const part& other){
-                // Only copy the information if the other is enabled.
-                if (other.status >= status){
-                    character = other.character;
-                    color = other.color;
-                    type = other.type;
-
-                    status = other.status;
-                }
-                return *this;
-            }
-
-            constexpr part(const part& other) : styleBase(other.status), 
-                character(other.character), color(other.color), type(other.type) {}
-
-            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
-
-            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
-        };
-
-
-        class Bar : public element{
-        protected:
-            float Progress = 0; // 0.0 - 1.0
-
-            INTERNAL::compactString Head = INTERNAL::compactString('>');
-            INTERNAL::compactString Body = INTERNAL::compactString('-');
-            INTERNAL::compactString Tail = INTERNAL::compactString('|');
-            INTERNAL::compactString Empty = INTERNAL::compactString(' ');
-
-            RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
-            RGB Body_Color = GGUI::COLOR::GRAY;
-            RGB Tail_Color = GGUI::COLOR::GRAY;
-            RGB Empty_Color = GGUI::COLOR::DARK_GRAY;
-
-            std::vector<UTF> Content;
-        public:
-
-            /**
-             * @brief Constructor for Progress_Bar.
-             *
-             * This constructor calls the Element constructor with the given style and
-             * initializes the Progress_Bar object with default values.
-             *
-             * @param s The style for the Progress_Bar.
-             * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Progress_Bar's style. Only use if you know what you're doing!!!
-             */
-            Bar(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
-                Progress = 0.0f;
-            }
-            
-            Bar(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : Bar(s, Embed_Styles_On_Construct){}
-
-            /**
-             * @brief Default constructor for Progress_Bar.
-             *
-             * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
-             * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
-             */
-            Bar() = default;
-
-            void setHeadCharacter(INTERNAL::compactString cs) { Head = cs; }
-            void setBodyCharacter(INTERNAL::compactString cs) { Body = cs; }
-            void setTailCharacter(INTERNAL::compactString cs) { Tail = cs; }
-            void setEmptyCharacter(INTERNAL::compactString cs) { Empty = cs; }
-
-            void setHeadColor(RGB color) { Head_Color = color; }
-            void setBodyColor(RGB color) { Body_Color = color; }
-            void setTailColor(RGB color) { Tail_Color = color; }
-            void setEmptyColor(RGB color) { Empty_Color = color; }
-
-            /**
-             * @brief Returns the index of the head of the progress bar.
-             * @details
-             * This function returns the index of the head of the progress bar. The head is the character that is drawn at the end of the progress bar when it is not full.
-             * The index is calculated by multiplying the width of the progress bar (minus the border on both sides) by the progress value.
-             * The result is then rounded down to the nearest integer using the floor() function.
-             * @return The index of the head of the progress bar.
-             */
-            unsigned int getIndexofHead();
-
-            /**
-             * @brief Colors the bar with the current progress value.
-             * @details
-             * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
-             */
-            void colorBar();
-
-            /**
-             * @brief Renders the progress bar into the Render_Buffer.
-             * @details This function processes the progress bar to generate a vector of UTF objects representing the current state.
-             * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
-             * @return A vector of UTF objects representing the rendered progress bar.
-             */
-            std::vector<GGUI::UTF>& render() override;
-
-            /**
-             * @brief Sets the progress value of the progress bar.
-             * @details This function updates the progress value of the progress bar. 
-             * If the given value exceeds 1.0, a warning is reported, and the function returns without updating.
-             * It also updates the color of the progress bar and marks the render buffer as dirty.
-             * @param New_Progress The new progress value to set (should be between 0.0 and 1.0).
-             */
-            void setProgress(float New_Progress);
-            
-            /**
-             * @brief Returns the current progress value of the progress bar.
-             * @details This function returns the current progress value of the progress bar, which is a float between 0.0 and 1.0.
-             * @return The current progress value of the progress bar.
-             */
-            float getProgress();
-
-            void updateProgress(float add);
-
-            /**
-             * @brief Toggles the border visibility of the progress bar.
-             * @details This function toggles the border visibility of the progress bar.
-             *          If the state has changed, it updates the border enabled state, marks the element as dirty for border changes, and updates the frame.
-             * @param b The desired state of the border visibility.
-             */
-            void showBorder(bool state) override;
-
-            /**
-             * @brief Destructor for the Progress_Bar class.
-             *
-             * This destructor is responsible for properly deallocating all the memory
-             * allocated by the Progress_Bar object. It calls the base class destructor
-             * to ensure all parent class resources are also cleaned up.
-             */
-            ~Bar() override {
-                // Call the base destructor to clean up base class resources.
-                element::~element();
-            }
-            
-            /**
-             * @brief Creates a deep copy of the Progress_Bar object.
-             * @details This function creates a new Progress_Bar object and copies all the data from the current Progress_Bar object to the new one.
-             *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
-             * @return A pointer to the new Progress_Bar object.
-             */
-            element* safeMove() const override {
-                return new Bar();
-            }
-
-            /**
-             * @brief Returns the name of the Progress_Bar object.
-             * @details This function returns a string that represents the name of the Progress_Bar object.
-             *          The name is constructed by concatenating the name of the Progress_Bar with the 
-             *          class name "Progress_Bar", separated by a "<" and a ">".
-             * @return The name of the Progress_Bar object.
-             */
-            std::string getName() const override{
-                return "progressBar<" + Name + ">";
-            }
-        };
-    }
-}
-
-#endif
-#ifndef _SWITCH_H_
-#define _SWITCH_H_
-
-#include <vector>
-#include <string>
-
-
-
-
-
-
-
-
-namespace GGUI{
-
-    class visualState : public STYLING_INTERNAL::styleBase {
-    public:
-        const INTERNAL::compactString *Off, *On;
-
-        constexpr visualState(const INTERNAL::compactString& off, const INTERNAL::compactString& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Off(&off), On(&on) {}
-
-        constexpr visualState(const GGUI::visualState& other) : styleBase(other.status), Off(other.Off), On(other.On) {}
-
-        inline ~visualState() override { styleBase::~styleBase(); }
-
-        inline styleBase* copy() const override {
-            return new visualState(*this);
-        }
-
-        constexpr visualState& operator=(const visualState& other){
-            // Only copy the information if the other is enabled.
-            if (other.status >= status){
-                Off = other.Off;
-                On = other.On;
-
-                status = other.status;
-            }
-            return *this;
-        }
-
-        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
-
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
-    };
-
-    class singleSelect : public STYLING_INTERNAL::styleBase {
-    public:
-        constexpr singleSelect(const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) {}
-
-        constexpr singleSelect(const GGUI::singleSelect& other) : styleBase(other.status) {}
-
-        inline ~singleSelect() override { styleBase::~styleBase(); }
-
-        inline styleBase* copy() const override {
-            return new singleSelect(*this);
-        }
-
-        constexpr singleSelect& operator=(const singleSelect& other){
-            // Only copy the information if the other is enabled.
-            if (other.status >= status){
-                status = other.status;
-            }
-            return *this;
-        }
-
-        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
-
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
-    };
-
-    class switchBox : public element{
-    protected:
-        bool State = false;
-        bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
-
-        //Contains the unchecked version of the symbol and the checked version.
-        const INTERNAL::compactString *Off = nullptr, *On = nullptr;
-
-        textField Text;
-    public:
-        /**
-         * @brief Constructs a Switch element with specified text, states, event handler, and styling.
-         * @param s The styling for the switch.
-         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the switch's style. Only use if you know what you're doing!!!
-         */
-        switchBox(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
-        switchBox(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : switchBox(s, Embed_Styles_On_Construct){}
-
-        ~switchBox() override{
-            // call the base destructor.
-            element::~element();
-        }
-
-        /**
-         * @brief Renders the switch element and its children into the Render_Buffer nested buffer of the window.
-         * @details This function processes the switch element to generate a vector of UTF objects representing the current state.
-         * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the switch element is rendered correctly.
-         * @return A vector of UTF objects representing the rendered switch element.
-         */
-        std::vector<GGUI::UTF>& render() override;
-
-        /**
-         * @brief Toggles the state of the switch.
-         * @details Flips the current state from checked to unchecked or vice versa,
-         * and marks the switch as needing a state update.
-         */
-        void toggle();
-
-        void setState(bool b);
-
-        void enableSingleSelect();
-
-        bool isSingleSelect() { return SingleSelect; }
-
-        bool isSelected() { return State; }
-
-        /**
-         * @brief Sets the text of the switch element.
-         * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
-         * @param text The new text for the switch element.
-         */
-        void setText(INTERNAL::compactString text);
-
-        void showBorder(bool b) override;
-        
-        /**
-         * @brief Creates a deep copy of the Switch object.
-         * @details This function creates a new Switch object and copies all the data from the current Switch object to the new one.
-         *          This is useful for creating a new Switch object that is a modified version of the current one.
-         * @return A pointer to the new Switch object.
-         */
-        element* safeMove() const override {
-            return new switchBox();
-        }
-
-        /**
-         * @brief Returns the name of the Switch object.
-         * @details This function returns a string that represents the name of the Switch object.
-         *          The name is constructed by concatenating the name of the Switch with the 
-         *          class name "Switch", separated by a "<" and a ">".
-         * @return The name of the Switch object.
-         */
-        std::string getName() const override{
-            return "switchBox<" + Name + ">";
-        }
-
-        constexpr INTERNAL::compactString getStateString() const {
-            return State ? *On : *Off;
-        }
-
-        void setStateString(const INTERNAL::compactString* off, const INTERNAL::compactString* on);
-    };
-
-    class radioButton : public switchBox{
-    public:
-        /**
-         * @brief Constructs a radioButton element with optional custom styling and embedding behavior.
-         *
-         * This constructor initializes a radioButton, inheriting from switchBox, with the specified style and visual state.
-         * The visual state is set to display the appropriate radio button symbols for "off" and "on" states.
-         *
-         * @param s The style to apply to the radioButton. Defaults to STYLES::CONSTANTS::Default.
-         * @param Embed_Styles_On_Construct If true, embeds the styles during construction. Defaults to false.
-         */
-        radioButton(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
-            switchBox(s | visualState(SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON), Embed_Styles_On_Construct) {}
-        radioButton(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : radioButton(s, Embed_Styles_On_Construct){}
-
-        /**
-         * @brief Returns the state of the Radio_Button.
-         * @details This function returns a boolean value indicating whether the Radio_Button is turned on or off.
-         *          The state is represented by the Switch::State property.
-         * @return The state of the Radio_Button.
-         */
-        bool getState(){
-            return State;
-        }
-        
-        /**
-         * @brief Returns the name of the Radio_Button object.
-         * @details This function returns a string that represents the name of the Radio_Button object.
-         *          The name is constructed by concatenating the name of the Radio_Button with the 
-         *          class name "Radio_Button", separated by a "<" and a ">".
-         * @return The name of the Radio_Button object.
-         */
-        std::string getName() const override{
-            // Return the formatted name of the Radio_Button.
-            return "radioButton<" + Name + ">";
-        }
-
-        // Diabled, use the switchBox class type for search
-        // element* safeMove() const override {
-        //     return new radioButton();
-        // }
-    };
-
-    class checkBox : public switchBox{
-    public:
-        /**
-         * @brief Constructs a checkBox element with optional styling and embedding behavior.
-         *
-         * This constructor initializes a checkBox by applying the provided style and visual states
-         * for checked and unchecked symbols. It also allows specifying whether to embed styles upon construction.
-         *
-         * @param s The style to apply to the checkBox. Defaults to STYLES::CONSTANTS::Default.
-         * @param Embed_Styles_On_Construct If true, embeds styles during construction. Defaults to false.
-         */
-        checkBox(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
-            switchBox(s | visualState({SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}), Embed_Styles_On_Construct) {}
-        checkBox(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : checkBox(s, Embed_Styles_On_Construct) {}
-
-        /**
-         * @brief Returns the current state of the Check_Box.
-         * @details This function returns a boolean indicating whether the Check_Box is checked or unchecked.
-         * @return The state of the Check_Box.
-         */
-        bool getState(){
-            return State; // Return the current state of the Check_Box.
-        }
-        
-        /**
-         * @brief Returns the name of the Check_Box object.
-         * @details This function returns a string that represents the name of the Check_Box object.
-         *          The name is constructed by concatenating the name of the Check_Box with the 
-         *          class name "Check_Box", separated by a "<" and a ">".
-         * @return The name of the Check_Box object.
-         */
-        std::string getName() const override{
-            return "checkBox<" + Name + ">";
-        }
-
-        // Disabled, use the switchBox class type.
-        // element* safeMove() const override {
-        //     return new checkBox();
-        // }
-    };
-
-    namespace INTERNAL{
-        void DisableOthers(switchBox* keepOn);
-    }
-}
-
-#endif
-#ifndef _SETTINGS_H_
-#define _SETTINGS_H_
-
-#include <chrono>
-#include <string>
-#include <vector>
-#include <functional>
-
-namespace GGUI {
-    namespace INTERNAL {
-        extern std::string constructLoggerFileName();
-    }
-
-    namespace SETTINGS{
-        /**
-         * @brief Enumeration of supported argument types for command line parsing.
-         */
-        enum class ArgumentType {
-            FLAG,           ///< Boolean flag argument (no value expected)
-            STRING,         ///< String value argument
-            INTEGER,        ///< Integer value argument
-            UNSIGNED_LONG   ///< Unsigned long value argument
-        };
-
-        /**
-         * @brief Descriptor class for command line arguments.
-         * 
-         * This class encapsulates information about a command line argument including
-         * its name, type, description, and a callback function to handle the parsed value.
-         */
-        class ArgumentDescriptor {
-        public:
-            std::string name;                                    ///< Argument name (without dashes)
-            ArgumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
-            std::string description;                             ///< Human-readable description for help text
-            std::function<void(const std::string&)> handler;    ///< Callback function to handle parsed value
-
-            /**
-             * @brief Constructs an ArgumentDescriptor.
-             * 
-             * @param argName The name of the argument (without leading dashes)
-             * @param argType The type of the argument
-             * @param argDescription Description of the argument for help text
-             * @param argHandler Callback function to handle the parsed value
-             */
-            ArgumentDescriptor(const std::string& argName, 
-                             ArgumentType argType, 
-                             const std::string& argDescription,
-                             std::function<void(const std::string&)> argHandler)
-                : name(argName), type(argType), description(argDescription), handler(argHandler) {}
-
-            /**
-             * @brief Checks if this argument requires a value.
-             * 
-             * @return true if the argument type requires a value, false for flags
-             */
-            bool requiresValue() const {
-                return type != ArgumentType::FLAG;
-            }
-
-            /**
-             * @brief Gets the type name as a string for help text.
-             * 
-             * @return String representation of the argument type
-             */
-            std::string getTypeName() const {
-                switch (type) {
-                    case ArgumentType::FLAG: return "flag";
-                    case ArgumentType::STRING: return "string";
-                    case ArgumentType::INTEGER: return "integer";
-                    case ArgumentType::UNSIGNED_LONG: return "unsigned long";
-                    default: return "unknown";
-                }
-            }
-        };
-
-        // Given as --mousePressCooldown = 123
-        extern unsigned long long Mouse_Press_Down_Cooldown;  // Milliseconds
-
-        // Given as --enableWordWrapping
-        extern bool Word_Wrapping;
-
-        // Given as --enableGammaCorrection
-        extern bool ENABLE_GAMMA_CORRECTION;
-
-        namespace LOGGER{
-            // Given as --loggerFileName = "GGUI.log"
-            extern std::string File_Name;
-        }
-
-        // Given as --enableDRM
-        extern bool enableDRM;
-
-        extern void parseCommandLineArguments(int argc, char** argv);
-
-        /**
-         * @brief Initializes the settings for the application.
-         *
-         * This function sets up the necessary configurations for the application
-         * by initializing the logger file name using the internal logger file name
-         * construction method.
-         */
-        extern void initSettings();
-    }
-}
-
-#endif
-#ifndef _DRM_H_
-#define _DRM_H_
-
-
-
-
-#if _WIN32
-
-#else
-#include <unistd.h>
-#include <cstdint>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <cstring>
-#include <stdexcept>
-#include <string>
-#endif
-
-namespace GGUI {
-    namespace INTERNAL {
-        namespace DRM {
-            extern const char* handshakePortLocation;
-
-            struct cell {
-                char utf[4];    // Not null terminal, since we already know its size, leftovers are nulled out.
-
-                RGB foregroundColor;
-                RGB backgroundColor;
-            };
-
-            extern void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer);
-
-            constexpr int failRetryWaitTime = TIME::SECOND * 5;
-
-            namespace packet {
-                enum class type {
-                    UNKNOWN,
-                    DRAW_BUFFER,    // For sending/receiving cells
-                    INPUT,          // Fer sending/receiving input data
-                    NOTIFY,         // Contains an notify flag sending like empty buffers, for optimized polling.
-                    RESIZE,         // For sending/receiving GGUI resize
-                };
-
-                class base {
-                public:
-                    type packetType = type::UNKNOWN;
-
-                    base(type t) : packetType(t) {}
-                };
-
-                namespace notify {
-                    enum class type {
-                        UNKNOWN         = 0 << 0,
-                        EMPTY_BUFFER    = 1 << 0,
-                        CLOSED          = 1 << 1,   // When GGUI client has shutdown
-                    };
-
-                    class base : public packet::base {
-                    public:
-                        type notifyType = type::UNKNOWN;
-
-                        base(type t) : packet::base(packet::type::NOTIFY), notifyType(t) {}
-                    };
-                }
-
-                namespace input {
-                    enum class controlKey {
-                        UNKNOWN         = 0 << 0,
-                        SHIFT           = 1 << 0,
-                        CTRL            = 1 << 1,
-                        SUPER           = 1 << 2,
-                        ALT             = 1 << 3,
-                        ALTGR           = 1 << 4,
-                        FN              = 1 << 5,
-                        PRESSED_DOWN    = 1 << 6,   // Always on/off to indicate if the key is being pressed down or not.
-                    };
-
-                    // Bitwise operators for controlKey enum class
-                    inline controlKey operator&(controlKey lhs, controlKey rhs) {
-                        return static_cast<controlKey>(static_cast<int>(lhs) & static_cast<int>(rhs));
-                    }
-                    
-                    inline controlKey operator|(controlKey lhs, controlKey rhs) {
-                        return static_cast<controlKey>(static_cast<int>(lhs) | static_cast<int>(rhs));
-                    }
-                    
-                    inline controlKey operator^(controlKey lhs, controlKey rhs) {
-                        return static_cast<controlKey>(static_cast<int>(lhs) ^ static_cast<int>(rhs));
-                    }
-                    
-                    inline controlKey operator~(controlKey key) {
-                        return static_cast<controlKey>(~static_cast<int>(key));
-                    }
-
-                    enum class additionalKey {
-                        UNKNOWN,
-                        F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
-                        ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
-                        HOME, END, PAGE_UP, PAGE_DOWN,
-                        INSERT, DEL,
-                        LEFT_CLICK, MIDDLE_CLICK, RIGHT_CLICK, SCROLL_UP, SCROLL_DOWN,
-                    };
-
-                    class base : public packet::base {
-                    public:
-                        IVector2 mouse;             // Mouse position in the terminal   
-                        controlKey modifiers;       // Control keys pressed
-                        additionalKey additional;   // Additional keys pressed, which are not declared in ASCII
-                        unsigned char key;          // ASCII key pressed, if any
-
-                        base() : packet::base(packet::type::INPUT), mouse(), modifiers(controlKey::UNKNOWN), additional(additionalKey::UNKNOWN), key(0) {}
-                    };
-                
-                    extern void translatePacketInputToGGUIInput(input::base* packetInput);
-                }
-
-                namespace resize {
-                    class base : public packet::base {
-                    public:
-                        IVector2 size;
-
-                        base(int width, int height) : packet::base(packet::type::RESIZE), size(width, height) {}
-                    };
-                }
-
-                union maxSizetype {
-                    notify::base n;
-                    input::base i;
-                    resize::base r;
-                };
-
-                // Computes at compile time the maximum needed buffer length for a packet.
-                constexpr int size = sizeof(maxSizetype);
-            }
-
-            #if _WIN32
-            extern void connectDRMBackend();
-            
-            extern void sendBuffer(std::vector<UTF>&);
-
-            extern void pollInputs();
-
-            extern void translateInputs();
-
-            extern void retryDRMConnect();
-            #else
-
-            namespace tcp {
-                constexpr size_t pollingRate = TIME::MILLISECOND * 32;
-
-                /**
-                 * @brief Represents a TCP connection for sending and receiving data.
-                 * 
-                 * This class wraps a socket file descriptor and provides methods for
-                 * sending and receiving typed data over a TCP connection.
-                 */
-                class connection {
-                    int handle;
-                public:
-                    /**
-                     * @brief Constructs a connection from an existing socket file descriptor.
-                     * 
-                     * @param socketFd The socket file descriptor to wrap. Must be a valid TCP socket.
-                     * @throws std::invalid_argument if socketFd is negative (invalid).
-                     */
-                    explicit connection(int socketFd) : handle(socketFd) {
-                        if (socketFd < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Invalid socket file descriptor provided to connection constructor");
-                        }
-                    }
-
-                    explicit connection() : handle(-1) {}  // Initialize to invalid state
-
-                    // destructors are called via the handle manager and thus not needed to be called here
-
-                    /**
-                     * @brief Destructor that closes the connection if still open.
-                     */
-                    ~connection() {
-                        close();
-                    }
-
-                    // Disable copy constructor and assignment operator to prevent double-close
-                    connection(const connection&) = delete;
-                    connection& operator=(const connection&) = delete;
-
-                    // Enable move constructor and assignment operator
-                    connection(connection&& other) noexcept : handle(other.handle) {
-                        other.handle = -1;
-                    }
-
-                    connection& operator=(connection&& other) noexcept {
-                        if (this != &other) {
-                            close();
-                            handle = other.handle;
-                            other.handle = -1;
-                        }
-                        return *this;
-                    }
-
-                    /**
-                     * @brief Sends typed data over the TCP connection.
-                     * 
-                     * This template method sends count elements of type T over the connection.
-                     * It ensures all data is sent by checking the return value against the expected size.
-                     * 
-                     * @tparam T The type of data to send
-                     * @param data Pointer to the data buffer to send
-                     * @param count Number of elements of type T to send
-                     * @return true if all data was successfully sent, false otherwise
-                     * @throws std::runtime_error if the socket is invalid or closed
-                     */
-                    template<typename T>
-                    bool Send(const T* data, size_t count = 1) {
-                        if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot send on closed socket");
-                        }
-                        if (!data && count > 0) {
-                            return false;
-                        }
-                        
-                        size_t totalBytes = count * sizeof(T);
-                        ssize_t sent = send(handle, data, totalBytes, 0);
-                        
-                        if (sent < 0) {
-                            // Send failed due to error
-                            return false;
-                        }
-                        
-                        return sent == static_cast<ssize_t>(totalBytes);
-                    }
-
-                    /**
-                     * @brief Receives typed data from the TCP connection.
-                     * 
-                     * This template method receives count elements of type T from the connection.
-                     * It ensures all expected data is received by checking the return value.
-                     * 
-                     * @tparam T The type of data to receive
-                     * @param data Pointer to the buffer where received data will be stored
-                     * @param count Number of elements of type T to receive
-                     * @return true if all expected data was successfully received, false otherwise
-                     * @throws std::runtime_error if the socket is invalid or closed
-                     */
-                    template<typename T>
-                    bool Receive(T* data, size_t count = 1) {
-                        if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot receive on closed socket");
-                        }
-                        if (!data && count > 0) {
-                            return false;
-                        }
-                        
-                        size_t totalBytes = count * sizeof(T);
-                        ssize_t recvd = recv(handle, data, totalBytes, 0);
-                        
-                        if (recvd < 0) {
-                            // Receive failed due to error
-                            return false;
-                        }
-                        if (recvd == 0) {
-                            // Connection closed by peer
-                            return false;
-                        }
-                        
-                        return recvd == static_cast<ssize_t>(totalBytes);
-                    }
-
-                    /**
-                     * @brief Gets the underlying socket file descriptor.
-                     * 
-                     * @return The socket file descriptor, or -1 if the connection is closed
-                     */
-                    int getHandle() const { return handle; }
-
-                    /**
-                     * @brief Closes the TCP connection.
-                     * 
-                     * This method closes the underlying socket and marks the connection as invalid.
-                     * It's safe to call this method multiple times.
-                     */
-                    void close() {
-                        if (handle >= 0) {
-                            ::close(handle);
-                            handle = -1; // Mark as closed
-                        }
-                    }
-                };
-
-                /**
-                 * @brief TCP listener for accepting incoming connections.
-                 * 
-                 * This class creates a TCP server socket that can listen for and accept
-                 * incoming connections on a specified port.
-                 */
-                class listener {
-                    int handle;
-                public:
-                    /**
-                     * @brief Default constructor that creates an uninitialized listener.
-                     * 
-                     * Creates a listener with an invalid handle. Must be assigned or moved
-                     * from a properly constructed listener before use.
-                     */
-                    listener() : handle(-1) {}
-
-                    /**
-                     * @brief Constructs a TCP listener on the specified port.
-                     * 
-                     * Creates a TCP socket, binds it to the specified port (or any available port if 0),
-                     * and starts listening for incoming connections.
-                     * 
-                     * @param port The port number to listen on. Use 0 to let the system assign an available port.
-                     * @throws std::runtime_error if socket creation, binding, or listening fails
-                     */
-                    explicit listener(uint16_t port) : handle(-1) {
-                        // Create socket
-                        handle = socket(AF_INET, SOCK_STREAM, 0);
-                        if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to create socket: " + std::string(strerror(errno)));
-                        }
-
-                        // Set socket option to reuse address
-                        int opt = 1;
-                        if (setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-                            ::close(handle);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to set socket option SO_REUSEADDR: " + std::string(strerror(errno)));
-                        }
-
-                        // Bind socket to address
-                        sockaddr_in addr{};
-                        addr.sin_family = AF_INET;
-                        addr.sin_addr.s_addr = INADDR_ANY;
-                        addr.sin_port = htons(port);
-                        
-                        if (bind(handle, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
-                            ::close(handle);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to bind socket to port " + std::to_string(port) + ": " + std::string(strerror(errno)));
-                        }
-
-                        // Start listening
-                        if (listen(handle, 5) < 0) {
-                            ::close(handle);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to start listening on socket: " + std::string(strerror(errno)));
-                        }
-                    }
-
-                    /**
-                     * @brief Destructor that properly closes the listener socket.
-                     */
-                    ~listener() {
-                        if (handle >= 0) {
-                            ::close(handle);
-                        }
-                    }
-
-                    // Disable copy constructor and assignment operator to prevent double-close
-                    listener(const listener&) = delete;
-                    listener& operator=(const listener&) = delete;
-
-                    // Enable move constructor and assignment operator
-                    listener(listener&& other) noexcept : handle(other.handle) {
-                        other.handle = -1;
-                    }
-
-                    listener& operator=(listener&& other) noexcept {
-                        if (this != &other) {
-                            if (handle >= 0) {
-                                ::close(handle);
-                            }
-                            handle = other.handle;
-                            other.handle = -1;
-                        }
-                        return *this;
-                    }
-
-                    /**
-                     * @brief Accepts an incoming connection.
-                     * 
-                     * This method blocks until a client connects to the listener.
-                     * 
-                     * @return A connection object representing the accepted client connection
-                     * @throws std::runtime_error if the listener socket is closed or accept fails
-                     */
-                    connection Accept() {
-                        if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot accept on closed listener");
-                        }
-
-                        int connFd = accept(handle, nullptr, nullptr);
-                        if (connFd < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to accept connection: " + std::string(strerror(errno)));
-                        }
-                        
-                        return connection(connFd);
-                    }
-
-                    /**
-                     * @brief Gets the port number this listener is bound to.
-                     * 
-                     * This is particularly useful when the listener was created with port 0,
-                     * as it returns the actual port assigned by the system.
-                     * 
-                     * @return The port number this listener is bound to
-                     * @throws std::runtime_error if getting the socket name fails
-                     */
-                    uint16_t getPort() {
-                        if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot get port of closed listener");
-                        }
-
-                        sockaddr_in actual{};
-                        socklen_t len = sizeof(actual);
-                        
-                        if (getsockname(handle, reinterpret_cast<sockaddr*>(&actual), &len) < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to get socket name: " + std::string(strerror(errno)));
-                        }
-
-                        return ntohs(actual.sin_port);
-                    }
-                };
-
-                /**
-                 * @brief Utility class for creating outgoing TCP connections.
-                 * 
-                 * This class provides static methods to establish TCP connections to remote hosts.
-                 */
-                class sender {
-                public:
-                    /**
-                     * @brief Creates a TCP connection to the specified host and port.
-                     * 
-                     * Establishes a TCP connection to the given host and port. This method
-                     * creates a socket, resolves the host address, and connects to the remote endpoint.
-                     * 
-                     * @param port The port number to connect to
-                     * @param host The hostname or IP address to connect to (defaults to localhost)
-                     * @return A connection object representing the established connection
-                     * @throws std::runtime_error if socket creation, address resolution, or connection fails
-                     */
-                    static connection getConnection(uint16_t port, const char* host = "127.0.0.1") {
-                        if (!host) {
-                            throw std::invalid_argument("Host cannot be null");
-                        }
-
-                        // Create socket
-                        int sockFd = socket(AF_INET, SOCK_STREAM, 0);
-                        if (sockFd < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to create socket: " + std::string(strerror(errno)));
-                        }
-
-                        // Prepare address structure
-                        sockaddr_in addr{};
-                        addr.sin_family = AF_INET;
-                        addr.sin_port = htons(port);
-                        
-                        // Convert IP address from text to binary form
-                        int result = inet_pton(AF_INET, host, &addr.sin_addr);
-                        if (result <= 0) {
-                            ::close(sockFd);
-                            if (result == 0) {
-                                GGUI::INTERNAL::LOGGER::Log("Invalid IP address format: " + std::string(host));
-                            } else {
-                                GGUI::INTERNAL::LOGGER::Log("inet_pton failed: " + std::string(strerror(errno)));
-                            }
-                        }
-
-                        // Connect to the remote host
-                        if (connect(sockFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
-                            ::close(sockFd);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to connect to " + std::string(host) + ":" + std::to_string(port) + " - " + std::string(strerror(errno)));
-
-                            return connection();    // Return an empty connection with -1 as fd
-                        }
-                        
-                        return connection(sockFd);
-                    }
-                };
-            
-            }
-
-            // This will contain the open connection between DRM and this client.
-            extern tcp::connection DRMConnection;
-
-            extern void connectDRMBackend();
-            
-            extern void sendBuffer(std::vector<UTF>& abstractBuffer);
-
-            extern void retryDRMConnect();
-
-            extern void close();
-
-            // Called via the input thread.
-            extern void pollInputs();
-
-            extern void translateInputs();
-
-            #endif
-
-        }
-    }
-}
-
-#endif
 #ifndef _HTML_H_
 #define _HTML_H_
-
-
-
-
-
-
-
 
 
 
@@ -9100,438 +8241,1254 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _SIMD_H_
-#define _SIMD_H_
+#ifndef _LIST_VIEW_H_
+#define _LIST_VIEW_H_
 
 
 
 namespace GGUI{
+    class listView : public element{
+    public:
+        //We can always assume that the list starts from the upper left corner, right?
+        element* Last_Child = new element(position(0, 0) | width(0) | height(0));
 
-    #if defined(__AVX512F__)
-        #include <immintrin.h>
+        /**
+         * @brief Default constructor for List_View.
+         * 
+         * This constructor calls the default constructor of Element and sets the Allow_Dynamic_Size property to true.
+         */
+        listView() : element(){ allowDynamicSize(true); }
 
-        inline const unsigned int MAX_SIMD_SIZE = 16;
-    #elif defined(__AVX__)
-        #include <immintrin.h>
+        /**
+         * @brief Constructor for List_View.
+         * 
+         * This constructor calls the Element constructor with the given style and then sets the Allow_Dynamic_Size property to true.
+         * This is so that the list view can automatically resize itself based on the elements it contains.
+         * 
+         * @param s The style for the list view.
+         */
+        listView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
+        listView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
 
-        inline const unsigned int MAX_SIMD_SIZE = 8;
-    #elif defined(__SSE__)
-        #include <xmmintrin.h>
+        /**
+         * @brief Destructor for the List_View class.
+         *
+         * This destructor is responsible for properly deallocating all the memory
+         * allocated by the List_View object, including its child elements.
+         */
+        ~listView() override {
+            // Delete all child elements to avoid memory leaks.
+            for (element* e : Style->Childs) {
+                delete e;
+            }
 
-        inline const unsigned int MAX_SIMD_SIZE = 4;
-    #else
-        inline const unsigned int MAX_SIMD_SIZE = 1;
-    #endif
-
-    // The number represents how many 32 bit float value pairs can it calculate at the same time.
-    void simdDivision4(float* a, float* b, float* c);
-    void simdDivision8(float* a, float* b, float* c);
-    void simdDivision16(float* a, float* b, float* c);
-
-    // Calls the right division SIMD operator depending on the length
-    void operateSIMDDivision(float* dividend, float* divider, float* result, int length){
-        if(length == 4){
-            simdDivision4(dividend, divider, result);
-        }else if(length == 8){
-            simdDivision8(dividend, divider, result);
-        }else if(length == 16){
-            simdDivision16(dividend, divider, result);
-        }else{
-            INTERNAL::reportStack("Calling SIMD division with longer sequence than allowed: " + std::to_string(length) + " elements.");
+            // Call the base class destructor to ensure all parent class resources are cleaned up.
+            element::~element();
         }
-    }
 
-    void operateSIMDModulo(float* dividend, float* divider, float* result, int length){
-        // Uses the division variants and then calculates for each the modulo
-        operateSIMDDivision(dividend, divider, result, length);
+        //End of user constructors.
 
-        for(int i = 0; i < length; i++){
-            // by the formula: a - b * floor(a / b)
-            result[i] = dividend[i] - divider[i] * floor(result[i]);
-        }
-    }
+        IVector3 getDimensionLimit();
 
-    #if defined(__SSE__)
-        void simdDivision4(float* a, float* b, float* c) {
-            __m128 va = _mm_loadu_ps(a);
-            __m128 vb = _mm_loadu_ps(b);
-            __m128 vc = _mm_div_ps(va, vb);
-            _mm_storeu_ps(c, vc);
-        }
-    #else
-        void simdDivision4(float* a, float* b, float* c) {
-            *c = *a / *b;
-            *(c + 1) = *(a + 1) / *(b + 1);
-            *(c + 2) = *(a + 2) / *(b + 2);
-            *(c + 3) = *(a + 3) / *(b + 3);
-        }
-    #endif
+        /**
+         * @brief Adds a child element to the list view.
+         * @details This function adds a child element to the list view and manages the positioning and sizing
+         *          of the child element within the list view. It takes into account the list's flow direction,
+         *          border offsets, and dynamic sizing capabilities.
+         * @param e The child element to be added.
+         */
+        void addChild(element* e) override;
+        
+        /**
+         * @brief Calculates the hitboxes of all child elements of the list view.
+         * @details This function is similar to the Remove(Element* c) like behaviour.
+         *          It takes into account the border offsets of both the current and the next element as well as their positions.
+         *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
+         *          For a vertical list, it checks if the next element's height is greater than the current element's height.
+         *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
+         *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
+         * @param Starting_Offset The starting offset into the child array.
+         */
+        void calculateChildsHitboxes(unsigned int Starting_Offset = 0) override;
 
-    #if defined(__AVX__)
-        void simdDivision8(float* a, float* b, float* c) {
-            __m256 va = _mm256_loadu_ps(a);
-            __m256 vb = _mm256_loadu_ps(b);
-            __m256 vc = _mm256_div_ps(va, vb);
-            _mm256_storeu_ps(c, vc);
-        }
-    #else
-        void simdDivision8(float* a, float* b, float* c) {
-            // use the one stage lower SIMD function variant.
-            simdDivision4(a, b, c);
-            simdDivision4(a + 4, b + 4, c + 4);
-        }
-    #endif
+        /**
+         * @brief Gets the name of the list view.
+         * @details This function returns the name of the list view in the format "List_View<Name>".
+         * @return The name of the list view.
+         */
+        std::string getName() const override;
 
-    #if defined(__AVX512F__)
-        void simdDivision16(float* a, float* b, float* c) {
-            __m512 va = _mm512_loadu_ps(a);
-            __m512 vb = _mm512_loadu_ps(b);
-            __m512 vc = _mm512_div_ps(va, vb);
-            _mm512_storeu_ps(c, vc);
+        /**
+         * @brief Removes a child element from the list view.
+         * @param remove The child element to be removed.
+         * @return true if the element was successfully removed, false if not.
+         *
+         * This function removes a child element from the list view and updates the position of all elements following the removed element.
+         * It also recalculates the width and height of the list view and updates the dimensions of the list view if it is dynamically sized.
+         */
+        bool remove(element* e) override;
+
+        /**
+         * @brief Sets the flow direction of the list view.
+         * @details This function sets the flow priority of the list view to the specified direction.
+         *          The flow direction determines how the child elements are arranged within the list view.
+         * @param gd The direction to set as the flow priority.
+         */
+        void setFlowDirection(DIRECTION gd){
+            Style->Flow_Priority = gd;
         }
-    #else
-        void simdDivision16(float* a, float* b, float* c) {
-            // use the one stage lower SIMD function variant.
-            simdDivision8(a, b, c);
-            simdDivision8(a + 8, b + 8, c + 8);
+
+        /**
+         * @brief Gets the current flow direction of the list view.
+         * @details This function returns the current flow direction of the list view.
+         * @return The flow direction of the list view.
+         */
+        DIRECTION getFlowDirection(){
+            return (DIRECTION)Style->Flow_Priority.value;
         }
-    #endif
+
+        /**
+         * @brief Gets a child element from the list view by its index.
+         * @details This function returns a pointer to the child element at the specified index.
+         *          The index is checked to be within the range of the child array.
+         * @param index The index of the child element to retrieve.
+         * @return The child element at the specified index, or nullptr if the index is out of range.
+         */
+        template<typename  T>
+        T* get(int index){
+            if (index > (signed)Style->Childs.size() - 1)
+                return nullptr;
+
+            if (index < 0)
+                index = (signed)Style->Childs.size() + index - 1;
+
+            return (T*)this->Style->Childs[index];
+        }
+
+        /**
+         * @brief Creates a deep copy of the List_View object.
+         * @details This function creates a new List_View object and copies all the data from the current List_View object to the new one.
+         * @return A pointer to the new List_View object.
+         */
+        element* safeMove() const override {
+            return new listView();
+        }
+    };
+
+    class scrollView : public element{
+    protected:
+        int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
+    public:
+
+        /**
+         * @brief Default constructor for the scrollView class.
+         * 
+         * This constructor initializes a scrollView object by calling the base class
+         * element's default constructor.
+         */
+        scrollView() : element() { allowOverflow(true); }
+
+        /**
+         * @brief Constructor for the Scroll_View class.
+         * @details This constructor initializes a Scroll_View object with the specified styling.
+         * @param s The styling to be applied to the Scroll_View.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
+         */
+        scrollView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allowOverflow(true); }
+        scrollView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
+
+        /**
+         * @brief Constructor for the Scroll_View class.
+         * @details This constructor initializes a Scroll_View object with a reference to a List_View object.
+         * @param container The List_View object to be used as the container for the Scroll_View.
+         */
+        scrollView(listView& container);
+
+        /**
+         * @brief Adds a child element to the Scroll_View.
+         * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
+         * @param e The child element to be added.
+         */
+        void addChild(element* e) override;
+
+        /**
+         * @brief Enables or disables scrolling for the Scroll_View.
+         * @details This function updates the scrolling capability of the Scroll_View.
+         *          If scrolling is enabled, it ensures that scrolling events are registered.
+         * @param allow A boolean indicating whether to enable or disable scrolling.
+         */
+        void allowScrolling(bool allow);
+    
+        /**
+         * @brief Checks if the scrolling is enabled for the Scroll_View.
+         * @details This function checks the value of the Allow_Scrolling property of the Scroll_View's styling.
+         * @return A boolean indicating whether the scrolling is enabled for the Scroll_View.
+         */
+        bool isScrollingEnabled(){
+            return Style->Allow_Scrolling.value;
+        }
+
+        /**
+         * @brief Scrolls the view up by one index.
+         * @details Decreases the scroll index if it is greater than zero and updates the container's position based on the growth direction.
+         * Marks the view as dirty for a deep update.
+         */
+        void scrollUp() override;
+
+        /**
+         * @brief Scrolls the view down by one index.
+         * @details Increases the scroll index by one and updates the container's position based on the growth direction.
+         * Marks the view as dirty for a deep update.
+         */
+        void scrollDown() override;
+
+        /**
+         * @brief Removes a child element from the scroll view.
+         * @details This function forwards the request to the Remove(Element* remove) function of the container.
+         * @param remove The element to be removed.
+         * @return true if the element was successfully removed, false if not.
+         */
+        bool remove(element* e) override;
+
+        /**
+         * @brief Gets the name of the scroll view.
+         * @details This function returns the name of the scroll view.
+         * @return The name of the scroll view.
+         */
+        std::string getName() const override;
+
+        /**
+         * @brief Sets the growth direction of the scroll view.
+         * @details This function forwards the request to the Set_Flow_Direction(DIRECTION gd) function of the container.
+         * @param gd The direction value to set as the growth direction.
+         */
+        void setGrowthDirection(DIRECTION gd){
+            ((listView*)Style->Childs[0])->setFlowDirection(gd);
+        }
+
+        /**
+         * @brief Gets the current growth direction of the scroll view.
+         * @details This function retrieves the current growth direction of the scroll view.
+         * @return The current growth direction of the scroll view.
+         */
+        DIRECTION getGrowthDirection(){
+            return ((listView*)Style->Childs[0])->getFlowDirection();
+        }
+
+        /**
+         * @brief Gets a child element from the scroll view by its index.
+         * @details This function forwards the request to the Get(int index) function of the container.
+         * @param index The index of the child element to retrieve.
+         * @return The child element at the specified index, or nullptr if the index is out of range.
+         */
+        template<typename  T>
+        T* get(int index){
+            return ((listView*)Style->Childs[0])->get<T>(index);
+        }
+
+        /**
+         * @brief Gets the container of the scroll view.
+         * @details This function retrieves the container of the scroll view, which is a List_View.
+         * @return The container of the scroll view.
+         */
+        listView* getContainer(){
+            // If the container has not been yet initialized, do so.
+            if (getChilds().size() == 0){
+                allowOverflow(true);
+                element::addChild(new listView(
+                    name((getName() + "::container").c_str()) | 
+                    flowPriority(element::getFlowPriority())
+                ));
+            }
+
+            return (listView*)Style->Childs[0];
+        }
+        
+        /**
+         * @brief Safely moves the current element to a new scrollView element.
+         * 
+         * This function overrides the safeMove method from the base class and 
+         * creates a new instance of the scrollView element.
+         * 
+         * @return A pointer to the newly created scrollView element.
+         */
+        element* safeMove() const override {
+            return new scrollView();
+        }
+    };
 }
 
 #endif
-#ifndef _UTILS_H_
-#define _UTILS_H_
-/**
- * This is an Utils file made for the Renderer.cpp to use internally, these are just removed to clean up the source code.
- */
+#ifndef _PROGRESS_BAR_H_
+#define _PROGRESS_BAR_H_
 
 
-
-
-#include <math.h>
 
 namespace GGUI{
-    class element;
-    class UTF;
-    class RGB;
 
-    namespace INTERNAL{
-        extern std::string constructLoggerFileName();
+    namespace progress{
+        enum class partType{
+            EMPTY,
+            HEAD,
+            BODY,
+            TAIL
+        };
 
-        extern bool Identical_Frame;
+        class part : public STYLING_INTERNAL::styleBase{
+        public:
+            INTERNAL::compactString character = INTERNAL::compactString(' ');
+            RGB color = COLOR::GRAY;
+            partType type = partType::EMPTY;
 
-        extern void De_Initialize();
+            constexpr part(partType t, RGB fillColor = COLOR::GREEN, INTERNAL::compactString cs = INTERNAL::compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
 
-        extern int BEFORE_ENCODE_BUFFER_SIZE;
-        extern int AFTER_ENCODE_BUFFER_SIZE;
+            constexpr part() = default;
+
+            inline ~part() override { styleBase::~styleBase(); }
+
+            inline styleBase* copy() const override {
+                return new part(*this);
+            }
+            
+            constexpr part& operator=(const part& other){
+                // Only copy the information if the other is enabled.
+                if (other.status >= status){
+                    character = other.character;
+                    color = other.color;
+                    type = other.type;
+
+                    status = other.status;
+                }
+                return *this;
+            }
+
+            constexpr part(const part& other) : styleBase(other.status), 
+                character(other.character), color(other.color), type(other.type) {}
+
+            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
+
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+        };
+
+
+        class Bar : public element{
+        protected:
+            float Progress = 0; // 0.0 - 1.0
+
+            INTERNAL::compactString Head = INTERNAL::compactString('>');
+            INTERNAL::compactString Body = INTERNAL::compactString('-');
+            INTERNAL::compactString Tail = INTERNAL::compactString('|');
+            INTERNAL::compactString Empty = INTERNAL::compactString(' ');
+
+            RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
+            RGB Body_Color = GGUI::COLOR::GRAY;
+            RGB Tail_Color = GGUI::COLOR::GRAY;
+            RGB Empty_Color = GGUI::COLOR::DARK_GRAY;
+
+            std::vector<UTF> Content;
+        public:
+
+            /**
+             * @brief Constructor for Progress_Bar.
+             *
+             * This constructor calls the Element constructor with the given style and
+             * initializes the Progress_Bar object with default values.
+             *
+             * @param s The style for the Progress_Bar.
+             * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Progress_Bar's style. Only use if you know what you're doing!!!
+             */
+            Bar(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
+                Progress = 0.0f;
+            }
+            
+            Bar(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : Bar(s, Embed_Styles_On_Construct){}
+
+            /**
+             * @brief Default constructor for Progress_Bar.
+             *
+             * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
+             * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
+             */
+            Bar() = default;
+
+            void setHeadCharacter(INTERNAL::compactString cs) { Head = cs; }
+            void setBodyCharacter(INTERNAL::compactString cs) { Body = cs; }
+            void setTailCharacter(INTERNAL::compactString cs) { Tail = cs; }
+            void setEmptyCharacter(INTERNAL::compactString cs) { Empty = cs; }
+
+            void setHeadColor(RGB color) { Head_Color = color; }
+            void setBodyColor(RGB color) { Body_Color = color; }
+            void setTailColor(RGB color) { Tail_Color = color; }
+            void setEmptyColor(RGB color) { Empty_Color = color; }
+
+            /**
+             * @brief Returns the index of the head of the progress bar.
+             * @details
+             * This function returns the index of the head of the progress bar. The head is the character that is drawn at the end of the progress bar when it is not full.
+             * The index is calculated by multiplying the width of the progress bar (minus the border on both sides) by the progress value.
+             * The result is then rounded down to the nearest integer using the floor() function.
+             * @return The index of the head of the progress bar.
+             */
+            unsigned int getIndexofHead();
+
+            /**
+             * @brief Colors the bar with the current progress value.
+             * @details
+             * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
+             */
+            void colorBar();
+
+            /**
+             * @brief Renders the progress bar into the Render_Buffer.
+             * @details This function processes the progress bar to generate a vector of UTF objects representing the current state.
+             * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
+             * @return A vector of UTF objects representing the rendered progress bar.
+             */
+            std::vector<GGUI::UTF>& render() override;
+
+            /**
+             * @brief Sets the progress value of the progress bar.
+             * @details This function updates the progress value of the progress bar. 
+             * If the given value exceeds 1.0, a warning is reported, and the function returns without updating.
+             * It also updates the color of the progress bar and marks the render buffer as dirty.
+             * @param New_Progress The new progress value to set (should be between 0.0 and 1.0).
+             */
+            void setProgress(float New_Progress);
+            
+            /**
+             * @brief Returns the current progress value of the progress bar.
+             * @details This function returns the current progress value of the progress bar, which is a float between 0.0 and 1.0.
+             * @return The current progress value of the progress bar.
+             */
+            float getProgress();
+
+            void updateProgress(float add);
+
+            /**
+             * @brief Toggles the border visibility of the progress bar.
+             * @details This function toggles the border visibility of the progress bar.
+             *          If the state has changed, it updates the border enabled state, marks the element as dirty for border changes, and updates the frame.
+             * @param b The desired state of the border visibility.
+             */
+            void showBorder(bool state) override;
+
+            /**
+             * @brief Destructor for the Progress_Bar class.
+             *
+             * This destructor is responsible for properly deallocating all the memory
+             * allocated by the Progress_Bar object. It calls the base class destructor
+             * to ensure all parent class resources are also cleaned up.
+             */
+            ~Bar() override {
+                // Call the base destructor to clean up base class resources.
+                element::~element();
+            }
+            
+            /**
+             * @brief Creates a deep copy of the Progress_Bar object.
+             * @details This function creates a new Progress_Bar object and copies all the data from the current Progress_Bar object to the new one.
+             *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
+             * @return A pointer to the new Progress_Bar object.
+             */
+            element* safeMove() const override {
+                return new Bar();
+            }
+
+            /**
+             * @brief Returns the name of the Progress_Bar object.
+             * @details This function returns a string that represents the name of the Progress_Bar object.
+             *          The name is constructed by concatenating the name of the Progress_Bar with the 
+             *          class name "Progress_Bar", separated by a "<" and a ">".
+             * @return The name of the Progress_Bar object.
+             */
+            std::string getName() const override{
+                return "progressBar<" + Name + ">";
+            }
+        };
+    }
+}
+
+#endif
+#ifndef _SWITCH_H_
+#define _SWITCH_H_
+
+#include <vector>
+#include <string>
+
+
+namespace GGUI{
+
+    class visualState : public STYLING_INTERNAL::styleBase {
+    public:
+        const INTERNAL::compactString *Off, *On;
+
+        constexpr visualState(const INTERNAL::compactString& off, const INTERNAL::compactString& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Off(&off), On(&on) {}
+
+        constexpr visualState(const GGUI::visualState& other) : styleBase(other.status), Off(other.Off), On(other.On) {}
+
+        inline ~visualState() override { styleBase::~styleBase(); }
+
+        inline styleBase* copy() const override {
+            return new visualState(*this);
+        }
+
+        constexpr visualState& operator=(const visualState& other){
+            // Only copy the information if the other is enabled.
+            if (other.status >= status){
+                Off = other.Off;
+                On = other.On;
+
+                status = other.status;
+            }
+            return *this;
+        }
+
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+
+        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+    };
+
+    class singleSelect : public STYLING_INTERNAL::styleBase {
+    public:
+        constexpr singleSelect(const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) {}
+
+        constexpr singleSelect(const GGUI::singleSelect& other) : styleBase(other.status) {}
+
+        inline ~singleSelect() override { styleBase::~styleBase(); }
+
+        inline styleBase* copy() const override {
+            return new singleSelect(*this);
+        }
+
+        constexpr singleSelect& operator=(const singleSelect& other){
+            // Only copy the information if the other is enabled.
+            if (other.status >= status){
+                status = other.status;
+            }
+            return *this;
+        }
+
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+
+        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+    };
+
+    class switchBox : public element{
+    protected:
+        bool State = false;
+        bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
+
+        //Contains the unchecked version of the symbol and the checked version.
+        const INTERNAL::compactString *Off = nullptr, *On = nullptr;
+
+        textField Text;
+    public:
+        /**
+         * @brief Constructs a Switch element with specified text, states, event handler, and styling.
+         * @param s The styling for the switch.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the switch's style. Only use if you know what you're doing!!!
+         */
+        switchBox(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        switchBox(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : switchBox(s, Embed_Styles_On_Construct){}
+
+        ~switchBox() override{
+            // call the base destructor.
+            element::~element();
+        }
+
+        /**
+         * @brief Renders the switch element and its children into the Render_Buffer nested buffer of the window.
+         * @details This function processes the switch element to generate a vector of UTF objects representing the current state.
+         * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the switch element is rendered correctly.
+         * @return A vector of UTF objects representing the rendered switch element.
+         */
+        std::vector<GGUI::UTF>& render() override;
+
+        /**
+         * @brief Toggles the state of the switch.
+         * @details Flips the current state from checked to unchecked or vice versa,
+         * and marks the switch as needing a state update.
+         */
+        void toggle();
+
+        void setState(bool b);
+
+        void enableSingleSelect();
+
+        bool isSingleSelect() { return SingleSelect; }
+
+        bool isSelected() { return State; }
+
+        /**
+         * @brief Sets the text of the switch element.
+         * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
+         * @param text The new text for the switch element.
+         */
+        void setText(INTERNAL::compactString text);
+
+        void showBorder(bool b) override;
         
         /**
-         * @brief The Renderer function is responsible for managing the rendering loop.
-         * It waits for a condition to resume rendering, processes rendering tasks, and
-         * then pauses itself until the condition is met again.
-         * 
-         * The function performs the following steps:
-         * 1. Waits for the render thread to be resumed.
-         * 2. Saves the current time.
-         * 3. Checks if the rendering scheduler needs to be terminated.
-         * 4. Processes carry flags and updates the maximum width and height if needed.
-         * 5. Renders the main frame buffer.
-         * 6. Encodes the buffer for optimization.
-         * 7. Converts the abstract frame buffer to a string and renders the frame.
-         * 8. Calculates the render delay.
-         * 9. Pauses the render thread and notifies all waiting threads.
+         * @brief Creates a deep copy of the Switch object.
+         * @details This function creates a new Switch object and copies all the data from the current Switch object to the new one.
+         *          This is useful for creating a new Switch object that is a modified version of the current one.
+         * @return A pointer to the new Switch object.
          */
-        extern void renderer();
-
-        /**
-         * @brief Event_Thread is a function that runs an infinite loop to handle various events and tasks.
-         * 
-         * This function performs the following tasks in each iteration of the loop:
-         * - Resets the thread load counter and updates the previous time.
-         * - Calls functions to recall memories, go through file streams, and refresh the multi-frame canvas.
-         * - Checks for termination signals and breaks out of the loop if the terminate flag is set.
-         * - Updates the current time and calculates the delta time.
-         * - Adjusts the current update speed based on the event thread load.
-         * - Sleeps for a calculated duration to control the update speed.
-         * 
-         * The function is designed to be used in a multi-threaded environment where it can be paused and resumed as needed.
-         * 
-         * @note If uncapped FPS is desired, the sleep code can be disabled.
-         */
-        extern void eventThread();
-
-        /**
-         * @brief Function that continuously handles user input in a separate thread.
-         *
-         * This function runs an infinite loop where it performs the following steps:
-         * 1. Waits for user input by calling INTERNAL::Query_Inputs().
-         * 2. Pauses the GGUI system and performs the following actions:
-         *    - Records the current time as INTERNAL::Previous_Time.
-         *    - Translates the queried inputs using INTERNAL::Translate_Inputs().
-         *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
-         *    - Calls the event handlers to react to the parsed input using Event_Handler().
-         *    - Records the current time as INTERNAL::Current_Time.
-         *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
-         */
-        extern void inputThread();
-
-        /**
-         * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
-         * 
-         * This function takes an unsigned long long integer and formats it as a hexadecimal string
-         * in uppercase. The resulting string does not include a "0x" prefix.
-         * 
-         * @param value The unsigned long long integer to be converted to a hexadecimal string.
-         * @return A std::string containing the uppercase hexadecimal representation of the input value.
-         */
-        extern std::string Hex(unsigned long long value);
-
-        /**
-         * @brief Checks if two rectangles collide.
-         *
-         * This function determines whether two rectangles, defined by their top-left
-         * corners and dimensions, overlap in a 2D space.
-         *
-         * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
-         * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
-         * @param A_Width The width of the first rectangle.
-         * @param A_Height The height of the first rectangle.
-         * @param B_Width The width of the second rectangle.
-         * @param B_Height The height of the second rectangle.
-         * @return true if the rectangles overlap, false otherwise.
-         */
-        extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
-
-        /**
-         * @brief Checks if two GGUI elements collide.
-         * 
-         * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
-         * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
-         * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
-         * 
-         * @param a Pointer to the first GGUI element.
-         * @param b Pointer to the second GGUI element.
-         * @param Identity Boolean value to return if the elements are the same.
-         * @return true if the elements collide, false otherwise.
-         */
-        extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
-
-        /**
-         * @brief Checks if a given point collides with a specified element.
-         * 
-         * This function determines if the point `b` collides with the element `a` by 
-         * calling another `Collides` function with the element's absolute position, 
-         * width, height, and the point's assumed dimensions of 1x1.
-         * 
-         * @param a Pointer to the GGUI::Element to check for collision.
-         * @param b The point (as GGUI::IVector3) to check for collision with the element.
-         * @return true if the point collides with the element, false otherwise.
-         */
-        extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
-
-        /**
-         * @brief Recursively finds the most accurate element that contains the given position.
-         * 
-         * This function checks if the given position is within the bounds of the parent element.
-         * If it is, it then checks all the child elements of the parent to see if any of them
-         * contain the position. If a child element contains the position, the function is called
-         * recursively on that child element. If no child element contains the position, the parent
-         * element is returned.
-         * 
-         * @param c The position to check, represented as an IVector3.
-         * @param Parent The parent element to start the search from.
-         * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
-         */
-        extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
-
-        /**
-         * @brief Returns the smaller of two signed long long integers.
-         * 
-         * This function compares two signed long long integers and returns the smaller of the two.
-         * 
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The smaller of the two signed long long integers.
-         */
-        extern signed long long Min(signed long long a, signed long long b);
-
-        /**
-         * @brief Returns the maximum of two signed long long integers.
-         *
-         * This function compares two signed long long integers and returns the greater of the two.
-         *
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The greater of the two signed long long integers.
-         */
-        extern signed long long Max(signed long long a, signed long long b);
-
-        /**
-         * @brief Checks if a bit is set in a char.
-         * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
-         *          It returns true if the bit is set and false if it is not.
-         *
-         * @param val The char to check the bit in.
-         * @param i The index of the bit to check.
-         *
-         * @return True if the bit is set, false if it is not.
-         */
-        extern bool Has_Bit_At(char val, int i);
-
-        /**
-         * @brief Gets the contents of a given position in the buffer.
-         * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
-         * @param Absolute_Position The position to get the contents of.
-         * @return The contents of the given position, or nullptr if the position is out of bounds.
-         */
-        extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
-
-        /**
-         * @brief Calculates the current load of the GGUI thread based on the given current position.
-         * @param Min The minimum value the load can have.
-         * @param Max The maximum value the load can have.
-         * @param Position The current position of the load.
-         * @return The current load of the GGUI thread from 0 to 1.
-         */
-        extern float Lerp(int Min, int Max, int Position);
-
-        /**
-         * @brief Checks if the given flag is set in the given flags.
-         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-         *
-         * @param f The flags to check.
-         * @param Flag The flag to check for.
-         * @return True if the flag is set, otherwise false.
-         */
-        extern bool Is(unsigned long long f, unsigned long long Flag);
-
-        /**
-         * @brief Checks if a flag is set in a set of flags.
-         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-         *
-         * @param f The flags to check.
-         * @param flag The flag to check for.
-         * @return True if the flag is set, otherwise false.
-         */
-        extern bool Has(unsigned long long f, unsigned long long flag);
-
-        extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
-
-        /**
-         * @brief Checks if all flags in small are set in big.
-         * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
-         *
-         * @param big The flags to check against.
-         * @param small The flags to check.
-         * @return True if all flags in small are set in big, otherwise false.
-         */
-        extern bool Contains(unsigned long long big, unsigned long long Small);
-
-        extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
-
-        /**
-         * @brief Determines if a given pointer is likely deletable (heap-allocated).
-         *
-         * This function assesses whether a pointer may belong to the heap by comparing its
-         * position relative to known memory sections such as the stack, heap, and data segments.
-         *
-         * @param ptr Pointer to be evaluated.
-         * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
-         */
-        extern ALLOCATION_TYPE getAllocationType(const void* ptr);
-
-        /**
-         * Linear interpolation function
-         * @param a The start value
-         * @param b The end value
-         * @param t The interpolation value, between 0 and 1
-         * @return The interpolated value
-         */
-        template<typename T>
-        constexpr T lerp(T a, T b, T t) {
-            // Clamp t between a and b
-            return a + t * (b - a);
+        element* safeMove() const override {
+            return new switchBox();
         }
 
         /**
-         * @brief Performs gamma-corrected linear interpolation between two values.
-         * 
-         * @tparam T The type of the input values.
-         * @tparam P The type of the interpolation factor.
-         * @param a The start value.
-         * @param b The end value.
-         * @param t The interpolation factor, typically between 0 and 1.
-         * @return The interpolated value, gamma-corrected and cast back to type T.
+         * @brief Returns the name of the Switch object.
+         * @details This function returns a string that represents the name of the Switch object.
+         *          The name is constructed by concatenating the name of the Switch with the 
+         *          class name "Switch", separated by a "<" and a ">".
+         * @return The name of the Switch object.
          */
-        template<typename T, typename P>
-        constexpr T Interpolate(T a, T b, P t) {
-            // Define gamma value for correction
-            constexpr float gamma = 2.2F;
-
-            // Apply gamma correction to input values and perform linear interpolation
-            const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
-
-            // Reverse gamma correction and cast back to original type
-            return static_cast<T>(std::pow(c_f, 1.F / gamma));
+        std::string getName() const override{
+            return "switchBox<" + Name + ">";
         }
+
+        constexpr INTERNAL::compactString getStateString() const {
+            return State ? *On : *Off;
+        }
+
+        void setStateString(const INTERNAL::compactString* off, const INTERNAL::compactString* on);
+    };
+
+    class radioButton : public switchBox{
+    public:
+        /**
+         * @brief Constructs a radioButton element with optional custom styling and embedding behavior.
+         *
+         * This constructor initializes a radioButton, inheriting from switchBox, with the specified style and visual state.
+         * The visual state is set to display the appropriate radio button symbols for "off" and "on" states.
+         *
+         * @param s The style to apply to the radioButton. Defaults to STYLES::CONSTANTS::Default.
+         * @param Embed_Styles_On_Construct If true, embeds the styles during construction. Defaults to false.
+         */
+        radioButton(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
+            switchBox(s | visualState(SYMBOLS::RADIOBUTTON_OFF, SYMBOLS::RADIOBUTTON_ON), Embed_Styles_On_Construct) {}
+        radioButton(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : radioButton(s, Embed_Styles_On_Construct){}
 
         /**
-         * @brief Interpolates between two RGB colors using linear interpolation.
-         * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
-         * @param A The start RGB color.
-         * @param B The end RGB color.
-         * @param Distance The interpolation factor, typically between 0 and 1.
-         * @return The interpolated RGB color.
+         * @brief Returns the state of the Radio_Button.
+         * @details This function returns a boolean value indicating whether the Radio_Button is turned on or off.
+         *          The state is represented by the Switch::State property.
+         * @return The state of the Radio_Button.
          */
-        extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
-
-        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
-            static std::string result;  // an internal cache container between renders.
-
-            if (result.empty() || Liquefied_Size != result.size()){
-                // Resize a std::string to the total size.
-                result.resize(Liquefied_Size, '\0');
-            }
-
-            // Copy the contents of the Data vector into the std::string.
-            unsigned int Current_UTF_Insert_Index = 0;
-            for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
-                const compactString& data = Data->at(i);
-
-                // Size of ones are always already loaded from memory into a char.
-                if (data.size > 1){
-                    // Replace the current contents of the string with the contents of the Unicode data.
-                    result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
-
-                    Current_UTF_Insert_Index += data.size;
-                }
-                else{
-                    // Add the single character to the string.
-                    result[Current_UTF_Insert_Index++] = data.getAscii();
-                }
-            }
-
-            return &result;
+        bool getState(){
+            return State;
+        }
+        
+        /**
+         * @brief Returns the name of the Radio_Button object.
+         * @details This function returns a string that represents the name of the Radio_Button object.
+         *          The name is constructed by concatenating the name of the Radio_Button with the 
+         *          class name "Radio_Button", separated by a "<" and a ">".
+         * @return The name of the Radio_Button object.
+         */
+        std::string getName() const override{
+            // Return the formatted name of the Radio_Button.
+            return "radioButton<" + Name + ">";
         }
 
-        inline std::string To_String(compactString& cstr){
-            // Resize a std::string to the total size.
-            std::string result;
-            result.resize(cstr.size);
+        // Diabled, use the switchBox class type for search
+        // element* safeMove() const override {
+        //     return new radioButton();
+        // }
+    };
 
-            // Copy the contents of the Compact_String into the std::string.
-            if (cstr.size > 1){
-                // Replace the current contents of the string with the contents of the Unicode data.
-                result.replace(0, cstr.size, cstr.getUnicode());
-            }
-            else{
-                // Add the single character to the string.
-                result[0] = cstr.getAscii();
-            }
+    class checkBox : public switchBox{
+    public:
+        /**
+         * @brief Constructs a checkBox element with optional styling and embedding behavior.
+         *
+         * This constructor initializes a checkBox by applying the provided style and visual states
+         * for checked and unchecked symbols. It also allows specifying whether to embed styles upon construction.
+         *
+         * @param s The style to apply to the checkBox. Defaults to STYLES::CONSTANTS::Default.
+         * @param Embed_Styles_On_Construct If true, embeds styles during construction. Defaults to false.
+         */
+        checkBox(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : 
+            switchBox(s | visualState({SYMBOLS::EMPTY_CHECK_BOX, SYMBOLS::CHECKED_CHECK_BOX}), Embed_Styles_On_Construct) {}
+        checkBox(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : checkBox(s, Embed_Styles_On_Construct) {}
 
-            return result;
+        /**
+         * @brief Returns the current state of the Check_Box.
+         * @details This function returns a boolean indicating whether the Check_Box is checked or unchecked.
+         * @return The state of the Check_Box.
+         */
+        bool getState(){
+            return State; // Return the current state of the Check_Box.
         }
+        
+        /**
+         * @brief Returns the name of the Check_Box object.
+         * @details This function returns a string that represents the name of the Check_Box object.
+         *          The name is constructed by concatenating the name of the Check_Box with the 
+         *          class name "Check_Box", separated by a "<" and a ">".
+         * @return The name of the Check_Box object.
+         */
+        std::string getName() const override{
+            return "checkBox<" + Name + ">";
+        }
+
+        // Disabled, use the switchBox class type.
+        // element* safeMove() const override {
+        //     return new checkBox();
+        // }
+    };
+
+    namespace INTERNAL{
+        void DisableOthers(switchBox* keepOn);
     }
+}
+
+#endif
+#ifndef _TEXT_FIELD_H_
+#define _TEXT_FIELD_H_
+
+
+
+namespace GGUI{
+    class textField : public element{
+    protected:
+        std::string Text = "";
+
+        // This will hold the text by lines, and does not re-allocate memory for whole text, only for indicies.
+        std::vector<INTERNAL::compactString> Text_Cache; 
+
+        /**
+         * @brief Updates the text cache list by newlines, and if no found then set the Text as the zeroth index.
+         * @details This function will also determine the longest line length and store it in the class.
+         * @note This function will also check if the lines can be appended to the previous line or not.
+         */
+        void updateTextCache();
+    public:
+
+        /**
+         * @brief Constructor for the Text_Field class.
+         * @details This constructor takes an optional Styling parameter, and an optional string parameter.
+         *          If the string parameter is not given, it defaults to an empty string.
+         *          If the Styling parameter is not given, it defaults to a Styling object with
+         *          the default values for the Height and Width properties.
+         *          The Styling parameter is used to set the style of the Text_Field object.
+         * @param text The text to be displayed in the Text_Field object.
+         * @param s The Styling object to use for the Text_Field object.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Text_Field's style. Only use if you know what you're doing!!!
+         */
+        textField(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
+
+            // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
+            Text_Cache.reserve(getHeight());
+
+            if (getWidth() == 1 && getHeight() == 1){
+                allowDynamicSize(true);
+            }
+
+            // Update the text cache list by newlines, and if no found then set the Text as the zeroth index.
+            if (Embed_Styles_On_Construct)
+                updateTextCache();
+        }
+        
+        textField(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : textField(s, Embed_Styles_On_Construct){}
+
+        /**
+         * @brief Sets the text of the text field.
+         * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
+         * @param text The new text for the text field.
+         */
+        void setText(std::string text);
+
+        /**
+         * @brief Gets the text of the text field.
+         * @details This function returns the string containing the text of the text field.
+         * @return The text of the text field as a string.
+         */
+        std::string getText(){
+            return Text;
+        }
+
+        /**
+         * @brief Renders the text field into the Render_Buffer.
+         * @details This function processes the text field to generate a vector of UTF objects representing the current state.
+         * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
+         * @return A vector of UTF objects representing the rendered text field.
+         */
+        std::vector<GGUI::UTF>& render() override;
+
+        /**
+         * @brief Aligns text to the left within the text field.
+         * @param Result A vector of UTF objects to store the aligned text.
+         * @details This function iterates over each line in the Text_Cache and aligns them to the left side 
+         *          of the text field. The function respects the maximum height and width of the text field 
+         *          and handles overflow according to the Style settings.
+         */
+        void alignTextLeft(std::vector<UTF>& Result);
+        
+        /**
+         * @brief Aligns text to the right within the text field.
+         * @param Result A vector of UTF objects to store the aligned text.
+         * @details This function iterates over each line in the Text_Cache and aligns them to the right side
+         *          of the text field. The function respects the maximum height and width of the text field
+         *          and handles overflow according to the Style settings.
+         */
+        void alignTextRight(std::vector<UTF>& Result);
+        
+        /**
+         * @brief Aligns text to the center within the text field.
+         * @param Result A vector of UTF objects to store the aligned text.
+         * @details This function iterates over each line in the Text_Cache and aligns them to the center of the text field. The function respects the maximum height and width of the text field
+         *          and handles overflow according to the Style settings.
+         */
+        void alignTextCenter(std::vector<UTF>& Result);
+
+        /**
+         * @brief Listens for input and calls a function when user presses any key.
+         * @param Then A function that takes a character as input and does something with it.
+         * @details This function creates three actions (for key press, enter, and backspace) that listen for input when the text field is focused. If the event is a key press or enter, it
+         *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
+         *          dirty and updates the frame.
+         */
+        void input(std::function<void(textField*, char)> Then);
+
+        element* safeMove() const override {
+            return new textField();
+        }
+    };
+}
+
+#endif
+#ifndef _RENDERER_H_
+#define _RENDERER_H_
+
+#undef min
+#undef max
+
+#include <functional>
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+
+
+
+//GGUI uses the ANSI escape code
+//https://en.wikipedia.org/wiki/ANSI_escape_code
+namespace GGUI{
+
+    namespace INTERNAL{
+        class bufferCapture;
+
+        namespace atomic{
+            enum class status{
+                PAUSED,
+                REQUESTING_RENDERING,
+                RENDERING,
+                TERMINATED,
+                NOT_INITIALIZED
+            };
+
+            extern int LOCKED;
+
+            extern std::mutex Mutex;
+            extern std::condition_variable Condition;
+
+            extern status Pause_Render_Thread;
+        }
+
+        // Inits with 'NOW()' when created
+        class buttonState {
+        public:
+            bool State;
+            std::chrono::high_resolution_clock::time_point Capture_Time;
+
+            buttonState(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
+        };
+
+        extern std::vector<UTF>* Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
+        extern std::string* Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
+
+        extern std::vector<INTERNAL::bufferCapture*> Global_Buffer_Captures;
+
+        extern unsigned int Max_Width;
+        extern unsigned int Max_Height;
+
+        extern atomic::guard<std::vector<memory>> Remember;
+
+        extern std::vector<action*> Event_Handlers;
+        extern std::vector<input*> Inputs;
+        
+        extern std::unordered_map<std::string, element*> Element_Names;
+
+        extern element* Focused_On;
+        extern element* Hovered_On;
+
+        extern bool Platform_Initialized;
+
+        extern IVector3 Mouse;    
+        extern bool Mouse_Movement_Enabled;
+
+        extern std::unordered_map<std::string, buttonState> KEYBOARD_STATES;
+
+        extern time_t MAX_UPDATE_SPEED;
+        extern int Inputs_Per_Second;
+        extern int Inputs_Per_Query;
+
+        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
+        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+
+        extern atomic::guard<std::unordered_map<int, styling>> Classes;
+        extern std::unordered_map<std::string, int> Class_Names;
+
+        extern element* Main;  
+
+        extern std::unordered_map<GGUI::canvas*, bool> Multi_Frame_Canvas;
+
+        // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
+        extern time_t MAX_UPDATE_SPEED;
+        extern time_t MIN_UPDATE_SPEED;    // Close approximation to 60 fps.
+        extern time_t CURRENT_UPDATE_SPEED;
+        extern float Event_Thread_Load;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
+
+        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
+        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+        extern unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
+
+        extern std::string now();
+
+        extern std::string constructLoggerFileName();
+
+        /**
+         * @brief Initializes platform-specific settings for console handling.
+         * @details This function sets up the console handles and modes required for input and output operations.
+         *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
+         *          handling specific ANSI features.
+         */
+        extern void initPlatformStuff();
+        
+        
+        /**
+         * @brief Sleep for the specified amount of milliseconds.
+         * @details This function is used to pause the execution of the program for a specified amount of time.
+         *          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
+         *          while on Linux and macOS it calls the usleep function.
+         * @param mm The number of milliseconds to sleep.
+         */
+        void SLEEP(unsigned int milliseconds);
+        
+        /**
+         * @brief Renders the current frame to the console.
+         * 
+         * This function moves the console cursor to the top left corner of the screen
+         * and writes the contents of the Frame_Buffer to the console.
+         * 
+         * @note The number of bytes written to the console is stored in a temporary
+         * variable but is not used elsewhere in the function.
+         */
+        extern void renderFrame();
+
+        /**
+         * @brief Updates the maximum width and height of the console window.
+         * 
+         * This function retrieves the current console screen buffer information and updates
+         * the maximum width and height based on the console window dimensions. If the console
+         * information is not retrieved correctly, an error message is reported. Additionally,
+         * if the main window is active, its dimensions are set to the updated maximum width
+         * and height.
+         */
+        extern void updateMaxWidthAndHeight();
+        
+        /**
+         * @brief Queries and appends new input records to the existing buffered input.
+         *
+         * This function reads input records from the console and appends them to the 
+         * existing buffered input which has not yet been processed. It uses the previous 
+         * size of the raw input buffer to determine the starting point for new input records.
+         *
+         * @note The function ensures that negative numbers do not create overflows by 
+         *       using the maximum of the remaining capacity and the total capacity.
+         *
+         * @param None
+         * @return None
+         */
+        extern void queryInputs();
+        
+        /**
+         * @brief Gracefully shuts down the application.
+         *
+         * This function performs a series of steps to gracefully shut down the application:
+         * 1. Logs the initiation of the termination process.
+         * 2. Signals subthreads to terminate.
+         * 3. Waits for all subthreads to join.
+         * 4. Reverts the console to its normal mode.
+         * 5. Cleans up platform-specific resources and settings.
+         * 6. Logs the successful shutdown of the application.
+         * 7. Exits the application with the specified exit code.
+         *
+         * @param signum The exit code to be used when terminating the application.
+         */
+        extern void EXIT(int Signum = 0);
+
+        extern void waitForThreadTermination();
+
+        /**
+         * @brief Processes mouse input events and updates the input list.
+         * @details This function checks the state of mouse buttons (left, right, and middle)
+         *          and determines if they have been pressed or clicked. It compares the current
+         *          state with the previous state and the duration the button has been pressed.
+         *          Based on these checks, it creates corresponding input objects and adds them
+         *          to the Inputs list.
+         */
+        extern void mouseAPI();
+
+        /**
+         * @brief Handles mouse scroll events.
+         * @details This function checks if the mouse scroll up or down button has been pressed and if the focused element is not null.
+         *          If the focused element is not null, it calls the scroll up or down function on the focused element.
+         */
+        extern void scrollAPI();
+
+        /**
+         * @brief Returns the length of a Unicode character based on the first byte.
+         * @details This function takes the first byte of a Unicode character and returns its length in bytes.
+         *          If the character is not a Unicode character, it returns 1.
+         * @param first_char The first byte of the character.
+         * @return The length of the character in bytes.
+         */
+        extern int getUnicodeLength(char first_char);
+
+        /**
+         * @brief Gets the current maximum width of the terminal.
+         * @details This function returns the current maximum width of the terminal. If the width is 0, it will set the carry flag to indicate that a resize is needed to be performed.
+         *
+         * @return The current maximum width of the terminal.
+         */
+        extern int getMaxWidth();
+
+        /**
+         * @brief Gets the current maximum height of the terminal.
+         * @details This function returns the current maximum height of the terminal. If the height is 0, it will set the carry flag to indicate that a resize is needed to be performed.
+         *
+         * @return The current maximum height of the terminal.
+         */
+        extern int getMaxHeight();
+
+        /**
+         * @brief Converts a vector of UTFs into a Super_String.
+         * @details This function takes a vector of UTFs, and converts it into a Super_String. The resulting Super_String is stored in a cache, and the cache is resized if the window size has changed.
+         * @param Text The vector of UTFs to convert.
+         * @param Width The width of the window.
+         * @param Height The height of the window.
+         * @return A pointer to the resulting Super_String.
+         */
+        extern std::vector<compactString>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
+        
+        /**
+         * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
+         * @details This function is a lambda function that is used by the Atomic::Guard class to prolong or delete memories in the smart memory system.
+         *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
+         */
+        extern void recallMemories();
+
+        /**
+         * @brief Removes focus from the currently focused element and its children.
+         * @details This function checks if there is a currently focused element.
+         *          If there is, it sets the focus state on the element and its children to false.
+         *          Focus is only removed if the element's current focus state differs from the desired state.
+         */
+        extern void unFocusElement();
+
+        /**
+         * @brief Removes the hover state from the currently hovered element and its children.
+         * @details This function checks if there is a currently hovered element.
+         *          If there is, it sets the hover state on the element and its children to false.
+         *          Hover is only removed if the element's current hover state differs from the desired state.
+         */
+        extern void unHoverElement();
+
+        /**
+         * @brief Updates the currently focused element to a new candidate.
+         * @details This function checks if the new candidate is the same as the current focused element.
+         *          If not, it removes the focus from the current element and all its children.
+         *          Then, it sets the focus on the new candidate element and all its children.
+         * @param new_candidate The new element to focus on.
+         */
+        extern void updateFocusedElement(GGUI::element* new_candidate);
+
+        /**
+         * @brief Updates the currently hovered element to a new candidate.
+         * @details This function checks if the new candidate is the same as the current hovered element.
+         *          If not, it removes the hover state from the current element and all its children.
+         *          Then, it sets the hover state on the new candidate element and all its children.
+         * @param new_candidate The new element to hover on.
+         */
+        extern void updateHoveredElement(GGUI::element* new_candidate);
+
+        /**
+         * @brief Handles all events in the system.
+         * @details This function goes through all event handlers and checks if the event criteria matches any of the inputs.
+         *          If a match is found, it calls the event handler job with the input as an argument.
+         *          If the job is successful, it removes the input from the list of inputs.
+         *          If the job is unsuccessful, it reports an error.
+         */
+        extern void eventHandler();
+
+        /**
+         * Get the ID of a class by name, assigning a new ID if it doesn't exist.
+         * 
+         * @param n The name of the class.
+         * @return The ID of the class.
+         */
+        extern int getFreeClassID(std::string n);
+
+        /**
+         * @brief Initializes the GGUI system and returns the main window.
+         * 
+         * @return The main window of the GGUI system.
+         */
+        extern GGUI::element* initGGUI();
+
+        /**
+         * @brief Nests a text buffer into a parent buffer while considering the childs position and size.
+         * 
+         * @param Parent The parent element which the text is being nested into.
+         * @param child The child element which's text is being nested.
+         * @param Text The text buffer to be nested.
+         * @param Parent_Buffer The parent buffer which the text is being nested into.
+         */
+        extern void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
+
+        /**
+         * @brief Handles the pressing of the tab key.
+         * @details This function selects the next tabbed element as focused and not hovered.
+         *          If the shift key is pressed, it goes backwards in the list of tabbed elements.
+         */
+        extern void handleTabulator();
+
+        /**
+         * @brief Handles escape key press events.
+         * @details This function checks if the escape key has been pressed and if the focused element is not null.
+         *          If the focused element is not null, it calls the Un_Focus_Element function to remove the focus.
+         *          If the focused element is null but the hovered element is not null, it calls the Un_Hover_Element
+         *          function to remove the hover.
+         */
+        extern void handleEscape();
+
+        /**
+         * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
+         * 
+         * @param Buffer A vector of UTF elements to be encoded.
+         * @details The function marks the beginning and end of color strips within the buffer. 
+         *          It checks each UTF element's foreground and background colors with its adjacent elements
+         *          to determine where encoding strips start and end.
+         */
+        extern void encodeBuffer(std::vector<GGUI::UTF>* Buffer);
+
+        /**
+         * @brief Notifies all global buffer capturers about the latest data to be captured.
+         *
+         * This function is used to inform all global buffer capturers about the latest data to be captured.
+         * It iterates over all global buffer capturers and calls their Sync() method to update their data.
+         *
+         * @param informer Pointer to the buffer capturer with the latest data.
+         */
+        extern void informAllGlobalBufferCaptures(bufferCapture* informer);
+    }
+
+    /**
+     * @brief Updates the frame.
+     * @details This function updates the frame. It's the main entry point for the rendering thread.
+     * @note This function will return immediately if the rendering thread is paused.
+     */
+    extern void updateFrame();
+    
+    /**
+     * @brief Pauses the rendering thread.
+     * @details This function pauses the rendering thread. The thread will wait until the rendering thread is resumed.
+     */
+    extern void pauseGGUI();
+
+    /**
+     * @brief Resumes the rendering thread.
+     * @details This function resumes the rendering thread after it has been paused.
+     * @param restore_render_to The status to restore the rendering thread to.
+     */
+    extern void resumeGGUI();
+
+    /**
+     * @brief Pauses all other GGUI internal threads and calls the given function.
+     * @details This function will pause all other GGUI internal threads and call the given function.
+     * @param f The function to call.
+     */
+    extern void pauseGGUI(std::function<void()> f);
+
+    /**
+     * @brief Use GGUI in a simple way.
+     * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, add all the elements to the root window, sleep for the given amount of milliseconds, and then exit GGUI.
+     * @param App The whole GGUI Application that GGUI holds.
+     * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
+     */
+    extern void GGUI(STYLING_INTERNAL::styleBase& App, unsigned long long Sleep_For = 0);
+
+    /**
+     * @brief Calls the GGUI function with the provided style and sleep duration.
+     *
+     * This function forwards the given style object and sleep duration to another
+     * overload of the GGUI function. It is typically used to initialize or update
+     * the graphical user interface with specific styling and timing parameters.
+     *
+     * @param App An rvalue reference to a STYLING_INTERNAL::style_base object representing the application's style.
+     * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
+     */
+    extern void GGUI(STYLING_INTERNAL::styleBase&& App, unsigned long long Sleep_For = 0);
+
+    /**
+    * @brief Retrieves an element by name.
+    * @details This function takes a string argument representing the name of the element
+    *          and returns a pointer to the element if it exists in the global Element_Names map.
+    * @param name The name of the element to retrieve.
+    * @return A pointer to the element if it exists; otherwise, nullptr.
+    */
+    extern element* getElement(std::string name);
+
+    /**
+     * @brief Retrieves a vector of pointers to elements of type T.
+     * 
+     * This template function delegates the retrieval of elements to the INTERNAL::Main object.
+     * It returns a std::vector containing pointers to elements of the specified type T.
+     * 
+     * @tparam T The type of elements to retrieve.
+     * @return std::vector<T*> A vector of pointers to elements of type T.
+     */
+    template<typename T>
+    std::vector<T*> getElements(){
+        return INTERNAL::Main->getElements<T>();
+    }
+}
+
+#endif
+#ifndef _ADDONS_H_
+#define _ADDONS_H_
+
+namespace GGUI{
+    
+    /**
+     * @brief Initializes all addons and adds them to the main internal structure.
+     *
+     * This function first calls the initializer for the inspect tool addon.
+     * After all addons are loaded, it iterates through the list of addons
+     * and adds each one to the main internal structure.
+     */
+    extern void initAddons();
+
+    /**
+     * @brief Initializes the inspect tool.
+     * @details This function initializes the inspect tool which is a debug tool that displays the number of elements, render time, and event time.
+     * @see GGUI::Update_Stats
+     */
+    extern void initInspectTool();
 }
 
 #endif
