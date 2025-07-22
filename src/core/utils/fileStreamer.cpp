@@ -556,7 +556,7 @@ namespace GGUI{
 
             // If the informer has less data, synchronization is not possible
             if (Difference > 0) {
-                report(
+                GGUI::report(
                     "Failed to sync buffer capture: '" + getName() + "' with: '" + Informer->getName() + "' !\n" +
                     "Try obj->Merge(Informer) before trying to sync them again."
                 );

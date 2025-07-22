@@ -5,7 +5,11 @@
 #include <vector>
 #include <fstream>
 #include <regex>
+#if defined(_WIN32)
 #include <intrin.h>
+#else
+#include <cpuid.h>
+#endif
 
 using namespace std;
 
@@ -109,18 +113,20 @@ void Compile_Headers(){
             Output << Header.second.Data;
         }
     } 
-
-    // close all the files
-    Output.close();
 }
 
 std::string Get_Machine_SIMD_Type(){
-    // Uses the CMD utility to prone 'lscpu' command
-    int cpuInfo[4];
+    int cpuInfo[4] = {0};
+#if defined(_WIN32)
     __cpuid(cpuInfo, 1);
-
     bool sseSupport = cpuInfo[3] & (1 << 25);
     bool avxSupport = cpuInfo[2] & (1 << 28);
+#else
+    unsigned int eax, ebx, ecx, edx;
+    __cpuid(1, eax, ebx, ecx, edx);
+    bool sseSupport = edx & (1 << 25);
+    bool avxSupport = ecx & (1 << 28);
+#endif
 
     if (avxSupport) return "-mavx";
     if (sseSupport) return "-msse";
@@ -130,19 +136,14 @@ std::string Get_Machine_SIMD_Type(){
 
 /// @brief Gathers all cpp files under GGUI/src and returns them as usable source files for g++
 std::string Get_Cpp_Files(){
-    std::vector<std::string> Cpp_Files;
-    for (const auto & entry : std::filesystem::directory_iterator("../../src")) {
-        if(entry.path().extension() != ".cpp" || entry.path().filename() == "main") continue;
-        Cpp_Files.push_back(entry.path().filename().string());
-    }
+    // Use the single GGUIBody.cpp file that includes all other source files
+    return " ./GGUIBody.cpp";
+}
 
-    std::string Result = "";
-
-    for(auto& file : Cpp_Files){
-        Result += " -c ../../src/" + file;
-    }
-
-    return Result;
+/// @brief Gets the corresponding object file names 
+std::string Get_Object_Files(){
+    // Since we're only compiling GGUIBody.cpp, we only get GGUIBody.o
+    return " ./GGUIBody.o";
 }
 
 int main(){
@@ -155,6 +156,7 @@ int main(){
     Compile_Headers();
 
     std::string CPP_Files = Get_Cpp_Files();
+    std::string Object_Files = Get_Object_Files();
 
     // generate the .o file for window and linux
 
@@ -163,31 +165,25 @@ int main(){
     if (SIMD_Support.size() > 0)
         std::cout << "Using SIMD type: " << SIMD_Support << std::endl;
 
-    std::string Universal_Args = CPP_Files + " -c -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " -DGGUI_RELEASE --std=c++17 ";
+    std::string Universal_Args = " -c " + CPP_Files + " -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " -DGGUI_RELEASE -U_WIN32 --std=c++17 ";
 
     // generate for the main platform this script is run from with gcc
     std::string Command = std::string("g++" + Universal_Args) + Double_Command_Mark + 
-    std::string("ar rcs GGUIWin.lib ./main.o");
+    std::string("ar rcs GGUILinux.lib") + Object_Files;
 
-#if _WIN32
-    // if we are in windows, then generate for unix
-    Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
-    std::string("ar rcs GGUIUnix.lib ./main.o");
-#else
-    // if we are on Unix, then generate for windows too
-    Command += Double_Command_Mark + std::string("x86_64-w64-mingw32-g++" + Universal_Args) + Double_Command_Mark +
-    std::string("x86_64-w64-mingw32-ar rcs GGUIWin.lib ./main.o");
-#endif
+    // Try to build for Windows with MinGW if available, but don't fail if it doesn't work
+    std::string Windows_Args = " -c " + CPP_Files + " -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " -DGGUI_RELEASE -D_WIN32 --std=c++17 ";
+    Command += " ; echo 'Attempting Windows cross-compilation...' ; x86_64-w64-mingw32-g++" + Windows_Args + " || echo 'Windows cross-compilation failed, skipping...'";
 
     system(Command.c_str());
 
 #if _WIN32
-    // Clean the *.o file
-    Command = std::string("del main.o");
+    // Clean the *.o files
+    Command = std::string("del *.o");
     system(Command.c_str());
 #else
-    // Clean the *.o file
-    Command = std::string("rm ./main.o");
+    // Clean the *.o files
+    Command = std::string("rm -f *.o");
     system(Command.c_str());
 #endif
 }

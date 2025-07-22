@@ -111,7 +111,7 @@ namespace GGUI{
         #if _WIN32
     
         #include <windows.h>
-        #include <DbgHelp.h>
+        #include <dbghelp.h>
 
         /**
          * @brief Sleep for the specified amount of milliseconds.

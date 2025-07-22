@@ -132,7 +132,7 @@ namespace GGUI{
     #if _WIN32
     
         #include <windows.h>
-        #include <DbgHelp.h>
+        #include <dbghelp.h>
 
         #ifndef GGUI_RELEASE
 
@@ -672,7 +672,7 @@ namespace GGUI{
             // Attempt to generate human-readable strings for each frame address (optional backup, not used directly)
             char** symbolNames = backtrace_symbols(callStackAddresses, capturedFrameCount);
             if (!symbolNames) {
-                report("Error: Failed to retrieve stack trace symbols. Problem: " + problemDescription);
+                GGUI::report("Error: Failed to retrieve stack trace symbols. Problem: " + problemDescription);
                 return;
             }
 
@@ -722,10 +722,10 @@ namespace GGUI{
             formattedTrace += "Problem: " + problemDescription;
 
             // Output the full report
-            report(formattedTrace);
+            GGUI::report(formattedTrace);
         #else
             // If the platform is unsupported (e.g., Android), report the problem without stack trace
-            report(problemDescription);
+            GGUI::report(problemDescription);
         #endif
         }
     #endif
