@@ -245,7 +245,7 @@ int main(){
         const std::string& cpp_file = CPP_Files[i];
         const std::string& obj_file = Object_Files[i];
         
-        std::string compile_command = "x86_64-w64-mingw32-g++-posix" + Base_Args + " -o " + obj_file + " " + cpp_file;
+        std::string compile_command = "x86_64-w64-mingw32-g++" + Base_Args + " -o " + obj_file + " " + cpp_file;
         
         int result = system((virtualRoot + compile_command).c_str());
         if (result != 0) {
