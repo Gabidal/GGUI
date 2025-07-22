@@ -135,10 +135,4 @@ echo "=== Initialization Complete ==="
 echo "✓ Build process completed successfully!"
 echo "✓ GGUI executable: ./build/GGUI"
 echo
-echo "Next steps:"
-echo "  • Test the build: ./build/GGUI"
-echo "  • Run analytics: ./analytics/benchmark.sh --help"
-echo "  • Memory check: ./analytics/leaks.sh"
-echo "  • View examples: cd ../examples"
-echo
 echo "For analytics documentation, see: ./analytics/README.md"
