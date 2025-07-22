@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <regex>
+#include <algorithm>
 #if defined(_WIN32)
 #include <intrin.h>
 #else
@@ -135,15 +136,63 @@ std::string Get_Machine_SIMD_Type(){
 }
 
 /// @brief Gathers all cpp files under GGUI/src and returns them as usable source files for g++
-std::string Get_Cpp_Files(){
-    // Use the single GGUIBody.cpp file that includes all other source files
-    return " ./GGUIBody.cpp";
+std::vector<std::string> Get_Cpp_Files(){
+    std::vector<std::string> cpp_files = {
+        // Core utilities
+        "src/core/utils/style.cpp",
+        "src/core/utils/logger.cpp", 
+        "src/core/utils/utils.cpp",
+        "src/core/utils/fileStreamer.cpp",
+        "src/core/utils/settings.cpp",
+        "src/core/utils/drm.cpp",
+        
+        // Elements
+        "src/elements/element.cpp",
+        "src/elements/listView.cpp",
+        "src/elements/textField.cpp",
+        "src/elements/switch.cpp",
+        "src/elements/canvas.cpp",
+        "src/elements/progressBar.cpp",
+        
+        // Specialized elements
+        "src/elements/HTML.cpp",
+        
+        // core functionalities
+        "src/core/renderer.cpp",
+        "src/core/thread.cpp",
+        "src/core/addons/addons.cpp"
+    };
+    return cpp_files;
 }
 
 /// @brief Gets the corresponding object file names 
-std::string Get_Object_Files(){
-    // Since we're only compiling GGUIBody.cpp, we only get GGUIBody.o
-    return " ./GGUIBody.o";
+std::vector<std::string> Get_Object_Files(){
+    std::vector<std::string> obj_files = {
+        // Core utilities
+        "style.o",
+        "logger.o",
+        "utils.o", 
+        "fileStreamer.o",
+        "settings.o",
+        "drm.o",
+        
+        // Elements
+        "element.o",
+        "listView.o",
+        "textField.o",
+        "switch.o",
+        "canvas.o",
+        "progressBar.o",
+        
+        // Specialized elements
+        "HTML.o",
+        
+        // core functionalities
+        "renderer.o",
+        "thread.o",
+        "addons.o"
+    };
+    return obj_files;
 }
 
 int main(){
@@ -155,35 +204,122 @@ int main(){
     // Compile the headers:
     Compile_Headers();
 
-    std::string CPP_Files = Get_Cpp_Files();
-    std::string Object_Files = Get_Object_Files();
+    std::vector<std::string> CPP_Files = Get_Cpp_Files();
+    std::vector<std::string> Object_Files = Get_Object_Files();
 
-    // generate the .o file for window and linux
-
-    std::string SIMD_Support = Get_Machine_SIMD_Type();
+    // std::string SIMD_Support = Get_Machine_SIMD_Type();
+    std::string SIMD_Support = "";
 
     if (SIMD_Support.size() > 0)
         std::cout << "Using SIMD type: " << SIMD_Support << std::endl;
 
-    std::string Universal_Args = " -c " + CPP_Files + " -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " -DGGUI_RELEASE -U_WIN32 --std=c++17 ";
+    std::vector<std::string> flags = {
+        "-c",
+        "-O3",
+        SIMD_Support,
+        "-DGGUI_RELEASE",
+        "--std=c++17",
+        "-fpermissive",
+        "-Wno-narrowing",
+        "-march=native",
+        "-flto",
+        "-fwhole-program"
+    };
 
-    // generate for the main platform this script is run from with gcc
-    std::string Command = std::string("g++" + Universal_Args) + Double_Command_Mark + 
-    std::string("ar rcs GGUILinux.lib") + Object_Files;
+    // Remove empty SIMD flag if not set
+    if (SIMD_Support.empty()) {
+        flags.erase(std::remove(flags.begin(), flags.end(), ""), flags.end());
+    }
 
-    // Try to build for Windows with MinGW if available, but don't fail if it doesn't work
-    std::string Windows_Args = " -c " + CPP_Files + " -O3 -fpermissive -Wno-narrowing " + SIMD_Support + " -DGGUI_RELEASE -D_WIN32 --std=c++17 ";
-    Command += " ; echo 'Attempting Windows cross-compilation...' ; x86_64-w64-mingw32-g++" + Windows_Args + " || echo 'Windows cross-compilation failed, skipping...'";
+    std::string Base_Args = "";
+    for (const auto& flag : flags) {
+        if (!flag.empty()) {
+            Base_Args += " " + flag;
+        }
+    }
+    
+#if _WIN32
+    Base_Args += " -D_WIN32";
+    std::string nativeName = "Win";
+    std::string alienName = "Unix";
+#else
+    Base_Args += " -D__unix__";
+    std::string nativeName = "Unix";
+    std::string alienName = "Win";
+#endif
+    std::string virtualRoot = "cd ./../../ " + Double_Command_Mark;
 
-    system(Command.c_str());
+    // Compile each source file individually
+    std::cout << "Compiling individual source files..." << std::endl;
+    for (size_t i = 0; i < CPP_Files.size(); ++i) {
+        const std::string& cpp_file = CPP_Files[i];
+        const std::string& obj_file = Object_Files[i];
+        
+        std::string compile_command = "g++" + Base_Args + " -o " + obj_file + " " + cpp_file;
+        
+        std::cout << "Compiling: " << cpp_file << " -> " << obj_file << std::endl;
+        int result = system((virtualRoot + compile_command).c_str());
+        if (result != 0) {
+            std::cout << "Error compiling " << cpp_file << std::endl;
+            return 1;
+        }
+    }
+
+    // Create library from all object files
+    std::string obj_files_list = "";
+    for (const auto& obj : Object_Files) {
+        obj_files_list += " " + obj;
+    }
+
+    std::string Command = "ar rcs bin/export/GGUI" + nativeName + ".lib" + obj_files_list;
+    std::cout << "Creating library: bin/export/GGUI" << nativeName << ".lib" << std::endl;
+    system((virtualRoot + Command).c_str());
 
 #if _WIN32
-    // Clean the *.o files
-    Command = std::string("del *.o");
-    system(Command.c_str());
+    // Cross-compile for Unix if on Windows
+    std::cout << "Cross-compiling for Unix..." << std::endl;
+    for (size_t i = 0; i < CPP_Files.size(); ++i) {
+        const std::string& cpp_file = CPP_Files[i];
+        const std::string& obj_file = Object_Files[i];
+        
+        std::string compile_command = "x86_64-w64-mingw32-g++" + Base_Args + " -o " + obj_file + " " + cpp_file;
+        
+        int result = system((virtualRoot + compile_command).c_str());
+        if (result != 0) {
+            std::cout << "Warning: Cross-compilation failed for " << cpp_file << std::endl;
+        }
+    }
+    
+    Command = "ar rcs bin/export/GGUI" + alienName + ".lib" + obj_files_list;
+    system((virtualRoot + Command).c_str());
 #else
-    // Clean the *.o files
-    Command = std::string("rm -f *.o");
-    system(Command.c_str());
+    // Cross-compile for Windows if on Unix
+    std::cout << "Cross-compiling for Windows..." << std::endl;
+    for (size_t i = 0; i < CPP_Files.size(); ++i) {
+        const std::string& cpp_file = CPP_Files[i];
+        const std::string& obj_file = Object_Files[i];
+        
+        std::string compile_command = "x86_64-w64-mingw32-g++" + Base_Args + " -o " + obj_file + " " + cpp_file;
+        
+        int result = system((virtualRoot + compile_command).c_str());
+        if (result != 0) {
+            std::cout << "Warning: Cross-compilation failed for " << cpp_file << std::endl;
+        }
+    }
+    
+    Command = "x86_64-w64-mingw32-ar rcs bin/export/GGUI" + alienName + ".lib" + obj_files_list;
+    system((virtualRoot + Command).c_str());
 #endif
+
+    // Clean the *.o files from the project root
+#if _WIN32
+    Command = std::string("del *.o");
+    system((virtualRoot + Command).c_str());
+#else
+    Command = std::string("rm -f *.o");
+    system((virtualRoot + Command).c_str());
+#endif
+
+    std::cout << "Static library build completed!" << std::endl;
+    return 0;
 }

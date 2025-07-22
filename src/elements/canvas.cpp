@@ -5,7 +5,7 @@
 #include <cmath>
 #include <bitset>
 
-#include "../core/SIMD/SIMD.h"
+// #include "../core/SIMD/SIMD.h"
 
 namespace GGUI{
     /**

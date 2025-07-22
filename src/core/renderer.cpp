@@ -1200,7 +1200,7 @@ namespace GGUI{
                     // Normal character data
                     Inputs.push_back(new GGUI::input(Raw_Input[i], constants::KEY_PRESS));
                 }
-                else if (Raw_Input[i] == constants::ANSI::DELETE){
+                else if (Raw_Input[i] == constants::ANSI::DEL){
                     Inputs.push_back(new GGUI::input(' ', constants::BACKSPACE));
                     KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE] = buttonState(true);
                 }

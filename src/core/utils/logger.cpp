@@ -513,7 +513,7 @@ namespace GGUI{
             result = problemDescription;
         #endif
             // Submit the final formatted report
-            report(result);
+            GGUI::report(result);
         }
 
 

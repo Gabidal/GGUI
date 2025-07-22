@@ -203,7 +203,7 @@ namespace GGUI{
             constexpr char GROUP_SEPARATOR = 29;
             constexpr char RECORD_SEPARATOR = 30;
             constexpr char UNIT_SEPARATOR = 31;
-            constexpr char DELETE = 127;
+            constexpr char DEL = 127;
 
             // At compile time generate 0-255 representations as const char* values.
             constexpr const char* toStringTable[256] = {
@@ -281,7 +281,7 @@ namespace GGUI{
         constexpr unsigned long long SUPER = (unsigned long long)1 << 13;
         constexpr unsigned long long HOME = (unsigned long long)1 << 14;
         constexpr unsigned long long INSERT = (unsigned long long)1 << 15;
-        constexpr unsigned long long DELETE = (unsigned long long)1 << 16;
+        constexpr unsigned long long DEL = (unsigned long long)1 << 16;
         constexpr unsigned long long END = (unsigned long long)1 << 17;
         constexpr unsigned long long PAGE_UP = (unsigned long long)1 << 18;
         constexpr unsigned long long PAGE_DOWN = (unsigned long long)1 << 19;
@@ -357,7 +357,7 @@ namespace GGUI{
         static const std::string INS = "INS";
         static const std::string HOME = "HOME";
         static const std::string PAGE_UP = "PAGE_UP";
-        static const std::string DELETE = "DELETE";
+        static const std::string DEL = "DELETE";
         static const std::string INSERT = "INSERT";
         static const std::string END = "END";
         static const std::string PAGE_DOWN = "PAGE_DOWN";
@@ -407,7 +407,7 @@ namespace GGUI{
             {KEYBOARD_BUTTONS::INS, constants::INSERT},
             {KEYBOARD_BUTTONS::HOME, constants::HOME},
             {KEYBOARD_BUTTONS::PAGE_UP, constants::PAGE_UP},
-            {KEYBOARD_BUTTONS::DELETE, constants::DELETE},
+            {KEYBOARD_BUTTONS::DEL, constants::DEL},
             {KEYBOARD_BUTTONS::INSERT, constants::INSERT},
             {KEYBOARD_BUTTONS::END, constants::END},
             {KEYBOARD_BUTTONS::PAGE_DOWN, constants::PAGE_DOWN},

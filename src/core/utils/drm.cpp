@@ -171,9 +171,9 @@ namespace GGUI {
                         INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::INSERT));
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::INSERT] = INTERNAL::buttonState(isPressed);
                         break;
-                    case additionalKey::DELETE:
-                        INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::DELETE));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::DELETE] = INTERNAL::buttonState(isPressed);
+                    case additionalKey::DEL:
+                        INTERNAL::Inputs.push_back(new GGUI::input(' ', GGUI::constants::DEL));
+                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::DEL] = INTERNAL::buttonState(isPressed);
                         break;
                     case additionalKey::LEFT_CLICK:
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT] = INTERNAL::buttonState(isPressed);
@@ -257,7 +257,13 @@ namespace GGUI {
             #if _WIN32
             void connectDRMBackend() {}
             
-            void sendBuffer(std::vector<UTF>& abstractBuffer) {}
+            void sendBuffer(std::vector<UTF>&) {}
+
+            void pollInputs() {}
+
+            void translateInputs() {}
+
+            void retryDRMConnect() {}
             #else
             
             // This will contain the open connection between DRM and this client.

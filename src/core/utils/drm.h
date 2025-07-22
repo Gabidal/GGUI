@@ -99,7 +99,7 @@ namespace GGUI {
                         F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
                         ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
                         HOME, END, PAGE_UP, PAGE_DOWN,
-                        INSERT, DELETE,
+                        INSERT, DEL,
                         LEFT_CLICK, MIDDLE_CLICK, RIGHT_CLICK, SCROLL_UP, SCROLL_DOWN,
                     };
 
@@ -136,10 +136,15 @@ namespace GGUI {
             }
 
             #if _WIN32
-            // No windows support for DRM backend.
             extern void connectDRMBackend();
             
-            extern void sendBuffer(std::vector<UTF>& abstractBuffer);
+            extern void sendBuffer(std::vector<UTF>&);
+
+            extern void pollInputs();
+
+            extern void translateInputs();
+
+            extern void retryDRMConnect();
             #else
 
             namespace tcp {

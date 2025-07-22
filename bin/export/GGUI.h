@@ -646,134 +646,6 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _COLOR_H_
-#define _COLOR_H_
-
-#include <string>
-#include <limits>
-#include <math.h>
-
-
-
-
-namespace GGUI{
-    class RGB{
-    public:
-        unsigned char Red = 0;
-        unsigned char Green = 0;
-        unsigned char Blue = 0;
-
-        constexpr RGB(unsigned char r, unsigned char g, unsigned char b) : Red(r), Green(g), Blue(b) {}
-
-        constexpr RGB() = default;
-
-        /**
-         * @brief Converts the RGB colour to a string.
-         *
-         * @param Result The result string.
-         */
-        constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
-            // Add the red value to the string
-            Result->add(constants::ANSI::toCompactTable[Red]);
-            
-            // Add the separator to the string
-            Result->add(constants::ANSI::SEPARATE);
-            
-            // Add the green value to the string
-            Result->add(constants::ANSI::toCompactTable[Green]);
-            
-            // Add the separator to the string
-            Result->add(constants::ANSI::SEPARATE);
-            
-            // Add the blue value to the string
-            Result->add(constants::ANSI::toCompactTable[Blue]);
-        }
-    
-        /**
-         * @brief Populates a Super_String with ANSI escape codes for text or background color.
-         * 
-         * This function adds the escape codes for either text or background color to the provided Super_String.
-         * Ensure that the Result has been initialized with at least Maximum_Needed_Pre_Allocation_For_Over_Head.
-         * 
-         * @param Result A pointer to the Super_String to populate with escape codes.
-         * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
-         */
-        constexpr void getOverHeadAsSuperString(INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Result, const bool Is_Text_Color = true) const {
-            Result->add(constants::ANSI::ESC_CODE);
-            
-            Is_Text_Color ? 
-                Result->add(constants::ANSI::TEXT_COLOR) :
-                Result->add(constants::ANSI::BACKGROUND_COLOR);
-
-            Result->add(constants::ANSI::SEPARATE);
-            Result->add(constants::ANSI::USE_RGB);
-            Result->add(constants::ANSI::SEPARATE);
-        }
-    
-        constexpr bool operator==(const RGB& Other) const{
-            // only take the bits from the first 3 unsigned chars
-            //return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
-            return Red == Other.Red && Green == Other.Green && Blue == Other.Blue;
-        }
-
-        constexpr bool operator!=(const RGB& Other) const{
-            return !(*this == Other);
-        }
-
-        constexpr RGB operator+(const RGB& Other) const{
-            return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
-        }
-
-        constexpr RGB operator*(const float Scalar) const{
-            return RGB((unsigned char)((float)Red * Scalar), (unsigned char)((float)Green * Scalar), (unsigned char)((float)Blue * Scalar));
-        }
-
-        constexpr RGB operator!() const{
-            return RGB(UINT8_MAX - Red, UINT8_MAX - Green, UINT8_MAX - Blue);
-        }
-
-        constexpr void add(const RGB& other, float opacity){
-            // Calculate the reverse alpha
-            float Reverse_Alpha = 1.0f - opacity;
-
-            // Blend the colors based on the opacity
-            Red = (unsigned char)((float)Red * Reverse_Alpha + (float)other.Red * opacity);
-            Green = (unsigned char)((float)Green * Reverse_Alpha + (float)other.Green * opacity);
-            Blue = (unsigned char)((float)Blue * Reverse_Alpha + (float)other.Blue * opacity);
-        }
-    };
-
-    namespace COLOR{
-        static constexpr RGB WHITE = RGB(255, 255, 255);
-        static constexpr RGB BLACK = RGB(0, 0, 0);
-        static constexpr RGB RED = RGB(255, 0, 0);
-        static constexpr RGB GREEN = RGB(0, 255, 0);
-        static constexpr RGB BLUE = RGB(0, 0, 255);
-        static constexpr RGB YELLOW = RGB(255, 255, 0);
-        static constexpr RGB ORANGE = RGB(255, 128, 0);
-        static constexpr RGB CYAN = RGB(0, 255, 255);
-        static constexpr RGB TEAL = RGB(0, 128, 128);
-        static constexpr RGB MAGENTA = RGB(255, 0, 255);
-        static constexpr RGB GRAY = RGB(128, 128, 128);
-        static constexpr RGB LIGHT_RED = RGB(255, 128, 128);
-        static constexpr RGB LIGHT_GREEN = RGB(128, 255, 128);
-        static constexpr RGB LIGHT_BLUE = RGB(128, 128, 255);
-        static constexpr RGB LIGHT_YELLOW = RGB(255, 255, 128);
-        static constexpr RGB LIGHT_CYAN = RGB(128, 255, 255);
-        static constexpr RGB LIGHT_MAGENTA = RGB(255, 128, 255);
-        static constexpr RGB LIGHT_GRAY = RGB(192, 192, 192);
-        static constexpr RGB DARK_RED = RGB(128, 0, 0);
-        static constexpr RGB DARK_GREEN = RGB(0, 128, 0);
-        static constexpr RGB DARK_BLUE = RGB(0, 0, 128);
-        static constexpr RGB DARK_YELLOW = RGB(128, 128, 0);
-        static constexpr RGB DARK_CYAN = RGB(0, 128, 128);
-        static constexpr RGB DARK_MAGENTA = RGB(128, 0, 128);
-        static constexpr RGB DARK_GRAY = RGB(64, 64, 64);
-    }
-
-}
-
-#endif
 #ifndef _CONSTANTS_H_
 #define _CONSTANTS_H_
 
@@ -979,7 +851,7 @@ namespace GGUI{
             constexpr char GROUP_SEPARATOR = 29;
             constexpr char RECORD_SEPARATOR = 30;
             constexpr char UNIT_SEPARATOR = 31;
-            constexpr char DELETE = 127;
+            constexpr char DEL = 127;
 
             // At compile time generate 0-255 representations as const char* values.
             constexpr const char* toStringTable[256] = {
@@ -1057,7 +929,7 @@ namespace GGUI{
         constexpr unsigned long long SUPER = (unsigned long long)1 << 13;
         constexpr unsigned long long HOME = (unsigned long long)1 << 14;
         constexpr unsigned long long INSERT = (unsigned long long)1 << 15;
-        constexpr unsigned long long DELETE = (unsigned long long)1 << 16;
+        constexpr unsigned long long DEL = (unsigned long long)1 << 16;
         constexpr unsigned long long END = (unsigned long long)1 << 17;
         constexpr unsigned long long PAGE_UP = (unsigned long long)1 << 18;
         constexpr unsigned long long PAGE_DOWN = (unsigned long long)1 << 19;
@@ -1133,7 +1005,7 @@ namespace GGUI{
         static const std::string INS = "INS";
         static const std::string HOME = "HOME";
         static const std::string PAGE_UP = "PAGE_UP";
-        static const std::string DELETE = "DELETE";
+        static const std::string DEL = "DELETE";
         static const std::string INSERT = "INSERT";
         static const std::string END = "END";
         static const std::string PAGE_DOWN = "PAGE_DOWN";
@@ -1183,7 +1055,7 @@ namespace GGUI{
             {KEYBOARD_BUTTONS::INS, constants::INSERT},
             {KEYBOARD_BUTTONS::HOME, constants::HOME},
             {KEYBOARD_BUTTONS::PAGE_UP, constants::PAGE_UP},
-            {KEYBOARD_BUTTONS::DELETE, constants::DELETE},
+            {KEYBOARD_BUTTONS::DEL, constants::DEL},
             {KEYBOARD_BUTTONS::INSERT, constants::INSERT},
             {KEYBOARD_BUTTONS::END, constants::END},
             {KEYBOARD_BUTTONS::PAGE_DOWN, constants::PAGE_DOWN},
@@ -1223,6 +1095,134 @@ namespace GGUI{
         constexpr INTERNAL::compactString EMPTY_CHECK_BOX = "☐";
         constexpr INTERNAL::compactString CHECKED_CHECK_BOX = "☒";
     }
+}
+
+#endif
+#ifndef _COLOR_H_
+#define _COLOR_H_
+
+#include <string>
+#include <limits>
+#include <math.h>
+
+
+
+
+namespace GGUI{
+    class RGB{
+    public:
+        unsigned char Red = 0;
+        unsigned char Green = 0;
+        unsigned char Blue = 0;
+
+        constexpr RGB(unsigned char r, unsigned char g, unsigned char b) : Red(r), Green(g), Blue(b) {}
+
+        constexpr RGB() = default;
+
+        /**
+         * @brief Converts the RGB colour to a string.
+         *
+         * @param Result The result string.
+         */
+        constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
+            // Add the red value to the string
+            Result->add(constants::ANSI::toCompactTable[Red]);
+            
+            // Add the separator to the string
+            Result->add(constants::ANSI::SEPARATE);
+            
+            // Add the green value to the string
+            Result->add(constants::ANSI::toCompactTable[Green]);
+            
+            // Add the separator to the string
+            Result->add(constants::ANSI::SEPARATE);
+            
+            // Add the blue value to the string
+            Result->add(constants::ANSI::toCompactTable[Blue]);
+        }
+    
+        /**
+         * @brief Populates a Super_String with ANSI escape codes for text or background color.
+         * 
+         * This function adds the escape codes for either text or background color to the provided Super_String.
+         * Ensure that the Result has been initialized with at least Maximum_Needed_Pre_Allocation_For_Over_Head.
+         * 
+         * @param Result A pointer to the Super_String to populate with escape codes.
+         * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
+         */
+        constexpr void getOverHeadAsSuperString(INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Result, const bool Is_Text_Color = true) const {
+            Result->add(constants::ANSI::ESC_CODE);
+            
+            Is_Text_Color ? 
+                Result->add(constants::ANSI::TEXT_COLOR) :
+                Result->add(constants::ANSI::BACKGROUND_COLOR);
+
+            Result->add(constants::ANSI::SEPARATE);
+            Result->add(constants::ANSI::USE_RGB);
+            Result->add(constants::ANSI::SEPARATE);
+        }
+    
+        constexpr bool operator==(const RGB& Other) const{
+            // only take the bits from the first 3 unsigned chars
+            //return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
+            return Red == Other.Red && Green == Other.Green && Blue == Other.Blue;
+        }
+
+        constexpr bool operator!=(const RGB& Other) const{
+            return !(*this == Other);
+        }
+
+        constexpr RGB operator+(const RGB& Other) const{
+            return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
+        }
+
+        constexpr RGB operator*(const float Scalar) const{
+            return RGB((unsigned char)((float)Red * Scalar), (unsigned char)((float)Green * Scalar), (unsigned char)((float)Blue * Scalar));
+        }
+
+        constexpr RGB operator!() const{
+            return RGB(UINT8_MAX - Red, UINT8_MAX - Green, UINT8_MAX - Blue);
+        }
+
+        constexpr void add(const RGB& other, float opacity){
+            // Calculate the reverse alpha
+            float Reverse_Alpha = 1.0f - opacity;
+
+            // Blend the colors based on the opacity
+            Red = (unsigned char)((float)Red * Reverse_Alpha + (float)other.Red * opacity);
+            Green = (unsigned char)((float)Green * Reverse_Alpha + (float)other.Green * opacity);
+            Blue = (unsigned char)((float)Blue * Reverse_Alpha + (float)other.Blue * opacity);
+        }
+    };
+
+    namespace COLOR{
+        static constexpr RGB WHITE = RGB(255, 255, 255);
+        static constexpr RGB BLACK = RGB(0, 0, 0);
+        static constexpr RGB RED = RGB(255, 0, 0);
+        static constexpr RGB GREEN = RGB(0, 255, 0);
+        static constexpr RGB BLUE = RGB(0, 0, 255);
+        static constexpr RGB YELLOW = RGB(255, 255, 0);
+        static constexpr RGB ORANGE = RGB(255, 128, 0);
+        static constexpr RGB CYAN = RGB(0, 255, 255);
+        static constexpr RGB TEAL = RGB(0, 128, 128);
+        static constexpr RGB MAGENTA = RGB(255, 0, 255);
+        static constexpr RGB GRAY = RGB(128, 128, 128);
+        static constexpr RGB LIGHT_RED = RGB(255, 128, 128);
+        static constexpr RGB LIGHT_GREEN = RGB(128, 255, 128);
+        static constexpr RGB LIGHT_BLUE = RGB(128, 128, 255);
+        static constexpr RGB LIGHT_YELLOW = RGB(255, 255, 128);
+        static constexpr RGB LIGHT_CYAN = RGB(128, 255, 255);
+        static constexpr RGB LIGHT_MAGENTA = RGB(255, 128, 255);
+        static constexpr RGB LIGHT_GRAY = RGB(192, 192, 192);
+        static constexpr RGB DARK_RED = RGB(128, 0, 0);
+        static constexpr RGB DARK_GREEN = RGB(0, 128, 0);
+        static constexpr RGB DARK_BLUE = RGB(0, 0, 128);
+        static constexpr RGB DARK_YELLOW = RGB(128, 128, 0);
+        static constexpr RGB DARK_CYAN = RGB(0, 128, 128);
+        static constexpr RGB DARK_MAGENTA = RGB(128, 0, 128);
+        static constexpr RGB DARK_GRAY = RGB(64, 64, 64);
+    }
+
 }
 
 #endif
@@ -5955,6 +5955,46 @@ namespace GGUI{
 }
 
 #endif
+#ifndef _LOGGER_H_
+#define _LOGGER_H_
+
+#include <queue>
+
+
+
+namespace GGUI{
+
+    class fileStream;
+
+    namespace INTERNAL{
+        // Contains Logging utils.
+        namespace LOGGER{
+            // File handle for logging to files for Atomic access across different threads.
+            extern atomic::guard<fileStream> Handle;
+            extern thread_local std::queue<std::string>* Queue;
+
+            extern void Init();
+
+            extern void Log(std::string Text);
+
+            extern void RegisterCurrentThread();
+        };
+        
+        extern void reportStack(const std::string& problemDescription);
+
+        extern void loggerThread();
+    }
+    
+    /**
+     * @brief Reports an error to the user.
+     * @param Problem The error message to display.
+     * @note If the main window is not created yet, the error will be printed to the console.
+     * @note This function is thread safe.
+     */
+    extern void report(const std::string& problem);
+}
+
+#endif
 #ifndef _TEXT_FIELD_H_
 #define _TEXT_FIELD_H_
 
@@ -6070,330 +6110,6 @@ namespace GGUI{
 
         element* safeMove() const override {
             return new textField();
-        }
-    };
-}
-
-#endif
-#ifndef _LOGGER_H_
-#define _LOGGER_H_
-
-#include <queue>
-
-
-
-namespace GGUI{
-
-    class fileStream;
-
-    namespace INTERNAL{
-        // Contains Logging utils.
-        namespace LOGGER{
-            // File handle for logging to files for Atomic access across different threads.
-            extern atomic::guard<fileStream> Handle;
-            extern thread_local std::queue<std::string>* Queue;
-
-            extern void Init();
-
-            extern void Log(std::string Text);
-
-            extern void RegisterCurrentThread();
-        };
-        
-        extern void reportStack(const std::string& problemDescription);
-
-        extern void loggerThread();
-    }
-    
-    /**
-     * @brief Reports an error to the user.
-     * @param Problem The error message to display.
-     * @note If the main window is not created yet, the error will be printed to the console.
-     * @note This function is thread safe.
-     */
-    extern void report(const std::string& problem);
-}
-
-#endif
-#ifndef _LIST_VIEW_H_
-#define _LIST_VIEW_H_
-
-
-
-
-
-
-
-
-
-namespace GGUI{
-    class listView : public element{
-    public:
-        //We can always assume that the list starts from the upper left corner, right?
-        element* Last_Child = new element(position(0, 0) | width(0) | height(0));
-
-        /**
-         * @brief Default constructor for List_View.
-         * 
-         * This constructor calls the default constructor of Element and sets the Allow_Dynamic_Size property to true.
-         */
-        listView() : element(){ allowDynamicSize(true); }
-
-        /**
-         * @brief Constructor for List_View.
-         * 
-         * This constructor calls the Element constructor with the given style and then sets the Allow_Dynamic_Size property to true.
-         * This is so that the list view can automatically resize itself based on the elements it contains.
-         * 
-         * @param s The style for the list view.
-         */
-        listView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
-        listView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
-
-        /**
-         * @brief Destructor for the List_View class.
-         *
-         * This destructor is responsible for properly deallocating all the memory
-         * allocated by the List_View object, including its child elements.
-         */
-        ~listView() override {
-            // Delete all child elements to avoid memory leaks.
-            for (element* e : Style->Childs) {
-                delete e;
-            }
-
-            // Call the base class destructor to ensure all parent class resources are cleaned up.
-            element::~element();
-        }
-
-        //End of user constructors.
-
-        IVector3 getDimensionLimit();
-
-        /**
-         * @brief Adds a child element to the list view.
-         * @details This function adds a child element to the list view and manages the positioning and sizing
-         *          of the child element within the list view. It takes into account the list's flow direction,
-         *          border offsets, and dynamic sizing capabilities.
-         * @param e The child element to be added.
-         */
-        void addChild(element* e) override;
-        
-        /**
-         * @brief Calculates the hitboxes of all child elements of the list view.
-         * @details This function is similar to the Remove(Element* c) like behaviour.
-         *          It takes into account the border offsets of both the current and the next element as well as their positions.
-         *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
-         *          For a vertical list, it checks if the next element's height is greater than the current element's height.
-         *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
-         *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
-         * @param Starting_Offset The starting offset into the child array.
-         */
-        void calculateChildsHitboxes(unsigned int Starting_Offset = 0) override;
-
-        /**
-         * @brief Gets the name of the list view.
-         * @details This function returns the name of the list view in the format "List_View<Name>".
-         * @return The name of the list view.
-         */
-        std::string getName() const override;
-
-        /**
-         * @brief Removes a child element from the list view.
-         * @param remove The child element to be removed.
-         * @return true if the element was successfully removed, false if not.
-         *
-         * This function removes a child element from the list view and updates the position of all elements following the removed element.
-         * It also recalculates the width and height of the list view and updates the dimensions of the list view if it is dynamically sized.
-         */
-        bool remove(element* e) override;
-
-        /**
-         * @brief Sets the flow direction of the list view.
-         * @details This function sets the flow priority of the list view to the specified direction.
-         *          The flow direction determines how the child elements are arranged within the list view.
-         * @param gd The direction to set as the flow priority.
-         */
-        void setFlowDirection(DIRECTION gd){
-            Style->Flow_Priority = gd;
-        }
-
-        /**
-         * @brief Gets the current flow direction of the list view.
-         * @details This function returns the current flow direction of the list view.
-         * @return The flow direction of the list view.
-         */
-        DIRECTION getFlowDirection(){
-            return (DIRECTION)Style->Flow_Priority.value;
-        }
-
-        /**
-         * @brief Gets a child element from the list view by its index.
-         * @details This function returns a pointer to the child element at the specified index.
-         *          The index is checked to be within the range of the child array.
-         * @param index The index of the child element to retrieve.
-         * @return The child element at the specified index, or nullptr if the index is out of range.
-         */
-        template<typename  T>
-        T* get(int index){
-            if (index > (signed)Style->Childs.size() - 1)
-                return nullptr;
-
-            if (index < 0)
-                index = (signed)Style->Childs.size() + index - 1;
-
-            return (T*)this->Style->Childs[index];
-        }
-
-        /**
-         * @brief Creates a deep copy of the List_View object.
-         * @details This function creates a new List_View object and copies all the data from the current List_View object to the new one.
-         * @return A pointer to the new List_View object.
-         */
-        element* safeMove() const override {
-            return new listView();
-        }
-    };
-
-    class scrollView : public element{
-    protected:
-        int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
-    public:
-
-        /**
-         * @brief Default constructor for the scrollView class.
-         * 
-         * This constructor initializes a scrollView object by calling the base class
-         * element's default constructor.
-         */
-        scrollView() : element() { allowOverflow(true); }
-
-        /**
-         * @brief Constructor for the Scroll_View class.
-         * @details This constructor initializes a Scroll_View object with the specified styling.
-         * @param s The styling to be applied to the Scroll_View.
-         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
-         */
-        scrollView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allowOverflow(true); }
-        scrollView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
-
-        /**
-         * @brief Constructor for the Scroll_View class.
-         * @details This constructor initializes a Scroll_View object with a reference to a List_View object.
-         * @param container The List_View object to be used as the container for the Scroll_View.
-         */
-        scrollView(listView& container);
-
-        /**
-         * @brief Adds a child element to the Scroll_View.
-         * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
-         * @param e The child element to be added.
-         */
-        void addChild(element* e) override;
-
-        /**
-         * @brief Enables or disables scrolling for the Scroll_View.
-         * @details This function updates the scrolling capability of the Scroll_View.
-         *          If scrolling is enabled, it ensures that scrolling events are registered.
-         * @param allow A boolean indicating whether to enable or disable scrolling.
-         */
-        void allowScrolling(bool allow);
-    
-        /**
-         * @brief Checks if the scrolling is enabled for the Scroll_View.
-         * @details This function checks the value of the Allow_Scrolling property of the Scroll_View's styling.
-         * @return A boolean indicating whether the scrolling is enabled for the Scroll_View.
-         */
-        bool isScrollingEnabled(){
-            return Style->Allow_Scrolling.value;
-        }
-
-        /**
-         * @brief Scrolls the view up by one index.
-         * @details Decreases the scroll index if it is greater than zero and updates the container's position based on the growth direction.
-         * Marks the view as dirty for a deep update.
-         */
-        void scrollUp() override;
-
-        /**
-         * @brief Scrolls the view down by one index.
-         * @details Increases the scroll index by one and updates the container's position based on the growth direction.
-         * Marks the view as dirty for a deep update.
-         */
-        void scrollDown() override;
-
-        /**
-         * @brief Removes a child element from the scroll view.
-         * @details This function forwards the request to the Remove(Element* remove) function of the container.
-         * @param remove The element to be removed.
-         * @return true if the element was successfully removed, false if not.
-         */
-        bool remove(element* e) override;
-
-        /**
-         * @brief Gets the name of the scroll view.
-         * @details This function returns the name of the scroll view.
-         * @return The name of the scroll view.
-         */
-        std::string getName() const override;
-
-        /**
-         * @brief Sets the growth direction of the scroll view.
-         * @details This function forwards the request to the Set_Flow_Direction(DIRECTION gd) function of the container.
-         * @param gd The direction value to set as the growth direction.
-         */
-        void setGrowthDirection(DIRECTION gd){
-            ((listView*)Style->Childs[0])->setFlowDirection(gd);
-        }
-
-        /**
-         * @brief Gets the current growth direction of the scroll view.
-         * @details This function retrieves the current growth direction of the scroll view.
-         * @return The current growth direction of the scroll view.
-         */
-        DIRECTION getGrowthDirection(){
-            return ((listView*)Style->Childs[0])->getFlowDirection();
-        }
-
-        /**
-         * @brief Gets a child element from the scroll view by its index.
-         * @details This function forwards the request to the Get(int index) function of the container.
-         * @param index The index of the child element to retrieve.
-         * @return The child element at the specified index, or nullptr if the index is out of range.
-         */
-        template<typename  T>
-        T* get(int index){
-            return ((listView*)Style->Childs[0])->get<T>(index);
-        }
-
-        /**
-         * @brief Gets the container of the scroll view.
-         * @details This function retrieves the container of the scroll view, which is a List_View.
-         * @return The container of the scroll view.
-         */
-        listView* getContainer(){
-            // If the container has not been yet initialized, do so.
-            if (getChilds().size() == 0){
-                allowOverflow(true);
-                element::addChild(new listView(
-                    name((getName() + "::container").c_str()) | 
-                    flowPriority(element::getFlowPriority())
-                ));
-            }
-
-            return (listView*)Style->Childs[0];
-        }
-        
-        /**
-         * @brief Safely moves the current element to a new scrollView element.
-         * 
-         * This function overrides the safeMove method from the base class and 
-         * creates a new instance of the scrollView element.
-         * 
-         * @return A pointer to the newly created scrollView element.
-         */
-        element* safeMove() const override {
-            return new scrollView();
         }
     };
 }
@@ -7538,445 +7254,482 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _UTILS_H_
-#define _UTILS_H_
-/**
- * This is an Utils file made for the Renderer.cpp to use internally, these are just removed to clean up the source code.
- */
+#ifndef _LIST_VIEW_H_
+#define _LIST_VIEW_H_
 
 
 
 
-#include <math.h>
+
+
+
+
 
 namespace GGUI{
-    class element;
-    class UTF;
-    class RGB;
+    class listView : public element{
+    public:
+        //We can always assume that the list starts from the upper left corner, right?
+        element* Last_Child = new element(position(0, 0) | width(0) | height(0));
 
-    namespace INTERNAL{
-        extern std::string constructLoggerFileName();
+        /**
+         * @brief Default constructor for List_View.
+         * 
+         * This constructor calls the default constructor of Element and sets the Allow_Dynamic_Size property to true.
+         */
+        listView() : element(){ allowDynamicSize(true); }
 
-        extern bool Identical_Frame;
+        /**
+         * @brief Constructor for List_View.
+         * 
+         * This constructor calls the Element constructor with the given style and then sets the Allow_Dynamic_Size property to true.
+         * This is so that the list view can automatically resize itself based on the elements it contains.
+         * 
+         * @param s The style for the list view.
+         */
+        listView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
+        listView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
 
-        extern void De_Initialize();
+        /**
+         * @brief Destructor for the List_View class.
+         *
+         * This destructor is responsible for properly deallocating all the memory
+         * allocated by the List_View object, including its child elements.
+         */
+        ~listView() override {
+            // Delete all child elements to avoid memory leaks.
+            for (element* e : Style->Childs) {
+                delete e;
+            }
 
-        extern int BEFORE_ENCODE_BUFFER_SIZE;
-        extern int AFTER_ENCODE_BUFFER_SIZE;
+            // Call the base class destructor to ensure all parent class resources are cleaned up.
+            element::~element();
+        }
+
+        //End of user constructors.
+
+        IVector3 getDimensionLimit();
+
+        /**
+         * @brief Adds a child element to the list view.
+         * @details This function adds a child element to the list view and manages the positioning and sizing
+         *          of the child element within the list view. It takes into account the list's flow direction,
+         *          border offsets, and dynamic sizing capabilities.
+         * @param e The child element to be added.
+         */
+        void addChild(element* e) override;
         
         /**
-         * @brief The Renderer function is responsible for managing the rendering loop.
-         * It waits for a condition to resume rendering, processes rendering tasks, and
-         * then pauses itself until the condition is met again.
-         * 
-         * The function performs the following steps:
-         * 1. Waits for the render thread to be resumed.
-         * 2. Saves the current time.
-         * 3. Checks if the rendering scheduler needs to be terminated.
-         * 4. Processes carry flags and updates the maximum width and height if needed.
-         * 5. Renders the main frame buffer.
-         * 6. Encodes the buffer for optimization.
-         * 7. Converts the abstract frame buffer to a string and renders the frame.
-         * 8. Calculates the render delay.
-         * 9. Pauses the render thread and notifies all waiting threads.
+         * @brief Calculates the hitboxes of all child elements of the list view.
+         * @details This function is similar to the Remove(Element* c) like behaviour.
+         *          It takes into account the border offsets of both the current and the next element as well as their positions.
+         *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
+         *          For a vertical list, it checks if the next element's height is greater than the current element's height.
+         *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
+         *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
+         * @param Starting_Offset The starting offset into the child array.
          */
-        extern void renderer();
+        void calculateChildsHitboxes(unsigned int Starting_Offset = 0) override;
 
         /**
-         * @brief Event_Thread is a function that runs an infinite loop to handle various events and tasks.
-         * 
-         * This function performs the following tasks in each iteration of the loop:
-         * - Resets the thread load counter and updates the previous time.
-         * - Calls functions to recall memories, go through file streams, and refresh the multi-frame canvas.
-         * - Checks for termination signals and breaks out of the loop if the terminate flag is set.
-         * - Updates the current time and calculates the delta time.
-         * - Adjusts the current update speed based on the event thread load.
-         * - Sleeps for a calculated duration to control the update speed.
-         * 
-         * The function is designed to be used in a multi-threaded environment where it can be paused and resumed as needed.
-         * 
-         * @note If uncapped FPS is desired, the sleep code can be disabled.
+         * @brief Gets the name of the list view.
+         * @details This function returns the name of the list view in the format "List_View<Name>".
+         * @return The name of the list view.
          */
-        extern void eventThread();
+        std::string getName() const override;
 
         /**
-         * @brief Function that continuously handles user input in a separate thread.
+         * @brief Removes a child element from the list view.
+         * @param remove The child element to be removed.
+         * @return true if the element was successfully removed, false if not.
          *
-         * This function runs an infinite loop where it performs the following steps:
-         * 1. Waits for user input by calling INTERNAL::Query_Inputs().
-         * 2. Pauses the GGUI system and performs the following actions:
-         *    - Records the current time as INTERNAL::Previous_Time.
-         *    - Translates the queried inputs using INTERNAL::Translate_Inputs().
-         *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
-         *    - Calls the event handlers to react to the parsed input using Event_Handler().
-         *    - Records the current time as INTERNAL::Current_Time.
-         *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
+         * This function removes a child element from the list view and updates the position of all elements following the removed element.
+         * It also recalculates the width and height of the list view and updates the dimensions of the list view if it is dynamically sized.
          */
-        extern void inputThread();
+        bool remove(element* e) override;
 
         /**
-         * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
-         * 
-         * This function takes an unsigned long long integer and formats it as a hexadecimal string
-         * in uppercase. The resulting string does not include a "0x" prefix.
-         * 
-         * @param value The unsigned long long integer to be converted to a hexadecimal string.
-         * @return A std::string containing the uppercase hexadecimal representation of the input value.
+         * @brief Sets the flow direction of the list view.
+         * @details This function sets the flow priority of the list view to the specified direction.
+         *          The flow direction determines how the child elements are arranged within the list view.
+         * @param gd The direction to set as the flow priority.
          */
-        extern std::string Hex(unsigned long long value);
-
-        /**
-         * @brief Checks if two rectangles collide.
-         *
-         * This function determines whether two rectangles, defined by their top-left
-         * corners and dimensions, overlap in a 2D space.
-         *
-         * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
-         * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
-         * @param A_Width The width of the first rectangle.
-         * @param A_Height The height of the first rectangle.
-         * @param B_Width The width of the second rectangle.
-         * @param B_Height The height of the second rectangle.
-         * @return true if the rectangles overlap, false otherwise.
-         */
-        extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
-
-        /**
-         * @brief Checks if two GGUI elements collide.
-         * 
-         * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
-         * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
-         * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
-         * 
-         * @param a Pointer to the first GGUI element.
-         * @param b Pointer to the second GGUI element.
-         * @param Identity Boolean value to return if the elements are the same.
-         * @return true if the elements collide, false otherwise.
-         */
-        extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
-
-        /**
-         * @brief Checks if a given point collides with a specified element.
-         * 
-         * This function determines if the point `b` collides with the element `a` by 
-         * calling another `Collides` function with the element's absolute position, 
-         * width, height, and the point's assumed dimensions of 1x1.
-         * 
-         * @param a Pointer to the GGUI::Element to check for collision.
-         * @param b The point (as GGUI::IVector3) to check for collision with the element.
-         * @return true if the point collides with the element, false otherwise.
-         */
-        extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
-
-        /**
-         * @brief Recursively finds the most accurate element that contains the given position.
-         * 
-         * This function checks if the given position is within the bounds of the parent element.
-         * If it is, it then checks all the child elements of the parent to see if any of them
-         * contain the position. If a child element contains the position, the function is called
-         * recursively on that child element. If no child element contains the position, the parent
-         * element is returned.
-         * 
-         * @param c The position to check, represented as an IVector3.
-         * @param Parent The parent element to start the search from.
-         * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
-         */
-        extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
-
-        /**
-         * @brief Returns the smaller of two signed long long integers.
-         * 
-         * This function compares two signed long long integers and returns the smaller of the two.
-         * 
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The smaller of the two signed long long integers.
-         */
-        extern signed long long Min(signed long long a, signed long long b);
-
-        /**
-         * @brief Returns the maximum of two signed long long integers.
-         *
-         * This function compares two signed long long integers and returns the greater of the two.
-         *
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The greater of the two signed long long integers.
-         */
-        extern signed long long Max(signed long long a, signed long long b);
-
-        /**
-         * @brief Checks if a bit is set in a char.
-         * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
-         *          It returns true if the bit is set and false if it is not.
-         *
-         * @param val The char to check the bit in.
-         * @param i The index of the bit to check.
-         *
-         * @return True if the bit is set, false if it is not.
-         */
-        extern bool Has_Bit_At(char val, int i);
-
-        /**
-         * @brief Gets the contents of a given position in the buffer.
-         * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
-         * @param Absolute_Position The position to get the contents of.
-         * @return The contents of the given position, or nullptr if the position is out of bounds.
-         */
-        extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
-
-        /**
-         * @brief Calculates the current load of the GGUI thread based on the given current position.
-         * @param Min The minimum value the load can have.
-         * @param Max The maximum value the load can have.
-         * @param Position The current position of the load.
-         * @return The current load of the GGUI thread from 0 to 1.
-         */
-        extern float Lerp(int Min, int Max, int Position);
-
-        /**
-         * @brief Checks if the given flag is set in the given flags.
-         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-         *
-         * @param f The flags to check.
-         * @param Flag The flag to check for.
-         * @return True if the flag is set, otherwise false.
-         */
-        extern bool Is(unsigned long long f, unsigned long long Flag);
-
-        /**
-         * @brief Checks if a flag is set in a set of flags.
-         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-         *
-         * @param f The flags to check.
-         * @param flag The flag to check for.
-         * @return True if the flag is set, otherwise false.
-         */
-        extern bool Has(unsigned long long f, unsigned long long flag);
-
-        extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
-
-        /**
-         * @brief Checks if all flags in small are set in big.
-         * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
-         *
-         * @param big The flags to check against.
-         * @param small The flags to check.
-         * @return True if all flags in small are set in big, otherwise false.
-         */
-        extern bool Contains(unsigned long long big, unsigned long long Small);
-
-        extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
-
-        /**
-         * @brief Determines if a given pointer is likely deletable (heap-allocated).
-         *
-         * This function assesses whether a pointer may belong to the heap by comparing its
-         * position relative to known memory sections such as the stack, heap, and data segments.
-         *
-         * @param ptr Pointer to be evaluated.
-         * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
-         */
-        extern ALLOCATION_TYPE getAllocationType(const void* ptr);
-
-        /**
-         * Linear interpolation function
-         * @param a The start value
-         * @param b The end value
-         * @param t The interpolation value, between 0 and 1
-         * @return The interpolated value
-         */
-        template<typename T>
-        constexpr T lerp(T a, T b, T t) {
-            // Clamp t between a and b
-            return a + t * (b - a);
+        void setFlowDirection(DIRECTION gd){
+            Style->Flow_Priority = gd;
         }
 
         /**
-         * @brief Performs gamma-corrected linear interpolation between two values.
-         * 
-         * @tparam T The type of the input values.
-         * @tparam P The type of the interpolation factor.
-         * @param a The start value.
-         * @param b The end value.
-         * @param t The interpolation factor, typically between 0 and 1.
-         * @return The interpolated value, gamma-corrected and cast back to type T.
+         * @brief Gets the current flow direction of the list view.
+         * @details This function returns the current flow direction of the list view.
+         * @return The flow direction of the list view.
          */
-        template<typename T, typename P>
-        constexpr T Interpolate(T a, T b, P t) {
-            // Define gamma value for correction
-            constexpr float gamma = 2.2F;
-
-            // Apply gamma correction to input values and perform linear interpolation
-            const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
-
-            // Reverse gamma correction and cast back to original type
-            return static_cast<T>(std::pow(c_f, 1.F / gamma));
+        DIRECTION getFlowDirection(){
+            return (DIRECTION)Style->Flow_Priority.value;
         }
 
         /**
-         * @brief Interpolates between two RGB colors using linear interpolation.
-         * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
-         * @param A The start RGB color.
-         * @param B The end RGB color.
-         * @param Distance The interpolation factor, typically between 0 and 1.
-         * @return The interpolated RGB color.
+         * @brief Gets a child element from the list view by its index.
+         * @details This function returns a pointer to the child element at the specified index.
+         *          The index is checked to be within the range of the child array.
+         * @param index The index of the child element to retrieve.
+         * @return The child element at the specified index, or nullptr if the index is out of range.
          */
-        extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
+        template<typename  T>
+        T* get(int index){
+            if (index > (signed)Style->Childs.size() - 1)
+                return nullptr;
 
-        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
-            static std::string result;  // an internal cache container between renders.
+            if (index < 0)
+                index = (signed)Style->Childs.size() + index - 1;
 
-            if (result.empty() || Liquefied_Size != result.size()){
-                // Resize a std::string to the total size.
-                result.resize(Liquefied_Size, '\0');
-            }
-
-            // Copy the contents of the Data vector into the std::string.
-            unsigned int Current_UTF_Insert_Index = 0;
-            for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
-                const compactString& data = Data->at(i);
-
-                // Size of ones are always already loaded from memory into a char.
-                if (data.size > 1){
-                    // Replace the current contents of the string with the contents of the Unicode data.
-                    result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
-
-                    Current_UTF_Insert_Index += data.size;
-                }
-                else{
-                    // Add the single character to the string.
-                    result[Current_UTF_Insert_Index++] = data.getAscii();
-                }
-            }
-
-            return &result;
+            return (T*)this->Style->Childs[index];
         }
 
-        inline std::string To_String(compactString& cstr){
-            // Resize a std::string to the total size.
-            std::string result;
-            result.resize(cstr.size);
-
-            // Copy the contents of the Compact_String into the std::string.
-            if (cstr.size > 1){
-                // Replace the current contents of the string with the contents of the Unicode data.
-                result.replace(0, cstr.size, cstr.getUnicode());
-            }
-            else{
-                // Add the single character to the string.
-                result[0] = cstr.getAscii();
-            }
-
-            return result;
+        /**
+         * @brief Creates a deep copy of the List_View object.
+         * @details This function creates a new List_View object and copies all the data from the current List_View object to the new one.
+         * @return A pointer to the new List_View object.
+         */
+        element* safeMove() const override {
+            return new listView();
         }
-    }
+    };
+
+    class scrollView : public element{
+    protected:
+        int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
+    public:
+
+        /**
+         * @brief Default constructor for the scrollView class.
+         * 
+         * This constructor initializes a scrollView object by calling the base class
+         * element's default constructor.
+         */
+        scrollView() : element() { allowOverflow(true); }
+
+        /**
+         * @brief Constructor for the Scroll_View class.
+         * @details This constructor initializes a Scroll_View object with the specified styling.
+         * @param s The styling to be applied to the Scroll_View.
+         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
+         */
+        scrollView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allowOverflow(true); }
+        scrollView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
+
+        /**
+         * @brief Constructor for the Scroll_View class.
+         * @details This constructor initializes a Scroll_View object with a reference to a List_View object.
+         * @param container The List_View object to be used as the container for the Scroll_View.
+         */
+        scrollView(listView& container);
+
+        /**
+         * @brief Adds a child element to the Scroll_View.
+         * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
+         * @param e The child element to be added.
+         */
+        void addChild(element* e) override;
+
+        /**
+         * @brief Enables or disables scrolling for the Scroll_View.
+         * @details This function updates the scrolling capability of the Scroll_View.
+         *          If scrolling is enabled, it ensures that scrolling events are registered.
+         * @param allow A boolean indicating whether to enable or disable scrolling.
+         */
+        void allowScrolling(bool allow);
+    
+        /**
+         * @brief Checks if the scrolling is enabled for the Scroll_View.
+         * @details This function checks the value of the Allow_Scrolling property of the Scroll_View's styling.
+         * @return A boolean indicating whether the scrolling is enabled for the Scroll_View.
+         */
+        bool isScrollingEnabled(){
+            return Style->Allow_Scrolling.value;
+        }
+
+        /**
+         * @brief Scrolls the view up by one index.
+         * @details Decreases the scroll index if it is greater than zero and updates the container's position based on the growth direction.
+         * Marks the view as dirty for a deep update.
+         */
+        void scrollUp() override;
+
+        /**
+         * @brief Scrolls the view down by one index.
+         * @details Increases the scroll index by one and updates the container's position based on the growth direction.
+         * Marks the view as dirty for a deep update.
+         */
+        void scrollDown() override;
+
+        /**
+         * @brief Removes a child element from the scroll view.
+         * @details This function forwards the request to the Remove(Element* remove) function of the container.
+         * @param remove The element to be removed.
+         * @return true if the element was successfully removed, false if not.
+         */
+        bool remove(element* e) override;
+
+        /**
+         * @brief Gets the name of the scroll view.
+         * @details This function returns the name of the scroll view.
+         * @return The name of the scroll view.
+         */
+        std::string getName() const override;
+
+        /**
+         * @brief Sets the growth direction of the scroll view.
+         * @details This function forwards the request to the Set_Flow_Direction(DIRECTION gd) function of the container.
+         * @param gd The direction value to set as the growth direction.
+         */
+        void setGrowthDirection(DIRECTION gd){
+            ((listView*)Style->Childs[0])->setFlowDirection(gd);
+        }
+
+        /**
+         * @brief Gets the current growth direction of the scroll view.
+         * @details This function retrieves the current growth direction of the scroll view.
+         * @return The current growth direction of the scroll view.
+         */
+        DIRECTION getGrowthDirection(){
+            return ((listView*)Style->Childs[0])->getFlowDirection();
+        }
+
+        /**
+         * @brief Gets a child element from the scroll view by its index.
+         * @details This function forwards the request to the Get(int index) function of the container.
+         * @param index The index of the child element to retrieve.
+         * @return The child element at the specified index, or nullptr if the index is out of range.
+         */
+        template<typename  T>
+        T* get(int index){
+            return ((listView*)Style->Childs[0])->get<T>(index);
+        }
+
+        /**
+         * @brief Gets the container of the scroll view.
+         * @details This function retrieves the container of the scroll view, which is a List_View.
+         * @return The container of the scroll view.
+         */
+        listView* getContainer(){
+            // If the container has not been yet initialized, do so.
+            if (getChilds().size() == 0){
+                allowOverflow(true);
+                element::addChild(new listView(
+                    name((getName() + "::container").c_str()) | 
+                    flowPriority(element::getFlowPriority())
+                ));
+            }
+
+            return (listView*)Style->Childs[0];
+        }
+        
+        /**
+         * @brief Safely moves the current element to a new scrollView element.
+         * 
+         * This function overrides the safeMove method from the base class and 
+         * creates a new instance of the scrollView element.
+         * 
+         * @return A pointer to the newly created scrollView element.
+         */
+        element* safeMove() const override {
+            return new scrollView();
+        }
+    };
 }
 
 #endif
-#ifndef _SETTINGS_H_
-#define _SETTINGS_H_
+#ifndef _PROGRESS_BAR_H_
+#define _PROGRESS_BAR_H_
 
-#include <chrono>
-#include <string>
-#include <vector>
-#include <functional>
 
-namespace GGUI {
-    namespace INTERNAL {
-        extern std::string constructLoggerFileName();
-    }
 
-    namespace SETTINGS{
-        /**
-         * @brief Enumeration of supported argument types for command line parsing.
-         */
-        enum class ArgumentType {
-            FLAG,           ///< Boolean flag argument (no value expected)
-            STRING,         ///< String value argument
-            INTEGER,        ///< Integer value argument
-            UNSIGNED_LONG   ///< Unsigned long value argument
+
+
+
+
+
+
+namespace GGUI{
+
+    namespace progress{
+        enum class partType{
+            EMPTY,
+            HEAD,
+            BODY,
+            TAIL
         };
 
-        /**
-         * @brief Descriptor class for command line arguments.
-         * 
-         * This class encapsulates information about a command line argument including
-         * its name, type, description, and a callback function to handle the parsed value.
-         */
-        class ArgumentDescriptor {
+        class part : public STYLING_INTERNAL::styleBase{
         public:
-            std::string name;                                    ///< Argument name (without dashes)
-            ArgumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
-            std::string description;                             ///< Human-readable description for help text
-            std::function<void(const std::string&)> handler;    ///< Callback function to handle parsed value
+            INTERNAL::compactString character = INTERNAL::compactString(' ');
+            RGB color = COLOR::GRAY;
+            partType type = partType::EMPTY;
 
-            /**
-             * @brief Constructs an ArgumentDescriptor.
-             * 
-             * @param argName The name of the argument (without leading dashes)
-             * @param argType The type of the argument
-             * @param argDescription Description of the argument for help text
-             * @param argHandler Callback function to handle the parsed value
-             */
-            ArgumentDescriptor(const std::string& argName, 
-                             ArgumentType argType, 
-                             const std::string& argDescription,
-                             std::function<void(const std::string&)> argHandler)
-                : name(argName), type(argType), description(argDescription), handler(argHandler) {}
+            constexpr part(partType t, RGB fillColor = COLOR::GREEN, INTERNAL::compactString cs = INTERNAL::compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
 
-            /**
-             * @brief Checks if this argument requires a value.
-             * 
-             * @return true if the argument type requires a value, false for flags
-             */
-            bool requiresValue() const {
-                return type != ArgumentType::FLAG;
+            constexpr part() = default;
+
+            inline ~part() override { styleBase::~styleBase(); }
+
+            inline styleBase* copy() const override {
+                return new part(*this);
             }
+            
+            constexpr part& operator=(const part& other){
+                // Only copy the information if the other is enabled.
+                if (other.status >= status){
+                    character = other.character;
+                    color = other.color;
+                    type = other.type;
 
-            /**
-             * @brief Gets the type name as a string for help text.
-             * 
-             * @return String representation of the argument type
-             */
-            std::string getTypeName() const {
-                switch (type) {
-                    case ArgumentType::FLAG: return "flag";
-                    case ArgumentType::STRING: return "string";
-                    case ArgumentType::INTEGER: return "integer";
-                    case ArgumentType::UNSIGNED_LONG: return "unsigned long";
-                    default: return "unknown";
+                    status = other.status;
                 }
+                return *this;
             }
+
+            constexpr part(const part& other) : styleBase(other.status), 
+                character(other.character), color(other.color), type(other.type) {}
+
+            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
+
+            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };
 
-        // Given as --mousePressCooldown = 123
-        extern unsigned long long Mouse_Press_Down_Cooldown;  // Milliseconds
 
-        // Given as --enableWordWrapping
-        extern bool Word_Wrapping;
+        class Bar : public element{
+        protected:
+            float Progress = 0; // 0.0 - 1.0
 
-        // Given as --enableGammaCorrection
-        extern bool ENABLE_GAMMA_CORRECTION;
+            INTERNAL::compactString Head = INTERNAL::compactString('>');
+            INTERNAL::compactString Body = INTERNAL::compactString('-');
+            INTERNAL::compactString Tail = INTERNAL::compactString('|');
+            INTERNAL::compactString Empty = INTERNAL::compactString(' ');
 
-        namespace LOGGER{
-            // Given as --loggerFileName = "GGUI.log"
-            extern std::string File_Name;
-        }
+            RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
+            RGB Body_Color = GGUI::COLOR::GRAY;
+            RGB Tail_Color = GGUI::COLOR::GRAY;
+            RGB Empty_Color = GGUI::COLOR::DARK_GRAY;
 
-        // Given as --enableDRM
-        extern bool enableDRM;
+            std::vector<UTF> Content;
+        public:
 
-        extern void parseCommandLineArguments(int argc, char** argv);
+            /**
+             * @brief Constructor for Progress_Bar.
+             *
+             * This constructor calls the Element constructor with the given style and
+             * initializes the Progress_Bar object with default values.
+             *
+             * @param s The style for the Progress_Bar.
+             * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Progress_Bar's style. Only use if you know what you're doing!!!
+             */
+            Bar(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
+                Progress = 0.0f;
+            }
+            
+            Bar(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : Bar(s, Embed_Styles_On_Construct){}
 
-        /**
-         * @brief Initializes the settings for the application.
-         *
-         * This function sets up the necessary configurations for the application
-         * by initializing the logger file name using the internal logger file name
-         * construction method.
-         */
-        extern void initSettings();
+            /**
+             * @brief Default constructor for Progress_Bar.
+             *
+             * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
+             * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
+             */
+            Bar() = default;
+
+            void setHeadCharacter(INTERNAL::compactString cs) { Head = cs; }
+            void setBodyCharacter(INTERNAL::compactString cs) { Body = cs; }
+            void setTailCharacter(INTERNAL::compactString cs) { Tail = cs; }
+            void setEmptyCharacter(INTERNAL::compactString cs) { Empty = cs; }
+
+            void setHeadColor(RGB color) { Head_Color = color; }
+            void setBodyColor(RGB color) { Body_Color = color; }
+            void setTailColor(RGB color) { Tail_Color = color; }
+            void setEmptyColor(RGB color) { Empty_Color = color; }
+
+            /**
+             * @brief Returns the index of the head of the progress bar.
+             * @details
+             * This function returns the index of the head of the progress bar. The head is the character that is drawn at the end of the progress bar when it is not full.
+             * The index is calculated by multiplying the width of the progress bar (minus the border on both sides) by the progress value.
+             * The result is then rounded down to the nearest integer using the floor() function.
+             * @return The index of the head of the progress bar.
+             */
+            unsigned int getIndexofHead();
+
+            /**
+             * @brief Colors the bar with the current progress value.
+             * @details
+             * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
+             */
+            void colorBar();
+
+            /**
+             * @brief Renders the progress bar into the Render_Buffer.
+             * @details This function processes the progress bar to generate a vector of UTF objects representing the current state.
+             * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
+             * @return A vector of UTF objects representing the rendered progress bar.
+             */
+            std::vector<GGUI::UTF>& render() override;
+
+            /**
+             * @brief Sets the progress value of the progress bar.
+             * @details This function updates the progress value of the progress bar. 
+             * If the given value exceeds 1.0, a warning is reported, and the function returns without updating.
+             * It also updates the color of the progress bar and marks the render buffer as dirty.
+             * @param New_Progress The new progress value to set (should be between 0.0 and 1.0).
+             */
+            void setProgress(float New_Progress);
+            
+            /**
+             * @brief Returns the current progress value of the progress bar.
+             * @details This function returns the current progress value of the progress bar, which is a float between 0.0 and 1.0.
+             * @return The current progress value of the progress bar.
+             */
+            float getProgress();
+
+            void updateProgress(float add);
+
+            /**
+             * @brief Toggles the border visibility of the progress bar.
+             * @details This function toggles the border visibility of the progress bar.
+             *          If the state has changed, it updates the border enabled state, marks the element as dirty for border changes, and updates the frame.
+             * @param b The desired state of the border visibility.
+             */
+            void showBorder(bool state) override;
+
+            /**
+             * @brief Destructor for the Progress_Bar class.
+             *
+             * This destructor is responsible for properly deallocating all the memory
+             * allocated by the Progress_Bar object. It calls the base class destructor
+             * to ensure all parent class resources are also cleaned up.
+             */
+            ~Bar() override {
+                // Call the base destructor to clean up base class resources.
+                element::~element();
+            }
+            
+            /**
+             * @brief Creates a deep copy of the Progress_Bar object.
+             * @details This function creates a new Progress_Bar object and copies all the data from the current Progress_Bar object to the new one.
+             *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
+             * @return A pointer to the new Progress_Bar object.
+             */
+            element* safeMove() const override {
+                return new Bar();
+            }
+
+            /**
+             * @brief Returns the name of the Progress_Bar object.
+             * @details This function returns a string that represents the name of the Progress_Bar object.
+             *          The name is constructed by concatenating the name of the Progress_Bar with the 
+             *          class name "Progress_Bar", separated by a "<" and a ">".
+             * @return The name of the Progress_Bar object.
+             */
+            std::string getName() const override{
+                return "progressBar<" + Name + ">";
+            }
+        };
     }
 }
 
@@ -8224,102 +7977,110 @@ namespace GGUI{
 }
 
 #endif
-#ifndef _SIMD_H_
-#define _SIMD_H_
+#ifndef _SETTINGS_H_
+#define _SETTINGS_H_
 
+#include <chrono>
+#include <string>
+#include <vector>
+#include <functional>
 
-
-namespace GGUI{
-
-    #if defined(__AVX512F__)
-        #include <immintrin.h>
-
-        inline const unsigned int MAX_SIMD_SIZE = 16;
-    #elif defined(__AVX__)
-        #include <immintrin.h>
-
-        inline const unsigned int MAX_SIMD_SIZE = 8;
-    #elif defined(__SSE__)
-        #include <xmmintrin.h>
-
-        inline const unsigned int MAX_SIMD_SIZE = 4;
-    #else
-        inline const unsigned int MAX_SIMD_SIZE = 1;
-    #endif
-
-    // The number represents how many 32 bit float value pairs can it calculate at the same time.
-    void simdDivision4(float* a, float* b, float* c);
-    void simdDivision8(float* a, float* b, float* c);
-    void simdDivision16(float* a, float* b, float* c);
-
-    // Calls the right division SIMD operator depending on the length
-    void operateSIMDDivision(float* dividend, float* divider, float* result, int length){
-        if(length == 4){
-            simdDivision4(dividend, divider, result);
-        }else if(length == 8){
-            simdDivision8(dividend, divider, result);
-        }else if(length == 16){
-            simdDivision16(dividend, divider, result);
-        }else{
-            INTERNAL::reportStack("Calling SIMD division with longer sequence than allowed: " + std::to_string(length) + " elements.");
-        }
+namespace GGUI {
+    namespace INTERNAL {
+        extern std::string constructLoggerFileName();
     }
 
-    void operateSIMDModulo(float* dividend, float* divider, float* result, int length){
-        // Uses the division variants and then calculates for each the modulo
-        operateSIMDDivision(dividend, divider, result, length);
+    namespace SETTINGS{
+        /**
+         * @brief Enumeration of supported argument types for command line parsing.
+         */
+        enum class ArgumentType {
+            FLAG,           ///< Boolean flag argument (no value expected)
+            STRING,         ///< String value argument
+            INTEGER,        ///< Integer value argument
+            UNSIGNED_LONG   ///< Unsigned long value argument
+        };
 
-        for(int i = 0; i < length; i++){
-            // by the formula: a - b * floor(a / b)
-            result[i] = dividend[i] - divider[i] * floor(result[i]);
+        /**
+         * @brief Descriptor class for command line arguments.
+         * 
+         * This class encapsulates information about a command line argument including
+         * its name, type, description, and a callback function to handle the parsed value.
+         */
+        class ArgumentDescriptor {
+        public:
+            std::string name;                                    ///< Argument name (without dashes)
+            ArgumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
+            std::string description;                             ///< Human-readable description for help text
+            std::function<void(const std::string&)> handler;    ///< Callback function to handle parsed value
+
+            /**
+             * @brief Constructs an ArgumentDescriptor.
+             * 
+             * @param argName The name of the argument (without leading dashes)
+             * @param argType The type of the argument
+             * @param argDescription Description of the argument for help text
+             * @param argHandler Callback function to handle the parsed value
+             */
+            ArgumentDescriptor(const std::string& argName, 
+                             ArgumentType argType, 
+                             const std::string& argDescription,
+                             std::function<void(const std::string&)> argHandler)
+                : name(argName), type(argType), description(argDescription), handler(argHandler) {}
+
+            /**
+             * @brief Checks if this argument requires a value.
+             * 
+             * @return true if the argument type requires a value, false for flags
+             */
+            bool requiresValue() const {
+                return type != ArgumentType::FLAG;
+            }
+
+            /**
+             * @brief Gets the type name as a string for help text.
+             * 
+             * @return String representation of the argument type
+             */
+            std::string getTypeName() const {
+                switch (type) {
+                    case ArgumentType::FLAG: return "flag";
+                    case ArgumentType::STRING: return "string";
+                    case ArgumentType::INTEGER: return "integer";
+                    case ArgumentType::UNSIGNED_LONG: return "unsigned long";
+                    default: return "unknown";
+                }
+            }
+        };
+
+        // Given as --mousePressCooldown = 123
+        extern unsigned long long Mouse_Press_Down_Cooldown;  // Milliseconds
+
+        // Given as --enableWordWrapping
+        extern bool Word_Wrapping;
+
+        // Given as --enableGammaCorrection
+        extern bool ENABLE_GAMMA_CORRECTION;
+
+        namespace LOGGER{
+            // Given as --loggerFileName = "GGUI.log"
+            extern std::string File_Name;
         }
+
+        // Given as --enableDRM
+        extern bool enableDRM;
+
+        extern void parseCommandLineArguments(int argc, char** argv);
+
+        /**
+         * @brief Initializes the settings for the application.
+         *
+         * This function sets up the necessary configurations for the application
+         * by initializing the logger file name using the internal logger file name
+         * construction method.
+         */
+        extern void initSettings();
     }
-
-    #if defined(__SSE__)
-        void simdDivision4(float* a, float* b, float* c) {
-            __m128 va = _mm_loadu_ps(a);
-            __m128 vb = _mm_loadu_ps(b);
-            __m128 vc = _mm_div_ps(va, vb);
-            _mm_storeu_ps(c, vc);
-        }
-    #else
-        void simdDivision4(float* a, float* b, float* c) {
-            *c = *a / *b;
-            *(c + 1) = *(a + 1) / *(b + 1);
-            *(c + 2) = *(a + 2) / *(b + 2);
-            *(c + 3) = *(a + 3) / *(b + 3);
-        }
-    #endif
-
-    #if defined(__AVX__)
-        void simdDivision8(float* a, float* b, float* c) {
-            __m256 va = _mm256_loadu_ps(a);
-            __m256 vb = _mm256_loadu_ps(b);
-            __m256 vc = _mm256_div_ps(va, vb);
-            _mm256_storeu_ps(c, vc);
-        }
-    #else
-        void simdDivision8(float* a, float* b, float* c) {
-            // use the one stage lower SIMD function variant.
-            simdDivision4(a, b, c);
-            simdDivision4(a + 4, b + 4, c + 4);
-        }
-    #endif
-
-    #if defined(__AVX512F__)
-        void simdDivision16(float* a, float* b, float* c) {
-            __m512 va = _mm512_loadu_ps(a);
-            __m512 vb = _mm512_loadu_ps(b);
-            __m512 vc = _mm512_div_ps(va, vb);
-            _mm512_storeu_ps(c, vc);
-        }
-    #else
-        void simdDivision16(float* a, float* b, float* c) {
-            // use the one stage lower SIMD function variant.
-            simdDivision8(a, b, c);
-            simdDivision8(a + 8, b + 8, c + 8);
-        }
-    #endif
 }
 
 #endif
@@ -8424,7 +8185,7 @@ namespace GGUI {
                         F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
                         ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
                         HOME, END, PAGE_UP, PAGE_DOWN,
-                        INSERT, DELETE,
+                        INSERT, DEL,
                         LEFT_CLICK, MIDDLE_CLICK, RIGHT_CLICK, SCROLL_UP, SCROLL_DOWN,
                     };
 
@@ -8461,10 +8222,15 @@ namespace GGUI {
             }
 
             #if _WIN32
-            // No windows support for DRM backend.
             extern void connectDRMBackend();
             
-            extern void sendBuffer(std::vector<UTF>& abstractBuffer);
+            extern void sendBuffer(std::vector<UTF>&);
+
+            extern void pollInputs();
+
+            extern void translateInputs();
+
+            extern void retryDRMConnect();
             #else
 
             namespace tcp {
@@ -8820,202 +8586,6 @@ namespace GGUI {
             #endif
 
         }
-    }
-}
-
-#endif
-#ifndef _PROGRESS_BAR_H_
-#define _PROGRESS_BAR_H_
-
-
-
-
-
-
-
-
-
-namespace GGUI{
-
-    namespace progress{
-        enum class partType{
-            EMPTY,
-            HEAD,
-            BODY,
-            TAIL
-        };
-
-        class part : public STYLING_INTERNAL::styleBase{
-        public:
-            INTERNAL::compactString character = INTERNAL::compactString(' ');
-            RGB color = COLOR::GRAY;
-            partType type = partType::EMPTY;
-
-            constexpr part(partType t, RGB fillColor = COLOR::GREEN, INTERNAL::compactString cs = INTERNAL::compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
-
-            constexpr part() = default;
-
-            inline ~part() override { styleBase::~styleBase(); }
-
-            inline styleBase* copy() const override {
-                return new part(*this);
-            }
-            
-            constexpr part& operator=(const part& other){
-                // Only copy the information if the other is enabled.
-                if (other.status >= status){
-                    character = other.character;
-                    color = other.color;
-                    type = other.type;
-
-                    status = other.status;
-                }
-                return *this;
-            }
-
-            constexpr part(const part& other) : styleBase(other.status), 
-                character(other.character), color(other.color), type(other.type) {}
-
-            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
-
-            inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
-        };
-
-
-        class Bar : public element{
-        protected:
-            float Progress = 0; // 0.0 - 1.0
-
-            INTERNAL::compactString Head = INTERNAL::compactString('>');
-            INTERNAL::compactString Body = INTERNAL::compactString('-');
-            INTERNAL::compactString Tail = INTERNAL::compactString('|');
-            INTERNAL::compactString Empty = INTERNAL::compactString(' ');
-
-            RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
-            RGB Body_Color = GGUI::COLOR::GRAY;
-            RGB Tail_Color = GGUI::COLOR::GRAY;
-            RGB Empty_Color = GGUI::COLOR::DARK_GRAY;
-
-            std::vector<UTF> Content;
-        public:
-
-            /**
-             * @brief Constructor for Progress_Bar.
-             *
-             * This constructor calls the Element constructor with the given style and
-             * initializes the Progress_Bar object with default values.
-             *
-             * @param s The style for the Progress_Bar.
-             * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Progress_Bar's style. Only use if you know what you're doing!!!
-             */
-            Bar(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
-                Progress = 0.0f;
-            }
-            
-            Bar(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : Bar(s, Embed_Styles_On_Construct){}
-
-            /**
-             * @brief Default constructor for Progress_Bar.
-             *
-             * This constructor is explicitly defined as default, which means that the compiler will generate a default implementation for it.
-             * This is needed because otherwise, the compiler would not generate a default constructor for this class, since we have a user-declared constructor.
-             */
-            Bar() = default;
-
-            void setHeadCharacter(INTERNAL::compactString cs) { Head = cs; }
-            void setBodyCharacter(INTERNAL::compactString cs) { Body = cs; }
-            void setTailCharacter(INTERNAL::compactString cs) { Tail = cs; }
-            void setEmptyCharacter(INTERNAL::compactString cs) { Empty = cs; }
-
-            void setHeadColor(RGB color) { Head_Color = color; }
-            void setBodyColor(RGB color) { Body_Color = color; }
-            void setTailColor(RGB color) { Tail_Color = color; }
-            void setEmptyColor(RGB color) { Empty_Color = color; }
-
-            /**
-             * @brief Returns the index of the head of the progress bar.
-             * @details
-             * This function returns the index of the head of the progress bar. The head is the character that is drawn at the end of the progress bar when it is not full.
-             * The index is calculated by multiplying the width of the progress bar (minus the border on both sides) by the progress value.
-             * The result is then rounded down to the nearest integer using the floor() function.
-             * @return The index of the head of the progress bar.
-             */
-            unsigned int getIndexofHead();
-
-            /**
-             * @brief Colors the bar with the current progress value.
-             * @details
-             * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
-             */
-            void colorBar();
-
-            /**
-             * @brief Renders the progress bar into the Render_Buffer.
-             * @details This function processes the progress bar to generate a vector of UTF objects representing the current state.
-             * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
-             * @return A vector of UTF objects representing the rendered progress bar.
-             */
-            std::vector<GGUI::UTF>& render() override;
-
-            /**
-             * @brief Sets the progress value of the progress bar.
-             * @details This function updates the progress value of the progress bar. 
-             * If the given value exceeds 1.0, a warning is reported, and the function returns without updating.
-             * It also updates the color of the progress bar and marks the render buffer as dirty.
-             * @param New_Progress The new progress value to set (should be between 0.0 and 1.0).
-             */
-            void setProgress(float New_Progress);
-            
-            /**
-             * @brief Returns the current progress value of the progress bar.
-             * @details This function returns the current progress value of the progress bar, which is a float between 0.0 and 1.0.
-             * @return The current progress value of the progress bar.
-             */
-            float getProgress();
-
-            void updateProgress(float add);
-
-            /**
-             * @brief Toggles the border visibility of the progress bar.
-             * @details This function toggles the border visibility of the progress bar.
-             *          If the state has changed, it updates the border enabled state, marks the element as dirty for border changes, and updates the frame.
-             * @param b The desired state of the border visibility.
-             */
-            void showBorder(bool state) override;
-
-            /**
-             * @brief Destructor for the Progress_Bar class.
-             *
-             * This destructor is responsible for properly deallocating all the memory
-             * allocated by the Progress_Bar object. It calls the base class destructor
-             * to ensure all parent class resources are also cleaned up.
-             */
-            ~Bar() override {
-                // Call the base destructor to clean up base class resources.
-                element::~element();
-            }
-            
-            /**
-             * @brief Creates a deep copy of the Progress_Bar object.
-             * @details This function creates a new Progress_Bar object and copies all the data from the current Progress_Bar object to the new one.
-             *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
-             * @return A pointer to the new Progress_Bar object.
-             */
-            element* safeMove() const override {
-                return new Bar();
-            }
-
-            /**
-             * @brief Returns the name of the Progress_Bar object.
-             * @details This function returns a string that represents the name of the Progress_Bar object.
-             *          The name is constructed by concatenating the name of the Progress_Bar with the 
-             *          class name "Progress_Bar", separated by a "<" and a ">".
-             * @return The name of the Progress_Bar object.
-             */
-            std::string getName() const override{
-                return "progressBar<" + Name + ">";
-            }
-        };
     }
 }
 
@@ -9526,6 +9096,441 @@ namespace GGUI{
          * Finally, the concatenated text from the Raw_Text vector is set to the provided string pointer.
          */
         extern void translateChildsToElement(element* e, HTMLNode* input, std::string* Set_Text_To);
+    }
+}
+
+#endif
+#ifndef _SIMD_H_
+#define _SIMD_H_
+
+
+
+namespace GGUI{
+
+    #if defined(__AVX512F__)
+        #include <immintrin.h>
+
+        inline const unsigned int MAX_SIMD_SIZE = 16;
+    #elif defined(__AVX__)
+        #include <immintrin.h>
+
+        inline const unsigned int MAX_SIMD_SIZE = 8;
+    #elif defined(__SSE__)
+        #include <xmmintrin.h>
+
+        inline const unsigned int MAX_SIMD_SIZE = 4;
+    #else
+        inline const unsigned int MAX_SIMD_SIZE = 1;
+    #endif
+
+    // The number represents how many 32 bit float value pairs can it calculate at the same time.
+    void simdDivision4(float* a, float* b, float* c);
+    void simdDivision8(float* a, float* b, float* c);
+    void simdDivision16(float* a, float* b, float* c);
+
+    // Calls the right division SIMD operator depending on the length
+    void operateSIMDDivision(float* dividend, float* divider, float* result, int length){
+        if(length == 4){
+            simdDivision4(dividend, divider, result);
+        }else if(length == 8){
+            simdDivision8(dividend, divider, result);
+        }else if(length == 16){
+            simdDivision16(dividend, divider, result);
+        }else{
+            INTERNAL::reportStack("Calling SIMD division with longer sequence than allowed: " + std::to_string(length) + " elements.");
+        }
+    }
+
+    void operateSIMDModulo(float* dividend, float* divider, float* result, int length){
+        // Uses the division variants and then calculates for each the modulo
+        operateSIMDDivision(dividend, divider, result, length);
+
+        for(int i = 0; i < length; i++){
+            // by the formula: a - b * floor(a / b)
+            result[i] = dividend[i] - divider[i] * floor(result[i]);
+        }
+    }
+
+    #if defined(__SSE__)
+        void simdDivision4(float* a, float* b, float* c) {
+            __m128 va = _mm_loadu_ps(a);
+            __m128 vb = _mm_loadu_ps(b);
+            __m128 vc = _mm_div_ps(va, vb);
+            _mm_storeu_ps(c, vc);
+        }
+    #else
+        void simdDivision4(float* a, float* b, float* c) {
+            *c = *a / *b;
+            *(c + 1) = *(a + 1) / *(b + 1);
+            *(c + 2) = *(a + 2) / *(b + 2);
+            *(c + 3) = *(a + 3) / *(b + 3);
+        }
+    #endif
+
+    #if defined(__AVX__)
+        void simdDivision8(float* a, float* b, float* c) {
+            __m256 va = _mm256_loadu_ps(a);
+            __m256 vb = _mm256_loadu_ps(b);
+            __m256 vc = _mm256_div_ps(va, vb);
+            _mm256_storeu_ps(c, vc);
+        }
+    #else
+        void simdDivision8(float* a, float* b, float* c) {
+            // use the one stage lower SIMD function variant.
+            simdDivision4(a, b, c);
+            simdDivision4(a + 4, b + 4, c + 4);
+        }
+    #endif
+
+    #if defined(__AVX512F__)
+        void simdDivision16(float* a, float* b, float* c) {
+            __m512 va = _mm512_loadu_ps(a);
+            __m512 vb = _mm512_loadu_ps(b);
+            __m512 vc = _mm512_div_ps(va, vb);
+            _mm512_storeu_ps(c, vc);
+        }
+    #else
+        void simdDivision16(float* a, float* b, float* c) {
+            // use the one stage lower SIMD function variant.
+            simdDivision8(a, b, c);
+            simdDivision8(a + 8, b + 8, c + 8);
+        }
+    #endif
+}
+
+#endif
+#ifndef _UTILS_H_
+#define _UTILS_H_
+/**
+ * This is an Utils file made for the Renderer.cpp to use internally, these are just removed to clean up the source code.
+ */
+
+
+
+
+#include <math.h>
+
+namespace GGUI{
+    class element;
+    class UTF;
+    class RGB;
+
+    namespace INTERNAL{
+        extern std::string constructLoggerFileName();
+
+        extern bool Identical_Frame;
+
+        extern void De_Initialize();
+
+        extern int BEFORE_ENCODE_BUFFER_SIZE;
+        extern int AFTER_ENCODE_BUFFER_SIZE;
+        
+        /**
+         * @brief The Renderer function is responsible for managing the rendering loop.
+         * It waits for a condition to resume rendering, processes rendering tasks, and
+         * then pauses itself until the condition is met again.
+         * 
+         * The function performs the following steps:
+         * 1. Waits for the render thread to be resumed.
+         * 2. Saves the current time.
+         * 3. Checks if the rendering scheduler needs to be terminated.
+         * 4. Processes carry flags and updates the maximum width and height if needed.
+         * 5. Renders the main frame buffer.
+         * 6. Encodes the buffer for optimization.
+         * 7. Converts the abstract frame buffer to a string and renders the frame.
+         * 8. Calculates the render delay.
+         * 9. Pauses the render thread and notifies all waiting threads.
+         */
+        extern void renderer();
+
+        /**
+         * @brief Event_Thread is a function that runs an infinite loop to handle various events and tasks.
+         * 
+         * This function performs the following tasks in each iteration of the loop:
+         * - Resets the thread load counter and updates the previous time.
+         * - Calls functions to recall memories, go through file streams, and refresh the multi-frame canvas.
+         * - Checks for termination signals and breaks out of the loop if the terminate flag is set.
+         * - Updates the current time and calculates the delta time.
+         * - Adjusts the current update speed based on the event thread load.
+         * - Sleeps for a calculated duration to control the update speed.
+         * 
+         * The function is designed to be used in a multi-threaded environment where it can be paused and resumed as needed.
+         * 
+         * @note If uncapped FPS is desired, the sleep code can be disabled.
+         */
+        extern void eventThread();
+
+        /**
+         * @brief Function that continuously handles user input in a separate thread.
+         *
+         * This function runs an infinite loop where it performs the following steps:
+         * 1. Waits for user input by calling INTERNAL::Query_Inputs().
+         * 2. Pauses the GGUI system and performs the following actions:
+         *    - Records the current time as INTERNAL::Previous_Time.
+         *    - Translates the queried inputs using INTERNAL::Translate_Inputs().
+         *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
+         *    - Calls the event handlers to react to the parsed input using Event_Handler().
+         *    - Records the current time as INTERNAL::Current_Time.
+         *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
+         */
+        extern void inputThread();
+
+        /**
+         * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
+         * 
+         * This function takes an unsigned long long integer and formats it as a hexadecimal string
+         * in uppercase. The resulting string does not include a "0x" prefix.
+         * 
+         * @param value The unsigned long long integer to be converted to a hexadecimal string.
+         * @return A std::string containing the uppercase hexadecimal representation of the input value.
+         */
+        extern std::string Hex(unsigned long long value);
+
+        /**
+         * @brief Checks if two rectangles collide.
+         *
+         * This function determines whether two rectangles, defined by their top-left
+         * corners and dimensions, overlap in a 2D space.
+         *
+         * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
+         * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
+         * @param A_Width The width of the first rectangle.
+         * @param A_Height The height of the first rectangle.
+         * @param B_Width The width of the second rectangle.
+         * @param B_Height The height of the second rectangle.
+         * @return true if the rectangles overlap, false otherwise.
+         */
+        extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
+
+        /**
+         * @brief Checks if two GGUI elements collide.
+         * 
+         * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
+         * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
+         * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
+         * 
+         * @param a Pointer to the first GGUI element.
+         * @param b Pointer to the second GGUI element.
+         * @param Identity Boolean value to return if the elements are the same.
+         * @return true if the elements collide, false otherwise.
+         */
+        extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
+
+        /**
+         * @brief Checks if a given point collides with a specified element.
+         * 
+         * This function determines if the point `b` collides with the element `a` by 
+         * calling another `Collides` function with the element's absolute position, 
+         * width, height, and the point's assumed dimensions of 1x1.
+         * 
+         * @param a Pointer to the GGUI::Element to check for collision.
+         * @param b The point (as GGUI::IVector3) to check for collision with the element.
+         * @return true if the point collides with the element, false otherwise.
+         */
+        extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
+
+        /**
+         * @brief Recursively finds the most accurate element that contains the given position.
+         * 
+         * This function checks if the given position is within the bounds of the parent element.
+         * If it is, it then checks all the child elements of the parent to see if any of them
+         * contain the position. If a child element contains the position, the function is called
+         * recursively on that child element. If no child element contains the position, the parent
+         * element is returned.
+         * 
+         * @param c The position to check, represented as an IVector3.
+         * @param Parent The parent element to start the search from.
+         * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
+         */
+        extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
+
+        /**
+         * @brief Returns the smaller of two signed long long integers.
+         * 
+         * This function compares two signed long long integers and returns the smaller of the two.
+         * 
+         * @param a The first signed long long integer to compare.
+         * @param b The second signed long long integer to compare.
+         * @return The smaller of the two signed long long integers.
+         */
+        extern signed long long Min(signed long long a, signed long long b);
+
+        /**
+         * @brief Returns the maximum of two signed long long integers.
+         *
+         * This function compares two signed long long integers and returns the greater of the two.
+         *
+         * @param a The first signed long long integer to compare.
+         * @param b The second signed long long integer to compare.
+         * @return The greater of the two signed long long integers.
+         */
+        extern signed long long Max(signed long long a, signed long long b);
+
+        /**
+         * @brief Checks if a bit is set in a char.
+         * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
+         *          It returns true if the bit is set and false if it is not.
+         *
+         * @param val The char to check the bit in.
+         * @param i The index of the bit to check.
+         *
+         * @return True if the bit is set, false if it is not.
+         */
+        extern bool Has_Bit_At(char val, int i);
+
+        /**
+         * @brief Gets the contents of a given position in the buffer.
+         * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
+         * @param Absolute_Position The position to get the contents of.
+         * @return The contents of the given position, or nullptr if the position is out of bounds.
+         */
+        extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
+
+        /**
+         * @brief Calculates the current load of the GGUI thread based on the given current position.
+         * @param Min The minimum value the load can have.
+         * @param Max The maximum value the load can have.
+         * @param Position The current position of the load.
+         * @return The current load of the GGUI thread from 0 to 1.
+         */
+        extern float Lerp(int Min, int Max, int Position);
+
+        /**
+         * @brief Checks if the given flag is set in the given flags.
+         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+         *
+         * @param f The flags to check.
+         * @param Flag The flag to check for.
+         * @return True if the flag is set, otherwise false.
+         */
+        extern bool Is(unsigned long long f, unsigned long long Flag);
+
+        /**
+         * @brief Checks if a flag is set in a set of flags.
+         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
+         *
+         * @param f The flags to check.
+         * @param flag The flag to check for.
+         * @return True if the flag is set, otherwise false.
+         */
+        extern bool Has(unsigned long long f, unsigned long long flag);
+
+        extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
+
+        /**
+         * @brief Checks if all flags in small are set in big.
+         * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
+         *
+         * @param big The flags to check against.
+         * @param small The flags to check.
+         * @return True if all flags in small are set in big, otherwise false.
+         */
+        extern bool Contains(unsigned long long big, unsigned long long Small);
+
+        extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
+
+        /**
+         * @brief Determines if a given pointer is likely deletable (heap-allocated).
+         *
+         * This function assesses whether a pointer may belong to the heap by comparing its
+         * position relative to known memory sections such as the stack, heap, and data segments.
+         *
+         * @param ptr Pointer to be evaluated.
+         * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
+         */
+        extern ALLOCATION_TYPE getAllocationType(const void* ptr);
+
+        /**
+         * Linear interpolation function
+         * @param a The start value
+         * @param b The end value
+         * @param t The interpolation value, between 0 and 1
+         * @return The interpolated value
+         */
+        template<typename T>
+        constexpr T lerp(T a, T b, T t) {
+            // Clamp t between a and b
+            return a + t * (b - a);
+        }
+
+        /**
+         * @brief Performs gamma-corrected linear interpolation between two values.
+         * 
+         * @tparam T The type of the input values.
+         * @tparam P The type of the interpolation factor.
+         * @param a The start value.
+         * @param b The end value.
+         * @param t The interpolation factor, typically between 0 and 1.
+         * @return The interpolated value, gamma-corrected and cast back to type T.
+         */
+        template<typename T, typename P>
+        constexpr T Interpolate(T a, T b, P t) {
+            // Define gamma value for correction
+            constexpr float gamma = 2.2F;
+
+            // Apply gamma correction to input values and perform linear interpolation
+            const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
+
+            // Reverse gamma correction and cast back to original type
+            return static_cast<T>(std::pow(c_f, 1.F / gamma));
+        }
+
+        /**
+         * @brief Interpolates between two RGB colors using linear interpolation.
+         * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
+         * @param A The start RGB color.
+         * @param B The end RGB color.
+         * @param Distance The interpolation factor, typically between 0 and 1.
+         * @return The interpolated RGB color.
+         */
+        extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
+
+        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
+            static std::string result;  // an internal cache container between renders.
+
+            if (result.empty() || Liquefied_Size != result.size()){
+                // Resize a std::string to the total size.
+                result.resize(Liquefied_Size, '\0');
+            }
+
+            // Copy the contents of the Data vector into the std::string.
+            unsigned int Current_UTF_Insert_Index = 0;
+            for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
+                const compactString& data = Data->at(i);
+
+                // Size of ones are always already loaded from memory into a char.
+                if (data.size > 1){
+                    // Replace the current contents of the string with the contents of the Unicode data.
+                    result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
+
+                    Current_UTF_Insert_Index += data.size;
+                }
+                else{
+                    // Add the single character to the string.
+                    result[Current_UTF_Insert_Index++] = data.getAscii();
+                }
+            }
+
+            return &result;
+        }
+
+        inline std::string To_String(compactString& cstr){
+            // Resize a std::string to the total size.
+            std::string result;
+            result.resize(cstr.size);
+
+            // Copy the contents of the Compact_String into the std::string.
+            if (cstr.size > 1){
+                // Replace the current contents of the string with the contents of the Unicode data.
+                result.replace(0, cstr.size, cstr.getUnicode());
+            }
+            else{
+                // Add the single character to the string.
+                result[0] = cstr.getAscii();
+            }
+
+            return result;
+        }
     }
 }
 
