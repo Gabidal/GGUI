@@ -268,6 +268,7 @@ int main(){
         const std::string& cpp_file = CPP_Files[i];
         const std::string& obj_file = Object_Files[i];
         
+        // If this is not found install it with: sudo apt install g++-mingw-w64-x86-64-posix
         std::string compile_command = "x86_64-w64-mingw32-g++-posix" + Base_Args + " -o " + obj_file + " " + cpp_file;
         
         int result = system((virtualRoot + compile_command).c_str());

@@ -5,7 +5,7 @@ cd ./bin/export
 
 g++ buildGGUILib.cpp    # build the exporter
 
-./a.out # run the exporter
+# ./a.out # run the exporter
 
 # Now the libGGUIUnix.a should exist
 

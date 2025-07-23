@@ -18,6 +18,21 @@
                 "isDefault": true
             },
             "detail": "Buildarna"
+        },
+        {
+            "type": "shell",
+            "label": "export",
+            "command": "./test/run.sh",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": "$gcc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Buildarna"
         }
     ],
     "version": "2.0.0"

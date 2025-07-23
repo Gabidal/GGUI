@@ -86,9 +86,6 @@ echo
 # Step 2: Set up build environment
 echo "Step 2: Setting up build environment..."
 
-# Step 2: Set up build environment
-echo "Step 2: Setting up build environment..."
-
 # Ensure the CXX variable is set (default to 'g++' if not)
 if [ -z "$CXX" ]; then
     export CXX=g++

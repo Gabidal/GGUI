@@ -9,10 +9,10 @@ Comprehensive CPU profiling using Valgrind's Callgrind tool with KCachegrind int
 
 **Usage:**
 ```bash
-./benchmark.sh              # Basic profiling with standard settings
-./benchmark.sh -F            # Full profiling with cache simulation
-./benchmark.sh --enableDRM   # Enable DRM mode for hardware acceleration
-./benchmark.sh --help        # Display help information
+./bin/analytics/benchmark.sh              # Basic profiling with standard settings
+./bin/analytics/benchmark.sh -F            # Full profiling with cache simulation
+./bin/analytics/benchmark.sh --enableDRM   # Enable DRM mode for hardware acceleration
+./bin/analytics/benchmark.sh --help        # Display help information
 ```
 
 **Output:**
@@ -25,12 +25,12 @@ Modern performance profiling using Linux perf tools with web-based pprof analysi
 
 **Usage:**
 ```bash
-./benchmark2.sh              # Branch misses analysis (default)
-./benchmark2.sh -c           # CPU cycles analysis
-./benchmark2.sh -i           # Instructions analysis
-./benchmark2.sh -a           # Comprehensive multi-event analysis
-./benchmark2.sh -F           # Maximum profiling with all events
-./benchmark2.sh --help       # Display help information
+./bin/analytics/benchmark2.sh              # Branch misses analysis (default)
+./bin/analytics/benchmark2.sh -c           # CPU cycles analysis
+./bin/analytics/benchmark2.sh -i           # Instructions analysis
+./bin/analytics/benchmark2.sh -a           # Comprehensive multi-event analysis
+./bin/analytics/benchmark2.sh -F           # Maximum profiling with all events
+./bin/analytics/benchmark2.sh --help       # Display help information
 ```
 
 **Output:**
@@ -43,9 +43,9 @@ Memory leak detection and error analysis using Valgrind's Memcheck tool.
 
 **Usage:**
 ```bash
-./leaks.sh                   # Basic memory checks (faster)
-./leaks.sh -F                # Full memory analysis (comprehensive)
-./leaks.sh --help            # Display help information
+./bin/analytics/leaks.sh                   # Basic memory checks (faster)
+./bin/analytics/leaks.sh -F                # Full memory analysis (comprehensive)
+./bin/analytics/leaks.sh --help            # Display help information
 ```
 
 #### When using `-F`, valgrind.log will report so called `on exit` memory leaks, these are ok. As long as no runtime memory leaks exist. 
@@ -59,9 +59,9 @@ Measures instruction execution over time to detect performance degradation and m
 
 **Usage:**
 ```bash
-./time.sh 5 30               # Compare 5-second vs 30-second runs
-./time.sh 10 60              # Compare 10-second vs 60-second runs
-./time.sh --help             # Display help information
+./bin/analytics/time.sh 5 30               # Compare 5-second vs 30-second runs
+./bin/analytics/time.sh 10 60              # Compare 10-second vs 60-second runs
+./bin/analytics/time.sh --help             # Display help information
 ```
 
 **Arguments:**

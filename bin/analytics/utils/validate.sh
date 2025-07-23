@@ -4,7 +4,7 @@
 # GGUI Analytics Tools Validation Script
 # =============================================================================
 # This script validates the functionality of the refactored analytics tools
-# by testing utility modules and verifying script integration.
+# by testing utility modules and verifying script integrity.
 #
 # Author: GGUI Analytics Team
 # Version: 1.0
@@ -111,11 +111,11 @@ test_help_module() {
 }
 
 # =============================================================================
-# Script Integration Tests
+# Script integrity Tests
 # =============================================================================
 
-test_script_integration() {
-    echo "Testing script integration..."
+test_script_integrity() {
+    echo "Testing script integrity..."
     
     local scripts=("benchmark.sh" "benchmark2.sh" "leaks.sh" "time.sh")
     
@@ -158,8 +158,8 @@ test_environment() {
 # Tool Availability Tests
 # =============================================================================
 
-test_tool_availability() {
-    echo "Testing tool availability..."
+test_analytic_tool_availability() {
+    echo "Testing analytic tool availability..."
     
     # Optional tools (don't fail if missing)
     local optional_tools=("valgrind" "kcachegrind")
@@ -211,16 +211,25 @@ test_requirements() {
         fi
     done
     
-    # Test compiler availability
-    if command -v gcc >/dev/null 2>&1; then
-        echo "GCC compiler: AVAILABLE ($(gcc --version | head -n1))"
-    else
-        echo "GCC compiler: NOT AVAILABLE"
-        missing_packages+=("gcc")
-    fi
-    
+    # Test compiler availability    
     if command -v g++ >/dev/null 2>&1; then
-        echo "G++ compiler: AVAILABLE ($(g++ --version | head -n1))"
+        local gpp_version_output=$(g++ --version | head -n1)
+        echo "G++ compiler: AVAILABLE ($gpp_version_output)"
+        
+        # Check if g++ is actually clang in disguise
+        if echo "$gpp_version_output" | grep -qi "clang"; then
+            echo "ERROR: g++ command points to clang, GGUI relies on GCC specific C++ standard 17 constexpr tricks!"
+            ((TEST_FAILED++))
+        else
+            # Extract and validate G++ version (must be 13 or higher)
+            local gpp_version=$(echo "$gpp_version_output" | grep -oE '[0-9]+\.[0-9]+' | head -n1 | cut -d. -f1)
+            if [[ -n "$gpp_version" && "$gpp_version" -ge 13 ]]; then
+                echo "G++ version: SUFFICIENT (version $gpp_version)"
+            else
+                echo "ERROR: G++ version $gpp_version is too old (minimum version 13 required)"
+                ((TEST_FAILED++))
+            fi
+        fi
     else
         echo "G++ compiler: NOT AVAILABLE"
         missing_packages+=("g++")
@@ -396,7 +405,7 @@ test_analytics_setup() {
 # Main Execution
 # =============================================================================
 
-echo "GGUI Analytics Tools Validation"
+echo "GGUI Dependency Validation"
 echo "==============================="
 echo
 
@@ -413,7 +422,7 @@ test_build_system
 test_project_structure
 
 # Test tool availability
-test_tool_availability
+test_analytic_tool_availability
 
 # Test analytics setup
 test_analytics_setup
@@ -423,11 +432,11 @@ for module in "common.sh" "valgrind.sh" "perf.sh" "help.sh"; do
     test_module "$module"
 done
 
-# Test script integration
-test_script_integration
+# Test script integrity
+test_script_integrity
 
 # Summary
-echo "Validation Summary"
+echo "Summary"
 echo "=================="
 echo "Tests passed: $TEST_PASSED"
 echo "Tests failed: $TEST_FAILED"
@@ -435,7 +444,7 @@ echo "Total tests:  $((TEST_PASSED + TEST_FAILED))"
 echo
 
 if [[ $TEST_FAILED -eq 0 ]]; then
-    echo "✓ All tests passed! Analytics tools are ready for use."
+    echo "✓ All tests passed! Ready to dev GGUI."
     echo
     echo "Next steps:"
     echo "- Run './bin/analytics/benchmark.sh --help' to see profiling options"
@@ -451,5 +460,6 @@ else
     echo "- Check file permissions: chmod +x bin/analytics/*.sh"
     echo "- Verify GGUI project structure and git repository"
     echo "- Ensure you're running from within the GGUI project"
+    echo "- Missing gcc or too old version? Run: sudo apt install gcc-13 g++-13 && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 60 --slave /usr/bin/g++ g++ /usr/bin/g++-13"
     exit 1
 fi

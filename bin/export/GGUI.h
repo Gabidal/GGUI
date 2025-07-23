@@ -107,9 +107,9 @@ namespace GGUI{
                 size_t length = getLength(data);
 
                 // Check for the most cases
-                length > 1 ? 
+                length > 1 ?    // Transfer larger than single char strings
                     setUnicode(data) : 
-                    length == 1 ?
+                    length == 1 ?   // Handle single character strings and zero length strings
                         setAscii(data[0]) : 
                         setAscii('\0'); // Handle empty string case
 
@@ -161,7 +161,11 @@ namespace GGUI{
              * @return True if the flag is set, otherwise false.
              */
             constexpr bool is(unsigned char cs_flag) const {
-                return (cs_flag == COMPACT_STRING_FLAG::IS_ASCII && size == 1) || (cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && size > 1) ? true : false;
+                return (
+                    cs_flag == COMPACT_STRING_FLAG::IS_ASCII && std::holds_alternative<char>(text)
+                ) || (
+                    cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && std::holds_alternative<const char*>(text)
+                ) ? true : false;
             }
 
             // Fast comparison of type and content
@@ -185,15 +189,15 @@ namespace GGUI{
              * @return char The character at the specified index.
              */
             constexpr char operator[](int index) const {
-                return ((unsigned)index > size || index < 0) ? 
+                return ((unsigned)index >= size || index < 0) ? 
                     '\0' : // Return null character if index is out of bounds.
-                    (size > 1 ? std::get<const char*>(text)[index] : std::get<char>(text));  // Return the character from Unicode or ASCII data.
+                    (is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::get<const char*>(text)[index] : std::get<char>(text));  // Return the character from Unicode or ASCII data.
             }
 
             constexpr const char* getUnicode(bool force = false) const {
                 // If the size is greater than 1, return the Unicode data.
                 // Otherwise, return a pointer to the ASCII data.
-                return size > 1 || force ? 
+                return is(COMPACT_STRING_FLAG::IS_UNICODE) || force ? 
                     std::get<const char*>(text) : 
                     nullptr;
             }
@@ -201,7 +205,7 @@ namespace GGUI{
             constexpr char getAscii() const {
                 // If the size is 1, return the ASCII data.
                 // Otherwise, return a null character.
-                return size == 1 ? 
+                return is(COMPACT_STRING_FLAG::IS_ASCII) ? 
                     std::get<char>(text) : 
                     '\0';
             }
