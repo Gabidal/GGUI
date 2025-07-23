@@ -8,6 +8,8 @@
 #include <vector>
 #include <functional>
 #include <cassert>
+#include <iomanip>
+#include <cctype>
 
 namespace tester {
     namespace utils {
@@ -126,6 +128,88 @@ namespace tester {
             }
         };
 
+        // Helper function to convert a single character to safe hex representation
+        std::string char_to_hex(unsigned char c) {
+            const char* hex_chars = "0123456789abcdef";
+            std::string result = "\\x";
+            result += hex_chars[(c >> 4) & 0xF];
+            result += hex_chars[c & 0xF];
+            return result;
+        }
+
+        // Helper function to safely convert values to string for error messages
+        template<typename T>
+        std::string safe_to_string(const T& value) {
+            // For most types, try normal stringstream conversion first
+            std::stringstream ss;
+            ss << value;
+            std::string result = ss.str();
+            
+            // Replace control characters and non-printable characters with their hex representation
+            std::string safe_result;
+            for (char c : result) {
+                if (std::iscntrl(c) || !std::isprint(c)) {
+                    safe_result += char_to_hex(static_cast<unsigned char>(c));
+                } else {
+                    safe_result += c;
+                }
+            }
+            return safe_result;
+        }
+
+        // Specialization for char to handle control characters properly
+        template<>
+        std::string safe_to_string<char>(const char& value) {
+            if (std::iscntrl(value) || !std::isprint(value)) {
+                return char_to_hex(static_cast<unsigned char>(value));
+            } else {
+                return std::string(1, value);
+            }
+        }
+
+        // Specialization for unsigned char
+        template<>
+        std::string safe_to_string<unsigned char>(const unsigned char& value) {
+            if (std::iscntrl(value) || !std::isprint(value)) {
+                return char_to_hex(value);
+            } else {
+                return std::string(1, static_cast<char>(value));
+            }
+        }
+
+        // Specialization for C-style strings
+        template<>
+        std::string safe_to_string<const char*>(const char* const& value) {
+            if (value == nullptr) {
+                return "(null)";
+            }
+            
+            std::string safe_result;
+            for (size_t i = 0; value[i] != '\0'; ++i) {
+                char c = value[i];
+                if (std::iscntrl(c) || !std::isprint(c)) {
+                    safe_result += char_to_hex(static_cast<unsigned char>(c));
+                } else {
+                    safe_result += c;
+                }
+            }
+            return safe_result;
+        }
+
+        // Specialization for std::string
+        template<>
+        std::string safe_to_string<std::string>(const std::string& value) {
+            std::string safe_result;
+            for (char c : value) {
+                if (std::iscntrl(c) || !std::isprint(c)) {
+                    safe_result += char_to_hex(static_cast<unsigned char>(c));
+                } else {
+                    safe_result += c;
+                }
+            }
+            return safe_result;
+        }
+
         // Simple assertion functions that don't use problematic macros
         void assert_true(bool condition, const std::string& message, const std::string& file, int line) {
             if (!condition) {
@@ -146,27 +230,51 @@ namespace tester {
         template<typename T>
         void assert_eq(const T& expected, const T& actual, const std::string& file, int line) {
             if (!(expected == actual)) {
-                std::stringstream ss;
-                ss << "Assertion failed: expected " << expected << " but got " << actual << " at " << file << ":" << line;
-                throw std::runtime_error(ss.str());
+                // Build the error message using string concatenation to avoid stringstream issues
+                std::string error_msg = "Assertion failed: expected ";
+                error_msg += safe_to_string(expected);
+                error_msg += " but got ";
+                error_msg += safe_to_string(actual);
+                error_msg += " at ";
+                error_msg += file;
+                error_msg += ":";
+                error_msg += std::to_string(line);
+                throw std::runtime_error(error_msg);
             }
         }
 
         template<typename T>
         void assert_ne(const T& expected, const T& actual, const std::string& file, int line) {
             if (expected == actual) {
-                std::stringstream ss;
-                ss << "Assertion failed: expected " << expected << " to not equal " << actual << " at " << file << ":" << line;
-                throw std::runtime_error(ss.str());
+                // Build the error message using string concatenation to avoid stringstream issues
+                std::string error_msg = "Assertion failed: expected ";
+                error_msg += safe_to_string(expected);
+                error_msg += " to not equal ";
+                error_msg += safe_to_string(actual);
+                error_msg += " at ";
+                error_msg += file;
+                error_msg += ":";
+                error_msg += std::to_string(line);
+                throw std::runtime_error(error_msg);
             }
         }
 
         void assert_float_eq(float expected, float actual, float epsilon, const std::string& file, int line) {
             if (std::abs(expected - actual) > epsilon) {
-                std::stringstream ss;
-                ss << "Assertion failed: expected " << expected << " but got " << actual 
-                << " (difference: " << std::abs(expected - actual) << " > " << epsilon << ") at " << file << ":" << line;
-                throw std::runtime_error(ss.str());
+                // Build the error message using string concatenation to avoid stringstream issues
+                std::string error_msg = "Assertion failed: expected ";
+                error_msg += std::to_string(expected);
+                error_msg += " but got ";
+                error_msg += std::to_string(actual);
+                error_msg += " (difference: ";
+                error_msg += std::to_string(std::abs(expected - actual));
+                error_msg += " > ";
+                error_msg += std::to_string(epsilon);
+                error_msg += ") at ";
+                error_msg += file;
+                error_msg += ":";
+                error_msg += std::to_string(line);
+                throw std::runtime_error(error_msg);
             }
         }
 
