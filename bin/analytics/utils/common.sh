@@ -179,8 +179,8 @@ ensure_executable() {
         # Try common build directory locations
         if [[ -f "$current_dir/build/GGUI" ]]; then
             executable_path="$current_dir/build/GGUI"
-        elif [[ -f "$current_dir/Build/GGUI" ]]; then
-            executable_path="$current_dir/Build/GGUI"
+        elif [[ -f "$current_dir/build/GGUI" ]]; then
+            executable_path="$current_dir/build/GGUI"
         else
             executable_path="$current_dir/build/GGUI"  # Default fallback
         fi

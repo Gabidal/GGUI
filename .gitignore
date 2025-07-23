@@ -20,3 +20,5 @@ callgrind.*
 *.data
 *.old
 *.log
+tester
+*.a

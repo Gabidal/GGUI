@@ -3,7 +3,7 @@
     <source_groups>
         <source_group_32028a1a-b526-4fda-925f-7e8bc12c3bfb>
             <build_file_path>
-                <compilation_db_path>../Build/compile_commands.json</compilation_db_path>
+                <compilation_db_path>../build/compile_commands.json</compilation_db_path>
             </build_file_path>
             <compiler_flags>
                 <compiler_flag>-fpermissive</compiler_flag>

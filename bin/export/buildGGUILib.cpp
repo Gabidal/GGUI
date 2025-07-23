@@ -34,11 +34,11 @@ void Compile_Headers(){
     
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
+        "../../src/core/utils/superString.h",
         "../../src/core/utils/constants.h",
         "../../src/core/utils/color.h",
-        "../../src/core/utils/superString.h",
-        "../../src/core/utils/utf.h",
         "../../src/core/utils/types.h",
+        "../../src/core/utils/utf.h",
         "../../src/core/utils/style.h",
         "../../src/core/utils/settings.h",
         "../../src/core/utils/utils.h",
@@ -47,12 +47,12 @@ void Compile_Headers(){
         "../../src/core/utils/drm.h",
         "../../src/core/SIMD/SIMD.h",
         "../../src/elements/element.h",
+        "../../src/elements/listView.h",
+        "../../src/elements/textField.h",
         "../../src/elements/canvas.h",
         "../../src/elements/HTML.h",
-        "../../src/elements/listView.h",
         "../../src/elements/progressBar.h",
         "../../src/elements/switch.h",
-        "../../src/elements/textField.h",
         "../../src/core/renderer.h",
         "../../src/core/addons/addons.h"
     };
@@ -234,8 +234,14 @@ int main(){
         obj_files_list += " " + obj;
     }
 
+#if _WIN32
     std::string Command = "ar rcs bin/export/GGUI" + nativeName + ".lib" + obj_files_list;
     std::cout << "Creating library: bin/export/GGUI" << nativeName << ".lib" << std::endl;
+#else
+    std::string Command = "ar rcs bin/export/libGGUI" + nativeName + ".a" + obj_files_list;
+    std::cout << "Creating library: bin/export/libGGUI" << nativeName << ".a" << std::endl;
+#endif
+
     system((virtualRoot + Command).c_str());
 
 #if _WIN32
@@ -253,7 +259,7 @@ int main(){
         }
     }
     
-    Command = "ar rcs bin/export/GGUI" + alienName + ".lib" + obj_files_list;
+    Command = "ar rcs bin/export/libGGUI" + alienName + ".a" + obj_files_list;
     system((virtualRoot + Command).c_str());
 #else
     // Cross-compile for Windows if on Unix

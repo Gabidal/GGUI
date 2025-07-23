@@ -104,9 +104,15 @@ namespace GGUI{
             constexpr compactString(const char* data){
                 // Store the string as Unicode data if its length is greater than 1.
                 // Store the single character as ASCII data.
-                getLength(data) > 1 ? 
+                size_t length = getLength(data);
+
+                // Check for the most cases
+                length > 1 ?    // Transfer larger than single char strings
                     setUnicode(data) : 
-                    setAscii(data[0]);
+                    length == 1 ?   // Handle single character strings and zero length strings
+                        setAscii(data[0]) : 
+                        setAscii('\0'); // Handle empty string case
+
             }
 
             /**

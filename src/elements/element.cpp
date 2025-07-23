@@ -44,6 +44,7 @@ void GGUI::UTF::toSuperString(
     Result->add(constants::ANSI::END_COMMAND);
     Result->add(Background_Overhead);
     Result->add(Background_Colour);
+    Result->add(constants::ANSI::END_COMMAND);
 
     if (is(INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE)){
         // Add the const char* to the Result

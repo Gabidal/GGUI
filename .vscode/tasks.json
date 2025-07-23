@@ -7,7 +7,7 @@
             "args": [
                 "compile",
                 "-C",
-                "bin/Build"
+                "bin/build"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
