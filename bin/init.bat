@@ -70,13 +70,13 @@ if "%CXX%"=="" (
 
 rem Step 1: Set up the Build directory (wipe existing if necessary)
 echo Setting up the Build directory...
-if exist "Build" (
-    meson setup --wipe Build || (
+if exist "build" (
+    meson setup --wipe build || (
         echo Error: Failed to set up the Build directory.
         exit /b 1
     )
 ) else (
-    meson setup Build || (
+    meson setup build || (
         echo Error: Failed to set up the Build directory.
         exit /b 1
     )
@@ -84,7 +84,7 @@ if exist "Build" (
 
 rem Step 2: Compile the project using meson
 echo Compiling the project...
-meson compile -C Build || (
+meson compile -C build || (
     echo Error: Compilation failed.
     exit /b 1
 )

@@ -70,7 +70,7 @@ if "%CXX%"=="" (
 
 rem Step 4: Compile the project using Meson
 echo Info: Compiling the project using Meson...
-meson compile -C Build || (
+meson compile -C build || (
     echo Error: Compilation failed.
     exit /b 1
 )
