@@ -1,6 +1,8 @@
 #include <GGUI.h>
 #include "units/utils.h"
 #include "units/superStringSuite.h"
+#include "units/ansiSuite.h"
+#include "units/fileStreamSuite.h"
 
 int main() {
     std::cout << tester::utils::colorText("GGUI Framework Test Suite\n", GGUI::COLOR::BLUE);
@@ -10,6 +12,8 @@ int main() {
     try {
         tester::utils::run_all_tests({
             new tester::superStringSuite(),
+            new tester::ansiSuite(),
+            new tester::fileStreamSuite(),
         });
     } catch (const std::exception& e) {
         std::cout << tester::utils::colorText("Test suite crashed with exception: ", GGUI::COLOR::RED) << e.what() << "\n";

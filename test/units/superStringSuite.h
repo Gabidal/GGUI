@@ -3,6 +3,8 @@
 
 #include "utils.h"
 
+// This test suite tests for validity of Super String and Compact String. 
+
 namespace tester {
     class superStringSuite : public utils::TestSuite {
     public: 

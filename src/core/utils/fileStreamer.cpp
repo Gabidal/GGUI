@@ -30,6 +30,12 @@ namespace GGUI{
             return "";
         }
 
+        // Check if the file handle is actually open
+        if (!Handle.is_open()){
+            report("Cannot read from a file that failed to open: '" + this->Name + "' !");
+            return "";
+        }
+
         if (Buffer_Capture){
             return Buffer_Capture->read();
         }
@@ -41,7 +47,7 @@ namespace GGUI{
             std::string Data;
 
             if (Length == 0){
-                report("Empty file: '" + this->Name + "'");
+                // Empty file is not an error, just return empty string
                 return "";
             }
             else if (Length < 0){
@@ -68,21 +74,15 @@ namespace GGUI{
                 delete[] Buffer;
             }
 
-            // Error handling:
+            // Error handling: Only check for bad state, not EOF
+            // EOF is expected after reading the entire file
             if (Handle.bad()){
-                report("Failed to read file: '" + this->Name + "'");
-                return "";
-            }
-
-            if (!Handle.eof()){
                 report("Failed to read file: '" + this->Name + "'");
                 return "";
             }
 
             return Data;
         }
-
-        // uuhhh.. how did we end up here?
     }
 
     void fileStream::Write(std::string Buffer){

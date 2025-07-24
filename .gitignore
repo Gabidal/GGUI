@@ -22,3 +22,5 @@ callgrind.*
 *.log
 tester
 *.a
+*.tmp
+/bin/export/GGUI.h
