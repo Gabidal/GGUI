@@ -58,7 +58,7 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
     
     if(Output.is_open()){
         for(const std::string& rel_path : Header_Files_In_Order){
-            std::string file_path = std::filesystem::path(source_root) / rel_path;
+            std::string file_path = (std::filesystem::path(source_root) / rel_path).string();
             std::ifstream File(file_path);
             
             if(File.is_open()){

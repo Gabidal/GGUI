@@ -1,10 +1,18 @@
-# This folder contains the CPP files needed to compile the exported version of GGUI.
+# Export helpers
 
-### **Run the following in `./export/` folder:**
+This folder contains the tools to build/export amalgamated headers and prebuilt libraries.
+
+On windows simply run:
 ```bash
-g++ buildGGUILib.cpp
+./bin/export.bat
 ```
 
+On linux simply run:
 ```bash
-./a.exe
+./bin/export.sh
+```
+
+Old and manual way of doing this:
+```bash
+g++ buildGGUILib.cpp && ./a.exe
 ```

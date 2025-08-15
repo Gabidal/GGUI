@@ -4,6 +4,7 @@
 *.out
 build/
 build-win/
+build-linux/
 build-release/
 callgrind.*
 *.backup

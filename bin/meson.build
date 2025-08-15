@@ -246,6 +246,15 @@ run_target(
   depends: []
 )
 
+# Cross-compile for Linux using a Meson cross file (requires a Linux cross toolchain on PATH)
+export_linux_script = files('export/meson_export_linux.sh')
+
+run_target(
+  'export-linux',
+  command: ['bash', export_linux_script[0]],
+  depends: []
+)
+
 # Test target — use exported artifacts to mirror original run.sh
 tester_inc = include_directories('..', 'export')
 
