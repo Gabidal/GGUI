@@ -98,7 +98,7 @@ link_args = []
 
 # Add custom flags based on Meson's buildtype
 if build_type == 'debug'
-  cpp_args += ['-DGGUI_DEBUG']
+  cpp_args += ['-DGGUI_DEBUG', '-Og']
   if cppc.has_argument('-flto')
     cpp_args += ['-flto']
     link_args += ['-flto']
@@ -121,13 +121,9 @@ elif build_type == 'release'
     cpp_args += ['-fwhole-program']
     link_args += ['-fwhole-program']
   endif
-elif build_type == 'debugoptimized' or build_type == 'profile'
-  # Treat debugoptimized/profile as profiling build
-  cpp_args += ['-DGGUI_PROFILE', '-DGGUI_DEBUG', '-pg']
-  link_args += ['-pg']
 endif
 
-if build_type == 'debug' or build_type == 'debugoptimized' or build_type == 'profile'
+if build_type == 'debug' or build_type == 'profile'
   # Windows-specific settings (e.g., for debugging)
   if host_machine.system() == 'windows'
     link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library for better debugging support
