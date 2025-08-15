@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Orchestrate export via Meson: run tests, then export Linux and Windows libs
+# =============================================================================
+# GGUI Export Orchestrator (Linux)
+# Mirrors behavior of bin/export.sh:
+# - Ensure native build exists and tests pass (bin/build)
+# - Prepare a release build (bin/build-release)
+# - Export native artifacts (header + platform lib) via Meson run target
+# - Attempt Windows cross export via export-win if bash and script available
+# =============================================================================
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"      # /root/GGUI/bin (meson.build lives here)
 BUILD_DIR="${SOURCE_DIR}/build"                                 # /root/GGUI/bin/build (used for tests)

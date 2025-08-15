@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# GGUI Project Initialization Script
+# GGUI Project Initialization Script (Linux)
 # =============================================================================
 # This script initializes and builds the GGUI project locally. It validates
 # the environment, checks for required tools, manages the build setup, and
@@ -14,8 +14,6 @@
 # - Analytics tools validation and setup
 # - Proper file permissions configuration
 #
-# Author: GGUI Development Team
-# Version: 2.0 (Enhanced with analytics validation)
 # =============================================================================
 
 # Function to check if the script is being run from the project root directory

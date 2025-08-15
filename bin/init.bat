@@ -3,11 +3,18 @@ setlocal EnableExtensions
 
 rem =============================================================================
 rem GGUI Project Initialization Script (Windows)
-rem Mirrors behavior of bin/init.sh (v2.0):
-rem - Detect and cd to project bin directory
-rem - Validate env and analytics tools (via bash)
-rem - Setup build (debug) and compile via meson
-rem - Optionally set script permissions via bash and re-validate
+rem =============================================================================
+rem This script initializes and builds the GGUI project locally. It validates
+rem the environment, checks for required tools, manages the build setup, and
+rem ensures analytics tools are properly configured.
+rem
+rem Features:
+rem - Environment and requirements validation
+rem - Automated build directory setup
+rem - Project compilation with meson
+rem - Analytics tools validation and setup
+rem - Proper file permissions configuration
+rem
 rem =============================================================================
 
 echo === GGUI Project Initialization ===

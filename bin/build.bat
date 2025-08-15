@@ -1,8 +1,10 @@
 @echo off
+
 rem ----------------------------------------------------------------------------
-rem Initializes and builds the GGUI project locally. This script ensures the user
-rem is in the correct project directory, checks the required tools (meson, g++),
-rem and compiles the project with Meson.
+rem Initializes and builds the GGUI project locally.
+rem - robust project root detection (git or directory layout fallback)
+rem - checks for Meson and a C++ compiler, prints brief versions
+rem - configures and compiles using Meson
 rem ----------------------------------------------------------------------------
 
 rem Function to check if the script is run from the project root or a subdirectory

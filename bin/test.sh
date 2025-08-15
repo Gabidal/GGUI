@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# =============================================================================
+# GGUI Test Runner (Linux)
+# - Configure or reconfigure Meson build directory (bin/build)
+# - Run meson tests with verbose output and error logs
+# - Forward any extra args to meson test
+# =============================================================================
+
 # Run the test suite via Meson (build + export artifacts + tests handled by meson.build)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${SCRIPT_DIR}/.."
