@@ -3,6 +3,8 @@
 *.lib
 *.out
 build/
+build-win/
+build-release/
 callgrind.*
 *.backup
 *.txt

@@ -26,41 +26,39 @@ std::vector<std::string> get_all_files(const std::string& directory) {
     return files;
 }
 
-void Compile_Headers(){
-    // This function goes through all the header files in the `../Elements/` and `../Core/` and `../Core/SIMD/` folders and then concatenates them with \n
-    // The resulting buffer is then written into ./GGUI.h
+void Compile_Headers(const std::string& destination, const std::string& source_root){
+    // Concatenate selected project headers into a single amalgamated header.
 
-    std::string Destination_File_Name = "./GGUI.h";
-    
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
-        "../../src/core/utils/superString.h",
-        "../../src/core/utils/constants.h",
-        "../../src/core/utils/color.h",
-        "../../src/core/utils/types.h",
-        "../../src/core/utils/utf.h",
-        "../../src/core/utils/style.h",
-        "../../src/core/utils/settings.h",
-        "../../src/core/utils/utils.h",
-        "../../src/core/utils/logger.h",
-        "../../src/core/utils/fileStreamer.h",
-        "../../src/core/utils/drm.h",
-        "../../src/core/SIMD/SIMD.h",
-        "../../src/elements/element.h",
-        "../../src/elements/listView.h",
-        "../../src/elements/textField.h",
-        "../../src/elements/canvas.h",
-        "../../src/elements/HTML.h",
-        "../../src/elements/progressBar.h",
-        "../../src/elements/switch.h",
-        "../../src/core/renderer.h",
-        "../../src/core/addons/addons.h"
+        "src/core/utils/superString.h",
+        "src/core/utils/constants.h",
+        "src/core/utils/color.h",
+        "src/core/utils/types.h",
+        "src/core/utils/utf.h",
+        "src/core/utils/style.h",
+        "src/core/utils/settings.h",
+        "src/core/utils/utils.h",
+        "src/core/utils/logger.h",
+        "src/core/utils/fileStreamer.h",
+        "src/core/utils/drm.h",
+        "src/core/SIMD/SIMD.h",
+        "src/elements/element.h",
+        "src/elements/listView.h",
+        "src/elements/textField.h",
+        "src/elements/canvas.h",
+        "src/elements/HTML.h",
+        "src/elements/progressBar.h",
+        "src/elements/switch.h",
+        "src/core/renderer.h",
+        "src/core/addons/addons.h"
     };
 
-    std::ofstream Output(Destination_File_Name);
+    std::ofstream Output(destination);
     
     if(Output.is_open()){
-        for(const std::string& file_path : Header_Files_In_Order){
+        for(const std::string& rel_path : Header_Files_In_Order){
+            std::string file_path = std::filesystem::path(source_root) / rel_path;
             std::ifstream File(file_path);
             
             if(File.is_open()){
@@ -76,12 +74,14 @@ void Compile_Headers(){
                 std::cout << "Warning: Could not open file: " << file_path << std::endl;
             }
         }
+    } else {
+        std::cerr << "Error: Could not open destination file for writing: " << destination << std::endl;
     }
 }
 
 std::string Get_Machine_SIMD_Type(){
-    int cpuInfo[4] = {0};
 #if defined(_WIN32)
+    int cpuInfo[4] = {0};
     __cpuid(cpuInfo, 1);
     bool sseSupport = cpuInfo[3] & (1 << 25);
     bool avxSupport = cpuInfo[2] & (1 << 28);
@@ -158,14 +158,36 @@ std::vector<std::string> Get_Object_Files(){
     return obj_files;
 }
 
-int main(){
+int main(int argc, char** argv){
     std::string Double_Command_Mark = " ; ";
 
 #if _WIN32
 	Double_Command_Mark = " && ";
 #endif
-    // Compile the headers:
-    Compile_Headers();
+    // Parse simple CLI options for Meson integration
+    bool headers_only = false;
+    std::string out_header = "./GGUI.h"; // default to current working directory
+    // Default source_root keeps the previous behavior if run from bin/export in source tree
+    std::string source_root = "./../../";
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--headers-only") {
+            headers_only = true;
+        } else if (arg == "--out" && i + 1 < argc) {
+            out_header = argv[++i];
+        } else if (arg == "--source-root" && i + 1 < argc) {
+            source_root = argv[++i];
+        }
+    }
+
+    // Compile the headers first
+    Compile_Headers(out_header, source_root);
+
+    if (headers_only) {
+        std::cout << "Generated header at: " << out_header << std::endl;
+        return 0;
+    }
 
     std::vector<std::string> CPP_Files = Get_Cpp_Files();
     std::vector<std::string> Object_Files = Get_Object_Files();

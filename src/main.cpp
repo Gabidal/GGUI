@@ -2,8 +2,11 @@
 
 using namespace GGUI;
 
-int main() 
+int main(int argc, char* argv[])
 {
+    // This will enable whatever the user gave the args with GGUI
+    GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
+
     GGUI::GGUI(
         // Animated canvas
         node(new canvas(
@@ -32,7 +35,7 @@ int main()
             width(0.33f) | height(0.5f) | position(STYLES::center) |
 
             // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
-            onDraw([](unsigned int x, unsigned int y){
+            onDraw([](unsigned int /*x*/, unsigned int /*y*/){
                 // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
                 return GGUI::sprite(UTF(
                     "🗲",   // <-- Unicode characters are supported, but don't use too wide ones, since they currently break GGUI.

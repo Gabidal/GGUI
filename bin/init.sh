@@ -96,10 +96,10 @@ fi
 echo "Step 3: Setting up the build directory..."
 if [ -d "./build" ]; then
     echo "Existing build directory found. Cleaning up..."
-    meson setup --wipe build || exit 1
+    meson setup --wipe build -Dbuildtype=debug || exit 1
 else
     echo "Creating new build directory..."
-    meson setup build || exit 1
+    meson setup build -Dbuildtype=debug || exit 1
 fi
 
 # Step 4: Compile the project using meson

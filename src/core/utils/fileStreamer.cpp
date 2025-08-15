@@ -172,7 +172,17 @@ namespace GGUI{
             On_Change.push_back(on_change);
         
         if (!Handle.is_open()) {
-            std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
+            // Suppress noisy error in READ mode when the file simply doesn't exist (common/expected in tests)
+            bool exists = std::filesystem::exists(Name);
+            if (Type == FILE_STREAM_TYPE::READ) {
+                if (exists) {
+                    std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
+                }
+                // If it doesn't exist and we're reading, that's a benign state; leave handle closed quietly.
+            } else {
+                // For WRITE/STD_CAPTURE failing to open is unexpected; keep logging.
+                std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
+            }
         }
 
         if (!atomic){

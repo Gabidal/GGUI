@@ -83,7 +83,7 @@
       "name": "unix-tester",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/test/tester",
+      "program": "${workspaceFolder}/bin/build/tester",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

@@ -264,7 +264,7 @@ namespace tester {
             // Fast_Read might return empty if no Read() has been called yet
             
             // Test that Fast_Read doesn't crash and returns a string
-            ASSERT_TRUE(fast_read.length() >= 0); // Should be a valid string
+            // ASSERT_TRUE(fast_read.length() > (size_t)0); // Should be a valid string
             
             // Modify file externally without notifying the stream
             {
@@ -293,7 +293,7 @@ namespace tester {
             
             // Test Fast_Read with non-existent file - should be safe
             std::string fast_content = fs.Fast_Read();
-            ASSERT_TRUE(fast_content.length() >= 0); // Should be a valid string
+            // ASSERT_TRUE(fast_content.length() > (size_t)0); // Should be a valid string
             
             // Test writing to a file (this should create the file)
             GGUI::fileStream fs_write(non_existent, [](){}, GGUI::FILE_STREAM_TYPE::WRITE, true);
@@ -316,7 +316,7 @@ namespace tester {
             
             // Test Fast_Read with empty file
             std::string empty_content = fs_empty.Fast_Read();
-            ASSERT_TRUE(empty_content.length() >= 0); // Should be valid string (might be empty)
+            // ASSERT_TRUE(empty_content.length() > (size_t)0); // Should be valid string (might be empty)
             
             // Test with large content file
             std::string large_content(1000, 'A'); // 1KB of 'A's (reduced from 10KB)

@@ -22,7 +22,7 @@
         {
             "type": "shell",
             "label": "export",
-            "command": "./test/run.sh",
+            "command": "./bin/test.sh",
             "args": [],
             "options": {
                 "cwd": "${workspaceFolder}"

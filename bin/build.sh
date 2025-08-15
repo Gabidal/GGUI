@@ -1,66 +1,59 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 # Initializes and builds the GGUI project locally.
-# Ensures the script is run from the project root directory, verifies required
-# tools (meson, g++), and runs the compilation process.
+# - robust project root detection (git or directory layout fallback)
+# - checks for Meson and a C++ compiler, prints brief versions
+# - configures and compiles using Meson
 # ----------------------------------------------------------------------------
 
-# Function to check if the script is run from the project root directory or a subdirectory.
-check_directory() {
-    local current_dir=$(pwd)
-    local project_root_name="GGUI"
-    local bin_dir_name="bin"
-
-    # Find the project root directory by looking for the .git directory
-    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
-
-    # If git is not found or the project root is not determined
-    if [ -z "$project_root" ]; then
-        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
-        exit 1
-    fi
-
-    # If we're in the project root, change to the 'bin' directory
-    if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
-        echo "Project root directory detected. Changing to the 'bin' directory."
-        cd "$project_root/$bin_dir_name" || exit 1
-    # Otherwise, navigate to the 'bin' directory from anywhere in the project
-    elif [[ "$current_dir" != *"$project_root/$bin_dir_name"* ]]; then
-        echo "Navigating to the 'bin' directory within the project."
-        cd "$project_root/$bin_dir_name" || exit 1
-    fi
-}
-
-# Call the check_directory function to ensure we're in the correct directory
-check_directory
-
-# Function to check if a command is available, exit if not
-check_command() {
-    local cmd="$1"
-    local cmd_name="$2"
-
-    if ! command -v "$cmd" &>/dev/null; then
-        echo "Error: '$cmd_name' is required but not installed. Please install it before running this script."
-        exit 1
-    fi
-}
-
-# Check if meson is installed
-check_command "meson" "meson"
-
-# Check if g++ is installed
-check_command "g++" "g++"
-
-# Ensure the CXX variable is set to the correct compiler (g++ if not set)
-if [ -z "$CXX" ]; then
-    export CXX=g++
-    echo "CXX environment variable was not set. Defaulting to 'g++'."
+SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # .../GGUI/bin
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$PROJECT_ROOT" ]; then
+    PROJECT_ROOT="$(dirname "$SOURCE_DIR")"
 fi
 
-# Compile the project using meson
-echo "Compiling the project..."
-meson compile -C build || exit 1
+cd "$PROJECT_ROOT/bin" || { echo "[build] ERROR: failed to change to $PROJECT_ROOT/bin" >&2; exit 1; }
+BUILD_DIR="$PWD/build"
 
-# Completion message
-echo "build completed successfully!"
+log() { printf '[build] %s\n' "$*"; }
+err() { printf '[build] ERROR: %s\n' "$*" >&2; }
+
+# Check required commands
+command -v meson >/dev/null 2>&1 || { err "meson is required but not installed"; exit 1; }
+
+# Prefer user-provided CXX, otherwise try g++ then clang++
+: "${CXX:=""}"
+if [ -z "${CXX}" ]; then
+    if command -v g++ >/dev/null 2>&1; then
+        CXX=g++
+    elif command -v clang++ >/dev/null 2>&1; then
+        CXX=clang++
+    else
+        err "No C++ compiler found (tried g++ and clang++)"
+        exit 1
+    fi
+fi
+export CXX
+
+log "Using project root: ${PROJECT_ROOT}"
+log "Using CXX=${CXX}"
+# Print brief tool versions for reproducibility
+$CXX --version 2>/dev/null | sed -n '1p' | sed 's/^/[build] /' || true
+meson --version | sed -n '1p' | sed 's/^/[build] /' || true
+
+# Configure or reconfigure Meson build directory
+if [ ! -d "$BUILD_DIR" ]; then
+    log "Configuring build directory: ${BUILD_DIR} (source: ${SOURCE_DIR})"
+    meson setup "${BUILD_DIR}" "${SOURCE_DIR}" || { err "meson setup failed"; exit 1; }
+else
+    log "Reconfiguring build directory: ${BUILD_DIR} (source: ${SOURCE_DIR})"
+    meson setup --reconfigure "${BUILD_DIR}" "${SOURCE_DIR}" || { err "meson reconfigure failed"; exit 1; }
+fi
+
+# Build
+log "Compiling the project..."
+meson compile -C "${BUILD_DIR}" || { err "Build failed"; exit 1; }
+log "Build completed successfully"

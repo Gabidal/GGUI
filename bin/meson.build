@@ -3,29 +3,19 @@
 # -----------------------------------------------------------------------------
 # This is the Meson build configuration for the GGUI project. It defines the
 # project settings, source files, compilation flags, and platform-specific 
-# configurations. The script supports different build types: Debug, Release, 
-# and Profiling.
+# configurations. The script supports different build types via Meson's
+# standard `buildtype` option (set at meson setup time).
 # -----------------------------------------------------------------------------
 
 project(
   'GGUI', 'cpp',
   version : '0.1.8',
-  #DEBUG
-  default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug']
-  #RELEASE
-  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=false', 'buildtype=release', 'optimization=3']
-  #PROFILE
-  #default_options : ['warning_level=3', 'cpp_std=c++17', 'debug=true', 'buildtype=debug', 'b_ndebug=false', 'b_lto=false']
+  default_options : ['warning_level=3', 'cpp_std=c++17']
 )
 
-# Build type options
-DEBUG = 1
-RELEASE = 2
-PROFILE = 3
-TYPE = DEBUG  # Change this to RELEASE or PROFILE for different build types
-
 # Source files for the project
-sources = [
+# Library sources (no main.cpp)
+lib_sources = [
   # Core utilities
   '../src/core/utils/style.cpp',
   '../src/core/utils/logger.cpp',
@@ -49,7 +39,6 @@ sources = [
   '../src/core/renderer.cpp',
   '../src/core/thread.cpp',
   '../src/core/addons/addons.cpp',
-  '../src/main.cpp'
 ]
 
 # SIMD and CPU-specific options
@@ -60,11 +49,18 @@ AVX512  = '-mavx512f'
 # Default SIMD mode (can be adjusted for specific requirements)
 SIMD_MODE = ''
 
-# Common C++ compiler flags
-cpp_args = [
-  '-Wno-narrowing',              # Disable narrowing warnings (e.g., casting to a smaller type)
+# Compiler handle
+cppc = meson.get_compiler('cpp')
+is_cross = meson.is_cross_build()
+
+# Use Meson's buildtype instead of a custom TYPE variable
+build_type = get_option('buildtype')
+
+# Common C++ warning flags (filtered per compiler)
+base_warn_flags = [
+  '-Wno-narrowing',              # Disable narrowing warnings
   '-Wshadow',
-  '-Wdangling-reference',
+  '-Wdangling-reference',        # Not supported by some MinGW toolchains
   '-Wformat=2',
   '-Wnon-virtual-dtor',
   '-Wcast-align',
@@ -76,11 +72,15 @@ cpp_args = [
   '-Wnull-dereference',
   '-Wuseless-cast',
   '-Wdouble-promotion',
-  '-Wimplicit-fallthrough'
-  # '-fvisibility=hidden',         # Hide symbols by default
-  # '-fPIC',                       # Generate position-independent code
-  # '-fno-semantic-interposition', # Disable semantic interposition
+  '-Wimplicit-fallthrough',
 ]
+
+cpp_args = []
+foreach f : base_warn_flags
+  if cppc.has_argument(f)
+    cpp_args += [f]
+  endif
+endforeach
 
 # Platform-specific settings
 # Check if we're on an Android environment
@@ -93,24 +93,41 @@ else
   endif
 endif
 
-# Linker arguments (e.g., libraries)
+# Linker arguments (collected project-wide)
 link_args = []
 
-# For PGO, use '-fprofile-generate' to generate and use: '-fprofile-use=GGUI.p/*.gcda', '-fprofile-correction' in compile_commands.json.
-
-# Add custom flags based on build type
-if TYPE == DEBUG
-  cpp_args += ['-DGGUI_DEBUG', '-Og', '-flto', '-fwhole-program']
-  link_args += ['-flto', '-fwhole-program']
-elif TYPE == RELEASE
-  cpp_args += ['-DGGUI_RELEASE', '-march=native', '-flto', '-fwhole-program']
-  link_args += ['-flto', '-fwhole-program']
-elif TYPE == PROFILE
+# Add custom flags based on Meson's buildtype
+if build_type == 'debug'
+  cpp_args += ['-DGGUI_DEBUG']
+  if cppc.has_argument('-flto')
+    cpp_args += ['-flto']
+    link_args += ['-flto']
+  endif
+  if cppc.has_argument('-fwhole-program')
+    cpp_args += ['-fwhole-program']
+    link_args += ['-fwhole-program']
+  endif
+elif build_type == 'release'
+  cpp_args += ['-DGGUI_RELEASE']
+  # Avoid -march=native for cross builds (e.g., MinGW)
+  if not is_cross and cppc.has_argument('-march=native')
+    cpp_args += ['-march=native']
+  endif
+  if cppc.has_argument('-flto')
+    cpp_args += ['-flto']
+    link_args += ['-flto']
+  endif
+  if cppc.has_argument('-fwhole-program')
+    cpp_args += ['-fwhole-program']
+    link_args += ['-fwhole-program']
+  endif
+elif build_type == 'debugoptimized' or build_type == 'profile'
+  # Treat debugoptimized/profile as profiling build
   cpp_args += ['-DGGUI_PROFILE', '-DGGUI_DEBUG', '-pg']
   link_args += ['-pg']
 endif
 
-if TYPE == DEBUG or TYPE == PROFILE
+if build_type == 'debug' or build_type == 'debugoptimized' or build_type == 'profile'
   # Windows-specific settings (e.g., for debugging)
   if host_machine.system() == 'windows'
     link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library for better debugging support
@@ -120,11 +137,133 @@ if TYPE == DEBUG or TYPE == PROFILE
   endif
 endif
 
-# Define the executable to be built
-executable(
-  'GGUI',                      # Output executable name
-  sources,                     # Source files
-  install : true,               # Install the executable after building
-  cpp_args: cpp_args,          # C++ compiler flags
-  link_args: link_args         # Linker flags
+# Apply computed flags project-wide so individual targets don't need to repeat them
+if cpp_args.length() > 0
+  add_project_arguments(cpp_args, language: 'cpp')
+endif
+if link_args.length() > 0
+  add_project_link_arguments(link_args, language: 'cpp')
+endif
+
+# Build the core static library
+ggui_core = static_library(
+  'GGUIcore',
+  lib_sources,
+  install: false
 )
+
+# Build a non-thin archive from the core objects for external consumption
+core_objs = ggui_core.extract_all_objects(recursive: true)
+
+# Choose archive command depending on platform/compiler
+archive_cmd = []
+if host_machine.system() == 'windows' and cppc.get_id() == 'msvc'
+  # MSVC: use lib.exe to create .lib
+  archive_cmd = ['lib', '/OUT:@OUTPUT@', '@INPUT@']
+else
+  # Unix-like / MinGW: use ar
+  archive_cmd = ['ar', 'rcs', '@OUTPUT@', '@INPUT@']
+endif
+
+build_native_archive = custom_target(
+  'build_native_archive',
+  input: core_objs,
+  output: host_machine.system() == 'windows' ? 'GGUIWin.lib' : 'libGGUIUnix.a',
+  command: archive_cmd,
+  build_by_default: false
+)
+
+# Build the main demo executable linked with the core library
+executable(
+  'GGUI',
+  '../src/main.cpp',
+  link_with: ggui_core,
+  install: true
+)
+
+# Header generator tool (reuse existing C++ file)
+headergen = executable(
+  'ggui_headergen',
+  'export/buildGGUILib.cpp',
+  install: false
+)
+
+# Generate amalgamated header into the build directory
+generate_header = custom_target(
+  'generate_header',
+  output: 'GGUI.h',
+  command: [
+    headergen,
+    '--headers-only',
+    '--out', '@OUTPUT@',
+  '--source-root', '../../',
+  ],
+  build_by_default: false
+)
+
+# Copy artifacts into the source export directory for backward compatibility
+copy_header_to_export = custom_target(
+  'copy_header_to_export',
+  input: generate_header,
+  output: 'exported_header.stamp',
+  command: [
+    'bash', '-lc',
+    'mkdir -p ' + join_paths(meson.project_source_root(), 'export') +
+    ' && cp @INPUT@ ' + join_paths(meson.project_source_root(), 'export', 'GGUI.h') +
+    ' && echo done > @OUTPUT@'
+  ],
+  build_by_default: false
+)
+
+export_native_lib = custom_target(
+  'export_native_lib',
+  input: build_native_archive,
+  output: 'exported_native_lib.stamp',
+  command: [
+    'bash', '-lc',
+    'mkdir -p ' + join_paths(meson.project_source_root(), 'export') +
+    (host_machine.system() == 'windows'
+      ? ' && cp @INPUT@ ' + join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
+      : ' && cp @INPUT@ ' + join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')) +
+    ' && echo done > @OUTPUT@'
+  ],
+  build_by_default: false
+)
+
+# Convenience run target to generate header and export current-platform lib
+run_target(
+  'export',
+  command: ['bash', '-lc', 'true'],
+  depends: [generate_header, copy_header_to_export, export_native_lib]
+)
+
+# Cross-compile for Windows using a Meson cross file (requires MinGW tools)
+export_win_script = files('export/meson_export_win.sh')
+
+run_target(
+  'export-win',
+  command: ['bash', export_win_script[0]],
+  depends: []
+)
+
+# Test target — use exported artifacts to mirror original run.sh
+tester_inc = include_directories('..', 'export')
+
+# Test target — link with exported lib and include exported header
+tester = executable(
+  'tester',
+  [
+    '../test/tester.cpp',
+    copy_header_to_export,
+    export_native_lib,
+  ],
+  include_directories: tester_inc,
+  link_args: [
+    host_machine.system() == 'windows'
+      ? join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
+      : join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')
+  ],
+  install: false
+)
+
+test('GGUI unit tests', tester, depends: [copy_header_to_export, export_native_lib])
