@@ -8,7 +8,6 @@ rem - Ensure native build exists and tests pass (bin/build)
 rem - Prepare a release build (bin/build-release)
 rem - Export native artifacts (header + platform lib) via Meson run target
 rem - Attempt Windows cross export via export-win if bash and script available
-rem - Create a manifest of exported files
 rem =============================================================================
 
 set "SCRIPT_DIR=%~dp0"

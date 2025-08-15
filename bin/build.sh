@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 # Initializes and builds the GGUI project locally.
 # - robust project root detection (git or directory layout fallback)

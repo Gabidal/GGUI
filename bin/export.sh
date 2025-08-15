@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# SPDX-License-Identifier: MIT
 # Orchestrate export via Meson: run tests, then export Linux and Windows libs
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"      # /root/GGUI/bin (meson.build lives here)
@@ -62,19 +61,4 @@ if [ -n "${MINGW_PREFIX}" ]; then
 else
 	log "MinGW cross-compiler not found; skipping Windows export. Install: sudo apt install g++-mingw-w64-x86-64-posix"
 fi
-
-# 6) Summarize exported files and write manifest
-log "done. Exported files:"
-if [ -d "${EXPORT_DIR}" ]; then
-	ls -l "${EXPORT_DIR}" | sed 's/^/[export] /'
-	# Write a simple manifest for automation
-	{
-		echo "# Export manifest" 
-		ls -1 "${EXPORT_DIR}"
-	} > "${EXPORT_DIR}/manifest.txt"
-	log "wrote ${EXPORT_DIR}/manifest.txt"
-else
-	log "export directory not found: ${EXPORT_DIR}"
-fi
-
 
