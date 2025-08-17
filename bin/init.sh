@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # =============================================================================
 # GGUI Project Initialization Script (Linux)
@@ -58,13 +58,19 @@ check_directory
 echo "=== GGUI Project Initialization ==="
 echo
 
+# Set execution permissions on all necessary scripts
+echo "Setting execution permissions..."
+chmod +x build.sh 2>/dev/null || true
+chmod +x ./analytics/*.sh 2>/dev/null || true
+chmod +x ./analytics/utils/*.sh 2>/dev/null || true
+
 # Step 1: Run analytics validation
 echo "Step 1: Validating environment and analytics tools..."
 if [[ -f "./analytics/utils/validate.sh" ]]; then
     if bash "./analytics/utils/validate.sh"; then
-        echo "✓ Environment validation completed successfully."
+        echo "Environment validation completed successfully."
     else
-        echo "✗ Environment validation failed. Please address the issues above."
+        echo "Environment validation failed. Please address the issues above."
         echo "You can continue with basic build, but analytics tools may not work properly."
         read -p "Continue anyway? [y/N]: " -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -104,30 +110,8 @@ fi
 echo "Step 4: Compiling the project..."
 meson compile -C build || exit 1
 
-# Step 5: Set up analytics tools
-echo "Step 5: Setting up analytics tools..."
-# Step 5: Set up analytics tools
-echo "Step 5: Setting up analytics tools..."
-
-# Set execution permissions on all necessary scripts
-echo "Setting execution permissions..."
-chmod +x build.sh 2>/dev/null || true
-chmod +x ./analytics/*.sh 2>/dev/null || true
-chmod +x ./analytics/utils/*.sh 2>/dev/null || true
-
-# Verify analytics tools are working
-if [[ -f "./analytics/utils/validate.sh" ]]; then
-    echo "Re-validating analytics setup..."
-    if bash "./analytics/utils/validate.sh" >/dev/null 2>&1; then
-        echo "✓ Analytics tools are properly configured."
-    else
-        echo "⚠ Analytics tools validation has warnings. Run './analytics/utils/validate.sh' for details."
-    fi
-fi
-
 echo
 echo "=== Initialization Complete ==="
-echo "✓ Build process completed successfully!"
-echo "✓ GGUI executable: ./build/GGUI"
-echo
-echo "For analytics documentation, see: ./analytics/README.md"
+echo "Run ./bin/test.sh to test GGUI integrity"
+echo "Run ./bin/export.sh to export GGUI as linkable libraries and auto generate headers"
+echo "Run ./bin/analytics/* scripts for performance and memory leak checks"

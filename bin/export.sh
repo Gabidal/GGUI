@@ -3,7 +3,6 @@ set -euo pipefail
 
 # =============================================================================
 # GGUI Export Orchestrator (Linux)
-# Mirrors behavior of bin/export.sh:
 # - Ensure native build exists and tests pass (bin/build)
 # - Prepare a release build (bin/build-release)
 # - Export native artifacts (header + platform lib) via Meson run target

@@ -9,10 +9,10 @@ Comprehensive CPU profiling using Valgrind's Callgrind tool with KCachegrind int
 
 **Usage:**
 ```bash
-./bin/analytics/benchmark.sh              # Basic profiling with standard settings
-./bin/analytics/benchmark.sh -F            # Full profiling with cache simulation
-./bin/analytics/benchmark.sh --enableDRM   # Enable DRM mode for hardware acceleration
-./bin/analytics/benchmark.sh --help        # Display help information
+./bin/analytics/benchmark.sh                 # Basic profiling with standard settings
+./bin/analytics/benchmark.sh -F              # Full profiling with cache simulation
+./bin/analytics/benchmark.sh --enableDRM     # Enable DRM mode for hardware acceleration
+./bin/analytics/benchmark.sh --help          # Display help information
 ```
 
 **Output:**

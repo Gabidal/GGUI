@@ -161,7 +161,8 @@ if errorlevel 1 (
 )
 
 echo === Initialization Complete ===
-echo Build process completed successfully!
-echo GGUI executable: .\build\GGUI.exe
+echo Run ./bin/test.sh to test GGUI integrity
+echo Run ./bin/export.sh to export GGUI as linkable libraries and auto generate headers
+echo Run ./bin/analytics/* scripts for performance and memory leak checks
 
 endlocal

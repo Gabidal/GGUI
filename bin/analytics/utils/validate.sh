@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # =============================================================================
 # GGUI Analytics Tools Validation Script
@@ -444,7 +444,7 @@ echo "Total tests:  $((TEST_PASSED + TEST_FAILED))"
 echo
 
 if [[ $TEST_FAILED -eq 0 ]]; then
-    echo "✓ All tests passed! Ready to dev GGUI."
+    echo "All tests passed! Ready to dev GGUI."
     echo
     echo "Next steps:"
     echo "- Run './bin/analytics/benchmark.sh --help' to see profiling options"
@@ -452,7 +452,7 @@ if [[ $TEST_FAILED -eq 0 ]]; then
     echo "- See './bin/analytics/README.md' for comprehensive documentation"
     exit 0
 else
-    echo "✗ Some tests failed. Please review the failures above."
+    echo "Some tests failed. Please review the failures above."
     echo
     echo "Common solutions:"
     echo "- Install missing packages: sudo apt update && sudo apt install <packages>"

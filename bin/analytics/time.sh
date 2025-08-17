@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # =============================================================================
 # GGUI Performance Growth Analysis Script
@@ -16,9 +16,6 @@
 # - Memory leaks (increasing instruction counts)
 # - Performance degradation
 # - Initialization overhead vs. steady-state performance
-#
-# Author: GGUI Analytics Team
-# Version: 2.0 (Refactored with modular utilities)
 # =============================================================================
 
 # Source utility modules
@@ -109,8 +106,7 @@ calculate_growth_analysis() {
         handle_error "Time intervals are equal. Cannot compute growth analysis."
     fi
     
-    # Note: Original calculation had an extra factor of 1000, maintaining for compatibility
-    local slope2=$(echo "scale=10; ($long_count - $short_count) / (1000 * ($long_time - $short_time))" | bc -l)
+    local slope2=$(echo "scale=10; ($long_count - $short_count) / ($long_time - $short_time)" | bc -l)
     local ratio=$(echo "scale=10; $slope2 / $slope1" | bc -l)
     
     # Display results
