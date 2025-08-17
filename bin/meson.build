@@ -305,3 +305,10 @@ timing_busy = executable(
   ],
   install: false
 )
+
+# Compare two callgrind outputs and produce a filtered one (analytics/time2.cpp)
+time2 = executable(
+  'time2',
+  [ 'analytics/time2.cpp' ],
+  install: false
+)

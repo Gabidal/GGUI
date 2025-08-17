@@ -38,6 +38,25 @@ fi
 # Parse timing arguments
 TIME_SHORT="$1"
 TIME_LONG="$2"
+shift 2
+
+# Optional: allow caller to request persistent callgrind outputs with a prefix
+EMIT_PREFIX=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --emit-callgrind-prefix)
+            EMIT_PREFIX="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_help
+            ;;
+        *)
+            log_warning "Unknown option '$1' ignored"
+            shift
+            ;;
+    esac
+done
 
 # Validate numeric arguments
 if ! [[ "$TIME_SHORT" =~ ^[0-9]+$ ]] || ! [[ "$TIME_LONG" =~ ^[0-9]+$ ]]; then
@@ -96,19 +115,30 @@ ensure_wrappers_built() {
 measure_instruction_count() {
     local duration="$1"
     local executable="$2"
-    local temp_output="callgrind_temp.out"
-    
-    log_info "Measuring instruction count for ${duration}s execution..."
-    
+    local label="${3:-run}"
+
+    local output_file
+    if [[ -n "$EMIT_PREFIX" ]]; then
+        output_file="${EMIT_PREFIX}_${label}.out"
+    else
+        output_file="callgrind_temp.out"
+    fi
+
+    log_info "Measuring instruction count for ${duration}s execution (label='${label}')..."
+
     # Run timed Callgrind profiling
-    run_callgrind_timed "$duration" "$executable" "full" "$temp_output"
-    
+    run_callgrind_timed "$duration" "$executable" "full" "$output_file"
+
     # Extract instruction count
-    INSTRUCTION_COUNT=$(extract_instruction_count "$temp_output")
-    
-    # Clean up temporary file
-    rm -f "$temp_output"
-    
+    INSTRUCTION_COUNT=$(extract_instruction_count "$output_file")
+
+    # Clean up temporary file (only when not emitting persistent files)
+    if [[ -z "$EMIT_PREFIX" ]]; then
+        rm -f "$output_file"
+    else
+        log_info "Saved callgrind profile: $output_file"
+    fi
+
     log_info "Instructions executed in ${duration}s: $INSTRUCTION_COUNT"
 }
 
@@ -199,20 +229,20 @@ compute_ratio_only() {
 
 # Measure STANDING
 log_info "[Standing] Short duration measurement..."
-measure_instruction_count "$TIME_SHORT" "$STANDING_EXE"
+measure_instruction_count "$TIME_SHORT" "$STANDING_EXE" "standing_short"
 standing_short="$INSTRUCTION_COUNT"
 
 log_info "[Standing] Long duration measurement..."
-measure_instruction_count "$TIME_LONG" "$STANDING_EXE"
+measure_instruction_count "$TIME_LONG" "$STANDING_EXE" "standing_long"
 standing_long="$INSTRUCTION_COUNT"
 
 # Measure BUSY
 log_info "[Busy] Short duration measurement..."
-measure_instruction_count "$TIME_SHORT" "$BUSY_EXE"
+measure_instruction_count "$TIME_SHORT" "$BUSY_EXE" "busy_short"
 busy_short="$INSTRUCTION_COUNT"
 
 log_info "[Busy] Long duration measurement..."
-measure_instruction_count "$TIME_LONG" "$BUSY_EXE"
+measure_instruction_count "$TIME_LONG" "$BUSY_EXE" "busy_long"
 busy_long="$INSTRUCTION_COUNT"
 
 echo
