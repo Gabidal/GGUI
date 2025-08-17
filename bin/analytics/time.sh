@@ -141,11 +141,9 @@ calculate_growth_analysis() {
     local ratio=$(echo "scale=10; $slope2 / $slope1" | bc -l)
     
     # Display results
-    echo "=================================="
-    echo "Performance Growth Analysis Results"
-    echo "=================================="
-    echo "Short run (${short_time}s): $short_count instructions"
-    echo "Long run (${long_time}s):  $long_count instructions"
+    echo "Short run (${short_time}s):    $short_count instructions"
+    echo "Long run (${long_time}s):      $long_count instructions"
+
     local diff
     diff=$(echo "$long_count - $short_count" | bc)
     echo "Opcode difference (long - short): $diff"
@@ -158,13 +156,17 @@ calculate_growth_analysis() {
     
     # Provide interpretation
     echo "Interpretation:"
-    if (( $(echo "$ratio > 0.1" | bc -l) )); then
+    if (( $(echo "$ratio > 1.1" | bc -l) )); then
         log_warning "High growth ratio detected - possible memory leak or performance degradation"
-    elif (( $(echo "$ratio < -0.1" | bc -l) )); then
+    elif (( $(echo "$ratio < 0.9" | bc -l) )); then
         log_info "Negative growth detected - possible optimization or reduced workload over time"
     else
         log_info "Stable performance - ratio close to zero indicates consistent behavior"
     fi
+    echo
+    echo "----------------------------------------------------------------------"
+    echo
+    echo
 }
 
 # =============================================================================
@@ -204,11 +206,6 @@ log_info "[Standing] Long duration measurement..."
 measure_instruction_count "$TIME_LONG" "$STANDING_EXE"
 standing_long="$INSTRUCTION_COUNT"
 
-echo
-echo "===== Standing: Detailed Analysis ====="
-calculate_growth_analysis "$standing_short" "$standing_long" "$TIME_SHORT" "$TIME_LONG"
-standing_ratio=$(compute_ratio_only "$standing_short" "$standing_long" "$TIME_SHORT" "$TIME_LONG")
-
 # Measure BUSY
 log_info "[Busy] Short duration measurement..."
 measure_instruction_count "$TIME_SHORT" "$BUSY_EXE"
@@ -217,6 +214,11 @@ busy_short="$INSTRUCTION_COUNT"
 log_info "[Busy] Long duration measurement..."
 measure_instruction_count "$TIME_LONG" "$BUSY_EXE"
 busy_long="$INSTRUCTION_COUNT"
+
+echo
+echo "===== Standing: Detailed Analysis ====="
+calculate_growth_analysis "$standing_short" "$standing_long" "$TIME_SHORT" "$TIME_LONG"
+standing_ratio=$(compute_ratio_only "$standing_short" "$standing_long" "$TIME_SHORT" "$TIME_LONG")
 
 echo
 echo "===== Busy: Detailed Analysis ====="
