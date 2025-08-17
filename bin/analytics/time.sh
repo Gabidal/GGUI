@@ -52,6 +52,37 @@ fi
 # Performance Measurement Functions
 # =============================================================================
 
+ensure_wrappers_built() {
+    ensure_bin_directory
+
+    local BIN_DIR
+    BIN_DIR="$(pwd)"              # .../GGUI/bin
+    local BUILD_DIR="$BIN_DIR/build"
+
+    # Configure or reconfigure Meson build directory (like bin/test.sh/export.sh)
+    if [ ! -d "$BUILD_DIR" ]; then
+        log_info "Configuring Meson build directory at $BUILD_DIR"
+        meson setup "$BUILD_DIR" "$BIN_DIR" || handle_error "Meson setup failed"
+    else
+        log_info "Reconfiguring Meson build directory at $BUILD_DIR"
+        meson setup --reconfigure "$BUILD_DIR" "$BIN_DIR" || handle_error "Meson reconfigure failed"
+    fi
+
+    # Build the wrapper executables; Meson targets ensure export deps are satisfied
+    log_info "Building timing wrappers via Meson"
+    meson compile -C "$BUILD_DIR" timingStanding timingBusy || handle_error "Failed to build timing wrappers"
+
+    # Paths to built executables inside build dir
+    STANDING_EXE="$BUILD_DIR/timingStanding"
+    BUSY_EXE="$BUILD_DIR/timingBusy"
+
+    if [ ! -x "$STANDING_EXE" ] || [ ! -x "$BUSY_EXE" ]; then
+        handle_error "Failed to locate built executables in $BUILD_DIR"
+    fi
+
+    log_info "Wrappers built: $STANDING_EXE, $BUSY_EXE"
+}
+
 ##
 # Runs a timed instruction count measurement using Valgrind Callgrind.
 #
@@ -115,6 +146,9 @@ calculate_growth_analysis() {
     echo "=================================="
     echo "Short run (${short_time}s): $short_count instructions"
     echo "Long run (${long_time}s):  $long_count instructions"
+    local diff
+    diff=$(echo "$long_count - $short_count" | bc)
+    echo "Opcode difference (long - short): $diff"
     echo ""
     echo "Analysis Metrics:"
     echo "Time 1 (Instructions/sec):     $slope1"
@@ -137,10 +171,9 @@ calculate_growth_analysis() {
 # Main Execution
 # =============================================================================
 
-# Setup environment and build project
+# Setup environment and build wrappers
 log_info "Setting up environment for performance growth analysis..."
-ensure_bin_directory
-executable=$(ensure_executable)
+ensure_wrappers_built
 
 # Validate required tools
 validate_valgrind_installation
@@ -149,19 +182,61 @@ validate_tools "timeout" "bc" "callgrind_annotate"
 log_info "Performance growth analysis configuration:"
 log_info "Short run duration: ${TIME_SHORT}s"
 log_info "Long run duration:  ${TIME_LONG}s"
-log_info "Executable: $executable"
+log_info "Standing executable: $STANDING_EXE"
+log_info "Busy executable:     $BUSY_EXE"
 
-# Run first measurement (short duration)
-log_info "Starting short duration measurement..."
-measure_instruction_count "$TIME_SHORT" "$executable"
-short_count="$INSTRUCTION_COUNT"
+# Helper to compute ratio value (as string) without printing full analysis
+compute_ratio_only() {
+    local short_count="$1" long_count="$2" short_time="$3" long_time="$4"
+    local slope1 slope2 ratio
+    slope1=$(echo "scale=10; $short_count / $short_time" | bc -l)
+    slope2=$(echo "scale=10; ($long_count - $short_count) / ($long_time - $short_time)" | bc -l)
+    ratio=$(echo "scale=10; $slope2 / $slope1" | bc -l)
+    echo "$ratio"
+}
 
-# Run second measurement (long duration)
-log_info "Starting long duration measurement..."
-measure_instruction_count "$TIME_LONG" "$executable"
-long_count="$INSTRUCTION_COUNT"
+# Measure STANDING
+log_info "[Standing] Short duration measurement..."
+measure_instruction_count "$TIME_SHORT" "$STANDING_EXE"
+standing_short="$INSTRUCTION_COUNT"
 
-# Calculate and display analysis
-calculate_growth_analysis "$short_count" "$long_count" "$TIME_SHORT" "$TIME_LONG"
+log_info "[Standing] Long duration measurement..."
+measure_instruction_count "$TIME_LONG" "$STANDING_EXE"
+standing_long="$INSTRUCTION_COUNT"
+
+echo
+echo "===== Standing: Detailed Analysis ====="
+calculate_growth_analysis "$standing_short" "$standing_long" "$TIME_SHORT" "$TIME_LONG"
+standing_ratio=$(compute_ratio_only "$standing_short" "$standing_long" "$TIME_SHORT" "$TIME_LONG")
+
+# Measure BUSY
+log_info "[Busy] Short duration measurement..."
+measure_instruction_count "$TIME_SHORT" "$BUSY_EXE"
+busy_short="$INSTRUCTION_COUNT"
+
+log_info "[Busy] Long duration measurement..."
+measure_instruction_count "$TIME_LONG" "$BUSY_EXE"
+busy_long="$INSTRUCTION_COUNT"
+
+echo
+echo "===== Busy: Detailed Analysis ====="
+calculate_growth_analysis "$busy_short" "$busy_long" "$TIME_SHORT" "$TIME_LONG"
+busy_ratio=$(compute_ratio_only "$busy_short" "$busy_long" "$TIME_SHORT" "$TIME_LONG")
+
+# Final summary ratios
+echo
+echo "================ Summary Ratios ================"
+printf "Standing growth ratio (long vs short): %s\n" "$standing_ratio"
+printf "Busy growth ratio (long vs short):     %s\n" "$busy_ratio"
+
+# Compare busy vs standing to give sense of opcode growth differences
+if command -v bc >/dev/null 2>&1; then
+    if (( $(echo "$standing_ratio == 0" | bc -l) )); then
+        comp_ratio="inf"
+    else
+        comp_ratio=$(echo "scale=10; $busy_ratio / $standing_ratio" | bc -l)
+    fi
+    printf "Relative (busy/standing) ratio:        %s\n" "$comp_ratio"
+fi
 
 log_info "Performance growth analysis completed."

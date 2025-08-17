@@ -272,3 +272,36 @@ tester = executable(
 )
 
 test('GGUI unit tests', tester, depends: [copy_header_to_export, export_native_lib])
+
+# Timing wrapper executables used by analytics/time.sh
+timing_standing = executable(
+  'timingStanding',
+  [
+    'analytics/timingWrappers/standing.cpp',
+    copy_header_to_export,
+    export_native_lib,
+  ],
+  include_directories: tester_inc,
+  link_args: [
+    host_machine.system() == 'windows'
+      ? join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
+      : join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')
+  ],
+  install: false
+)
+
+timing_busy = executable(
+  'timingBusy',
+  [
+    'analytics/timingWrappers/busy.cpp',
+    copy_header_to_export,
+    export_native_lib,
+  ],
+  include_directories: tester_inc,
+  link_args: [
+    host_machine.system() == 'windows'
+      ? join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
+      : join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')
+  ],
+  install: false
+)
