@@ -10,7 +10,7 @@
 
 # Source common utilities
 UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -z "$COMMON_SOURCED" ]]; then
+if [[ -z "${COMMON_SOURCED:-}" ]]; then
     source "$UTILS_DIR/common.sh"
     COMMON_SOURCED=true
 fi
@@ -68,6 +68,26 @@ For more information, see the GGUI project documentation.
 EOF
 }
 
+valgrind_modular_help_text() {
+    # Usage: valgrind_modular_help_text "ToolName"
+    local tool_name="$1"
+
+    cat << EOF
+  -h, --help      Display this help message and exit.
+  -F, -f          Enable maximum profiling with comprehensive analysis.
+  --enableDRM     Enable DRM mode for GGUI (hardware acceleration).
+
+Profiling Modes:
+  Default:        Basic $tool_name analysis with standard settings.
+  Full (-F/-f):   Comprehensive analysis with all available options.
+                  Includes cache simulation, jump collection, and timing.
+
+Output:
+  Profile data is saved and can be opened in appropriate analysis tools.
+  You will be prompted to save or delete the profile data after analysis.
+EOF
+}
+
 ##
 # Generates help text for Valgrind-based tools.
 #
@@ -86,19 +106,29 @@ generate_valgrind_help() {
     
     cat << EOF
 Options:
-  -h, --help      Display this help message and exit.
-  -F, -f          Enable maximum profiling with comprehensive analysis.
-  --enableDRM     Enable DRM mode for GGUI (hardware acceleration).
+$(valgrind_modular_help_text "$tool_name")
+EOF
+    
+    generate_help_footer
+}
 
-Profiling Modes:
-  Default:        Basic $tool_name analysis with standard settings.
-  Full (-F/-f):   Comprehensive analysis with all available options.
-                  Includes cache simulation, jump collection, and timing.
-
-Output:
-  Profile data is saved and can be opened in appropriate analysis tools.
-  You will be prompted to save or delete the profile data after analysis.
-
+##
+# Generates help text for benchmark.sh.
+#
+# Arguments:
+#   $1 - build type (e.g, "debug", "release")
+#
+# Usage:
+#   generate_valgrind_help -t release
+##
+generate_benchmark_help() {
+    generate_help_header "benchmark.sh" "GGUI Valgrind Callgrind Profiling Script"
+    
+    cat << EOF
+Options:
+  -t, --type=release
+                  Specify the build type (debug or release, defaults to debug).
+$(valgrind_modular_help_text "Callgrind")
 EOF
     
     generate_help_footer
@@ -191,12 +221,20 @@ EOF
 generate_timing_help() {
     local script_name="$1"
     
-    generate_help_header "$script_name" "Performance timing and instruction count analysis" "\$0 time_short time_long"
+    generate_help_header "$script_name" "Performance timing and instruction count analysis" "\$0 [OPTIONS] time_short time_long"
     
     cat << EOF
 Arguments:
   time_short      Duration for short run (in seconds).
   time_long       Duration for long run (in seconds).
+
+Options:
+  -t, --type=release
+                  Specify the build type (debug or release, defaults to debug).
+  --emit-callgrind-prefix <prefix>
+                  Save generated Callgrind outputs with the given prefix instead
+                  of deleting them (files like <prefix>_standing_short.out).
+  -h, --help      Display this help message and exit.
 
 Description:
   This script measures instruction execution over two different durations
@@ -214,12 +252,19 @@ Description:
 Method:
   Uses Valgrind Callgrind to measure exact instruction counts during
   timed execution runs. The executable is run twice with timeout control.
+  The build type controls whether wrappers are run from bin/build or
+  bin/build-release.
 
 Requirements:
   - Valgrind with Callgrind support
   - callgrind_annotate tool
   - timeout command
   - bc calculator
+
+Examples:
+  Basic run (debug build):      \$0 3 15
+  Run using release build:      \$0 -t release 3 15
+  Keep callgrind outputs:       \$0 3 15 --emit-callgrind-prefix runA
 
 EOF
     
@@ -250,27 +295,50 @@ EOF
 #   fi
 ##
 parse_common_options() {
-    HELP_REQUESTED="false"
-    PROFILING_MODE="minimal"
-    VERBOSE_MODE="false"
-    ENABLE_DRM=""
-    
-    for arg in "$@"; do
-        case "$arg" in
-            -h|--help|--h|-help)
-                HELP_REQUESTED="true"
-                ;;
-            -F|-f|--full)
-                PROFILING_MODE="full"
-                ;;
-            -v|--verbose)
-                VERBOSE_MODE="true"
-                ;;
-            --enableDRM)
-                ENABLE_DRM="--enableDRM"
-                ;;
-        esac
-    done
+  HELP_REQUESTED="false"
+  PROFILING_MODE="minimal"
+  VERBOSE_MODE="false"
+  ENABLE_DRM=""
+  BUILD_TYPE="debug"    # default build type
+
+  # Iterate with index to support two-arg flags like --type release
+  local ARGS=("$@")
+  local i=0
+  while [[ $i -lt ${#ARGS[@]} ]]; do
+    local arg="${ARGS[$i]}"
+    case "$arg" in
+      -h|--help|--h|-help)
+        HELP_REQUESTED="true"
+        ;;
+      -F|-f|--full)
+        PROFILING_MODE="full"
+        ;;
+      -v|--verbose)
+        VERBOSE_MODE="true"
+        ;;
+      --enableDRM)
+        ENABLE_DRM="--enableDRM"
+        ;;
+      # Build type options (several accepted forms)
+      type=release|--type=release|-t=release|release)
+        BUILD_TYPE="release"
+        ;;
+      type=debug|--type=debug|-t=debug|debug)
+        BUILD_TYPE="debug"
+        ;;
+      --type|-t)
+        # Look ahead for the next value
+        if [[ $((i+1)) -lt ${#ARGS[@]} ]]; then
+          local next="${ARGS[$((i+1))]}"
+          if [[ "$next" == "release" || "$next" == "debug" ]]; then
+            BUILD_TYPE="$next"
+            i=$((i+1))
+          fi
+        fi
+        ;;
+    esac
+    i=$((i+1))
+  done
 }
 
 ##
@@ -351,6 +419,7 @@ Comprehensive CPU profiling using Valgrind's Callgrind tool.
 ./benchmark.sh              # Basic profiling
 ./benchmark.sh -F            # Full profiling with cache simulation
 ./benchmark.sh --enableDRM   # Enable hardware acceleration
+./benchmark.sh -type=release # You can enable this with other flags to test for release performance testing
 ```
 
 ### benchmark2.sh - Linux Perf Profiling
@@ -396,6 +465,7 @@ Measures instruction count growth over time to detect performance issues.
 **Usage:**
 ```bash
 ./time.sh 5 30               # Compare 5s vs 30s runs
+./time.sh 5 30 -t release    # Compare 5s vs 30s runs in release mode
 ```
 
 ## Utility Modules

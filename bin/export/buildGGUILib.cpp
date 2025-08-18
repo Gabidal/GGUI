@@ -264,7 +264,13 @@ int main(int argc, char** argv){
     std::cout << "Creating library: bin/export/libGGUI" << nativeName << ".a" << std::endl;
 #endif
 
-    system((virtualRoot + Command).c_str());
+    {
+        std::string full_cmd = virtualRoot + Command;
+        int rc = system(full_cmd.c_str());
+        if (rc != 0) {
+            std::cerr << "Warning: command failed: " << full_cmd << " (return=" << rc << ")" << std::endl;
+        }
+    }
 
 #if _WIN32
     // Cross-compile for Unix if on Windows
@@ -282,7 +288,13 @@ int main(int argc, char** argv){
     }
     
     Command = "ar rcs bin/export/libGGUI" + alienName + ".a" + obj_files_list;
-    system((virtualRoot + Command).c_str());
+    {
+        std::string full_cmd = virtualRoot + Command;
+        int rc = system(full_cmd.c_str());
+        if (rc != 0) {
+            std::cerr << "Warning: command failed: " << full_cmd << " (return=" << rc << ")" << std::endl;
+        }
+    }
 #else
     // Cross-compile for Windows if on Unix
     std::cout << "Cross-compiling for Windows..." << std::endl;
@@ -300,16 +312,28 @@ int main(int argc, char** argv){
     }
     
     Command = "x86_64-w64-mingw32-ar rcs bin/export/GGUI" + alienName + ".lib" + obj_files_list;
-    system((virtualRoot + Command).c_str());
+    {
+        std::string full_cmd = virtualRoot + Command;
+        int rc = system(full_cmd.c_str());
+        if (rc != 0) {
+            std::cerr << "Warning: command failed: " << full_cmd << " (return=" << rc << ")" << std::endl;
+        }
+    }
 #endif
 
     // Clean the *.o files from the project root
 #if _WIN32
     Command = std::string("del *.o");
-    system((virtualRoot + Command).c_str());
+    (void)(system((virtualRoot + Command).c_str()));
 #else
     Command = std::string("rm -f *.o");
-    system((virtualRoot + Command).c_str());
+    {
+        std::string full_cmd = virtualRoot + Command;
+        int rc = system(full_cmd.c_str());
+        if (rc != 0) {
+            std::cerr << "Warning: command failed: " << full_cmd << " (return=" << rc << ")" << std::endl;
+        }
+    }
 #endif
 
     std::cout << "Static library build completed!" << std::endl;

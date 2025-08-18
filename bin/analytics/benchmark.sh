@@ -15,8 +15,6 @@
 # - Profile data management with backup options
 # - DRM mode support for hardware acceleration testing
 #
-# Author: GGUI Analytics Team
-# Version: 2.0 (Refactored with modular utilities)
 # =============================================================================
 
 # Source utility modules
@@ -27,11 +25,11 @@ source "$SCRIPT_DIR/utils/help.sh"
 
 # Function to display help message
 show_help() {
-    generate_valgrind_help "$(basename "$0")" "Callgrind"
+    generate_benchmark_help
     exit 0
 }
 
-# Parse command line arguments
+# Parse command line arguments (sets HELP_REQUESTED, PROFILING_MODE, ENABLE_DRM, BUILD_TYPE)
 parse_common_options "$@"
 
 # Display help if requested
@@ -46,7 +44,11 @@ fi
 # Setup environment and build project
 log_info "Setting up environment for Callgrind profiling..."
 ensure_bin_directory
-executable=$(ensure_executable)
+# Build the selected configuration via Meson so the executable exists
+compile_meson_build "$BUILD_TYPE"
+# Select executable based on requested build type
+preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/GGUI"
+executable=$(ensure_executable "$preferred_exec")
 
 # Validate Valgrind installation
 validate_valgrind_installation

@@ -31,12 +31,8 @@ THRESHOLD="$1"; shift
 
 # Ensure we're in bin and build the 'time2' tool
 ensure_bin_directory
-if [ ! -d "${BUILD_DIR}" ]; then
-  meson setup "${BUILD_DIR}" "${BIN_DIR}" || handle_error "Meson setup failed"
-else
-  meson setup --reconfigure "${BUILD_DIR}" "${BIN_DIR}" || handle_error "Meson reconfigure failed"
-fi
-meson compile -C "${BUILD_DIR}" time2 timingStanding timingBusy || handle_error "Failed to build tools"
+meson_setup_or_reconfigure "${BUILD_DIR}" "${BIN_DIR}"
+meson_build_targets "${BUILD_DIR}" time2 timingStanding timingBusy
 
 # Generate two callgrind outputs using analytics/time.sh but keep files
 STAMP="cg$(date +%Y%m%d_%H%M%S)"

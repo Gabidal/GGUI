@@ -1,4 +1,6 @@
 #include <string>
+#include <cmath>
+#include <algorithm>
 
 #include "utils.h"
 #include "../../elements/element.h"
@@ -621,15 +623,14 @@ namespace GGUI{
 
         GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance) {
             if (SETTINGS::ENABLE_GAMMA_CORRECTION) {
-                // Apply gamma correction to input values
-                A.Red = Interpolate(A.Red, B.Red, Distance);
-                A.Green = Interpolate(A.Green, B.Green, Distance);
-                A.Blue = Interpolate(A.Blue, B.Blue, Distance);
+                A.Red   = fast::Interpolate(A.Red,   B.Red, Distance);
+                A.Green = fast::Interpolate(A.Green, B.Green, Distance);
+                A.Blue  = fast::Interpolate(A.Blue,  B.Blue, Distance);
             } else {
-                // Perform linear interpolation on input values
-                A.Red = static_cast<unsigned char>(lerp<float>(A.Red, B.Red, Distance));
-                A.Green = static_cast<unsigned char>(lerp<float>(A.Green, B.Green, Distance));
-                A.Blue = static_cast<unsigned char>(lerp<float>(A.Blue, B.Blue, Distance));
+                // Fast integer-based linear interpolation on 8-bit channels
+                A.Red   = fast::InterpolateLinearU8(A.Red,   B.Red, Distance);
+                A.Green = fast::InterpolateLinearU8(A.Green, B.Green, Distance);
+                A.Blue  = fast::InterpolateLinearU8(A.Blue,  B.Blue, Distance);
             }
             return A;
         }

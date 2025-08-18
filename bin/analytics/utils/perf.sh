@@ -9,7 +9,7 @@
 
 # Source common utilities
 UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -z "$COMMON_SOURCED" ]]; then
+if [[ -z "${COMMON_SOURCED:-}" ]]; then
     source "$UTILS_DIR/common.sh"
     COMMON_SOURCED=true
 fi

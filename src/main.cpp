@@ -72,6 +72,6 @@ int main(int argc, char* argv[])
         ))
     );
 
-    INTERNAL::SLEEP(1000);
+    INTERNAL::SLEEP(2000);
     INTERNAL::EXIT();
 }

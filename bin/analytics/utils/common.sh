@@ -13,12 +13,8 @@
 # -----------------------------------------------------------------------------
 # Global Configuration
 # -----------------------------------------------------------------------------
-if [[ -z "$PROJECT_NAME" ]]; then
-    readonly PROJECT_NAME="GGUI"
-fi
-if [[ -z "$BIN_DIR_NAME" ]]; then
-    readonly BIN_DIR_NAME="bin"
-fi
+PROJECT_NAME="${PROJECT_NAME:-GGUI}"
+BIN_DIR_NAME="${BIN_DIR_NAME:-bin}"
 
 # Mark that common utilities have been sourced
 COMMON_SOURCED=true
@@ -176,13 +172,14 @@ ensure_executable() {
     # Auto-detect executable path if not provided
     if [[ -z "$executable_path" ]]; then
         local current_dir=$(pwd)
-        # Try common build directory locations
-        if [[ -f "$current_dir/build/GGUI" ]]; then
-            executable_path="$current_dir/build/GGUI"
+        # Try common build directory locations (prefer release if present)
+        if [[ -f "$current_dir/build-release/GGUI" ]]; then
+            executable_path="$current_dir/build-release/GGUI"
         elif [[ -f "$current_dir/build/GGUI" ]]; then
             executable_path="$current_dir/build/GGUI"
         else
-            executable_path="$current_dir/build/GGUI"  # Default fallback
+            # Default to debug path; will trigger build below if missing
+            executable_path="$current_dir/build/GGUI"
         fi
     fi
     
@@ -198,6 +195,104 @@ ensure_executable() {
     
     log_info "Using executable: $executable_path" >&2
     echo "$executable_path"
+}
+
+##
+# Compiles the Meson build for the requested type using meson compile -C <dir>.
+#
+# Arguments:
+#   $1 - build type: "debug" (default) or "release"
+#
+# Usage:
+#   compile_meson_build "release"
+##
+compile_meson_build() {
+    local build_type="${1:-debug}"
+    local current_dir
+    current_dir=$(pwd)
+    local build_dir="$current_dir/build"
+    if [[ "$build_type" == "release" ]]; then
+        build_dir="$current_dir/build-release"
+    fi
+    log_info "Compiling ${build_type} build at ${build_dir}"
+    meson compile -C "${build_dir}" || handle_error "Build failed for ${build_type} (${build_dir})"
+}
+
+##
+# Returns the absolute Meson build directory for a given build type.
+#
+# Arguments:
+#   $1 - build type: "debug" (default) or "release"
+#
+# Echoes the absolute path to the build directory.
+##
+get_build_dir_for_type() {
+    local build_type="${1:-debug}"
+    local base_dir
+    base_dir=$(pwd)
+    if [[ "$build_type" == "release" ]]; then
+        echo "$base_dir/build-release"
+    else
+        echo "$base_dir/build"
+    fi
+}
+
+##
+# Ensures a Meson build directory is configured (setup or reconfigure).
+#
+# Arguments:
+#   $1 - build directory (absolute path)
+#   $2 - source directory (absolute path, typically bin dir)
+#   $3 - (optional) buildtype (debug|release); if provided, enforced via -Dbuildtype
+##
+meson_setup_or_reconfigure() {
+    local build_dir="$1"
+    local src_dir="$2"
+    local build_type_opt=""
+    local cross_file_opt=""
+    if [[ -n "${3:-}" ]]; then
+        build_type_opt="-Dbuildtype=${3}"
+    fi
+    if [[ -n "${4:-}" ]]; then
+        cross_file_opt=(--cross-file "${4}")
+    else
+        cross_file_opt=()
+    fi
+
+    # Determine if this is an initialized Meson build dir (has build.ninja)
+    local has_ninja="false"
+    if [[ -f "$build_dir/build.ninja" ]]; then
+        has_ninja="true"
+    fi
+
+    if [[ "$has_ninja" != "true" ]]; then
+        log_info "Configuring Meson build directory: $build_dir"
+        meson setup "${cross_file_opt[@]}" "$build_dir" "$src_dir" $build_type_opt || handle_error "Meson setup failed for $build_dir"
+    else
+        log_info "Reconfiguring Meson build directory: $build_dir"
+        if ! meson setup --reconfigure "${cross_file_opt[@]}" "$build_dir" "$src_dir" $build_type_opt; then
+            # If reconfigure fails, retry a fresh setup (e.g., broken/partial dir)
+            log_warning "Reconfigure failed; attempting fresh setup for $build_dir"
+            rm -rf "$build_dir"
+            meson setup "${cross_file_opt[@]}" "$build_dir" "$src_dir" $build_type_opt || handle_error "Meson setup failed for $build_dir"
+        fi
+    fi
+}
+
+##
+# Builds specific Meson targets inside a build directory.
+#
+# Arguments:
+#   $1 - build directory (absolute path)
+#   $2+ - target names to build
+##
+meson_build_targets() {
+    local build_dir="$1"; shift
+    if [[ $# -eq 0 ]]; then
+        handle_error "meson_build_targets requires at least one target"
+    fi
+    log_info "Building targets in $build_dir: $*"
+    meson compile -C "$build_dir" "$@" || handle_error "Failed to build Meson targets: $*"
 }
 
 # -----------------------------------------------------------------------------

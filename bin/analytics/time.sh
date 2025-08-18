@@ -30,33 +30,55 @@ show_help() {
     exit 0
 }
 
-# Validate arguments
-if [[ "$#" -lt 2 || "$1" =~ ^(-h|--help)$ ]]; then
+# Parse common options (-h/-t/etc.) similar to benchmark.sh
+parse_common_options "$@"
+
+# Show help if requested
+if [[ "$HELP_REQUESTED" == "true" ]]; then
+    show_help
+fi
+
+# Extract positional numeric args (time_short, time_long) and script-specific options
+EMIT_PREFIX=""
+NUM_ARGS=()
+ARGS=("$@")
+i=0
+while [[ $i -lt ${#ARGS[@]} ]]; do
+    arg="${ARGS[$i]}"
+    case "$arg" in
+        --emit-callgrind-prefix)
+            if [[ $((i+1)) -lt ${#ARGS[@]} ]]; then
+                EMIT_PREFIX="${ARGS[$((i+1))]}"
+                i=$((i+1))
+            else
+                handle_error "--emit-callgrind-prefix requires a value"
+            fi
+            ;;
+        -h|--help|--h|-help)
+            show_help
+            ;;
+        --type|-t|--type=*|-t=*)
+            # handled by parse_common_options; skip
+            ;;
+        release|debug|type=release|type=debug|-t=release|-t=debug|--type=release|--type=debug)
+            # already handled by parse_common_options; skip these tokens
+            ;;
+        *)
+            if [[ "$arg" =~ ^[0-9]+$ ]]; then
+                NUM_ARGS+=("$arg")
+            fi
+            ;;
+    esac
+    i=$((i+1))
+done
+
+if [[ ${#NUM_ARGS[@]} -lt 2 ]]; then
     show_help
 fi
 
 # Parse timing arguments
-TIME_SHORT="$1"
-TIME_LONG="$2"
-shift 2
-
-# Optional: allow caller to request persistent callgrind outputs with a prefix
-EMIT_PREFIX=""
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --emit-callgrind-prefix)
-            EMIT_PREFIX="$2"
-            shift 2
-            ;;
-        -h|--help)
-            show_help
-            ;;
-        *)
-            log_warning "Unknown option '$1' ignored"
-            shift
-            ;;
-    esac
-done
+TIME_SHORT="${NUM_ARGS[0]}"
+TIME_LONG="${NUM_ARGS[1]}"
 
 # Validate numeric arguments
 if ! [[ "$TIME_SHORT" =~ ^[0-9]+$ ]] || ! [[ "$TIME_LONG" =~ ^[0-9]+$ ]]; then
@@ -76,20 +98,17 @@ ensure_wrappers_built() {
 
     local BIN_DIR
     BIN_DIR="$(pwd)"              # .../GGUI/bin
-    local BUILD_DIR="$BIN_DIR/build"
+    local BUILD_DIR
+    BUILD_DIR="$(get_build_dir_for_type "$BUILD_TYPE")"
 
-    # Configure or reconfigure Meson build directory (like bin/test.sh/export.sh)
-    if [ ! -d "$BUILD_DIR" ]; then
-        log_info "Configuring Meson build directory at $BUILD_DIR"
-        meson setup "$BUILD_DIR" "$BIN_DIR" || handle_error "Meson setup failed"
-    else
-        log_info "Reconfiguring Meson build directory at $BUILD_DIR"
-        meson setup --reconfigure "$BUILD_DIR" "$BIN_DIR" || handle_error "Meson reconfigure failed"
-    fi
+    # Ensure build directory is configured for the selected build type
+    meson_setup_or_reconfigure "$BUILD_DIR" "$BIN_DIR" "$BUILD_TYPE"
 
-    # Build the wrapper executables; Meson targets ensure export deps are satisfied
-    log_info "Building timing wrappers via Meson"
-    meson compile -C "$BUILD_DIR" timingStanding timingBusy || handle_error "Failed to build timing wrappers"
+    # Build the selected configuration via Meson so the executables exist
+    compile_meson_build "$BUILD_TYPE"
+
+    # Build the wrapper executables explicitly to be safe
+    meson_build_targets "$BUILD_DIR" timingStanding timingBusy
 
     # Paths to built executables inside build dir
     STANDING_EXE="$BUILD_DIR/timingStanding"
@@ -214,6 +233,7 @@ validate_tools "timeout" "bc" "callgrind_annotate"
 log_info "Performance growth analysis configuration:"
 log_info "Short run duration: ${TIME_SHORT}s"
 log_info "Long run duration:  ${TIME_LONG}s"
+log_info "Build type:         ${BUILD_TYPE}"
 log_info "Standing executable: $STANDING_EXE"
 log_info "Busy executable:     $BUSY_EXE"
 

@@ -120,6 +120,7 @@
         "syncstream": "cpp",
         "text_encoding": "cpp",
         "typeindex": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "__locale": "cpp"
     }
 }

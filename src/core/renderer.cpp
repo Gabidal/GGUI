@@ -15,6 +15,18 @@
 #include <exception>
 #include <csignal>
 
+#if _WIN32
+    #include <windows.h>
+    #include <dbghelp.h>
+#else
+    #include <sys/ioctl.h>
+    #include <signal.h>
+    #include <termios.h>
+    #include <unistd.h>
+    #include <sys/uio.h> // Needed for writev
+    #include <cstring>
+#endif
+
 namespace GGUI{
     namespace INTERNAL{
         std::vector<UTF>* Abstract_Frame_Buffer = nullptr;              // 2D clean vector without bold nor color
@@ -109,9 +121,6 @@ namespace GGUI{
         extern void Read_Start_Addresses();
 
         #if _WIN32
-    
-        #include <windows.h>
-        #include <dbghelp.h>
 
         /**
          * @brief Sleep for the specified amount of milliseconds.
@@ -126,8 +135,8 @@ namespace GGUI{
             Sleep(mm);
         }
 
-        GGUI::INTERNAL::HANDLE GLOBAL_STD_OUTPUT_HANDLE;
-        GGUI::INTERNAL::HANDLE GLOBAL_STD_INPUT_HANDLE;
+        HANDLE GLOBAL_STD_OUTPUT_HANDLE;
+        HANDLE GLOBAL_STD_INPUT_HANDLE;
 
         DWORD PREVIOUS_CONSOLE_OUTPUT_STATE;
         DWORD PREVIOUS_CONSOLE_INPUT_STATE;
@@ -679,10 +688,6 @@ namespace GGUI{
 
         #else
 
-        #include <sys/ioctl.h>
-        #include <signal.h>
-        #include <termios.h>
-
         int Previous_Flags = 0;
         struct termios Previous_Raw;
 
@@ -791,18 +796,18 @@ namespace GGUI{
          *          If the write operation fails or writes fewer bytes than expected, an error message is reported.
          */
         void renderFrame() {
-            // Move the cursor to the top-left corner of the terminal
-            printf("%s", GGUI::constants::ANSI::SET_CURSOR_TO_START.getUnicode());
+            // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
+            const char* cursorReset = GGUI::constants::ANSI::SET_CURSOR_TO_START.getUnicode();
+            size_t cursorResetLength = strlen(cursorReset);
 
-            // Flush the output buffer to ensure it's written immediately
-            fflush(stdout);
+            iovec vec[2] = {
+                { (void*)cursorReset,           cursorResetLength },
+                { (void*)Frame_Buffer->data(),  Frame_Buffer->size() }
+            };
 
-            // Write the contents of Frame_Buffer to STDOUT
-            int Error = write(STDOUT_FILENO, Frame_Buffer->data(), Frame_Buffer->size());
-
-            // Check for write errors or incomplete writes
-            if (Error != (signed)Frame_Buffer->size()) {
-                INTERNAL::reportStack("Failed to write to STDOUT: " + std::to_string(Error));
+            ssize_t wrote = writev(STDOUT_FILENO, vec, 2);
+            if (wrote != (ssize_t)cursorResetLength) {
+                INTERNAL::reportStack("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
             }
         }
 

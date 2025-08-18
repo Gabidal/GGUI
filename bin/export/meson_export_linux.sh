@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source shared utilities for Meson helpers
+UTILS_COMMON="$(cd "$(dirname "$0")/../analytics/utils" && pwd)/common.sh"
+if [[ -f "$UTILS_COMMON" ]]; then
+  # shellcheck disable=SC1090
+  source "$UTILS_COMMON"
+fi
+
 # Cross-compile Linux artifacts from a Windows host using a Linux cross toolchain.
 # Requires a working bash (e.g., Git Bash) and a cross toolchain on PATH,
 # such as x86_64-linux-gnu-* from MSYS2 or a custom toolchain.
@@ -11,9 +18,15 @@ CROSS_FILE="$ROOT_DIR/bin/export/cross-linux.ini"
 
 mkdir -p "$BUILD_LINUX"
 
-# Setup cross build targeting Linux if not already configured
-if [ ! -f "$BUILD_LINUX/build.ninja" ]; then
-  meson setup --cross-file "$CROSS_FILE" "$BUILD_LINUX" "$ROOT_DIR/bin"
+# Setup or reconfigure cross build targeting Linux
+if command -v meson_setup_or_reconfigure >/dev/null 2>&1; then
+  meson_setup_or_reconfigure "$BUILD_LINUX" "$ROOT_DIR/bin" "debug" "$CROSS_FILE"
+else
+  if [ ! -f "$BUILD_LINUX/build.ninja" ]; then
+    meson setup --cross-file "$CROSS_FILE" "$BUILD_LINUX" "$ROOT_DIR/bin"
+  else
+    meson setup --reconfigure --cross-file "$CROSS_FILE" "$BUILD_LINUX" "$ROOT_DIR/bin"
+  fi
 fi
 
 # Build only the core library to avoid running any target executables

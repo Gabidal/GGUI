@@ -9,6 +9,9 @@
 #include "color.h"
 
 #include <math.h>
+#include <cstring>
+#include <algorithm> // std::clamp
+#include <cmath>     // std::pow, std::lround
 
 namespace GGUI{
     class element;
@@ -275,6 +278,52 @@ namespace GGUI{
             return static_cast<T>(std::pow(c_f, 1.F / gamma));
         }
 
+        namespace fast {
+            // Fast gamma-correct interpolation using small LUTs
+            // Initialize LUTs once (thread-safe in C++11+ for function statics)
+            struct GammaLUT {
+                    float s2l[256];            // sRGB 0..255 -> linear [0,1]
+                    unsigned char l2s_u8[256]; // linear [0,1] sampled at 256 -> sRGB 0..255
+                    GammaLUT() {
+                        constexpr float gamma = 2.2f;
+                        for (int i = 0; i < 256; ++i) {
+                            float s = static_cast<float>(i) / 255.0f;
+                            s2l[i] = std::pow(s, gamma);
+                        }
+                        for (int i = 0; i < 256; ++i) {
+                            float l = static_cast<float>(i) / 255.0f;
+                            float s = std::pow(l, 1.0f / 2.2f);
+                            int v = static_cast<int>(std::lround(s * 255.0f));
+                            l2s_u8[i] = static_cast<unsigned char>(std::clamp(v, 0, 255));
+                        }
+                    }
+            };
+
+            // Header-safe single definition across TUs
+            inline const GammaLUT LUT{};
+
+            inline unsigned char Interpolate(unsigned char a, unsigned char b, float t) {
+                float la = LUT.s2l[a];
+                float lb = LUT.s2l[b];
+                float lc = la + (lb - la) * t; // linear blend in linear space
+                // Map back via LUT: index by 0..255
+                int idx = static_cast<int>(std::lround(std::clamp(lc, 0.0f, 1.0f) * 255.0f));
+                return LUT.l2s_u8[idx];
+            };
+
+            // Fast linear interpolate for 8-bit channels without gamma correction.
+            // Uses fixed-point weights to avoid divisions and minimize float work.
+            constexpr unsigned char InterpolateLinearU8(unsigned char a, unsigned char b, float t) {
+                // Clamp t and convert to 0..256 fixed-point weight with rounding
+                int w = static_cast<int>(t * (float)UINT8_MAX + 0.5f);   // 0..256
+                int inv = UINT8_MAX - w;                             // 256..0
+
+                // Weighted sum with rounding, then >> 8 instead of /255
+                int sum = a * inv + b * w;                     // <= 255*256 + 255*256 = 130560
+                return static_cast<unsigned char>((sum + UINT8_MAX/2) >> 8);
+            }
+        }
+
         /**
          * @brief Interpolates between two RGB colors using linear interpolation.
          * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
@@ -285,30 +334,32 @@ namespace GGUI{
          */
         extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
 
-        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) {
-            static std::string result;  // an internal cache container between renders.
+        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) noexcept {
+            static std::string result; // internal cache between renders
 
-            if (result.empty() || Liquefied_Size != result.size()){
+            if (result.size() != Liquefied_Size){
                 // Resize a std::string to the total size.
                 result.resize(Liquefied_Size, '\0');
             }
 
-            // Copy the contents of the Data vector into the std::string.
-            unsigned int Current_UTF_Insert_Index = 0;
-            for(unsigned int i = 0; i < Data->size() && Current_UTF_Insert_Index < Liquefied_Size; i++){
-                const compactString& data = Data->at(i);
+            // Fast-path pointer access to avoid bounds checks and replace overhead
+            char* outputAddress = result.data();
+            unsigned int outputIndex = 0;
 
-                // Size of ones are always already loaded from memory into a char.
-                if (data.size > 1){
-                    // Replace the current contents of the string with the contents of the Unicode data.
-                    result.replace(Current_UTF_Insert_Index, data.size, data.getUnicode());
+            const compactString* dataAddress = Data->data();
+            const size_t cachedSize = Data->size();
 
-                    Current_UTF_Insert_Index += data.size;
-                }
-                else{
-                    // Add the single character to the string.
-                    result[Current_UTF_Insert_Index++] = data.getAscii();
-                }
+            for (size_t i = 0; i < cachedSize; i++) {
+                const compactString& data = dataAddress[i];
+
+                // If current compact string data entry is a unicode
+                if (data.size > 1) {
+                    // Copy multi-byte unicode sequence directly
+                    std::memcpy(outputAddress + outputIndex, data.getUnicode(), data.size);
+                    outputIndex += data.size;
+                } else if (data.size == 1) {    // If current compact string data entry is a unicode
+                    outputAddress[outputIndex++] = data.getAscii();
+                } // else data.size == 0 -> skip
             }
 
             return &result;

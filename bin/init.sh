@@ -96,15 +96,26 @@ if [ -z "$CXX" ]; then
     echo "CXX environment variable was not set. Defaulting to 'g++'."
 fi
 
-# Step 3: Set up the build directory (wipe existing if necessary)
-echo "Step 3: Setting up the build directory..."
+# Check if ./build, ./build-win, ./build-release, ./build-linux exists, if so then remove them
 if [ -d "./build" ]; then
-    echo "Existing build directory found. Cleaning up..."
-    meson setup --wipe build -Dbuildtype=debug || exit 1
-else
-    echo "Creating new build directory..."
-    meson setup build -Dbuildtype=debug || exit 1
+    echo "Removing existing build directory..."
+    rm -rf ./build
 fi
+if [ -d "./build-win" ]; then
+    echo "Removing existing build-win directory..."
+    rm -rf ./build-win
+fi
+if [ -d "./build-linux" ]; then
+    echo "Removing existing build-linux directory..."
+    rm -rf ./build-linux
+fi
+if [ -d "./build-release" ]; then
+    echo "Removing existing build-release directory..."
+    rm -rf ./build-release
+fi
+
+echo "Setting up the default build configure..."
+meson setup build -Dbuildtype=debug || exit 1
 
 # Step 4: Compile the project using meson
 echo "Step 4: Compiling the project..."

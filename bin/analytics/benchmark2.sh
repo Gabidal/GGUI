@@ -46,7 +46,8 @@ fi
 # Setup environment and build project
 log_info "Setting up environment for perf performance analysis..."
 ensure_bin_directory
-executable=$(ensure_executable)
+preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/GGUI"
+executable=$(ensure_executable "$preferred_exec")
 
 # Validate perf and pprof installations
 validate_perf_installation
