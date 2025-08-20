@@ -25,6 +25,7 @@
     #include <unistd.h>
     #include <sys/uio.h> // Needed for writev
     #include <cstring>
+    #include <poll.h>
 #endif
 
 namespace GGUI{
@@ -696,6 +697,9 @@ namespace GGUI{
         unsigned char Raw_Input[Raw_Input_Capacity];
         ssize_t Raw_Input_Size = 0;
 
+        // Whether STDIN is an interactive terminal (TTY). Used to decide input setup/teardown.
+        static bool STDIN_IS_TTY = false;
+
         /**
          * @brief De-initializes platform-specific settings and resources.
          * @details This function restores console modes to their previous states, cleans up file stream handles,
@@ -721,11 +725,13 @@ namespace GGUI{
                 std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();  // restores the screen.
                 std::cout << std::flush;
 
-                // Restore previous file descriptor flags
-                fcntl(STDIN_FILENO, F_SETFL, Previous_Flags); // set non-blocking flag
+                if (STDIN_IS_TTY) {
+                    // Restore previous file descriptor flags
+                    fcntl(STDIN_FILENO, F_SETFL, Previous_Flags);
 
-                // Restore previous terminal attributes
-                tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
+                    // Restore previous terminal attributes
+                    tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
+                }
             }
         }
 
@@ -900,11 +906,32 @@ namespace GGUI{
          *          It is also the function that is called as soon as possible and gets stuck awaiting for the user input.
          */
         void queryInputs(){
-            Raw_Input_Size = read(
-                STDIN_FILENO,
-                Raw_Input,
-                Raw_Input_Capacity
-            );
+            // If stdin isn't a TTY (e.g., piped/timeout), read() may return 0 (EOF) repeatedly; avoid spinning.
+            if (!STDIN_IS_TTY) {
+                // Use poll to wait briefly for readability; if not readable, sleep a bit to avoid busy-loop.
+                struct pollfd pollFileDescriptor;
+                pollFileDescriptor.fd = STDIN_FILENO;
+                pollFileDescriptor.events = POLLIN;
+                pollFileDescriptor.revents = 0;
+
+                constexpr nfds_t  fileDescriptorCount = 1;
+
+                if (poll(
+                    &pollFileDescriptor,
+                    fileDescriptorCount,
+                    TIME::SECOND    // Max allowed wait time, could be replaced with -1, to wait as long as needed.
+                ) <= 0) {
+                    // No data; avoid spinning
+                    Raw_Input_Size = 0;
+                    return;
+                }
+            }
+
+            Raw_Input_Size = read(STDIN_FILENO, Raw_Input, Raw_Input_Capacity);
+            if (Raw_Input_Size <= 0) {
+                // EOF or error; normalize to 0 to signal no input
+                Raw_Input_Size = 0;
+            }
         }
 
         enum class VTTermModifiers{
@@ -930,6 +957,10 @@ namespace GGUI{
 
             // Unlike in Windows we wont be getting an indication per Key information, whether it was pressed in or out.
             KEYBOARD_STATES.clear();
+
+            if (Raw_Input_Size <= 0) {
+                return; // nothing to translate
+            }
 
             for (ssize_t i = 0; i < Raw_Input_Size; i++) {                // Check if SHIFT has been modifying the keys
                 if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')) {
@@ -1232,27 +1263,29 @@ namespace GGUI{
                 // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
                 std::cout << std::flush;
 
-                // Save the current flags and take an snapshot of the flags before GGUI
-                Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+                // Detect whether STDIN is a TTY. When not a TTY (e.g. piped/timeout), avoid raw mode and polling setup.
+                STDIN_IS_TTY = (isatty(STDIN_FILENO) == 1);
 
-                // Set non-blocking flag
-                int flags = O_RDONLY | O_CLOEXEC;
-                fcntl(STDIN_FILENO, F_SETFL, flags);
+                if (STDIN_IS_TTY) {
+                    // Save the current flags and take a snapshot of the flags before GGUI
+                    Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 
-                // Save the current terminal settings
-                struct termios Term_Handle;
-                tcgetattr(STDIN_FILENO, &Term_Handle);
+                    // Ensure we don't leave the descriptor in an unexpected mode; do not force non-blocking here.
+                    // Configure terminal to raw mode
+                    struct termios Term_Handle;
+                    if (tcgetattr(STDIN_FILENO, &Term_Handle) == 0) {
+                        Previous_Raw = Term_Handle;
+                        Term_Handle.c_lflag &= ~(ECHO | ICANON);
+                        Term_Handle.c_cc[VMIN] = 1;   // return after 1 byte
+                        Term_Handle.c_cc[VTIME] = 0;  // no timeout
+                        tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
+                    }
 
-                Previous_Raw = Term_Handle;
-
-                // Set the terminal to raw mode
-                Term_Handle.c_lflag &= ~(ECHO | ICANON);
-                Term_Handle.c_cc[VMIN] = 1;     // This dictates how many characters until the user input awaiting read() function will return the buffer.
-                Term_Handle.c_cc[VTIME] = 0;    // Suppress automatic returning, since we want the Input_Query() to await until the user has given an input.  
-                tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
-
-                // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
-                Add_Automatic_Terminal_Size_Update_Handler();
+                    // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
+                    Add_Automatic_Terminal_Size_Update_Handler();
+                } else {
+                    LOGGER::Log("STDIN is not a TTY; input thread will be disabled unless DRM is enabled.");
+                }
             }
 
             /*
@@ -2055,10 +2088,18 @@ namespace GGUI{
                 INTERNAL::eventThread();
             });
             
-            std::thread Inquire_Scheduler([](){
-                INTERNAL::LOGGER::RegisterCurrentThread();
-                INTERNAL::inputThread();
-            });
+            // Start input thread only if DRM is enabled or STDIN is a TTY (interactive).
+            std::unique_ptr<std::thread> Inquire_Scheduler_ptr;
+            if (SETTINGS::enableDRM
+                #if !_WIN32
+                || STDIN_IS_TTY
+                #endif
+            ){
+                Inquire_Scheduler_ptr = std::make_unique<std::thread>([](){
+                    INTERNAL::LOGGER::RegisterCurrentThread();
+                    INTERNAL::inputThread();
+                });
+            }
 
             std::thread Logging_Scheduler([](){
                 INTERNAL::LOGGER::RegisterCurrentThread();
@@ -2068,7 +2109,7 @@ namespace GGUI{
             // INTERNAL::Sub_Threads.push_back(std::move(Inquire_Scheduler));
             // INTERNAL::Sub_Threads.back().detach();    // the Inquire scheduler cannot never stop and thus needs to be as an separate thread.
             
-            Inquire_Scheduler.detach();
+            if (Inquire_Scheduler_ptr) Inquire_Scheduler_ptr->detach();
             Logging_Scheduler.detach();
 
             // INTERNAL::Sub_Threads.push_back(std::move(Logging_Scheduler));

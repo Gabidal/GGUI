@@ -152,11 +152,11 @@ run_callgrind_timed() {
     local output_file="$4"
     shift 4
     local exe_args="$@"
-    
+
     if [[ ! -f "$executable" ]]; then
         handle_error "Executable '$executable' not found."
     fi
-    
+
     local valgrind_settings
     case "$mode" in
         "full")
@@ -166,26 +166,49 @@ run_callgrind_timed() {
             valgrind_settings=$(get_callgrind_minimal_settings)
             ;;
     esac
-    
+
+    # Avoid GNU timeout to prevent workload distortion; control Callgrind via callgrind_control instead
+    validate_tools "valgrind" "callgrind_control"
+
     log_info "Running timed Callgrind profile for ${timeout_seconds}s"
     log_info "Executable: $executable"
     log_info "Mode: $mode"
     log_info "Output: $output_file"
-    
-    # Validate required tools
-    validate_tools "valgrind" "timeout"
-    
-    # Run with timeout
-    timeout "$timeout_seconds" valgrind $valgrind_settings --callgrind-out-file="$output_file" "$executable" $exe_args
-    
-    local exit_code=$?
-    if [ $exit_code -eq 124 ]; then
-        log_info "Profiling completed (timeout reached after ${timeout_seconds}s)"
-    elif [ $exit_code -ne 0 ]; then
-        handle_error "Valgrind Callgrind profiling failed with exit code $exit_code"
-    else
-        log_info "Profiling completed successfully"
+
+    # Start Valgrind (foreground instrumentation). Run in background and capture PID
+    # Note: callgrind_control targets the Valgrind-wrapped process (this PID)
+    valgrind $valgrind_settings --callgrind-out-file="$output_file" "$executable" $exe_args &
+    local vg_pid=$!
+
+    # Wait briefly for Callgrind to attach/init
+    sleep 0.5
+
+    # Optional: confirm Callgrind is reachable (best-effort, non-fatal)
+    if ! callgrind_control -p "$vg_pid" -q >/dev/null 2>&1; then
+        log_warning "callgrind_control couldn't query PID $vg_pid yet; continuing"
     fi
+
+    # Let the program run for the requested duration
+    sleep "$timeout_seconds"
+
+    # Ask Callgrind to dump results before terminating
+    callgrind_control -d -p "$vg_pid" >/dev/null 2>&1 || true
+
+    # Gracefully stop the app; escalate if needed
+    kill -INT "$vg_pid" 2>/dev/null || true
+    sleep 1
+    if kill -0 "$vg_pid" 2>/dev/null; then
+        kill -TERM "$vg_pid" 2>/dev/null || true
+        sleep 1
+    fi
+    if kill -0 "$vg_pid" 2>/dev/null; then
+        kill -KILL "$vg_pid" 2>/dev/null || true
+    fi
+
+    # Reap background process
+    wait "$vg_pid" 2>/dev/null || true
+
+    log_info "Timed profiling completed; output: $output_file"
 }
 
 ##
@@ -211,7 +234,7 @@ extract_instruction_count() {
     
     # Extract instruction count using callgrind_annotate
     local result
-    result=$(callgrind_annotate "$callgrind_file" | awk '/^Ir/ {getline; getline; gsub(/,/, "", $1); print $1; exit}' | tail -n1 | tr -d '[:space:]')
+    result=$(callgrind_annotate "$callgrind_file" | awk '/PROGRAM TOTALS/ {gsub(/,/, "", $1); print $1; exit}')
     
     if [ -z "$result" ]; then
         handle_error "Failed to extract instruction count from '$callgrind_file'"
