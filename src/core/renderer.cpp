@@ -66,8 +66,8 @@ namespace GGUI{
         //move 1 by 1, or element by element.
         bool Mouse_Movement_Enabled = true;
 
-        std::unordered_map<std::string, buttonState> KEYBOARD_STATES;
-        std::unordered_map<std::string, buttonState> PREVIOUS_KEYBOARD_STATES;
+        std::unordered_map<std::string_view, buttonState> KEYBOARD_STATES;
+        std::unordered_map<std::string_view, buttonState> PREVIOUS_KEYBOARD_STATES;
 
         // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
         inline time_t MAX_UPDATE_SPEED = TIME::SECOND;

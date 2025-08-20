@@ -11,8 +11,8 @@ namespace GGUI {
         // Forward declarations for functions used from renderer.cpp
         extern void handleEscape();
         extern void handleTabulator();
-        extern std::unordered_map<std::string, buttonState> PREVIOUS_KEYBOARD_STATES;
-        extern std::unordered_map<std::string, buttonState> KEYBOARD_STATES;
+        extern std::unordered_map<std::string_view, buttonState> PREVIOUS_KEYBOARD_STATES;
+        extern std::unordered_map<std::string_view, buttonState> KEYBOARD_STATES;
         extern std::vector<input*> Inputs;
         extern IVector3 Mouse;
         

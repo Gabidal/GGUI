@@ -76,7 +76,7 @@ namespace GGUI{
         extern IVector3 Mouse;    
         extern bool Mouse_Movement_Enabled;
 
-        extern std::unordered_map<std::string, buttonState> KEYBOARD_STATES;
+        extern std::unordered_map<std::string_view, buttonState> KEYBOARD_STATES;
 
         extern time_t MAX_UPDATE_SPEED;
         extern int Inputs_Per_Second;

@@ -326,52 +326,52 @@ namespace GGUI{
     }
 
     namespace KEYBOARD_BUTTONS{
-        static const std::string ESC = "ECS";
-        static const std::string F1 = "F1";
-        static const std::string F2 = "F2";
-        static const std::string F3 = "F3";
-        static const std::string F4 = "F4";
-        static const std::string F5 = "F5";
-        static const std::string F6 = "F6";
-        static const std::string F7 = "F7";
-        static const std::string F8 = "F8";
-        static const std::string F9 = "F9";
-        static const std::string F10 = "F10";
-        static const std::string F11 = "F11";
-        static const std::string F12 = "F12";
-        static const std::string PRTSC = "PRTSC";
-        static const std::string SCROLL_LOCK = "SCROLL_LOCK";
-        static const std::string PAUSE = "PAUSE";
-        static const std::string SECTION = "SECTION";
-        static const std::string BACKSPACE = "BACKSPACE";
-        static const std::string TAB = "TAB";
-        static const std::string ENTER = "ENTER";
-        static const std::string CAPS = "CAPS";
-        static const std::string SHIFT = "SHIFT";
-        static const std::string CONTROL = "CTRL";
-        static const std::string SUPER = "SUPER";
-        static const std::string ALT = "ALT";
-        static const std::string SPACE = "SPACE";
-        static const std::string ALTGR = "ALTGR";
-        static const std::string FN = "FN";
-        static const std::string INS = "INS";
-        static const std::string HOME = "HOME";
-        static const std::string PAGE_UP = "PAGE_UP";
-        static const std::string DEL = "DELETE";
-        static const std::string INSERT = "INSERT";
-        static const std::string END = "END";
-        static const std::string PAGE_DOWN = "PAGE_DOWN";
+        static constexpr std::string_view ESC = "ECS";
+        static constexpr std::string_view F1 = "F1";
+        static constexpr std::string_view F2 = "F2";
+        static constexpr std::string_view F3 = "F3";
+        static constexpr std::string_view F4 = "F4";
+        static constexpr std::string_view F5 = "F5";
+        static constexpr std::string_view F6 = "F6";
+        static constexpr std::string_view F7 = "F7";
+        static constexpr std::string_view F8 = "F8";
+        static constexpr std::string_view F9 = "F9";
+        static constexpr std::string_view F10 = "F10";
+        static constexpr std::string_view F11 = "F11";
+        static constexpr std::string_view F12 = "F12";
+        static constexpr std::string_view PRTSC = "PRTSC";
+        static constexpr std::string_view SCROLL_LOCK = "SCROLL_LOCK";
+        static constexpr std::string_view PAUSE = "PAUSE";
+        static constexpr std::string_view SECTION = "SECTION";
+        static constexpr std::string_view BACKSPACE = "BACKSPACE";
+        static constexpr std::string_view TAB = "TAB";
+        static constexpr std::string_view ENTER = "ENTER";
+        static constexpr std::string_view CAPS = "CAPS";
+        static constexpr std::string_view SHIFT = "SHIFT";
+        static constexpr std::string_view CONTROL = "CTRL";
+        static constexpr std::string_view SUPER = "SUPER";
+        static constexpr std::string_view ALT = "ALT";
+        static constexpr std::string_view SPACE = "SPACE";
+        static constexpr std::string_view ALTGR = "ALTGR";
+        static constexpr std::string_view FN = "FN";
+        static constexpr std::string_view INS = "INS";
+        static constexpr std::string_view HOME = "HOME";
+        static constexpr std::string_view PAGE_UP = "PAGE_UP";
+        static constexpr std::string_view DEL = "DELETE";
+        static constexpr std::string_view INSERT = "INSERT";
+        static constexpr std::string_view END = "END";
+        static constexpr std::string_view PAGE_DOWN = "PAGE_DOWN";
 
-        static const std::string UP = "UP";
-        static const std::string DOWN = "DOWN";
-        static const std::string LEFT = "LEFT";
-        static const std::string RIGHT = "RIGHT";
+        static constexpr std::string_view UP = "UP";
+        static constexpr std::string_view DOWN = "DOWN";
+        static constexpr std::string_view LEFT = "LEFT";
+        static constexpr std::string_view RIGHT = "RIGHT";
 
-        static const std::string MOUSE_LEFT = "MOUSE_LEFT";
-        static const std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
-        static const std::string MOUSE_RIGHT = "MOUSE_RIGHT";
-        static const std::string MOUSE_SCROLL_UP = "MOUSE_SCROLL_UP";
-        static const std::string MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
+        static constexpr std::string_view MOUSE_LEFT = "MOUSE_LEFT";
+        static constexpr std::string_view MOUSE_MIDDLE = "MOUSE_MIDDLE";
+        static constexpr std::string_view MOUSE_RIGHT = "MOUSE_RIGHT";
+        static constexpr std::string_view MOUSE_SCROLL_UP = "MOUSE_SCROLL_UP";
+        static constexpr std::string_view MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
     };
 
     namespace INTERNAL{
@@ -387,7 +387,7 @@ namespace GGUI{
             }
         };
 
-        static const arrayMap<const std::string, unsigned long long, 37> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
+        static const arrayMap<const std::string_view, unsigned long long, 37> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
             std::make_pair(KEYBOARD_BUTTONS::ESC, constants::ESCAPE),
             {KEYBOARD_BUTTONS::F1, constants::F1},
             {KEYBOARD_BUTTONS::F2, constants::F2},
