@@ -1370,7 +1370,7 @@ namespace GGUI{
                         continue;
 
                     // Get the constant associated with the key
-                    unsigned long long Constant_Key = BUTTON_STATES_TO_CONSTANTS_BRIDGE.at(Key.first);
+                    unsigned long long Constant_Key = BUTTON_STATES_TO_CONSTANTS_BRIDGE[Key.first];
 
                     // Check if the input already exists
                     bool Found = false;

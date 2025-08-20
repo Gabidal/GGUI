@@ -133,6 +133,14 @@ if build_type == 'debug' or build_type == 'profile'
   endif
 endif
 
+# Prefer static linkage for the runtime on Linux
+if host_machine.system() == 'linux'
+  # This will link libc, libstdc++, libgcc, and other deps statically if
+  # corresponding .a archives are available. This is the most reliable way
+  # to ensure libc and libstdc++ are not dynamically linked.
+  link_args += ['-static']
+endif
+
 # Apply computed flags project-wide so individual targets don't need to repeat them
 if cpp_args.length() > 0
   add_project_arguments(cpp_args, language: 'cpp')

@@ -2,8 +2,8 @@
 #define _CONSTANTS_H_
 
 #include <string>
-#include <unordered_map>
 #include <chrono>
+#include <stdexcept>
 
 #include "superString.h"
 
@@ -375,8 +375,20 @@ namespace GGUI{
     };
 
     namespace INTERNAL{
-        static const std::unordered_map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
-            {KEYBOARD_BUTTONS::ESC, constants::ESCAPE},
+        template <typename Key, typename Value, std::size_t N>
+        struct arrayMap {
+            std::array<std::pair<Key, Value>, N> data;
+
+            constexpr Value operator[](Key key) const {
+                for (auto&& [k, v] : data) {
+                    if (k == key) return v;
+                }
+                throw std::out_of_range("key not found in array_map");
+            }
+        };
+
+        static const arrayMap<const std::string, unsigned long long, 37> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
+            std::make_pair(KEYBOARD_BUTTONS::ESC, constants::ESCAPE),
             {KEYBOARD_BUTTONS::F1, constants::F1},
             {KEYBOARD_BUTTONS::F2, constants::F2},
             {KEYBOARD_BUTTONS::F3, constants::F3},

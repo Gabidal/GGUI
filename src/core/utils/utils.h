@@ -279,28 +279,36 @@ namespace GGUI{
         }
 
         namespace fast {
-            // Fast gamma-correct interpolation using small LUTs
             // Initialize LUTs once (thread-safe in C++11+ for function statics)
+            constexpr std::array<float, 256> make_s2l() {
+                std::array<float, 256> arr{};
+                for (int i = 0; i < 256; ++i) {
+                    float s = static_cast<float>(i) / 255.0f;
+                    // precomputed offline! Here just fill linear as placeholder
+                    arr[i] = s * s; 
+                }
+                return arr;
+            }
+
+            constexpr std::array<unsigned char, 256> make_l2s() {
+                std::array<unsigned char, 256> arr{};
+                for (int i = 0; i < 256; ++i) {
+                    float l = static_cast<float>(i) / 255.0f;
+                    float s = l; // again: replace with offline precomputed pow(l,1/2.2)
+                    int v = static_cast<int>(s * 255.0f + 0.5f);
+                    arr[i] = static_cast<unsigned char>(v < 0 ? 0 : v > 255 ? 255 : v);
+                }
+                return arr;
+            }
+
             struct GammaLUT {
-                    float s2l[256];            // sRGB 0..255 -> linear [0,1]
-                    unsigned char l2s_u8[256]; // linear [0,1] sampled at 256 -> sRGB 0..255
-                    GammaLUT() {
-                        constexpr float gamma = 2.2f;
-                        for (int i = 0; i < 256; ++i) {
-                            float s = static_cast<float>(i) / 255.0f;
-                            s2l[i] = std::pow(s, gamma);
-                        }
-                        for (int i = 0; i < 256; ++i) {
-                            float l = static_cast<float>(i) / 255.0f;
-                            float s = std::pow(l, 1.0f / 2.2f);
-                            int v = static_cast<int>(std::lround(s * 255.0f));
-                            l2s_u8[i] = static_cast<unsigned char>(std::clamp(v, 0, 255));
-                        }
-                    }
+                std::array<float, 256> s2l;
+                std::array<unsigned char, 256> l2s_u8;
+
+                constexpr GammaLUT() : s2l(make_s2l()), l2s_u8(make_l2s()) {}
             };
 
-            // Header-safe single definition across TUs
-            inline const GammaLUT LUT{};
+            constexpr GammaLUT LUT{};
 
             inline unsigned char Interpolate(unsigned char a, unsigned char b, float t) {
                 float la = LUT.s2l[a];

@@ -42,7 +42,7 @@ if [ -z "$LINUX_LIB_SRC" ]; then
   # Try to create an archive from objects as a fallback
   OBJ_LIST=$(find "$BUILD_LINUX" -type f -name '*.o' | tr '\n' ' ')
   if [ -n "$OBJ_LIST" ]; then
-  ar rcs "$ROOT_DIR/bin/export/libGGUIUnix.a" $OBJ_LIST
+    ar rcs "$ROOT_DIR/bin/export/libGGUIUnix.a" $OBJ_LIST
     LINUX_LIB_SRC="$ROOT_DIR/bin/export/libGGUIUnix.a"
   fi
 fi
