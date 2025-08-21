@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 #include <utility>
+#include <cstdint>
 
 #include "superString.h"
 #include "color.h"
@@ -181,8 +182,6 @@ namespace GGUI{
          */
         void toEncodedSuperString(
             INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
             INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
             INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
         ) const;
@@ -214,6 +213,21 @@ namespace GGUI{
 
     namespace SYMBOLS{
         inline const UTF EMPTY_UTF(' ', {COLOR::WHITE, COLOR::BLACK});
+    }
+
+    namespace INTERNAL {
+        // Precompute and store the two overhead strings at startup.
+        constexpr const INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> makeOverhead(bool isText) {
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> ss;
+            // Use RGB::getOverHeadAsSuperString path with a dummy color to build the header consistently.
+            // Header content does not depend on the actual RGB values, only on isText flag.
+            RGB dummy(0,0,0);
+            dummy.getOverHeadAsSuperString(&ss, isText);
+            return ss;
+        }
+
+        static inline INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> textOverheadPrecompute  = makeOverhead(true);
+        static inline  INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> backgroundOverheadPrecompute  = makeOverhead(false);
     }
 }
 

@@ -65,7 +65,6 @@ namespace GGUI{
     
         constexpr bool operator==(const RGB& Other) const{
             // only take the bits from the first 3 unsigned chars
-            //return (*(unsigned int*)this & 0xFFFFFF) == (*(unsigned int*)&Other & 0xFFFFFF);
             return Red == Other.Red && Green == Other.Green && Blue == Other.Blue;
         }
 

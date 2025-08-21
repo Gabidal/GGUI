@@ -73,23 +73,19 @@ void GGUI::UTF::toSuperString(
  */
 void GGUI::UTF::toEncodedSuperString(
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
 ) const{
 
     if (is(INTERNAL::ENCODING_FLAG::START)) {
         // Add the foreground and background colour and style to the result
-        foreground.getOverHeadAsSuperString(Text_Overhead, true);
         foreground.getColourAsSuperString(Text_Colour);
-        background.getOverHeadAsSuperString(Background_Overhead, false);
         background.getColourAsSuperString(Background_Colour);
 
-        Result->add(Text_Overhead);
+        Result->add(INTERNAL::textOverheadPrecompute);
         Result->add(Text_Colour);
         Result->add(constants::ANSI::END_COMMAND);
-        Result->add(Background_Overhead);
+        Result->add(INTERNAL::backgroundOverheadPrecompute);
         Result->add(Background_Colour);
         Result->add(constants::ANSI::END_COMMAND);
     }

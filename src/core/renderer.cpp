@@ -1619,8 +1619,6 @@ namespace GGUI{
             // Ensure previous frame contents are not read again
             LIQUIFY_UTF_TEXT_RESULT_CACHE.clear();
             LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
-            LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.clear();
-            LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.clear();
             LIQUIFY_UTF_TEXT_TEXT_COLOUR.clear();
             LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.clear();
             
@@ -1633,8 +1631,6 @@ namespace GGUI{
 
                     Text->at(y * Width + x).toEncodedSuperString(
                         &LIQUIFY_UTF_TEXT_TMP_CONTAINER,
-                        &LIQUIFY_UTF_TEXT_TEXT_OVERHEAD,
-                        &LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD,
                         &LIQUIFY_UTF_TEXT_TEXT_COLOUR,
                         &LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR
                     );
@@ -1646,8 +1642,6 @@ namespace GGUI{
 
                     // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
                     LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
-                    LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.clear();
-                    LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.clear();   
                     LIQUIFY_UTF_TEXT_TEXT_COLOUR.clear();
                     LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.clear();
                 }
