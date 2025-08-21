@@ -276,15 +276,17 @@ namespace GGUI{
          */
         template<std::size_t maxSize>
         class superString{
-        protected:
-            // Inline storage to avoid dynamic allocations for the common case.
-            std::array<compactString, maxSize> inlineStorage{};
         public:
             // Data points either to inlineStorage (default) or an external window provided by fastVector.
             compactString* data = nullptr;
             unsigned int currentIndex = 0;
             unsigned int liquefiedSize = 0;
 
+        protected:
+            // Inline storage to avoid dynamic allocations for the common case.
+            std::array<compactString, maxSize> inlineStorage{};
+        
+        public:
 
             /**
              * @brief Default constexpr constructor for the Super_String class.
