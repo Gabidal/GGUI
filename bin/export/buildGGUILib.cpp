@@ -32,6 +32,7 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
         "src/core/utils/superString.h",
+        "src/core/utils/fastVector.h",
         "src/core/utils/constants.h",
         "src/core/utils/color.h",
         "src/core/utils/types.h",

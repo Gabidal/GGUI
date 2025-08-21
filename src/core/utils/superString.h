@@ -276,10 +276,15 @@ namespace GGUI{
          */
         template<std::size_t maxSize>
         class superString{
+        protected:
+            // Inline storage to avoid dynamic allocations for the common case.
+            std::array<compactString, maxSize> inlineStorage{};
         public:
-            std::array<compactString, maxSize> data;
+            // Data points either to inlineStorage (default) or an external window provided by fastVector.
+            compactString* data = nullptr;
             unsigned int currentIndex = 0;
             unsigned int liquefiedSize = 0;
+
 
             /**
              * @brief Default constexpr constructor for the Super_String class.
@@ -287,7 +292,12 @@ namespace GGUI{
              * Initializes a Super_String object with default values at compile time.
              * This constructor does not perform any custom initialization logic.
              */
-            constexpr superString() = default;
+            constexpr superString() {
+                // By default, use inline storage to avoid heap allocations.
+                data = inlineStorage.data();
+                currentIndex = 0;
+                liquefiedSize = 0;
+            }
 
             /**
              * @brief Constructs a Super_String from an initializer list of Compact_String objects.
@@ -297,10 +307,17 @@ namespace GGUI{
              *
              * @param data An initializer list containing Compact_String objects to be added to the Super_String.
              */
-            constexpr superString(const std::initializer_list<compactString>& Data) {
+            constexpr superString(const std::initializer_list<compactString>& Data) : superString() {
                 for (const auto& item : Data) {
                     add(item);
                 }
+            }
+
+            constexpr superString(compactString* preAllocatedWindow) {
+                // Use external window memory; caller manages its lifetime.
+                data = preAllocatedWindow;
+                currentIndex = 0;
+                liquefiedSize = 0;
             }
 
             /**

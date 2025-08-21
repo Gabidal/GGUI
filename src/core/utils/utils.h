@@ -7,6 +7,7 @@
 #include "types.h"
 #include "superString.h"
 #include "color.h"
+#include "fastVector.h"
 
 #include <math.h>
 #include <cstring>
@@ -342,7 +343,7 @@ namespace GGUI{
          */
         extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
 
-        inline std::string* To_String(std::vector<compactString>* Data, unsigned int Liquefied_Size) noexcept {
+        inline std::string* To_String(fastVector<compactString> Data, unsigned int Liquefied_Size) noexcept {
             static std::string result; // internal cache between renders
 
             if (result.size() != Liquefied_Size){
@@ -354,8 +355,8 @@ namespace GGUI{
             char* outputAddress = result.data();
             unsigned int outputIndex = 0;
 
-            const compactString* dataAddress = Data->data();
-            const size_t cachedSize = Data->size();
+            const compactString* dataAddress = Data.getData();
+            const size_t cachedSize = Data.getSize();
 
             for (size_t i = 0; i < cachedSize; i++) {
                 const compactString& data = dataAddress[i];

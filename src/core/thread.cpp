@@ -94,7 +94,7 @@ namespace GGUI{
                             encodeBuffer(Abstract_Frame_Buffer);
 
                             unsigned int Liquefied_Size = 0;
-                            std::vector<compactString>* CS_Buffer = liquifyUTFText(Abstract_Frame_Buffer, Liquefied_Size, Main->getWidth(), Main->getHeight());
+                            fastVector<compactString> CS_Buffer = liquifyUTFText(Abstract_Frame_Buffer, Liquefied_Size, Main->getWidth(), Main->getHeight());
                             
                             Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
                             

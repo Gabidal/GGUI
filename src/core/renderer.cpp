@@ -6,6 +6,7 @@
 #include "./addons/addons.h"
 #include "./utils/settings.h"
 #include "./utils/drm.h"
+#include "./utils/fastVector.h"
 
 #include <string>
 #include <cassert>
@@ -1594,8 +1595,7 @@ namespace GGUI{
             return Max_Height;
         }
 
-
-        static std::vector<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        static fastVector<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE(1000*1000);
         static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
         static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
         static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
@@ -1610,13 +1610,14 @@ namespace GGUI{
          * @param Height The height of the window.
          * @return A pointer to the resulting Super_String.
          */
-        std::vector<compactString>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
+        fastVector<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
             const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * constants::ANSI::maximumNeededPreAllocationForEncodedSuperString + !SETTINGS::Word_Wrapping * (Height - 1));
-            
+
             // Since they are located as globals we need to remember to restart the starting offset.
-            unsigned int LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX = 0;
             Liquefied_Size = 0;
 
+            // Ensure previous frame contents are not read again
+            LIQUIFY_UTF_TEXT_RESULT_CACHE.clear();
             LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
             LIQUIFY_UTF_TEXT_TEXT_OVERHEAD.clear();
             LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD.clear();
@@ -1624,12 +1625,12 @@ namespace GGUI{
             LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.clear();
             
             // We need to dynamically resize this, since the window size will be potentially re-sized.
-            if (LIQUIFY_UTF_TEXT_RESULT_CACHE.size() != Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer){
-                LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer, compactString());
-            }
+            LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
     
             for (int y = 0; y < Height; y++){
                 for (int x = 0; x < Width; x++){
+                    LIQUIFY_UTF_TEXT_TMP_CONTAINER = LIQUIFY_UTF_TEXT_RESULT_CACHE.getWindow<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>();
+
                     Text->at(y * Width + x).toEncodedSuperString(
                         &LIQUIFY_UTF_TEXT_TMP_CONTAINER,
                         &LIQUIFY_UTF_TEXT_TEXT_OVERHEAD,
@@ -1637,10 +1638,9 @@ namespace GGUI{
                         &LIQUIFY_UTF_TEXT_TEXT_COLOUR,
                         &LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR
                     );
-                    
-                    for (unsigned int i = 0; i < LIQUIFY_UTF_TEXT_TMP_CONTAINER.currentIndex; i++){
-                        LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = LIQUIFY_UTF_TEXT_TMP_CONTAINER.data[i];
-                    }
+
+                    // Tell the fastVector the actual used size of the window.
+                    LIQUIFY_UTF_TEXT_RESULT_CACHE.releaseWindow(LIQUIFY_UTF_TEXT_TMP_CONTAINER.currentIndex);
 
                     Liquefied_Size += LIQUIFY_UTF_TEXT_TMP_CONTAINER.liquefiedSize;
 
@@ -1654,12 +1654,12 @@ namespace GGUI{
 
                 // the system doesn't have word wrapping enabled then, use newlines as replacement.
                 if (!SETTINGS::Word_Wrapping){
-                    LIQUIFY_UTF_TEXT_RESULT_CACHE[LIQUIFY_UTF_TEXT_RESULT_CACHE_INDEX++] = compactString('\n'); // the system is word wrapped.
+                    LIQUIFY_UTF_TEXT_RESULT_CACHE.append(compactString('\n')); // the system is word wrapped.
                     Liquefied_Size += 1;
                 }
             }
 
-            return &LIQUIFY_UTF_TEXT_RESULT_CACHE;
+            return LIQUIFY_UTF_TEXT_RESULT_CACHE;
         }
 
         void waitForThreadTermination(){
@@ -2200,31 +2200,33 @@ namespace GGUI{
             INTERNAL::BEFORE_ENCODE_BUFFER_SIZE = Buffer->size() *  constants::ANSI::maximumNeededPreAllocationForEncodedSuperString;
             INTERNAL::AFTER_ENCODE_BUFFER_SIZE = 0;
 
-            // Cache previous colors
+            // Cache previous colors (start with the very first element)
             auto PrevFg = Buffer->front().foreground;
             auto PrevBg = Buffer->front().background;
 
-            auto* Curr = Buffer->data();
-            auto* Next = Curr + 1;
+            unsigned int StartOffset = 1;
 
-            for (size_t i = 1; i < Count - 1; i++) {
+            // Align pointers so Curr points to the current index i, and Next to i+1
+            auto* Curr = Buffer->data() + StartOffset;      // i = 1
+            auto* Next = Curr + 1;                          // i + 1
+
+            // Process interior elements [StartOffset, Count-2]
+            for (size_t i = StartOffset; i < Count - 1; i++) {
                 bool SameAsPrev = (Curr->foreground == PrevFg) && (Curr->background == PrevBg);
                 bool SameAsNext = (Curr->foreground == Next->foreground) && (Curr->background == Next->background);
 
-                if (!SameAsPrev){
+                if (!SameAsPrev) {
                     Curr->setFlag(ENCODING_FLAG::START);
-
                     // for logging:
                     INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
                 }
-                
-                if (!SameAsNext){
+
+                if (!SameAsNext) {
                     Curr->setFlag(ENCODING_FLAG::END);
-                    
                     // for logging:
                     INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForReset;
                 }
-                
+
                 PrevFg = Curr->foreground;
                 PrevBg = Curr->background;
 
@@ -2238,11 +2240,15 @@ namespace GGUI{
             // Handle the last element
             auto& Last = Buffer->back();
             Last.setFlag(ENCODING_FLAG::END);
+            // for logging:
+            INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
 
             // Compare last with second-last for possible START flag
             const auto& SecondLast = Buffer->at(Count - 2);
             if (!(Last.foreground == SecondLast.foreground) || !(Last.background == SecondLast.background)) {
                 Last.setFlag(ENCODING_FLAG::START);
+                // for logging:
+                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
             }
         }
 

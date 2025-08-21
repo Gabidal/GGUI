@@ -19,6 +19,7 @@
 #include "../core/utils/color.h"
 #include "../core/utils/utf.h"
 #include "../core/utils/style.h"
+#include "../core/utils/fastVector.h"
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -229,7 +230,7 @@ namespace GGUI{
          * @param Height The height of the window.
          * @return A pointer to the resulting Super_String.
          */
-        extern std::vector<compactString>* liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
+        extern fastVector<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
         
         /**
          * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
