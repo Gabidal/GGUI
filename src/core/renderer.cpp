@@ -813,7 +813,7 @@ namespace GGUI{
 
             ssize_t wrote = writev(STDOUT_FILENO, vec, 2);
             if (wrote != (ssize_t)cursorResetLength) {
-                INTERNAL::reportStack("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
+                LOGGER::Log("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
             }
         }
 
@@ -2204,32 +2204,35 @@ namespace GGUI{
             auto PrevFg = Buffer->front().foreground;
             auto PrevBg = Buffer->front().background;
 
-            for (size_t i = 1; i < Count - 1; i++) {
-                auto& Curr = Buffer->at(i);
-                const auto& Next = Buffer->at(i + 1);
+            auto* Curr = Buffer->data();
+            auto* Next = Curr + 1;
 
-                bool SameAsPrev = (Curr.foreground == PrevFg) && (Curr.background == PrevBg);
-                bool SameAsNext = (Curr.foreground == Next.foreground) && (Curr.background == Next.background);
+            for (size_t i = 1; i < Count - 1; i++) {
+                bool SameAsPrev = (Curr->foreground == PrevFg) && (Curr->background == PrevBg);
+                bool SameAsNext = (Curr->foreground == Next->foreground) && (Curr->background == Next->background);
 
                 if (!SameAsPrev){
-                    Curr.setFlag(ENCODING_FLAG::START);
+                    Curr->setFlag(ENCODING_FLAG::START);
 
                     // for logging:
                     INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
                 }
                 
                 if (!SameAsNext){
-                    Curr.setFlag(ENCODING_FLAG::END);
+                    Curr->setFlag(ENCODING_FLAG::END);
                     
                     // for logging:
                     INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForReset;
                 }
                 
-                PrevFg = Curr.foreground;
-                PrevBg = Curr.background;
+                PrevFg = Curr->foreground;
+                PrevBg = Curr->background;
 
                 // for logging:
                 INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
+
+                Curr++;
+                Next++;
             }
 
             // Handle the last element
