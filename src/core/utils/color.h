@@ -62,6 +62,22 @@ namespace GGUI{
             Result->add(constants::ANSI::USE_RGB);
             Result->add(constants::ANSI::SEPARATE);
         }
+
+        constexpr INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> getOverHeadAsSuperString(const bool Is_Text_Color = true) const {
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> Result;
+
+            Result.add(constants::ANSI::ESC_CODE);
+            
+            Is_Text_Color ? 
+                Result.add(constants::ANSI::TEXT_COLOR) :
+                Result.add(constants::ANSI::BACKGROUND_COLOR);
+
+            Result.add(constants::ANSI::SEPARATE);
+            Result.add(constants::ANSI::USE_RGB);
+            Result.add(constants::ANSI::SEPARATE);
+
+            return Result;
+        }
     
         constexpr bool operator==(const RGB& Other) const{
             // only take the bits from the first 3 unsigned chars

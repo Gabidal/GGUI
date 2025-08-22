@@ -218,16 +218,14 @@ namespace GGUI{
     namespace INTERNAL {
         // Precompute and store the two overhead strings at startup.
         constexpr const INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> makeOverhead(bool isText) {
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> ss;
             // Use RGB::getOverHeadAsSuperString path with a dummy color to build the header consistently.
             // Header content does not depend on the actual RGB values, only on isText flag.
             RGB dummy(0,0,0);
-            dummy.getOverHeadAsSuperString(&ss, isText);
-            return ss;
+            return dummy.getOverHeadAsSuperString(isText);
         }
 
-        static inline INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> textOverheadPrecompute  = makeOverhead(true);
-        static inline  INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> backgroundOverheadPrecompute  = makeOverhead(false);
+        static const INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> textOverheadPrecompute  = makeOverhead(true);
+        static const  INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> backgroundOverheadPrecompute  = makeOverhead(false);
     }
 }
 
