@@ -26,9 +26,7 @@ std::vector<std::string> get_all_files(const std::string& directory) {
     return files;
 }
 
-void Compile_Headers(const std::string& destination, const std::string& source_root){
-    // Concatenate selected project headers into a single amalgamated header.
-
+void Compile_Headers(const std::string& destination, const std::string& source_root) {
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
         "src/core/utils/superString.h",
@@ -56,43 +54,65 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
     };
 
     std::ofstream Output(destination);
-    
-    if(Output.is_open()){
-        for(const std::string& rel_path : Header_Files_In_Order){
-            std::string file_path = (std::filesystem::path(source_root) / rel_path).string();
-            std::ifstream File(file_path);
-            
-            if(File.is_open()){
-                std::string Line;
-                bool in_ignored_block = false; // Tracks whether we're inside an ignore region
-                while(std::getline(File, Line)){
-                    // Detect ignore regions marked in source headers:
-                    //   // autoGen: Ignore start
-                    //   ... (skipped content) ...
-                    //   // autoGen: Ignore end
-                    if(in_ignored_block){
-                        if(Line.find("autoGen: Ignore end") != std::string::npos){
-                            in_ignored_block = false; // Stop ignoring after this line
-                        }
-                        continue; // Skip all lines while in ignored block (including the end marker line)
-                    } else {
-                        if(Line.find("autoGen: Ignore start") != std::string::npos){
-                            in_ignored_block = true; // Begin ignoring from next line onwards
-                            continue; // Skip the start marker line itself
-                        }
-                    }
-                    // Skip local includes
-                    if(Line.find("#include \"") != std::string::npos && Line.find(".h\"") != std::string::npos){
-                        continue;
-                    }
-                    Output << Line << "\n";
-                }
-            } else {
-                std::cout << "Warning: Could not open file: " << file_path << std::endl;
-            }
-        }
-    } else {
+
+    if (!Output.is_open()) {
         std::cerr << "Error: Could not open destination file for writing: " << destination << std::endl;
+        return;
+    }
+
+    // =========================================================================
+    // Write file header + TOC
+    // =========================================================================
+    Output << "// ============================================================================\n";
+    Output << "//  GGUI - Amalgamated TUI Framework Header\n";
+    Output << "//\n";
+    Output << "//  This file was auto-generated via the ./bin/export.sh\n";
+    Output << "//\n";
+    Output << "//  TABLE OF CONTENTS\n";
+
+    int sectionIndex = 1;
+    for (const std::string& rel_path : Header_Files_In_Order) {
+        Output << "//    [" << sectionIndex++ << "] " << rel_path << "\n";
+    }
+
+    Output << "// ============================================================================\n\n";
+    Output << "#pragma once\n\n";
+
+    // =========================================================================
+    // Concatenate headers
+    // =========================================================================
+    for (const std::string& rel_path : Header_Files_In_Order) {
+        std::string file_path = (std::filesystem::path(source_root) / rel_path).string();
+        std::ifstream File(file_path);
+
+        if (!File.is_open()) {
+            std::cout << "Warning: Could not open file: " << file_path << std::endl;
+            continue;
+        }
+
+        std::string Line;
+        bool in_ignored_block = false;
+        while (std::getline(File, Line)) {
+            // Ignore marked regions
+            if (in_ignored_block) {
+                if (Line.find("autoGen: Ignore end") != std::string::npos) {
+                    in_ignored_block = false;
+                }
+                continue;
+            } else {
+                if (Line.find("autoGen: Ignore start") != std::string::npos) {
+                    in_ignored_block = true;
+                    continue;
+                }
+            }
+
+            // Skip local includes of project headers
+            if (Line.find("#include \"") != std::string::npos && Line.find(".h\"") != std::string::npos) {
+                continue;
+            }
+
+            Output << Line << "\n";
+        }
     }
 }
 
