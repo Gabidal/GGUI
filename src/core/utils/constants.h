@@ -380,14 +380,18 @@ namespace GGUI{
             std::array<std::pair<Key, Value>, N> data;
 
             constexpr Value operator[](Key key) const {
-                for (auto&& [k, v] : data) {
-                    if (k == key) return v;
+                for (auto&& kv : data) {
+                    if (kv.first == key) return kv.second;
                 }
+            #if defined(__cpp_exceptions)
                 throw std::out_of_range("key not found in array_map");
+            #else
+                return Value{}; // fallback in no-exception builds
+            #endif
             }
         };
 
-        static const arrayMap<const std::string_view, unsigned long long, 37> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
+        inline constexpr arrayMap<const std::string_view, unsigned long long, 37> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
             std::make_pair(KEYBOARD_BUTTONS::ESC, constants::ESCAPE),
             {KEYBOARD_BUTTONS::F1, constants::F1},
             {KEYBOARD_BUTTONS::F2, constants::F2},

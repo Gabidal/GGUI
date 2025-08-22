@@ -330,7 +330,7 @@ namespace GGUI{
          *          If the element has no parent, it will return nullptr.
          * @return A pointer to the parent element.
          */
-        element* getParent() const{
+        constexpr element* getParent() const noexcept {
             return Parent;
         }
 

@@ -8,17 +8,17 @@ namespace GGUI{
     #if defined(__AVX512F__)
         #include <immintrin.h>
 
-        inline const unsigned int MAX_SIMD_SIZE = 16;
+    inline constexpr unsigned int MAX_SIMD_SIZE = 16;
     #elif defined(__AVX__)
         #include <immintrin.h>
 
-        inline const unsigned int MAX_SIMD_SIZE = 8;
+    inline constexpr unsigned int MAX_SIMD_SIZE = 8;
     #elif defined(__SSE__)
         #include <xmmintrin.h>
 
-        inline const unsigned int MAX_SIMD_SIZE = 4;
+    inline constexpr unsigned int MAX_SIMD_SIZE = 4;
     #else
-        inline const unsigned int MAX_SIMD_SIZE = 1;
+    inline constexpr unsigned int MAX_SIMD_SIZE = 1;
     #endif
 
     // The number represents how many 32 bit float value pairs can it calculate at the same time.

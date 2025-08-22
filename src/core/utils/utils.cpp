@@ -295,30 +295,6 @@ namespace GGUI{
         }
 
         /**
-         * @brief Checks if two rectangles collide.
-         *
-         * This function determines whether two rectangles, defined by their top-left
-         * corners and dimensions, overlap in a 2D space.
-         *
-         * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
-         * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
-         * @param A_Width The width of the first rectangle.
-         * @param A_Height The height of the first rectangle.
-         * @param B_Width The width of the second rectangle.
-         * @param B_Height The height of the second rectangle.
-         * @return true if the rectangles overlap, false otherwise.
-         */
-        bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width, int A_Height, int B_Width, int B_Height) {
-            // Check if the rectangles overlap in the x-axis and y-axis
-            return (
-                A.X < B.X + B_Width &&   // A's right edge is beyond B's left edge
-                A.X + A_Width > B.X &&   // A's left edge is before B's right edge
-                A.Y < B.Y + B_Height &&  // A's bottom edge is below B's top edge
-                A.Y + A_Height > B.Y     // A's top edge is above B's bottom edge
-            );
-        }
-
-        /**
          * @brief Checks if two GGUI elements collide.
          * 
          * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
@@ -429,47 +405,6 @@ namespace GGUI{
         }
 
         /**
-         * @brief Returns the smaller of two signed long long integers.
-         * 
-         * This function compares two signed long long integers and returns the smaller of the two.
-         * 
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The smaller of the two signed long long integers.
-         */
-        signed long long Min(signed long long a, signed long long b){
-            return a < b ? a : b;
-        }
-
-        /**
-         * @brief Returns the maximum of two signed long long integers.
-         *
-         * This function compares two signed long long integers and returns the greater of the two.
-         *
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The greater of the two signed long long integers.
-         */
-        signed long long Max(signed long long a, signed long long b){
-            return a > b ? a : b;
-        }
-
-        /**
-         * @brief Checks if a bit is set in a char.
-         * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
-         *          It returns true if the bit is set and false if it is not.
-         *
-         * @param val The char to check the bit in.
-         * @param i The index of the bit to check.
-         *
-         * @return True if the bit is set, false if it is not.
-         */
-        bool Has_Bit_At(char val, int i){
-            // Shift the bit to the right i times and then check if the bit is set.
-            return ((val) & (1<<(i))) != 0;
-        }
-
-        /**
          * @brief Gets the contents of a given position in the buffer.
          * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
          * @param Absolute_Position The position to get the contents of.
@@ -490,62 +425,8 @@ namespace GGUI{
             }
         }
 
-        /**
-         * @brief Calculates the current load of the GGUI thread based on the given current position.
-         * @param Min The minimum value the load can have.
-         * @param Max The maximum value the load can have.
-         * @param Position The current position of the load.
-         * @return The current load of the GGUI thread from 0 to 1.
-         */
-        float Lerp(int Min, int Max, int Position){
-            // First calculate the possible length of which our load can represent on.
-            float Length_Of_Possible_Values = Max - Min;
-
-            // Get the offset of which the wanted target fps deviates from the minimum value
-            float Offset_Of_Our_Load = GGUI::INTERNAL::Max(Position - Min, 0);
-
-            // Calculate the simple probability.
-            return 1 - Offset_Of_Our_Load / Length_Of_Possible_Values;
-        }
-        
-        /**
-         * @brief Checks if the given flag is set in the given flags.
-         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-         *
-         * @param f The flags to check.
-         * @param Flag The flag to check for.
-         * @return True if the flag is set, otherwise false.
-         */
-        bool Is(unsigned long long f, unsigned long long Flag){
-            return (f & Flag) == Flag;
-        }
-
-        /**
-         * @brief Checks if a flag is set in a set of flags.
-         * @details This function takes two unsigned long long parameters, one for the flags and one for the flag to check. It returns true if the flag is set in the flags, otherwise it returns false.
-         *
-         * @param f The flags to check.
-         * @param flag The flag to check for.
-         * @return True if the flag is set, otherwise false.
-         */
-        bool Has(unsigned long long f, unsigned long long flag){
-            return (f & flag) != 0;
-        }
-
         bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag){
             return Has((unsigned long long)f, (unsigned long long)flag);
-        }
-
-        /**
-         * @brief Checks if all flags in small are set in big.
-         * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
-         *
-         * @param big The flags to check against.
-         * @param small The flags to check.
-         * @return True if all flags in small are set in big, otherwise false.
-         */
-        bool Contains(unsigned long long big, unsigned long long Small) {
-            return (Small & big) == Small;
         }
 
         bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small){

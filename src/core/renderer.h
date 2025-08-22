@@ -20,6 +20,7 @@
 #include "../core/utils/utf.h"
 #include "../core/utils/style.h"
 #include "../core/utils/fastVector.h"
+#include "./utils/utils.h"
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -79,12 +80,17 @@ namespace GGUI{
 
         extern std::unordered_map<std::string_view, buttonState> KEYBOARD_STATES;
 
-        extern time_t MAX_UPDATE_SPEED;
+        // Maximum allowed delay between passive event loop iterations.
+        inline constexpr time_t MAX_UPDATE_SPEED = TIME::SECOND;
+        // Close approximation to 60 FPS for minimum sleep (cannot be constexpr modified elsewhere).
+        inline constexpr time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 16;
+        extern time_t CURRENT_UPDATE_SPEED; // dynamic depending on load
+
         extern int Inputs_Per_Second;
         extern int Inputs_Per_Query;
 
         extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+        extern unsigned long long Event_Delay;     // describes how long previous memory tasks took in ms
 
         extern atomic::guard<std::unordered_map<int, styling>> Classes;
         extern std::unordered_map<std::string, int> Class_Names;
@@ -93,14 +99,10 @@ namespace GGUI{
 
         extern std::unordered_map<GGUI::canvas*, bool> Multi_Frame_Canvas;
 
-        // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
-        extern time_t MAX_UPDATE_SPEED;
-        extern time_t MIN_UPDATE_SPEED;    // Close approximation to 60 fps.
-        extern time_t CURRENT_UPDATE_SPEED;
         extern float Event_Thread_Load;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
         extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-        extern unsigned long long Event_Delay;    // describes how long previous memory tasks took in ms
+        extern unsigned long long Event_Delay;     // describes how long previous memory tasks took in ms
         extern unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
 
         extern std::string now();
@@ -204,7 +206,17 @@ namespace GGUI{
          * @param first_char The first byte of the character.
          * @return The length of the character in bytes.
          */
-        extern int getUnicodeLength(char first_char);
+        constexpr int getUnicodeLength(char first_char){
+            // ASCII (0xxxxxxx)
+            if (!INTERNAL::Has_Bit_At(first_char, 7)) return 1;
+            // 2-byte (110xxxxx)
+            if (INTERNAL::Has_Bit_At(first_char,7) && INTERNAL::Has_Bit_At(first_char,6) && !INTERNAL::Has_Bit_At(first_char,5)) return 2;
+            // 3-byte (1110xxxx)
+            if (INTERNAL::Has_Bit_At(first_char,7) && INTERNAL::Has_Bit_At(first_char,6) && INTERNAL::Has_Bit_At(first_char,5) && !INTERNAL::Has_Bit_At(first_char,4)) return 3;
+            // 4-byte (11110xxx)
+            if (INTERNAL::Has_Bit_At(first_char,7) && INTERNAL::Has_Bit_At(first_char,6) && INTERNAL::Has_Bit_At(first_char,5) && INTERNAL::Has_Bit_At(first_char,4) && !INTERNAL::Has_Bit_At(first_char,3)) return 4;
+            return 1;
+        }
 
         /**
          * @brief Gets the current maximum width of the terminal.

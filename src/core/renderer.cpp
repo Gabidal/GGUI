@@ -71,9 +71,7 @@ namespace GGUI{
         std::unordered_map<std::string_view, buttonState> PREVIOUS_KEYBOARD_STATES;
 
         // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
-        inline time_t MAX_UPDATE_SPEED = TIME::SECOND;
-        inline time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 16;    // Close approximation to 60 fps.
-        inline time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
+        time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
         inline float Event_Thread_Load = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
         std::chrono::high_resolution_clock::time_point Previous_Time;
@@ -1537,30 +1535,6 @@ namespace GGUI{
             // Now update the focused element with the new index
             unHoverElement();
             updateFocusedElement(Event_Handlers[Current_Index]->host);
-        }
-
-        // Returns the length of a Unicode character based on the first byte.
-        // @param first_char The first byte of the character.
-        // @return The length of the character in bytes. Returns 1 if it is not a Unicode character.
-        int getUnicodeLength(char first_char) {
-            // Check if the character is an ASCII character (0xxxxxxx)
-            if (!Has_Bit_At(first_char, 7)) // ASCII characters have the most significant bit as 0
-                return 1;
-
-            // Check if the character is a 2-byte Unicode character (110xxxxx)
-            if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && !Has_Bit_At(first_char, 5))
-                return 2;
-
-            // Check if the character is a 3-byte Unicode character (1110xxxx)
-            if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && Has_Bit_At(first_char, 5) && !Has_Bit_At(first_char, 4))
-                return 3;
-
-            // Check if the character is a 4-byte Unicode character (11110xxx)
-            if (Has_Bit_At(first_char, 7) && Has_Bit_At(first_char, 6) && Has_Bit_At(first_char, 5) && Has_Bit_At(first_char, 4) && !Has_Bit_At(first_char, 3))
-                return 4;
-
-            // Default case: return 1 for invalid or unexpected byte patterns
-            return 1;
         }
 
         /**

@@ -104,7 +104,14 @@ namespace GGUI{
          * @param B_Height The height of the second rectangle.
          * @return true if the rectangles overlap, false otherwise.
          */
-        extern bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1);
+        constexpr bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1) noexcept {
+            return (
+                A.X < B.X + B_Width &&
+                A.X + A_Width > B.X &&
+                A.Y < B.Y + B_Height &&
+                A.Y + A_Height > B.Y
+            );
+        }
 
         /**
          * @brief Checks if two GGUI elements collide.
@@ -157,7 +164,7 @@ namespace GGUI{
          * @param b The second signed long long integer to compare.
          * @return The smaller of the two signed long long integers.
          */
-        extern signed long long Min(signed long long a, signed long long b);
+        constexpr signed long long Min(signed long long a, signed long long b) noexcept { return a < b ? a : b; }
 
         /**
          * @brief Returns the maximum of two signed long long integers.
@@ -168,7 +175,7 @@ namespace GGUI{
          * @param b The second signed long long integer to compare.
          * @return The greater of the two signed long long integers.
          */
-        extern signed long long Max(signed long long a, signed long long b);
+        constexpr signed long long Max(signed long long a, signed long long b) noexcept { return a > b ? a : b; }
 
         /**
          * @brief Checks if a bit is set in a char.
@@ -180,7 +187,7 @@ namespace GGUI{
          *
          * @return True if the bit is set, false if it is not.
          */
-        extern bool Has_Bit_At(char val, int i);
+        constexpr bool Has_Bit_At(char val, int i) noexcept { return (val & (1 << i)) != 0; }
 
         /**
          * @brief Gets the contents of a given position in the buffer.
@@ -197,7 +204,11 @@ namespace GGUI{
          * @param Position The current position of the load.
          * @return The current load of the GGUI thread from 0 to 1.
          */
-        extern float Lerp(int Min, int Max, int Position);
+        constexpr float Lerp(int Min, int Max, int Position) noexcept {
+            float Length_Of_Possible_Values = static_cast<float>(Max - Min);
+            float Offset_Of_Our_Load = GGUI::INTERNAL::Max(static_cast<signed long long>(Position - Min), 0);
+            return 1.0f - Offset_Of_Our_Load / Length_Of_Possible_Values;
+        }
 
         /**
          * @brief Checks if the given flag is set in the given flags.
@@ -207,7 +218,7 @@ namespace GGUI{
          * @param Flag The flag to check for.
          * @return True if the flag is set, otherwise false.
          */
-        extern bool Is(unsigned long long f, unsigned long long Flag);
+        constexpr bool Is(unsigned long long f, unsigned long long Flag) noexcept { return (f & Flag) == Flag; }
 
         /**
          * @brief Checks if a flag is set in a set of flags.
@@ -217,7 +228,7 @@ namespace GGUI{
          * @param flag The flag to check for.
          * @return True if the flag is set, otherwise false.
          */
-        extern bool Has(unsigned long long f, unsigned long long flag);
+        constexpr bool Has(unsigned long long f, unsigned long long flag) noexcept { return (f & flag) != 0ULL; }
 
         extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
 
@@ -229,7 +240,7 @@ namespace GGUI{
          * @param small The flags to check.
          * @return True if all flags in small are set in big, otherwise false.
          */
-        extern bool Contains(unsigned long long big, unsigned long long Small);
+        constexpr bool Contains(unsigned long long big, unsigned long long Small) noexcept { return (Small & big) == Small; }
 
         extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
 
@@ -343,6 +354,20 @@ namespace GGUI{
          */
         extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
 
+        /**
+         * @brief Convert a liquefied UTF fastVector into a cached std::string.
+         *
+         * Re-uses a static std::string buffer between calls to avoid heap churn. The
+         * function expects that Liquefied_Size equals the sum of the sizes of all
+         * compactString entries in Data and will resize the cached string if the size
+         * differs. Multi‑byte (unicode) entries are memcpy'd; single byte ASCII entries
+         * are written directly. Entries with size == 0 are skipped.
+         *
+         * @param Data Contiguous collection of compactString produced by liquifyUTFText().
+         * @param Liquefied_Size Pre-computed total number of bytes represented by Data.
+         * @return Pointer to an internally cached std::string containing the concatenated bytes.
+         * @warning The returned pointer becomes invalid after the next call to this function.
+         */
         inline std::string* To_String(fastVector<compactString> Data, unsigned int Liquefied_Size) noexcept {
             static std::string result; // internal cache between renders
 
@@ -374,6 +399,15 @@ namespace GGUI{
             return &result;
         }
 
+        /**
+         * @brief Create a std::string from a single compactString.
+         *
+         * Allocates a std::string sized to the compactString length and copies either the
+         * multi-byte unicode sequence or the single ASCII character.
+         *
+         * @param cstr Source compactString.
+         * @return Newly constructed std::string containing the character data (no caching).
+         */
         inline std::string To_String(compactString& cstr){
             // Resize a std::string to the total size.
             std::string result;
