@@ -43,7 +43,7 @@ void foo(element* self){
         resumeGGUI();
 
         // press 'CTRL + SHIFT + I' to open the inspect window. 
-        GGUI::INTERNAL::SLEEP(16);
+        GGUI::SLEEP(16);
     }
 }
 
@@ -80,5 +80,5 @@ int main(){
         name("Main window")
     );
 
-    GGUI::INTERNAL::SLEEP(INT32_MAX);
+    GGUI::SLEEP(INT32_MAX);
 }

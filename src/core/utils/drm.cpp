@@ -352,7 +352,7 @@ namespace GGUI {
                     return;
                 }
 
-                size_t maximumBufferSize = INTERNAL::Main->getWidth() * INTERNAL::Main->getHeight() * sizeof(cell);
+                size_t maximumBufferSize = getRoot()->getWidth() * getRoot()->getHeight() * sizeof(cell);
 
                 static std::vector<char> packetBuffer = std::vector<char>();
                 

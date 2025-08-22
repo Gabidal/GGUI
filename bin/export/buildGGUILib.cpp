@@ -64,7 +64,23 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
             
             if(File.is_open()){
                 std::string Line;
+                bool in_ignored_block = false; // Tracks whether we're inside an ignore region
                 while(std::getline(File, Line)){
+                    // Detect ignore regions marked in source headers:
+                    //   // autoGen: Ignore start
+                    //   ... (skipped content) ...
+                    //   // autoGen: Ignore end
+                    if(in_ignored_block){
+                        if(Line.find("autoGen: Ignore end") != std::string::npos){
+                            in_ignored_block = false; // Stop ignoring after this line
+                        }
+                        continue; // Skip all lines while in ignored block (including the end marker line)
+                    } else {
+                        if(Line.find("autoGen: Ignore start") != std::string::npos){
+                            in_ignored_block = true; // Begin ignoring from next line onwards
+                            continue; // Skip the start marker line itself
+                        }
+                    }
                     // Skip local includes
                     if(Line.find("#include \"") != std::string::npos && Line.find(".h\"") != std::string::npos){
                         continue;

@@ -13,14 +13,14 @@ const char* TEXT_INPUT_NAME = "text_input";
 const char* EXIT_NAME = "exit";
 
 void inputHandler(string& input){
-    GGUI::textField* textHistory = (GGUI::textField*)INTERNAL::Main->getElement(INPUT_HISTORY);
+    GGUI::textField* textHistory = (GGUI::textField*)getRoot()->getElement(INPUT_HISTORY);
     textHistory->setText(textHistory->getText() + "\n" + input);
 }
 
 // Switches from the 'From' ID to the 'To' ID
 void switchDisplayedElements(const char* From, const char* To){
-    GGUI::element* From_Element = INTERNAL::Main->getElement(From);
-    GGUI::element* To_Element = INTERNAL::Main->getElement(To);
+    GGUI::element* From_Element = getRoot()->getElement(From);
+    GGUI::element* To_Element = getRoot()->getElement(To);
 
     // Run these changes in safe mode.
     GGUI::pauseGGUI([From_Element, To_Element](){
@@ -99,5 +99,5 @@ int main(){
         initMenu() | initCampaign()
     );
 
-    GGUI::INTERNAL::SLEEP(UINT32_MAX);
+    GGUI::SLEEP(UINT32_MAX);
 }

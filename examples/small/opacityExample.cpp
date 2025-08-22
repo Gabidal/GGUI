@@ -24,5 +24,5 @@ int main(){
     );
 
     // You can also use the GGUI's internal sleep function to wait.
-    GGUI::INTERNAL::SLEEP(INT32_MAX);
+    GGUI::SLEEP(INT32_MAX);
 }

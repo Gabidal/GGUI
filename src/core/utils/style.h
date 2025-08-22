@@ -17,10 +17,10 @@ namespace GGUI{
     class element;
     class textField;
     class styling;
+    extern void EXIT(int signum);
     namespace INTERNAL{
         enum class STAIN_TYPE;
         extern void reportStack(const std::string& problemDescription);
-        extern void EXIT(int signum);
 
         template <typename T>
         std::string Get_Type_Name() {
@@ -174,7 +174,7 @@ namespace GGUI{
             constexpr bool operator==(const value<T>& other) const {
                 // if (evaluationType != other.evaluationType){
                 //     INTERNAL::reportStack("Cannot compare two different eval type values!");
-                //     INTERNAL::EXIT(1);
+                //     EXIT(1);
                 //     return false;   // for warnings.
                 // }
                 // else{
@@ -186,7 +186,7 @@ namespace GGUI{
                 //         return percentage == other.percentage;
                 //     default:
                 //         INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
-                //         INTERNAL::EXIT(1);
+                //         EXIT(1);
                 //         return false;   // for warnings.
                 //     }
                 // }
@@ -195,7 +195,7 @@ namespace GGUI{
             constexpr value<T> operator+(const value<T>& other){
                 if (evaluationType != other.evaluationType){
                     INTERNAL::reportStack("Cannot add two different eval type values!");
-                    INTERNAL::EXIT(1);
+                    EXIT(1);
                     return false;   // for warnings.
                 }
                 else{
@@ -207,7 +207,7 @@ namespace GGUI{
                         return value<T>(percentage + other.percentage);
                     default:
                         INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
-                        INTERNAL::EXIT(1);
+                        EXIT(1);
                         return value<T>(0);
                     }
                 }
@@ -217,7 +217,7 @@ namespace GGUI{
                 if (evaluationType != other.evaluationType){
                     // TODO: add capability to call reportStack in Styles.h
                     INTERNAL::LOGGER::Log("Cannot substract two different eval type values!");
-                    INTERNAL::EXIT(1);
+                    EXIT(1);
                     return false;   // for warnings.
                 }
                 else{
@@ -229,7 +229,7 @@ namespace GGUI{
                         return value<T>(percentage - other.percentage);
                     default:
                         INTERNAL::LOGGER::Log("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
-                        INTERNAL::EXIT(1);
+                        EXIT(1);
                         return value<T>(0);
                     }
                 }

@@ -32,5 +32,5 @@ int main()
         enableBorder(true) 
     );
 
-    GGUI::INTERNAL::SLEEP(UINT32_MAX);
+    GGUI::SLEEP(UINT32_MAX);
 }

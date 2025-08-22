@@ -13,17 +13,12 @@
 
 namespace tester {
     namespace utils {
-
-        std::string toString(GGUI::UTF ColoredText) {
-            return ColoredText.toSuperString()->toString();
-        }
-
         std::string colorText(const char* text, GGUI::RGB color) {
             GGUI::UTF result = GGUI::UTF(text, {color, {}});
 
             result.flags = GGUI::INTERNAL::ENCODING_FLAG::START | GGUI::INTERNAL::ENCODING_FLAG::END;
 
-            return toString(result);
+            return GGUI::toString(result);
         }
 
         // Test statistics

@@ -9,6 +9,7 @@ namespace GGUI{
 
     class fileStream;
 
+    // autoGen: Ignore start
     namespace INTERNAL{
         // Contains Logging utils.
         namespace LOGGER{
@@ -27,6 +28,7 @@ namespace GGUI{
 
         extern void loggerThread();
     }
+    // autoGen: Ignore end
     
     /**
      * @brief Reports an error to the user.

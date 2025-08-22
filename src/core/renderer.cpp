@@ -19,6 +19,43 @@
 #if _WIN32
     #include <windows.h>
     #include <dbghelp.h>
+
+    namespace GGUI {
+        /**
+         * @brief Sleep for the specified amount of milliseconds.
+         * 
+         * This function pauses the execution of the current thread for the specified
+         * duration in milliseconds.
+         * 
+         * @param mm The number of milliseconds to sleep.
+         */
+        void SLEEP(unsigned int mm){
+            // Sleep for the specified amount of milliseconds.
+            Sleep(mm);
+        }
+
+        namespace INTERNAL {
+            extern void EXIT(int signum);
+        }
+
+        /**
+         * @brief Gracefully shuts down the application.
+         *
+         * This function performs a series of steps to gracefully shut down the application:
+         * 1. Logs the initiation of the termination process.
+         * 2. Signals subthreads to terminate.
+         * 3. Waits for all subthreads to join.
+         * 4. Reverts the console to its normal mode.
+         * 5. Cleans up platform-specific resources and settings.
+         * 6. Logs the successful shutdown of the application.
+         * 7. Exits the application with the specified exit code.
+         *
+         * @param signum The exit code to be used when terminating the application.
+         */
+        void EXIT(int signum){
+            INTERNAL::EXIT(signum);
+        }
+    }
 #else
     #include <sys/ioctl.h>
     #include <signal.h>
@@ -27,6 +64,48 @@
     #include <sys/uio.h> // Needed for writev
     #include <cstring>
     #include <poll.h>
+
+    namespace GGUI {
+        /**
+         * @brief Suspends the execution of the calling thread for a specified duration.
+         *
+         * This function uses the nanosleep system call to suspend the execution of the calling thread
+         * for the specified number of milliseconds. It repeatedly calls nanosleep until the entire
+         * sleep duration has elapsed.
+         *
+         * @param mm The number of milliseconds to sleep.
+         */
+        void SLEEP(unsigned int mm){
+            // Define timespec structure for the required sleep duration
+            struct timespec req = {0, 0};
+            // Calculate seconds from milliseconds
+            time_t sec = (int)(mm / 1000);
+            // Calculate remaining milliseconds
+            mm = mm - (sec * 1000);
+            // Set the seconds and nanoseconds in the timespec structure
+            req.tv_sec = sec;
+            req.tv_nsec = mm * 1000000L;
+            // Repeatedly call nanosleep until the sleep duration is fully elapsed
+            while(nanosleep(&req, &req) == -1)
+                continue;
+        }
+
+        namespace INTERNAL {
+            extern void Cleanup();
+        }
+
+        /**
+         * @brief De-initializes platform-specific settings and resources and exits the application.
+         * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
+         *          It ensures that any platform-specific settings are reset before the application exits.
+         * @param signum The exit code for the application.
+         */
+        void EXIT(int signum){
+            INTERNAL::Cleanup();
+            // Exit the application with the specified exit code
+            exit(signum);
+        }
+    }
 #endif
 
 namespace GGUI{
@@ -121,19 +200,6 @@ namespace GGUI{
         extern void Read_Start_Addresses();
 
         #if _WIN32
-
-        /**
-         * @brief Sleep for the specified amount of milliseconds.
-         * 
-         * This function pauses the execution of the current thread for the specified
-         * duration in milliseconds.
-         * 
-         * @param mm The number of milliseconds to sleep.
-         */
-        void SLEEP(unsigned int mm){
-            // Sleep for the specified amount of milliseconds.
-            Sleep(mm);
-        }
 
         HANDLE GLOBAL_STD_OUTPUT_HANDLE;
         HANDLE GLOBAL_STD_INPUT_HANDLE;
@@ -756,42 +822,6 @@ namespace GGUI{
 
                 LOGGER::Log("GGUI shutdown successful.");
             }
-        }
-
-        /**
-         * @brief De-initializes platform-specific settings and resources and exits the application.
-         * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
-         *          It ensures that any platform-specific settings are reset before the application exits.
-         * @param signum The exit code for the application.
-         */
-        void EXIT(int signum){
-            Cleanup();
-            // Exit the application with the specified exit code
-            exit(signum);
-        }
-
-        /**
-         * @brief Suspends the execution of the calling thread for a specified duration.
-         *
-         * This function uses the nanosleep system call to suspend the execution of the calling thread
-         * for the specified number of milliseconds. It repeatedly calls nanosleep until the entire
-         * sleep duration has elapsed.
-         *
-         * @param mm The number of milliseconds to sleep.
-         */
-        void SLEEP(unsigned int mm){
-            // Define timespec structure for the required sleep duration
-            struct timespec req = {0, 0};
-            // Calculate seconds from milliseconds
-            time_t sec = (int)(mm / 1000);
-            // Calculate remaining milliseconds
-            mm = mm - (sec * 1000);
-            // Set the seconds and nanoseconds in the timespec structure
-            req.tv_sec = sec;
-            req.tv_nsec = mm * 1000000L;
-            // Repeatedly call nanosleep until the sleep duration is fully elapsed
-            while(nanosleep(&req, &req) == -1)
-                continue;
         }
 
         /**
@@ -2248,6 +2278,10 @@ namespace GGUI{
         }
     }
 
+    element* getRoot() {
+        return INTERNAL::Main;
+    }
+
     /**
      * @brief Updates the frame.
      * @details This function updates the frame. It's the main entry point for the rendering thread.
@@ -2343,7 +2377,7 @@ namespace GGUI{
             INTERNAL::initGGUI();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
-            INTERNAL::Main->addStyling(App);
+            getRoot()->addStyling(App);
             
             // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
             initAddons();
@@ -2354,10 +2388,10 @@ namespace GGUI{
         });
         
         // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
-        INTERNAL::Main->check(INTERNAL::STATE::INIT);
+        getRoot()->check(INTERNAL::STATE::INIT);
 
         // Sleep for the given amount of milliseconds.
-        INTERNAL::SLEEP(Sleep_For);
+        SLEEP(Sleep_For);
     }
 
     /**

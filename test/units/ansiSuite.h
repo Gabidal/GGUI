@@ -139,10 +139,9 @@ namespace tester {
         static void test_utf_character_color_encoding() {
             // Test UTF character with red foreground and black background
             GGUI::UTF colored_char('A', {GGUI::COLOR::RED, GGUI::COLOR::BLACK});
-            auto* result = colored_char.toSuperString();
             
             // The result should contain ANSI escape codes for red text on black background
-            std::string ansi_result = result->toString();
+            std::string ansi_result = GGUI::toString(colored_char);
             
             // Should contain escape sequence for red foreground (38;2;255;0;0)
             ASSERT_TRUE(ansi_result.find("38;2;255;0;0") != std::string::npos);
@@ -153,13 +152,10 @@ namespace tester {
             // Should contain reset sequence
             ASSERT_TRUE(ansi_result.find("\x1B[0m") != std::string::npos);
 
-            delete result;
-
             // Test UTF character with blue foreground and white background
             GGUI::UTF blue_char('B', {GGUI::COLOR::BLUE, GGUI::COLOR::WHITE});
-            auto* blue_result = blue_char.toSuperString();
             
-            std::string blue_ansi_result = blue_result->toString();
+            std::string blue_ansi_result = GGUI::toString(blue_char);
             
             // Should contain escape sequence for blue foreground (38;2;0;0;255)
             ASSERT_TRUE(blue_ansi_result.find("38;2;0;0;255") != std::string::npos);
@@ -167,8 +163,6 @@ namespace tester {
             ASSERT_TRUE(blue_ansi_result.find("48;2;255;255;255") != std::string::npos);
             // Should contain the character 'B'
             ASSERT_TRUE(blue_ansi_result.find('B') != std::string::npos);
-
-            delete blue_result;
         }
 
         static void test_predefined_colors() {
@@ -265,159 +259,120 @@ namespace tester {
         static void test_utf_single_character_colorization() {
             // Test single character with basic colors
             GGUI::UTF red_a('A', {GGUI::COLOR::RED, GGUI::COLOR::BLACK});
-            auto* result = red_a.toSuperString();
-            std::string output = result->toString();
+            std::string output = GGUI::toString(red_a);
             
             // Should contain: ESC[38;2;255;0;0mESC[48;2;0;0;0mA ESC[0m
             ASSERT_TRUE(output.find("\x1B[38;2;255;0;0m") != std::string::npos); // Red foreground
             ASSERT_TRUE(output.find("\x1B[48;2;0;0;0m") != std::string::npos);   // Black background
             ASSERT_TRUE(output.find('A') != std::string::npos);                   // Character
             ASSERT_TRUE(output.find("\x1B[0m") != std::string::npos);            // Reset
-            
-            delete result;
 
             // Test single character with white on blue
             GGUI::UTF white_x('X', {GGUI::COLOR::WHITE, GGUI::COLOR::BLUE});
-            auto* blue_result = white_x.toSuperString();
-            std::string blue_output = blue_result->toString();
+            std::string blue_output = GGUI::toString(white_x);
             
             ASSERT_TRUE(blue_output.find("\x1B[38;2;255;255;255m") != std::string::npos); // White foreground
             ASSERT_TRUE(blue_output.find("\x1B[48;2;0;0;255m") != std::string::npos);     // Blue background
             ASSERT_TRUE(blue_output.find('X') != std::string::npos);                      // Character
-            
-            delete blue_result;
 
             // Test special characters
             GGUI::UTF special_char('@', {GGUI::COLOR::YELLOW, GGUI::COLOR::MAGENTA});
-            auto* special_result = special_char.toSuperString();
-            std::string special_output = special_result->toString();
+            std::string special_output = GGUI::toString(special_char);
             
             ASSERT_TRUE(special_output.find("\x1B[38;2;255;255;0m") != std::string::npos); // Yellow foreground
             ASSERT_TRUE(special_output.find("\x1B[48;2;255;0;255m") != std::string::npos); // Magenta background
             ASSERT_TRUE(special_output.find('@') != std::string::npos);                    // Character
-            
-            delete special_result;
         }
 
         static void test_utf_string_colorization() {
             // Test string with colors
             GGUI::UTF hello_string("Hello", {GGUI::COLOR::GREEN, GGUI::COLOR::WHITE});
-            auto* result = hello_string.toSuperString();
-            std::string output = result->toString();
+            std::string output = GGUI::toString(hello_string);
             
             // Should contain green text on white background
             ASSERT_TRUE(output.find("\x1B[38;2;0;255;0m") != std::string::npos);   // Green foreground
             ASSERT_TRUE(output.find("\x1B[48;2;255;255;255m") != std::string::npos); // White background
             ASSERT_TRUE(output.find("Hello") != std::string::npos);                  // Text content
             ASSERT_TRUE(output.find("\x1B[0m") != std::string::npos);               // Reset
-            
-            delete result;
 
             // Test longer string with custom colors
             GGUI::UTF custom_string("Testing ANSI", {GGUI::RGB(128, 64, 192), GGUI::RGB(255, 200, 100)});
-            auto* custom_result = custom_string.toSuperString();
-            std::string custom_output = custom_result->toString();
+            std::string custom_output = GGUI::toString(custom_string);
             
             ASSERT_TRUE(custom_output.find("\x1B[38;2;128;64;192m") != std::string::npos); // Custom foreground
             ASSERT_TRUE(custom_output.find("\x1B[48;2;255;200;100m") != std::string::npos); // Custom background
             ASSERT_TRUE(custom_output.find("Testing ANSI") != std::string::npos);           // Text content
-            
-            delete custom_result;
 
             // Test empty string handling
             GGUI::UTF empty_string("", {GGUI::COLOR::RED, GGUI::COLOR::BLACK});
-            auto* empty_result = empty_string.toSuperString();
-            std::string empty_output = empty_result->toString();
+            std::string empty_output = GGUI::toString(empty_string);
             
             // Should still contain color codes even with empty text
             ASSERT_TRUE(empty_output.find("\x1B[38;2;255;0;0m") != std::string::npos); // Red foreground
             ASSERT_TRUE(empty_output.find("\x1B[48;2;0;0;0m") != std::string::npos);   // Black background
             ASSERT_TRUE(empty_output.find("\x1B[0m") != std::string::npos);            // Reset
-            
-            delete empty_result;
         }
 
         static void test_utf_complex_color_combinations() {
             // Test with orange and teal combination
             GGUI::UTF orange_teal('*', {GGUI::COLOR::ORANGE, GGUI::COLOR::TEAL});
-            auto* result = orange_teal.toSuperString();
-            std::string output = result->toString();
+            std::string output = GGUI::toString(orange_teal);
             
             ASSERT_TRUE(output.find("\x1B[38;2;255;128;0m") != std::string::npos);  // Orange foreground
             ASSERT_TRUE(output.find("\x1B[48;2;0;128;128m") != std::string::npos);  // Teal background
             ASSERT_TRUE(output.find('*') != std::string::npos);                     // Character
-            
-            delete result;
 
             // Test with gray foreground and cyan background
             GGUI::UTF gray_cyan("TEST", {GGUI::COLOR::GRAY, GGUI::COLOR::CYAN});
-            auto* gray_result = gray_cyan.toSuperString();
-            std::string gray_output = gray_result->toString();
+            std::string gray_output = GGUI::toString(gray_cyan);
             
             ASSERT_TRUE(gray_output.find("\x1B[38;2;128;128;128m") != std::string::npos); // Gray foreground
             ASSERT_TRUE(gray_output.find("\x1B[48;2;0;255;255m") != std::string::npos);   // Cyan background
             ASSERT_TRUE(gray_output.find("TEST") != std::string::npos);                   // Text
-            
-            delete gray_result;
 
             // Test with identical foreground and background colors
             GGUI::UTF same_colors('H', {GGUI::COLOR::RED, GGUI::COLOR::RED});
-            auto* same_result = same_colors.toSuperString();
-            std::string same_output = same_result->toString();
+            std::string same_output = GGUI::toString(same_colors);
             
             // Both foreground and background should be red
             ASSERT_TRUE(same_output.find("\x1B[38;2;255;0;0m") != std::string::npos); // Red foreground
             ASSERT_TRUE(same_output.find("\x1B[48;2;255;0;0m") != std::string::npos); // Red background
             ASSERT_TRUE(same_output.find('H') != std::string::npos);                  // Character
-            
-            delete same_result;
         }
 
         static void test_utf_edge_case_colors() {
             // Test with extreme color values (black and white)
             GGUI::UTF black_white('B', {GGUI::COLOR::BLACK, GGUI::COLOR::WHITE});
-            auto* result = black_white.toSuperString();
-            std::string output = result->toString();
+            std::string output = GGUI::toString(black_white);
             
             ASSERT_TRUE(output.find("\x1B[38;2;0;0;0m") != std::string::npos);       // Black foreground
             ASSERT_TRUE(output.find("\x1B[48;2;255;255;255m") != std::string::npos); // White background
             ASSERT_TRUE(output.find('B') != std::string::npos);                      // Character
-            
-            delete result;
 
             // Test with custom RGB edge values (max values)
             GGUI::UTF max_colors('M', {GGUI::RGB(255, 255, 255), GGUI::RGB(0, 0, 0)});
-            auto* max_result = max_colors.toSuperString();
-            std::string max_output = max_result->toString();
+            std::string max_output = GGUI::toString(max_colors);
             
             ASSERT_TRUE(max_output.find("\x1B[38;2;255;255;255m") != std::string::npos); // Max RGB foreground
             ASSERT_TRUE(max_output.find("\x1B[48;2;0;0;0m") != std::string::npos);       // Min RGB background
             ASSERT_TRUE(max_output.find('M') != std::string::npos);                      // Character
             ASSERT_TRUE(max_output.find("\033[0m") != std::string::npos);                // Reset
-            
-            delete max_result;
 
             // Test with mid-range RGB values
             GGUI::UTF mid_colors("Mid", {GGUI::RGB(127, 127, 127), GGUI::RGB(128, 128, 128)});
-            auto* mid_result = mid_colors.toSuperString();
-            std::string mid_output = mid_result->toString();
+            std::string mid_output = GGUI::toString(mid_colors);
             
             ASSERT_TRUE(mid_output.find("\x1B[38;2;127;127;127m") != std::string::npos); // Mid-range foreground
             ASSERT_TRUE(mid_output.find("\x1B[48;2;128;128;128m") != std::string::npos); // Slightly different background
             ASSERT_TRUE(mid_output.find("Mid") != std::string::npos);                    // Text
-            
-            delete mid_result;
 
             // Test with zero RGB values
             GGUI::UTF zero_colors('0', {GGUI::RGB(0, 0, 0), GGUI::RGB(1, 1, 1)});
-            auto* zero_result = zero_colors.toSuperString();
-            std::string zero_output = zero_result->toString();
+            std::string zero_output = GGUI::toString(zero_colors);
             
             ASSERT_TRUE(zero_output.find("\x1B[38;2;0;0;0m") != std::string::npos); // Zero RGB foreground
             ASSERT_TRUE(zero_output.find("\x1B[48;2;1;1;1m") != std::string::npos); // Minimal RGB background
             ASSERT_TRUE(zero_output.find('0') != std::string::npos);                // Character
-            
-            delete zero_result;
         }
     };
 }

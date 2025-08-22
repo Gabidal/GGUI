@@ -763,7 +763,7 @@ namespace GGUI{
                         bool Create_New_Line = true;
 
                         // First check if there already is a report log.
-                        element* Error_Logger = INTERNAL::Main->getElement(ERROR_LOGGER);
+                        element* Error_Logger = getRoot()->getElement(ERROR_LOGGER);
 
                         if (Error_Logger){
                             // Get the list
@@ -829,12 +829,12 @@ namespace GGUI{
                                 ))
                             );
 
-                            INTERNAL::Main->addChild(Error_Logger);
+                            getRoot()->addChild(Error_Logger);
                         }
 
                         if (Create_New_Line){
                             // re-find the error_logger.
-                            Error_Logger = INTERNAL::Main->getElement(ERROR_LOGGER);
+                            Error_Logger = getRoot()->getElement(ERROR_LOGGER);
                             scrollView* History = (scrollView*)Error_Logger->getElement(HISTORY);
 
                             History->addChild(new listView(
@@ -938,7 +938,7 @@ namespace GGUI{
                     SleepTime = GGUI::TIME::MILLISECOND * 100;
                 }
 
-                INTERNAL::SLEEP(SleepTime);
+                SLEEP(SleepTime);
             }
         }
 

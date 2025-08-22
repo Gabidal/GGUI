@@ -7,6 +7,7 @@
 #include "superString.h"
 
 namespace GGUI {
+    // autoGen: Ignore start
     namespace INTERNAL {
 
         /**
@@ -129,6 +130,7 @@ namespace GGUI {
         };
 
     }
+    // autoGen: Ignore end
 }
 
 #endif

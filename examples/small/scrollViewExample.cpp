@@ -41,21 +41,21 @@ int main(){
         for (int i = 0; i < 10; i++){
 
             // getElements<>() will return all elements of the specified class type in the main window.
-            for (auto* scrollable : GGUI::INTERNAL::Main->getElements<scrollView>()){
+            for (auto* scrollable : GGUI::getRoot()->getElements<scrollView>()){
                 scrollable->scrollUp();
             }
             
-            GGUI::INTERNAL::SLEEP(16);
+            GGUI::SLEEP(16);
         }
 
         for (int i = 0; i < 10; i++){
 
             // getElements<>() will return all elements of the specified class type in the main window.
-            for (auto* scrollable : GGUI::INTERNAL::Main->getElements<scrollView>()){
+            for (auto* scrollable : GGUI::getRoot()->getElements<scrollView>()){
                 scrollable->scrollDown();
             }
 
-            GGUI::INTERNAL::SLEEP(16);
+            GGUI::SLEEP(16);
         }
     }
 }

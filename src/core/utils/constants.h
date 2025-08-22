@@ -374,6 +374,7 @@ namespace GGUI{
         static constexpr std::string_view MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
     };
 
+    // autoGen: Ignore start
     namespace INTERNAL{
         template <typename Key, typename Value, std::size_t N>
         struct arrayMap {
@@ -440,7 +441,8 @@ namespace GGUI{
             {KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN, constants::MOUSE_MIDDLE_SCROLL_DOWN},
         };
     }
-
+    // autoGen: Ignore end
+    
     namespace SYMBOLS{
         constexpr INTERNAL::compactString TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
         constexpr INTERNAL::compactString BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";

@@ -8,6 +8,6 @@ int main()
         GGUI::backgroundColor(GGUI::COLOR::BLACK)
     );
 
-    INTERNAL::SLEEP(10000);
-    INTERNAL::EXIT();
+    SLEEP(10000);
+    EXIT();
 }

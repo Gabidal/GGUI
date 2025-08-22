@@ -32,5 +32,5 @@ int main() {
         ))
     );
 
-    GGUI::INTERNAL::SLEEP(UINT32_MAX);
+    GGUI::SLEEP(UINT32_MAX);
 }

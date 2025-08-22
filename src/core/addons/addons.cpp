@@ -28,7 +28,7 @@ namespace GGUI{
 
         // Finally after all addons are loaded
         for (auto* a : Addons){
-            INTERNAL::Main->addChild(a);
+            getRoot()->addChild(a);
         }
     }
 
@@ -55,7 +55,7 @@ namespace GGUI{
         optimized = optimized.substr(0, optimized.find('.'));
 
         return  "Optimized: " + optimized + "%\n" + 
-                "Elements: " + std::to_string(INTERNAL::Main->getAllNestedElements().size()) + "\n" +
+                "Elements: " + std::to_string(getRoot()->getAllNestedElements().size()) + "\n" +
                 "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
                 "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
                 "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
@@ -72,13 +72,13 @@ namespace GGUI{
      */
     bool Update_Stats([[maybe_unused]] GGUI::event* Event){
         // Check if the inspect tool is displayed
-        element* Inspect_Tool = INTERNAL::Main->getElement("Inspect");
+        element* Inspect_Tool = getRoot()->getElement("Inspect");
 
         if (!Inspect_Tool || !Inspect_Tool->isDisplayed())
             return false;
 
         // find the stats element
-        textField* Stats = (textField*)INTERNAL::Main->getElement("STATS");
+        textField* Stats = (textField*)getRoot()->getElement("STATS");
 
         if (!Stats) // This normally should not happen, but can happen if main thread is lagging behind.
             return false;
@@ -143,7 +143,7 @@ namespace GGUI{
 
             onInit([](element* self){
                 // Register an event handler to toggle the inspect tool on and off
-                GGUI::INTERNAL::Main->on(constants::SHIFT | constants::CONTROL | constants::KEY_PRESS, [self](GGUI::event* e){
+                GGUI::getRoot()->on(constants::SHIFT | constants::CONTROL | constants::KEY_PRESS, [self](GGUI::event* e){
                     GGUI::input* input = (GGUI::input*)e;
 
                     // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool

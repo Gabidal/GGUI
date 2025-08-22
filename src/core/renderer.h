@@ -26,6 +26,7 @@
 //https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
 
+    // autoGen: Ignore start
     namespace INTERNAL{
         class bufferCapture;
 
@@ -117,16 +118,6 @@ namespace GGUI{
          */
         extern void initPlatformStuff();
         
-        
-        /**
-         * @brief Sleep for the specified amount of milliseconds.
-         * @details This function is used to pause the execution of the program for a specified amount of time.
-         *          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
-         *          while on Linux and macOS it calls the usleep function.
-         * @param mm The number of milliseconds to sleep.
-         */
-        void SLEEP(unsigned int milliseconds);
-        
         /**
          * @brief Renders the current frame to the console.
          * 
@@ -163,22 +154,6 @@ namespace GGUI{
          * @return None
          */
         extern void queryInputs();
-        
-        /**
-         * @brief Gracefully shuts down the application.
-         *
-         * This function performs a series of steps to gracefully shut down the application:
-         * 1. Logs the initiation of the termination process.
-         * 2. Signals subthreads to terminate.
-         * 3. Waits for all subthreads to join.
-         * 4. Reverts the console to its normal mode.
-         * 5. Cleans up platform-specific resources and settings.
-         * 6. Logs the successful shutdown of the application.
-         * 7. Exits the application with the specified exit code.
-         *
-         * @param signum The exit code to be used when terminating the application.
-         */
-        extern void EXIT(int Signum = 0);
 
         extern void waitForThreadTermination();
 
@@ -355,6 +330,39 @@ namespace GGUI{
          */
         extern void informAllGlobalBufferCaptures(bufferCapture* informer);
     }
+    // autoGen: Ignore end
+    
+    /**
+     * @brief Sleep for the specified amount of milliseconds.
+     * @details This function is used to pause the execution of the program for a specified amount of time.
+     *          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
+     *          while on Linux and macOS it calls the usleep function.
+     * @param mm The number of milliseconds to sleep.
+     */
+    extern void SLEEP(unsigned int milliseconds);
+
+    /**
+     * @brief Gracefully shuts down the application.
+     *
+     * This function performs a series of steps to gracefully shut down the application:
+     * 1. Logs the initiation of the termination process.
+     * 2. Signals subthreads to terminate.
+     * 3. Waits for all subthreads to join.
+     * 4. Reverts the console to its normal mode.
+     * 5. Cleans up platform-specific resources and settings.
+     * 6. Logs the successful shutdown of the application.
+     * 7. Exits the application with the specified exit code.
+     *
+     * @param signum The exit code to be used when terminating the application.
+     */
+    extern void EXIT(int Signum = 0);
+
+    /**
+     * @brief Returns the Main element of the GGUI system.
+     * @details This function returns the main element of the GGUI system, which is the root element of the GUI.
+     * @return A pointer to the main element of the GGUI system.
+     */
+    extern element* getRoot();
 
     /**
      * @brief Updates the frame.
@@ -423,7 +431,7 @@ namespace GGUI{
      */
     template<typename T>
     std::vector<T*> getElements(){
-        return INTERNAL::Main->getElements<T>();
+        return getRoot()->getElements<T>();
     }
 }
 

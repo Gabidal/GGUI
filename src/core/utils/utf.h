@@ -148,6 +148,8 @@ namespace GGUI{
             compactString::operator=(other);
         }
 
+        // autoGen: Ignore start
+
         /**
          * @brief Converts the UTF character to a Super_String.
          * @param Result The result string.
@@ -186,6 +188,8 @@ namespace GGUI{
             INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
         ) const;
 
+        // autoGen: Ignore end
+
         /**
          * @brief Assign a character to the UTF object.
          * @param text The character to assign.
@@ -215,6 +219,7 @@ namespace GGUI{
         inline const UTF EMPTY_UTF(' ', {COLOR::WHITE, COLOR::BLACK});
     }
 
+    // autoGen: Ignore start
     namespace INTERNAL {
         // Precompute and store the two overhead strings at startup.
         constexpr const INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> makeOverhead(bool isText) {
@@ -227,6 +232,7 @@ namespace GGUI{
         static const INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> textOverheadPrecompute  = makeOverhead(true);
         static const  INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> backgroundOverheadPrecompute  = makeOverhead(false);
     }
+    // autoGen: Ignore end
 }
 
 #endif

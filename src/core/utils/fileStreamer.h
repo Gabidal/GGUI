@@ -80,6 +80,11 @@ namespace GGUI{
      */
     extern bool hasStartedAsTTY();
 
+    namespace INTERNAL {
+        class bufferCapture;
+    }
+
+    // autoGen: Ignore start
     namespace INTERNAL{
         // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.
         // These black boxes work like Stack Frames, where the data collected will be deleted when the current "Frame" capturer is destructed.
@@ -212,6 +217,7 @@ namespace GGUI{
         };
 
     }
+    // autoGen: Ignore end
 
     enum class FILE_STREAM_TYPE{
         UN_INITIALIZED  = 0 << 0,
@@ -316,12 +322,7 @@ namespace GGUI{
          * If read_from_std_cout is true, the event handler is added to the list of event handlers of the Buffer_Capture object.
          * Otherwise, the event handler is added to the list of event handlers of this FILE_STREAM object.
          */
-        void Add_On_Change_Handler(std::function<void()> on_change){
-            if (Buffer_Capture)
-                Buffer_Capture->addOnChangeHandler(on_change);
-            else
-                On_Change.push_back(on_change);
-        }
+        void Add_On_Change_Handler(std::function<void()> on_change);
 
         /**
          * @brief Checks if the file stream is a std::cout stream.

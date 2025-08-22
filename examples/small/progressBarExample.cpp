@@ -15,11 +15,11 @@ float getRandomFloat(float min, float max) {
 
 void update(){
     while (true){
-        for (auto* i : GGUI::INTERNAL::Main->getElements<Bar>()){
+        for (auto* i : GGUI::getRoot()->getElements<Bar>()){
             i->updateProgress(getRandomFloat(0.00005f, 0.05f));     // use negative percentage to go backwards if for some reason needed.
         }
 
-        GGUI::INTERNAL::SLEEP(100);
+        GGUI::SLEEP(100);
     }
 }
 

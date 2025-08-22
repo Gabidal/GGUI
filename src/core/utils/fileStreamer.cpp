@@ -139,6 +139,20 @@ namespace GGUI{
         }
     }
 
+    /**
+     * @brief Adds a new event handler to the list of event handlers for this file.
+     * @param on_change The function to be called when the file changes.
+     * 
+     * This function adds a new event handler to the list of event handlers for this file.
+     * If read_from_std_cout is true, the event handler is added to the list of event handlers of the Buffer_Capture object.
+     * Otherwise, the event handler is added to the list of event handlers of this FILE_STREAM object.
+     */
+    void fileStream::Add_On_Change_Handler(std::function<void()> on_change){
+        if (Buffer_Capture)
+            Buffer_Capture->addOnChangeHandler(on_change);
+        else
+            On_Change.push_back(on_change);
+    }
 
     /**
      * @brief Constructor of the FILE_STREAM class.

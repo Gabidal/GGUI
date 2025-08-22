@@ -11,6 +11,6 @@ int main() {
         GGUI::backgroundColor(GGUI::COLOR::BLACK)
     );
 
-    GGUI::INTERNAL::SLEEP(UINT32_MAX);
+    GGUI::SLEEP(UINT32_MAX);
 }
 

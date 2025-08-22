@@ -19,6 +19,7 @@ namespace GGUI{
     class UTF;
     class RGB;
 
+    // autoGen: Ignore start
     namespace INTERNAL{
         extern std::string constructLoggerFileName();
 
@@ -426,6 +427,9 @@ namespace GGUI{
             return result;
         }
     }
+    // autoGen: Ignore end
+
+    extern std::string toString(UTF coloredText);
 }
 
 #endif
