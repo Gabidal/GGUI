@@ -562,12 +562,12 @@ namespace GGUI{
             reference = getReference(owner);
         }
 
-        position previous_value = Position;
+        IVector3 previous_value = Position.get();
 
         Position.evaluate(owner->getDirectStyle(), reference);
 
         // check if position is still the same
-        return previous_value != Position;
+        return previous_value != Position.get();
     }
 
     bool styling::evaluateDynamicDimensions(element* owner, styling* reference){
@@ -575,14 +575,14 @@ namespace GGUI{
             reference = getReference(owner);
         }
 
-        width previous_width = Width;
-        height previous_height = Height;
+        int previous_width = Width.get();
+        int previous_height = Height.get();
 
         Width.evaluate(owner->getDirectStyle(), reference);
         Height.evaluate(owner->getDirectStyle(), reference);
 
         // check if width or height is still the same
-        return previous_width != Width || previous_height != Height;
+        return previous_width != Width.get() || previous_height != Height.get();
     }
 
     bool styling::evaluateDynamicBorder(element* owner, styling* reference){
@@ -590,12 +590,12 @@ namespace GGUI{
             reference = getReference(owner);
         }
 
-        enableBorder previous_value = Border_Enabled;
+        bool previous_value = Border_Enabled.value;
 
         Border_Enabled.evaluate(owner->getDirectStyle(), reference);
 
         // check if border is still the same
-        return previous_value != Border_Enabled;
+        return previous_value != Border_Enabled.value;
     }
 
     bool styling::evaluateDynamicColors(element* owner, styling* reference){

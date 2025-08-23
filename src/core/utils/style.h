@@ -1139,7 +1139,7 @@ namespace GGUI{
             transformCenterToTopLeftOrigin();
         }
 
-        inline ~position() override { styleBase::~styleBase(); }
+        inline ~position() override { vectorValue::~vectorValue(); }
 
         inline styleBase* copy() const override {
             return new position(*this);
@@ -1183,7 +1183,7 @@ namespace GGUI{
         // When this is used we should automatically disable AllowDynamicSize
         constexpr width(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
 
-        inline ~width() override { styleBase::~styleBase(); }
+        inline ~width() override { numberValue::~numberValue(); }
 
         inline styleBase* copy() const override {
             return new width(*this);
@@ -1213,7 +1213,7 @@ namespace GGUI{
         // When this is used we should automatically disable AllowDynamicSize
         constexpr height(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : numberValue(Value, Default){}
 
-        inline ~height() override { styleBase::~styleBase(); }
+        inline ~height() override { numberValue::~numberValue(); }
 
         inline styleBase* copy() const override {
             return new height(*this);
@@ -1244,7 +1244,7 @@ namespace GGUI{
 
         constexpr enableBorder(const GGUI::enableBorder& other) : boolValue(other.value, other.status){}
 
-        inline ~enableBorder() override { styleBase::~styleBase(); }
+        inline ~enableBorder() override { boolValue::~boolValue(); }
 
         inline styleBase* copy() const override {
             return new enableBorder(*this);
@@ -1274,7 +1274,7 @@ namespace GGUI{
 
         constexpr textColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~textColor() override { styleBase::~styleBase(); }
+        inline ~textColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new textColor(*this);
@@ -1298,7 +1298,7 @@ namespace GGUI{
 
         constexpr backgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~backgroundColor() override { styleBase::~styleBase(); }
+        inline ~backgroundColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new backgroundColor(*this);
@@ -1322,7 +1322,7 @@ namespace GGUI{
 
         constexpr borderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~borderColor() override { styleBase::~styleBase(); }
+        inline ~borderColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new borderColor(*this);
@@ -1346,7 +1346,7 @@ namespace GGUI{
 
         constexpr borderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~borderBackgroundColor() override { styleBase::~styleBase(); }
+        inline ~borderBackgroundColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new borderBackgroundColor(*this);
@@ -1370,7 +1370,7 @@ namespace GGUI{
 
         constexpr hoverBorderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hoverBorderColor() override { styleBase::~styleBase(); }
+        inline ~hoverBorderColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new hoverBorderColor(*this);
@@ -1394,7 +1394,7 @@ namespace GGUI{
 
         constexpr hoverTextColor(const float  relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hoverTextColor() override { styleBase::~styleBase(); }
+        inline ~hoverTextColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new hoverTextColor(*this);
@@ -1418,7 +1418,7 @@ namespace GGUI{
 
         constexpr hoverBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hoverBackgroundColor() override { styleBase::~styleBase(); }
+        inline ~hoverBackgroundColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new hoverBackgroundColor(*this);
@@ -1442,7 +1442,7 @@ namespace GGUI{
 
         constexpr hoverBorderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~hoverBorderBackgroundColor() override { styleBase::~styleBase(); }
+        inline ~hoverBorderBackgroundColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new hoverBorderBackgroundColor(*this);
@@ -1466,7 +1466,7 @@ namespace GGUI{
 
         constexpr focusBorderColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focusBorderColor() override { styleBase::~styleBase(); }
+        inline ~focusBorderColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new focusBorderColor(*this);
@@ -1490,7 +1490,7 @@ namespace GGUI{
 
         constexpr focusTextColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focusTextColor() override { styleBase::~styleBase(); }
+        inline ~focusTextColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new focusTextColor(*this);
@@ -1514,7 +1514,7 @@ namespace GGUI{
 
         constexpr focusBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focusBackgroundColor() override { styleBase::~styleBase(); }
+        inline ~focusBackgroundColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new focusBackgroundColor(*this);
@@ -1538,7 +1538,7 @@ namespace GGUI{
 
         constexpr focusBorderBackgroundColor(const float relative_percentage, const VALUE_STATE Default = VALUE_STATE::VALUE) : RGBValue(relative_percentage, Default){}
 
-        inline ~focusBorderBackgroundColor() override { styleBase::~styleBase(); }
+        inline ~focusBorderBackgroundColor() override { RGBValue::~RGBValue(); }
 
         inline styleBase* copy() const override {
             return new focusBorderBackgroundColor(*this);
@@ -1656,7 +1656,7 @@ namespace GGUI{
     public:
         constexpr flowPriority(const DIRECTION Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : enumValue(Value, Default){}
 
-        inline ~flowPriority() override { styleBase::~styleBase(); }
+        inline ~flowPriority() override { enumValue<DIRECTION>::~enumValue<DIRECTION>(); }
 
         inline styleBase* copy() const override {
             return new flowPriority(*this);
@@ -1678,7 +1678,7 @@ namespace GGUI{
     public:
         constexpr wrap(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~wrap() override { styleBase::~styleBase(); }
+        inline ~wrap() override { boolValue::~boolValue(); }
 
         inline styleBase* copy() const override {
             return new wrap(*this);
@@ -1700,7 +1700,7 @@ namespace GGUI{
     public:
         constexpr allowOverflow(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~allowOverflow() override { styleBase::~styleBase(); }
+        inline ~allowOverflow() override { boolValue::~boolValue(); }
 
         inline styleBase* copy() const override {
             return new allowOverflow(*this);
@@ -1722,7 +1722,7 @@ namespace GGUI{
     public:
         constexpr allowDynamicSize(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~allowDynamicSize() override { styleBase::~styleBase(); }
+        inline ~allowDynamicSize() override { boolValue::~boolValue(); }
 
         inline styleBase* copy() const override {
             return new allowDynamicSize(*this);
@@ -1822,7 +1822,7 @@ namespace GGUI{
     public:
         constexpr allowScrolling(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~allowScrolling() override { styleBase::~styleBase(); }
+        inline ~allowScrolling() override { boolValue::~boolValue(); }
 
         inline styleBase* copy() const override {
             return new allowScrolling(*this);
@@ -1844,7 +1844,7 @@ namespace GGUI{
     public:
         constexpr anchor(const ANCHOR Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : enumValue(Value, Default){}
 
-        inline ~anchor() override { styleBase::~styleBase(); }
+        inline ~anchor() override { enumValue<ANCHOR>::~enumValue<ANCHOR>(); }
 
         inline styleBase* copy() const override {
             return new anchor(*this);
@@ -2119,7 +2119,7 @@ namespace GGUI{
     public:
         constexpr display(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : boolValue(Value, Default){}
 
-        inline ~display() override { styleBase::~styleBase(); }
+        inline ~display() override { boolValue::~boolValue(); }
 
         inline styleBase* copy() const override {
             return new display(*this);

@@ -102,7 +102,9 @@ namespace GGUI{
                         }
                     }
                     else{
+                    #ifdef GGUI_DEBUG
                         LOGGER::Log("Saved frame");
+                    #endif
 
                         if (SETTINGS::enableDRM) {
                             std::vector<UTF> empty;
