@@ -938,7 +938,7 @@ namespace GGUI{
                     SleepTime = GGUI::TIME::MILLISECOND * 100;
                 }
 
-                SLEEP(SleepTime);
+                std::this_thread::sleep_for(std::chrono::milliseconds(SleepTime));
             }
         }
 

@@ -8,6 +8,6 @@ int main()
         GGUI::backgroundColor(GGUI::COLOR::BLACK)
     );
 
-    SLEEP(10000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXIT();
 }

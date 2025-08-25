@@ -1,4 +1,4 @@
-#include "ggui.h"
+#include <GGUI.h>
 
 using namespace GGUI;
 
@@ -8,10 +8,10 @@ int main()
         childs({
             new listView(
                 childs({
-                    new button(text("File")),
-                    new button(text("Edit") | onClick([]([[maybe_unused]] element* self){ return true; })),
-                    new button(text("View") | onClick([]([[maybe_unused]] element* self){ return true; })),
-                    new button(text("Help") | onClick([]([[maybe_unused]] element* self){ return true; }))
+                    new textField(text("File")),
+                    new textField(text("Edit") | onClick([]([[maybe_unused]] element* self){ return true; })),
+                    new textField(text("View") | onClick([]([[maybe_unused]] element* self){ return true; })),
+                    new textField(text("Help") | onClick([]([[maybe_unused]] element* self){ return true; }))
                 }) |
                 enableBorder(true)
             ),
@@ -32,5 +32,5 @@ int main()
         enableBorder(true) 
     );
 
-    GGUI::SLEEP(UINT32_MAX);
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
 }

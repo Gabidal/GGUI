@@ -1,4 +1,4 @@
-#include "ggui.h"
+#include <GGUI.h>
 
 using namespace GGUI;
 
@@ -24,5 +24,5 @@ int main(){
     );
 
     // You can also use the GGUI's internal sleep function to wait.
-    GGUI::SLEEP(INT32_MAX);
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
 }

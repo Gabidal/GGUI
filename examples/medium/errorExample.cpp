@@ -1,4 +1,4 @@
-#include "ggui.h"
+#include <GGUI.h>
 
 #include <vector>
 
@@ -24,26 +24,26 @@ void foo(element* self){
         C->updatePosition(C_velocity);
 
         // Check if any window hits an edge and reverse its direction
-        if (A->getPosition().X <= 0 || A->getPosition().X + A->getProcessedWidth() >= self->getWidth())
+        if (A->getPosition().X <= 0 || A->getPosition().X + A->getWidth() >= self->getWidth())
             A_velocity.X = -A_velocity.X;
-        if (A->getPosition().Y <= 0 || A->getPosition().Y + A->getProcessedHeight() >= self->getHeight())
+        if (A->getPosition().Y <= 0 || A->getPosition().Y + A->getHeight() >= self->getHeight())
             A_velocity.Y = -A_velocity.Y;
 
-        if (B->getPosition().X <= 0 || B->getPosition().X + B->getProcessedWidth() >= self->getWidth())
+        if (B->getPosition().X <= 0 || B->getPosition().X + B->getWidth() >= self->getWidth())
             B_velocity.X = -B_velocity.X;
-        if (B->getPosition().Y <= 0 || B->getPosition().Y + B->getProcessedHeight() >= self->getHeight())
+        if (B->getPosition().Y <= 0 || B->getPosition().Y + B->getHeight() >= self->getHeight())
             B_velocity.Y = -B_velocity.Y;
 
-        if (C->getPosition().X <= 0 || C->getPosition().X + C->getProcessedWidth() >= self->getWidth())
+        if (C->getPosition().X <= 0 || C->getPosition().X + C->getWidth() >= self->getWidth())
             C_velocity.X = -C_velocity.X;
-        if (C->getPosition().Y <= 0 || C->getPosition().Y + C->getProcessedHeight() >= self->getHeight())
+        if (C->getPosition().Y <= 0 || C->getPosition().Y + C->getHeight() >= self->getHeight())
             C_velocity.Y = -C_velocity.Y;
 
         GGUI::report(to_string(A->getPosition().X));
         resumeGGUI();
 
         // press 'CTRL + SHIFT + I' to open the inspect window. 
-        GGUI::SLEEP(16);
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 }
 
@@ -80,5 +80,5 @@ int main(){
         name("Main window")
     );
 
-    GGUI::SLEEP(INT32_MAX);
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
 }

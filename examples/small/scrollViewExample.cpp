@@ -1,4 +1,4 @@
-#include "ggui.h"
+#include <GGUI.h>
 
 using namespace GGUI;
 
@@ -45,7 +45,7 @@ int main(){
                 scrollable->scrollUp();
             }
             
-            GGUI::SLEEP(16);
+            std::this_thread::sleep_for(std::chrono::milliseconds(16));
         }
 
         for (int i = 0; i < 10; i++){
@@ -55,7 +55,7 @@ int main(){
                 scrollable->scrollDown();
             }
 
-            GGUI::SLEEP(16);
+            std::this_thread::sleep_for(std::chrono::milliseconds(16));
         }
     }
 }

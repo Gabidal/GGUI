@@ -19,21 +19,6 @@
 #if _WIN32
     #include <windows.h>
     #include <dbghelp.h>
-
-    namespace GGUI {
-        /**
-         * @brief Sleep for the specified amount of milliseconds.
-         * 
-         * This function pauses the execution of the current thread for the specified
-         * duration in milliseconds.
-         * 
-         * @param mm The number of milliseconds to sleep.
-         */
-        void SLEEP(unsigned int mm){
-            // Sleep for the specified amount of milliseconds.
-            Sleep(mm);
-        }
-    }
 #else
     #include <sys/ioctl.h>
     #include <signal.h>
@@ -42,32 +27,6 @@
     #include <sys/uio.h> // Needed for writev
     #include <cstring>
     #include <poll.h>
-
-    namespace GGUI {
-        /**
-         * @brief Suspends the execution of the calling thread for a specified duration.
-         *
-         * This function uses the nanosleep system call to suspend the execution of the calling thread
-         * for the specified number of milliseconds. It repeatedly calls nanosleep until the entire
-         * sleep duration has elapsed.
-         *
-         * @param mm The number of milliseconds to sleep.
-         */
-        void SLEEP(unsigned int mm){
-            // Define timespec structure for the required sleep duration
-            struct timespec req = {0, 0};
-            // Calculate seconds from milliseconds
-            time_t sec = (int)(mm / 1000);
-            // Calculate remaining milliseconds
-            mm = mm - (sec * 1000);
-            // Set the seconds and nanoseconds in the timespec structure
-            req.tv_sec = sec;
-            req.tv_nsec = mm * 1000000L;
-            // Repeatedly call nanosleep until the sleep duration is fully elapsed
-            while(nanosleep(&req, &req) == -1)
-                continue;
-        }
-    }
 #endif
 
 namespace GGUI{
@@ -2406,7 +2365,7 @@ namespace GGUI{
         getRoot()->check(INTERNAL::STATE::INIT);
 
         // Sleep for the given amount of milliseconds.
-        SLEEP(Sleep_For);
+        std::this_thread::sleep_for(std::chrono::milliseconds(Sleep_For));
     }
 
     /**

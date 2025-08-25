@@ -1,4 +1,4 @@
-#include "ggui.h"
+#include <GGUI.h>
 
 #include <vector>
 
@@ -34,7 +34,7 @@ node initMenu(){
         flowPriority(DIRECTION::COLUMN) |
         width(1.0f) | height(1.0f) | 
         name(MENU_NAME) | 
-        node(new button(
+        node(new textField(
             text(CAMPAIGN_NAME) | 
             onClick([]([[maybe_unused]] element* self){
                 self->focus();
@@ -42,7 +42,7 @@ node initMenu(){
                 return true;
             })
         )) | 
-        node(new button(
+        node(new textField(
             text(EXIT_NAME) | 
             onClick([]([[maybe_unused]] element* self){
                 EXIT();
@@ -99,5 +99,5 @@ int main(){
         initMenu() | initCampaign()
     );
 
-    GGUI::SLEEP(UINT32_MAX);
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
 }

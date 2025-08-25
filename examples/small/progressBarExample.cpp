@@ -1,4 +1,4 @@
-#include "ggui.h"
+#include <GGUI.h>
 
 using namespace GGUI;
 using namespace progress;
@@ -19,7 +19,7 @@ void update(){
             i->updateProgress(getRandomFloat(0.00005f, 0.05f));     // use negative percentage to go backwards if for some reason needed.
         }
 
-        GGUI::SLEEP(100);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 

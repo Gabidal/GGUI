@@ -337,15 +337,6 @@ namespace GGUI{
      * @details Callbacks are executed after internal threads are joined but before terminal state is restored.
      */
     extern void registerCleanupCallback(std::function<void()> Callback);
-    
-    /**
-     * @brief Sleep for the specified amount of milliseconds.
-     * @details This function is used to pause the execution of the program for a specified amount of time.
-     *          It is implemented differently for each platform, so on Windows, it calls the Sleep function,
-     *          while on Linux and macOS it calls the usleep function.
-     * @param mm The number of milliseconds to sleep.
-     */
-    extern void SLEEP(unsigned int milliseconds);
 
     /**
      * @brief Gracefully shuts down the application.

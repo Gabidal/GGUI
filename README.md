@@ -2,7 +2,7 @@
 
 ### Hello World example
 ```C++
-#include "ggui.h"
+#include <GGUI.h>
 
 using namespace GGUI;
 

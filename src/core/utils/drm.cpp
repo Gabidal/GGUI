@@ -376,10 +376,10 @@ namespace GGUI {
                 if (!DRMConnection.Send(packetBuffer.data(), packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
                     GGUI::INTERNAL::LOGGER::Log("Failed to send draw buffer header");
 
-                    SLEEP(TIME::SECOND);    // Wait for the cleanup of tcp packages in the DRM backend
+                    std::this_thread::sleep_for(std::chrono::milliseconds(TIME::SECOND)); // Wait for the cleanup of tcp packages in the DRM backend
                 }
 
-                SLEEP(tcp::pollingRate);
+                std::this_thread::sleep_for(std::chrono::milliseconds(tcp::pollingRate));
             }
 
             void retryDRMConnect() {

@@ -32,5 +32,5 @@ int main() {
         ))
     );
 
-    GGUI::SLEEP(UINT32_MAX);
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
 }
