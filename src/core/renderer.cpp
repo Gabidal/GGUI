@@ -2281,8 +2281,8 @@ namespace GGUI{
      */
     void pauseGGUI(){
         std::unique_lock lock(INTERNAL::atomic::Mutex);
-
-        // Already paused via upper scope.
+        
+        // Already paused via upper scope or if the rendering system hasn't been initialized yet, just no-op.
         if (INTERNAL::atomic::LOCKED++ > 0 || INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::NOT_INITIALIZED)
             return;
 
@@ -2298,8 +2298,13 @@ namespace GGUI{
      * @param restore_render_to The status to restore the rendering thread to.
      */
     void resumeGGUI(){
+        // If not initialized, simply reset LOCKED counter (if needed) and no-op.
+        if (INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::NOT_INITIALIZED){
+            INTERNAL::atomic::LOCKED = 0; // Safety: ensure clean state for unit tests.
+            return;
+        }
+
         {
-            // Local scope to set the new render status.
             std::unique_lock lock(INTERNAL::atomic::Mutex);
 
             if (--INTERNAL::atomic::LOCKED > 0)
@@ -2320,6 +2325,12 @@ namespace GGUI{
      * @param f The function to call.
      */
     void pauseGGUI(std::function<void()> f){
+        // Fast path: if rendering thread not initialized (e.g. unit tests constructing elements only), just execute.
+        if (INTERNAL::atomic::Pause_Render_Thread == INTERNAL::atomic::status::NOT_INITIALIZED){
+            f();
+            return;
+        }
+
         pauseGGUI();
 
         try{

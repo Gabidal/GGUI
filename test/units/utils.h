@@ -16,9 +16,7 @@ namespace tester {
         std::string colorText(const char* text, GGUI::RGB color) {
             GGUI::UTF result = GGUI::UTF(text, {color, {}});
 
-            result.flags = GGUI::INTERNAL::ENCODING_FLAG::START | GGUI::INTERNAL::ENCODING_FLAG::END;
-
-            return GGUI::toString(result);
+            return GGUI::toString(result, true);
         }
 
         // Test statistics

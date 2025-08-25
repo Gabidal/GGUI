@@ -518,7 +518,7 @@ namespace GGUI{
 
     }
 
-    std::string toString(UTF coloredText) {
-        return coloredText.toSuperString()->toString();
+    std::string toString(UTF coloredText, bool transparentBackground) {
+        return coloredText.toSuperString(transparentBackground)->toString();
     }
 }

@@ -25,6 +25,7 @@
  */
 void GGUI::UTF::toSuperString(
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
+    bool TransparentBackground,
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
@@ -34,17 +35,23 @@ void GGUI::UTF::toSuperString(
     foreground.getOverHeadAsSuperString(Text_Overhead, true);
     // Get the foreground colour as a string
     foreground.getColourAsSuperString(Text_Colour);
-    // Get the background colour and style as a string
-    background.getOverHeadAsSuperString(Background_Overhead, false);
-    // Get the background colour as a string
-    background.getColourAsSuperString(Background_Colour);
+
+    if (!TransparentBackground) {
+        // Get the background colour and style as a string
+        background.getOverHeadAsSuperString(Background_Overhead, false);
+        // Get the background colour as a string
+        background.getColourAsSuperString(Background_Colour);
+    }
 
     Result->add(Text_Overhead);
     Result->add(Text_Colour);
     Result->add(constants::ANSI::END_COMMAND);
-    Result->add(Background_Overhead);
-    Result->add(Background_Colour);
-    Result->add(constants::ANSI::END_COMMAND);
+    
+    if (!TransparentBackground) {
+        Result->add(Background_Overhead);
+        Result->add(Background_Colour);
+        Result->add(constants::ANSI::END_COMMAND);
+    }
 
     if (is(INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE)){
         // Add the const char* to the Result

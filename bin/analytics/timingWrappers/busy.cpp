@@ -12,7 +12,6 @@ int main() {
     GGUI::GGUI(
         // Animated canvas
         node(new canvas(
-            // Set the canvas to third of screen size. 30%
             width(1.0f) | height(1.0f) | position(STYLES::left) |
 
             // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.

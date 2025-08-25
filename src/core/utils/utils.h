@@ -429,7 +429,7 @@ namespace GGUI{
     }
     // autoGen: Ignore end
 
-    extern std::string toString(UTF coloredText);
+    extern std::string toString(UTF coloredText, bool transparentBackground = false);
 }
 
 #endif
