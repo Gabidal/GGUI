@@ -33,28 +33,6 @@
             // Sleep for the specified amount of milliseconds.
             Sleep(mm);
         }
-
-        namespace INTERNAL {
-            extern void EXIT(int signum);
-        }
-
-        /**
-         * @brief Gracefully shuts down the application.
-         *
-         * This function performs a series of steps to gracefully shut down the application:
-         * 1. Logs the initiation of the termination process.
-         * 2. Signals subthreads to terminate.
-         * 3. Waits for all subthreads to join.
-         * 4. Reverts the console to its normal mode.
-         * 5. Cleans up platform-specific resources and settings.
-         * 6. Logs the successful shutdown of the application.
-         * 7. Exits the application with the specified exit code.
-         *
-         * @param signum The exit code to be used when terminating the application.
-         */
-        void EXIT(int signum){
-            INTERNAL::EXIT(signum);
-        }
     }
 #else
     #include <sys/ioctl.h>
@@ -89,28 +67,32 @@
             while(nanosleep(&req, &req) == -1)
                 continue;
         }
-
-        namespace INTERNAL {
-            extern void Cleanup();
-        }
-
-        /**
-         * @brief De-initializes platform-specific settings and resources and exits the application.
-         * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
-         *          It ensures that any platform-specific settings are reset before the application exits.
-         * @param signum The exit code for the application.
-         */
-        void EXIT(int signum){
-            INTERNAL::Cleanup();
-            // Exit the application with the specified exit code
-            exit(signum);
-        }
     }
 #endif
 
 namespace GGUI{
+
+    // User provided cleanup callbacks.
+    static std::vector<std::function<void()>> User_Cleanup_Callbacks;
+    void registerCleanupCallback(std::function<void()> Callback) {
+        User_Cleanup_Callbacks.push_back(Callback);
+    }
+
     namespace INTERNAL{
         std::vector<UTF>* Abstract_Frame_Buffer = nullptr;              // 2D clean vector without bold nor color
+        struct platformState {
+            bool Screen_Capture_Enabled = false;
+            bool Alternative_Screen_Enabled = false;
+            bool Mouse_Reporting_Enabled = false;
+            bool Cursor_Hidden = false;
+            bool Raw_Mode_Enabled = false;          // POSIX only
+            bool Initialized = false;
+#if _WIN32
+            unsigned long Previous_Windows_Codepage = 0;
+#endif
+            bool De_Initialized = false;
+        } Platform_State;
+
         std::string* Frame_Buffer;                                      // string with bold and color, this what gets drawn to console.
 
         // For threading system
@@ -226,58 +208,60 @@ namespace GGUI{
          * - Flushes the output to ensure all data is written to the console.
          */
         void De_Initialize(){
-            // Clean up file stream handles
-            for (auto File_Handle : File_Streamer_Handles){
-                File_Handle.second->~fileStream(); // Manually call destructor to release resources
-            }
+            if (Platform_State.De_Initialized)
+                return; // Guard against double execution.
 
+            // Execute user-provided cleanup callbacks first (they may rely on live terminal state).
+            for (auto& Callback : User_Cleanup_Callbacks){
+                if (Callback) Callback();
+            }
+            User_Cleanup_Callbacks.clear();
+
+            // File_Streamer_Handles now holds unique_ptr; clearing map will destroy streams.
             File_Streamer_Handles.clear();
 
             // Restore previous console modes
             SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
             SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
 
-            // Disable specific ANSI features and restore screen
-            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
-            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
-            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
+            // Restore code page if it was changed
+            if (Platform_State.Previous_Windows_Codepage != 0){
+                SetConsoleOutputCP(Platform_State.Previous_Windows_Codepage);
+            }
+
+            // Symmetric disabling of features we enabled.
+            if (Platform_State.Cursor_Hidden)
+                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
+            if (Platform_State.Mouse_Reporting_Enabled)
+                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+            if (Platform_State.Screen_Capture_Enabled)
+                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
+            if (Platform_State.Alternative_Screen_Enabled)
+                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
+
+            // Reset all SGR (text style / color) attributes so the parent shell is not left with altered colors.
+            std::cout << GGUI::constants::ANSI::Enable_SGR_Feature(GGUI::constants::ANSI::RESET_SGR).toString();
+            // We don't want to touch the cursor shape.
             std::cout << std::flush; // Ensure all output is flushed to console
+
+            Platform_State.De_Initialized = true;
         }
 
-        /**
-         * @brief Gracefully shuts down the application.
-         *
-         * This function performs a series of steps to gracefully shut down the application:
-         * 1. Logs the initiation of the termination process.
-         * 2. Signals subthreads to terminate.
-         * 3. Waits for all subthreads to join.
-         * 4. Reverts the console to its normal mode.
-         * 5. Cleans up platform-specific resources and settings.
-         * 6. Logs the successful shutdown of the application.
-         * 7. Exits the application with the specified exit code.
-         *
-         * @param signum The exit code to be used when terminating the application.
-         */
-        void EXIT(int signum){
+        void Cleanup(){
             if (!Carry_Flags.read().Terminate){
                 waitForThreadTermination();
 
                 // Join the threads
                 for (auto& thread : Sub_Threads){
-                    if (thread.joinable()){
-                        thread.join();
-                    }
+                    if (thread.joinable()) thread.join();
                 }
 
                 LOGGER::Log("Reverting to normal console mode...");
 
-                // Clean up platform-specific resources and settings
+                // Clean up platform-specific resources and settings (idempotent)
                 De_Initialize();
 
                 LOGGER::Log("GGUI shutdown successful.");
-
-                // Exit the application with the specified exit code
-                exit(signum);
             }
         }
 
@@ -619,17 +603,23 @@ namespace GGUI{
             GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &PREVIOUS_CONSOLE_OUTPUT_STATE);
             GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
 
-            // Set new console modes with extended flags, mouse, and window input enabled.
-            SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, -1);
+            // Set new console modes with extended flags, mouse, and window input enabled (preserve existing output mode flags).
+            DWORD Current_Output_Mode = 0;
+            GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &Current_Output_Mode);
+            // We do not forcibly overwrite output mode with -1. Input mode is extended for mouse + window events.
             SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_PROCESSED_INPUT);
 
-            // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
-            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString() 
-                    << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
-            std::cout.flush();
+            // Capture previous code page and switch to UTF-8 if different.
+            Platform_State.Previous_Windows_Codepage = GetConsoleOutputCP();
+            if (Platform_State.Previous_Windows_Codepage != (unsigned long)ENABLE_UTF8_MODE_FOR_WINDOWS)
+                SetConsoleOutputCP(ENABLE_UTF8_MODE_FOR_WINDOWS);
 
-            // Set the console output code page to UTF-8 mode.
-            SetConsoleOutputCP(ENABLE_UTF8_MODE_FOR_WINDOWS);
+            // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+            Platform_State.Mouse_Reporting_Enabled = true;
+            std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
+            Platform_State.Cursor_Hidden = true;
+            std::cout.flush();
 
             // Critical error handlers.
             SetUnhandledExceptionFilter(Critical_Error_Handler);
@@ -655,6 +645,7 @@ namespace GGUI{
 
             // Mark the platform as initialized.
             Platform_Initialized = true;
+            Platform_State.Initialized = true;
         }
 
         /**
@@ -772,52 +763,57 @@ namespace GGUI{
          *          before the application exits.
          */
         void De_Initialize(){
-            // Restore previous console modes
-            for (auto File_Handle : File_Streamer_Handles){
-                File_Handle.second->~fileStream();
+            if (Platform_State.De_Initialized)
+                return; // Guard against double execution.
+
+            // Execute user cleanup callbacks.
+            for (auto& Callback : User_Cleanup_Callbacks){
+                if (Callback) Callback();
             }
-            
+            User_Cleanup_Callbacks.clear();
+
+            // Unique_ptr map cleanup.
             File_Streamer_Handles.clear();
 
             if (!SETTINGS::enableDRM) {
-                // Restore default cursor visibility
-                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
+                if (Platform_State.Cursor_Hidden)
+                    std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
+                if (Platform_State.Mouse_Reporting_Enabled)
+                    std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+                if (Platform_State.Screen_Capture_Enabled)
+                    std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
+                if (Platform_State.Alternative_Screen_Enabled)
+                    std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
+                std::cout << GGUI::constants::ANSI::Enable_SGR_Feature(GGUI::constants::ANSI::RESET_SGR).toString();
 
-                // Disable mouse event reporting
-                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
-
-                // Disable screen capture
-                std::cout << GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();  // restores the screen.
+                // Do NOT force a cursor shape; leave user / outer environment shape intact (we never changed shape explicitly).
                 std::cout << std::flush;
 
-                if (STDIN_IS_TTY) {
-                    // Restore previous file descriptor flags
+                if (STDIN_IS_TTY && Platform_State.Raw_Mode_Enabled) {
                     fcntl(STDIN_FILENO, F_SETFL, Previous_Flags);
-
-                    // Restore previous terminal attributes
                     tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
+                    LOGGER::Log("Restored previous terminal raw mode configuration.");
+                } else if (!STDIN_IS_TTY) {
+                    LOGGER::Log("STDIN was not a TTY; no terminal mode restoration needed.");
                 }
             }
+
+            Platform_State.De_Initialized = true;
         }
 
         void Cleanup(){
             if (!Carry_Flags.read().Terminate){
                 waitForThreadTermination();
-
-                // Join the threads
-                for (auto& thread : INTERNAL::Sub_Threads){
-                    if (thread.joinable()){
-                        thread.join();
-                    }
+                
+                for (auto& thread : Sub_Threads){
+                    if (thread.joinable()) thread.join();
                 }
 
                 LOGGER::Log("Reverting to normal console mode...");
 
-                // Close DRM connection if it was established
                 if (SETTINGS::enableDRM)
                     DRM::close();
 
-                // Clean up platform-specific resources and settings
                 De_Initialize();
 
                 LOGGER::Log("GGUI shutdown successful.");
@@ -1286,8 +1282,11 @@ namespace GGUI{
             if (!SETTINGS::enableDRM) {
                 // Initialize the console for mouse and window input, and set UTF-8 mode for output.
                 std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+                Platform_State.Mouse_Reporting_Enabled = true;
                 std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::MOUSE_CURSOR, false).toString();
+                Platform_State.Cursor_Hidden = true;
                 std::cout << constants::ANSI::Enable_Private_SGR_Feature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
+                Platform_State.Screen_Capture_Enabled = true;
                 // std::cout << constants::RESET_CONSOLE;
                 // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
                 std::cout << std::flush;
@@ -1308,6 +1307,7 @@ namespace GGUI{
                         Term_Handle.c_cc[VMIN] = 1;   // return after 1 byte
                         Term_Handle.c_cc[VTIME] = 0;  // no timeout
                         tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
+                        Platform_State.Raw_Mode_Enabled = true;
                     }
 
                     // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
@@ -1349,6 +1349,8 @@ namespace GGUI{
             if (atexit([](){Cleanup();})){
                 LOGGER::Log("Failed to register exit handler.");
             }
+
+            Platform_State.Initialized = true;
         }
 
 
@@ -2276,6 +2278,19 @@ namespace GGUI{
             }
 
         }
+    }
+
+    /**
+     * @brief De-initializes platform-specific settings and resources and exits the application.
+     * @details This function is called by the Exit function to de-initialize platform-specific settings and resources.
+     *          It ensures that any platform-specific settings are reset before the application exits.
+     * @param signum The exit code for the application.
+     */
+    void EXIT(int signum){
+        INTERNAL::Cleanup();
+
+        // Exit the application with the specified exit code
+        exit(signum);
     }
 
     element* getRoot() {

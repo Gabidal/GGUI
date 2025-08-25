@@ -66,17 +66,17 @@ namespace tester {
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::UN_INITIALIZED), static_cast<int>(fs1.Get_type()));
             
             // Test constructor with filename only (READ mode) - use atomic=true
-            GGUI::fileStream fs2(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs2(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::READ), static_cast<int>(fs2.Get_type()));
             ASSERT_EQ(test_file, fs2.Name);
             
             // Test constructor with filename and callback - use atomic=true
             bool callback_set = false;
-            GGUI::fileStream fs3(test_file, [&callback_set](){ callback_set = true; }, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs3(test_file, [&callback_set](){ callback_set = true; }, GGUI::FILE_STREAM_TYPE::READ);
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::READ), static_cast<int>(fs3.Get_type()));
             
             // Test constructor with WRITE type - use atomic=true
-            GGUI::fileStream fs4(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE, true);
+            GGUI::fileStream fs4(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE);
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::WRITE), static_cast<int>(fs4.Get_type()));
             
             cleanup_file(test_file);
@@ -90,7 +90,7 @@ namespace tester {
             std::string verify_content = read_file_content(test_file);
             ASSERT_EQ(test_content, verify_content);
             
-            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             
             // Test reading the entire file content
             std::string content = fs.Read();
@@ -99,7 +99,7 @@ namespace tester {
             
             // Alternative approach: Let's test the fileStream functionality
             // without relying on Read() which seems to be problematic
-            GGUI::fileStream fs2(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs2(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             
             // Test that the fileStream properties are correct
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::READ), static_cast<int>(fs2.Get_type()));
@@ -115,7 +115,7 @@ namespace tester {
             
             // Test writing to file with scoped fileStream (seems to work better)
             {
-                GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE, true);
+                GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE);
                 fs.Write(write_content);
             } // destructor should flush
             
@@ -129,7 +129,7 @@ namespace tester {
             
             // Test overwriting with new content using a fresh fileStream
             {
-                GGUI::fileStream fs_new(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE, true);
+                GGUI::fileStream fs_new(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE);
                 std::string new_content = "New content only";
                 fs_new.Write(new_content);
             } // destructor should flush
@@ -158,7 +158,7 @@ namespace tester {
             std::string initial_content = "Initial content\n";
             std::string test_file = create_temp_file(initial_content);
             
-            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE, true);
+            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE);
             
             // Test appending to file
             std::string append_content = "Appended line";
@@ -191,7 +191,7 @@ namespace tester {
             std::string test_file = create_temp_file(initial_content);
             
             bool change_detected = false;
-            GGUI::fileStream fs(test_file, [&change_detected](){ change_detected = true; }, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs(test_file, [&change_detected](){ change_detected = true; }, GGUI::FILE_STREAM_TYPE::READ);
             
             // Give the fileStream time to initialize
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -218,14 +218,14 @@ namespace tester {
             
             // Test adding file stream handle (this uses the global service)
             bool handler_called = false;
-            GGUI::addFileStreamHandle(test_file, [&handler_called](){ handler_called = true; });
+            GGUI::addFileStreamHandle(test_file, [&handler_called](){ handler_called = true; }, GGUI::FILE_STREAM_TYPE::READ);
             
             // Test getting file stream handle
             GGUI::fileStream* handle = GGUI::getFileStreamHandle(test_file);
             ASSERT_TRUE(handle != nullptr);
             
             // Test adding multiple handlers using atomic stream
-            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             fs.Add_On_Change_Handler([&handler_called](){ handler_called = true; });
             
             cleanup_file(test_file);
@@ -235,15 +235,15 @@ namespace tester {
             std::string test_file = create_temp_file();
             
             // Test READ type
-            GGUI::fileStream fs_read(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs_read(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::READ), static_cast<int>(fs_read.Get_type()));
             
             // Test WRITE type
-            GGUI::fileStream fs_write(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE, true);
+            GGUI::fileStream fs_write(test_file, [](){}, GGUI::FILE_STREAM_TYPE::WRITE);
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::WRITE), static_cast<int>(fs_write.Get_type()));
             
             // Test STD_CAPTURE type
-            GGUI::fileStream fs_capture(test_file, [](){}, GGUI::FILE_STREAM_TYPE::STD_CAPTURE, true);
+            GGUI::fileStream fs_capture(test_file, [](){}, GGUI::FILE_STREAM_TYPE::STD_CAPTURE);
             ASSERT_EQ(static_cast<int>(GGUI::FILE_STREAM_TYPE::STD_CAPTURE), static_cast<int>(fs_capture.Get_type()));
             ASSERT_TRUE(fs_capture.Is_Cout_Stream());
             
@@ -254,7 +254,7 @@ namespace tester {
             std::string content = "Fast read test content";
             std::string test_file = create_temp_file(content);
             
-            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs(test_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             
             // Give the fileStream time to initialize
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -282,7 +282,7 @@ namespace tester {
         static void test_filestream_error_handling() {
             // Test with non-existent file
             std::string non_existent = "non_existent_file.tmp";
-            GGUI::fileStream fs(non_existent, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs(non_existent, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             
             // Give the fileStream time to initialize
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -296,7 +296,7 @@ namespace tester {
             // ASSERT_TRUE(fast_content.length() > (size_t)0); // Should be a valid string
             
             // Test writing to a file (this should create the file)
-            GGUI::fileStream fs_write(non_existent, [](){}, GGUI::FILE_STREAM_TYPE::WRITE, true);
+            GGUI::fileStream fs_write(non_existent, [](){}, GGUI::FILE_STREAM_TYPE::WRITE);
             fs_write.Write("test content");
             
             // Give time for write to complete
@@ -309,7 +309,7 @@ namespace tester {
         static void test_filestream_edge_cases() {
             // Test with empty file
             std::string empty_file = create_temp_file("");
-            GGUI::fileStream fs_empty(empty_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs_empty(empty_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             
             // Give time to initialize
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -319,9 +319,9 @@ namespace tester {
             // ASSERT_TRUE(empty_content.length() > (size_t)0); // Should be valid string (might be empty)
             
             // Test with large content file
-            std::string large_content(1000, 'A'); // 1KB of 'A's (reduced from 10KB)
+            std::string large_content(10000, 'A'); // 10KB of 'A's
             std::string large_file = create_temp_file(large_content);
-            GGUI::fileStream fs_large(large_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs_large(large_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             
             // Give time to initialize
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -333,7 +333,7 @@ namespace tester {
             // Test with special characters (without null character to avoid string issues)
             std::string special_content = "Special chars: \n\t\r\\\"'";
             std::string special_file = create_temp_file(special_content);
-            GGUI::fileStream fs_special(special_file, [](){}, GGUI::FILE_STREAM_TYPE::READ, true);
+            GGUI::fileStream fs_special(special_file, [](){}, GGUI::FILE_STREAM_TYPE::READ);
             
             // Give time to initialize
             std::this_thread::sleep_for(std::chrono::milliseconds(50));

@@ -121,6 +121,7 @@
         "text_encoding": "cpp",
         "typeindex": "cpp",
         "__nullptr": "cpp",
-        "__locale": "cpp"
+        "__locale": "cpp",
+        "__threading_support": "cpp"
     }
 }

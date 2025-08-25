@@ -139,7 +139,7 @@ namespace GGUI{
          * and height.
          */
         extern void updateMaxWidthAndHeight();
-        
+            
         /**
          * @brief Queries and appends new input records to the existing buffered input.
          *
@@ -331,6 +331,12 @@ namespace GGUI{
         extern void informAllGlobalBufferCaptures(bufferCapture* informer);
     }
     // autoGen: Ignore end
+    
+    /**
+     * @brief Register a user defined cleanup callback to be invoked during de-initialization.
+     * @details Callbacks are executed after internal threads are joined but before terminal state is restored.
+     */
+    extern void registerCleanupCallback(std::function<void()> Callback);
     
     /**
      * @brief Sleep for the specified amount of milliseconds.

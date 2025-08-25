@@ -9,6 +9,7 @@
 #include <fstream>
 #include <functional>
 #include <unordered_map>
+#include <memory>
 #include <stdio.h>
 #include <deque>
 #include <fcntl.h>
@@ -27,26 +28,8 @@ namespace GGUI{
 
     class fileStream;
 
-    extern std::unordered_map<std::string, fileStream*> File_Streamer_Handles;
-
-    /**
-     * @brief Adds an event handler that is called when the file is changed.
-     * @param File_Name The name of the file to add the event handler for.
-     * @param Handle The event handler to be called when the file is changed.
-     *
-     * If there is already a file handle for this file name, the event handler is
-     * added to the list of event handlers for that file. If not, a new file
-     * handle is created and the event handler is added to the list of event
-     * handlers for that file.
-     */
-    extern void addFileStreamHandle(std::string File_Handle, std::function<void()> Handle);
-
-    /**
-     * @brief Returns the file stream handle associated with the given file name.
-     * @param File_Name The name of the file to retrieve the handle for.
-     * @return The file stream handle associated with the given file name, or nullptr if no handle exists.
-     */
-    extern fileStream* getFileStreamHandle(std::string File_Name);
+    // Managed file stream handles. Ownership is now RAII via unique_ptr.
+    extern std::unordered_map<std::string, std::unique_ptr<fileStream>> File_Streamer_Handles;
 
     /**
      * @brief Returns the current working directory of the program.
@@ -249,7 +232,7 @@ namespace GGUI{
          * handlers for that file. If not, a new file handle is created and the event handler is added to the list
          * of event handlers for the new file.
          */
-        fileStream(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ, bool atomic = false);
+        fileStream(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ);
 
         /**
          * @brief Intended for Logger Atomic::Guard, do not use as User!
@@ -377,6 +360,25 @@ namespace GGUI{
             return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
         }
     };
+    
+    /**
+     * @brief Adds an event handler that is called when the file is changed.
+     * @param File_Name The name of the file to add the event handler for.
+     * @param Handle The event handler to be called when the file is changed.
+     *
+     * If there is already a file handle for this file name, the event handler is
+     * added to the list of event handlers for that file. If not, a new file
+     * handle is created and the event handler is added to the list of event
+     * handlers for that file.
+     */
+    extern void addFileStreamHandle(std::string File_Handle, std::function<void()> Handle, FILE_STREAM_TYPE type);
+
+    /**
+     * @brief Returns the file stream handle associated with the given file name.
+     * @param File_Name The name of the file to retrieve the handle for.
+     * @return The file stream handle associated with the given file name, or nullptr if no handle exists.
+     */
+    extern fileStream* getFileStreamHandle(std::string File_Name);
 
     #if _WIN32
         class CMD{

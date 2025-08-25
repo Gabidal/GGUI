@@ -142,11 +142,10 @@ namespace GGUI{
          *          on the file stream to trigger any associated change events.
          */
         void Go_Through_File_Streams(){
-            for (auto& File_Handle : File_Streamer_Handles){
-                // Check if the file handle is not a standard output stream
-                if (File_Handle.second->Get_type() == FILE_STREAM_TYPE::READ) {
-                    // Trigger change event for the file stream
-                    File_Handle.second->Changed();
+            for (auto& pair : File_Streamer_Handles){
+                auto& handle = pair.second;
+                if (handle && handle->Get_type() == FILE_STREAM_TYPE::READ){
+                    handle->Changed();
                 }
             }
         }

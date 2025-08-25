@@ -62,7 +62,7 @@ namespace GGUI{
                         if (SETTINGS::LOGGER::File_Name.size() == 0){
                             SETTINGS::initSettings();
                         }
-                        new (&self) fileStream(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE, true);
+                        new (&self) fileStream(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE);
                     }
                 });
             }

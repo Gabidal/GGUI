@@ -12,7 +12,7 @@
 #endif
 
 namespace GGUI{
-    std::unordered_map<std::string, fileStream*> File_Streamer_Handles;
+    std::unordered_map<std::string, std::unique_ptr<fileStream>> File_Streamer_Handles;
 
     /**
      * @brief Read the content of the file.
@@ -165,7 +165,7 @@ namespace GGUI{
      * handlers for that file. If not, a new file handle is created and the event handler is added to the list
      * of event handlers for the new file.
      */
-    fileStream::fileStream(std::string file_name, std::function<void()> on_change, FILE_STREAM_TYPE type, bool atomic){
+    fileStream::fileStream(std::string file_name, std::function<void()> on_change, FILE_STREAM_TYPE type){
         Name = file_name;
         Type = type;
 
@@ -198,21 +198,6 @@ namespace GGUI{
                 std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
             }
         }
-
-        if (!atomic){
-            // Check if there is already a file handle for this file name
-            auto it = File_Streamer_Handles.find(file_name);
-
-            // If there is not, create one.
-            if (it == File_Streamer_Handles.end()){
-                File_Streamer_Handles[file_name] = this;
-            }
-            // If there is, add the handle to the list.
-            else{
-                // TODO: add one method for ATOMIC::GUARDED file streams.
-                it->second->Add_On_Change_Handler(on_change);
-            }
-        }
     }
 
     fileStream::~fileStream() {
@@ -222,13 +207,6 @@ namespace GGUI{
 
         // Close the file handle
         Handle.close();
-
-        // Find itself from the File_Streamer_Handles and if exists, there remove from there.
-        auto it = File_Streamer_Handles.find(Name);
-
-        if (it != File_Streamer_Handles.end()){
-            File_Streamer_Handles.erase(it);
-        }
     }
 
     /**
@@ -241,16 +219,13 @@ namespace GGUI{
      * handle is created and the event handler is added to the list of event
      * handlers for that file.
      */
-    void addFileStreamHandle(std::string File_Name, std::function<void()> Handle){
+    void addFileStreamHandle(std::string File_Name, std::function<void()> Handle, FILE_STREAM_TYPE type){
         // Check if there is already a file handle for this file name
         auto it = File_Streamer_Handles.find(File_Name);
-
-        // If there is not, create one.
         if (it == File_Streamer_Handles.end()){
-            File_Streamer_Handles[File_Name] = new fileStream(File_Name, Handle);
-        }
-        // If there is, add the handle to the list.
-        else{
+            auto fs = std::make_unique<fileStream>(File_Name, Handle, type);
+            File_Streamer_Handles.emplace(File_Name, std::move(fs));
+        } else {
             it->second->Add_On_Change_Handler(Handle);
         }
     }
@@ -264,8 +239,7 @@ namespace GGUI{
         // Check if there is a file handle for this file name
         auto it = File_Streamer_Handles.find(File_Name);
         if (it != File_Streamer_Handles.end()){
-            // Return the handle
-            return it->second;
+            return it->second.get();
         }
 
         // If no handle exists, return nullptr
@@ -504,9 +478,7 @@ namespace GGUI{
                 Current_Line.clear();
 
                 // Notify all registered change handlers
-                for (auto& on_change : On_Change) {
-                    on_change();
-                }
+            for (auto& on_change : On_Change){ on_change(); }
 
                 // Inform all global BUFFER_CAPTURES if this one is global
                 if (Is_Global) {

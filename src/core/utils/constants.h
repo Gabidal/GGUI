@@ -64,6 +64,10 @@ namespace GGUI{
             // 1 to feature to be enabled
             // 1 to END_COMMAND
             constexpr unsigned int maximumNeededPreAllocationForEnablingOrDisablingSGRFeature = 1 + 1 + 1;
+            
+            // 1 to Escape code
+            // 1 to Mouse appearance
+            constexpr unsigned int maximumNeededPreAllocationForSettingCursorShape = 1 + 1;
 
             // CSI (Control Sequence Introducer) sequences.
             constexpr INTERNAL::compactString ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
@@ -75,6 +79,13 @@ namespace GGUI{
             constexpr INTERNAL::compactString CLEAR_SCROLLBACK = "\x1B[3J";
             constexpr INTERNAL::compactString SET_CURSOR_TO_START = "\x1B[H";
             constexpr INTERNAL::compactString RESET_CONSOLE = "\x1B[c";
+            // Cursor shape (DECSCUSR) fragments (value + space + 'q').
+            constexpr INTERNAL::compactString CURSOR_SHAPE_BLINKING_BLOCK = "0 q";     // Also default
+            constexpr INTERNAL::compactString CURSOR_SHAPE_STEADY_BLOCK = "2 q";
+            constexpr INTERNAL::compactString CURSOR_SHAPE_BLINKING_UNDERLINE = "3 q";
+            constexpr INTERNAL::compactString CURSOR_SHAPE_STEADY_UNDERLINE = "4 q";
+            constexpr INTERNAL::compactString CURSOR_SHAPE_BLINKING_BAR = "5 q";
+            constexpr INTERNAL::compactString CURSOR_SHAPE_STEADY_BAR = "6 q";
 
             /**
              * @brief Enable or disable a private SGR feature
@@ -125,6 +136,14 @@ namespace GGUI{
                 // Add the end command
                 Result.add(END_COMMAND);
 
+                return Result;
+            }
+
+            // Build a cursor shape control sequence: ESC[ <Ps> q where fragment already provides "<digit> q".
+            constexpr INTERNAL::superString<maximumNeededPreAllocationForSettingCursorShape> Set_Cursor_Shape(const INTERNAL::compactString& fragment){
+                INTERNAL::superString<maximumNeededPreAllocationForSettingCursorShape> Result;
+                Result.add(ESC_CODE);
+                Result.add(fragment);
                 return Result;
             }
 
