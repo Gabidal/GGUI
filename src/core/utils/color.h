@@ -5,6 +5,7 @@
 #include <limits>
 #include <math.h>
 #include <stdint.h>
+#include <ostream>
 
 #include "superString.h"
 #include "constants.h"
@@ -139,6 +140,12 @@ namespace GGUI{
         static constexpr RGB DARK_GRAY = RGB(64, 64, 64);
     }
 
+    inline std::ostream& operator<<(std::ostream& os, const GGUI::RGB& color) {
+        os << "RGB(" << static_cast<int>(color.Red) << ", "
+           << static_cast<int>(color.Green) << ", "
+           << static_cast<int>(color.Blue) << ")";
+        return os;
+    }
 }
 
 #endif

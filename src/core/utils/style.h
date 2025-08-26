@@ -22,6 +22,7 @@ namespace GGUI{
         enum class STAIN_TYPE;
         extern void reportStack(const std::string& problemDescription);
 
+        // autoGen: Ignore start
         template <typename T>
         std::string Get_Type_Name() {
         #if defined(__clang__) || defined(__GNUC__)
@@ -39,6 +40,7 @@ namespace GGUI{
 
             return std::string(start, length);            // Construct and return a std::string
         }
+        // autoGen: Ignore end
     
         enum class EMBED_ORDER{
             INSTANT,

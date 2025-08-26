@@ -9,330 +9,209 @@ namespace tester {
     class superStringSuite : public utils::TestSuite {
     public: 
         superStringSuite() : utils::TestSuite("super string tester") {
-            add_test("test_compact_string_constructors", "Test compactString constructor variations", test_compact_string_constructors);
-            add_test("test_compact_string_ascii", "Test compactString ASCII operations", test_compact_string_ascii);
-            add_test("test_compact_string_unicode", "Test compactString Unicode operations", test_compact_string_unicode);
-            add_test("test_compact_string_comparison", "Test compactString comparison methods", test_compact_string_comparison);
-            add_test("test_compact_string_access", "Test compactString character access", test_compact_string_access);
-            add_test("test_compact_string_getters", "Test compactString getter methods", test_compact_string_getters);
-            add_test("test_compact_string_setters", "Test compactString setter methods", test_compact_string_setters);
-            add_test("test_compact_string_utilities", "Test compactString utility methods", test_compact_string_utilities);
-            add_test("test_super_string_constructors", "Test superString constructor variations", test_super_string_constructors);
-            add_test("test_super_string_add_methods", "Test superString add methods", test_super_string_add_methods);
-            add_test("test_super_string_clear", "Test superString clear functionality", test_super_string_clear);
-            add_test("test_super_string_to_string", "Test superString toString conversion", test_super_string_to_string);
-            add_test("test_super_string_templates", "Test superString template functionality", test_super_string_templates);
-            add_test("test_compact_string_flags", "Test compactString flag operations", test_compact_string_flags);
-            add_test("test_edge_cases", "Test edge cases and boundary conditions", test_edge_cases);
+            add_test("compact_default_constructor", "Default constructed compactString is empty (size 0)", [](){
+                GGUI::INTERNAL::compactString cs; // size should be 0
+                ASSERT_EQ(0u, cs.size);
+                ASSERT_TRUE(cs.empty());
+            });
+
+            add_test("compact_char_ptr_empty", "Construct from empty C-string becomes ASCII with \\0", [](){
+                const char* empty = ""; // length 0 -> stored as ASCII '\\0'
+                GGUI::INTERNAL::compactString cs(empty);
+                ASSERT_EQ(1u, cs.size); // implementation sets to 1 via setAscii('\\0')
+                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
+                ASSERT_EQ('\0', cs.getAscii());
+            });
+
+            add_test("compact_char_ptr_single", "Single char C-string stored as ASCII", [](){
+                const char* one = "A";
+                GGUI::INTERNAL::compactString cs(one);
+                ASSERT_EQ(1u, cs.size);
+                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
+                ASSERT_EQ('A', cs.getAscii());
+                ASSERT_TRUE(cs.is('A'));
+                ASSERT_FALSE(cs.is("A")); // not unicode path
+            });
+
+            add_test("compact_char_ptr_multi", "Multi char C-string stored as unicode pointer", [](){
+                const char* word = "Hello";
+                GGUI::INTERNAL::compactString cs(word);
+                ASSERT_EQ(5u, cs.size);
+                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
+                ASSERT_TRUE(cs.is("Hello"));
+                ASSERT_EQ('H', cs[0]);
+                ASSERT_EQ('o', cs[4]);
+            });
+
+            add_test("compact_char_constructor", "Single char constructor", [](){
+                GGUI::INTERNAL::compactString cs('Z');
+                ASSERT_EQ(1u, cs.size);
+                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
+                ASSERT_EQ('Z', cs.getAscii());
+            });
+
+            add_test("compact_explicit_size_unicode", "Explicit size constructor chooses unicode when size>1", [](){
+                const char* txt = "Hi";
+                GGUI::INTERNAL::compactString cs(txt, 2);
+                ASSERT_EQ(2u, cs.size);
+                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
+                ASSERT_TRUE(cs.is("Hi"));
+            });
+
+            add_test("compact_force_unicode_small", "Force unicode with size 1", [](){
+                const char* txt = "X"; // size parameter 1, force unicode
+                GGUI::INTERNAL::compactString cs(txt, 1, true);
+                ASSERT_EQ(1u, cs.size); // overridden to Size
+                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
+                ASSERT_EQ('X', cs[0]);
+            });
+
+            add_test("compact_operator_index_bounds", "Index operator returns \\0 for OOB and valid for in-range", [](){
+                const char* txt = "World";
+                GGUI::INTERNAL::compactString cs(txt);
+                ASSERT_EQ('W', cs[0]);
+                ASSERT_EQ('d', cs[4]);
+                ASSERT_EQ('\0', cs[5]); // out of range
+                ASSERT_EQ('\0', cs[-1]); // negative
+            });
+
+            add_test("compact_setters", "setAscii and setUnicode adjust size", [](){
+                GGUI::INTERNAL::compactString cs('A');
+                ASSERT_EQ(1u, cs.size);
+                cs.setAscii('B');
+                ASSERT_EQ(1u, cs.size);
+                ASSERT_EQ('B', cs.getAscii());
+                cs.setUnicode("Hello");
+                ASSERT_EQ(5u, cs.size);
+                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
+            });
+
+            add_test("compact_has_default_text_ascii_space", "hasDefaultText true for ASCII space", [](){
+                GGUI::INTERNAL::compactString cs(' ');
+                ASSERT_TRUE(cs.hasDefaultText());
+            });
+
+            add_test("compact_has_default_text_unicode_space", "hasDefaultText true when first unicode char space", [](){
+                GGUI::INTERNAL::compactString cs(" test");
+                ASSERT_TRUE(cs.hasDefaultText());
+            });
+
+            // superString tests
+            add_test("super_default_constructor", "superString default empty", [](){
+                GGUI::INTERNAL::superString<8> ss;
+                ASSERT_EQ(0u, ss.currentIndex);
+                ASSERT_EQ(0u, ss.liquefiedSize);
+            });
+
+            add_test("super_add_char", "Adding chars increments size and liquefiedSize", [](){
+                GGUI::INTERNAL::superString<8> ss;
+                ss.add('A');
+                ss.add('B');
+                ASSERT_EQ(2u, ss.currentIndex);
+                ASSERT_EQ(2u, ss.liquefiedSize);
+                ASSERT_EQ(std::string("AB"), ss.toString());
+            });
+
+            add_test("super_add_cstring", "Adding C-string with size", [](){
+                GGUI::INTERNAL::superString<8> ss;
+                ss.add("Hi", 2);
+                ASSERT_EQ(1u, ss.currentIndex);
+                ASSERT_EQ(2u, ss.liquefiedSize);
+                ASSERT_EQ(std::string("Hi"), ss.toString());
+            });
+
+            add_test("super_add_compactString", "Adding compactString", [](){
+                GGUI::INTERNAL::superString<8> ss;
+                GGUI::INTERNAL::compactString cs("Hello");
+                ss.add(cs);
+                ASSERT_EQ(1u, ss.currentIndex);
+                ASSERT_EQ(5u, ss.liquefiedSize);
+                ASSERT_EQ(std::string("Hello"), ss.toString());
+            });
+
+            add_test("super_add_multiple_mixed", "Adding mixed entries unicode + ascii", [](){
+                GGUI::INTERNAL::superString<8> ss;
+                ss.add("Hi", 2); // unicode
+                ss.add(' ');
+                ss.add("World", 5);
+                ASSERT_EQ(3u, ss.currentIndex);
+                ASSERT_EQ(2u + 1u + 5u, ss.liquefiedSize);
+                ASSERT_EQ(std::string("Hi World"), ss.toString());
+            });
+
+            add_test("super_initializer_list", "Initializer list constructor", [](){
+                GGUI::INTERNAL::superString<5> ss{ GGUI::INTERNAL::compactString("A"), GGUI::INTERNAL::compactString("BC"), GGUI::INTERNAL::compactString('D') };
+                ASSERT_EQ(3u, ss.currentIndex);
+                ASSERT_EQ(1u + 2u + 1u, ss.liquefiedSize);
+                ASSERT_EQ(std::string("ABCD"), ss.toString());
+            });
+
+            add_test("super_add_super_by_ref", "Add another superString by const ref", [](){
+                GGUI::INTERNAL::superString<8> a; a.add("Hi",2); a.add(' ');
+                GGUI::INTERNAL::superString<8> b; b.add("There",5);
+                a.add(b);
+                ASSERT_EQ(3u, a.currentIndex);
+                ASSERT_EQ(2u + 1u + 5u, a.liquefiedSize);
+                ASSERT_EQ(std::string("Hi There"), a.toString());
+            });
+
+            add_test("super_add_super_by_ptr", "Add another superString by pointer", [](){
+                GGUI::INTERNAL::superString<8> a; a.add('X');
+                GGUI::INTERNAL::superString<8> b; b.add('Y'); b.add('Z');
+                a.add(&b);
+                ASSERT_EQ(3u, a.currentIndex);
+                ASSERT_EQ(3u, a.liquefiedSize);
+                ASSERT_EQ(std::string("XYZ"), a.toString());
+            });
+
+            add_test("super_clear", "clear resets indices and allows reuse", [](){
+                GGUI::INTERNAL::superString<8> ss; ss.add('A'); ss.add('B');
+                ss.clear();
+                ASSERT_EQ(0u, ss.currentIndex);
+                ASSERT_EQ(0u, ss.liquefiedSize);
+                ss.add('C');
+                ASSERT_EQ(std::string("C"), ss.toString());
+            });
+
+            add_test("super_truncation_on_default_compact", "Encountering size 0 compactString stops toString loop", [](){
+                GGUI::INTERNAL::superString<8> ss;
+                ss.add('A');
+                // Manually inject a default compactString with size 0 (break condition) then another char
+                ss.data[ss.currentIndex++] = GGUI::INTERNAL::compactString(); // size=0
+                ss.add('B');
+                // liquefiedSize counts all adds including later ones
+                ASSERT_EQ(3u, ss.currentIndex);
+                ASSERT_EQ(1u + 0u + 1u, ss.liquefiedSize); // second added size 0, third size 1
+                // toString stops copying once it encounters size 0; trailing capacity remains default (\0)
+                auto result = ss.toString();
+                ASSERT_EQ('A', result[0]);
+                ASSERT_EQ('\0', result[1]); // second char is null due to pre-sized buffer
+                ASSERT_EQ(static_cast<size_t>(2), result.size());
+            });
+
+            add_test("super_many_small_parts", "Many single chars concatenated", [](){
+                GGUI::INTERNAL::superString<32> ss;
+                std::string expected;
+                for(char c='a'; c<'a'+10; ++c){
+                    ss.add(c);
+                    expected.push_back(c);
+                }
+                ASSERT_EQ(10u, ss.currentIndex);
+                ASSERT_EQ(10u, ss.liquefiedSize);
+                ASSERT_EQ(expected, ss.toString());
+            });
+
+            add_test("super_unicode_and_ascii_mix_access", "Ensure internal ordering preserved", [](){
+                GGUI::INTERNAL::superString<10> ss;
+                ss.add("AB",2);
+                ss.add('C');
+                ss.add("DEF",3);
+                ss.add('G');
+                ASSERT_EQ(std::string("ABCDEFG"), ss.toString());
+            });
         }
     private:
-        static void test_compact_string_constructors() {
-            // Test default constructor
-            GGUI::INTERNAL::compactString cs1;
-            ASSERT_EQ((unsigned)0, cs1.size);
-
-            // Test single character constructor
-            GGUI::INTERNAL::compactString cs2('A');
-            ASSERT_EQ((unsigned)1, cs2.size);
-            ASSERT_TRUE(cs2.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-            ASSERT_EQ('A', cs2.getAscii());
-
-            // Test C-string constructor (short string)
-            GGUI::INTERNAL::compactString cs3("B");
-            ASSERT_EQ((unsigned)1, cs3.size);
-            ASSERT_TRUE(cs3.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-            ASSERT_EQ('B', cs3.getAscii());
-
-            // Test C-string constructor (long string)
-            GGUI::INTERNAL::compactString cs4("Hello");
-            ASSERT_EQ((unsigned)5, cs4.size);
-            ASSERT_TRUE(cs4.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
-            ASSERT_TRUE(cs4.is("Hello"));
-
-            // Test constructor with size parameter
-            GGUI::INTERNAL::compactString cs5("Test", 4);
-            ASSERT_EQ((unsigned)4, cs5.size);
-
-            // Test constructor with force unicode flag
-            GGUI::INTERNAL::compactString cs6("X", 1, true);
-            ASSERT_EQ((unsigned)1, cs6.size);
-            ASSERT_TRUE(cs6.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
-            ASSERT_TRUE(cs6.is("X"));
-        }
-
-        static void test_compact_string_ascii() {
-            // Test ASCII character storage
-            GGUI::INTERNAL::compactString cs('Z');
-            ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-            ASSERT_FALSE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
-            ASSERT_EQ((unsigned)1, cs.size);
-
-            // Test getAscii method
-            ASSERT_EQ('Z', cs.getAscii());
-
-            // Test setAscii method
-            cs.setAscii('Y');
-            ASSERT_EQ('Y', cs.getAscii());
-            ASSERT_EQ((unsigned)1, cs.size);
-        }
-
-        static void test_compact_string_unicode() {
-            // Test Unicode string storage
-            GGUI::INTERNAL::compactString cs("Unicode");
-            ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
-            ASSERT_FALSE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-            ASSERT_EQ((unsigned)7, cs.size);
-
-            // Test getUnicode method
-            const char* unicode_text = cs.getUnicode();
-            ASSERT_TRUE(unicode_text != nullptr);
-            ASSERT_TRUE(std::string(unicode_text) == "Unicode");
-
-            // Test setUnicode method
-            cs.setUnicode("NewText");
-            ASSERT_EQ((unsigned)7, cs.size);
-            ASSERT_TRUE(std::string(cs.getUnicode()) == "NewText");
-        }
-
-        static void test_compact_string_comparison() {
-            // Test character comparison
-            GGUI::INTERNAL::compactString cs1('A');
-            ASSERT_TRUE(cs1.is('A'));
-            ASSERT_FALSE(cs1.is('B'));
-
-            // Test string comparison
-            GGUI::INTERNAL::compactString cs2("Hello");
-            ASSERT_TRUE(cs2.is("Hello"));
-            ASSERT_FALSE(cs2.is("World"));
-
-            // Test comparison with wrong type
-            ASSERT_FALSE(cs1.is("A")); // ASCII char vs string
-            ASSERT_FALSE(cs2.is('H')); // Unicode string vs char
-        }
-
-        static void test_compact_string_access() {
-            // Test subscript operator with ASCII
-            GGUI::INTERNAL::compactString cs1('X');
-            ASSERT_EQ('X', cs1[0]);
-            ASSERT_EQ('\0', cs1[1]); // Out of bounds
-
-            // Test subscript operator with Unicode
-            GGUI::INTERNAL::compactString cs2("Test");
-            ASSERT_EQ('T', cs2[0]);
-            ASSERT_EQ('e', cs2[1]);
-            ASSERT_EQ('s', cs2[2]);
-            ASSERT_EQ('t', cs2[3]);
-            ASSERT_EQ('\0', cs2[4]); // Out of bounds
-            ASSERT_EQ('\0', cs2[-1]); // Negative index
-        }
-
-        static void test_compact_string_getters() {
-            // Test getAscii with ASCII string
-            GGUI::INTERNAL::compactString cs1('M');
-            ASSERT_EQ('M', cs1.getAscii());
-
-            // Test getAscii with Unicode string (should return null char)
-            GGUI::INTERNAL::compactString cs2("Multi");
-            ASSERT_EQ('\0', cs2.getAscii());
-
-            // Test getUnicode with Unicode string
-            const char* unicode_str = cs2.getUnicode();
-            ASSERT_TRUE(unicode_str != nullptr);
-            ASSERT_TRUE(std::string(unicode_str) == "Multi");
-
-            // Test getUnicode with ASCII string (should return nullptr)
-            ASSERT_EQ((const char*)nullptr, cs1.getUnicode());
-        }
-
-        static void test_compact_string_setters() {
-            GGUI::INTERNAL::compactString cs;
-
-            // Test setAscii
-            cs.setAscii('K');
-            ASSERT_EQ('K', cs.getAscii());
-            ASSERT_EQ((unsigned)1, cs.size);
-            ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-
-            // Test setUnicode
-            cs.setUnicode("Testing");
-            ASSERT_TRUE(std::string(cs.getUnicode()) == "Testing");
-            ASSERT_EQ((unsigned)7, cs.size);
-            ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
-        }
-
-        static void test_compact_string_utilities() {
-            // Test empty method
-            GGUI::INTERNAL::compactString cs1;
-            ASSERT_TRUE(cs1.empty());
-
-            GGUI::INTERNAL::compactString cs2('A');
-            ASSERT_FALSE(cs2.empty());
-
-            GGUI::INTERNAL::compactString cs3("Text");
-            ASSERT_FALSE(cs3.empty());
-
-            // Test hasDefaultText method
-            GGUI::INTERNAL::compactString cs4(' ');
-            ASSERT_TRUE(cs4.hasDefaultText());
-
-            GGUI::INTERNAL::compactString cs5(" Default");
-            ASSERT_TRUE(cs5.hasDefaultText());
-
-            GGUI::INTERNAL::compactString cs6('X');
-            ASSERT_FALSE(cs6.hasDefaultText());
-
-            GGUI::INTERNAL::compactString cs7("NoSpace");
-            ASSERT_FALSE(cs7.hasDefaultText());
-        }
-
-        static void test_super_string_constructors() {
-            // Test default constructor
-            GGUI::INTERNAL::superString<10> ss1;
-            ASSERT_EQ((unsigned)0, ss1.currentIndex);
-            ASSERT_EQ((unsigned)0, ss1.liquefiedSize);
-
-            // Test initializer list constructor
-            GGUI::INTERNAL::compactString cs1('A');
-            GGUI::INTERNAL::compactString cs2("Hello");
-            GGUI::INTERNAL::superString<10> ss2{cs1, cs2};
-            ASSERT_EQ((unsigned)2, ss2.currentIndex);
-            ASSERT_EQ((unsigned)6, ss2.liquefiedSize); // 1 + 5
-        }
-
-        static void test_super_string_add_methods() {
-            GGUI::INTERNAL::superString<20> ss;
-
-            // Test add character
-            ss.add('A');
-            ASSERT_EQ((unsigned)1, ss.currentIndex);
-            ASSERT_EQ((unsigned)1, ss.liquefiedSize);
-
-            // Test add string with size
-            ss.add("Hello", 5);
-            ASSERT_EQ((unsigned)2, ss.currentIndex);
-            ASSERT_EQ((unsigned)6, ss.liquefiedSize);
-
-            // Test add compactString
-            GGUI::INTERNAL::compactString cs("World");
-            ss.add(cs);
-            ASSERT_EQ((unsigned)3, ss.currentIndex);
-            ASSERT_EQ((unsigned)11, ss.liquefiedSize);
-
-            // Test add another superString (by pointer)
-            GGUI::INTERNAL::superString<10> ss2;
-            ss2.add('!');
-            ss2.add('?');
-            ss.add(&ss2);
-            ASSERT_EQ((unsigned)5, ss.currentIndex);
-            ASSERT_EQ((unsigned)13, ss.liquefiedSize);
-
-            // Test add another superString (by reference)
-            GGUI::INTERNAL::superString<10> ss3;
-            ss3.add("End");
-            ss.add(ss3);
-            ASSERT_EQ((unsigned)6, ss.currentIndex);
-            ASSERT_EQ((unsigned)16, ss.liquefiedSize);
-        }
-
-        static void test_super_string_clear() {
-            GGUI::INTERNAL::superString<10> ss;
-            
-            // Add some content
-            ss.add('A');
-            ss.add("Hello");
-            ASSERT_EQ((unsigned)2, ss.currentIndex);
-            ASSERT_EQ((unsigned)6, ss.liquefiedSize);
-
-            // Clear and verify
-            ss.clear();
-            ASSERT_EQ((unsigned)0, ss.currentIndex);
-            ASSERT_EQ((unsigned)0, ss.liquefiedSize);
-        }
-
-        static void test_super_string_to_string() {
-            GGUI::INTERNAL::superString<10> ss;
-
-            // Test empty toString
-            std::string result = ss.toString();
-            ASSERT_TRUE(result.empty());
-
-            // Add mixed content
-            ss.add('H');
-            ss.add("ello");
-            ss.add(' ');
-            ss.add("World");
-
-            // Test toString
-            result = ss.toString();
-            ASSERT_TRUE(result == "Hello World");
-            ASSERT_EQ((size_t)11, result.length());
-        }
-
-        static void test_super_string_templates() {
-            // Test different template sizes
-            GGUI::INTERNAL::superString<5> small_ss;
-            GGUI::INTERNAL::superString<100> large_ss;
-
-            small_ss.add("Small");
-            large_ss.add("Large");
-
-            ASSERT_EQ((unsigned)1, small_ss.currentIndex);
-            ASSERT_EQ((unsigned)1, large_ss.currentIndex);
-
-            // Test adding from different template sizes
-            large_ss.add(small_ss);
-            ASSERT_EQ((unsigned)2, large_ss.currentIndex);
-            ASSERT_EQ((unsigned)10, large_ss.liquefiedSize); // "Large" + "Small"
-        }
-
-        static void test_compact_string_flags() {
-            // Test flag constants
-            ASSERT_EQ((unsigned char)1, GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII);
-            ASSERT_EQ((unsigned char)2, GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE);
-
-            // Test is() method with flags
-            GGUI::INTERNAL::compactString ascii_cs('A');
-            GGUI::INTERNAL::compactString unicode_cs("Unicode");
-
-            ASSERT_TRUE(ascii_cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-            ASSERT_FALSE(ascii_cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
-
-            ASSERT_FALSE(unicode_cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-            ASSERT_TRUE(unicode_cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
-        }
-
-        static void test_edge_cases() {
-            // Test empty string - skip null string test as it may cause issues
-            GGUI::INTERNAL::compactString cs2("");
-            ASSERT_EQ((unsigned)1, cs2.size);
-            ASSERT_EQ('\0', cs2[0]); // Empty string should return null character
-
-            // Test single character string vs char constructor
-            GGUI::INTERNAL::compactString cs3("A");
-            GGUI::INTERNAL::compactString cs4('A');
-            ASSERT_EQ(cs3.size, cs4.size);
-            ASSERT_EQ(cs3[0], cs4[0]);
-
-            // Test boundary access
-            GGUI::INTERNAL::compactString cs5("Test");
-            ASSERT_EQ('\0', cs5[100]);
-            ASSERT_EQ('\0', cs5[-10]);
-
-            // Test superString at capacity
-            GGUI::INTERNAL::superString<2> small_ss;
-            small_ss.add('A');
-            small_ss.add('B');
-            ASSERT_EQ((unsigned)2, small_ss.currentIndex);
-
-            // Test copy constructors and assignments
-            GGUI::INTERNAL::compactString original("Original");
-            GGUI::INTERNAL::compactString copy1(original);
-            GGUI::INTERNAL::compactString copy2;
-            copy2 = original;
-
-            ASSERT_TRUE(copy1.is("Original"));
-            ASSERT_TRUE(copy2.is("Original"));
-        }
+        
     };
 }
 

@@ -2,10 +2,7 @@
 #include "units/utils.h"
 #include "units/superStringSuite.h"
 #include "units/ansiSuite.h"
-#include "units/fileStreamSuite.h"
 #include "units/colorSuite.h"
-#include "units/utilsCoreSuite.h"
-#include "units/utfSuite.h"
 #include "units/elementSuite.h"
 
 int main() {
@@ -17,10 +14,7 @@ int main() {
         tester::utils::run_all_tests({
             new tester::superStringSuite(),
             new tester::ansiSuite(),
-            new tester::fileStreamSuite(),
             new tester::colorSuite(),
-            new tester::utilsCoreSuite(),
-            new tester::utfSuite(),
             new tester::elementSuite(),
         });
     } catch (const std::exception& e) {

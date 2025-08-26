@@ -4,242 +4,258 @@
 #include "utils.h"
 #include <GGUI.h>
 
+// element class testing, no styling from style class, only internal styling member testing instead.
+
 namespace tester {
     class elementSuite : public utils::TestSuite {
     public:
-        elementSuite() : utils::TestSuite("Element core behaviour tester") {
-            add_test("test_focus_and_hover_state", "Focus and hover flag transitions", test_focus_and_hover_state);
-            add_test("test_opacity_setters", "Opacity setters (float & int) affect transparency", test_opacity_setters);
-            add_test("test_dynamic_resize_on_add_child", "Parent resizes when dynamic size allowed", test_dynamic_resize_on_add_child);
-            add_test("test_compose_text_and_border_colors", "composeAll* color selection precedence", test_compose_text_and_border_colors);
-            add_test("test_display_cascade", "Display state cascades to children", test_display_cascade);
-            add_test("test_child_ordering_by_z", "Children reordered by Z (ascending)", test_child_ordering_by_z);
-            add_test("test_absolute_position_cache_on_render", "Absolute position cache updates after render", test_absolute_position_cache_on_render);
-            add_test("test_border_rendering_and_corners", "Border corners & edges rendered in buffer", test_border_rendering_and_corners);
-            add_test("test_title_truncation_with_ellipsis", "Title truncated with ellipsis when exceeding width", test_title_truncation_with_ellipsis);
-            add_test("test_negative_position_fitting_area", "getFittingArea handles negative child offsets", test_negative_position_fitting_area);
-            add_test("test_alpha_blending_partial_opacity", "Child with 50% opacity blends into parent", test_alpha_blending_partial_opacity);
-            add_test("test_get_all_nested_elements_visibility", "getAllNestedElements respects Show flag", test_get_all_nested_elements_visibility);
-            add_test("test_remove_child_updates_parent", "Removing child dirties parent & detaches", test_remove_child_updates_parent);
+        elementSuite() : utils::TestSuite("Element node behaviour") {
+            add_test("default_construction", "Verify default element state", test_default_construction);
+            add_test("dimensions_set", "Width/Height and STRETCH staining", test_dimensions_set);
+            add_test("individual_width_height", "Independent width / height setters", test_individual_width_height);
+            add_test("position_and_absolute", "Position + absolute cache incl. border offset", test_position_and_absolute);
+            add_test("focus_and_hover_flags", "Focus / Hover state transitions", test_focus_and_hover_flags);
+            add_test("opacity_float_int", "Opacity set via float and int + transparency flag", test_opacity_float_int);
+            add_test("border_toggle", "showBorder overload behaviour", test_border_toggle);
+            add_test("add_child_parent_relationship", "addChild establishes parent & ordering", test_add_child_parent_relationship);
+            add_test("remove_child_by_pointer", "remove(element*) deletes child entry", test_remove_child_by_pointer);
+            add_test("remove_child_by_index", "remove(index) deletes child entry", test_remove_child_by_index);
+            add_test("display_toggle_propagation", "display(false/true) cascades to children", test_display_toggle_propagation);
+            add_test("dynamic_size_allowed", "Parent grows when Allow_Dynamic_Size true", test_dynamic_size_allowed);
+            add_test("dynamic_size_disallowed", "Parent remains static when dynamic size off", test_dynamic_size_disallowed);
+            add_test("overflow_and_wrap_flags", "allowOverflow / wrap flags", test_overflow_and_wrap_flags);
+            add_test("anchor_and_flow_priority", "Anchor and flow priority setters", test_anchor_and_flow_priority);
+            add_test("color_setters", "Background / Text / Border color setters", test_color_setters);
+            add_test("hover_focus_color_composition", "composeAllTextRGBValues precedence", test_hover_focus_color_composition);
+            add_test("margin_setter", "setMargin copies values", test_margin_setter);
+            add_test("name_and_lookup", "setName & getElement recursive search", test_name_and_lookup);
+            add_test("fitting_dimensions_basic", "getFittingDimensions base cases", test_fitting_dimensions_basic);
+            add_test("reorder_childs_z", "reOrderChilds sorts by Z", test_reorder_childs_z);
         }
     private:
-        static void test_focus_and_hover_state() {
-            GGUI::element parent; // default style
-            ASSERT_FALSE(parent.isFocused());
-            ASSERT_FALSE(parent.isHovered());
-            parent.setHoverState(true);
-            ASSERT_TRUE(parent.isHovered());
-            parent.setFocus(true);
-            ASSERT_TRUE(parent.isFocused());
-            // Focus should not unset hover automatically
-            ASSERT_TRUE(parent.isHovered());
-            parent.setHoverState(false);
-            ASSERT_FALSE(parent.isHovered());
+        // Helper: access STRETCH flag quickly
+        static bool hasFlag(GGUI::element* e, GGUI::INTERNAL::STAIN_TYPE f){
+            return e->getDirty().has(static_cast<unsigned int>(f));
         }
 
-        static void test_opacity_setters() {
-            GGUI::element e;
+        static void test_default_construction(){
+            GGUI::element e; // root-like element (no parent)
+            ASSERT_EQ((unsigned)1, e.getWidth());
+            ASSERT_EQ((unsigned)1, e.getHeight());
             ASSERT_FLOAT_EQ(1.0f, e.getOpacity(), 0.0001f);
+            ASSERT_TRUE(e.isDisplayed());
+            ASSERT_FALSE(e.hasBorder());
+            ASSERT_TRUE(e.getParent() == nullptr);
+        }
+
+        static void test_dimensions_set(){
+            GGUI::element e;
+            e.setDimensions(5,4);
+            ASSERT_EQ((unsigned)5, e.getWidth());
+            ASSERT_EQ((unsigned)4, e.getHeight());
+            ASSERT_TRUE(hasFlag(&e, GGUI::INTERNAL::STAIN_TYPE::STRETCH) || hasFlag(&e, GGUI::INTERNAL::STAIN_TYPE::COLOR)); // fullyStain sets multiple
+        }
+
+        static void test_individual_width_height(){
+            GGUI::element e; 
+            e.setWidth(7);
+            ASSERT_EQ((unsigned)7, e.getWidth());
+            e.setHeight(9);
+            ASSERT_EQ((unsigned)9, e.getHeight());
+        }
+
+        static void test_position_and_absolute(){
+            GGUI::element parent; parent.setDimensions(20,10);
+            auto child = new GGUI::element();
+            child->setPosition({2,3,0});
+            parent.addChild(child);
+            child->updateAbsolutePositionCache();
+            ASSERT_TRUE(child->getAbsolutePosition().X == (short)2);
+            ASSERT_TRUE(child->getAbsolutePosition().Y == (short)3);
+            parent.showBorder(true);
+            child->updateAbsolutePositionCache();
+            ASSERT_TRUE(child->getAbsolutePosition().X == (short)3); // +1 border offset
+            ASSERT_TRUE(child->getAbsolutePosition().Y == (short)4);
+        }
+
+        static void test_focus_and_hover_flags(){
+            GGUI::element e;
+            e.setFocus(true);
+            ASSERT_TRUE(e.isFocused());
+            e.setHoverState(true);
+            ASSERT_TRUE(e.isHovered());
+            e.setFocus(false);
+            ASSERT_FALSE(e.isFocused());
+            e.setHoverState(false);
+            ASSERT_FALSE(e.isHovered());
+        }
+
+        static void test_opacity_float_int(){
+            GGUI::element e;
             e.setOpacity(0.5f);
             ASSERT_FLOAT_EQ(0.5f, e.getOpacity(), 0.0001f);
             ASSERT_TRUE(e.isTransparent());
-            e.setOpacity(100u); // 100% -> 1.0f
+            e.setOpacity(100u);
             ASSERT_FLOAT_EQ(1.0f, e.getOpacity(), 0.0001f);
             ASSERT_FALSE(e.isTransparent());
         }
 
-        static void test_dynamic_resize_on_add_child() {
-            GGUI::element parent; // default  maybe small but set explicit dims
-            parent.setDimensions(5,5);
-            parent.allowDynamicSize(true);
-
-            auto child = new GGUI::element();
-            child->setPosition({4,4,0});
-            child->setDimensions(4,4); // would exceed parent (needs width >=8 height >=8)
-            parent.addChild(child);
-
-            ASSERT_TRUE(parent.getWidth() >= 8);
-            ASSERT_TRUE(parent.getHeight() >= 8);
-        }
-
-        static void test_compose_text_and_border_colors() {
+        static void test_border_toggle(){
             GGUI::element e;
-            // Capture base colors
-            auto baseText = e.composeAllTextRGBValues();
-            auto baseBorder = e.composeAllBorderRGBValues();
-
-            // Hover should switch to hover colors
-            e.setHoverState(true);
-            auto hoverText = e.composeAllTextRGBValues();
-            auto hoverBorder = e.composeAllBorderRGBValues();
-
-            // Focus should override hover
-            e.setFocus(true);
-            auto focusText = e.composeAllTextRGBValues();
-            auto focusBorder = e.composeAllBorderRGBValues();
-
-            // Validate precedence: focus colors must match direct getters
-            ASSERT_EQ(focusText.first.Red, e.getFocusTextColor().Red);
-            ASSERT_EQ(focusText.first.Green, e.getFocusTextColor().Green);
-            ASSERT_EQ(focusText.first.Blue, e.getFocusTextColor().Blue);
-            ASSERT_EQ(focusBorder.first.Red, e.getFocusBorderColor().Red);
-
-            // At least one of the stages should differ (avoid brittle equality on all channels if style defaults identical)
-            bool anyDiffHover = baseText.first.Red != hoverText.first.Red || baseText.second.Red != hoverText.second.Red;
-            bool anyDiffFocus = hoverText.first.Red != focusText.first.Red || hoverText.second.Red != focusText.second.Red;
-            bool anyBorderDiffHover = baseBorder.first.Red != hoverBorder.first.Red || baseBorder.second.Red != hoverBorder.second.Red;
-            bool anyBorderDiffFocus = hoverBorder.first.Red != focusBorder.first.Red || hoverBorder.second.Red != focusBorder.second.Red;
-            ASSERT_TRUE(anyDiffHover || anyDiffFocus || anyBorderDiffHover || anyBorderDiffFocus);
+            ASSERT_FALSE(e.hasBorder());
+            e.showBorder(true);
+            ASSERT_TRUE(e.hasBorder());
+            e.showBorder(false, true); // overload
+            ASSERT_FALSE(e.hasBorder());
         }
 
-        static void test_display_cascade() {
-            GGUI::element parent; parent.setDimensions(10,3);
+        static void test_add_child_parent_relationship(){
+            GGUI::element parent; parent.setDimensions(10,10);
+            auto child = new GGUI::element();
+            parent.addChild(child);
+            ASSERT_TRUE(child->getParent() == &parent);
+            ASSERT_EQ((size_t)1, parent.getChilds().size());
+        }
+
+        static void test_remove_child_by_pointer(){
+            GGUI::element parent; parent.setDimensions(10,10);
+            auto child = new GGUI::element();
+            parent.addChild(child);
+            ASSERT_EQ((size_t)1, parent.getChilds().size());
+            bool removed = parent.remove(child); // deletes child
+            ASSERT_TRUE(removed);
+            ASSERT_EQ((size_t)0, parent.getChilds().size());
+        }
+
+        static void test_remove_child_by_index(){
+            GGUI::element parent; parent.setDimensions(10,10);
             auto c1 = new GGUI::element();
             auto c2 = new GGUI::element();
             parent.addChild(c1);
             parent.addChild(c2);
-            // Precondition: children inherit visibility from parent
-            ASSERT_TRUE(c1->isDisplayed());
-            // Toggle visibility off
+            ASSERT_EQ((size_t)2, parent.getChilds().size());
+            bool ok = parent.remove(0u);
+            ASSERT_TRUE(ok);
+            ASSERT_EQ((size_t)1, parent.getChilds().size());
+        }
+
+        static void test_display_toggle_propagation(){
+            GGUI::element parent; parent.setDimensions(5,5);
+            auto child = new GGUI::element();
+            parent.addChild(child);
+            ASSERT_TRUE(child->isDisplayed());
             parent.display(false);
-            // Direct state check (no render thread)
             ASSERT_FALSE(parent.isDisplayed());
-            ASSERT_FALSE(c1->isDisplayed());
-            ASSERT_FALSE(c2->isDisplayed());
-            // Toggle back on
+            ASSERT_FALSE(child->isDisplayed());
             parent.display(true);
             ASSERT_TRUE(parent.isDisplayed());
-            ASSERT_TRUE(c1->isDisplayed());
+            ASSERT_TRUE(child->isDisplayed());
         }
 
-        static void test_child_ordering_by_z() {
-            GGUI::element parent; parent.setDimensions(20,5);
-            auto low = new GGUI::element(); low->setPosition({0,0,0});
-            auto mid = new GGUI::element(); mid->setPosition({0,0,5});
-            auto high = new GGUI::element(); high->setPosition({0,0,10});
-            parent.addChild(high); // add out of order intentionally
-            parent.addChild(low);
-            parent.addChild(mid);
+        static void test_dynamic_size_allowed(){
+            GGUI::element parent; parent.setDimensions(1,1); parent.allowDynamicSize(true);
+            auto child = new GGUI::element(); child->setDimensions(6,4);
+            parent.addChild(child);
+            ASSERT_TRUE(parent.getWidth() >= child->getWidth());
+            ASSERT_TRUE(parent.getHeight() >= child->getHeight());
+        }
+
+        static void test_dynamic_size_disallowed(){
+            GGUI::element parent; parent.setDimensions(1,1); parent.allowDynamicSize(false);
+            auto child = new GGUI::element(); child->setDimensions(6,4);
+            parent.addChild(child);
+            ASSERT_EQ((unsigned)1, parent.getWidth());
+            ASSERT_EQ((unsigned)1, parent.getHeight());
+        }
+
+        static void test_overflow_and_wrap_flags(){
+            GGUI::element e;
+            e.allowOverflow(true);
+            ASSERT_TRUE(e.isOverflowAllowed());
+            e.allowOverflow(false);
+            ASSERT_FALSE(e.isOverflowAllowed());
+            e.setWrap(true);
+            ASSERT_TRUE(e.getWrap());
+            e.setWrap(false);
+            ASSERT_FALSE(e.getWrap());
+        }
+
+        static void test_anchor_and_flow_priority(){
+            GGUI::element e;
+            e.setAnchor(GGUI::ANCHOR::CENTER);
+            ASSERT_EQ((int)GGUI::ANCHOR::CENTER, (int)e.getAlign());
+            e.setFlowPriority(GGUI::DIRECTION::COLUMN);
+            ASSERT_EQ((int)GGUI::DIRECTION::COLUMN, (int)e.getFlowPriority());
+        }
+
+        static void test_color_setters(){
+            GGUI::element e;
+            e.setBackgroundColor(GGUI::COLOR::BLUE);
+            ASSERT_EQ(GGUI::COLOR::BLUE, e.getBackgroundColor());
+            e.setTextColor(GGUI::COLOR::GREEN);
+            ASSERT_EQ(GGUI::COLOR::GREEN, e.getTextColor());
+            e.setBorderColor(GGUI::COLOR::RED);
+            ASSERT_EQ(GGUI::COLOR::RED, e.getBorderColor());
+            e.setHoverBackgroundColor(GGUI::COLOR::YELLOW);
+            ASSERT_EQ(GGUI::COLOR::YELLOW, e.getHoverBackgroundColor());
+            e.setFocusBackgroundColor(GGUI::COLOR::MAGENTA);
+            ASSERT_EQ(GGUI::COLOR::MAGENTA, e.getFocusBackgroundColor());
+        }
+
+        static void test_hover_focus_color_composition(){
+            GGUI::element e; 
+            e.setTextColor({10,20,30});
+            e.setBackgroundColor({1,2,3});
+            e.setHoverTextColor({40,50,60});
+            e.setHoverBackgroundColor({4,5,6});
+            e.setFocusTextColor({70,80,90});
+            e.setFocusBackgroundColor({7,8,9});
+            auto base = e.composeAllTextRGBValues();
+            ASSERT_EQ(GGUI::RGB(10,20,30), base.first);
+            e.setHoverState(true);
+            auto hov = e.composeAllTextRGBValues();
+            ASSERT_EQ(GGUI::RGB(40,50,60), hov.first);
+            e.setFocus(true); // focus should override hover
+            auto foc = e.composeAllTextRGBValues();
+            ASSERT_EQ(GGUI::RGB(70,80,90), foc.first);
+        }
+
+        static void test_margin_setter(){
+            GGUI::element e; 
+            GGUI::margin m(1,2,3,4); e.setMargin(m);
+            auto gm = e.getMargin();
+            ASSERT_EQ(1u, gm.Top.get<unsigned int>());
+            ASSERT_EQ(2u, gm.Bottom.get<unsigned int>());
+            ASSERT_EQ(3u, gm.Left.get<unsigned int>());
+            ASSERT_EQ(4u, gm.Right.get<unsigned int>());
+        }
+
+        static void test_name_and_lookup(){
+            GGUI::element root; root.setDimensions(20,10);
+            auto c1 = new GGUI::element(); c1->setName("child1");
+            auto c2 = new GGUI::element(); c2->setName("child2");
+            root.addChild(c1); root.addChild(c2);
+            ASSERT_TRUE(root.getElement("child2") == c2);
+        }
+
+        static void test_fitting_dimensions_basic(){
+            GGUI::element parent; parent.setDimensions(10,5); parent.showBorder(false);
+            auto c = new GGUI::element(); c->setDimensions(3,2); parent.addChild(c);
+            auto fit = parent.getFittingDimensions(c);
+            ASSERT_TRUE(fit.first  <= parent.getWidth());
+            ASSERT_TRUE(fit.second <= parent.getHeight());
+        }
+
+        static void test_reorder_childs_z(){
+            GGUI::element parent; parent.setDimensions(10,5);
+            auto a = new GGUI::element(); a->setPosition({0,0,5});
+            auto b = new GGUI::element(); b->setPosition({0,0,1});
+            auto c = new GGUI::element(); c->setPosition({0,0,3});
+            parent.addChild(a); parent.addChild(b); parent.addChild(c);
+            // After addChild calls reOrderChilds, order should be by Z ascending
             auto& childs = parent.getChilds();
-            ASSERT_TRUE(childs.size() == 3);
-            // Expect ascending Z after reOrderChilds inside addChild
             ASSERT_TRUE(childs[0]->getPosition().Z <= childs[1]->getPosition().Z);
             ASSERT_TRUE(childs[1]->getPosition().Z <= childs[2]->getPosition().Z);
-        }
-
-        static void test_absolute_position_cache_on_render() {
-            GGUI::element parent; parent.setDimensions(10,4); parent.setPosition({2,3,0});
-            auto child = new GGUI::element();
-            child->setPosition({5,1,0});
-            parent.addChild(child);
-            // Trigger render to update absolute caches
-            parent.render();
-            auto absParent = parent.getAbsolutePosition();
-            auto absChild = child->getAbsolutePosition();
-            ASSERT_EQ(absParent.X, parent.getPosition().X);
-            ASSERT_EQ(absParent.Y, parent.getPosition().Y);
-            short expectedChildX = parent.getPosition().X + child->getPosition().X;
-            short expectedChildY = parent.getPosition().Y + child->getPosition().Y;
-            ASSERT_EQ(absChild.X, expectedChildX);
-            ASSERT_EQ(absChild.Y, expectedChildY);
-        }
-
-        static void prepareForDirectRender(GGUI::element& e){
-            // Force a render to allocate buffer in current state
-            e.render();
-        }
-
-        static void test_border_rendering_and_corners(){
-            GGUI::element e; 
-            e.setDimensions(6,4); // Enough for a hollow box
-            e.setCustomBorderStyle(GGUI::STYLES::BORDER::Single);
-            e.showBorder(true);
-            auto& buf = e.render();
-            ASSERT_EQ((unsigned) (6*4), (unsigned) buf.size());
-            auto isGlyph = [](const GGUI::UTF& u, const char* g){ return u.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE) && std::string(u.getUnicode()) == g; };
-            ASSERT_TRUE(isGlyph(buf[0], "┌"));
-            ASSERT_TRUE(isGlyph(buf[5], "┐"));
-            ASSERT_TRUE(isGlyph(buf[18], "└")); // (height-1)*width = 3*6 = 18
-            ASSERT_TRUE(isGlyph(buf[23], "┘"));
-            ASSERT_TRUE(isGlyph(buf[2], "─"));
-            ASSERT_TRUE(isGlyph(buf[6], "│"));
-        }
-
-        static void test_title_truncation_with_ellipsis(){
-            GGUI::element e; 
-            e.setDimensions(10,3);
-            e.setCustomBorderStyle(GGUI::STYLES::BORDER::Single);
-            e.showBorder(true);
-            e.setTitle(GGUI::INTERNAL::compactString("VeryLongTitleThatShouldTrim"));
-            auto& buf = e.render();
-            // First row indices 0..9
-            std::string topRow;
-            for (int x=0;x<10;x++) if (!buf[x].is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE) || buf[x].size>0) topRow += buf[x][0];
-            // Expect ellipsis present
-            ASSERT_TRUE(topRow.find("...") != std::string::npos);
-        }
-
-        static void test_negative_position_fitting_area(){
-            GGUI::element parent; parent.setDimensions(8,5); parent.showBorder(false);
-            auto child = new GGUI::element();
-            child->setDimensions(6,4);
-            child->setPosition({-2,-1,0}); // Partially outside
-            parent.addChild(child);
-            parent.render();
-            // getFittingArea should clamp start >=0 and provide negativeOffset
-            auto fa = GGUI::element::getFittingArea(&parent, child);
-            ASSERT_TRUE(fa.negativeOffset.X == 2);
-            ASSERT_TRUE(fa.negativeOffset.Y == 1);
-            ASSERT_TRUE(fa.start.X >= 0 && fa.start.Y >=0);
-            ASSERT_TRUE(fa.end.X <= (int)parent.getWidth());
-            ASSERT_TRUE(fa.end.Y <= (int)parent.getHeight());
-        }
-
-        static void test_alpha_blending_partial_opacity(){
-            GGUI::element parent; parent.setDimensions(3,3); parent.showBorder(false);
-            auto child = new GGUI::element();
-            child->setDimensions(3,3);
-            child->setBackgroundColor(GGUI::COLOR::RED); // Red background
-            child->setOpacity(0.5f);
-            parent.addChild(child);
-            auto& buf = parent.render();
-            // Pick center cell index (1,1) => 1 + 1*3 = 4
-            auto blended = buf[4];
-            // Background red channel should be roughly half intensity (~127)
-            ASSERT_TRUE(blended.background.Red >= 110 && blended.background.Red <= 140);
-            ASSERT_EQ((unsigned char)0, blended.background.Green);
-            ASSERT_EQ((unsigned char)0, blended.background.Blue);
-            // Foreground green/blue diminished (approx 127). Red likely 255.
-            ASSERT_TRUE(blended.foreground.Red >= 200);
-            ASSERT_TRUE(blended.foreground.Green >= 110 && blended.foreground.Green <= 140);
-            ASSERT_TRUE(blended.foreground.Blue >= 110 && blended.foreground.Blue <= 140);
-        }
-
-        static void test_get_all_nested_elements_visibility(){
-            GGUI::element root; root.setDimensions(4,4);
-            auto a = new GGUI::element(); auto b = new GGUI::element();
-            root.addChild(a); root.addChild(b);
-            b->display(false); // hide b
-            auto allVisible = root.getAllNestedElements(false);
-            // Should contain root and a, but not b
-            bool hasRoot=false, hasA=false, hasB=false;
-            for (auto* e : allVisible){ if (e==&root) hasRoot=true; else if (e==a) hasA=true; else if (e==b) hasB=true; }
-            ASSERT_TRUE(hasRoot && hasA);
-            ASSERT_FALSE(hasB);
-            auto allWithHidden = root.getAllNestedElements(true);
-            hasRoot=hasA=hasB=false;
-            for (auto* e : allWithHidden){ if (e==&root) hasRoot=true; else if (e==a) hasA=true; else if (e==b) hasB=true; }
-            ASSERT_TRUE(hasRoot && hasA && hasB);
-        }
-
-        static void test_remove_child_updates_parent(){
-            GGUI::element parent; parent.setDimensions(5,3);
-            auto child = new GGUI::element();
-            parent.addChild(child);
-            ASSERT_TRUE(parent.getChilds().size() == 1);
-            bool removed = parent.remove(child);
-            ASSERT_TRUE(removed);
-            ASSERT_TRUE(parent.getChilds().size() == 0);
         }
     };
 }
