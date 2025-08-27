@@ -72,10 +72,18 @@ if [[ -f "./analytics/utils/validate.sh" ]]; then
     else
         echo "Environment validation failed. Please address the issues above."
         echo "You can continue with basic build, but analytics tools may not work properly."
-        read -p "Continue anyway? [y/N]: " -r
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Initialization cancelled."
-            exit 1
+        # Allow non-interactive/CI environments to bypass the prompt.
+        # Conditions to auto-continue:
+        #  - Environment variable GGUI_FORCE=1 (explicit override)
+        #  - CI environment (GitHub Actions sets CI=true)
+        if [[ -n "$GGUI_FORCE" || "$CI" == "true" ]]; then
+            echo "Force/CI mode detected (GGUI_FORCE=$GGUI_FORCE, CI=$CI). Continuing despite validation failure." >&2
+        else
+            read -p "Continue anyway? [y/N]: " -r
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                echo "Initialization cancelled."
+                exit 1
+            fi
         fi
     fi
 else
