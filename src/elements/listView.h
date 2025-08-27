@@ -107,7 +107,7 @@ namespace GGUI{
          * @return The flow direction of the list view.
          */
         DIRECTION getFlowDirection(){
-            return (DIRECTION)Style->Flow_Priority.value;
+            return Style->Flow_Priority.value;
         }
 
         /**
