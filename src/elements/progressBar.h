@@ -47,8 +47,7 @@ namespace GGUI{
                 return *this;
             }
 
-            constexpr part(const part& other) : styleBase(other.status), 
-                character(other.character), color(other.color), type(other.type) {}
+            constexpr part(const part& other) : styleBase(other.status), character(other.character), color(other.color), type(other.type) {}
 
             INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
 
@@ -86,6 +85,13 @@ namespace GGUI{
                 Progress = 0.0f;
             }
             
+            /**
+             * @brief Constructs a Bar object with the given style and optional embedding of styles.
+             * 
+             * @param s A rvalue reference to a STYLING_INTERNAL::styleBase object that defines the style for the Bar.
+             * @param Embed_Styles_On_Construct A boolean flag indicating whether to embed styles during construction. 
+             *        Defaults to false.
+             */
             Bar(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : Bar(s, Embed_Styles_On_Construct){}
 
             /**
@@ -124,14 +130,6 @@ namespace GGUI{
             void colorBar();
 
             /**
-             * @brief Renders the progress bar into the Render_Buffer.
-             * @details This function processes the progress bar to generate a vector of UTF objects representing the current state.
-             * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
-             * @return A vector of UTF objects representing the rendered progress bar.
-             */
-            std::vector<GGUI::UTF>& render() override;
-
-            /**
              * @brief Sets the progress value of the progress bar.
              * @details This function updates the progress value of the progress bar. 
              * If the given value exceeds 1.0, a warning is reported, and the function returns without updating.
@@ -147,6 +145,20 @@ namespace GGUI{
              */
             float getProgress();
 
+            /**
+             * @brief Updates the progress of the progress bar by adding the specified value.
+             * 
+             * This function increments the current progress by the given value, ensuring
+             * that the progress does not exceed 1.0f. If the progress exceeds 1.0f after
+             * adding the value, the function returns without making any changes.
+             * 
+             * After updating the progress, the function updates the color of the progress
+             * bar, marks the render buffer as dirty to reflect the changes, and triggers
+             * a frame update to re-render the progress bar.
+             * 
+             * @param add The value to add to the current progress. Should be a float
+             *            between 0.0f and 1.0f.
+             */
             void updateProgress(float add);
 
             /**
@@ -168,16 +180,6 @@ namespace GGUI{
                 // Call the base destructor to clean up base class resources.
                 element::~element();
             }
-            
-            /**
-             * @brief Creates a deep copy of the Progress_Bar object.
-             * @details This function creates a new Progress_Bar object and copies all the data from the current Progress_Bar object to the new one.
-             *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
-             * @return A pointer to the new Progress_Bar object.
-             */
-            element* createInstance() const override {
-                return new Bar();
-            }
 
             /**
              * @brief Returns the name of the Progress_Bar object.
@@ -188,6 +190,25 @@ namespace GGUI{
              */
             std::string getName() const override{
                 return "progressBar<" + Name + ">";
+            }
+
+        protected:
+            /**
+             * @brief Renders the progress bar into the Render_Buffer.
+             * @details This function processes the progress bar to generate a vector of UTF objects representing the current state.
+             * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
+             * @return A vector of UTF objects representing the rendered progress bar.
+             */
+            std::vector<GGUI::UTF>& render() override;
+            
+            /**
+             * @brief Creates a deep copy of the Progress_Bar object.
+             * @details This function creates a new Progress_Bar object and copies all the data from the current Progress_Bar object to the new one.
+             *          This is useful for creating a new Progress_Bar object that is a modified version of the current one.
+             * @return A pointer to the new Progress_Bar object.
+             */
+            element* createInstance() const override {
+                return new Bar();
             }
         };
     }

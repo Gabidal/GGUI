@@ -36,20 +36,15 @@ namespace GGUI{
          * @param s The Styling object to use for the Text_Field object.
          * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Text_Field's style. Only use if you know what you're doing!!!
          */
-        textField(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){
-
-            // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
-            Text_Cache.reserve(getHeight());
-
-            if (getWidth() == 1 && getHeight() == 1){
-                allowDynamicSize(true);
-            }
-
-            // Update the text cache list by newlines, and if no found then set the Text as the zeroth index.
-            if (Embed_Styles_On_Construct)
-                updateTextCache();
-        }
+        textField(STYLING_INTERNAL::styleBase& s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
         
+        /**
+         * @brief Constructs a textField object with the specified style and optional embedding of styles.
+         * 
+         * @param s A rvalue reference to a styleBase object that defines the styling for the textField.
+         * @param Embed_Styles_On_Construct A boolean flag indicating whether styles should be embedded during construction. 
+         *        Defaults to false.
+         */
         textField(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : textField(s, Embed_Styles_On_Construct){}
 
         /**
@@ -67,14 +62,6 @@ namespace GGUI{
         std::string getText(){
             return Text;
         }
-
-        /**
-         * @brief Renders the text field into the Render_Buffer.
-         * @details This function processes the text field to generate a vector of UTF objects representing the current state.
-         * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
-         * @return A vector of UTF objects representing the rendered text field.
-         */
-        std::vector<GGUI::UTF>& render() override;
 
         /**
          * @brief Aligns text to the left within the text field.
@@ -111,9 +98,30 @@ namespace GGUI{
          */
         void input(std::function<void(textField*, char)> Then);
 
+
+    protected:
+        /**
+         * @brief Renders the text field into the Render_Buffer.
+         * @details This function processes the text field to generate a vector of UTF objects representing the current state.
+         * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
+         * @return A vector of UTF objects representing the rendered text field.
+         */
+        std::vector<GGUI::UTF>& render() override;
+        
+        /**
+         * @brief Creates a new instance of the textField element.
+         * 
+         * This method overrides the base class implementation to return
+         * a dynamically allocated instance of the textField class.
+         * 
+         * @return A pointer to a newly created textField instance.
+         */
         element* createInstance() const override {
             return new textField();
         }
+
+        // switchBox uses textField::render() so lets give it some access.
+        friend class switchBox;
     };
 }
 

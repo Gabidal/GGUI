@@ -13,15 +13,16 @@
 
 namespace GGUI{
     class sprite{
-    public:
+    protected:
         std::vector<GGUI::UTF> Frames;
-
+        
         int Offset = 0;     // This is for more beautiful mass animation systems
         int Speed = 1;      // Using decimals too slow hmmm...
-
+        
         int Frame_Distance = 1;
-
+        
         bool Is_Power_Of_Two = false;
+    public:
 
         /**
          * @brief Constructor for Sprite class.
@@ -61,13 +62,6 @@ namespace GGUI{
             Is_Power_Of_Two = false;
         }
 
-        /**
-         * @brief Renders a UTF character based on the sprite's current frame and speed.
-         * @param Current_Frame The current frame of the animation.
-         * @return The rendered UTF character.
-         */
-        UTF render(unsigned char Current_Time);
-
         void setAnimationSpeed(int speed){
             Speed = speed;
         }
@@ -75,6 +69,16 @@ namespace GGUI{
         void setOffset(int offset){
             Offset = offset;
         }
+
+    protected:
+        /**
+         * @brief Renders a UTF character based on the sprite's current frame and speed.
+         * @param Current_Frame The current frame of the animation.
+         * @return The rendered UTF character.
+         */
+        UTF render(unsigned char Current_Time);
+
+        friend class canvas;
     };
 
     class canvas : public element{
@@ -91,36 +95,87 @@ namespace GGUI{
 
         GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
+        /**
+         * @brief Constructs a canvas element with the specified style and optional embedding of styles.
+         * 
+         * @param s A reference to a `STYLING_INTERNAL::styleBase` object that defines the style for the canvas.
+         * @param Embed_Styles_On_Construct A boolean flag indicating whether styles should be embedded during construction. 
+         *        Defaults to `false`.
+         */
         canvas(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){}
-        canvas(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : canvas(s, Embed_Styles_On_Construct){}
-        
-        ~canvas() override;
-
-        void setNextAnimationFrame() { Current_Animation_Frame++; }
-
-        void set(unsigned int x, unsigned int y, sprite& sprite, bool Flush = true);
-
-        void set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush = true);
-
-        void set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);
-        
-        void flush(bool Force_Flush = false);
-        
-        std::vector<GGUI::UTF>&  render() override;
-        
-        void groupHeuristics();
-
-        void group(unsigned int Start_Index, int length);
-
-        bool isMultiFrame(){ return Multi_Frame; }
 
         /**
-         * @brief Creates a deep copy of the Terminal_Canvas and returns it as a movable Element.
-         * @return A deep copy of the Terminal_Canvas as a movable Element.
+         * @brief Constructs a canvas object with the specified style and optional embedding of styles.
+         * 
+         * @param s A rvalue reference to a `STYLING_INTERNAL::styleBase` object that defines the style for the canvas.
+         * @param Embed_Styles_On_Construct A boolean flag indicating whether to embed styles during construction. 
+         *        Defaults to false.
          */
-        element* createInstance() const override {
-            return new canvas();
-        }
+        canvas(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : canvas(s, Embed_Styles_On_Construct){}
+        
+        /**
+         * @brief Destructor for the Terminal_Canvas class.
+         * @details This destructor checks if the current Terminal_Canvas instance is part of the multi-frame list.
+         *          If it is, it removes the instance from the list to properly manage resources.
+         *          It then calls the base class destructor to ensure all parent class resources are cleaned up.
+         */
+        ~canvas() override;
+
+        /**
+         * @brief Advances the animation to the next frame.
+         * 
+         * This function increments the current animation frame counter,
+         * allowing the animation to progress to the next frame in the sequence.
+         */
+        void setNextAnimationFrame() { Current_Animation_Frame++; }
+
+        /**
+         * @brief Set the sprite at the specified location on the terminal canvas.
+         * @details This function places a sprite on the canvas at the given (x, y) coordinates.
+         * The function also handles buffer resizing and multi-frame management.
+         * @param x The x coordinate of the location.
+         * @param y The y coordinate of the location.
+         * @param sprite The sprite to be placed.
+         * @param Flush Whether or not to call Update_Frame() after setting the sprite.
+         */
+        void set(unsigned int x, unsigned int y, sprite& sprite, bool Flush = true);
+
+        /**
+         * @brief Set the sprite at the specified location on the terminal canvas.
+         * @details This function places a sprite on the canvas at the given (x, y) coordinates.
+         * The function also handles buffer resizing and multi-frame management.
+         * @param x The x coordinate of the location.
+         * @param y The y coordinate of the location.
+         * @param sprite The sprite to be placed.
+         * @param Flush Whether or not to call Update_Frame() after setting the sprite.
+         */
+        void set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush = true);
+
+        /**
+         * @brief Set the UTF sprite at the specified location on the terminal canvas.
+         * @details This function places a UTF sprite on the canvas at the given (x, y) coordinates.
+         * It also handles buffer resizing when necessary.
+         * @param x The x coordinate of the location.
+         * @param y The y coordinate of the location.
+         * @param sprite The UTF sprite to be placed.
+         * @param Flush Whether or not to call Update_Frame() after setting the sprite.
+         */
+        void set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);
+        
+        /**
+         * @brief Flush the canvas.
+         * @details This function can be used to manually flush the canvas.
+         * If Force_Flush is true, the canvas will be marked as dirty for color updates.
+         * @param Force_Flush Whether or not to mark the canvas as dirty for color updates.
+         */
+        void flush(bool Force_Flush = false);
+
+        /**
+         * @brief Checks if the canvas is in a multi-frame state.
+         * 
+         * @return true if the canvas is in a multi-frame state, false otherwise.
+         */
+        bool isMultiFrame(){ return Multi_Frame; }
 
         /**
          * @brief Returns the name of the Terminal_Canvas as a string.
@@ -148,9 +203,36 @@ namespace GGUI{
          */
         void embedPoints(std::vector<bool> pixels, styledBorder border_style = GGUI::STYLES::BORDER::Single, bool Flush = true);
 
+        /**
+         * @brief Sets the callback function to be invoked during the drawing process.
+         * 
+         * This function allows you to specify a custom callback that will be called
+         * for each pixel or coordinate during the drawing operation. The callback
+         * should return a GGUI::sprite object based on the provided x and y coordinates.
+         * 
+         * @param on_draw A pointer to a function that takes two unsigned integers 
+         *                (x and y coordinates) as input and returns a GGUI::sprite object.
+         */
         void setOnDraw(GGUI::sprite (*on_draw)(unsigned int x, unsigned int y)){
             this->On_Draw = on_draw;
         }
+
+    protected:
+        /**
+         * @brief Creates a deep copy of the Terminal_Canvas and returns it as a movable Element.
+         * @return A deep copy of the Terminal_Canvas as a movable Element.
+         */
+        element* createInstance() const override {
+            return new canvas();
+        }
+        
+        /**
+         * @brief Render the canvas.
+         * @details This function renders the canvas, applying all the necessary transformations and color changes.
+         *          It also handles the multi-frame list and sprite animations.
+         * @return A vector of UTF objects representing the rendered canvas.
+         */
+        std::vector<GGUI::UTF>&  render() override;
     };
 
     namespace DRAW{

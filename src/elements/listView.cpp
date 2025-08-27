@@ -27,6 +27,19 @@ GGUI::scrollView::scrollView(listView& container) : element(){
 
 //End of user constructors.
 
+/**
+ * @brief Retrieves the dimension limits of the list view.
+ *
+ * This function calculates and returns the dimension limits of the list view
+ * based on its configuration. The behavior depends on whether overflow or 
+ * dynamic sizing is allowed.
+ *
+ * @return GGUI::IVector3 The dimension limits of the list view:
+ * - If overflow is allowed, the dimensions are unbounded and set to {INT16_MAX, INT16_MAX}.
+ * - If dynamic sizing is allowed, the dimensions are calculated as the difference
+ *   between the position of the last child element and the final limit.
+ * - Otherwise, the dimensions are determined by the width and height of the list view.
+ */
 GGUI::IVector3 GGUI::listView::getDimensionLimit(){
     // Overflow does not have bounds, and is thus unbounded.
     if (isOverflowAllowed()){

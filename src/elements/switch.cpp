@@ -47,6 +47,16 @@ namespace GGUI{
         Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::STATE);
     }
 
+    /**
+     * @brief Sets the state strings for the switch box.
+     * 
+     * This function assigns the provided strings to represent the "off" and "on" states
+     * of the switch box. It also marks the switch as needing a state update and refreshes
+     * its frame to reflect the changes.
+     * 
+     * @param off Pointer to a compactString representing the "off" state.
+     * @param on Pointer to a compactString representing the "on" state.
+     */
     void switchBox::setStateString(const INTERNAL::compactString* off, const INTERNAL::compactString* on) {
         Off = off;
         On = on;
@@ -83,6 +93,19 @@ namespace GGUI{
         });
     }
 
+    /**
+     * @brief Toggles the visibility of the border for the switchBox element.
+     * 
+     * This function enables or disables the border of the switchBox element
+     * based on the provided boolean value. When the border state changes, 
+     * the width and height of the element are adjusted accordingly to 
+     * accommodate the border. The element is marked as dirty to reflect 
+     * the border changes, and a frame update is triggered to re-render 
+     * the element.
+     * 
+     * @param b A boolean value indicating whether the border should be 
+     *          enabled (true) or disabled (false).
+     */
     void switchBox::showBorder(bool b){
         if (b != Style->Border_Enabled.value) {
             Style->Border_Enabled = b;
@@ -205,6 +228,16 @@ namespace GGUI{
         updateFrame();
     }
 
+    /**
+     * @brief Sets the state of the switch box and updates its visual representation.
+     * 
+     * This function changes the internal state of the switch box to the specified
+     * boolean value, marks the state as dirty for internal processing, and updates
+     * the frame to reflect the new state.
+     * 
+     * @param b The new state to set for the switch box. `true` represents an active
+     *          state, while `false` represents an inactive state.
+     */
     void switchBox::setState(bool b){
         State = b;
 
@@ -213,11 +246,30 @@ namespace GGUI{
         updateFrame();
     }
 
+    /**
+     * @brief Enables single selection mode for the switchBox.
+     * 
+     * When single selection mode is enabled, the switchBox ensures that 
+     * only one option can be selected at a time.
+     */
     void switchBox::enableSingleSelect(){
         SingleSelect = true;
     }
 
     namespace INTERNAL{
+        /**
+         * @brief Disables other switches in the same group, keeping only the specified switch active.
+         * 
+         * This function ensures that if the provided switchBox (`keepOn`) is part of a group
+         * and is marked as single-select, it will remain active while all other single-select
+         * switches in the same group are disabled. If the switch is not part of a group or is
+         * not single-select, it toggles the state of the provided switchBox.
+         * 
+         * @param keepOn Pointer to the switchBox that should remain active or be toggled.
+         * 
+         * @note If the `keepOn` switchBox does not have a parent or is not part of a group,
+         *       the function will simply toggle its state.
+         */
         void DisableOthers(switchBox* keepOn){
             // If this is in switch group, disable other grouped switches
             if (keepOn->isSingleSelect()){

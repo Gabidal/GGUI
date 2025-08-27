@@ -781,7 +781,7 @@ namespace GGUI{
                                 Error_Logger->addChild(History);
                             }
 
-                            std::vector<listView*>& Rows = (std::vector<listView*>&)(History->getContainer()->getChilds()); 
+                            std::vector<listView*>& Rows = (std::vector<listView*>&)(History->getChilds()); 
 
                             if (Rows.size() > 0){
                                 //Text_Field* Previous_Date = Rows.back()->Get<Text_Field>(0);

@@ -5,6 +5,20 @@
 
 namespace GGUI{
 
+    textField::textField(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct){
+
+        // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
+        Text_Cache.reserve(getHeight());
+
+        if (getWidth() == 1 && getHeight() == 1){
+            allowDynamicSize(true);
+        }
+
+        // Update the text cache list by newlines, and if no found then set the Text as the zeroth index.
+        if (Embed_Styles_On_Construct)
+            updateTextCache();
+    }
+
     /**
      * @brief Updates the text cache of the text field when the text field has a deep stain.
      * @details This function is called when the text field has a deep stain, and it will update the text cache of the text field. The text cache is a list of compact strings, where each compact string is a line of text. The text cache is used to store the text of the text field, and it is used to determine the size of the text field. The text cache is updated by splitting the text into lines based on the newline character, and then adding each line to the text cache. The text cache is also updated to remove any empty lines at the end of the text cache.

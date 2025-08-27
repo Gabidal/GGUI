@@ -10,10 +10,15 @@
 #include "../core/utils/style.h"
 
 namespace GGUI{
+    namespace INTERNAL {
+        extern void renderLogger(const std::string& problem);
+    }
+
     class listView : public element{
-    public:
+    protected:
         //We can always assume that the list starts from the upper left corner, right?
         element* Last_Child = new element(position(0, 0) | width(0) | height(0));
+    public:
 
         /**
          * @brief Default constructor for List_View.
@@ -51,8 +56,6 @@ namespace GGUI{
 
         //End of user constructors.
 
-        IVector3 getDimensionLimit();
-
         /**
          * @brief Adds a child element to the list view.
          * @details This function adds a child element to the list view and manages the positioning and sizing
@@ -62,18 +65,6 @@ namespace GGUI{
          */
         void addChild(element* e) override;
         
-        /**
-         * @brief Calculates the hitboxes of all child elements of the list view.
-         * @details This function is similar to the Remove(Element* c) like behaviour.
-         *          It takes into account the border offsets of both the current and the next element as well as their positions.
-         *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
-         *          For a vertical list, it checks if the next element's height is greater than the current element's height.
-         *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
-         *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
-         * @param Starting_Offset The starting offset into the child array.
-         */
-        void calculateChildsHitboxes(unsigned int Starting_Offset = 0) override;
-
         /**
          * @brief Gets the name of the list view.
          * @details This function returns the name of the list view in the format "List_View<Name>".
@@ -128,6 +119,8 @@ namespace GGUI{
             return (T*)this->Style->Childs[index];
         }
 
+
+    protected:
         /**
          * @brief Creates a deep copy of the List_View object.
          * @details This function creates a new List_View object and copies all the data from the current List_View object to the new one.
@@ -136,6 +129,36 @@ namespace GGUI{
         element* createInstance() const override {
             return new listView();
         }
+
+        /**
+         * @brief Calculates the hitboxes of all child elements of the list view.
+         * @details This function is similar to the Remove(Element* c) like behaviour.
+         *          It takes into account the border offsets of both the current and the next element as well as their positions.
+         *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
+         *          For a vertical list, it checks if the next element's height is greater than the current element's height.
+         *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
+         *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
+         * @param Starting_Offset The starting offset into the child array.
+         */
+        void calculateChildsHitboxes(unsigned int Starting_Offset = 0) override;
+
+        /**
+         * @brief Retrieves the dimension limits of the list view.
+         *
+         * This function calculates and returns the dimension limits of the list view
+         * based on its configuration. The behavior depends on whether overflow or 
+         * dynamic sizing is allowed.
+         *
+         * @return GGUI::IVector3 The dimension limits of the list view:
+         * - If overflow is allowed, the dimensions are unbounded and set to {INT16_MAX, INT16_MAX}.
+         * - If dynamic sizing is allowed, the dimensions are calculated as the difference
+         *   between the position of the last child element and the final limit.
+         * - Otherwise, the dimensions are determined by the width and height of the list view.
+         */
+        IVector3 getDimensionLimit();
+
+        // Give access to Last_Child
+        friend class scrollView;
     };
 
     class scrollView : public element{
@@ -250,23 +273,19 @@ namespace GGUI{
         }
 
         /**
-         * @brief Gets the container of the scroll view.
-         * @details This function retrieves the container of the scroll view, which is a List_View.
-         * @return The container of the scroll view.
+         * @brief Retrieves the child elements of the current element.
+         * 
+         * This function overrides the base class method to return a reference
+         * to the vector of child elements managed by the container associated
+         * with this element.
+         * 
+         * @return A reference to a vector of pointers to the child elements.
          */
-        listView* getContainer(){
-            // If the container has not been yet initialized, do so.
-            if (getChilds().size() == 0){
-                allowOverflow(true);
-                element::addChild(new listView(
-                    name((getName() + "::container").c_str()) | 
-                    flowPriority(element::getFlowPriority())
-                ));
-            }
-
-            return (listView*)Style->Childs[0];
+        std::vector<element*>& getChilds() override {
+            return getContainer()->getChilds();
         }
-        
+
+    protected:
         /**
          * @brief Safely moves the current element to a new scrollView element.
          * 
@@ -278,6 +297,27 @@ namespace GGUI{
         element* createInstance() const override {
             return new scrollView();
         }
+
+        /**
+         * @brief Gets the container of the scroll view.
+         * @details This function retrieves the container of the scroll view, which is a List_View.
+         * @return The container of the scroll view.
+         */
+        listView* getContainer(){
+            // If the container has not been yet initialized, do so.
+            if (element::getChilds().size() == 0){
+                allowOverflow(true);
+                element::addChild(new listView(
+                    name((getName() + "::container").c_str()) | 
+                    flowPriority(element::getFlowPriority())
+                ));
+            }
+
+            return (listView*)Style->Childs[0];
+        }
+
+        // This is only needed until auto scrolling has been implemented.
+        friend void INTERNAL::renderLogger(const std::string&);
     };
 }
 

@@ -193,6 +193,20 @@ namespace GGUI{
             return Progress;
         }
 
+        /**
+         * @brief Updates the progress of the progress bar by adding the specified value.
+         * 
+         * This function increments the current progress by the given value, ensuring
+         * that the progress does not exceed 1.0f. If the progress exceeds 1.0f after
+         * adding the value, the function returns without making any changes.
+         * 
+         * After updating the progress, the function updates the color of the progress
+         * bar, marks the render buffer as dirty to reflect the changes, and triggers
+         * a frame update to re-render the progress bar.
+         * 
+         * @param add The value to add to the current progress. Should be a float
+         *            between 0.0f and 1.0f.
+         */
         void Bar::updateProgress(float add){
             if (Progress + add > 1.0f){
                 return;
