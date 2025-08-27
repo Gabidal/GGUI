@@ -47,13 +47,19 @@ if exist ".\analytics\utils\validate.sh" (
         bash "./analytics/utils/validate.sh"
         if errorlevel 1 (
             echo Environment validation failed. Analytics tools may not work properly.
-            set /p _CONT=Continue anyway? [y/N]:
-            set "_CONT=%_CONT:~0,1%"
-            if /i "%_CONT%"=="y" (
-                rem continue
+            if defined GGUI_FORCE (
+                echo Force/CI mode detected (GGUI_FORCE=%GGUI_FORCE%, CI=%CI%). Continuing despite validation failure.
+            ) else if "%CI%"=="true" (
+                echo Force/CI mode detected (GGUI_FORCE=%GGUI_FORCE%, CI=%CI%). Continuing despite validation failure.
             ) else (
-                echo Initialization cancelled.
-                exit /b 1
+                set /p _CONT=Continue anyway? [y/N]:
+                set "_CONT=%_CONT:~0,1%"
+                if /i "%_CONT%"=="y" (
+                    rem continue
+                ) else (
+                    echo Initialization cancelled.
+                    exit /b 1
+                )
             )
         ) else (
             echo Environment validation completed successfully.
