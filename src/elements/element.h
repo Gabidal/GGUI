@@ -19,6 +19,13 @@
 #include "../core/utils/style.h"
 
 namespace GGUI{
+    namespace STYLING_INTERNAL {
+        class styleBase;
+    }
+    namespace INTERNAL {
+        extern void renderer();
+    }
+
     class element{
     protected:
         // Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
@@ -50,18 +57,28 @@ namespace GGUI{
     public:
 
         /**
-         * @brief The constructor for the Element class that accepts a Styling object.
-         *
-         * This constructor is used when an Element is created without a parent.
-         * In this case, the Element is created as a root object, and it will be
-         * automatically added to the list of root objects.
-         *
-         * @param s The Styling object to use for the Element.
-         * @param Embed_Styles_On_Construct A flag indicating whether to embed the styles on construction. Only use if you know what you're doing!!!
+         * @brief Constructor for the GGUI::element class.
+         * 
+         * This constructor initializes an element with a given style and optionally embeds styles during construction.
+         * 
+         * @param style A reference to a STYLING_INTERNAL::styleBase object that defines the base styling for the element.
+         * @param Embed_Styles_On_Construct A boolean flag indicating whether styles should be embedded during construction.
+         *        - If true, styles are embedded immediately, and the element's initialization state is finalized.
+         *        - If false, styles are not embedded, and a deep copy of unparsed styles is created for later use.
+         * 
+         * @note If styles are embedded during construction, the element's `On_Init` method will not be called again by 
+         *       the main embedding process.
+         * 
+         * @todo Implement the deep copy functionality for unparsed styles in `Style->copyUnParsedStyles()`.
          */
-        // element(styling s = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
-
         element(STYLING_INTERNAL::styleBase& style = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+
+        /**
+         * @brief Constructs an element with the given style and optional embedding of styles.
+         * 
+         * @param style A rvalue reference to a `STYLING_INTERNAL::styleBase` object representing the style to be applied to the element.
+         * @param Embed_Styles_On_Construct A boolean flag indicating whether to embed styles during construction. Defaults to `false`.
+         */
         element(STYLING_INTERNAL::styleBase&& style, bool Embed_Styles_On_Construct = false) : element(style, Embed_Styles_On_Construct) {}
 
         /**
@@ -86,41 +103,11 @@ namespace GGUI{
         virtual ~element();
 
         /**
-         * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
-         * @details This function processes the element to generate a vector of UTF objects representing the current state.
-         * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
-         * @return A vector of UTF objects representing the rendered element and its children.
-         */
-        virtual std::vector<GGUI::UTF>& render();
-
-        /**
-         * @brief Safely moves the current Element object to a new memory location.
-         * 
-         * This function creates a new Element object, copies the contents of the 
-         * current Element object to the new object, and returns a pointer to the 
-         * newly created object.
-         * 
-         * @return Element* Pointer to the newly created Element object.
-         */
-        virtual element* safeMove() const {
-            return new element();
-        }
-
-        /**
          * @brief Creates a deep copy of this Element, including all its children.
          * 
          * @return A new Element object that is a copy of this one.
          */
         element* copy() const;
-
-        /**
-         * @brief Embeds styles into the current element and its child elements.
-         * 
-         * This function calls the Embed_Styles method on the current element's style,
-         * passing the current element as a parameter. It then recursively calls the 
-         * Embed_Styles method on each child element's style.
-         */
-        void embedStyles();
 
         /**
          * @brief Applies the given styling to the element.
@@ -159,23 +146,6 @@ namespace GGUI{
          */
         void addStyling(STYLING_INTERNAL::styleBase&& s){
             addStyling(s);
-        }
-
-        /** 
-         * @brief Marks the Element as fully dirty by setting all stain types.
-         * 
-         * This function sets each stain type on the Dirty object, indicating
-         * that the Element needs to be reprocessed for all attributes.
-         */
-        constexpr void fullyStain(){
-            // Mark the element as dirty for all possible stain types to ensure
-            // complete re-evaluation and rendering.
-            this->Dirty.Dirty(
-                INTERNAL::STAIN_TYPE::STRETCH | 
-                INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::DEEP | 
-                INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::MOVE
-                // INTERNAL::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
-            );
         }
 
         /**
@@ -251,8 +221,6 @@ namespace GGUI{
          */
         styling getStyle() const;
 
-        styling* getDirectStyle();
-
         /**
          * @brief Sets the styling information of the element.
          * @details This function sets the styling information of the element to the given value.
@@ -262,18 +230,6 @@ namespace GGUI{
          * @param css The new styling information to associate with the element.
          */
         void setStyle(styling css);
-
-        /**
-         * @brief Calculates the hitboxes of all child elements of the element.
-         * @details This function calculates the hitboxes of all child elements of the element.
-         *          The hitbox of a child element is the area of the element that is actually visible
-         *          on the screen. The function takes the starting offset into the child array as an
-         *          argument. If no argument is provided, the function starts at the beginning of the
-         *          child array.
-         * @param Starting_Offset The starting offset into the child array. If no argument is provided,
-         *                         the function starts at the beginning of the child array.
-         */
-        virtual void calculateChildsHitboxes([[maybe_unused]] unsigned int Starting_Offset = 0) {}
 
         /**
          * @brief Sets the opacity of the element.
@@ -344,21 +300,6 @@ namespace GGUI{
         void setParent(element* parent);
 
         /**
-         * @brief Get the fitting dimensions for the given child element.
-         *
-         * This function takes a child element and calculates the fitting dimensions for it.
-         * The fitting dimensions are the width and height of the child element that does not exceed the
-         * bounds of the parent element. If the child element is colliding with another child element
-         * then the fitting dimensions are reduced to the point where the collision is resolved.
-         *
-         * @param child The child element for which the fitting dimensions are calculated.
-         * @return A pair containing the width and height of the fitting dimensions.
-         */
-        std::pair<unsigned int, unsigned int> getFittingDimensions(element* child);
-
-        IVector3 getFinalLimit();
-
-        /**
          * @brief Sets the border visibility of the element.
          * @details This function takes a boolean as a parameter and sets the border visibility of the element accordingly.
          *          If the new state is different from the current state, the element will be marked as dirty with the EDGE stain.
@@ -420,21 +361,6 @@ namespace GGUI{
          * It also marks the current element as dirty with the DEEP stain after adding all the elements.
          */
         virtual void setChilds(std::vector<element*> childs);
-
-        /**
-         * @brief Check if any children have changed.
-         * @details This function will check if any of the children have changed, this is used to determine if the element needs to be re-drawn.
-         * @return true if any children have changed, false otherwise.
-         */
-        bool childrenChanged();
-        
-        /**
-         * @brief Check if there are any transparent children.
-         * @details This function determines if the current element or any of its children
-         *          are transparent and require redrawing.
-         * @return True if any child is transparent and not clean; otherwise, false.
-         */
-        bool hasTransparentChildren();    
 
         /**
          * @brief Retrieves the list of child elements.
@@ -568,12 +494,6 @@ namespace GGUI{
          * @return The absolute position of the element as an IVector3 object.
          */
         constexpr IVector3 getAbsolutePosition() { return absolutePositionCache; }
-
-        /**
-         * @brief Update the absolute position cache of the element.
-         * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
-         */
-        void updateAbsolutePositionCache();
 
         /**
          * @brief Sets the title of the window and updates border visibility and colors accordingly.
@@ -949,18 +869,6 @@ namespace GGUI{
         constexpr bool isOverflowAllowed(){ return Style->Allow_Overflow.value; }
         
         /**
-         * @brief Gets the fitting area for a child element in its parent.
-         * @details This function calculates the area where the child element should be rendered within the parent element.
-         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
-         *          The function returns a pair of pairs, where the first pair contains the negative offset of the child element from the parent element,
-         *          the second pair contains the starting offset of the child element within the parent element and the third pair contains the ending offset of the child element within the parent element.
-         * @param Parent The parent element.
-         * @param Child The child element.
-         * @return A pair of pairs containing the fitting area for the child element within the parent element.
-         */
-        static INTERNAL::fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
-                
-        /**
          * @brief Recursively computes the size of the element based on its children.
          * 
          * This function will go through all the elements that are being displayed and
@@ -991,26 +899,6 @@ namespace GGUI{
         void updateParent(element* New_Element);
 
         /**
-         * @brief Add the border of the window to the rendered string.
-         *
-         * @param Result The string to add the border to.
-         */
-        void renderBorders(std::vector<UTF>& Result);
-
-        void renderTitle(std::vector<UTF>& Result);
-
-        /**
-         * @brief Apply the color system to the rendered string.
-         *
-         * This function applies the color system set by the style to the rendered string.
-         * It is called after the element has been rendered and the result is stored in the
-         * Result vector.
-         *
-         * @param Result The vector containing the rendered string.
-         */
-        void applyColors(std::vector<UTF>& Result);
-
-        /**
          * @brief Resizes the element to fit the size of its parent element.
          * @details This function is called when the parent element is resized and the
          *          current element is a child of the parent element. It resizes the
@@ -1026,30 +914,6 @@ namespace GGUI{
         }
 
         /**
-         * @brief Compute the alpha blending of the source element to the destination element.
-         * @details This function takes two UTF elements as arguments, the source element and the destination element.
-         *          It calculates the alpha blending of the source element to the destination element, by adding the
-         *          background color of the source element to the destination element, but only if the source element has
-         *          a non-zero alpha value. If the source element has full opacity, then the destination gets fully rewritten
-         *          over. If the source element has full transparency, then nothing is done.
-         * @param Dest The destination element to which the source element will be blended.
-         * @param Source The source element which will be blended to the destination element.
-         */
-        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, float childOpacity);
-
-        /**
-         * @brief Nests a child element into a parent element.
-         * @details This function calculates the area where the child element should be rendered within the parent element.
-         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
-         *          The function then copies the contents of the child element's buffer into the parent element's buffer at the calculated position.
-         * @param Parent The parent element.
-         * @param Child The child element.
-         * @param Parent_Buffer The parent element's buffer.
-         * @param Child_Buffer The child element's buffer.
-         */
-        void nestElement(element* parent, element* child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
-
-        /**
          * @brief Sets the custom border style for the element.
          * @details This function sets the custom border style for the element, marks the element's edges as dirty, and ensures that the border is visible.
          * @param style The custom border style to set.
@@ -1061,17 +925,6 @@ namespace GGUI{
          * @return The custom border style of the element.
          */
         GGUI::styledBorder getCustomBorderStyle(){ return Style->Border_Style; }
-
-        /**
-         * @brief Posts a process that handles the intersection of borders between two elements and their parent.
-         * @details This function posts a process that handles the intersection of borders between two elements and their parent.
-         *          The process calculates the intersection points of the borders and then constructs a bit mask that portraits the connections the middle point has.
-         *          With the calculated bit mask it can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
-         * @param A The first element.
-         * @param B The second element.
-         * @param Parent_Buffer The buffer of the parent element.
-         */
-        void postProcessBorders(element* A, element* B, std::vector<UTF>& Parent_Buffer);
 
         /**
          * @brief Composes the RGB values of the text color and background color of the element.
@@ -1130,14 +983,23 @@ namespace GGUI{
             return "element<" + getNameAsRaw() + ">";
         }
 
-        std::string getNameAsRaw() const {
-            if (Name.size() == 0) return std::to_string((unsigned long long)this);
-            else return Name;
-        }
+        /**
+         * @brief Retrieves the name of the element as a raw string.
+         * 
+         * If the element's name is not set (i.e., the Name string is empty),
+         * this function returns the memory address of the element as a string.
+         * Otherwise, it returns the Name string.
+         * 
+         * @return A std::string containing either the element's name or its memory address.
+         */
+        std::string getNameAsRaw() const;
 
-        bool hasEmptyName() const {
-            return Name.size() == 0;
-        }
+        /**
+         * @brief Checks if the element's name is empty.
+         * 
+         * @return true if the name of the element has no characters, false otherwise.
+         */
+        bool hasEmptyName() const;
 
         /**
          * @brief Set the name of the element.
@@ -1228,25 +1090,7 @@ namespace GGUI{
          * @param Show_Hidden Flag to determine whether to include hidden elements in the result.
          * @return A vector of pointers to all nested elements.
          */
-        std::vector<element*> getAllNestedElements(bool Show_Hidden = false) {
-            std::vector<element*> result;
-
-            // If the element is not visible and hidden elements should not be shown, return an empty vector.
-            if (!Show && !Show_Hidden)
-                return {};
-
-            // Add the current element to the result vector.
-            result.push_back(this);
-
-            // Recursively retrieve all nested elements from child elements.
-            for (auto e : getChilds()) {
-                std::vector<element*> child_result = e->getAllNestedElements(Show_Hidden);
-                result.insert(result.end(), child_result.begin(), child_result.end());
-            }
-
-            // Return the result vector containing all nested elements.
-            return result;
-        }
+        std::vector<element*> getAllNestedElements(bool Show_Hidden = false);
 
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
@@ -1309,26 +1153,247 @@ namespace GGUI{
          */
         bool childIsShown(element* other);
 
+        /**
+         * @brief Sets the callback function to be executed during the initialization of the element.
+         * 
+         * @param func A pointer to a function that takes a pointer to the current element (`element* self`) 
+         *             as its parameter and returns void. This function will be called during the 
+         *             initialization phase of the element.
+         */
         inline void setOnInit(void (*func)(element* self)){
             On_Init = func;
         }
 
+        /**
+         * @brief Sets a callback function to be executed when the element is destroyed.
+         * 
+         * @param func A pointer to a function that takes a pointer to the current element 
+         *             (`element* self`) as its parameter. This function will be called 
+         *             during the destruction process of the element.
+         */
         inline void setOnDestroy(void (*func)(element* self)){
             On_Destroy = func;
         }
 
+        /**
+         * @brief Sets the callback function to be executed when the element is hidden.
+         * 
+         * @param func A pointer to a function that takes a pointer to the current 
+         *             element (`element* self`) as its parameter. This function will 
+         *             be called when the element is hidden.
+         */
         inline void setOnHide(void (*func)(element* self)){
             On_Hide = func;
         }
 
+        /**
+         * @brief Sets the callback function to be executed when the element is shown.
+         * 
+         * @param func A pointer to a function that takes a pointer to the current 
+         *             element (`element* self`) as its parameter. This function 
+         *             will be called when the element is shown.
+         */
         inline void setOnShow(void (*func)(element* self)){
             On_Show = func;
         }
 
+        /**
+         * @brief Forces the evaluation of dynamic style attributes for the current element.
+         * 
+         * This method checks if the element has an associated style object. If a style object
+         * exists, it triggers the evaluation of dynamic attribute values for the element
+         * by calling the `evaluateDynamicAttributeValues` method on the style object.
+         * 
+         * @note This function is typically used to ensure that the element's style is
+         * up-to-date, especially when dynamic attributes are involved.
+         */
         inline void forceStyleEvaluation(){
             if (Style)
                 Style->evaluateDynamicAttributeValues(this);
         }
+        
+    protected:
+    
+        /**
+         * @brief Retrieves the direct styling associated with this element.
+         * 
+         * This function returns a pointer to the styling object (`GGUI::styling`) 
+         * that is directly associated with the current element. The returned 
+         * styling object can be used to access or modify the visual properties 
+         * of the element.
+         * 
+         * @return GGUI::styling* Pointer to the direct styling object of the element.
+         */
+        styling* getDirectStyle();
+
+        /**
+         * @brief Add the border of the window to the rendered string.
+         *
+         * @param Result The string to add the border to.
+         */
+        void renderBorders(std::vector<UTF>& Result);
+
+        /**
+         * @brief Renders the title of the element into the provided result buffer.
+         * 
+         * This function writes the title text of the element into the `Result` vector,
+         * taking into account the available width and applying an ellipsis ("...") if
+         * the title is too long to fit within the allocated space. The title is styled
+         * using the element's text RGB values.
+         * 
+         * @param Result A vector of UTF objects where the rendered title will be stored.
+         *               The vector should have sufficient size to accommodate the rendered text.
+         * 
+         * @details
+         * - If the title is empty, the function returns immediately without modifying `Result`.
+         * - The title's length is determined by the `Style->Title.Value.size`.
+         * - The function calculates the writable length based on the element's width,
+         *   taking into account borders and the space required for the ellipsis.
+         * - If the title exceeds the writable length, an ellipsis is appended to indicate truncation.
+         * - The function ensures that no characters are written beyond the available width.
+         * 
+         * @note The function assumes that the `Result` vector is pre-allocated and large enough
+         *       to hold the rendered title and ellipsis.
+         */
+        void renderTitle(std::vector<UTF>& Result);
+
+        /**
+         * @brief Apply the color system to the rendered string.
+         *
+         * This function applies the color system set by the style to the rendered string.
+         * It is called after the element has been rendered and the result is stored in the
+         * Result vector.
+         *
+         * @param Result The vector containing the rendered string.
+         */
+        void applyColors(std::vector<UTF>& Result);
+        
+        /**
+         * @brief Posts a process that handles the intersection of borders between two elements and their parent.
+         * @details This function posts a process that handles the intersection of borders between two elements and their parent.
+         *          The process calculates the intersection points of the borders and then constructs a bit mask that portraits the connections the middle point has.
+         *          With the calculated bit mask it can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
+         * @param A The first element.
+         * @param B The second element.
+         * @param Parent_Buffer The buffer of the parent element.
+         */
+        void postProcessBorders(element* A, element* B, std::vector<UTF>& Parent_Buffer);
+
+        /**
+         * @brief Update the absolute position cache of the element.
+         * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
+         */
+        void updateAbsolutePositionCache();
+        
+        /**
+         * @brief Check if any children have changed.
+         * @details This function will check if any of the children have changed, this is used to determine if the element needs to be re-drawn.
+         * @return true if any children have changed, false otherwise.
+         */
+        bool childrenChanged();
+        
+        /**
+         * @brief Check if there are any transparent children.
+         * @details This function determines if the current element or any of its children
+         *          are transparent and require redrawing.
+         * @return True if any child is transparent and not clean; otherwise, false.
+         */
+        bool hasTransparentChildren();    
+        
+        /**
+         * @brief Retrieves the final size limit of the element.
+         *
+         * This function calculates the final size limit of the element based on its
+         * properties and its parent's constraints. If overflow is allowed, the size
+         * limit is set to the maximum possible value. Otherwise, the size is determined
+         * by the element's dimensions or inherited from the parent if dynamic sizing
+         * is allowed.
+         *
+         * @return GGUI::IVector3 The final size limit of the element.
+         */
+        IVector3 getFinalLimit();
+        
+        /**
+         * @brief Get the fitting dimensions for the given child element.
+         *
+         * This function takes a child element and calculates the fitting dimensions for it.
+         * The fitting dimensions are the width and height of the child element that does not exceed the
+         * bounds of the parent element. If the child element is colliding with another child element
+         * then the fitting dimensions are reduced to the point where the collision is resolved.
+         *
+         * @param child The child element for which the fitting dimensions are calculated.
+         * @return A pair containing the width and height of the fitting dimensions.
+         */
+        std::pair<unsigned int, unsigned int> getFittingDimensions(element* child);
+
+        /**
+         * @brief Calculates the hitboxes of all child elements of the element.
+         * @details This function calculates the hitboxes of all child elements of the element.
+         *          The hitbox of a child element is the area of the element that is actually visible
+         *          on the screen. The function takes the starting offset into the child array as an
+         *          argument. If no argument is provided, the function starts at the beginning of the
+         *          child array.
+         * @param Starting_Offset The starting offset into the child array. If no argument is provided,
+         *                         the function starts at the beginning of the child array.
+         */
+        virtual void calculateChildsHitboxes([[maybe_unused]] unsigned int Starting_Offset = 0) {}
+
+        /** 
+         * @brief Marks the Element as fully dirty by setting all stain types.
+         * 
+         * This function sets each stain type on the Dirty object, indicating
+         * that the Element needs to be reprocessed for all attributes.
+         */
+        constexpr void fullyStain(){
+            // Mark the element as dirty for all possible stain types to ensure
+            // complete re-evaluation and rendering.
+            this->Dirty.Dirty(
+                INTERNAL::STAIN_TYPE::STRETCH | 
+                INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::DEEP | 
+                INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::MOVE
+                // INTERNAL::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
+            );
+        }
+        
+        /**
+         * @brief Embeds styles into the current element and its child elements.
+         * 
+         * This function calls the Embed_Styles method on the current element's style,
+         * passing the current element as a parameter. It then recursively calls the 
+         * Embed_Styles method on each child element's style.
+         */
+        void embedStyles();
+        
+        /**
+         * @brief Creates a new instance of the element class.
+         * 
+         * This virtual function is intended to be overridden by derived classes
+         * to provide a mechanism for creating instances of the respective class.
+         * By default, it creates and returns a new instance of the base `element` class.
+         * 
+         * @return A pointer to a newly created instance of the `element` class.
+         */
+        virtual element* createInstance() const {
+            return new element();
+        }
+        
+        /**
+         * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
+         * @details This function processes the element to generate a vector of UTF objects representing the current state.
+         * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
+         * @return A vector of UTF objects representing the rendered element and its children.
+         */
+        virtual std::vector<GGUI::UTF>& render();
+
+        // Give thread::renderer() access to our private render method.
+        friend void INTERNAL::renderer();
+        
+        // Give styling class access to some private methods.
+        friend class styling;
+        friend class STYLING_INTERNAL::styleBase;
+
+        // Since protected methods can be accessed via the derived class only if it is as "this" pointer, so we need to give it access.
+        friend class listView;
     };
 }
 

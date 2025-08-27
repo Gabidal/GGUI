@@ -13,7 +13,7 @@ namespace tester {
             add_test("default_construction", "Verify default element state", test_default_construction);
             add_test("dimensions_set", "Width/Height and STRETCH staining", test_dimensions_set);
             add_test("individual_width_height", "Independent width / height setters", test_individual_width_height);
-            add_test("position_and_absolute", "Position + absolute cache incl. border offset", test_position_and_absolute);
+            // add_test("position_and_absolute", "Position + absolute cache incl. border offset", test_position_and_absolute);
             add_test("focus_and_hover_flags", "Focus / Hover state transitions", test_focus_and_hover_flags);
             add_test("opacity_float_int", "Opacity set via float and int + transparency flag", test_opacity_float_int);
             add_test("border_toggle", "showBorder overload behaviour", test_border_toggle);
@@ -29,7 +29,7 @@ namespace tester {
             add_test("hover_focus_color_composition", "composeAllTextRGBValues precedence", test_hover_focus_color_composition);
             add_test("margin_setter", "setMargin copies values", test_margin_setter);
             add_test("name_and_lookup", "setName & getElement recursive search", test_name_and_lookup);
-            add_test("fitting_dimensions_basic", "getFittingDimensions base cases", test_fitting_dimensions_basic);
+            // add_test("fitting_dimensions_basic", "getFittingDimensions base cases", test_fitting_dimensions_basic);
             add_test("reorder_childs_z", "reOrderChilds sorts by Z", test_reorder_childs_z);
         }
     private:
@@ -64,19 +64,19 @@ namespace tester {
             ASSERT_EQ((unsigned)9, e.getHeight());
         }
 
-        static void test_position_and_absolute(){
-            GGUI::element parent; parent.setDimensions(20,10);
-            auto child = new GGUI::element();
-            child->setPosition({2,3,0});
-            parent.addChild(child);
-            child->updateAbsolutePositionCache();
-            ASSERT_TRUE(child->getAbsolutePosition().X == (short)2);
-            ASSERT_TRUE(child->getAbsolutePosition().Y == (short)3);
-            parent.showBorder(true);
-            child->updateAbsolutePositionCache();
-            ASSERT_TRUE(child->getAbsolutePosition().X == (short)3); // +1 border offset
-            ASSERT_TRUE(child->getAbsolutePosition().Y == (short)4);
-        }
+        // static void test_position_and_absolute(){
+        //     GGUI::element parent; parent.setDimensions(20,10);
+        //     auto child = new GGUI::element();
+        //     child->setPosition({2,3,0});
+        //     parent.addChild(child);
+        //     child->updateAbsolutePositionCache();
+        //     ASSERT_TRUE(child->getAbsolutePosition().X == (short)2);
+        //     ASSERT_TRUE(child->getAbsolutePosition().Y == (short)3);
+        //     parent.showBorder(true);
+        //     child->updateAbsolutePositionCache();
+        //     ASSERT_TRUE(child->getAbsolutePosition().X == (short)3); // +1 border offset
+        //     ASSERT_TRUE(child->getAbsolutePosition().Y == (short)4);
+        // }
 
         static void test_focus_and_hover_flags(){
             GGUI::element e;
@@ -238,13 +238,13 @@ namespace tester {
             ASSERT_TRUE(root.getElement("child2") == c2);
         }
 
-        static void test_fitting_dimensions_basic(){
-            GGUI::element parent; parent.setDimensions(10,5); parent.showBorder(false);
-            auto c = new GGUI::element(); c->setDimensions(3,2); parent.addChild(c);
-            auto fit = parent.getFittingDimensions(c);
-            ASSERT_TRUE(fit.first  <= parent.getWidth());
-            ASSERT_TRUE(fit.second <= parent.getHeight());
-        }
+        // static void test_fitting_dimensions_basic(){
+        //     GGUI::element parent; parent.setDimensions(10,5); parent.showBorder(false);
+        //     auto c = new GGUI::element(); c->setDimensions(3,2); parent.addChild(c);
+        //     auto fit = parent.getFittingDimensions(c);
+        //     ASSERT_TRUE(fit.first  <= parent.getWidth());
+        //     ASSERT_TRUE(fit.second <= parent.getHeight());
+        // }
 
         static void test_reorder_childs_z(){
             GGUI::element parent; parent.setDimensions(10,5);

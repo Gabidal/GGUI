@@ -133,7 +133,7 @@ namespace GGUI{
          * @details This function creates a new List_View object and copies all the data from the current List_View object to the new one.
          * @return A pointer to the new List_View object.
          */
-        element* safeMove() const override {
+        element* createInstance() const override {
             return new listView();
         }
     };
@@ -270,12 +270,12 @@ namespace GGUI{
         /**
          * @brief Safely moves the current element to a new scrollView element.
          * 
-         * This function overrides the safeMove method from the base class and 
+         * This function overrides the createInstance method from the base class and 
          * creates a new instance of the scrollView element.
          * 
          * @return A pointer to the newly created scrollView element.
          */
-        element* safeMove() const override {
+        element* createInstance() const override {
             return new scrollView();
         }
     };

@@ -118,7 +118,7 @@ namespace GGUI{
          * @brief Creates a deep copy of the Terminal_Canvas and returns it as a movable Element.
          * @return A deep copy of the Terminal_Canvas as a movable Element.
          */
-        element* safeMove() const override {
+        element* createInstance() const override {
             return new canvas();
         }
 

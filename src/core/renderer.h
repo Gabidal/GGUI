@@ -329,6 +329,42 @@ namespace GGUI{
          * @param informer Pointer to the buffer capturer with the latest data.
          */
         extern void informAllGlobalBufferCaptures(bufferCapture* informer);
+
+        /**
+         * @brief Gets the fitting area for a child element in its parent.
+         * @details This function calculates the area where the child element should be rendered within the parent element.
+         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
+         *          The function returns a pair of pairs, where the first pair contains the negative offset of the child element from the parent element,
+         *          the second pair contains the starting offset of the child element within the parent element and the third pair contains the ending offset of the child element within the parent element.
+         * @param Parent The parent element.
+         * @param Child The child element.
+         * @return A pair of pairs containing the fitting area for the child element within the parent element.
+         */
+        fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
+
+        /**
+         * @brief Compute the alpha blending of the source element to the destination element.
+         * @details This function takes two UTF elements as arguments, the source element and the destination element.
+         *          It calculates the alpha blending of the source element to the destination element, by adding the
+         *          background color of the source element to the destination element, but only if the source element has
+         *          a non-zero alpha value. If the source element has full opacity, then the destination gets fully rewritten
+         *          over. If the source element has full transparency, then nothing is done.
+         * @param Dest The destination element to which the source element will be blended.
+         * @param Source The source element which will be blended to the destination element.
+         */
+        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, float childOpacity);
+
+        /**
+         * @brief Nests a child element into a parent element.
+         * @details This function calculates the area where the child element should be rendered within the parent element.
+         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
+         *          The function then copies the contents of the child element's buffer into the parent element's buffer at the calculated position.
+         * @param Parent The parent element.
+         * @param Child The child element.
+         * @param Parent_Buffer The parent element's buffer.
+         * @param Child_Buffer The child element's buffer.
+         */
+        void nestElement(element* parent, element* child, std::vector<UTF>& Parent_Buffer, std::vector<UTF>& Child_Buffer);
     }
     // autoGen: Ignore end
     

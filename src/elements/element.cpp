@@ -111,6 +111,21 @@ void GGUI::UTF::toEncodedSuperString(
     }
 }
 
+/**
+ * @brief Constructor for the GGUI::element class.
+ * 
+ * This constructor initializes an element with a given style and optionally embeds styles during construction.
+ * 
+ * @param style A reference to a STYLING_INTERNAL::styleBase object that defines the base styling for the element.
+ * @param Embed_Styles_On_Construct A boolean flag indicating whether styles should be embedded during construction.
+ *        - If true, styles are embedded immediately, and the element's initialization state is finalized.
+ *        - If false, styles are not embedded, and a deep copy of unparsed styles is created for later use.
+ * 
+ * @note If styles are embedded during construction, the element's `On_Init` method will not be called again by 
+ *       the main embedding process.
+ * 
+ * @todo Implement the deep copy functionality for unparsed styles in `Style->copyUnParsedStyles()`.
+ */
 GGUI::element::element(STYLING_INTERNAL::styleBase& style, bool Embed_Styles_On_Construct){
     fullyStain();
 
@@ -438,6 +453,16 @@ GGUI::styling GGUI::element::getStyle() const {
     return *Style;
 }
 
+/**
+ * @brief Retrieves the direct styling associated with this element.
+ * 
+ * This function returns a pointer to the styling object (`GGUI::styling`) 
+ * that is directly associated with the current element. The returned 
+ * styling object can be used to access or modify the visual properties 
+ * of the element.
+ * 
+ * @return GGUI::styling* Pointer to the direct styling object of the element.
+ */
 GGUI::styling* GGUI::element::getDirectStyle() {
     return Style;
 }
@@ -891,7 +916,7 @@ void GGUI::element::setMargin(margin margin) {
 GGUI::element* GGUI::element::copy() const {
     // Compile time check
     //static_assert(std::is_same<T&, decltype(*this)>::value, "T must be the same as the type of the object");
-    element* new_element = safeMove();
+    element* new_element = createInstance();
 
     // Make sure the name is also renewed to represent the memory.
     new_element->setName(std::to_string((unsigned long long)new_element));
@@ -916,6 +941,7 @@ GGUI::element* GGUI::element::copy() const {
     *new_element->Style = *this->Style;
 
     //now also update the event handlers.
+    // NOTE: We don't have enough power to update the lambda captures of the this ptr value, so please use the self->host ptr instead!
     for (auto& e : INTERNAL::Event_Handlers){
 
         if (e->host == this){
@@ -929,8 +955,6 @@ GGUI::element* GGUI::element::copy() const {
             INTERNAL::Event_Handlers.push_back(new_action);
         }
     }
-
-    // TODO: somehow make the Lambda functions for State Handlers to switch their self pointers.
 
     // Clear the Focused on bool
     new_element->Focused = false;
@@ -1025,6 +1049,17 @@ std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(elemen
     return {Result_Width, Result_Height};
 }
 
+/**
+ * @brief Retrieves the final size limit of the element.
+ *
+ * This function calculates the final size limit of the element based on its
+ * properties and its parent's constraints. If overflow is allowed, the size
+ * limit is set to the maximum possible value. Otherwise, the size is determined
+ * by the element's dimensions or inherited from the parent if dynamic sizing
+ * is allowed.
+ *
+ * @return GGUI::IVector3 The final size limit of the element.
+ */
 GGUI::IVector3 GGUI::element::getFinalLimit(){
     if (isOverflowAllowed()){
         return {INT16_MAX, INT16_MAX};
@@ -1443,11 +1478,33 @@ void GGUI::element::renderBorders(std::vector<UTF>& Result){
 }
 
 
+/**
+ * @brief Renders the title of the element into the provided result buffer.
+ * 
+ * This function writes the title text of the element into the `Result` vector,
+ * taking into account the available width and applying an ellipsis ("...") if
+ * the title is too long to fit within the allocated space. The title is styled
+ * using the element's text RGB values.
+ * 
+ * @param Result A vector of UTF objects where the rendered title will be stored.
+ *               The vector should have sufficient size to accommodate the rendered text.
+ * 
+ * @details
+ * - If the title is empty, the function returns immediately without modifying `Result`.
+ * - The title's length is determined by the `Style->Title.Value.size`.
+ * - The function calculates the writable length based on the element's width,
+ *   taking into account borders and the space required for the ellipsis.
+ * - If the title exceeds the writable length, an ellipsis is appended to indicate truncation.
+ * - The function ensures that no characters are written beyond the available width.
+ * 
+ * @note The function assumes that the `Result` vector is pre-allocated and large enough
+ *       to hold the rendered title and ellipsis.
+ */
 void GGUI::element::renderTitle(std::vector<UTF>& Result){
     if (Style->Title.empty())
         return;
 
-    unsigned int Title_Length = Style->Title.Value.size; // +1 for trailing, since COmpact_Strings do not include trailing characters in their size.
+    unsigned int Title_Length = Style->Title.Value.size; // +1 for trailing, since Compact_Strings do not include trailing characters in their size.
     unsigned int Horizontal_Offset = hasBorder();
     INTERNAL::compactString Ellipsis = "...";
     bool Enable_Ellipsis = false;
@@ -1469,94 +1526,6 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
             if (Ellipsis_Offset + x < getWidth()){
                 Result[Ellipsis_Offset + x] = UTF(Ellipsis[x], composeAllTextRGBValues());
             }
-        }
-    }
-}
-
-/**
- * @brief Compute the alpha blending of the source element to the destination element.
- * @details This function takes two UTF elements as arguments, the source element and the destination element.
- *          It calculates the alpha blending of the source element to the destination element, by adding the
- *          background color of the source element to the destination element, but only if the source element has
- *          a non-zero alpha value. If the source element has full opacity, then the destination gets fully rewritten
- *          over. If the source element has full transparency, then nothing is done.
- * @param Dest The destination element to which the source element will be blended.
- * @param Source The source element which will be blended to the destination element.
- */
-void GGUI::element::computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, float childOpacity){
-    // If the Source element has full opacity, then the destination gets fully rewritten over.
-    if (childOpacity == 1.0f){
-        Dest = Source;
-        return;
-    }
-    else if (childOpacity == 0.0f) return;         // Dont need to do anything.
-
-    // Color the Destination UTF by the Source UTF background color.
-    Dest.background.add(Source.background, childOpacity);
-    Dest.foreground.add(Source.background, childOpacity);
-
-    // Check if source has text
-    if (!Source.hasDefaultText()){
-        Dest.setText(Source);
-        Dest.foreground.add(Source.foreground, childOpacity); 
-    }
-}
-
-/**
- * @brief Gets the fitting area for a child element in its parent.
- * @details This function calculates the area where the child element should be rendered within the parent element.
- *          It takes into account the border offsets of both the parent and the child element as well as their positions.
- * @param Parent The parent element.
- * @param Child The child element.
- */
-GGUI::INTERNAL::fittingArea GGUI::element::getFittingArea(GGUI::element* Parent, GGUI::element* Child){
-    // If both dont have same border setup and parent has a border, then the child needs to be offsetted by one in every direction.
-    int Border_Offset = Parent->hasBorder() != Child->hasBorder() && Parent->hasBorder() ? 1 : 0;
-    
-    // Absolute bounding
-    IVector2 parentStart = {Border_Offset, Border_Offset};
-    IVector2 parentEnd = {Parent->getWidth() - Border_Offset, Parent->getHeight() - Border_Offset};
-
-    // This only contains value if the position of the child element has any negative positioning in it.
-    IVector2 negativeOffset = {
-        Child->Style->Position.get().X < 0 ? -Child->Style->Position.get().X : 0,
-        Child->Style->Position.get().Y < 0 ? -Child->Style->Position.get().Y : 0
-    };
-
-    // Drawable box start, within the bounding box.
-    IVector2 childStart = IVector2{
-        GGUI::INTERNAL::Max(Child->Style->Position.get().X, 0),
-        GGUI::INTERNAL::Max(Child->Style->Position.get().Y, 0)
-    } + parentStart;
-
-    // Drawable box end, within the bounding box.
-    IVector2 childEnd = {
-        GGUI::INTERNAL::Min(childStart.X + Child->getWidth() - negativeOffset.X, parentEnd.X),
-        GGUI::INTERNAL::Min(childStart.Y + Child->getHeight() - negativeOffset.Y, parentEnd.Y)
-    };
-
-    return {negativeOffset, childStart, childEnd };
-}
-
-/**
- * @brief Nests a child element into a parent element.
- * @details This function calculates the area where the child element should be rendered within the parent element.
- *          It takes into account the border offsets of both the parent and the child element as well as their positions.
- *          The function then copies the contents of the child element's buffer into the parent element's buffer at the calculated position.
- * @param Parent The parent element.
- * @param Child The child element.
- * @param Parent_Buffer The parent element's buffer.
- * @param Child_Buffer The child element's buffer.
- */
-void GGUI::element::nestElement(GGUI::element* parent, GGUI::element* child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF>& Child_Buffer){
-    INTERNAL::fittingArea Limits = getFittingArea(parent, child);
-
-    for (int y = Limits.start.Y; y < Limits.end.Y; y++){
-        for (int x = Limits.start.X; x < Limits.end.X; x++){
-            // Calculate the position of the child element in its own buffer.
-            int Child_Buffer_Y = (y - Limits.start.Y + Limits.negativeOffset.Y) * child->getWidth();
-            int Child_Buffer_X = (x - Limits.start.X + Limits.negativeOffset.X); 
-            computeAlphaToNesting(Parent_Buffer[y * getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacity());
         }
     }
 }
@@ -1841,6 +1810,29 @@ bool GGUI::element::hasTransparentChildren() {
 }
 
 /**
+ * @brief Retrieves the name of the element as a raw string.
+ * 
+ * If the element's name is not set (i.e., the Name string is empty),
+ * this function returns the memory address of the element as a string.
+ * Otherwise, it returns the Name string.
+ * 
+ * @return A std::string containing either the element's name or its memory address.
+ */
+std::string GGUI::element::getNameAsRaw() const {
+    if (Name.size() == 0) return std::to_string((unsigned long long)this);
+    else return Name;
+}
+
+/**
+ * @brief Checks if the element's name is empty.
+ * 
+ * @return true if the name of the element has no characters, false otherwise.
+ */
+bool GGUI::element::hasEmptyName() const {
+    return Name.size() == 0;
+}
+
+/**
  * @brief Set the name of the element.
  * @details This function sets the name of the element and stores it in the global Element_Names map.
  * @param name The name of the element.
@@ -1876,6 +1868,33 @@ GGUI::element* GGUI::element::getElement(std::string name){
     }
 
     return nullptr;
+}
+
+/**
+ * @brief Retrieves all nested elements, including this element.
+ * @details This function collects all nested elements recursively, starting from this element.
+ *          If 'Show_Hidden' is false, hidden elements are excluded from the result.
+ * @param Show_Hidden Flag to determine whether to include hidden elements in the result.
+ * @return A vector of pointers to all nested elements.
+ */
+std::vector<GGUI::element*> GGUI::element::getAllNestedElements(bool Show_Hidden) {
+    std::vector<element*> result;
+
+    // If the element is not visible and hidden elements should not be shown, return an empty vector.
+    if (!Show && !Show_Hidden)
+        return {};
+
+    // Add the current element to the result vector.
+    result.push_back(this);
+
+    // Recursively retrieve all nested elements from child elements.
+    for (auto e : getChilds()) {
+        std::vector<element*> child_result = e->getAllNestedElements(Show_Hidden);
+        result.insert(result.end(), child_result.begin(), child_result.end());
+    }
+
+    // Return the result vector containing all nested elements.
+    return result;
 }
 
 /**

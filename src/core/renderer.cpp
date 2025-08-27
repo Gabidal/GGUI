@@ -2237,6 +2237,94 @@ namespace GGUI{
             }
 
         }
+    
+        /**
+         * @brief Gets the fitting area for a child element in its parent.
+         * @details This function calculates the area where the child element should be rendered within the parent element.
+         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
+         * @param Parent The parent element.
+         * @param Child The child element.
+         */
+        GGUI::INTERNAL::fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child){
+            // If both dont have same border setup and parent has a border, then the child needs to be offsetted by one in every direction.
+            int Border_Offset = Parent->hasBorder() != Child->hasBorder() && Parent->hasBorder() ? 1 : 0;
+            
+            // Absolute bounding
+            IVector2 parentStart = {Border_Offset, Border_Offset};
+            IVector2 parentEnd = {Parent->getWidth() - Border_Offset, Parent->getHeight() - Border_Offset};
+
+            // This only contains value if the position of the child element has any negative positioning in it.
+            IVector2 negativeOffset = {
+                Child->getPosition().X < 0 ? -Child->getPosition().X : 0,
+                Child->getPosition().Y < 0 ? -Child->getPosition().Y : 0
+            };
+
+            // Drawable box start, within the bounding box.
+            IVector2 childStart = IVector2{
+                GGUI::INTERNAL::Max(Child->getPosition().X, 0),
+                GGUI::INTERNAL::Max(Child->getPosition().Y, 0)
+            } + parentStart;
+
+            // Drawable box end, within the bounding box.
+            IVector2 childEnd = {
+                GGUI::INTERNAL::Min(childStart.X + Child->getWidth() - negativeOffset.X, parentEnd.X),
+                GGUI::INTERNAL::Min(childStart.Y + Child->getHeight() - negativeOffset.Y, parentEnd.Y)
+            };
+
+            return {negativeOffset, childStart, childEnd };
+        }
+
+        /**
+         * @brief Compute the alpha blending of the source element to the destination element.
+         * @details This function takes two UTF elements as arguments, the source element and the destination element.
+         *          It calculates the alpha blending of the source element to the destination element, by adding the
+         *          background color of the source element to the destination element, but only if the source element has
+         *          a non-zero alpha value. If the source element has full opacity, then the destination gets fully rewritten
+         *          over. If the source element has full transparency, then nothing is done.
+         * @param Dest The destination element to which the source element will be blended.
+         * @param Source The source element which will be blended to the destination element.
+         */
+        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, float childOpacity){
+            // If the Source element has full opacity, then the destination gets fully rewritten over.
+            if (childOpacity == 1.0f){
+                Dest = Source;
+                return;
+            }
+            else if (childOpacity == 0.0f) return;         // Dont need to do anything.
+
+            // Color the Destination UTF by the Source UTF background color.
+            Dest.background.add(Source.background, childOpacity);
+            Dest.foreground.add(Source.background, childOpacity);
+
+            // Check if source has text
+            if (!Source.hasDefaultText()){
+                Dest.setText(Source);
+                Dest.foreground.add(Source.foreground, childOpacity); 
+            }
+        }
+
+        /**
+         * @brief Nests a child element into a parent element.
+         * @details This function calculates the area where the child element should be rendered within the parent element.
+         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
+         *          The function then copies the contents of the child element's buffer into the parent element's buffer at the calculated position.
+         * @param Parent The parent element.
+         * @param Child The child element.
+         * @param Parent_Buffer The parent element's buffer.
+         * @param Child_Buffer The child element's buffer.
+         */
+        void nestElement(GGUI::element* parent, GGUI::element* child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF>& Child_Buffer){
+            INTERNAL::fittingArea Limits = getFittingArea(parent, child);
+
+            for (int y = Limits.start.Y; y < Limits.end.Y; y++){
+                for (int x = Limits.start.X; x < Limits.end.X; x++){
+                    // Calculate the position of the child element in its own buffer.
+                    int Child_Buffer_Y = (y - Limits.start.Y + Limits.negativeOffset.Y) * child->getWidth();
+                    int Child_Buffer_X = (x - Limits.start.X + Limits.negativeOffset.X); 
+                    computeAlphaToNesting(Parent_Buffer[y * parent->getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacity());
+                }
+            }
+        }
     }
 
     /**

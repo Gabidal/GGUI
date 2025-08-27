@@ -57,7 +57,7 @@ namespace GGUI{
          * HTML object to the new one. This is useful for creating a new HTML object that is
          * a modified version of the current one.
          */
-        element* safeMove() const override {
+        element* createInstance() const override {
             return new HTML();
         }
 

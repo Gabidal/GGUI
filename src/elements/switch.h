@@ -129,7 +129,7 @@ namespace GGUI{
          *          This is useful for creating a new Switch object that is a modified version of the current one.
          * @return A pointer to the new Switch object.
          */
-        element* safeMove() const override {
+        element* createInstance() const override {
             return new switchBox();
         }
 
@@ -189,7 +189,7 @@ namespace GGUI{
         }
 
         // Diabled, use the switchBox class type for search
-        // element* safeMove() const override {
+        // element* createInstance() const override {
         //     return new radioButton();
         // }
     };
@@ -230,7 +230,7 @@ namespace GGUI{
         }
 
         // Disabled, use the switchBox class type.
-        // element* safeMove() const override {
+        // element* createInstance() const override {
         //     return new checkBox();
         // }
     };
