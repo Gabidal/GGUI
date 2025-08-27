@@ -222,7 +222,7 @@ test_requirements() {
             ((TEST_FAILED++))
         else
             # Extract and validate G++ version (must be 13 or higher)
-            local gpp_version=$(echo "$gpp_version_output" | grep -oE '[0-9]+\.[0-9]+' | head -n1 | cut -d. -f1)
+            local gpp_version=$(echo "$gpp_version_output" | grep -oE '[0-9]+' | head -n1)
             if [[ -n "$gpp_version" && "$gpp_version" -ge 13 ]]; then
                 echo "G++ version: SUFFICIENT (version $gpp_version)"
             else
