@@ -48,9 +48,10 @@ jobs:
 
       - name: Configure (Meson) Windows
         if: startsWith(matrix.os, 'windows')
+        shell: cmd
         run: |
-          $env:GGUI_FORCE=1
-          .\bin\init.bat
+          set GGUI_FORCE=1
+          call .\bin\init.bat
 
       - name: Compile Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
