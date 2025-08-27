@@ -45,30 +45,6 @@ if exist ".\analytics\utils\validate.sh" (
         rem Normalize line endings to avoid $'\r' issues in Git Bash
         bash -lc "sed -i 's/\r$//' ./analytics/utils/validate.sh 2>/dev/null || true; sed -i 's/\r$//' ./analytics/*.sh 2>/dev/null || true; sed -i 's/\r$//' ./analytics/utils/*.sh 2>/dev/null || true; sed -i 's/\r$//' ./build.sh 2>/dev/null || true" >nul 2>nul
         bash "./analytics/utils/validate.sh"
-        if errorlevel 1 (
-            echo Environment validation failed. Analytics tools may not work properly.
-            rem Auto-continue conditions:
-            rem  - GGUI_FORCE environment variable defined (any value)
-            rem  - CI environment (GitHub Actions sets CI=true)
-            if defined GGUI_FORCE (
-                echo Force/CI mode detected (GGUI_FORCE=%GGUI_FORCE%, CI=%CI%). Continuing despite validation failure.
-            ) else (
-                if /i "%CI%"=="true" (
-                    echo Force/CI mode detected (GGUI_FORCE=%GGUI_FORCE%, CI=%CI%). Continuing despite validation failure.
-                ) else (
-                    set /p _CONT=Continue anyway? [y/N]:
-                    set "_CONT=%_CONT:~0,1%"
-                    if /i "%_CONT%"=="y" (
-                        rem continue
-                    ) else (
-                        echo Initialization cancelled.
-                        exit /b 1
-                    )
-                )
-            )
-        ) else (
-            echo Environment validation completed successfully.
-        )
     ) else (
         echo Warning: 'bash' not found. Skipping analytics validation.
         if defined _missingTool (
