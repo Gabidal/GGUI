@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ Dev, main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test (${{ matrix.os }} / ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        compiler: [gcc]
+    env:
+      CXX: g++
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip ninja-build g++ meson valgrind
+
+      - name: Install dependencies (Windows)
+        if: startsWith(matrix.os, 'windows')
+        shell: powershell
+        run: |
+          choco install -y ninja git mingw-w64
+          python -m pip install --upgrade meson
+
+      - name: Configure (Meson)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          ./bin/init.sh
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          .\bin\init.bat
+
+      - name: Compile
+        if: startsWith(matrix.os, 'ubuntu')
+        run: ./bin/build.sh
+        if: startsWith(matrix.os, 'windows')
+        run: .\bin\build.bat
+
+      - name: Run tests
+        if: startsWith(matrix.os, 'ubuntu')
+        run: ./bin/test.sh
+        if: startsWith(matrix.os, 'windows')
+        run: .\bin\test.bat
