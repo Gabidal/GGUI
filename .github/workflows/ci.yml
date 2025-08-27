@@ -42,22 +42,26 @@ jobs:
           choco install -y ninja git mingw-w64
           python -m pip install --upgrade meson
 
-      - name: Configure (Meson)
+      - name: Configure (Meson) Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          ./bin/init.sh
-        if: startsWith(matrix.os, 'windows')
-        run: |
-          .\bin\init.bat
+        run: ./bin/init.sh
 
-      - name: Compile
+      - name: Configure (Meson) Windows
+        if: startsWith(matrix.os, 'windows')
+        run: .\bin\init.bat
+
+      - name: Compile Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
         run: ./bin/build.sh
+
+      - name: Compile Windows
         if: startsWith(matrix.os, 'windows')
         run: .\bin\build.bat
 
-      - name: Run tests
+      - name: Run tests Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
         run: ./bin/test.sh
+
+      - name: Run tests Windows
         if: startsWith(matrix.os, 'windows')
         run: .\bin\test.bat
