@@ -67,83 +67,53 @@ if "%CXX%"=="" (
     echo CXX environment variable was not set. Defaulting to 'g++'.
 )
 
-echo Step 3: Setting up the build directory...
+rem Check if ./build, ./build-win, ./build-release, ./build-linux exists, if so then remove them
+echo Checking for old build directories...
 if exist "build" (
-    meson setup --wipe build -Dbuildtype=debug
+    echo Removing old 'build' directory...
+    rmdir /s /q "build"
     if errorlevel 1 (
-        echo Error: Failed to reconfigure the build directory.
+        echo Error: Failed to remove old 'build' directory.
         exit /b 1
     )
-) else (
-    meson setup build -Dbuildtype=debug
+)
+if exist "build-release" (
+    echo Removing old 'build-release' directory...
+    rmdir /s /q "build-release"
     if errorlevel 1 (
-        echo Error: Failed to configure the build directory.
+        echo Error: Failed to remove old 'build-release' directory. 
+        exit /b 1
+    )
+)
+if exist "build-win" (
+    echo Removing old 'build-win' directory...
+    rmdir /s /q "build-win"
+    if errorlevel 1 (
+        echo Error: Failed to remove old 'build-win' directory.
+        exit /b 1
+    )
+)
+if exist "build-linux" (
+    echo Removing old 'build-linux' directory...
+    rmdir /s /q "build-linux"
+    if errorlevel 1 (
+        echo Error: Failed to remove old 'build-linux' directory.
         exit /b 1
     )
 )
 
-echo Step 4: Compiling the core application (GGUI)...
-meson compile -C build GGUI
+echo Step 3: Setting up the debug build directory...
+rem Since the build directories are already removed, we can just assume build dir is gone.
+meson setup build -Dbuildtype=debug
+if errorlevel 1 (
+    echo Error: Failed to configure the build directory.
+    exit /b 1
+)
+
+echo Step 4: Compiling basic debug build...
+meson compile -C build
 if errorlevel 1 (
     echo Error: Compilation failed while building GGUI.
-    exit /b 1
-)
-
-echo Step 4.1: Preparing export artifacts (header and native library)...
-set "HEADER_OUT=build\GGUI.h"
-if not exist "%HEADER_OUT%" (
-    if not exist "build\ggui_headergen.exe" (
-        echo Building header generator...
-        g++ -std=c++17 -O2 -o "build\ggui_headergen.exe" "export\buildGGUILib.cpp"
-        if errorlevel 1 (
-            echo Error: Failed to compile header generator.
-            exit /b 1
-        )
-    )
-    echo Generating amalgamated header...
-    "build\ggui_headergen.exe" --headers-only --out "%HEADER_OUT%" --source-root ".." 
-    if errorlevel 1 (
-        echo Error: Header generation failed.
-        exit /b 1
-    )
-)
-
-rem Create export directory and copy artifacts
-set "EXPORT_DIR=%cd%\export"
-if not exist "%EXPORT_DIR%" (
-    mkdir "%EXPORT_DIR%" >nul 2>nul
-)
-copy /Y "%HEADER_OUT%" "%EXPORT_DIR%\GGUI.h" >nul
-if errorlevel 1 (
-    echo Error: Failed to copy header to export directory.
-    exit /b 1
-)
-rem Build non-thin native archive and copy to export
-if exist "build\GGUIWin.lib" del /f /q "build\GGUIWin.lib" >nul 2>nul
-if exist "build\libGGUIUnix.a" del /f /q "build\libGGUIUnix.a" >nul 2>nul
-meson compile -C build build_native_archive
-if errorlevel 1 (
-    echo Error: Failed to build native archive.
-    exit /b 1
-)
-if exist "build\GGUIWin.lib" (
-    copy /Y "build\GGUIWin.lib" "%EXPORT_DIR%\GGUIWin.lib" >nul
-) else if exist "build\libGGUIUnix.a" (
-    copy /Y "build\libGGUIUnix.a" "%EXPORT_DIR%\libGGUIUnix.a" >nul
-) else (
-    echo Error: Native archive output not found after build.
-    exit /b 1
-)
-
-rem Create stamp files newer than inputs to satisfy ninja deps
-echo done> "build\exported_header.stamp"
-echo done> "build\exported_native_lib.stamp"
-
-echo Step 4.2: Compiling tester (uses exported artifacts)...
-if exist "build\GGUIWin.lib" del /f /q "build\GGUIWin.lib" >nul 2>nul
-meson compile -C build tester
-if errorlevel 1 (
-    echo Error: Tester build failed.
     exit /b 1
 )
 

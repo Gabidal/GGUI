@@ -222,7 +222,7 @@ test_requirements() {
             ((TEST_FAILED++))
         else
             # Extract and validate G++ version (must be 13 or higher)
-            local gpp_version=$(echo "$gpp_version_output" | sed -n 's/.* \([0-9]\+\).*/\1/p')
+            local gpp_version=$(echo "$gpp_version_output" | grep -oP '\d+(\.\d+)?' | head -n1 | cut -d. -f1)
             if [[ -n "$gpp_version" && "$gpp_version" -ge 13 ]]; then
                 echo "G++ version: SUFFICIENT (version $gpp_version)"
             else
@@ -460,6 +460,6 @@ else
     echo "- Check file permissions: chmod +x bin/analytics/*.sh"
     echo "- Verify GGUI project structure and git repository"
     echo "- Ensure you're running from within the GGUI project"
-    echo "- Missing gcc or too old version? Run: sudo apt install gcc-13 g++-13 && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 60 --slave /usr/bin/g++ g++ /usr/bin/g++-13"
+    echo "- Missing gcc or too old version? Run: sudo apt install -y gcc-13 g++-13 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 60 && sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 60"
     exit 1
 fi

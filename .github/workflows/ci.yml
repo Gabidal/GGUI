@@ -44,7 +44,7 @@ jobs:
 
       - name: Configure (Meson) Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
-        run: GGUI_FORCE=1 ./bin/init.sh
+        run: CI=1 ./bin/init.sh
 
       - name: Configure (Meson) Windows
         if: startsWith(matrix.os, 'windows')
