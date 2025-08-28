@@ -28,20 +28,9 @@ jobs:
       CXX: g++
 
     steps:
-      # Checkout repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Cache pip dependencies (for Meson)
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # Install dependencies
       - name: Install dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -55,37 +44,33 @@ jobs:
           choco install -y ninja git mingw-w64
           python -m pip install --upgrade meson
 
-      # Configure project
-      - name: Configure (Ubuntu)
+      - name: Configure (Meson) Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: CI=1 ./bin/init.sh
 
-      - name: Configure (Windows)
+      - name: Configure (Meson) Windows
         if: matrix.os == 'windows-latest'
         run: .\bin\init.bat
 
-      # Build
-      - name: Build (Ubuntu)
+      - name: Compile Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: ./bin/build.sh
 
-      - name: Build (Windows)
+      - name: Compile Windows
         if: matrix.os == 'windows-latest'
         run: .\bin\build.bat
 
-      # Run tests
-      - name: Test (Ubuntu)
+      - name: Run tests Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: ./bin/test.sh
 
-      - name: Test (Windows)
+      - name: Run tests Windows
         if: matrix.os == 'windows-latest'
         run: .\bin\test.bat
 
-      # Upload test logs on failure
-      - name: Upload logs if tests fail
+      - name: Upload test logs if tests fail
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-logs-${{ matrix.os }}
           path: ./test/logs/
