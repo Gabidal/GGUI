@@ -99,14 +99,6 @@ link_args = []
 # Add custom flags based on Meson's buildtype
 if build_type == 'debug'
   cpp_args += ['-DGGUI_DEBUG', '-Og']
-  if cppc.has_argument('-flto')
-    cpp_args += ['-flto']
-    link_args += ['-flto']
-  endif
-  if cppc.has_argument('-fwhole-program')
-    cpp_args += ['-fwhole-program']
-    link_args += ['-fwhole-program']
-  endif
 elif build_type == 'release'
   cpp_args += ['-DGGUI_RELEASE']
   # Avoid -march=native for cross builds (e.g., MinGW)
