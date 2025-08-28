@@ -2,12 +2,16 @@
 
 using namespace GGUI;
 
-int main()
-{
+int main(int argc, char* argv[]){
+    
+    // This will enable whatever the user gave the args with GGUI
+    GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
+
     GGUI::GGUI(
-        GGUI::backgroundColor(GGUI::COLOR::BLACK)
+        backgroundColor(COLOR::YELLOW) | 
+        enableBorder(true)
     );
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
     EXIT();
 }

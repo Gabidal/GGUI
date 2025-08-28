@@ -83,32 +83,38 @@ namespace GGUI{
 
                     Identical_Frame = true; // Assume that the incoming frame will be identical.
 
-                    Abstract_Frame_Buffer = &Main->render();
+                    // Main is zero size, before the DRM sends us the correct window size.
+                    bool FirstDRMRender = GGUI::SETTINGS::enableDRM && (Main->getWidth() == 0 && Main->getHeight() == 0);
 
-                    if (!Identical_Frame){
-                        if (SETTINGS::enableDRM) {
-                            DRM::sendBuffer(*Abstract_Frame_Buffer);
+                    // Skip rendering until DRM sends us the window size.
+                    if (!FirstDRMRender) {
+                        Abstract_Frame_Buffer = &Main->render();
+
+                        if (!Identical_Frame){
+                            if (SETTINGS::enableDRM) {
+                                DRM::sendBuffer(*Abstract_Frame_Buffer);
+                            }
+                            else {
+                                // ENCODE for optimize
+                                encodeBuffer(Abstract_Frame_Buffer);
+
+                                unsigned int Liquefied_Size = 0;
+                                fastVector<compactString> CS_Buffer = liquifyUTFText(Abstract_Frame_Buffer, Liquefied_Size, Main->getWidth(), Main->getHeight());
+                                
+                                Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
+                                
+                                renderFrame();
+                            }
                         }
-                        else {
-                            // ENCODE for optimize
-                            encodeBuffer(Abstract_Frame_Buffer);
+                        else{
+                        #ifdef GGUI_DEBUG
+                            LOGGER::Log("Saved frame");
+                        #endif
 
-                            unsigned int Liquefied_Size = 0;
-                            fastVector<compactString> CS_Buffer = liquifyUTFText(Abstract_Frame_Buffer, Liquefied_Size, Main->getWidth(), Main->getHeight());
-                            
-                            Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
-                            
-                            renderFrame();
-                        }
-                    }
-                    else{
-                    #ifdef GGUI_DEBUG
-                        LOGGER::Log("Saved frame");
-                    #endif
-
-                        if (SETTINGS::enableDRM) {
-                            std::vector<UTF> empty;
-                            DRM::sendBuffer(empty);
+                            if (SETTINGS::enableDRM) {
+                                std::vector<UTF> empty;
+                                DRM::sendBuffer(empty);
+                            }
                         }
                     }
                 }

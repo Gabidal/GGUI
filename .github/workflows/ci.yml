@@ -19,7 +19,7 @@ jobs:
     name: Build & Test (${{ matrix.os }} / ${{ matrix.compiler }})
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os: [ubuntu-latest, windows-latest]
         compiler: [gcc]

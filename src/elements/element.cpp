@@ -3,6 +3,7 @@
 
 #include "../core/renderer.h"
 #include "../core/utils/utils.h"
+#include "../core/utils/settings.h"
 
 #include <algorithm>
 #include <vector>
