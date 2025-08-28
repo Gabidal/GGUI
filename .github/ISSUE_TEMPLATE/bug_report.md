@@ -17,13 +17,21 @@ Steps to reproduce:
 What you expected to happen.
 
 ## Actual behavior / Output
-Include logs / screenshots if helpful.
+Include relevant logs (or link to a file) and screenshots if helpful.
 
 ## Environment
 - OS: 
+- Architecture: 
 - Compiler & version: 
-- Commit / Tag: 
+- Build type (Debug/Release): 
 - Terminal / Shell: 
+- Commit / Tag: 
+
+## Severity (optional)
+- Minor / Major / Blocking
+
+## Related PR or Issue (optional)
+Link if relevant.
 
 ## Additional context
 Add any other context here.

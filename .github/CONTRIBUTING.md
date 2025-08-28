@@ -19,6 +19,7 @@ Thanks for considering contributing!
 - Cover user accessible API's with doxygen comments
 - Avoid using abbreviations
 - Add enough comments, so that other developers can easily follow the code structure.
+- Use std::unique_ptr/std::shared_ptr only if ownership semantics require it
 
 ## Tests
 Unit tests live under `test/`. Add focused tests for new logic.
