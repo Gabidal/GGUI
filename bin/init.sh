@@ -73,7 +73,7 @@ if [[ -f "./analytics/utils/validate.sh" ]]; then
         # Allow non-interactive/CI environments to bypass the prompt.
         # Conditions to auto-continue:
         #  - CI environment (GitHub Actions sets CI=true)
-        if [[ -n "$CI" == "true" ]]; then
+        if [[ -n "$CI" ]]; then
             echo "Force/CI mode detected (CI=$CI). Continuing despite validation failure." >&2
         else
             read -p "Continue anyway? [y/N]: " -r
