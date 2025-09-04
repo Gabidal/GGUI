@@ -73,33 +73,7 @@ rem 4) Export native artifacts from release build (manual path for reliability o
 echo %LOG_PREFIX% exporting native artifacts (manual)
 if not exist "%EXPORT_DIR%\" mkdir "%EXPORT_DIR%" >nul 2>nul
 
-rem Generate amalgamated header using headergen (build if missing)
-set "HEADER_OUT=%BUILD_DIR_RELEASE%\GGUI.h"
-set "SOURCE_ROOT=%SCRIPT_DIR%.."
-if not exist "%BUILD_DIR_RELEASE%\ggui_headergen.exe" (
-  echo %LOG_PREFIX% Building header generator...
-  where g++ >nul 2>nul || (
-    echo %LOG_PREFIX% ERROR: g++ not found to build header generator.
-    popd >nul
-    exit /b 1
-  )
-  g++ -std=c++17 -O2 -o "%BUILD_DIR_RELEASE%\ggui_headergen.exe" "%SCRIPT_DIR%export\buildGGUILib.cpp"
-  if errorlevel 1 (
-    echo %LOG_PREFIX% ERROR: Failed to compile header generator.
-    popd >nul
-    exit /b 1
-  )
-)
-echo %LOG_PREFIX% Generating header...
-"%BUILD_DIR_RELEASE%\ggui_headergen.exe" --headers-only --out "%HEADER_OUT%" --source-root "%SOURCE_ROOT%"
-if errorlevel 1 (
-  echo %LOG_PREFIX% ERROR: Header generation failed.
-  popd >nul
-  exit /b 1
-)
-copy /Y "%HEADER_OUT" "%EXPORT_DIR%\GGUI.h" >nul
-
-rem Build native archive and copy to export
+rem 5) Build native archive
 meson compile -C "%BUILD_DIR_RELEASE%" build_native_archive
 if errorlevel 1 (
   echo %LOG_PREFIX% ERROR: Failed to build native archive.
@@ -107,15 +81,8 @@ if errorlevel 1 (
   exit /b 1
 )
 
-export/meson_export_linux.bat
-
-if exist "%BUILD_DIR_RELEASE%\libGGUIUnix.a" (
-  copy /Y "%BUILD_DIR_RELEASE%\libGGUIUnix.a" "%EXPORT_DIR%\libGGUIUnix.a" >nul
-) else (
-  echo %LOG_PREFIX% ERROR: Native archive output not found after build.
-  popd >nul
-  exit /b 1
-)
+rem 6) Cross-compile for linux as well.
+meson compile -C "%BUILD_DIR_RELEASE%" export-linux
 
 popd >nul
 exit /b 0

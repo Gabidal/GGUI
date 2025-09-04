@@ -47,7 +47,7 @@ fi
 
 # 4) Export native artifacts (header + Linux static lib) via Meson run target from release build
 log "exporting native artifacts from release build"
-meson compile -C "${BUILD_DIR_RELEASE}" export
+meson compile -C "${BUILD_DIR_RELEASE}"
 
 # 5) Export Windows cross-compiled lib, if MinGW is available (use release build)
 # Detect common MinGW cross-compilers or allow user to provide CROSS_COMPILE_PREFIX env var
