@@ -166,7 +166,7 @@ build_native_archive = custom_target(
   input: core_objs,
   output: host_machine.system() == 'windows' ? 'GGUIWin.lib' : 'libGGUIUnix.a',
   command: archive_cmd,
-  build_by_default: false
+  build_by_default: true
 )
 
 # Build the main demo executable linked with the core library
@@ -194,42 +194,31 @@ generate_header = custom_target(
     '--out', '../export/@OUTPUT@',
   '--source-root', '../../',
   ],
-  build_by_default: false
+  build_by_default: true
 )
 
-# Convenience run target to generate header and export current-platform lib
-if host_machine.system() == 'windows'
-  run_target(
-    'export',
-    command: ['cmd', '/c', 'echo Export complete'],
-    depends: [generate_header, build_native_archive]
-  )
-else
-  run_target(
-    'export',
-    command: ['bash', '-lc', 'true'],
-    depends: [generate_header, build_native_archive]
-  )
-endif
+# Only create export targets when not cross-compiling
+# (avoids recursive calls when export scripts invoke meson with cross files)
+if not is_cross
+  if host_machine.system() == 'windows'
+    # Cross-compile for Linux using a Meson cross file (requires a Linux cross toolchain on PATH)
+    export_linux_script = files('export/meson_export_linux.bat')
 
-if host_machine.system() == 'windows'
-  # Cross-compile for Linux using a Meson cross file (requires a Linux cross toolchain on PATH)
-  export_linux_script = files('export/meson_export_linux.bat')
+    run_target(
+      'export-linux',
+      command: ['cmd', export_linux_script[0]],
+      depends: []
+    )
+  else
+    # Cross-compile for Windows using a Meson cross file (requires MinGW tools)
+    export_win_script = files('export/meson_export_win.sh')
 
-  run_target(
-    'export-linux',
-    command: ['cmd', export_linux_script[0]],
-    depends: []
-  )
-else
-  # Cross-compile for Windows using a Meson cross file (requires MinGW tools)
-  export_win_script = files('export/meson_export_win.sh')
-
-  run_target(
-    'export-win',
-    command: ['bash', export_win_script[0]],
-    depends: []
-  )
+    run_target(
+      'export-win',
+      command: ['bash', export_win_script[0]],
+      depends: []
+    )
+  endif
 endif
 
 # Test target — use exported artifacts to mirror original run.sh
