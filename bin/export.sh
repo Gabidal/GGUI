@@ -68,3 +68,4 @@ else
 	log "MinGW cross-compiler not found; skipping Windows export. Install: sudo apt install g++-mingw-w64-x86-64-posix"
 fi
 
+echo "Exported artifacts are available in ${EXPORT_DIR}/"

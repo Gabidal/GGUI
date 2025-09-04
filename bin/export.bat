@@ -86,3 +86,5 @@ meson compile -C "%BUILD_DIR_RELEASE%" export-linux
 
 popd >nul
 exit /b 0
+
+echo Exported artifacts are available in %EXPORT_DIR%\

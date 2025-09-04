@@ -31,5 +31,3 @@ meson compile -C "$BUILD_WIN" GGUIcore || {
   echo "Cross compile failed. Check $BUILD_WIN/meson-logs/meson-log.txt" >&2
   exit 1
 }
-
-echo "Exported Windows library to $ROOT_DIR/bin"

@@ -784,9 +784,6 @@ void GGUI::element::setDimensions(unsigned int width, unsigned int height){
     if (width != getWidth() || height != getHeight()){
         setWidth(width);
         setHeight(height);
-        //Fully_Stain();
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
-        updateFrame();
     }
 }
 
@@ -801,7 +798,7 @@ void GGUI::element::setWidth(unsigned int width){
     if (width != getWidth()){
         Style->Width.Set(width);
         // Set the STRETCH stain if the width is changed
-        fullyStain();
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
         // Update the frame after resizing
         updateFrame();
     }
@@ -818,7 +815,7 @@ void GGUI::element::setHeight(unsigned int height){
     if (height != getHeight()){
         Style->Height.Set(height);
         // Set the STRETCH stain if the height is changed
-        fullyStain();
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
         // Update the frame after resizing
         updateFrame();
     }

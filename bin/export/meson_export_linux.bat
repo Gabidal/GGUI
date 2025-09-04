@@ -24,5 +24,3 @@ if %errorlevel% neq 0 (
     echo Cross compile (Linux) failed. Check %BUILD_LINUX%\meson-logs\meson-log.txt >&2
     exit /b 1
 )
-
-echo Exported Linux library to "%ROOT_DIR%bin"
