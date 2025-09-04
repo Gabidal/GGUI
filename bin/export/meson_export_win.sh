@@ -32,13 +32,4 @@ meson compile -C "$BUILD_WIN" GGUIcore || {
   exit 1
 }
 
-# Export the Windows static library into bin/export
-WIN_LIB_SRC="$(find "$BUILD_WIN" -type f -name 'libGGUIcore.a' -o -name 'GGUIcore.lib' | head -n1)"
-if [ -z "$WIN_LIB_SRC" ]; then
-  echo "Could not find built Windows static library in $BUILD_WIN" >&2
-  exit 1
-fi
-
-OUT_LIB="$ROOT_DIR/bin/export/GGUIWin.lib"
-cp "$WIN_LIB_SRC" "$OUT_LIB"
-echo "Exported Windows library to $OUT_LIB"
+echo "Exported Windows library to $ROOT_DIR/bin"

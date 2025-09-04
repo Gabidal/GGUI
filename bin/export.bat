@@ -106,33 +106,16 @@ if errorlevel 1 (
   popd >nul
   exit /b 1
 )
-if exist "%BUILD_DIR_RELEASE%\GGUIWin.lib" (
-  copy /Y "%BUILD_DIR_RELEASE%\GGUIWin.lib" "%EXPORT_DIR%\GGUIWin.lib" >nul
-) else if exist "%BUILD_DIR_RELEASE%\libGGUIUnix.a" (
+
+export/meson_export_linux.bat
+
+if exist "%BUILD_DIR_RELEASE%\libGGUIUnix.a" (
   copy /Y "%BUILD_DIR_RELEASE%\libGGUIUnix.a" "%EXPORT_DIR%\libGGUIUnix.a" >nul
 ) else (
   echo %LOG_PREFIX% ERROR: Native archive output not found after build.
   popd >nul
   exit /b 1
 )
-
-rem 5) Attempt cross-exports if bash and scripts are available (optional)
-where bash >nul 2>nul && (
-  if exist "export\meson_export_win.sh" (
-    echo %LOG_PREFIX% exporting Windows artifacts - cross-compile via bash script
-  bash "export/meson_export_win.sh"
-  if errorlevel 1 echo %LOG_PREFIX% Windows export failed - optional step
-  ) else (
-    echo %LOG_PREFIX% export/meson_export_win.sh not found; skipping Windows cross-export
-  )
-  if exist "export\meson_export_linux.sh" (
-    echo %LOG_PREFIX% exporting Linux artifacts - cross-compile via bash script
-  bash "export/meson_export_linux.sh"
-  if errorlevel 1 echo %LOG_PREFIX% Linux export failed - optional step
-  ) else (
-    echo %LOG_PREFIX% export/meson_export_linux.sh not found; skipping Linux cross-export
-  )
-) || echo %LOG_PREFIX% 'bash' not found; skipping cross-exports
 
 popd >nul
 exit /b 0

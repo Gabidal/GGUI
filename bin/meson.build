@@ -155,10 +155,10 @@ core_objs = ggui_core.extract_all_objects(recursive: true)
 archive_cmd = []
 if host_machine.system() == 'windows' and cppc.get_id() == 'msvc'
   # MSVC: use lib.exe to create .lib
-  archive_cmd = ['lib', '/OUT:@OUTPUT@', '@INPUT@']
+  archive_cmd = ['lib', '/OUT:../export/@OUTPUT@', '@INPUT@']
 else
   # Unix-like / MinGW: use ar
-  archive_cmd = ['ar', 'rcs', '@OUTPUT@', '@INPUT@']
+  archive_cmd = ['ar', 'rcs', '../export/@OUTPUT@', '@INPUT@']
 endif
 
 build_native_archive = custom_target(
@@ -191,65 +191,46 @@ generate_header = custom_target(
   command: [
     headergen,
     '--headers-only',
-    '--out', '@OUTPUT@',
+    '--out', '../export/@OUTPUT@',
   '--source-root', '../../',
   ],
   build_by_default: false
 )
 
-# Copy artifacts into the source export directory for backward compatibility
-copy_header_to_export = custom_target(
-  'copy_header_to_export',
-  input: generate_header,
-  output: 'exported_header.stamp',
-  command: [
-    'bash', '-lc',
-    'mkdir -p ' + join_paths(meson.project_source_root(), 'export') +
-    ' && cp @INPUT@ ' + join_paths(meson.project_source_root(), 'export', 'GGUI.h') +
-    ' && echo done > @OUTPUT@'
-  ],
-  build_by_default: false
-)
-
-export_native_lib = custom_target(
-  'export_native_lib',
-  input: build_native_archive,
-  output: 'exported_native_lib.stamp',
-  command: [
-    'bash', '-lc',
-    'mkdir -p ' + join_paths(meson.project_source_root(), 'export') +
-    (host_machine.system() == 'windows'
-      ? ' && cp @INPUT@ ' + join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
-      : ' && cp @INPUT@ ' + join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')) +
-    ' && echo done > @OUTPUT@'
-  ],
-  build_by_default: false
-)
-
 # Convenience run target to generate header and export current-platform lib
-run_target(
-  'export',
-  command: ['bash', '-lc', 'true'],
-  depends: [generate_header, copy_header_to_export, export_native_lib]
-)
+if host_machine.system() == 'windows'
+  run_target(
+    'export',
+    command: ['cmd', '/c', 'echo Export complete'],
+    depends: [generate_header, build_native_archive]
+  )
+else
+  run_target(
+    'export',
+    command: ['bash', '-lc', 'true'],
+    depends: [generate_header, build_native_archive]
+  )
+endif
 
-# Cross-compile for Windows using a Meson cross file (requires MinGW tools)
-export_win_script = files('export/meson_export_win.sh')
+if host_machine.system() == 'windows'
+  # Cross-compile for Linux using a Meson cross file (requires a Linux cross toolchain on PATH)
+  export_linux_script = files('export/meson_export_linux.bat')
 
-run_target(
-  'export-win',
-  command: ['bash', export_win_script[0]],
-  depends: []
-)
+  run_target(
+    'export-linux',
+    command: ['cmd', export_linux_script[0]],
+    depends: []
+  )
+else
+  # Cross-compile for Windows using a Meson cross file (requires MinGW tools)
+  export_win_script = files('export/meson_export_win.sh')
 
-# Cross-compile for Linux using a Meson cross file (requires a Linux cross toolchain on PATH)
-export_linux_script = files('export/meson_export_linux.sh')
-
-run_target(
-  'export-linux',
-  command: ['bash', export_linux_script[0]],
-  depends: []
-)
+  run_target(
+    'export-win',
+    command: ['bash', export_win_script[0]],
+    depends: []
+  )
+endif
 
 # Test target — use exported artifacts to mirror original run.sh
 tester_inc = include_directories('..', 'export')
@@ -259,34 +240,24 @@ tester = executable(
   'tester',
   [
     '../test/tester.cpp',
-    copy_header_to_export,
-    export_native_lib,
+    generate_header,
   ],
   include_directories: tester_inc,
-  link_args: [
-    host_machine.system() == 'windows'
-      ? join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
-      : join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')
-  ],
+  link_with: ggui_core,
   install: false
 )
 
-test('GGUI unit tests', tester, depends: [copy_header_to_export, export_native_lib])
+test('GGUI unit tests', tester, depends: [generate_header, build_native_archive])
 
 # Timing wrapper executables used by analytics/time.sh
 timing_standing = executable(
   'timingStanding',
   [
     'analytics/timingWrappers/standing.cpp',
-    copy_header_to_export,
-    export_native_lib,
+    generate_header,
   ],
   include_directories: tester_inc,
-  link_args: [
-    host_machine.system() == 'windows'
-      ? join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
-      : join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')
-  ],
+  link_with: ggui_core,
   install: false
 )
 
@@ -294,15 +265,10 @@ timing_busy = executable(
   'timingBusy',
   [
     'analytics/timingWrappers/busy.cpp',
-    copy_header_to_export,
-    export_native_lib,
+    generate_header,
   ],
   include_directories: tester_inc,
-  link_args: [
-    host_machine.system() == 'windows'
-      ? join_paths(meson.project_source_root(), 'export', 'GGUIWin.lib')
-      : join_paths(meson.project_source_root(), 'export', 'libGGUIUnix.a')
-  ],
+  link_with: ggui_core,
   install: false
 )
 
