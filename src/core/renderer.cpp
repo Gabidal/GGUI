@@ -246,10 +246,10 @@ namespace GGUI{
             // Handle different architectures (x86 vs x64)
             #if defined(_M_X64) || defined(__x86_64__)
                 // For x64 systems, use Rip
-                result += "Context (Rip): " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ContextRecord->Rip)) + "\n";
+                result += "Context (Rip): " + std::to_string((exceptionInfo->ContextRecord->Rip)) + "\n";
             #elif defined(_M_IX86) || defined(__i386__)
                 // For x86 systems, use Eip
-                result += "Context (Eip): " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ContextRecord->Eip)) + "\n";
+                result += "Context (Eip): " + std::to_string((exceptionInfo->ContextRecord->Eip)) + "\n";
             #else
                 result += "Context: Architecture not supported\n";
             #endif

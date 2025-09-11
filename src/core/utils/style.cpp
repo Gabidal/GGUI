@@ -114,7 +114,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     /**
      * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
@@ -123,7 +123,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     /**
      * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
@@ -132,7 +132,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     /**
      * @brief Embeds the value of a Vector object into a Styling object.
@@ -141,7 +141,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     INTERNAL::STAIN_TYPE position::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Position = *this;

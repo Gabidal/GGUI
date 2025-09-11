@@ -13,7 +13,7 @@ namespace GGUI{
         namespace COMPACT_STRING_FLAG{
             constexpr inline unsigned char IS_ASCII          = 1 << 0;
             constexpr inline unsigned char IS_UNICODE        = 1 << 1;
-        };
+        }
 
         /**
          * @class Compact_String

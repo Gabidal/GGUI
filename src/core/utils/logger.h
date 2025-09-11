@@ -22,7 +22,7 @@ namespace GGUI{
             extern void Log(std::string Text);
 
             extern void RegisterCurrentThread();
-        };
+        }
         
         extern void reportStack(const std::string& problemDescription);
 

@@ -330,7 +330,7 @@ namespace GGUI{
                 // Map back via LUT: index by 0..255
                 int idx = static_cast<int>(std::lround(std::clamp(lc, 0.0f, 1.0f) * 255.0f));
                 return LUT.l2s_u8[idx];
-            };
+            }
 
             // Fast linear interpolate for 8-bit channels without gamma correction.
             // Uses fixed-point weights to avoid divisions and minimize float work.

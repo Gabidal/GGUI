@@ -10,11 +10,14 @@
 project(
   'GGUI', 'cpp',
   version : '0.1.8',
-  default_options : ['warning_level=3', 'cpp_std=c++17']
+  default_options : [
+    'warning_level=3',
+    'cpp_std=c++17'
+    # , 'b_sanitize=address,undefined',     # Enable this to check if there are any UB
+  ]
 )
 
 # Source files for the project
-# Library sources (no main.cpp)
 lib_sources = [
   # Core utilities
   '../src/core/utils/style.cpp',
@@ -42,16 +45,17 @@ lib_sources = [
 ]
 
 # SIMD and CPU-specific options
+NO_SIMD = ''
 SSE     = '-msse'
 AVX     = '-mavx'
 AVX512  = '-mavx512f'
 
 # Default SIMD mode (can be adjusted for specific requirements)
-SIMD_MODE = ''
+SIMD_MODE = NO_SIMD
 
 # Compiler handle
 cppc = meson.get_compiler('cpp')
-is_cross = meson.is_cross_build()
+is_cross = meson.is_cross_build()   # This is to stop infinite recursion, since cross-platform will start meson but with other host OS, which could trigger second cross-platform
 
 # Use Meson's buildtype instead of a custom TYPE variable
 build_type = get_option('buildtype')
@@ -75,6 +79,7 @@ base_warn_flags = [
   '-Wimplicit-fallthrough',
 ]
 
+# cross-compilers don't always have full argument coverage, so lets disable those that the cross compiler doesn't have.
 cpp_args = []
 foreach f : base_warn_flags
   if cppc.has_argument(f)
@@ -98,7 +103,7 @@ link_args = []
 
 # Add custom flags based on Meson's buildtype
 if build_type == 'debug'
-  cpp_args += ['-DGGUI_DEBUG']
+  cpp_args += ['-DGGUI_DEBUG']  # no flto nor -Og since debugging becomes an hassle with weird line skipping.
 elif build_type == 'release'
   cpp_args += ['-DGGUI_RELEASE']
   # Avoid -march=native for cross builds (e.g., MinGW)
@@ -130,7 +135,7 @@ if host_machine.system() == 'linux'
   # This will link libc, libstdc++, libgcc, and other deps statically if
   # corresponding .a archives are available. This is the most reliable way
   # to ensure libc and libstdc++ are not dynamically linked.
-  link_args += ['-static']
+  # link_args += ['-static']
 endif
 
 # Apply computed flags project-wide so individual targets don't need to repeat them
@@ -236,9 +241,10 @@ tester = executable(
   install: false
 )
 
+# Run the tester to see if there are any problems
 test('GGUI unit tests', tester, depends: [generate_header, build_native_archive])
 
-# Timing wrapper executables used by analytics/time.sh
+# Timing wrapper executables used by analytics/time.sh and time2.sh
 timing_standing = executable(
   'timingStanding',
   [

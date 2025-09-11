@@ -612,7 +612,7 @@ namespace GGUI{
     namespace MEMORY_FLAGS{
         inline unsigned char PROLONG_MEMORY     = 1 << 0;
         inline unsigned char RETRIGGER          = 1 << 1;
-    };
+    }
 
     class memory : public action{
     public:

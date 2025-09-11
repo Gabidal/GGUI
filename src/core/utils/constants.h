@@ -391,7 +391,7 @@ namespace GGUI{
         static constexpr std::string_view MOUSE_RIGHT = "MOUSE_RIGHT";
         static constexpr std::string_view MOUSE_SCROLL_UP = "MOUSE_SCROLL_UP";
         static constexpr std::string_view MOUSE_SCROLL_DOWN = "MOUSE_SCROLL_DOWN";
-    };
+    }
 
     // autoGen: Ignore start
     namespace INTERNAL{
