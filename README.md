@@ -1,52 +1,63 @@
-# GGUI
+# **GGUI** - A Lightweight Terminal User Interface
 
-## Lightweight Terminal User Interface
-
-<img src="Banner.png"/>
-
-## Hello World example
+### Hello World example
 ```C++
-#include "GGUI.h"
+#include <GGUI.h>
 
 using namespace GGUI;
 
 int main() 
 {
-    // Initialize and startup GGUI
-    Init_GGUI();
+    GGUI::GGUI(
+        title("Welcome to GGUI!") | 
+        node(new textField( 
+            position(STYLES::center) | 
+            text("Hello World!")
+        ))
+    );
 
-    // Give the main window an title
-    Main->Set_Title("Your App UI");
-
-    // Create an text field
-    Text_Field* txt = new Text_Field("Hello World!");
-
-    // Add the text field to the main container to be displayed
-    Main->Add_Child(txt);
-
-    // Your code here...
-
-    // de-initialize console status.
-    Exit();
+    while (true) {
+        // ... 
+    }
 }
 ```
-### For more examples see `./Examples` folder. 
+
+<img src="./bin/img/helloWorld.png">
+
+### For more examples see [examples/README.md](./examples/README.md) folder. 
 
 # Features
- - ### Scrollable horizontal and vertical lists
- - ### Canvas with builtin cell animations
- - ### Custom error log (CTRL+SHIFT+I)
- - ### Text fields, with left, center and right aligning
- - ### RGB with Transparency
- - ### Progress bars.
- - ### Switches with radio buttons
- - ### Continuous command line interaction support  
- - ### Cross platform (Windows, Linux, Android)
+ - ### Cross platform (Windows, Linux, *"Android"*)
+ - ### **Dynamic containers** with **horizontal** and **vertical** lists
+ - ### **Text fields**, with left, center and right alignments
+ - ### **Canvas** with builtin **sprite animation** handling
+ - ### Fully customizable **progress bars** with even **multi line** support!
+ - ### Customizable borders for all drawn elements
+ - ### **Mouse support** with hover and focus effects
+ - ### **Buttons** and **switches**
+ - ### **Transparency** control
+ - ### Custom **event handling** with ease of use.
+ - ### *Should* contain everything you need to **interact with a terminal**
+ - ### **Simple integration** to your projects with single `.h` and `.lib` file
+    ```
+    g++ GGUI.lib ...
+    ```
+ - ### **Optimized** for **Blazing fast** runtime with c++17 constexpr!
 
-# Developing this project further
-- ### Initialize project locally with: `Init.sh` or `Init.bat`.
-- ### Exporting this project as library is documented in `./Export/README.md`.
-- ### Add GGUI to your project
-    ```
-    g++ ... GGUI.lib
-    ```
+--- 
+
+# Contributing to development of **GGUI**
+- ### Initialize project locally with the `init.*` script.
+- ### Exporting this project as library is documented in [bin/export/README.md](./bin/export/README.md).
+
+
+## Release Validation
+### Run these following commands to check if the current changes meet the stability requirements.
+```bash
+./bin/analytics/leaks.sh -F         # Full memory analysis
+./bin/analytics/benchmark.sh -F     # Full CPU profiling
+./bin/analytics/benchmark2.sh -a    # Multi-event perf analysis
+./bin/analytics/time.sh 15 120      # Extended growth analysis
+```
+### More about scripts at [bin/analytics/README.md](./bin/analytics/README.md)
+

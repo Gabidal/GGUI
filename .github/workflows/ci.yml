@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [ Dev, main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test (${{ matrix.os }} / ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        compiler: [gcc]
+
+    env:
+      CXX: g++
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 python3-pip ninja-build g++ meson valgrind
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          choco install -y ninja git mingw-w64
+          python -m pip install --upgrade meson
+
+      - name: Configure (Meson) Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: CI=1 ./bin/init.sh
+
+      - name: Configure (Meson) Windows
+        if: matrix.os == 'windows-latest'
+        run: .\bin\init.bat
+
+      - name: Compile Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: ./bin/build.sh
+
+      - name: Compile Windows
+        if: matrix.os == 'windows-latest'
+        run: .\bin\build.bat
+
+      - name: Run tests Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: ./bin/test.sh
+
+      - name: Run tests Windows
+        if: matrix.os == 'windows-latest'
+        run: .\bin\test.bat
+
+      - name: Upload test logs if tests fail
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.os }}
+          path: ./test/logs/
