@@ -20,7 +20,7 @@
 ### Overview
 Major restructuring and modernization of the project. Heaps of optimization and custom containers made for most optimal results. 
 Whole new styling system for more HTML/XML like styling and node tree construction.
-Clipped off internal components form getting into auto generated header on export.
+Clipped off internal components from getting into auto generated header on export.
 Since this update almost re-wrote the whole project many commits which focused on fixing issues, were about issues brought by the new re-write.
 
 ### API Changes
@@ -34,16 +34,21 @@ Since this update almost re-wrote the whole project many commits which focused o
     element(
         width(100) | height(100) |   // set the parent element as 100x100
         node(new element(
-            width(0.50f) | height(0.50f)    // this child element now as as 50x50 and updates as its parents dimensions changes
+            width(0.50f) | height(0.50f)    // this child element is now 50x50 and updates as its parents dimensions changes
         ))
     )
     ```
 - GGUI does no longer have RGBA, instead opacity is given as a single floating value per element node
 - RGB lerp can use Gamma color correct compute for much higher cost or use cheap simple lerp formula
-- Since most of the node structure is now gives as an HTML/XML like, GGUI provides `on_init()` and other `on()` state change function handlers the user can customize
+  - You can configure this via the settings or via the cmd arg:
+    ```CMD
+    enableGammaCorrection
+    ```
+  - GGUI accepts many of configurable settings at call time, via the args. GGUI removes hyphens so you can add single hyphen, double hyphen or no hyphens.
+- Since most of the node structure is now given as an HTML/XML like, GGUI provides `on_init()` and other `on()` state change function handlers the user can customize
   - Since JS and other types of similar products use underscores for their `on_*` state handlers GGUI uses this naming convention as well.
-- `GGUI::Main` is not accessible anymore, since it was moves under `GGUI::INTERNAL::Main`, and indented for suer to access through `GGUI::getRoot()`
-- Titles are now native to element so window class was removed
+- `GGUI::Main` is not accessible anymore, since it was moved under `GGUI::INTERNAL::Main`, and intended for user to access through `GGUI::getRoot()`
+- Titles are now native to element class so window class was removed
 - Pixel based canvas has been removed, since only terminal cell based canvas is needed
   - For pixel perfect canvas look up GGDirect for GGUI with DRM as backend support. 
 - Button class has been removed, since normal textField with `on_click()` brings out the same behavior
@@ -51,15 +56,15 @@ Since this update almost re-wrote the whole project many commits which focused o
 - Shadow styling has been removed, to be replaced later on with full shaders like customizations
 
 ### Fixes
-- Fixed where transparency wasn't propagated properly to transparent layers of text, not attaining color from layers below
+- Fixed where transparency wasn't propagated properly to transparent layers of text, not obtaining color from layers below
 
 ### Optimizations
 - To prevent unnecessary string concatenations GGUI implements its own string_view and string concatenation, these are called:
-  - compactString: Holds as an std::variant either an char or an unicode letter
-  - superString: Holds an predetermined list of compactStrings, capable of concatenating smaller superStrings to itself
+  - compactString: Holds as a std::variant either a char or a unicode letter
+  - superString: Holds a predetermined list of compactStrings, capable of concatenating smaller superStrings to itself
   - The whole rendering pipeline is based on these two classes.
 - Since GGUI has a varying and sometimes deeply nested functions of getters, many of them have been made constexpr to hopefully ease inlining and runtime
-- To prevent weird std::vector behavior and total control in niche use case of it, GGUI now implements its own fastVector for more cached like behavior between render passes
+- To prevent weird std::vector behavior and total control in niche use case of it, GGUI now implements its own fastVector for more cache-like behavior between render passes
 
 ### For Maintainers
 - Added proper scripts for linux and windows side for init, build, export, test and benchmarking with various kinds of tools
@@ -73,8 +78,8 @@ Since this update almost re-wrote the whole project many commits which focused o
   - Rendering pipeline
   - Memory and timed events handling
   - User input handling
-- 0.1.8 introduces new internally used `reportStacktrace()`, which utilizes symboltable lookup and stack to print out helpful stacktraces
-- GGUI utilizes some constexpr operator to defaults in all stylings, which is why GGUI currently only works on GCC v13 and higher and not in Clang!
+- 0.1.8 introduces new internally used `reportStacktrace()`, which utilizes symbol table lookup and stack to print out helpful stacktraces
+- GGUI utilizes some constexpr operator to default in all stylings, which is why GGUI currently only works on GCC v13 and higher and not in Clang!
 - The GGUI lib now links statically with libc and libc++
 
 ### Small additional notes
