@@ -19,7 +19,7 @@ if exist "%BUILD_LINUX%\build.ninja" (
 )
 
 REM Build only the core library to avoid running any target executables
-meson compile -C "%BUILD_LINUX%" GGUIcore
+meson compile -C "%BUILD_LINUX%" build_native_archive
 if %errorlevel% neq 0 (
     echo Cross compile (Linux) failed. Check %BUILD_LINUX%\meson-logs\meson-log.txt >&2
     exit /b 1

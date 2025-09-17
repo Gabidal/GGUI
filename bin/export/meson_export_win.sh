@@ -27,7 +27,7 @@ else
 fi
 
 # Build only the static library target to avoid running any target executables
-meson compile -C "$BUILD_WIN" GGUIcore || {
+meson compile -C "$BUILD_WIN" build_native_archive || {
   echo "Cross compile failed. Check $BUILD_WIN/meson-logs/meson-log.txt" >&2
   exit 1
 }
