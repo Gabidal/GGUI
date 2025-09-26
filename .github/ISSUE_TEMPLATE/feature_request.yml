@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest an idea for GGUI
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Remember to search before filing a new report
+        Please search for this feature in the issue tracker, and use a feature request title that
+        would have made your feature request turn up in the search results for your search query.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: What problem does this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the new API / behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List any alternative solutions or workarounds.
+  - type: textarea
+    id: example
+    attributes:
+      label: Example / Prototype (optional)
+      description: Minimal snippet or pseudo-code showing usage of the proposed feature.
+  - type: input
+    id: impact
+    attributes:
+      label: Impact / Priority (optional)
+      description: Low / Medium / High — How critical or useful is this feature?
+  - type: input
+    id: related
+    attributes:
+      label: Related PR or Issue (optional)
+      description: Link if relevant.
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Related libraries, references, screenshots, compatibility notes, or performance considerations.
