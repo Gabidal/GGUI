@@ -226,7 +226,6 @@ namespace GGUI{
         static constexpr RGB STEEL_BLUE = RGB(70, 130, 180);
         static constexpr RGB ROYAL_BLUE = RGB(65, 105, 225);
         static constexpr RGB MEDIUM_BLUE = RGB(0, 0, 205);
-        static constexpr RGB DARK_BLUE = RGB(0, 0, 139);
         static constexpr RGB MIDNIGHT_BLUE = RGB(25, 25, 112);
         
         // Cyan/Turquoise shades
