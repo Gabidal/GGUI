@@ -1,0 +1,64 @@
+name: Bug Report
+description: File a bug report
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A bug is when something works differently than it is expected to.
+        ## Remember to search before filing a new report
+        Please search for this bug in the issue tracker, and use a bug report title that
+        would have made your bug report turn up in the search results for your search query.
+  - type: input
+    id: version
+    attributes:
+      label: GGUI Version or Commit
+      description: "The commit hash or tag where the bug occurred"
+      placeholder: "e.g., v0.1.8.5 or 0.1.9"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce and Observed Behavior
+      description: What exactly can someone else do, in order to observe the problem that you observed? Include the output and all error messages.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / Output
+      description: Include relevant logs (or link to a file) and screenshots if helpful.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        - OS: 
+        - Architecture: 
+        - Compiler & version: 
+        - Build type (Debug/Release): 
+        - Terminal / Shell: 
+        - Commit / Tag:
+  - type: input
+    id: severity
+    attributes:
+      label: Severity (optional)
+      description: Minor / Major / Blocking
+  - type: input
+    id: related
+    attributes:
+      label: Related PR or Issue (optional)
+      description: Link if relevant.
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context here.
