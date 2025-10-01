@@ -1085,8 +1085,8 @@ namespace GGUI{
 
                             // Check if the 6'th bit has been set, is so then there is a movement event.
                             if (Bit_Mask & 64) {
-                                char X = Raw_Input[i + 3];
-                                char Y = Raw_Input[i + 4];
+                                unsigned char X = Raw_Input[i + 3];
+                                unsigned char Y = Raw_Input[i + 4];
 
                                 // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
                                 Mouse.X = X - 32;
@@ -1385,11 +1385,11 @@ namespace GGUI{
          *          state with the previous state and the duration the button has been pressed.
          *          Based on these checks, it creates corresponding input objects and adds them
          *          to the Inputs list.
+         * @note This function related on click events when the current keyboard state for that specific key is NOT on!
          */
         void mouseAPI() {
             // Get the duration the left mouse button has been pressed
-            unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-                abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].Capture_Time)).count();
+            unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].Capture_Time)).count();
 
             // Check if the left mouse button is pressed and for how long
             if (INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State && Mouse_Left_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
@@ -1401,8 +1401,7 @@ namespace GGUI{
             }
 
             // Get the duration the right mouse button has been pressed
-            unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-                abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].Capture_Time)).count();
+            unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].Capture_Time)).count();
 
             // Check if the right mouse button is pressed and for how long
             if (INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State && Mouse_Right_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
@@ -1414,8 +1413,7 @@ namespace GGUI{
             }
 
             // Get the duration the middle mouse button has been pressed
-            unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(
-                abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].Capture_Time)).count();
+            unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].Capture_Time)).count();
 
             // Check if the middle mouse button is pressed and for how long
             if (INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].State && Mouse_Middle_Pressed_For >= SETTINGS::Mouse_Press_Down_Cooldown) {
@@ -1463,12 +1461,8 @@ namespace GGUI{
 
             // If the focused element is not null, remove the focus
             if (Focused_On){
-                Hovered_On = Focused_On;
+                updateHoveredElement(Focused_On); // Update the hovered element to be the focused element before un-focusing it.
                 unFocusElement();
-            }
-            // If the focused element is null but the hovered element is not null, remove the hover
-            else if (Hovered_On){
-                unHoverElement();
             }
         }
 
@@ -1482,18 +1476,15 @@ namespace GGUI{
             if (!KEYBOARD_STATES[KEYBOARD_BUTTONS::TAB].State)
                 return;
 
+            if (Focused_On) return;   // Tabulator is disabled from switching if an element is focused on, this gives us the ability to insert tabs into textFields.
+            
             // Check if the shift key is pressed
             bool Shift_Is_Pressed = KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT].State;
 
             // Get the current element from the selected element
-            element* Current = Focused_On;
-
-            // If there has not been anything selected then then skip this phase and default to zero.
-            if (!Current)
-                Current = Hovered_On;
-
+            element* Current = Hovered_On;
+            
             int Current_Index = 0;
-            int temporary_way_of_calculating_how_far_back_we_should_go_with_shift = 1 + 1;
 
             // Find the index of the current element in the list of event handlers
             if (Current){
@@ -1507,25 +1498,23 @@ namespace GGUI{
                 for (int i = Current_Index + 1; i < (int)Event_Handlers.size(); i++){
                     if (Event_Handlers[i]->host == Current){
                         Current_Index = i; // Update the index to the last occurrence
-                        temporary_way_of_calculating_how_far_back_we_should_go_with_shift++;
                     }
                 }
             }
 
             // Generalize index hopping, if shift is pressed then go backwards.
-            Current_Index += 1 + (-temporary_way_of_calculating_how_far_back_we_should_go_with_shift * Shift_Is_Pressed);
+            Current_Index += 1 + (-2 * Shift_Is_Pressed);
 
             // If the index is out of bounds, wrap it around to the other side of the list
             if (Current_Index < 0){
                 Current_Index = Event_Handlers.size() - 1;
             }
-            else if ((unsigned int)Current_Index >= Event_Handlers.size()){
+            else if ((size_t)Current_Index >= Event_Handlers.size() - 1){
                 Current_Index = 0;
             }
 
-            // Now update the focused element with the new index
-            unHoverElement();
-            updateFocusedElement(Event_Handlers[Current_Index]->host);
+            // Now update the hovered element with the new index
+            updateHoveredElement(Event_Handlers[Current_Index]->host);
         }
 
         /**
@@ -1821,6 +1810,8 @@ namespace GGUI{
             if (INTERNAL::Focused_On == new_candidate || new_candidate == INTERNAL::Main)
                 return;
 
+            if (!new_candidate) return; // For total unselection, use unFocusElement()
+
             // Unfocus the previous focused element and its children
             if (INTERNAL::Focused_On){
                 unFocusElement();
@@ -1829,9 +1820,12 @@ namespace GGUI{
             // Set the focus on the new element and all its children
             INTERNAL::Focused_On = new_candidate;
 
+            // Update mouse location to match with keyboard given states.
+            Mouse = INTERNAL::Focused_On->getAbsolutePosition() + IVector3{1, 1, 0};
+
             // Set the focus state on the new element to true
             INTERNAL::Focused_On->setFocus(true);
-
+            
             // Recursively set the focus state on all child elements to true
             Recursively_Apply_Focus(INTERNAL::Focused_On, true);
         }
@@ -1847,6 +1841,8 @@ namespace GGUI{
             if (INTERNAL::Hovered_On == new_candidate || new_candidate == INTERNAL::Main)
                 return;
 
+            if (!new_candidate) return; // For total unselection, use unHoverElement()
+
             // Remove the hover state from the previous hovered element and its children
             if (INTERNAL::Hovered_On){
                 unHoverElement();
@@ -1854,6 +1850,9 @@ namespace GGUI{
 
             // Set the hover state on the new element and all its children
             INTERNAL::Hovered_On = new_candidate;
+
+            // Update mouse location to match with keyboard given states.
+            Mouse = INTERNAL::Hovered_On->getAbsolutePosition() + IVector3{1, 1, 0};
 
             // Set the hover state on the new element to true
             INTERNAL::Hovered_On->setHoverState(true);
@@ -1870,116 +1869,128 @@ namespace GGUI{
          *          If the job is unsuccessful, it reports an error.
          */
         void eventHandler(){
+            // For an input to belong to the current event handler, it needs to:
+            // - Have identical criteria
+            // - If mouse or enter is as the input:
+            //      - If host present and is onHovered: Un-hover the host element and and set it to onFocused
+            //      - If host present and is onFocused: Pipe input into the event handler job task
+
+            // TODO: probably remove this and move it somewhere else
             // Disable hovered element if the mouse isn't on top of it anymore.
-            if (INTERNAL::Hovered_On && !Collides(INTERNAL::Hovered_On, GGUI::INTERNAL::Mouse)){
-                unHoverElement();
-            }
+            // if (INTERNAL::Hovered_On && !Collides(INTERNAL::Hovered_On, GGUI::INTERNAL::Mouse)){
+            //     unHoverElement();
+            // }
 
             // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
             Populate_Inputs_For_Held_Down_Keys();
 
             for (unsigned int i = 0; i < INTERNAL::Event_Handlers.size(); i++){
+                action* currentEventHandler = INTERNAL::Event_Handlers[i];
+
+                // The reason these are held over multitude of inputs, is for scenario where this memory thread has not run in a long time and has a long query of inputs-
+                // and in this same listing of inputs at the start is the mouse click or enter and the user given inputs for that specifically activated event handler.
                 bool Has_Mouse_Left_Click_Event = false;
                 bool Has_Enter_Press_Event = false;
+                
+                // If the current event handler has an host element present
+                if (currentEventHandler->host){
+                    if (!currentEventHandler->host->isDisplayed())
+                        continue;   // Skip eventhandlers where their host is not active
 
-                for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
-                    Has_Mouse_Left_Click_Event = Has(INTERNAL::Inputs[j]->criteria, constants::MOUSE_LEFT_CLICKED);
-                    Has_Enter_Press_Event = Has(INTERNAL::Inputs[j]->criteria, constants::ENTER) && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].State == true;
+                    bool overlapsWithMouse = INTERNAL::Collides(currentEventHandler->host, INTERNAL::Mouse);
 
-                    // Criteria must be identical for more accurate criteria listing.
-                    if (
-                        INTERNAL::Event_Handlers[i]->criteria == INTERNAL::Inputs[j]->criteria && (
-                            (Collides(INTERNAL::Event_Handlers[i]->host, GGUI::INTERNAL::Mouse) && Has_Mouse_Left_Click_Event) || 
-                            (INTERNAL::Event_Handlers[i]->host->isFocused() && Has_Enter_Press_Event)
-                        )
-                    ){
-                        try{
-                            // Check if this job could be run successfully.
-                            if (INTERNAL::Event_Handlers[i]->Job(INTERNAL::Inputs[j])){
-                                //dont let anyone else react to this event.
-                                INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j);
-                            }
-                            else{
-                                // TODO: report miscarried event job.
-                                INTERNAL::reportStack("Job '" + INTERNAL::Event_Handlers[i]->ID + "' failed!");
-                            }
-                        }
-                        catch(std::exception& problem){
-                            INTERNAL::reportStack("In event: '" + INTERNAL::Event_Handlers[i]->ID + "' Problem: " + std::string(problem.what()));
-                        }
-                    }
-                }
-
-                if (i >= INTERNAL::Event_Handlers.size())
-                    break;
-
-                // Hosted branches
-                if (INTERNAL::Event_Handlers[i]->host){
-                    if (!INTERNAL::Event_Handlers[i]->host->isDisplayed())
-                        continue;
-
-                    //update the focused
-                    if (Collides(INTERNAL::Event_Handlers[i]->host, GGUI::INTERNAL::Mouse)){
-                        if (Has_Mouse_Left_Click_Event){
-                            updateFocusedElement(INTERNAL::Event_Handlers[i]->host);
+                    // First let's go through all inputs and see if any selector inputs are present.
+                    for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
+                        input* currentInput = INTERNAL::Inputs[j];      
+    
+                        Has_Mouse_Left_Click_Event = Has(currentInput->criteria, constants::MOUSE_LEFT_CLICKED) && overlapsWithMouse;
+                        Has_Enter_Press_Event = Has(currentInput->criteria, constants::ENTER) && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].State == true;
+    
+                        // Check if the host is prime to be focused on
+                        if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && currentEventHandler->host->isHovered()){
+                            updateFocusedElement(currentEventHandler->host);
                             unHoverElement();
+
+                            // Remove the input, since it's job is used here:
+                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j--);
                         }
-                        else{
-                            updateHoveredElement(INTERNAL::Event_Handlers[i]->host);
-                        }
-                    }
-                }
-                // Un-hosted branches
-                else{
 
-                    // some code...
-
-                }
-
-                if (INTERNAL::Inputs.size() <= 1)
-                    continue;
-
-                // TODO: Do better you dum!
-                // GO through the inputs and check if they contain all the flags required
-                unsigned long long Remaining_Flags = INTERNAL::Event_Handlers[i]->criteria;
-                std::vector<GGUI::input *> Accepted_Inputs;
-
-                // if an input has flags that meet the criteria, then remove the criteria from the remaining flags and continue until the remaining flags are equal to zero.
-                for (auto* j : INTERNAL::Inputs){
-
-                    if (Contains(Remaining_Flags, j->criteria)){
-                        Remaining_Flags &= ~j->criteria;
-                        Accepted_Inputs.push_back(j);
-                    }
-
-                    if (Remaining_Flags == 0)
-                        break;
-                }
-
-                if (Remaining_Flags == 0){
-                    // Now we need to find the information to send to the event handler.
-                    input* Best_Candidate = Accepted_Inputs[0];
-
-                    for (auto* j : Accepted_Inputs){
-                        if (j->data > Best_Candidate->data){
-                            Best_Candidate = j;
-                        }
-                    }
-
-                    //check if this job could be run successfully.
-                    if (INTERNAL::Event_Handlers[i]->Job(Best_Candidate)){
-                        // Now remove the candidates from the input
-                        for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
-                            if (INTERNAL::Inputs[j] == Best_Candidate){
-                                INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j);
-                                j--;
+                        // Criteria must be identical for more accurate criteria listing.
+                        if (currentEventHandler->criteria == currentInput->criteria && currentEventHandler->host->isFocused()){
+                            try{
+                                // Check if this job could be run successfully.
+                                if (currentEventHandler->Job(currentInput)){
+                                    //dont let anyone else react to this event.
+                                    INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j--);
+                                }
+                                else{
+                                    // TODO: report miscarried event job.
+                                    INTERNAL::reportStack("Job '" + currentEventHandler->ID + "' failed!");
+                                }
+                            }
+                            catch(std::exception& problem){
+                                INTERNAL::reportStack("In event: '" + currentEventHandler->ID + "' Problem: " + std::string(problem.what()));
                             }
                         }
                     }
+
+                    // If the current event handler is not focused, then we can check wether to set it on/off onHovering
+                    if (!currentEventHandler->host->isFocused()) {
+                        if (overlapsWithMouse){
+                            updateHoveredElement(currentEventHandler->host);
+                        }
+                        else {
+                            if (INTERNAL::Hovered_On == currentEventHandler->host)
+                                unHoverElement();
+                        }
+                    }
                 }
+
+                // if (INTERNAL::Inputs.size() <= 1)
+                //     continue;
+
+                // // TODO: Do better you dum!
+                // // GO through the inputs and check if they contain all the flags required
+                // unsigned long long Remaining_Flags = currentEventHandler->criteria;
+                // std::vector<GGUI::input *> Accepted_Inputs;
+
+                // // if an input has flags that meet the criteria, then remove the criteria from the remaining flags and continue until the remaining flags are equal to zero.
+                // for (auto* j : INTERNAL::Inputs){
+
+                //     if (Contains(Remaining_Flags, j->criteria)){
+                //         Remaining_Flags &= ~j->criteria;
+                //         Accepted_Inputs.push_back(j);
+                //     }
+
+                //     if (Remaining_Flags == 0)
+                //         break;
+                // }
+
+                // if (Remaining_Flags == 0){
+                //     // Now we need to find the information to send to the event handler.
+                //     input* Best_Candidate = Accepted_Inputs[0];
+
+                //     for (auto* j : Accepted_Inputs){
+                //         if (j->data > Best_Candidate->data){
+                //             Best_Candidate = j;
+                //         }
+                //     }
+
+                //     //check if this job could be run successfully.
+                //     if (currentEventHandler->Job(Best_Candidate)){
+                //         // Now remove the candidates from the input
+                //         for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
+                //             if (INTERNAL::Inputs[j] == Best_Candidate){
+                //                 INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j);
+                //                 j--;
+                //             }
+                //         }
+                //     }
+                // }
 
             }
-            //Clear_Inputs();
+            
+            // If no event handler recognized these inputs, there is no need to keep them lingering for next time.
             INTERNAL::Inputs.clear();
         }
 

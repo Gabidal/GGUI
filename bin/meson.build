@@ -9,7 +9,7 @@
 
 project(
   'GGUI', 'cpp',
-  version : '0.1.8',
+  version : '0.1.8.1',
   default_options : [
     'warning_level=3',
     'cpp_std=c++17'

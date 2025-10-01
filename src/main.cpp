@@ -9,8 +9,12 @@ int main(int argc, char* argv[]){
 
     GGUI::GGUI(
         backgroundColor(COLOR::YELLOW) | 
-        enableBorder(true) |
-        position(STYLES::bottom + STYLES::left)
+        node(new textField(
+            allowOverflow(true) | width(0.5f) | height(10) | 
+            onInput([](textField* self, char c){
+                self->setText(self->getText() + c);
+            })
+        ))
     );
 
     std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));

@@ -328,6 +328,7 @@ namespace GGUI{
          * @return true if the point collides with the element, false otherwise.
          */
         bool Collides(GGUI::element* a, GGUI::IVector3 b) {
+            if (!a) return false;   // Safe guard
             // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
             return Collides(a->getAbsolutePosition(), b, a->getWidth(), a->getHeight(), 1, 1);
         }
