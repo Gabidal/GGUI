@@ -53,6 +53,7 @@ body:
     id: severity
     attributes:
       label: Severity (optional)
+      description: The severity og the problem(s) in question
       options:
         - Minor
         - Major
@@ -63,7 +64,7 @@ body:
     id: related
     attributes:
       label: Related PR or Issue (optional)
-      description: List related items, one per line, starting with `- [ ] #<number>`
+      description: List related items, one per line, starting with `- [ ] \#<number>`
       placeholder: "- [ ] #123"
   - type: textarea
     id: additional
