@@ -226,10 +226,10 @@ if not is_cross
   endif
 endif
 
-# Test target — use exported artifacts to mirror original run.sh
+# Test target: use exported artifacts to mirror original run.sh
 tester_inc = include_directories('..', 'export')
 
-# Test target — link with exported lib and include exported header
+# Test target: link with exported lib and include exported header
 tester = executable(
   'tester',
   [

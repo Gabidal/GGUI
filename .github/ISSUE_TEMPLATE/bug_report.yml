@@ -12,9 +12,9 @@ body:
   - type: input
     id: version
     attributes:
-      label: GGUI Version or Commit
-      description: "The commit hash or tag where the bug occurred"
-      placeholder: "e.g., v0.1.8.5 or 0.1.9"
+      label: GGUI Version (Commit)
+      description: "The closest GGUI release version and the commit the problem occurs in."
+      placeholder: "e.g., 0.1.8.1 (65bf859)"
     validations:
       required: true
   - type: textarea
@@ -36,6 +36,8 @@ body:
     attributes:
       label: Actual behavior / Output
       description: Include relevant logs (or link to a file) and screenshots if helpful.
+    validations:
+      required: true
   - type: textarea
     id: environment
     attributes:
@@ -51,12 +53,18 @@ body:
     id: severity
     attributes:
       label: Severity (optional)
-      description: Minor / Major / Blocking
+      options:
+        - Minor
+        - Major
+        - Blocking
+    validations:
+      required: true
   - type: input
     id: related
     attributes:
       label: Related PR or Issue (optional)
-      description: Link if relevant.
+      description: List related items, one per line, starting with `- [ ] #<number>`
+      placeholder: "- [ ] #123"
   - type: textarea
     id: additional
     attributes:

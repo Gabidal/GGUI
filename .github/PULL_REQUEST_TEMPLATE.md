@@ -25,4 +25,4 @@ Describe the intent of this change.
 Closes # (issue)
 
 ## Additional Notes
-(Optional) Anything reviewers should focus on — e.g. performance impact, API ergonomics, portability, edge cases.
+(Optional) Anything reviewers should focus on - e.g. performance impact, API ergonomics, portability, edge cases.

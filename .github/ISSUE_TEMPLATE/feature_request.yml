@@ -32,11 +32,17 @@ body:
     attributes:
       label: Example / Prototype (optional)
       description: Minimal snippet or pseudo-code showing usage of the proposed feature.
-  - type: input
+  - type: dropdown
     id: impact
     attributes:
-      label: Impact / Priority (optional)
-      description: Low / Medium / High — How critical or useful is this feature?
+      label: Impact / Priority
+      description: How critical or useful is this feature?
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true
   - type: input
     id: related
     attributes:

@@ -8,7 +8,7 @@ Be respectful, constructive, and inclusive. Harassment or discrimination is not 
 
 ### Competitive Spirit
 This project encourages **strong technical debate and competitiveness**.  
-- Pointing out flaws or suggesting a better approach is welcome—even if blunt.  
+- Pointing out flaws or suggesting a better approach is welcome (even if blunt).  
 - Criticism must be directed at the code or idea, **not the person**.  
 - Passion is fine, but personal attacks, humiliation, or hostility are not.  
 
