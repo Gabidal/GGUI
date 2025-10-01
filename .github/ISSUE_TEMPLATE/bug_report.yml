@@ -59,12 +59,12 @@ body:
         - Major
         - Blocking
     validations:
-      required: false
+      required: true
   - type: input
     id: related
     attributes:
       label: Related PR or Issue (optional)
-      description: List related items, one per line, starting with `- [ ] \#<number>`
+      description: List related items, one per line, starting with `- [ ] #<number>`
       placeholder: "- [ ] #123"
   - type: textarea
     id: additional
