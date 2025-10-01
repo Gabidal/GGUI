@@ -49,17 +49,17 @@ body:
         - Build type (Debug/Release): 
         - Terminal / Shell: 
         - Commit / Tag:
-  - type: input
+  - type: dropdown
     id: severity
     attributes:
-      label: Severity (optional)
-      description: The severity og the problem(s) in question
+      label: Severity
+      description: How severe is the problem in question?
       options:
         - Minor
         - Major
         - Blocking
     validations:
-      required: true
+      required: false
   - type: input
     id: related
     attributes:
