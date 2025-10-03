@@ -31,6 +31,7 @@ namespace tester {
             add_test("name_and_lookup", "setName & getElement recursive search", test_name_and_lookup);
             // add_test("fitting_dimensions_basic", "getFittingDimensions base cases", test_fitting_dimensions_basic);
             add_test("reorder_childs_z", "reOrderChilds sorts by Z", test_reorder_childs_z);
+            add_test("mouse_on_hover", "Mouse hover detection and onHover callback", test_mouse_on_hover);
         }
     private:
         // Helper: access STRETCH flag quickly
@@ -256,6 +257,51 @@ namespace tester {
             auto& childs = parent.getChilds();
             ASSERT_TRUE(childs[0]->getPosition().Z <= childs[1]->getPosition().Z);
             ASSERT_TRUE(childs[1]->getPosition().Z <= childs[2]->getPosition().Z);
+        }
+
+        static void test_mouse_on_hover() {
+            using namespace GGUI;
+            
+            int w = 10, h = 10;
+
+            element hoverable(
+                width(w) | height(h) | onClick([](element*){
+                    return true;
+                }),
+                true
+            );
+            
+            
+            INTERNAL::Mouse = {0, 0};                   // Let's test it on all four corners
+            INTERNAL::eventHandler();                   // run pipeline 
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
+
+            
+            INTERNAL::Mouse = {w + 1, h + 1};           // Let's move the mouse outside the perimeter to disable hover
+            INTERNAL::eventHandler();
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
+
+            
+            INTERNAL::Mouse = {w - 1, 0};               // now let's try top right corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
+
+            
+            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
+
+            INTERNAL::Mouse = {0, h - 1};               // now let's try bottom left corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
+
+            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has
+
+            INTERNAL::Mouse = {w - 1, h - 1};           // now let's try bottom right corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
         }
     };
 }

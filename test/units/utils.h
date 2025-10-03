@@ -121,6 +121,15 @@ namespace tester {
             }
         };
 
+        template<typename T>
+        class dev : public T {
+        public:
+
+            // Passing all args
+            template<typename... Args>
+            dev(Args... args) : T(args...) {}
+        };
+
         // Helper function to convert a single character to safe hex representation
         std::string char_to_hex(unsigned char c) {
             const char* hex_chars = "0123456789abcdef";
