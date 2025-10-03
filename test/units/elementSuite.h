@@ -2,7 +2,7 @@
 #define _ELEMENT_SUITE_H_
 
 #include "utils.h"
-#include <GGUI.h>
+#include <GGUIDev.h>
 
 // element class testing, no styling from style class, only internal styling member testing instead.
 

@@ -1,7 +1,7 @@
 #ifndef _TEST_UTILS_H_
 #define _TEST_UTILS_H_
 
-#include <GGUI.h>
+#include <GGUIDev.h>
 #include <iostream>
 #include <string>
 #include <sstream>

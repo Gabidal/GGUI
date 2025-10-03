@@ -202,6 +202,20 @@ generate_header = custom_target(
   build_by_default: true
 )
 
+# This is for the test suite to get access and manipulate some internal pipelines without actually having to go through with rendering pipeline as a whole.
+generate_dev_header = custom_target(
+  'generate_dev_header',
+  output: 'GGUIDev.h',
+  command: [
+    headergen,
+    '--headers-only',
+    '--include-internal',
+    '--out', '../export/@OUTPUT@',
+    '--source-root', '../../',
+  ],
+  build_by_default: false
+)
+
 # Only create export targets when not cross-compiling
 # (avoids recursive calls when export scripts invoke meson with cross files)
 if not is_cross
@@ -234,7 +248,7 @@ tester = executable(
   'tester',
   [
     '../test/tester.cpp',
-    generate_header,
+    generate_dev_header,
   ],
   include_directories: tester_inc,
   link_with: ggui_core,
@@ -242,7 +256,7 @@ tester = executable(
 )
 
 # Run the tester to see if there are any problems
-test('GGUI unit tests', tester, depends: [generate_header, build_native_archive])
+test('GGUI unit tests', tester, depends: [generate_header, generate_dev_header, build_native_archive])
 
 # Timing wrapper executables used by analytics/time.sh and time2.sh
 timing_standing = executable(
