@@ -43,10 +43,6 @@ namespace GGUI{
             if (Handle != nullptr){
                 delete Handle;
             }
-
-            // Call the base destructor to ensure that all the resources are properly
-            // released.
-            element::~element();
         }
 
         /**

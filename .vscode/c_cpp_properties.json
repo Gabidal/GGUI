@@ -26,7 +26,7 @@
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x64",
+            "intelliSenseMode": "gcc-x64",
             "compileCommands": "${workspaceFolder}/bin/build/compile_commands.json"
         }
     ],

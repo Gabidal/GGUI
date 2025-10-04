@@ -17,7 +17,7 @@ namespace GGUI{
             extern atomic::guard<fileStream> Handle;
             extern thread_local std::queue<std::string>* Queue;
 
-            extern void Init();
+            extern void Init(fileStream* pre_pausedSelf = nullptr);
 
             extern void Log(std::string Text);
 

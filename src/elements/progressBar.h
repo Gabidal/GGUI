@@ -176,10 +176,7 @@ namespace GGUI{
              * allocated by the Progress_Bar object. It calls the base class destructor
              * to ensure all parent class resources are also cleaned up.
              */
-            ~Bar() override {
-                // Call the base destructor to clean up base class resources.
-                element::~element();
-            }
+            ~Bar() override = default;
 
             /**
              * @brief Returns the name of the Progress_Bar object.

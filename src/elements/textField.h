@@ -47,6 +47,8 @@ namespace GGUI{
          */
         textField(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : textField(s, Embed_Styles_On_Construct){}
 
+        ~textField() override = default;
+
         /**
          * @brief Sets the text of the text field.
          * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.

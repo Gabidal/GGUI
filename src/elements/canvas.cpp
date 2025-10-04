@@ -40,9 +40,6 @@ namespace GGUI{
             // Remove the canvas from the multi-frame list
             INTERNAL::Multi_Frame_Canvas.erase(this);
         }
-
-        // Call the base class destructor to clean up parent resources
-        element::~element();
     }
 
     /**
