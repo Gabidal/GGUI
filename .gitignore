@@ -1,24 +1,14 @@
+# A safe list of file extensions that have appeared in GGUI project history :)
 *.exe
 *.o
 *.lib
 *.out
-build/
-build-win/
-build-linux/
-build-release/
-callgrind.*
 *.backup
 *.txt
-/Export/GGUI.h
-/Export/*.json
-/Export/Export_Git
-/Export/json.hpp
 *.zip
-/Export/cpr/*
 *.srctrldb
 *.srctrlbm
 *.gcda
-/bin/GGUI.p/
 *~
 *.data
 *.old
@@ -26,4 +16,21 @@ callgrind.*
 tester
 *.a
 *.tmp
+
+# For benchmarking
+callgrind.*
+
+# meson output directories
+build/
+build-win/
+build-linux/
+build-release/
+
+# Custom output locations, since the headers can be easily re-generated or fetched from github releases.
+/bin/GGUI.p/
 /bin/export/GGUI.h
+/bin/export/GGUIDev.h
+
+# Probably from analytics? i don't quite remember why these are here :/
+/export/*.json
+/export/json.hpp

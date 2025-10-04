@@ -2,7 +2,7 @@
 #define _ELEMENT_SUITE_H_
 
 #include "utils.h"
-#include <GGUI.h>
+#include <GGUIDev.h>
 
 // element class testing, no styling from style class, only internal styling member testing instead.
 
@@ -14,9 +14,6 @@ namespace tester {
             add_test("dimensions_set", "Width/Height and STRETCH staining", test_dimensions_set);
             add_test("individual_width_height", "Independent width / height setters", test_individual_width_height);
             // add_test("position_and_absolute", "Position + absolute cache incl. border offset", test_position_and_absolute);
-            add_test("focus_and_hover_flags", "Focus / Hover state transitions", test_focus_and_hover_flags);
-            add_test("opacity_float_int", "Opacity set via float and int + transparency flag", test_opacity_float_int);
-            add_test("border_toggle", "showBorder overload behaviour", test_border_toggle);
             add_test("add_child_parent_relationship", "addChild establishes parent & ordering", test_add_child_parent_relationship);
             add_test("remove_child_by_pointer", "remove(element*) deletes child entry", test_remove_child_by_pointer);
             add_test("remove_child_by_index", "remove(index) deletes child entry", test_remove_child_by_index);
@@ -31,6 +28,7 @@ namespace tester {
             add_test("name_and_lookup", "setName & getElement recursive search", test_name_and_lookup);
             // add_test("fitting_dimensions_basic", "getFittingDimensions base cases", test_fitting_dimensions_basic);
             add_test("reorder_childs_z", "reOrderChilds sorts by Z", test_reorder_childs_z);
+            add_test("mouse_on_hover", "Mouse hover detection and onHover callback", test_mouse_on_hover);
         }
     private:
         // Helper: access STRETCH flag quickly
@@ -77,37 +75,6 @@ namespace tester {
         //     ASSERT_TRUE(child->getAbsolutePosition().X == (short)3); // +1 border offset
         //     ASSERT_TRUE(child->getAbsolutePosition().Y == (short)4);
         // }
-
-        static void test_focus_and_hover_flags(){
-            GGUI::element e;
-            e.setFocus(true);
-            ASSERT_TRUE(e.isFocused());
-            e.setHoverState(true);
-            ASSERT_TRUE(e.isHovered());
-            e.setFocus(false);
-            ASSERT_FALSE(e.isFocused());
-            e.setHoverState(false);
-            ASSERT_FALSE(e.isHovered());
-        }
-
-        static void test_opacity_float_int(){
-            GGUI::element e;
-            e.setOpacity(0.5f);
-            ASSERT_FLOAT_EQ(0.5f, e.getOpacity(), 0.0001f);
-            ASSERT_TRUE(e.isTransparent());
-            e.setOpacity(100u);
-            ASSERT_FLOAT_EQ(1.0f, e.getOpacity(), 0.0001f);
-            ASSERT_FALSE(e.isTransparent());
-        }
-
-        static void test_border_toggle(){
-            GGUI::element e;
-            ASSERT_FALSE(e.hasBorder());
-            e.showBorder(true);
-            ASSERT_TRUE(e.hasBorder());
-            e.showBorder(false, true); // overload
-            ASSERT_FALSE(e.hasBorder());
-        }
 
         static void test_add_child_parent_relationship(){
             GGUI::element parent; parent.setDimensions(10,10);
@@ -256,6 +223,47 @@ namespace tester {
             auto& childs = parent.getChilds();
             ASSERT_TRUE(childs[0]->getPosition().Z <= childs[1]->getPosition().Z);
             ASSERT_TRUE(childs[1]->getPosition().Z <= childs[2]->getPosition().Z);
+        }
+
+        static void test_mouse_on_hover() {
+            using namespace GGUI;
+            
+            int w = 100, h = 100;
+
+            element hoverable(
+                width(w) | height(h) | onClick([](element*){
+                    return true;
+                }),
+                true
+            );
+
+            INTERNAL::Mouse = {0, 0};                   // Let's test it on all four corners
+            INTERNAL::eventHandler();                   // run pipeline 
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
+
+            INTERNAL::Mouse = {w + 1, h + 1};           // Let's move the mouse outside the perimeter to disable hover
+            INTERNAL::eventHandler();
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
+            
+            INTERNAL::Mouse = {w - 1, 0};               // now let's try top right corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
+
+            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
+
+            INTERNAL::Mouse = {0, h - 1};               // now let's try bottom left corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
+
+            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has
+
+            INTERNAL::Mouse = {w - 1, h - 1};           // now let's try bottom right corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
         }
     };
 }

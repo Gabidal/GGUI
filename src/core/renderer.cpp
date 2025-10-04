@@ -1089,8 +1089,8 @@ namespace GGUI{
                                 unsigned char Y = Raw_Input[i + 4];
 
                                 // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
-                                Mouse.X = X - 32;
-                                Mouse.Y = Y - 32;
+                                Mouse.X = Max(X - 32 - 1, 0);   // The additional -1 is so that the mouse cursor top left point works as the actual focus point of the mouse.
+                                Mouse.Y = Max(Y - 32 - 1, 0);
 
                                 Bit_Mask &= ~64;
                             }
@@ -1821,7 +1821,7 @@ namespace GGUI{
             INTERNAL::Focused_On = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            Mouse = INTERNAL::Focused_On->getAbsolutePosition() + IVector3{1, 1, 0};
+            Mouse = INTERNAL::Focused_On->getAbsolutePosition();
 
             // Set the focus state on the new element to true
             INTERNAL::Focused_On->setFocus(true);
@@ -1852,7 +1852,7 @@ namespace GGUI{
             INTERNAL::Hovered_On = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            Mouse = INTERNAL::Hovered_On->getAbsolutePosition() + IVector3{1, 1, 0};
+            Mouse = INTERNAL::Hovered_On->getAbsolutePosition();
 
             // Set the hover state on the new element to true
             INTERNAL::Hovered_On->setHoverState(true);
@@ -1900,7 +1900,7 @@ namespace GGUI{
                     bool overlapsWithMouse = INTERNAL::Collides(currentEventHandler->host, INTERNAL::Mouse);
 
                     // First let's go through all inputs and see if any selector inputs are present.
-                    for (unsigned int j = 0; j < INTERNAL::Inputs.size(); j++){
+                    for (size_t j = 0; j < INTERNAL::Inputs.size();){
                         input* currentInput = INTERNAL::Inputs[j];      
     
                         Has_Mouse_Left_Click_Event = Has(currentInput->criteria, constants::MOUSE_LEFT_CLICKED) && overlapsWithMouse;
@@ -1912,7 +1912,8 @@ namespace GGUI{
                             unHoverElement();
 
                             // Remove the input, since it's job is used here:
-                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j--);
+                            INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j);
+                            continue;
                         }
 
                         // Criteria must be identical for more accurate criteria listing.
@@ -1921,7 +1922,8 @@ namespace GGUI{
                                 // Check if this job could be run successfully.
                                 if (currentEventHandler->Job(currentInput)){
                                     //dont let anyone else react to this event.
-                                    INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j--);
+                                    INTERNAL::Inputs.erase(INTERNAL::Inputs.begin() + j);
+                                    continue;
                                 }
                                 else{
                                     // TODO: report miscarried event job.
@@ -1932,6 +1934,8 @@ namespace GGUI{
                                 INTERNAL::reportStack("In event: '" + currentEventHandler->ID + "' Problem: " + std::string(problem.what()));
                             }
                         }
+
+                        j++;
                     }
 
                     // If the current event handler is not focused, then we can check wether to set it on/off onHovering

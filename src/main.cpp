@@ -10,7 +10,7 @@ int main(int argc, char* argv[]){
     GGUI::GGUI(
         backgroundColor(COLOR::YELLOW) | 
         node(new textField(
-            allowOverflow(true) | width(0.5f) | height(10) | 
+            allowOverflow(true) | width(0.5f) | height(1.0f) | 
             onInput([](textField* self, char c){
                 self->setText(self->getText() + c);
             })

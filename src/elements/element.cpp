@@ -185,16 +185,18 @@ GGUI::element::~element(){
     // Delete all the styles.
     delete Style;
 
+    Style = nullptr;    // For safety, if in future some destruction system is going to need to know if this is no longer accessble
+
     //now also update the event handlers.
-    for (unsigned int i = 0; i < INTERNAL::Event_Handlers.size(); i++)
-        if (INTERNAL::Event_Handlers[i]->host == this){
-            
-            //delete the event
+    for (size_t i = 0; i < INTERNAL::Event_Handlers.size();) {
+        if (INTERNAL::Event_Handlers[i]->host == this) {
             delete INTERNAL::Event_Handlers[i];
 
-            //remove the event from the list
             INTERNAL::Event_Handlers.erase(INTERNAL::Event_Handlers.begin() + i);
+            // don't increment i, since elements shifted left
         }
+        else ++i;   // Only increment if current index is not a match
+    }
 
     // Now make sure that if the Focused_On element points to this element, then set it to nullptr
     if (isFocused())
@@ -969,9 +971,9 @@ GGUI::element* GGUI::element::copy() const {
 }
 
 void GGUI::element::embedStyles(){
-    if (Parent == nullptr && GGUI::INTERNAL::Main == nullptr){
-        INTERNAL::reportStack("OUTBOX not supported, cannot anchor: " + getName());
-    }
+    // if (Parent == nullptr && GGUI::INTERNAL::Main == nullptr){
+    //     INTERNAL::reportStack("OUTBOX not supported, cannot anchor: " + getName());
+    // }
 
     Style->embedStyles(this);
     

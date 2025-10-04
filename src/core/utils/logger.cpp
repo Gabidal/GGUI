@@ -56,15 +56,20 @@ namespace GGUI{
              * This function is safe to call multiple times and will only initialize the file stream
              * if it has not already been initialized.
              */
-            void Init(){
-                Handle([](GGUI::fileStream& self){
+            void Init(fileStream* pre_pausedSelf){
+                auto task = [](fileStream& self){
                     if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED){    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
                         if (SETTINGS::LOGGER::File_Name.size() == 0){
                             SETTINGS::initSettings();
                         }
                         new (&self) fileStream(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE);
                     }
-                });
+                };
+
+                if (!pre_pausedSelf)
+                    Handle(task);
+                else
+                    task(*pre_pausedSelf);
             }
 
             /**
@@ -80,7 +85,7 @@ namespace GGUI{
                 Handle([&Text](GGUI::fileStream& self){
                     // If this log is called before the normal GGUI_Init is called, then we need to manually init this.
                     if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED)
-                        Init();
+                        Init(&self);
 
                     // Get the current time as string
                     std::string now = "[" + GGUI::INTERNAL::now() + "]: ";

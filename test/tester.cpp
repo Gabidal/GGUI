@@ -1,9 +1,11 @@
-#include <GGUI.h>
+#include <GGUIDev.h>
 #include "units/utils.h"
 #include "units/superStringSuite.h"
 #include "units/ansiSuite.h"
 #include "units/colorSuite.h"
 #include "units/elementSuite.h"
+#include "units/switchSuite.h"
+#include "units/textFieldSuite.h"
 
 int main() {
     std::cout << tester::utils::colorText("GGUI Framework Test Suite\n", GGUI::COLOR::BLUE);
@@ -16,6 +18,8 @@ int main() {
             new tester::ansiSuite(),
             new tester::colorSuite(),
             new tester::elementSuite(),
+            new tester::switchSuite(),
+            new tester::textFieldSuite(),
         });
     } catch (const std::exception& e) {
         std::cout << tester::utils::colorText("Test suite crashed with exception: ", GGUI::COLOR::RED) << e.what() << "\n";

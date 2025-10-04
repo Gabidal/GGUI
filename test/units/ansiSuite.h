@@ -2,6 +2,9 @@
 #define _ANSI_SUITE_H_
 
 #include "utils.h"
+#include <GGUIDev.h>
+
+// ANSI escape sequence and UTF conversion validation.
 
 namespace tester {
     class ansiSuite : public utils::TestSuite {

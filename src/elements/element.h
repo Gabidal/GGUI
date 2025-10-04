@@ -1394,6 +1394,20 @@ namespace GGUI{
 
         // Since protected methods can be accessed via the derived class only if it is as "this" pointer, so we need to give it access.
         friend class listView;
+    
+    // Some of the above mentioned functions be of help
+    public:
+        
+        /**
+         * @brief Provides access to embedStyles().
+         *
+         * This is a temporary workaround for managing RTTI during construction time.
+         * The base class element performs style embedding if forced, which means the
+         * virtual table (VT) has not yet been set to the derived class that is calling
+         * the base class constructor.
+         */
+        void compile() { embedStyles(); }
+        
     };
 }
 

@@ -49,9 +49,6 @@ namespace GGUI{
             for (element* e : Style->Childs) {
                 delete e;
             }
-
-            // Call the base class destructor to ensure all parent class resources are cleaned up.
-            element::~element();
         }
 
         //End of user constructors.

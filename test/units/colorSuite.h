@@ -2,8 +2,7 @@
 #define _COLOR_SUITE_H_
 
 #include "utils.h"
-#include "../../src/core/utils/color.h"
-#include "../../src/core/utils/constants.h"
+#include <GGUIDev.h>
 
 // Tests for RGB colour operations (operators, blending) and basic constants.
 

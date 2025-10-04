@@ -186,10 +186,7 @@ namespace GGUI{
          * is explicitly called to properly clean up resources associated with 
          * the base class.
          */
-        ~switchBox() override{
-            // call the base destructor.
-            element::~element();
-        }
+        ~switchBox() override = default;
 
         /**
          * @brief Toggles the state of the switch.

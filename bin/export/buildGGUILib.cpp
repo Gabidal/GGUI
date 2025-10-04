@@ -26,7 +26,7 @@ std::vector<std::string> get_all_files(const std::string& directory) {
     return files;
 }
 
-void Compile_Headers(const std::string& destination, const std::string& source_root) {
+void Compile_Headers(const std::string& destination, const std::string& source_root, bool ignore_autogen) {
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
         "src/core/utils/superString.h",
@@ -93,16 +93,18 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
         std::string Line;
         bool in_ignored_block = false;
         while (std::getline(File, Line)) {
-            // Ignore marked regions
-            if (in_ignored_block) {
-                if (Line.find("autoGen: Ignore end") != std::string::npos) {
-                    in_ignored_block = false;
-                }
-                continue;
-            } else {
-                if (Line.find("autoGen: Ignore start") != std::string::npos) {
-                    in_ignored_block = true;
+            // Ignore marked regions when configured to do so
+            if (ignore_autogen) {
+                if (in_ignored_block) {
+                    if (Line.find("autoGen: Ignore end") != std::string::npos) {
+                        in_ignored_block = false;
+                    }
                     continue;
+                } else {
+                    if (Line.find("autoGen: Ignore start") != std::string::npos) {
+                        in_ignored_block = true;
+                        continue;
+                    }
                 }
             }
 
@@ -203,6 +205,7 @@ int main(int argc, char** argv){
 #endif
     // Parse simple CLI options for Meson integration
     bool headers_only = false;
+    bool include_internal_sections = false;
     std::string out_header = "./GGUI.h"; // default to current working directory
     // Default source_root keeps the previous behavior if run from bin/export in source tree
     std::string source_root = "./../../";
@@ -215,11 +218,14 @@ int main(int argc, char** argv){
             out_header = argv[++i];
         } else if (arg == "--source-root" && i + 1 < argc) {
             source_root = argv[++i];
+        } else if (arg == "--include-internal") {
+            include_internal_sections = true;
         }
     }
 
     // Compile the headers first
-    Compile_Headers(out_header, source_root);
+    bool ignore_autogen_sections = !include_internal_sections;
+    Compile_Headers(out_header, source_root, ignore_autogen_sections);
 
     if (headers_only) {
         std::cout << "Generated header at: " << out_header << std::endl;
