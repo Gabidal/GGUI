@@ -1089,8 +1089,8 @@ namespace GGUI{
                                 unsigned char Y = Raw_Input[i + 4];
 
                                 // XTERM will normally shift its X and Y coordinates by 32, so that it skips all the control characters in ASCII.
-                                Mouse.X = X - 32;
-                                Mouse.Y = Y - 32;
+                                Mouse.X = Max(X - 32 - 1, 0);   // The additional -1 is so that the mouse cursor top left point works as the actual focus point of the mouse.
+                                Mouse.Y = Max(Y - 32 - 1, 0);
 
                                 Bit_Mask &= ~64;
                             }
