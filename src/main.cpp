@@ -3,27 +3,20 @@
 using namespace GGUI;
 
 int main(int argc, char* argv[]){
-    switchBox SB(
-        visualState("0", "1") | onClick([](element*){ return true; }) // Enable clicking and enter functions
+    
+    // This will enable whatever the user gave the args with GGUI
+    GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
+
+    GGUI::GGUI(
+        backgroundColor(COLOR::YELLOW) | 
+        node(new textField(
+            allowOverflow(true) | width(0.5f) | height(1.0f) | 
+            onInput([](textField* self, char c){
+                self->setText(self->getText() + c);
+            })
+        ))
     );
 
-    SB.compile();
-
-    // For an element to get onFocus it needs to be hovered upon first:
-    INTERNAL::Mouse = {0, 0};            // Let's test it on all four corners
-    INTERNAL::eventHandler();            // run pipeline 
-    if (SB.isHovered()) {
-        std::cout << "success" << std::endl;
-    }
-
-    // Now we can create an click input ourselves and put it into the inputs list and call eventHandler to parse it
-    INTERNAL::Inputs.push_back(new GGUI::input(0, constants::MOUSE_LEFT_CLICKED));
-    INTERNAL::eventHandler();            // run pipeline
-
-    // // Now we can simply check if SB has isFocused enabled
-    if (SB.isFocused()) {
-        std::cout << "success" << std::endl;
-    }
-
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
+    EXIT();
 }

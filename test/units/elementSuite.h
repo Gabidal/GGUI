@@ -228,7 +228,7 @@ namespace tester {
         static void test_mouse_on_hover() {
             using namespace GGUI;
             
-            int w = 10, h = 10;
+            int w = 100, h = 100;
 
             element hoverable(
                 width(w) | height(h) | onClick([](element*){
@@ -236,37 +236,34 @@ namespace tester {
                 }),
                 true
             );
+
+            INTERNAL::Mouse = {0, 0};                   // Let's test it on all four corners
+            INTERNAL::eventHandler();                   // run pipeline 
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
+
+            INTERNAL::Mouse = {w + 1, h + 1};           // Let's move the mouse outside the perimeter to disable hover
+            INTERNAL::eventHandler();
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
             
-            
-            // INTERNAL::Mouse = {0, 0};                   // Let's test it on all four corners
-            // INTERNAL::eventHandler();                   // run pipeline 
-            // ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
+            INTERNAL::Mouse = {w - 1, 0};               // now let's try top right corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
 
-            // INTERNAL::Mouse = {w + 1, h + 1};           // Let's move the mouse outside the perimeter to disable hover
-            // INTERNAL::eventHandler();
-            // ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
+            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
 
-            
-            // INTERNAL::Mouse = {w - 1, 0};               // now let's try top right corner next
-            // INTERNAL::eventHandler();                   // run pipeline
-            // ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
+            INTERNAL::Mouse = {0, h - 1};               // now let's try bottom left corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
 
-            
-            // INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
-            // INTERNAL::eventHandler();                   // run pipeline
-            // ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
+            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has
 
-            // INTERNAL::Mouse = {0, h - 1};               // now let's try bottom left corner next
-            // INTERNAL::eventHandler();                   // run pipeline
-            // ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
-
-            // INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
-            // INTERNAL::eventHandler();                   // run pipeline
-            // ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has
-
-            // INTERNAL::Mouse = {w - 1, h - 1};           // now let's try bottom right corner next
-            // INTERNAL::eventHandler();                   // run pipeline
-            // ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
+            INTERNAL::Mouse = {w - 1, h - 1};           // now let's try bottom right corner next
+            INTERNAL::eventHandler();                   // run pipeline
+            ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
         }
     };
 }
