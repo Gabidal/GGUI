@@ -4,11 +4,6 @@
 #include <vector>
 #include <fstream>
 #include <algorithm>
-#if defined(_WIN32)
-#include <intrin.h>
-#else
-#include <cpuid.h>
-#endif
 
 using namespace std;
 
@@ -116,25 +111,6 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
             Output << Line << "\n";
         }
     }
-}
-
-std::string Get_Machine_SIMD_Type(){
-#if defined(_WIN32)
-    int cpuInfo[4] = {0};
-    __cpuid(cpuInfo, 1);
-    bool sseSupport = cpuInfo[3] & (1 << 25);
-    bool avxSupport = cpuInfo[2] & (1 << 28);
-#else
-    unsigned int eax, ebx, ecx, edx;
-    __cpuid(1, eax, ebx, ecx, edx);
-    bool sseSupport = edx & (1 << 25);
-    bool avxSupport = ecx & (1 << 28);
-#endif
-
-    if (avxSupport) return "-mavx";
-    if (sseSupport) return "-msse";
-
-    return "";
 }
 
 /// @brief Gathers all cpp files under GGUI/src and returns them as usable source files for g++
