@@ -7,23 +7,9 @@
             "args": [
                 "compile",
                 "-C",
-                "bin/build"
+                "bin/build",
+                "GGUI"
             ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": "$gcc",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "detail": "Buildarna"
-        },
-        {
-            "type": "shell",
-            "label": "export",
-            "command": "./bin/test.sh",
-            "args": [],
             "options": {
                 "cwd": "${workspaceFolder}"
             },

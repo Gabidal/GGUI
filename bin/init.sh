@@ -124,7 +124,7 @@ meson setup build -Dbuildtype=debug || exit 1
 
 # Step 4: Compile the project using meson
 echo "Step 4: Compiling the project..."
-meson compile -C build || exit 1
+meson compile -C build ggui_core || exit 1
 
 echo
 echo "=== Initialization Complete ==="

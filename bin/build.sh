@@ -54,5 +54,5 @@ fi
 
 # Build
 log "Compiling the project..."
-meson compile -C "${BUILD_DIR}" || { err "Build failed"; exit 1; }
+meson compile -C "${BUILD_DIR}" build_native_archive || { err "Build failed"; exit 1; }
 log "Build completed successfully"

@@ -5,8 +5,6 @@
 #include <cmath>
 #include <bitset>
 
-// #include "../core/SIMD/SIMD.h"
-
 namespace GGUI{
     /**
      * @brief Constructor for Sprite class.

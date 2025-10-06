@@ -36,7 +36,6 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
         "src/core/utils/logger.h",
         "src/core/utils/fileStreamer.h",
         "src/core/utils/drm.h",
-        "src/core/SIMD/SIMD.h",
         "src/elements/element.h",
         "src/elements/listView.h",
         "src/elements/textField.h",

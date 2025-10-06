@@ -111,7 +111,7 @@ if errorlevel 1 (
 )
 
 echo Step 4: Compiling basic debug build...
-meson compile -C build
+meson compile -C build ggui_core
 if errorlevel 1 (
     echo Error: Compilation failed while building GGUI.
     exit /b 1

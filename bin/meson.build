@@ -44,15 +44,6 @@ lib_sources = [
   '../src/core/addons/addons.cpp',
 ]
 
-# SIMD and CPU-specific options
-NO_SIMD = ''
-SSE     = '-msse'
-AVX     = '-mavx'
-AVX512  = '-mavx512f'
-
-# Default SIMD mode (can be adjusted for specific requirements)
-SIMD_MODE = NO_SIMD
-
 # Compiler handle
 cppc = meson.get_compiler('cpp')
 is_cross = meson.is_cross_build()   # This is to stop infinite recursion, since cross-platform will start meson but with other host OS, which could trigger second cross-platform
@@ -87,25 +78,29 @@ foreach f : base_warn_flags
   endif
 endforeach
 
-# Platform-specific settings
-# Check if we're on an Android environment
-if host_machine.system() == 'android'
-  message('Android environment detected: Disabling SIMD flags')
-  # Disable SIMD flags on Android due to potential compatibility issues
-else
-  if SIMD_MODE != ''
-    cpp_args += [SIMD_MODE]  # Only add SIMD_MODE if it's not empty
-  endif
-endif
-
 # Linker arguments (collected project-wide)
 link_args = []
 
 # Add custom flags based on Meson's buildtype
-if build_type == 'debug'
+if build_type == 'profile'
+  cpp_args += ['-DGGUI_DEBUG', '-Og']
+  link_args += ['-static']  # Link all libc and other libraries statically for maximum inline and true profiling.
+
+elif build_type == 'debug'
   cpp_args += ['-DGGUI_DEBUG']  # no flto nor -Og since debugging becomes an hassle with weird line skipping.
+
+  if host_machine.system() == 'windows'
+    link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library and export all symbols for stacktrace
+  elif host_machine.system() == 'linux'
+    cpp_args += ['-rdynamic']   # Export all symbols for stacktrace
+  endif
+
 elif build_type == 'release'
   cpp_args += ['-DGGUI_RELEASE']
+
+  # NOTE: -static doesn't react similar to how it behaves in linux.
+  link_args += ['-static'] # Link all libc and other libraries statically for maximum inline.
+
   # Avoid -march=native for cross builds (e.g., MinGW)
   if not is_cross and cppc.has_argument('-march=native')
     cpp_args += ['-march=native']
@@ -120,24 +115,6 @@ elif build_type == 'release'
   endif
 endif
 
-if build_type == 'debug' or build_type == 'profile'
-  # Windows-specific settings (e.g., for debugging)
-  if host_machine.system() == 'windows'
-    link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library for better debugging support
-  elif host_machine.system() == 'linux'
-    # Linux-specific settings can be added here if needed
-    cpp_args += ['-rdynamic']  
-  endif
-endif
-
-# Prefer static linkage for the runtime on Linux
-if host_machine.system() == 'linux'
-  # This will link libc, libstdc++, libgcc, and other deps statically if
-  # corresponding .a archives are available. This is the most reliable way
-  # to ensure libc and libstdc++ are not dynamically linked.
-  # link_args += ['-static']
-endif
-
 # Apply computed flags project-wide so individual targets don't need to repeat them
 if cpp_args.length() > 0
   add_project_arguments(cpp_args, language: 'cpp')
@@ -148,7 +125,7 @@ endif
 
 # Build the core static library
 ggui_core = static_library(
-  'GGUIcore',
+  'ggui_core',
   lib_sources,
   install: false
 )
