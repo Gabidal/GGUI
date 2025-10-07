@@ -2,7 +2,7 @@
 #define _SWITCH_SUITE_H_
 
 #include "utils.h"
-#include <GGUIDev.h>
+#include <ggui_dev.h>
 
 // element class testing, no styling from style class, only internal styling member testing instead.
 

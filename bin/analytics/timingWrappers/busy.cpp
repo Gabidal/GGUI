@@ -4,7 +4,7 @@ This c++ code is a wrapper made to link with GGUI libraries and init GGUI and se
 
 */
 
-#include <GGUI.h>
+#include <ggui.h>
 
 using namespace GGUI;
 

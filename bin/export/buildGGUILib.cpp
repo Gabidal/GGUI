@@ -181,7 +181,7 @@ int main(int argc, char** argv){
     // Parse simple CLI options for Meson integration
     bool headers_only = false;
     bool include_internal_sections = false;
-    std::string out_header = "./GGUI.h"; // default to current working directory
+    std::string out_header = "./ggui.h"; // default to current working directory
     // Default source_root keeps the previous behavior if run from bin/export in source tree
     std::string source_root = "./../../";
 
@@ -275,11 +275,11 @@ int main(int argc, char** argv){
     }
 
 #if _WIN32
-    std::string Command = "ar rcs bin/export/GGUI" + nativeName + ".lib" + obj_files_list;
-    std::cout << "Creating library: bin/export/GGUI" << nativeName << ".lib" << std::endl;
+    std::string Command = "ar rcs bin/export/libggui.lib" + obj_files_list;
+    std::cout << "Creating library: bin/export/libggui.lib" << std::endl;
 #else
-    std::string Command = "ar rcs bin/export/libGGUI" + nativeName + ".a" + obj_files_list;
-    std::cout << "Creating library: bin/export/libGGUI" << nativeName << ".a" << std::endl;
+    std::string Command = "ar rcs bin/export/libggui.a" + obj_files_list;
+    std::cout << "Creating library: bin/export/libggui.a" << std::endl;
 #endif
 
     {
@@ -305,7 +305,7 @@ int main(int argc, char** argv){
         }
     }
     
-    Command = "ar rcs bin/export/libGGUI" + alienName + ".a" + obj_files_list;
+    Command = "ar rcs bin/export/libggui.a" + obj_files_list;
     {
         std::string full_cmd = virtualRoot + Command;
         int rc = system(full_cmd.c_str());
@@ -329,7 +329,7 @@ int main(int argc, char** argv){
         }
     }
     
-    Command = "x86_64-w64-mingw32-ar rcs bin/export/GGUI" + alienName + ".lib" + obj_files_list;
+    Command = "x86_64-w64-mingw32-ar rcs bin/export/libggui.lib" + obj_files_list;
     {
         std::string full_cmd = virtualRoot + Command;
         int rc = system(full_cmd.c_str());

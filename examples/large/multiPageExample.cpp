@@ -1,4 +1,4 @@
-#include <GGUI.h>
+#include <ggui.h>
 
 #include <vector>
 

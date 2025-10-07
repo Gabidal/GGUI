@@ -146,7 +146,7 @@ endif
 build_native_archive = custom_target(
   'build_native_archive',
   input: core_objs,
-  output: host_machine.system() == 'windows' ? 'GGUIWin.lib' : 'libGGUIUnix.a',
+  output: host_machine.system() == 'windows' ? 'libggui.lib' : 'libggui.a',
   command: archive_cmd,
   build_by_default: true
 )
@@ -169,7 +169,7 @@ headergen = executable(
 # Generate amalgamated header into the build directory
 generate_header = custom_target(
   'generate_header',
-  output: 'GGUI.h',
+  output: 'ggui.h',
   command: [
     headergen,
     '--headers-only',
@@ -182,7 +182,7 @@ generate_header = custom_target(
 # This is for the test suite to get access and manipulate some internal pipelines without actually having to go through with rendering pipeline as a whole.
 generate_dev_header = custom_target(
   'generate_dev_header',
-  output: 'GGUIDev.h',
+  output: 'ggui_dev.h',
   command: [
     headergen,
     '--headers-only',

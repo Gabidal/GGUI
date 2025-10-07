@@ -28,8 +28,8 @@ build-release/
 
 # Custom output locations, since the headers can be easily re-generated or fetched from github releases.
 /bin/GGUI.p/
-/bin/export/GGUI.h
-/bin/export/GGUIDev.h
+/bin/export/ggui.h
+/bin/export/ggui_dev.h
 
 # Probably from analytics? i don't quite remember why these are here :/
 /export/*.json

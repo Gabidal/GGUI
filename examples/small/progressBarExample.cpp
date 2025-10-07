@@ -1,4 +1,4 @@
-#include <GGUI.h>
+#include <ggui.h>
 
 using namespace GGUI;
 using namespace progress;

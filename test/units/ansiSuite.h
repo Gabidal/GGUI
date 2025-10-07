@@ -2,7 +2,7 @@
 #define _ANSI_SUITE_H_
 
 #include "utils.h"
-#include <GGUIDev.h>
+#include <ggui_dev.h>
 
 // ANSI escape sequence and UTF conversion validation.
 
