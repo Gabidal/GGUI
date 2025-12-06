@@ -1149,7 +1149,7 @@ namespace GGUI{
 
         constexpr position(const GGUI::position& other) : vectorValue(other){}
 
-        constexpr position& operator=(const position& other) = default;
+        position& operator=(const position& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1193,7 +1193,7 @@ namespace GGUI{
 
         constexpr width(const GGUI::width& other) : numberValue(other){}
 
-        constexpr width& operator=(const width& other) = default;
+        width& operator=(const width& other) = default;
 
         void evaluate(const styling* self, const styling* owner) override;
 
@@ -1223,7 +1223,7 @@ namespace GGUI{
 
         constexpr height(const GGUI::height& other) : numberValue(other){}
 
-        constexpr height& operator=(const height& other) = default;
+        height& operator=(const height& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1252,7 +1252,7 @@ namespace GGUI{
             return new enableBorder(*this);
         }
 
-        constexpr enableBorder& operator=(const enableBorder& other) = default;
+        enableBorder& operator=(const enableBorder& other) = default;
 
         constexpr bool operator==(const enableBorder& other) const{
             return value == other.value;
@@ -1284,7 +1284,7 @@ namespace GGUI{
 
         constexpr textColor(const GGUI::textColor& other) : RGBValue(other){}
 
-        constexpr textColor& operator=(const textColor& other) = default;
+        textColor& operator=(const textColor& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1308,7 +1308,7 @@ namespace GGUI{
 
         constexpr backgroundColor(const GGUI::backgroundColor& other) : RGBValue(other){}
 
-        constexpr backgroundColor& operator=(const backgroundColor& other) = default;
+        backgroundColor& operator=(const backgroundColor& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1332,7 +1332,7 @@ namespace GGUI{
 
         constexpr borderColor(const GGUI::borderColor& other) : RGBValue(other){}
 
-        constexpr borderColor& operator=(const borderColor& other) = default;
+        borderColor& operator=(const borderColor& other) = default;
 
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1356,7 +1356,7 @@ namespace GGUI{
 
         constexpr borderBackgroundColor(const GGUI::borderBackgroundColor& other) : RGBValue(other){}
 
-        constexpr borderBackgroundColor& operator=(const borderBackgroundColor& other) = default;
+        borderBackgroundColor& operator=(const borderBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1380,7 +1380,7 @@ namespace GGUI{
 
         constexpr hoverBorderColor(const GGUI::hoverBorderColor& other) : RGBValue(other){}
 
-        constexpr hoverBorderColor& operator=(const hoverBorderColor& other) = default;
+        hoverBorderColor& operator=(const hoverBorderColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1404,7 +1404,7 @@ namespace GGUI{
 
         constexpr hoverTextColor(const GGUI::hoverTextColor& other) : RGBValue(other){}
 
-        constexpr hoverTextColor& operator=(const hoverTextColor& other) = default;
+        hoverTextColor& operator=(const hoverTextColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1428,7 +1428,7 @@ namespace GGUI{
 
         constexpr hoverBackgroundColor(const GGUI::hoverBackgroundColor& other) : RGBValue(other){}
 
-        constexpr hoverBackgroundColor& operator=(const hoverBackgroundColor& other) = default;
+        hoverBackgroundColor& operator=(const hoverBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1452,7 +1452,7 @@ namespace GGUI{
 
         constexpr hoverBorderBackgroundColor(const GGUI::hoverBorderBackgroundColor& other) : RGBValue(other){}
 
-        constexpr hoverBorderBackgroundColor& operator=(const hoverBorderBackgroundColor& other) = default;
+        hoverBorderBackgroundColor& operator=(const hoverBorderBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1476,7 +1476,7 @@ namespace GGUI{
 
         constexpr focusBorderColor(const GGUI::focusBorderColor& other) : RGBValue(other){}
 
-        constexpr focusBorderColor& operator=(const focusBorderColor& other) = default;
+        focusBorderColor& operator=(const focusBorderColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1500,7 +1500,7 @@ namespace GGUI{
 
         constexpr focusTextColor(const GGUI::focusTextColor& other) : RGBValue(other){}
 
-        constexpr focusTextColor& operator=(const focusTextColor& other) = default;
+        focusTextColor& operator=(const focusTextColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1524,7 +1524,7 @@ namespace GGUI{
 
         constexpr focusBackgroundColor(const GGUI::focusBackgroundColor& other) : RGBValue(other){}
 
-        constexpr focusBackgroundColor& operator=(const focusBackgroundColor& other) = default;
+        focusBackgroundColor& operator=(const focusBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1548,7 +1548,7 @@ namespace GGUI{
 
         constexpr focusBorderBackgroundColor(const GGUI::focusBorderBackgroundColor& other) : RGBValue(other){}
 
-        constexpr focusBorderBackgroundColor& operator=(const focusBorderBackgroundColor& other) = default;
+        focusBorderBackgroundColor& operator=(const focusBorderBackgroundColor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1666,7 +1666,7 @@ namespace GGUI{
 
         constexpr flowPriority(const GGUI::flowPriority& other) : enumValue(other.value, other.status){}
 
-        constexpr flowPriority& operator=(const flowPriority& other) = default;
+        flowPriority& operator=(const flowPriority& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1688,7 +1688,7 @@ namespace GGUI{
 
         constexpr wrap(const GGUI::wrap& other) : boolValue(other.value, other.status){}
 
-        constexpr wrap& operator=(const wrap& other) = default;
+        wrap& operator=(const wrap& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1710,7 +1710,7 @@ namespace GGUI{
 
         constexpr allowOverflow(const GGUI::allowOverflow& other) : boolValue(other.value, other.status){}
 
-        constexpr allowOverflow& operator=(const allowOverflow& other) = default;
+        allowOverflow& operator=(const allowOverflow& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1732,7 +1732,7 @@ namespace GGUI{
 
         constexpr allowDynamicSize(const GGUI::allowDynamicSize& other) : boolValue(other.value, other.status){}
 
-        constexpr allowDynamicSize& operator=(const allowDynamicSize& other) = default;
+        allowDynamicSize& operator=(const allowDynamicSize& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1832,7 +1832,7 @@ namespace GGUI{
 
         constexpr allowScrolling(const GGUI::allowScrolling& other) : boolValue(other.value, other.status){}
 
-        constexpr allowScrolling& operator=(const allowScrolling& other) = default;
+        allowScrolling& operator=(const allowScrolling& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
@@ -1854,7 +1854,7 @@ namespace GGUI{
 
         constexpr anchor(const GGUI::anchor& other) : enumValue(other.value, other.status){}
 
-        constexpr anchor& operator=(const anchor& other) = default;
+        anchor& operator=(const anchor& other) = default;
         
         // for dynamically computable values like percentage depended
         // currently covers:
