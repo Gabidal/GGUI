@@ -17,6 +17,11 @@ project(
   ]
 )
 
+# --- User Configuration ------------------------------------------------------
+# PIC/PIE for ASLR security benefits (Can slow down on 32-bit hardware)
+enable_pic_pie = true
+# -----------------------------------------------------------------------------
+
 # Source files for the project
 lib_sources = [
   # Core utilities
@@ -127,7 +132,8 @@ endif
 ggui_core = static_library(
   'ggui_core',
   lib_sources,
-  install: false
+  install: false,
+  pic: enable_pic_pie
 )
 
 # Build a non-thin archive from the core objects for external consumption
@@ -156,7 +162,8 @@ executable(
   'GGUI',
   '../src/main.cpp',
   link_with: ggui_core,
-  install: true
+  install: true,
+  pie: enable_pic_pie
 )
 
 # Header generator tool (reuse existing C++ file)
@@ -229,7 +236,8 @@ tester = executable(
   ],
   include_directories: tester_inc,
   link_with: ggui_core,
-  install: false
+  install: false,
+  pie: enable_pic_pie
 )
 
 # Run the tester to see if there are any problems
@@ -244,7 +252,8 @@ timing_standing = executable(
   ],
   include_directories: tester_inc,
   link_with: ggui_core,
-  install: false
+  install: false,
+  pie: enable_pic_pie
 )
 
 timing_busy = executable(
@@ -255,12 +264,14 @@ timing_busy = executable(
   ],
   include_directories: tester_inc,
   link_with: ggui_core,
-  install: false
+  install: false,
+  pie: enable_pic_pie
 )
 
 # Compare two callgrind outputs and produce a filtered one (analytics/time2.cpp)
 time2 = executable(
   'time2',
   [ 'analytics/time2.cpp' ],
-  install: false
+  install: false,
+  pie: enable_pic_pie
 )
