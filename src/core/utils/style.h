@@ -455,7 +455,7 @@ namespace GGUI{
             constexpr RGBValue(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
                 : styleBase(Default), color(Value, INTERNAL::EVALUATION_TYPE::PERCENTAGE) {}
             
-            constexpr RGBValue() = default;
+            constexpr RGBValue() : styleBase(), color(RGB(0,0,0)) {}
 
             /**
              * @brief Destructor for the RGB_VALUE class.
@@ -555,7 +555,7 @@ namespace GGUI{
             constexpr boolValue(const bool Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
                 : styleBase(Default), value(Value) {}
             
-            constexpr boolValue() = default;
+            constexpr boolValue() : styleBase(), value(false) {}
 
             /**
              * @brief Destructor for the BOOL_VALUE class.
@@ -649,7 +649,7 @@ namespace GGUI{
             
             constexpr numberValue(unsigned int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number((signed int)Value, INTERNAL::EVALUATION_TYPE::DEFAULT){}
 
-            constexpr numberValue() = default;
+            constexpr numberValue() : styleBase(), number(0) {}
 
             /**
              * @brief Destructor for NUMBER_VALUE.
@@ -758,7 +758,7 @@ namespace GGUI{
              */
             constexpr enumValue(const T Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
 
-            constexpr enumValue() = default;
+            constexpr enumValue() : styleBase(), value(static_cast<T>(0)) {}
 
             /**
              * @brief Destructor for ENUM_VALUE.
@@ -851,7 +851,7 @@ namespace GGUI{
             
             constexpr vectorValue(const value<int> x, const value<int> y, const value<int> z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), X(x), Y(y), Z(z){}
 
-            constexpr vectorValue() = default;
+            constexpr vectorValue() : styleBase(), X(0), Y(0), Z(0) {}
 
             /**
              * @brief Destructor for Vector.
@@ -1111,7 +1111,7 @@ namespace GGUI{
     
         class empty : public styleBase{
         public:
-            constexpr empty() = default;
+            constexpr empty() : styleBase() {}
 
             inline ~empty() override { styleBase::~styleBase(); }
 
