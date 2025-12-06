@@ -79,7 +79,7 @@ namespace GGUI{
         constexpr bool isNonDiscriminantScalar(const P value, const float scalar);
 
         template<typename P>
-        constexpr std::string toString(const P value);
+        std::string toString(const P value);
 
         template<typename T>
         class value {
@@ -1075,7 +1075,7 @@ namespace GGUI{
         }
 
         template<typename P>
-        constexpr std::string toString(const P value){
+        std::string toString(const P value){
             if constexpr (std::is_same_v<P, std::string> || std::is_same_v<P, const char*> || std::is_same_v<P, char*>){
                 // These are already strings
                 return value;

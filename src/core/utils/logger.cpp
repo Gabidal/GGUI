@@ -10,6 +10,24 @@
 #include <vector>
 #include <string>
 
+#ifndef GGUI_RELEASE
+    #if _WIN32
+        #include <windows.h>
+        #include <dbghelp.h>
+    #else
+        #if !defined(__ANDROID__)   // Currently Termux does not support execinfo libraries as part of cpplib.
+        #include <execinfo.h>   // For stacktrace
+        #endif
+        #include <dlfcn.h>      // For stacktrace
+        #include <cxxabi.h>     // For stacktrace
+        #include <elf.h>        // For stacktrace
+        #include <fcntl.h>      // For stacktrace
+        #include <link.h>       // For stacktrace
+        #include <sys/mman.h>   // For stacktrace
+        #include <sys/stat.h>   // For stacktrace
+    #endif
+#endif
+
 namespace GGUI{
     namespace SETTINGS{
         extern void initSettings();
@@ -135,12 +153,7 @@ namespace GGUI{
     
     // For printing stacktrace
     #if _WIN32
-    
-        #include <windows.h>
-        #include <dbghelp.h>
-
         #ifndef GGUI_RELEASE
-
 
         /**
          * @brief Retrieves the module handle corresponding to a specific address.
@@ -523,17 +536,7 @@ namespace GGUI{
 
 
     #else
-        
         #ifndef GGUI_RELEASE
-
-        #include <execinfo.h>   // For stacktrace
-        #include <dlfcn.h>      // For stacktrace
-        #include <cxxabi.h>     // For stacktrace
-        #include <elf.h>        // For stacktrace
-        #include <fcntl.h>      // For stacktrace
-        #include <link.h>       // For stacktrace
-        #include <sys/mman.h>   // For stacktrace
-        #include <sys/stat.h>   // For stacktrace
 
         /**
          * Resolves the symbol name corresponding to a given instruction address by inspecting the
