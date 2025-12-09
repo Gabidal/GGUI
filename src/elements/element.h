@@ -54,6 +54,7 @@ namespace GGUI{
         void (*On_Destroy)(element*) = nullptr;
         void (*On_Hide)(element*) = nullptr;
         void (*On_Show)(element*) = nullptr;
+        void (*On_Render)(element*) = nullptr;
     public:
 
         /**
@@ -1198,6 +1199,18 @@ namespace GGUI{
         }
 
         /**
+         * @brief Sets the callback function to be called during the render phase of the element.
+         *
+         * This function assigns a user-defined function to be executed when the element is rendered.
+         * The callback receives a pointer to the element itself as its parameter.
+         *
+         * @param func Pointer to a function that takes an element* as its argument and returns void.
+         */
+        inline void setOnRender(void (*func)(element* self)){
+            On_Render = func;
+        }
+
+        /**
          * @brief Forces the evaluation of dynamic style attributes for the current element.
          * 
          * This method checks if the element has an associated style object. If a style object
@@ -1352,6 +1365,7 @@ namespace GGUI{
                 INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::DEEP | 
                 INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::MOVE
                 // INTERNAL::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
+                | INTERNAL::STAIN_TYPE::NOT_RENDERED
             );
         }
         

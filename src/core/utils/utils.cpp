@@ -503,16 +503,21 @@ namespace GGUI{
             return (ALLOCATION_TYPE)Result;
         }
 
-        GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, float Distance) {
+        GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, int frameIndexRemainder, int Frame_Distance) {
             if (SETTINGS::enableGammaCorrection) {
-                A.red   = fast::interpolate(A.red,   B.red, Distance);
-                A.green = fast::interpolate(A.green, B.green, Distance);
-                A.blue  = fast::interpolate(A.blue,  B.blue, Distance);
+                float distance = (float)frameIndexRemainder / (float)Frame_Distance;
+
+                A.red   = fast::interpolate(A.red,   B.red, distance);
+                A.green = fast::interpolate(A.green, B.green, distance);
+                A.blue  = fast::interpolate(A.blue,  B.blue, distance);
             } else {
-                // Fast integer-based linear interpolation on 8-bit channels
-                A.red   = fast::interpolateLinearU8(A.red,   B.red, Distance);
-                A.green = fast::interpolateLinearU8(A.green, B.green, Distance);
-                A.blue  = fast::interpolateLinearU8(A.blue,  B.blue, Distance);
+                auto extendedLerp = [&](int a, int b) {
+                    return (a * (Frame_Distance - frameIndexRemainder) + b * frameIndexRemainder) / Frame_Distance;
+                };
+
+                A.red = static_cast<unsigned char>(extendedLerp(A.red, B.red));
+                A.green = static_cast<unsigned char>(extendedLerp(A.green, B.green));
+                A.blue = static_cast<unsigned char>(extendedLerp(A.blue, B.blue));
             }
             return A;
         }

@@ -172,7 +172,14 @@ namespace GGUI{
             Result.clear();
             Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
             Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+        }
+
+        if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
+            if (On_Render) On_Render(this);
+
+            // Clean regardless of On_Render existing or not.
+            Dirty.Clean(INTERNAL::STAIN_TYPE::NOT_RENDERED);
         }
 
         // Update the absolute position cache if the MOVE stain is detected.

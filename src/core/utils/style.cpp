@@ -365,6 +365,12 @@ namespace GGUI{
         return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
+    INTERNAL::STAIN_TYPE onRender::embedValue([[maybe_unused]] styling* host, element* owner){
+        owner->setOnRender(value);
+
+        return INTERNAL::STAIN_TYPE::CLEAN;
+    }
+
     INTERNAL::STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
         // TODO: Remove this with 0.1.9, with de-standardization of std::string.
         std::string tmp = value.is(INTERNAL::COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, value.getAscii()) : std::string(value.getUnicode());

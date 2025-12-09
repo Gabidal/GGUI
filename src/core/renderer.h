@@ -84,7 +84,7 @@ namespace GGUI{
         // Maximum allowed delay between passive event loop iterations.
         inline constexpr time_t MAX_UPDATE_SPEED = TIME::SECOND;
         // Close approximation to 60 FPS for minimum sleep (cannot be constexpr modified elsewhere).
-        inline constexpr time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 16;
+        inline constexpr time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 33;
         extern time_t CURRENT_UPDATE_SPEED; // dynamic depending on load
 
         extern int inputsPerSecond;

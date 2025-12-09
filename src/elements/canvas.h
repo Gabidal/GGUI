@@ -19,7 +19,7 @@ namespace GGUI{
         int Offset = 0;     // This is for more beautiful mass animation systems
         int Speed = 1;      // Using decimals too slow hmmm...
         
-        int Frame_Distance = 1;
+        int Frame_Distance = 1; // This represents the distance between each frame
         
         bool Is_Power_Of_Two = false;
     public:
@@ -93,6 +93,7 @@ namespace GGUI{
         // For speeding up sprite sets, to avoid redundant checks in unordered_maps.
         bool Multi_Frame = false;
 
+        // Per-frame, use On_Render for an single pass use.
         GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
         /**

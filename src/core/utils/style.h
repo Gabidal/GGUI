@@ -2059,6 +2059,35 @@ namespace GGUI{
         INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
+    class onRender : public STYLING_INTERNAL::styleBase{
+    public:
+        void (*value)(element* self);
+
+        constexpr onRender(void (*Value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
+
+        constexpr onRender(const GGUI::onRender& other) : styleBase(other.status), value(other.value){}
+
+        inline ~onRender() override { styleBase::~styleBase(); }
+
+        inline styleBase* copy() const override {
+            return new onRender(*this);
+        }
+
+        constexpr onRender& operator=(const onRender& other){
+            // Only copy the information if the other is enabled.
+            if (other.status >= status){
+                value = other.value;
+
+                status = other.status;
+            }
+            return *this;
+        }
+
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+
+        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+    };
+
     class name : public STYLING_INTERNAL::styleBase{
     public:
         INTERNAL::compactString value;

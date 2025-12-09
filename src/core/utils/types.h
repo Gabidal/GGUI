@@ -672,7 +672,8 @@ namespace GGUI{
             STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently.
             MOVE = 1 << 5,          // Enabled, to signal absolute position caching.
             FINALIZE = 1 << 6,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
-            RESET = 1 << 7,         // This is to remove redundant STRETCH flagging.
+            RESET = 1 << 7,         // This is to make stretch less slaggy flagging.
+            NOT_RENDERED = 1 << 8,  // This is a single time flag, noting when the first render pass occurs for the element, triggers On_Render().
         };
 
         /**

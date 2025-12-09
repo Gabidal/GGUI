@@ -334,26 +334,26 @@ namespace GGUI{
 
             // Fast linear interpolate for 8-bit channels without gamma correction.
             // Uses fixed-point weights to avoid divisions and minimize float work.
-            constexpr unsigned char interpolateLinearU8(unsigned char a, unsigned char b, float t) {
+            constexpr unsigned char interpolateLinearU8(unsigned char a, unsigned char b, int clampedDistance) {
                 // Clamp t and convert to 0..256 fixed-point weight with rounding
-                int w = static_cast<int>(t * (float)UINT8_MAX + 0.5f);   // 0..256
-                int inv = UINT8_MAX - w;                             // 256..0
+                int inv = UINT8_MAX - clampedDistance;                       // 256..0
 
                 // Weighted sum with rounding, then >> 8 instead of /255
-                int sum = a * inv + b * w;                     // <= 255*256 + 255*256 = 130560
+                int sum = a * inv + b * clampedDistance;                     // <= 255*256 + 255*256 = 130560
                 return static_cast<unsigned char>((sum + UINT8_MAX/2) >> 8);
             }
         }
 
         /**
          * @brief Interpolates between two RGB colors using linear interpolation.
-         * If SETTINGS::ENABLE_GAMMA_CORRECTION is enabled, the interpolation is done in a gamma-corrected space.
+         * If SETTINGS::enableGammaCorrection is enabled, the interpolation is done in a gamma-corrected space.
          * @param A The start RGB color.
          * @param B The end RGB color.
-         * @param Distance The interpolation factor, typically between 0 and 1.
+         * @param frameIndexRemainder The remainder of the current frame index.
+         * @param Frame_Distance The total distance between frames.
          * @return The interpolated RGB color.
          */
-        extern GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
+        extern GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, int frameIndexRemainder, int Frame_Distance);
 
         /**
          * @brief Convert a liquefied UTF fastVector into a cached std::string.

@@ -177,7 +177,14 @@ namespace GGUI{
 
             Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
 
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+        }
+
+        if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
+            if (On_Render) On_Render(this);
+
+            // Clean regardless of On_Render existing or not.
+            Dirty.Clean(INTERNAL::STAIN_TYPE::NOT_RENDERED);
         }
 
         if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
@@ -189,9 +196,7 @@ namespace GGUI{
                     }
                 }
             }
-            else{
-                report(getName() + " is missing On_Draw call!");
-            }
+            else // report(getName() + " is missing On_Draw call!"); // No error's, since the canvas could use onInit simple draw. 
 
             Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
         }
@@ -232,48 +237,43 @@ namespace GGUI{
 
     /**
      * @brief Renders a UTF character based on the sprite's current frame and speed.
-     * @param Current_Frame The current frame of the animation.
+     * @param currentFrame The current frame of the animation.
      * @return The rendered UTF character.
      */
-    UTF sprite::render(unsigned char Current_Frame){
-        int Frame_Count = Frames.size();
+    UTF sprite::render(unsigned char currentFrame){
+        int frameCount = Frames.size();
 
-        if (Frame_Count < 2){   // Check if current sprite has animation frames.
+        if (frameCount < 2){   // Check if current sprite has animation frames.
             return Frames.back();
         }
 
-        // Apply the speed modifier to the animation frame
-        unsigned char Animation_Frame = (Current_Frame + Offset) * Speed;
+        unsigned char animationFrame = (currentFrame + Offset) * Speed;     // This is our current animation frame
 
-        // now check where the current animation frame lies in between two animation frames.
-        // From Animation_Frame / Frame_Distance - (Animation_Frame / (Frame_Count * Frame_Distance))
-        // => C/C * A/D - A/(CD)
-        // => (CA)/(CD) - A/(CD)
-        // => (CA - A)/(CD)
-        // => A(C - 1)/(CD) >> (Animation_Frame * (Frame_Count - 1)) / (Frame_Distance * Frame_Count)
-        int Divination = Animation_Frame / Frame_Distance;
+        int currentFrameIndex = animationFrame / Frame_Distance;            // This gives us the closest frame to the current animation frame.
 
-        int Frame_Below = Divination - (Animation_Frame / (Frame_Count * Frame_Distance));
+        int frameBelow = currentFrameIndex % frameCount;      // This gives us the how many animations we have passed
 
-        int Modulo = Animation_Frame - Frame_Below * Frame_Distance;
+        int frameIndexRemainder = animationFrame - frameBelow * Frame_Distance;  // This first transforms the frame below index back into non index based and then tells you how far are you from an "checkpoint" of a actual frame index.
 
-        int Frame_Above = (Frame_Below + 1) % Frame_Count;
-
+        int Frame_Above = (frameBelow + 1) % frameCount;    // only +1, because the currentFrameIndex isn't a real index.
+        
         // now interpolate the foreground color between the two points
         GGUI::RGB foreground = INTERNAL::lerp(
-            Frames[Frame_Below].foreground, 
+            Frames[frameBelow].foreground, 
             Frames[Frame_Above].foreground, 
-            (float)Modulo / (float)Frame_Distance
+            frameIndexRemainder,
+            Frame_Distance
         );
 
         // do same for background
         GGUI::RGB background = INTERNAL::lerp(
-            Frames[Frame_Below].background, 
+            Frames[frameBelow].background, 
             Frames[Frame_Above].background, 
-            (float)Modulo / (float)Frame_Distance
+            frameIndexRemainder,
+            Frame_Distance
         );
 
-        GGUI::UTF Result = Frames[Frame_Below];
+        GGUI::UTF Result = Frames[frameBelow];
         Result.setForeground(foreground);
         Result.setBackground(background);
 

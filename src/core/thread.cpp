@@ -174,7 +174,7 @@ namespace GGUI{
 
             // Adjust the event thread load if there are canvases to update
             if (multiFrameCanvas.size() > 0) {
-                eventThreadLoad = lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
+                eventThreadLoad = lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, 0);
             }
         }
 
