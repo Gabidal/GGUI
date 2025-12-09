@@ -34,9 +34,9 @@ namespace GGUI{
      */
     canvas::~canvas() {
         // Check if this Terminal_Canvas is in the multi-frame list
-        if (INTERNAL::Multi_Frame_Canvas.find(this) != INTERNAL::Multi_Frame_Canvas.end()) {
+        if (INTERNAL::multiFrameCanvas.find(this) != INTERNAL::multiFrameCanvas.end()) {
             // Remove the canvas from the multi-frame list
-            INTERNAL::Multi_Frame_Canvas.erase(this);
+            INTERNAL::multiFrameCanvas.erase(this);
         }
     }
 
@@ -54,8 +54,8 @@ namespace GGUI{
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
-        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
-            INTERNAL::Multi_Frame_Canvas[this] = true;
+        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
+            INTERNAL::multiFrameCanvas[this] = true;
             Multi_Frame = true;
         }
 
@@ -81,8 +81,8 @@ namespace GGUI{
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
-        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
-            INTERNAL::Multi_Frame_Canvas[this] = true;
+        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
+            INTERNAL::multiFrameCanvas[this] = true;
             Multi_Frame = true;
         }
 
@@ -109,8 +109,8 @@ namespace GGUI{
         
         Buffer[Location].Frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
 
-        if (!isMultiFrame() && Buffer[Location].Frames.size() > 1 && INTERNAL::Multi_Frame_Canvas.find(this) == INTERNAL::Multi_Frame_Canvas.end()){
-            INTERNAL::Multi_Frame_Canvas[this] = true;
+        if (!isMultiFrame() && Buffer[Location].Frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
+            INTERNAL::multiFrameCanvas[this] = true;
             Multi_Frame = true;
         }
 
@@ -260,14 +260,14 @@ namespace GGUI{
         int Frame_Above = (Frame_Below + 1) % Frame_Count;
 
         // now interpolate the foreground color between the two points
-        GGUI::RGB foreground = INTERNAL::Lerp(
+        GGUI::RGB foreground = INTERNAL::lerp(
             Frames[Frame_Below].foreground, 
             Frames[Frame_Above].foreground, 
             (float)Modulo / (float)Frame_Distance
         );
 
         // do same for background
-        GGUI::RGB background = INTERNAL::Lerp(
+        GGUI::RGB background = INTERNAL::lerp(
             Frames[Frame_Below].background, 
             Frames[Frame_Above].background, 
             (float)Modulo / (float)Frame_Distance
@@ -390,7 +390,7 @@ namespace GGUI{
         std::vector<bool> line(FVector2 Start, FVector2 End, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
-            line(Start.X, Start.Y, End.X, End.Y, Result, Buffer_Width);
+            line(Start.x, Start.y, End.x, End.y, Result, Buffer_Width);
 
             return Result;
         }
@@ -467,7 +467,7 @@ namespace GGUI{
         std::vector<bool> circle(FVector2 Center, int Radius, int Buffer_Width){
             std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
 
-            circle(Center.X, Center.Y, Radius, Result, Buffer_Width);
+            circle(Center.x, Center.y, Radius, Result, Buffer_Width);
 
             return Result;
         }
@@ -492,19 +492,19 @@ namespace GGUI{
                 float uuu = uu * u, ttt = tt * t;
 
                 FVector2 P;
-                P.X = uuu * P0.X; //influence of P0
-                P.Y = uuu * P0.Y; 
+                P.x = uuu * P0.x; //influence of P0
+                P.y = uuu * P0.y; 
 
-                P.X += 3 * uu * t * P1.X; //influence of P1
-                P.Y += 3 * uu * t * P1.Y; 
+                P.x += 3 * uu * t * P1.x; //influence of P1
+                P.y += 3 * uu * t * P1.y; 
 
-                P.X += 3 * u * tt * P2.X; //influence of P2
-                P.Y += 3 * u * tt * P2.Y; 
+                P.x += 3 * u * tt * P2.x; //influence of P2
+                P.y += 3 * u * tt * P2.y; 
 
-                P.X += ttt * P3.X; //influence of P3
-                P.Y += ttt * P3.Y; 
+                P.x += ttt * P3.x; //influence of P3
+                P.y += ttt * P3.y; 
 
-                pixels[P.Y * width + P.X] = true;
+                pixels[P.y * width + P.x] = true;
             }
         }
 

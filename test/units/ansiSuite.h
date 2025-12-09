@@ -19,9 +19,9 @@ namespace tester {
 
     private:
         static void test_sgr_basic_enable() {
-            auto bold = GGUI::constants::ANSI::Enable_SGR_Feature(GGUI::constants::ANSI::BOLD).toString();
-            auto underline = GGUI::constants::ANSI::Enable_SGR_Feature(GGUI::constants::ANSI::UNDERLINE).toString();
-            auto reset = GGUI::constants::ANSI::Enable_SGR_Feature(GGUI::constants::ANSI::RESET_SGR).toString();
+            auto bold = GGUI::constants::ANSI::enableSGRFeature(GGUI::constants::ANSI::BOLD).toString();
+            auto underline = GGUI::constants::ANSI::enableSGRFeature(GGUI::constants::ANSI::UNDERLINE).toString();
+            auto reset = GGUI::constants::ANSI::enableSGRFeature(GGUI::constants::ANSI::RESET_SGR).toString();
 
             ASSERT_EQ(std::string("\x1B[1m"), bold);
             ASSERT_EQ(std::string("\x1B[4m"), underline);
@@ -29,10 +29,10 @@ namespace tester {
         }
 
         static void test_private_sgr_enable_disable() {
-            auto cursor_on = GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR, true).toString();
-            auto cursor_off = GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
-            auto alt_on = GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, true).toString();
-            auto alt_off = GGUI::constants::ANSI::Enable_Private_SGR_Feature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
+            auto cursor_on = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR, true).toString();
+            auto cursor_off = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
+            auto alt_on = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, true).toString();
+            auto alt_off = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
 
             ASSERT_EQ(std::string("\x1B[?25h"), cursor_on);
             ASSERT_EQ(std::string("\x1B[?25l"), cursor_off);
@@ -45,8 +45,8 @@ namespace tester {
         }
 
         static void test_cursor_shape_sequences() {
-            auto blinking_block = GGUI::constants::ANSI::Set_Cursor_Shape(GGUI::constants::ANSI::CURSOR_SHAPE_BLINKING_BLOCK).toString();
-            auto steady_bar = GGUI::constants::ANSI::Set_Cursor_Shape(GGUI::constants::ANSI::CURSOR_SHAPE_STEADY_BAR).toString();
+            auto blinking_block = GGUI::constants::ANSI::setCursorShape(GGUI::constants::ANSI::CURSOR_SHAPE_BLINKING_BLOCK).toString();
+            auto steady_bar = GGUI::constants::ANSI::setCursorShape(GGUI::constants::ANSI::CURSOR_SHAPE_STEADY_BAR).toString();
 
             ASSERT_EQ(std::string("\x1B[0 q"), blinking_block);
             ASSERT_EQ(std::string("\x1B[6 q"), steady_bar);

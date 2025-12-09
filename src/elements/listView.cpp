@@ -96,34 +96,34 @@ void GGUI::listView::addChild(element* e) {
             signed int Width_Modifier = e->hasBorder() & Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
                 unsigned long long Proposed_Height = INTERNAL::Max(Child_Needs_Minimum_Height_Of, getHeight());
-                unsigned long long Proposed_Width = INTERNAL::Max(Last_Child->getPosition().X + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
+                unsigned long long Proposed_Width = INTERNAL::Max(Last_Child->getPosition().x + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
 
                 // Check if the parent allows stretching or overflow.
-                setHeight(INTERNAL::Min(limits.Y, Proposed_Height));
-                setWidth(INTERNAL::Min(limits.X, Proposed_Width));
+                setHeight(INTERNAL::Min(limits.y, Proposed_Height));
+                setWidth(INTERNAL::Min(limits.x, Proposed_Width));
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
             }
 
             // Set positions for the child and last child elements.
-            e->setPosition({Last_Child->getPosition().X - Width_Modifier, e->getPosition().Y});
-            Last_Child->setPosition({Last_Child->getPosition().X + e->getWidth() - Width_Modifier, Last_Child->getPosition().Y});
+            e->setPosition({Last_Child->getPosition().x - Width_Modifier, e->getPosition().y});
+            Last_Child->setPosition({Last_Child->getPosition().x + e->getWidth() - Width_Modifier, Last_Child->getPosition().y});
             Last_Child->setDimensions(e->getWidth(), e->getHeight());
         } else {
             // Adjust for minimum height needed when borders are present.
             signed int Height_Modifier = e->hasBorder() & Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
                 unsigned long long Proposed_Width = INTERNAL::Max(Child_Needs_Minimum_Width_Of, getWidth());
-                unsigned long long Proposed_Height = INTERNAL::Max(Last_Child->getPosition().Y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
+                unsigned long long Proposed_Height = INTERNAL::Max(Last_Child->getPosition().y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
 
                 // Check if the parent allows stretching or overflow.
-                setWidth(INTERNAL::Min(limits.X, Proposed_Width));
-                setHeight(INTERNAL::Min(limits.Y, Proposed_Height));
+                setWidth(INTERNAL::Min(limits.x, Proposed_Width));
+                setHeight(INTERNAL::Min(limits.y, Proposed_Height));
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
             }
 
             // Set positions for the child and last child elements.
-            e->setPosition({e->getPosition().X, Last_Child->getPosition().Y - Height_Modifier});
-            Last_Child->setPosition({Last_Child->getPosition().X, Last_Child->getPosition().Y + e->getHeight() - Height_Modifier});
+            e->setPosition({e->getPosition().x, Last_Child->getPosition().y - Height_Modifier});
+            Last_Child->setPosition({Last_Child->getPosition().x, Last_Child->getPosition().y + e->getHeight() - Height_Modifier});
             Last_Child->setDimensions(e->getWidth(), e->getHeight());
         }
 
@@ -134,7 +134,7 @@ void GGUI::listView::addChild(element* e) {
         Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
 
         // Add the child element to the internal structures.
-        INTERNAL::Element_Names.insert({e->getNameAsRaw(), e});
+        INTERNAL::elementNames.insert({e->getNameAsRaw(), e});
         Style->Childs.push_back(e);
     });
 }
@@ -168,7 +168,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
             // Affect minimum width needed, when current child has borders as well as the previous one.
             signed int Width_Modifier = Next->hasBorder() & Current->hasBorder();
 
-            Next->setPosition({Current->getPosition().X + Current->getWidth() - Width_Modifier, Next->getPosition().Y, Next->getPosition().Z});
+            Next->setPosition({Current->getPosition().x + Current->getWidth() - Width_Modifier, Next->getPosition().y, Next->getPosition().z});
 
             if (Next->getHeight() > Max_Height)
                 Max_Height = Next->getHeight();
@@ -183,7 +183,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
             // Affect minimum height needed, when current child has borders as well as the previous one.
             signed int Height_Modifier = Next->hasBorder() & Current->hasBorder();
 
-            Next->setPosition({Next->getPosition().X, Current->getPosition().Y + Current->getHeight() - Height_Modifier, Next->getPosition().Z});
+            Next->setPosition({Next->getPosition().x, Current->getPosition().y + Current->getHeight() - Height_Modifier, Next->getPosition().z});
 
             if (Next->getWidth() > Max_Width)
                 Max_Width = Next->getWidth();
@@ -194,7 +194,7 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
 
     if (
         (
-        Style->Width.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE
+        Style->Width.number.getType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.number.getType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE
         ) && isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()
     ){
         setDimensions(Max_Width, Max_Height);
@@ -243,7 +243,7 @@ bool GGUI::listView::remove(element* remove){
             // all elements after the index, need to be removed from their x position the gap value.
             for (unsigned int i = Index + 1; i < Style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().X - Gap, Style->Childs[i]->getPosition().Y});
+                Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().x - Gap, Style->Childs[i]->getPosition().y});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
@@ -264,7 +264,7 @@ bool GGUI::listView::remove(element* remove){
             // all elements after the index, need to be removed from their y position the gap value.
             for (unsigned int i = Index + 1; i < Style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().X, Style->Childs[i]->getPosition().Y - Gap});
+                Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().x, Style->Childs[i]->getPosition().y - Gap});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
@@ -283,7 +283,7 @@ bool GGUI::listView::remove(element* remove){
         if (Style->Childs.size() > 0){
             element* tmp = Style->Childs[Style->Childs.size() - 1];
 
-            Last_Child->setPosition({Last_Child->getPosition().X - tmp->getWidth(), Last_Child->getPosition().Y - tmp->getHeight()});
+            Last_Child->setPosition({Last_Child->getPosition().x - tmp->getWidth(), Last_Child->getPosition().y - tmp->getHeight()});
 
             Last_Child->showBorder(tmp->hasBorder());
         }
@@ -328,13 +328,13 @@ void GGUI::scrollView::allowScrolling(bool allow) {
     bool Scroll_Down_Event_Exists = false;
 
     // Check if scrolling events already exist for this Scroll_View
-    for (unsigned int i = 0; i < GGUI::INTERNAL::Event_Handlers.size(); i++) {
-        if (GGUI::INTERNAL::Event_Handlers[i]->host != this)
+    for (unsigned int i = 0; i < GGUI::INTERNAL::eventHandlers.size(); i++) {
+        if (GGUI::INTERNAL::eventHandlers[i]->host != this)
             continue;
 
-        if (GGUI::INTERNAL::Event_Handlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_UP)
+        if (GGUI::INTERNAL::eventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_UP)
             Scroll_Up_Event_Exists = true;
-        else if (GGUI::INTERNAL::Event_Handlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_DOWN)
+        else if (GGUI::INTERNAL::eventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_DOWN)
             Scroll_Down_Event_Exists = true;
     }
 
@@ -383,9 +383,9 @@ void GGUI::scrollView::scrollUp() {
 
     // Now also re-set the container position dependent of the growth direction.
     if (Container->getFlowDirection() == DIRECTION::ROW)
-        newPosition.X -= 1; // Move right by 1 unit
+        newPosition.x -= 1; // Move right by 1 unit
     else
-        newPosition.Y += 1; // Move down by 1 unit
+        newPosition.y += 1; // Move down by 1 unit
 
     Container->setPosition(newPosition);
 }
@@ -418,9 +418,9 @@ void GGUI::scrollView::scrollDown() {
 
     // Now also re-set the container position dependent of the growth direction.
     if (Container->getFlowDirection() == DIRECTION::ROW)
-        newPosition.X += 1; // Move right by 1 unit
+        newPosition.x += 1; // Move right by 1 unit
     else
-        newPosition.Y -= 1; // Move down by 1 unit
+        newPosition.y -= 1; // Move down by 1 unit
 
     Container->setPosition(newPosition);
 }

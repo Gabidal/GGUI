@@ -9,10 +9,10 @@
 #include <vector>
 
 namespace GGUI{
-    std::vector<element*> Addons;
+    std::vector<element*> addons;
 
     namespace INTERNAL{
-        extern element* Main;
+        extern element* main;
     }
 
     /**
@@ -27,7 +27,7 @@ namespace GGUI{
         initInspectTool();
 
         // Finally after all addons are loaded
-        for (auto* a : Addons){
+        for (auto* a : addons){
             getRoot()->addChild(a);
         }
     }
@@ -48,7 +48,7 @@ namespace GGUI{
      * 
      * @return A formatted string containing the collected statistics.
      */
-    std::string Get_Stats_Text(){
+    std::string getStatsText(){
         std::string optimized = std::to_string((float)(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE - INTERNAL::AFTER_ENCODE_BUFFER_SIZE) / (float)INTERNAL::Max(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE, 1) * 100.0f);
 
         // cut from the decimal point
@@ -56,12 +56,12 @@ namespace GGUI{
 
         return  "Optimized: " + optimized + "%\n" + 
                 "Elements: " + std::to_string(getRoot()->getAllNestedElements().size()) + "\n" +
-                "Render delay: " + std::to_string(INTERNAL::Render_Delay) + "ms\n" +
-                "Event delay: " + std::to_string(INTERNAL::Event_Delay) + "ms\n" + 
+                "Render delay: " + std::to_string(INTERNAL::renderDelay) + "ms\n" +
+                "Event delay: " + std::to_string(INTERNAL::eventDelay) + "ms\n" + 
                 "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
-                "Resolution: " + std::to_string(INTERNAL::Max_Width) + "x" + std::to_string(INTERNAL::Max_Height) + "\n" +
+                "Resolution: " + std::to_string(INTERNAL::maxWidth) + "x" + std::to_string(INTERNAL::maxHeight) + "\n" +
                 "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n" + 
-                "Mouse: {" + std::to_string(INTERNAL::Mouse.X) + ", " + std::to_string(INTERNAL::Mouse.Y) + "}";
+                "Mouse: {" + std::to_string(INTERNAL::mouse.x) + ", " + std::to_string(INTERNAL::mouse.y) + "}";
     }
     
     /**
@@ -70,7 +70,7 @@ namespace GGUI{
      * @return True if the update was successful, false otherwise.
      * @details This function should be called by the main event loop to update the stats panel.
      */
-    bool Update_Stats([[maybe_unused]] GGUI::event* Event){
+    bool updateStats([[maybe_unused]] GGUI::event* Event){
         // Check if the inspect tool is displayed
         element* Inspect_Tool = getRoot()->getElement("Inspect");
 
@@ -83,7 +83,7 @@ namespace GGUI{
         if (!Stats) // This normally should not happen, but can happen if main thread is lagging behind.
             return false;
 
-        std::string new_stats = Get_Stats_Text();
+        std::string new_stats = getStatsText();
 
         // Update the stats
         if (new_stats != Stats->getText()){
@@ -96,12 +96,12 @@ namespace GGUI{
     /**
      * @brief Initializes the inspect tool.
      * @details This function initializes the inspect tool which is a debug tool that displays the number of elements, render time, and event time.
-     * @see GGUI::Update_Stats
+     * @see GGUI::updateStats
      */
     void initInspectTool(){
         const char* ERROR_LOGGER = "_ERROR_LOGGER_";
 
-        Addons.push_back(new GGUI::listView(
+        addons.push_back(new GGUI::listView(
             width(0.5f) | height(1.0f) | 
             textColor(1.0f) | backgroundColor(GGUI::COLOR::BLACK) |
             // Set the flow direction to column so the elements stack vertically
@@ -135,7 +135,7 @@ namespace GGUI{
                 height(9) |
                 // Set the name of the text field to "STATS"
                 name("STATS")
-                // text(Get_Stats_Text().c_str())
+                // text(getStatsText().c_str())
             )) | 
 
             // Hide the inspect tool by default
@@ -147,7 +147,7 @@ namespace GGUI{
                     GGUI::input* input = (GGUI::input*)e;
 
                     // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
-                    if (!INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT].State && !INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL].State && input->data != 'i' && input->data != 'I') 
+                    if (!INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT].state && !INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL].state && input->data != 'i' && input->data != 'I') 
                         return false;
 
                     // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
@@ -158,11 +158,11 @@ namespace GGUI{
                 }, true);
 
                 // Remember the inspect tool, so it will be updated every second
-                INTERNAL::Remember([](std::vector<memory>& rememberable){
+                INTERNAL::remember([](std::vector<memory>& rememberable){
                     rememberable.push_back(
                         GGUI::memory(
                             TIME::SECOND,
-                            Update_Stats,
+                            updateStats,
                             MEMORY_FLAGS::RETRIGGER,
                             "Update Stats"
                         )

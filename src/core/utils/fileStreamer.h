@@ -29,7 +29,7 @@ namespace GGUI{
     class fileStream;
 
     // Managed file stream handles. Ownership is now RAII via unique_ptr.
-    extern std::unordered_map<std::string, std::unique_ptr<fileStream>> File_Streamer_Handles;
+    extern std::unordered_map<std::string, std::unique_ptr<fileStream>> fileStreamerHandles;
 
     /**
      * @brief Returns the current working directory of the program.
@@ -74,20 +74,20 @@ namespace GGUI{
         class bufferCapture : public std::streambuf{
         private:
             std::streambuf* STD_COUT_RESTORATION_HANDLE = nullptr;
-            std::string Current_Line = "";
-            std::deque<std::string> Console_History;
+            std::string currentLine = "";
+            std::deque<std::string> consoleHistory;
 
             // Multiple handlers.
-            std::vector<std::function<void()>> On_Change = {};
+            std::vector<std::function<void()>> onChange = {};
 
             // For speeding up.
-            std::unordered_map<bufferCapture*, bool> Synced;
+            std::unordered_map<bufferCapture*, bool> synced;
 
-            std::string Name = "";
+            std::string name = "";
         public:
             // We could just search it from the global listing, but that would be slow.
             // Stuck into the constructed position.
-            const bool Is_Global = false;
+            const bool isGlobal = false;
 
             /**
              * @brief Construct a BUFFER_CAPTURE
@@ -162,7 +162,7 @@ namespace GGUI{
              */
             void addOnChangeHandler(std::function<void()> on_change){                
                 // Append the change handler function to the list
-                On_Change.push_back(on_change);
+                onChange.push_back(on_change);
             }
 
             /**
@@ -194,8 +194,8 @@ namespace GGUI{
              * If a name has not been set, it defaults to "BUFFER_CAPTURE<address>".
              * @see Get_Name()
              */
-            void setName(std::string name){
-                this->Name = name;
+            void setName(std::string Name){
+                this->name = Name;
             }
         };
 
@@ -211,14 +211,14 @@ namespace GGUI{
 
     class fileStream{
     private:
-        INTERNAL::bufferCapture* Buffer_Capture = nullptr;
-        std::fstream Handle;
-        std::vector<std::function<void()>> On_Change = {};
-        std::string Previous_Content = "";
-        unsigned long long Previous_Hash = 0;
-        FILE_STREAM_TYPE Type = FILE_STREAM_TYPE::UN_INITIALIZED;
+        INTERNAL::bufferCapture* bufferCapture = nullptr;
+        std::fstream handle;
+        std::vector<std::function<void()>> onChange = {};
+        std::string previousContent = "";
+        unsigned long long previousHash = 0;
+        FILE_STREAM_TYPE type = FILE_STREAM_TYPE::UN_INITIALIZED;
     public:
-        std::string Name = "";
+        std::string name = "";
 
         /**
          * @brief Constructor of the FILE_STREAM class.
@@ -263,19 +263,19 @@ namespace GGUI{
          * If the file does not exist, or any other error occurs, this function will return an empty string and print an error message to the console.
          * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
          */
-        std::string Read();
+        std::string read();
 
         /**
          * @brief overwrites the given buffer into the file, clearing the previous content of said file.
          * @param Buffer The buffer to write into the file.
          */
-        void Write(std::string Buffer);
+        void write(std::string Buffer);
 
         /**
          * @brief Append line of text to the end of the file.
          * @param Line The line of text to append to the file.
          */
-        void Append(std::string Line);
+        void append(std::string Line);
     
         /**
          * @brief Read the content of the file quickly without checking if the file has changed.
@@ -286,7 +286,7 @@ namespace GGUI{
          * If the file does not exist, or any other error occurs, this function will return an empty string and print an error message to the console.
          * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
          */
-        std::string Fast_Read() { return Previous_Content; }
+        std::string fastRead() { return previousContent; }
 
         /**
          * @brief Checks if the file has changed and notifies the event handlers if so.
@@ -295,7 +295,7 @@ namespace GGUI{
          * It reads the new content from the file, calculates the hash of the new content, and compares it with the previous hash.
          * If the hash has changed, it notifies all the event handlers by calling them.
          */
-        void Changed();
+        void changed();
 
         /**
          * @brief Adds a new event handler to the list of event handlers for this file.
@@ -305,7 +305,7 @@ namespace GGUI{
          * If read_from_std_cout is true, the event handler is added to the list of event handlers of the Buffer_Capture object.
          * Otherwise, the event handler is added to the list of event handlers of this FILE_STREAM object.
          */
-        void Add_On_Change_Handler(std::function<void()> on_change);
+        void addOnChangeHandler(std::function<void()> on_change);
 
         /**
          * @brief Checks if the file stream is a std::cout stream.
@@ -314,20 +314,20 @@ namespace GGUI{
          * This function checks if the file stream is a std::cout stream, i.e. if it is a stream that is
          * associated with the BUFFER_CAPTURE class. If it is, it returns true, otherwise it returns false.
          */
-        bool Is_Cout_Stream(){
-            return Buffer_Capture != nullptr;
+        bool isCoutStream(){
+            return bufferCapture != nullptr;
         }
 
-        FILE_STREAM_TYPE Get_type(){
-            return Type;
+        FILE_STREAM_TYPE getType(){
+            return type;
         }
     };
 
     class filePosition{
     public:
-        std::string File_Name = "";     // Originated.
-        unsigned int Line_Number = 0;   // Y
-        unsigned int Character = 0;     // X
+        std::string fileName = "";     // Originated.
+        unsigned int lineNumber = 0;   // Y
+        unsigned int character = 0;     // X
 
         /**
          * @brief Constructor for the FILE_POSITION class.
@@ -337,10 +337,10 @@ namespace GGUI{
          * 
          * This constructor creates a new FILE_POSITION object with the given file name, line number and character number.
          */
-        filePosition(std::string file_name, unsigned int line_number, unsigned int character){
-            this->File_Name = file_name;
-            this->Line_Number = line_number;
-            this->Character = character;
+        filePosition(std::string file_name, unsigned int line_number, unsigned int Character){
+            this->fileName = file_name;
+            this->lineNumber = line_number;
+            this->character = Character;
         }
 
         /**
@@ -356,8 +356,8 @@ namespace GGUI{
          * This function converts the FILE_POSITION object to a string by concatenating the file name, line number and character number with a colon in between.
          * The resulting string can be used to log or display the position of the file stream.
          */
-        std::string To_String(){
-            return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
+        std::string toString(){
+            return fileName + ":" + std::to_string(lineNumber) + ":" + std::to_string(character);
         }
     };
     
@@ -409,7 +409,7 @@ namespace GGUI{
              * This function runs a command in a shell and captures its output. It
              * then returns the output as a string.
              */
-            std::string Run(std::string command);
+            std::string run(std::string command);
         };
     #else
         class CMD{  // Unix implementation:
@@ -420,7 +420,7 @@ namespace GGUI{
                     int Out;
                 } Way;
                 int FDS[2];
-            } File_Descriptor;
+            } fileDescriptor;
         public:
 
             /**
@@ -449,7 +449,7 @@ namespace GGUI{
              * a pipe and captured by the parent process. The function returns the
              * captured output as a string.
              */
-            std::string Run(std::string command);
+            std::string run(std::string command);
         };
     #endif
 }

@@ -31,7 +31,7 @@ namespace GGUI{
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
         // The textField::render() will take care of this if percentage is used.
-        if (innerWidth == 0 && Style->Width.number.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
+        if (innerWidth == 0 && Style->Width.number.getType() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
             return;
         }
 
@@ -375,12 +375,12 @@ namespace GGUI{
             this,
             getName() + "::input::keypress"
         );
-        GGUI::INTERNAL::Event_Handlers.push_back(key_press);
+        GGUI::INTERNAL::eventHandlers.push_back(key_press);
 
         action* enter = new action(
             constants::ENTER,
             [this, Then](GGUI::event* e) {
-                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].State) {
+                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].state) {
                     //We know the event was gifted as Input*
                     GGUI::input* input = (GGUI::input*)e;
 
@@ -396,12 +396,12 @@ namespace GGUI{
             this,
             getName() + "::input::enter"
         );
-        GGUI::INTERNAL::Event_Handlers.push_back(enter);
+        GGUI::INTERNAL::eventHandlers.push_back(enter);
 
         action* back_space = new action(
             constants::BACKSPACE,
             [this](GGUI::event*) {
-                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE].State) {
+                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE].state) {
                     //If the text field is empty, there is nothing to do
                     if (Text.size() > 0) {
                         Text.pop_back();
@@ -420,6 +420,6 @@ namespace GGUI{
             this,
             getName() + "::input::backspace"
         );
-        GGUI::INTERNAL::Event_Handlers.push_back(back_space);
+        GGUI::INTERNAL::eventHandlers.push_back(back_space);
     }
 }

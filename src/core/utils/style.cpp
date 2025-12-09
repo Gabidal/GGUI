@@ -28,80 +28,80 @@ namespace GGUI{
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
     void position::evaluate(const styling* self, const styling* parent){
-        X.Evaluate(INTERNAL::Max(
+        x.evaluate(INTERNAL::Max(
             parent->Width.get()                     // The base width of the parent
             - (parent->Border_Enabled.value * 2)    // Offset the width by 2 for both sides of border.
             - self->Width.get()                     // So that the relativity will take into count position - width. so that 1.0f doesn't put the element out of bound.
         , 1));
-        Y.Evaluate(INTERNAL::Max(
+        y.evaluate(INTERNAL::Max(
             parent->Height.get()                    // The base height of the parent 
             - (parent->Border_Enabled.value * 2)    // Offset the height by 2 for both sides of border.
             - self->Height.get()                    // So that the relativity will take into count position - height. so that 1.0f doesn't put the element out of bound.
         , 1));
-        // Z.Evaluate(parent->Position.Get().Z);    // Since child as always parent.Z+1, there is no world where this is useful.
+        // Z.evaluate(parent->Position.Get().Z);    // Since child as always parent.Z+1, there is no world where this is useful.
     }
 
     void width::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        number.Evaluate(INTERNAL::Max(parent->Width.get() - (parent->Border_Enabled.value * 2), 1));
+        number.evaluate(INTERNAL::Max(parent->Width.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
     void height::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        number.Evaluate(INTERNAL::Max(parent->Height.get() - (parent->Border_Enabled.value * 2), 1));
+        number.evaluate(INTERNAL::Max(parent->Height.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
     void textColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Text_Color.color.get<RGB>());
+        color.evaluate(parent->Text_Color.color.get<RGB>());
     }
 
     void backgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Background_Color.color.get<RGB>());
+        color.evaluate(parent->Background_Color.color.get<RGB>());
     }
 
     void borderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Border_Color.color.get<RGB>());
+        color.evaluate(parent->Border_Color.color.get<RGB>());
     }
 
     void borderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Border_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Border_Background_Color.color.get<RGB>());
     }
 
     void hoverBorderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Hover_Border_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Border_Color.color.get<RGB>());
     }
 
     void hoverTextColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Hover_Text_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Text_Color.color.get<RGB>());
     }
 
     void hoverBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Hover_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Background_Color.color.get<RGB>());
     }
 
     void hoverBorderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Hover_Border_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Border_Background_Color.color.get<RGB>());
     }
 
     void focusBorderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Focus_Border_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Border_Color.color.get<RGB>());
     }
 
     void focusTextColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Focus_Text_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Text_Color.color.get<RGB>());
     }
 
     void focusBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Focus_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Background_Color.color.get<RGB>());
     }
 
     void focusBorderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.Evaluate(parent->Focus_Border_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Border_Background_Color.color.get<RGB>());
     }
 
     void margin::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        Top.Evaluate(parent->Margin.Top.get<unsigned int>());
-        Bottom.Evaluate(parent->Margin.Bottom.get<unsigned int>());
-        Left.Evaluate(parent->Margin.Left.get<unsigned int>());
-        Right.Evaluate(parent->Margin.Right.get<unsigned int>());
+        top.evaluate(parent->Margin.top.get<unsigned int>());
+        bottom.evaluate(parent->Margin.bottom.get<unsigned int>());
+        left.evaluate(parent->Margin.left.get<unsigned int>());
+        right.evaluate(parent->Margin.right.get<unsigned int>());
     }
 
     // Embeds
@@ -114,7 +114,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::RGBvalue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     /**
      * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
@@ -123,7 +123,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::boolvalue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     /**
      * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
@@ -132,7 +132,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::numbervalue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     /**
      * @brief Embeds the value of a Vector object into a Styling object.
@@ -141,7 +141,7 @@ namespace GGUI{
      * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
      * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
      */
-    INTERNAL::STAIN_TYPE STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
+    INTERNAL::STAIN_TYPE STYLING_INTERNAL::vectorvalue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; }
 
     INTERNAL::STAIN_TYPE position::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Position = *this;
@@ -153,7 +153,7 @@ namespace GGUI{
         host->Width = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
-        if (host->Width.number.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
+        if (host->Width.number.getType() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
             allowDynamicSize tmp = allowDynamicSize(false);
             tmp.embedValue(host, owner);
         }
@@ -165,7 +165,7 @@ namespace GGUI{
         host->Height = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
-        if (host->Width.number.Get_Type() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
+        if (host->Width.number.getType() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
             allowDynamicSize tmp = allowDynamicSize(false);
             tmp.embedValue(host, owner);
         }
@@ -179,7 +179,7 @@ namespace GGUI{
         // If border background value has not been given, then set this background color inverted.
         if (host->Border_Background_Color.status < VALUE_STATE::VALUE){
             host->Border_Background_Color.color = host->Background_Color.color;
-            host->Border_Color.color.Set(!host->Background_Color.color.get<RGB>());
+            host->Border_Color.color.set(!host->Background_Color.color.get<RGB>());
         }
 
         return INTERNAL::STAIN_TYPE::EDGE;
@@ -320,19 +320,19 @@ namespace GGUI{
 
     INTERNAL::STAIN_TYPE node::embedValue(styling* host, [[maybe_unused]]  element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
-        // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
-        if (Has(INTERNAL::getAllocationType(Value), INTERNAL::ALLOCATION_TYPE::STACK))
-            Value = Value->copy();
+        // Since the value is typically given as an stack allocated local object, we need to transfer it into heap
+        if (has(INTERNAL::getAllocationType(value), INTERNAL::ALLOCATION_TYPE::STACK))
+            value = value->copy();
 
-        host->Childs.push_back(Value);
+        host->Childs.push_back(value);
 
         return INTERNAL::STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
     
     INTERNAL::STAIN_TYPE childs::embedValue(styling* host, [[maybe_unused]]  element* owner){
         for (auto* c : *this){
-            // Since the Value is typically given as an stack allocated local object, we need to transfer it into heap
-            if (Has(INTERNAL::getAllocationType(c), INTERNAL::ALLOCATION_TYPE::STACK))
+            // Since the value is typically given as an stack allocated local object, we need to transfer it into heap
+            if (has(INTERNAL::getAllocationType(c), INTERNAL::ALLOCATION_TYPE::STACK))
                 c = c->copy();
 
             host->Childs.push_back(c);
@@ -342,32 +342,32 @@ namespace GGUI{
     }
 
     INTERNAL::STAIN_TYPE onInit::embedValue([[maybe_unused]] styling* host, element* owner){
-        owner->setOnInit(Value);
+        owner->setOnInit(value);
 
         return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
     INTERNAL::STAIN_TYPE onDestroy::embedValue([[maybe_unused]] styling* host, element* owner){
-        owner->setOnDestroy(Value);
+        owner->setOnDestroy(value);
 
         return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
     INTERNAL::STAIN_TYPE onHide::embedValue([[maybe_unused]] styling* host, element* owner){
-        owner->setOnHide(Value);
+        owner->setOnHide(value);
 
         return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
     INTERNAL::STAIN_TYPE onShow::embedValue([[maybe_unused]] styling* host, element* owner){
-        owner->setOnShow(Value);
+        owner->setOnShow(value);
 
         return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
     INTERNAL::STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
         // TODO: Remove this with 0.1.9, with de-standardization of std::string.
-        std::string tmp = Value.is(INTERNAL::COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, Value.getAscii()) : std::string(Value.getUnicode());
+        std::string tmp = value.is(INTERNAL::COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, value.getAscii()) : std::string(value.getUnicode());
 
         owner->setName(tmp);
 
@@ -375,11 +375,11 @@ namespace GGUI{
     }
 
     INTERNAL::STAIN_TYPE title::embedValue([[maybe_unused]] styling* host, element* owner){
-        owner->setTitle(Value);
+        owner->setTitle(value);
 
         if (owner->hasEmptyName()){
             // If the name is empty, then set the name to the title.
-            owner->setName(INTERNAL::To_String(Value));
+            owner->setName(INTERNAL::toString(value));
         }
 
         return INTERNAL::STAIN_TYPE::CLEAN;
@@ -394,7 +394,7 @@ namespace GGUI{
     INTERNAL::STAIN_TYPE onDraw::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Terminal_Canvas element.
         if (dynamic_cast<canvas*>(owner))
-            ((canvas*)owner)->setOnDraw(Value);
+            ((canvas*)owner)->setOnDraw(value);
         else
             throw std::runtime_error("The on_draw attribute can only be used on Terminal_Canvas type elements.");
 
@@ -404,9 +404,9 @@ namespace GGUI{
     INTERNAL::STAIN_TYPE text::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Text_Field element.
         if (dynamic_cast<textField*>(owner))
-            ((textField*)owner)->setText(Value);
+            ((textField*)owner)->setText(value);
         else if (dynamic_cast<switchBox*>(owner))
-            ((switchBox*)owner)->setText(Value);
+            ((switchBox*)owner)->setText(value);
         else
             throw std::runtime_error("The text attribute can only be used on textField type elements.");
 
@@ -420,7 +420,7 @@ namespace GGUI{
             if (dynamic_cast<switchBox*>(owner))
                 INTERNAL::DisableOthers((switchBox*)owner);
 
-            return this->Value(owner);
+            return this->value(owner);
         });
 
         return INTERNAL::STAIN_TYPE::CLEAN;
@@ -428,7 +428,7 @@ namespace GGUI{
 
     INTERNAL::STAIN_TYPE onInput::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<textField*>(owner))
-            ((textField*)owner)->input(Value);
+            ((textField*)owner)->input(value);
         else
             throw std::runtime_error("The on_input attribute can only be used on textField type elements.");
 
@@ -498,7 +498,7 @@ namespace GGUI{
 
     STYLING_INTERNAL::styleBase* node::copy() const {
         node* new_one = new node(*this);
-        new_one->Value = new_one->Value->copy();
+        new_one->value = new_one->value->copy();
         return new_one;
     }
             
@@ -506,7 +506,7 @@ namespace GGUI{
         childs* new_one = new childs(*this);
 
         for (int i = 0; i < length(); i++){
-            new_one->Value[i] = this->Value[i]->copy();
+            new_one->value[i] = this->value[i]->copy();
         }
 
         return new_one;
@@ -526,7 +526,7 @@ namespace GGUI{
     }
 
     /**
-     * @brief Evaluates dynamic attribute values for the given element.
+     * @brief evaluates dynamic attribute values for the given element.
      *
      * This function evaluates the dynamic attribute values of the styling associated
      * with the specified element. It determines the point of interest, which is
@@ -536,14 +536,14 @@ namespace GGUI{
      * @param owner The element whose dynamic attributes are to be evaluated.
      * @return True if there wae changes in the attributes evaluated, false otherwise.
      */
-    bool styling::evaluateDynamicAttributeValues(element* owner) {
+    bool styling::evaluateDynamicAttributevalues(element* owner) {
 
         bool Changed_Attributes = false;
 
         // Use the retrieved style as a reference for evaluation
         styling* reference_style = getReference(owner);
 
-        // Evaluate each dynamic attribute against the reference style
+        // evaluate each dynamic attribute against the reference style
         Changed_Attributes |= evaluateDynamicDimensions(owner, reference_style);
         Changed_Attributes |= evaluateDynamicPosition(owner, reference_style);
         Changed_Attributes |= evaluateDynamicBorder(owner, reference_style);
@@ -733,8 +733,8 @@ namespace GGUI{
      * 
      * This function is used to embed the styles of the current styling object into the element.
      * It takes the element as a parameter and embeds the styles into it.
-     * The styles are embedded by looping through the un_parsed_styles list and calling the Embed_Value function on each attribute.
-     * The Embed_Value function is responsible for embedding the attribute into the element.
+     * The styles are embedded by looping through the un_parsed_styles list and calling the Embed_value function on each attribute.
+     * The Embed_value function is responsible for embedding the attribute into the element.
      * The changes to the element are recorded in the changes variable, which is of type STAIN.
      * The type of the changes is then added to the element's stains list.
      * The function returns nothing.
@@ -771,8 +771,8 @@ namespace GGUI{
             current_attribute = current_attribute->next;
         }
 
-        // Evaluate itself
-        bool Changes_After_Eval = evaluateDynamicAttributeValues(owner);
+        // evaluate itself
+        bool Changes_After_Eval = evaluateDynamicAttributevalues(owner);
 
         if (Changes_After_Eval)
             owner->fullyStain();

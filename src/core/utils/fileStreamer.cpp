@@ -12,7 +12,7 @@
 #endif
 
 namespace GGUI{
-    std::unordered_map<std::string, std::unique_ptr<fileStream>> File_Streamer_Handles;
+    std::unordered_map<std::string, std::unique_ptr<fileStream>> fileStreamerHandles;
 
     /**
      * @brief Read the content of the file.
@@ -23,27 +23,27 @@ namespace GGUI{
      * If the file does not exist, or any other error occurs, this function will return an empty string and print an error message to the console.
      * If read_from_std_cout is true, this function will read the content from the buffer capture instead of the file.
      */
-    std::string fileStream::Read(){
+    std::string fileStream::read(){
         // make sure the Type allows for reading
-        if (Type != FILE_STREAM_TYPE::READ){
-            report("Cannot read from a file that is not opened for reading: '" + this->Name + "' !");
+        if (type != FILE_STREAM_TYPE::READ){
+            report("Cannot read from a file that is not opened for reading: '" + this->name + "' !");
             return "";
         }
 
         // Check if the file handle is actually open
-        if (!Handle.is_open()){
-            report("Cannot read from a file that failed to open: '" + this->Name + "' !");
+        if (!handle.is_open()){
+            report("Cannot read from a file that failed to open: '" + this->name + "' !");
             return "";
         }
 
-        if (Buffer_Capture){
-            return Buffer_Capture->read();
+        if (bufferCapture){
+            return bufferCapture->read();
         }
         else{
             // Get the length of the file.
-            Handle.seekg(0, std::ios::end);
+            handle.seekg(0, std::ios::end);
 
-            int Length = Handle.tellg();
+            int Length = handle.tellg();
             std::string Data;
 
             if (Length == 0){
@@ -52,12 +52,12 @@ namespace GGUI{
             }
             else if (Length < 0){
                 // Clear any cache and go back to the beginning.
-                Handle.clear();
-                Handle.seekg(0, std::ios::beg);
+                handle.clear();
+                handle.seekg(0, std::ios::beg);
                 // Try to read line by line.
                 std::string Line;
 
-                while (std::getline(Handle, Line)){
+                while (std::getline(handle, Line)){
                     Data += Line + "\n";
                 }
             }
@@ -66,8 +66,8 @@ namespace GGUI{
                 char* Buffer = new char[Length];
 
                 // Read from top.
-                Handle.seekg(0, std::ios::beg);
-                Handle.read(Buffer, Length);
+                handle.seekg(0, std::ios::beg);
+                handle.read(Buffer, Length);
 
                 // Return the data.
                 Data = std::string(Buffer, Length);
@@ -76,8 +76,8 @@ namespace GGUI{
 
             // Error handling: Only check for bad state, not EOF
             // EOF is expected after reading the entire file
-            if (Handle.bad()){
-                report("Failed to read file: '" + this->Name + "'");
+            if (handle.bad()){
+                report("Failed to read file: '" + this->name + "'");
                 return "";
             }
 
@@ -85,24 +85,24 @@ namespace GGUI{
         }
     }
 
-    void fileStream::Write(std::string Buffer){
+    void fileStream::write(std::string Buffer){
         // make sure the Type allows for writing
-        if (Type != FILE_STREAM_TYPE::WRITE){
-            report("Cannot write to a file that is not opened for writing: '" + this->Name + "' !");
+        if (type != FILE_STREAM_TYPE::WRITE){
+            report("Cannot write to a file that is not opened for writing: '" + this->name + "' !");
             return;
         }
 
-        Handle << Buffer;
+        handle << Buffer;
     }
 
-    void fileStream::Append(std::string Line){
+    void fileStream::append(std::string Line){
         // make sure the Type allows for writing
-        if (Type != FILE_STREAM_TYPE::WRITE){
-            report("Cannot write to a file that is not opened for writing: '" + this->Name + "' !");
+        if (type != FILE_STREAM_TYPE::WRITE){
+            report("Cannot write to a file that is not opened for writing: '" + this->name + "' !");
             return;
         }
 
-        Handle << Line << std::endl;
+        handle << Line << std::endl;
     }
 
     /**
@@ -112,12 +112,12 @@ namespace GGUI{
      * It reads the new content from the file, calculates the hash of the new content, and compares it with the previous hash.
      * If the hash has changed, it notifies all the event handlers by calling them.
      */
-    void fileStream::Changed(){
+    void fileStream::changed(){
         // read the new content and check if the hash has changed
-        std::string New_Buffer = Read();
+        std::string New_Buffer = read();
 
         if (New_Buffer.size() == 0){
-            report("Failed to check if file: '" + this->Name + "' changes!");
+            report("Failed to check if file: '" + this->name + "' changes!");
 
             return;
         }
@@ -129,11 +129,11 @@ namespace GGUI{
             New_Hash = New_Buffer[i] + (New_Hash << 6) + (New_Hash << 16) - New_Hash;
         }
 
-        if (New_Hash != Previous_Hash){
+        if (New_Hash != previousHash){
             // If the hash has changed, update the previous hash and content, and notify all the event handlers.
-            Previous_Hash = New_Hash;
-            Previous_Content = New_Buffer;
-            for (auto& on_change : On_Change){
+            previousHash = New_Hash;
+            previousContent = New_Buffer;
+            for (auto& on_change : onChange){
                 on_change();
             }
         }
@@ -147,11 +147,11 @@ namespace GGUI{
      * If read_from_std_cout is true, the event handler is added to the list of event handlers of the Buffer_Capture object.
      * Otherwise, the event handler is added to the list of event handlers of this FILE_STREAM object.
      */
-    void fileStream::Add_On_Change_Handler(std::function<void()> on_change){
-        if (Buffer_Capture)
-            Buffer_Capture->addOnChangeHandler(on_change);
+    void fileStream::addOnChangeHandler(std::function<void()> on_change){
+        if (bufferCapture)
+            bufferCapture->addOnChangeHandler(on_change);
         else
-            On_Change.push_back(on_change);
+            onChange.push_back(on_change);
     }
 
     /**
@@ -165,48 +165,48 @@ namespace GGUI{
      * handlers for that file. If not, a new file handle is created and the event handler is added to the list
      * of event handlers for the new file.
      */
-    fileStream::fileStream(std::string file_name, std::function<void()> on_change, FILE_STREAM_TYPE type){
-        Name = file_name;
-        Type = type;
+    fileStream::fileStream(std::string file_name, std::function<void()> on_change, FILE_STREAM_TYPE Type){
+        name = file_name;
+        type = Type;
 
         int STD_Type = 0;
         
-        if (Type == FILE_STREAM_TYPE::READ)
+        if (type == FILE_STREAM_TYPE::READ)
             STD_Type |= std::ios::in;
 
-        if (Type == FILE_STREAM_TYPE::WRITE || Type == FILE_STREAM_TYPE::STD_CAPTURE)
+        if (type == FILE_STREAM_TYPE::WRITE || type == FILE_STREAM_TYPE::STD_CAPTURE)
             STD_Type |= std::ios::out | std::ios::app;
 
-        Handle = std::fstream(Name.c_str(), (std::ios_base::openmode)STD_Type);
+        handle = std::fstream(name.c_str(), (std::ios_base::openmode)STD_Type);
 
         // if the FILE_STREAM_TYPE::STD_CAPTURE is invoked, then we need to create a file where we are going to pipe the std::cout into
-        if (Type == FILE_STREAM_TYPE::STD_CAPTURE)
-            Buffer_Capture = new INTERNAL::bufferCapture(on_change);
+        if (type == FILE_STREAM_TYPE::STD_CAPTURE)
+            bufferCapture = new INTERNAL::bufferCapture(on_change);
         else
-            On_Change.push_back(on_change);
+            onChange.push_back(on_change);
         
-        if (!Handle.is_open()) {
+        if (!handle.is_open()) {
             // Suppress noisy error in READ mode when the file simply doesn't exist (common/expected in tests)
-            bool exists = std::filesystem::exists(Name);
-            if (Type == FILE_STREAM_TYPE::READ) {
+            bool exists = std::filesystem::exists(name);
+            if (type == FILE_STREAM_TYPE::READ) {
                 if (exists) {
-                    std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
+                    std::cerr << "CRITICAL: failed to open file: '" << name << "' !" << std::endl;
                 }
                 // If it doesn't exist and we're reading, that's a benign state; leave handle closed quietly.
             } else {
                 // For WRITE/STD_CAPTURE failing to open is unexpected; keep logging.
-                std::cerr << "CRITICAL: failed to open file: '" << Name << "' !" << std::endl;
+                std::cerr << "CRITICAL: failed to open file: '" << name << "' !" << std::endl;
             }
         }
     }
 
     fileStream::~fileStream() {
         // Close the BUFFER_CAPTURE if it's active
-        if (Buffer_Capture && Type == FILE_STREAM_TYPE::STD_CAPTURE)
-            Buffer_Capture->close();
+        if (bufferCapture && type == FILE_STREAM_TYPE::STD_CAPTURE)
+            bufferCapture->close();
 
         // Close the file handle
-        Handle.close();
+        handle.close();
     }
 
     /**
@@ -221,12 +221,12 @@ namespace GGUI{
      */
     void addFileStreamHandle(std::string File_Name, std::function<void()> Handle, FILE_STREAM_TYPE type){
         // Check if there is already a file handle for this file name
-        auto it = File_Streamer_Handles.find(File_Name);
-        if (it == File_Streamer_Handles.end()){
+        auto it = fileStreamerHandles.find(File_Name);
+        if (it == fileStreamerHandles.end()){
             auto fs = std::make_unique<fileStream>(File_Name, Handle, type);
-            File_Streamer_Handles.emplace(File_Name, std::move(fs));
+            fileStreamerHandles.emplace(File_Name, std::move(fs));
         } else {
-            it->second->Add_On_Change_Handler(Handle);
+            it->second->addOnChangeHandler(Handle);
         }
     }
 
@@ -237,8 +237,8 @@ namespace GGUI{
      */
     fileStream* getFileStreamHandle(std::string File_Name){
         // Check if there is a file handle for this file name
-        auto it = File_Streamer_Handles.find(File_Name);
-        if (it != File_Streamer_Handles.end()){
+        auto it = fileStreamerHandles.find(File_Name);
+        if (it != fileStreamerHandles.end()){
             return it->second.get();
         }
 
@@ -317,7 +317,7 @@ namespace GGUI{
          * This function runs a command in a shell and captures its output. It
          * then returns the output as a string.
          */
-        std::string CMD::Run(std::string Command){
+        std::string CMD::run(std::string Command){
             PROCESS_INFORMATION pi;
             STARTUPINFO si;
 
@@ -381,7 +381,7 @@ namespace GGUI{
             // Unix implementation
 
             // Create a pipe for inter-process communication
-            int Error = pipe(File_Descriptor.FDS);
+            int Error = pipe(fileDescriptor.FDS);
 
             // Check if there was an error creating the pipe
             if (Error == -1)
@@ -398,10 +398,10 @@ namespace GGUI{
          * a pipe and captured by the parent process. The function returns the
          * captured output as a string.
          */
-        std::string CMD::Run(std::string Command){
+        std::string CMD::run(std::string Command){
             if (fork() == 0) {
                 // Child process: redirect standard output to the write end of the pipe
-                dup2(File_Descriptor.Way.Out, STDOUT_FILENO);
+                dup2(fileDescriptor.Way.Out, STDOUT_FILENO);
                 int Error = system(Command.c_str());
 
                 if (Error == -1)
@@ -410,13 +410,13 @@ namespace GGUI{
                 exit(0); // Terminate the child process
             } else {
                 // Parent process: close the write end of the pipe
-                close(File_Descriptor.Way.Out);
+                close(fileDescriptor.Way.Out);
 
                 char buffer[256];
                 std::string output = "";
 
                 // Read the output of the command from the read end of the pipe
-                while (read(File_Descriptor.Way.In, buffer, sizeof(buffer)) > 0) {
+                while (read(fileDescriptor.Way.In, buffer, sizeof(buffer)) > 0) {
                     output += buffer;
                     memset(buffer, 0, sizeof(buffer)); // Clear the buffer
                 }
@@ -444,8 +444,8 @@ namespace GGUI{
          * This will also insert this as the new cout output stream.
          * If Global is true, this BUFFER_CAPTURE will inform all other global BUFFER_CAPTURES about the change.
          */
-        bufferCapture::bufferCapture(std::function<void()> on_change, std::string name, bool Global) : Name(name), Is_Global(Global){
-            Current_Line = "";
+        bufferCapture::bufferCapture(std::function<void()> on_change, std::string Name, bool Global) : name(Name), isGlobal(Global){
+            currentLine = "";
 
             // Store the previous handle.
             STD_COUT_RESTORATION_HANDLE = std::cout.rdbuf();
@@ -453,11 +453,11 @@ namespace GGUI{
             // Insert this as the new cout output stream.
             std::cout.rdbuf(this);
 
-            On_Change.push_back(on_change);
+            onChange.push_back(on_change);
 
             if (Global){
                 // Add this to the global list of BUFFER_CAPTURES, so that other global BUFFER_CAPTURES can inform this one when they change.
-                Global_Buffer_Captures.push_back(this);
+                globalBufferCaptures.push_back(this);
             }
         }
 
@@ -474,19 +474,19 @@ namespace GGUI{
         int bufferCapture::overflow(int c) {
             if (c == '\n') {
                 // Save the current line to the console history and clear it for the next line
-                Console_History.push_back(Current_Line);
-                Current_Line.clear();
+                consoleHistory.push_back(currentLine);
+                currentLine.clear();
 
                 // Notify all registered change handlers
-            for (auto& on_change : On_Change){ on_change(); }
+            for (auto& on_change : onChange){ on_change(); }
 
                 // Inform all global BUFFER_CAPTURES if this one is global
-                if (Is_Global) {
+                if (isGlobal) {
                     informAllGlobalBufferCaptures(this);
                 }
             } else {
                 // Append the character to the current line
-                Current_Line += static_cast<char>(c);
+                currentLine += static_cast<char>(c);
             }
 
             // Write the character to the original std::cout buffer
@@ -519,7 +519,7 @@ namespace GGUI{
             std::string Output = "";
 
             // Iterate through each line in the console history
-            for (auto& Line : Console_History) {
+            for (auto& Line : consoleHistory) {
                 // Append the line followed by a newline character to the output
                 Output += Line + "\n";
             }
@@ -541,14 +541,14 @@ namespace GGUI{
          */
         bool bufferCapture::sync(bufferCapture* Informer) {
             // Check if the BUFFER_CAPTUREs have previously been synchronized
-            if (Synced.find(Informer) != Synced.end()) {
+            if (synced.find(Informer) != synced.end()) {
                 // Share only the latest line if previously synced
-                Console_History.push_back(Informer->Console_History.back());
+                consoleHistory.push_back(Informer->consoleHistory.back());
                 return true;  // Synchronization was successful
             }
 
             // Calculate the difference in console history sizes
-            int Difference = Console_History.size() - Informer->Console_History.size();
+            int Difference = consoleHistory.size() - Informer->consoleHistory.size();
 
             // If the informer has less data, synchronization is not possible
             if (Difference > 0) {
@@ -560,12 +560,12 @@ namespace GGUI{
             } else {
                 // Synchronize the entire history if the informer has more data
                 for (int i = 0; i < Difference; i++) {
-                    int Actual_Offset = Console_History.size() - Difference + i - 1;
-                    Console_History.push_back(Informer->Console_History[Actual_Offset]);
+                    int Actual_Offset = consoleHistory.size() - Difference + i - 1;
+                    consoleHistory.push_back(Informer->consoleHistory[Actual_Offset]);
                 }
 
                 // Mark the BUFFER_CAPTUREs as synced
-                Synced[Informer] = true;
+                synced[Informer] = true;
                 return true;
             }
         }
@@ -577,12 +577,12 @@ namespace GGUI{
          * @return The name of this BUFFER_CAPTURE.
          */
         std::string bufferCapture::getName() {
-            if (Name.size() == 0) {
+            if (name.size() == 0) {
                 // Name not set, default to "BUFFER_CAPTURE<address>"
-                Name = "BUFFER_CAPTURE<" + std::to_string((unsigned long long)this) + ">";
+                name = "BUFFER_CAPTURE<" + std::to_string((unsigned long long)this) + ">";
             }
 
-            return Name;
+            return name;
         }
     }
 

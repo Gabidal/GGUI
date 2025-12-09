@@ -201,7 +201,7 @@ namespace GGUI{
         constexpr void check(INTERNAL::STATE s){
             if (s == INTERNAL::STATE::INIT && On_Init){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
-                Style->evaluateDynamicAttributeValues(this);
+                Style->evaluateDynamicAttributevalues(this);
 
                 On_Init(this);
             }
@@ -442,7 +442,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        INTERNAL::EVALUATION_TYPE getWidthType() { return Style->Width.number.Get_Type(); }
+        INTERNAL::EVALUATION_TYPE getWidthType() { return Style->Width.number.getType(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -451,7 +451,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        INTERNAL::EVALUATION_TYPE getHeightType() { return Style->Height.number.Get_Type(); }
+        INTERNAL::EVALUATION_TYPE getHeightType() { return Style->Height.number.getType(); }
 
         /**
          * @brief Set the position of the element.
@@ -940,7 +940,7 @@ namespace GGUI{
          * 
          * @return A pair of RGB values representing the text color and background color of the element.
          */
-        constexpr std::pair<RGB, RGB>  composeAllTextRGBValues(){
+        constexpr std::pair<RGB, RGB>  composeAllTextRGBvalues(){
             if (Focused){
                 return {Style->Focus_Text_Color.color.get<RGB>(), Style->Focus_Background_Color.color.get<RGB>()};
             }
@@ -960,7 +960,7 @@ namespace GGUI{
          * Otherwise, the function will return the RGB values of the normal border color and background color.
          * @return A pair of RGB values representing the border color and background color of the element.
          */
-        constexpr std::pair<RGB, RGB> composeAllBorderRGBValues(){
+        constexpr std::pair<RGB, RGB> composeAllBorderRGBvalues(){
             if (Focused){
                 return {Style->Focus_Border_Color.color.get<RGB>(), Style->Focus_Border_Background_Color.color.get<RGB>()};
             }
@@ -1202,14 +1202,14 @@ namespace GGUI{
          * 
          * This method checks if the element has an associated style object. If a style object
          * exists, it triggers the evaluation of dynamic attribute values for the element
-         * by calling the `evaluateDynamicAttributeValues` method on the style object.
+         * by calling the `evaluateDynamicAttributevalues` method on the style object.
          * 
          * @note This function is typically used to ensure that the element's style is
          * up-to-date, especially when dynamic attributes are involved.
          */
         inline void forceStyleEvaluation(){
             if (Style)
-                Style->evaluateDynamicAttributeValues(this);
+                Style->evaluateDynamicAttributevalues(this);
         }
         
     protected:
@@ -1246,7 +1246,7 @@ namespace GGUI{
          * 
          * @details
          * - If the title is empty, the function returns immediately without modifying `Result`.
-         * - The title's length is determined by the `Style->Title.Value.size`.
+         * - The title's length is determined by the `Style->Title.value.size`.
          * - The function calculates the writable length based on the element's width,
          *   taking into account borders and the space required for the ellipsis.
          * - If the title exceeds the writable length, an ellipsis is appended to indicate truncation.

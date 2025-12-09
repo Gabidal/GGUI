@@ -17,7 +17,7 @@ namespace GGUI{
     HTML::HTML(std::string File_Name){
         pauseGGUI([this, File_Name](){
             Handle = new fileStream(File_Name, [this](){
-                this->setChilds(INTERNAL::parseHTML(Handle->Fast_Read(), this));
+                this->setChilds(INTERNAL::parseHTML(Handle->fastRead(), this));
             });
 
             setName(File_Name);
@@ -426,10 +426,10 @@ namespace GGUI{
                 }
 
                 // Update the current position in the file.
-                Current_Position.Character++;
+                Current_Position.character++;
                 if (Current_Char == '\n') {
-                    Current_Position.Line_Number++;
-                    Current_Position.Character = 0;
+                    Current_Position.lineNumber++;
+                    Current_Position.character = 0;
                 }
             }
 
@@ -613,7 +613,7 @@ namespace GGUI{
             // try to check if the decimal is valid
             try{
                 // now put the left side number as the main decimal value and the right side as the fraction.
-                [[maybe_unused]] double Decimal_Value = std::stod(STR_VALUE);
+                [[maybe_unused]] double Decimal_value = std::stod(STR_VALUE);
             }
             catch(...){
                 report("Invalid decimal number: " + STR_VALUE, Input[i]->Position);
@@ -683,7 +683,7 @@ namespace GGUI{
          * calls the GGUI::Report function to display the error to the user.
          */
         void report(std::string problem, filePosition location){
-            GGUI::report(location.To_String() + ": " + problem);
+            GGUI::report(location.toString() + ": " + problem);
         }
 
         /**

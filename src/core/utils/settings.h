@@ -15,7 +15,7 @@ namespace GGUI {
         /**
          * @brief Enumeration of supported argument types for command line parsing.
          */
-        enum class ArgumentType {
+        enum class argumentType {
             FLAG,           ///< Boolean flag argument (no value expected)
             STRING,         ///< String value argument
             INTEGER,        ///< Integer value argument
@@ -28,10 +28,10 @@ namespace GGUI {
          * This class encapsulates information about a command line argument including
          * its name, type, description, and a callback function to handle the parsed value.
          */
-        class ArgumentDescriptor {
+        class argumentDescriptor {
         public:
             std::string name;                                    ///< Argument name (without dashes)
-            ArgumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
+            argumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
             std::string description;                             ///< Human-readable description for help text
             std::function<void(const std::string&)> handler;    ///< Callback function to handle parsed value
 
@@ -43,8 +43,8 @@ namespace GGUI {
              * @param argDescription Description of the argument for help text
              * @param argHandler Callback function to handle the parsed value
              */
-            ArgumentDescriptor(const std::string& argName, 
-                             ArgumentType argType, 
+            argumentDescriptor(const std::string& argName, 
+                             argumentType argType, 
                              const std::string& argDescription,
                              std::function<void(const std::string&)> argHandler)
                 : name(argName), type(argType), description(argDescription), handler(argHandler) {}
@@ -54,8 +54,8 @@ namespace GGUI {
              * 
              * @return true if the argument type requires a value, false for flags
              */
-            bool requiresValue() const {
-                return type != ArgumentType::FLAG;
+            bool requiresvalue() const {
+                return type != argumentType::FLAG;
             }
 
             /**
@@ -65,27 +65,27 @@ namespace GGUI {
              */
             std::string getTypeName() const {
                 switch (type) {
-                    case ArgumentType::FLAG: return "flag";
-                    case ArgumentType::STRING: return "string";
-                    case ArgumentType::INTEGER: return "integer";
-                    case ArgumentType::UNSIGNED_LONG: return "unsigned long";
+                    case argumentType::FLAG: return "flag";
+                    case argumentType::STRING: return "string";
+                    case argumentType::INTEGER: return "integer";
+                    case argumentType::UNSIGNED_LONG: return "unsigned long";
                     default: return "unknown";
                 }
             }
         };
 
         // Given as --mousePressCooldown = 123
-        extern unsigned long long Mouse_Press_Down_Cooldown;  // Milliseconds
+        extern unsigned long long mousePressDownCooldown;  // Milliseconds
 
         // Given as --enableWordWrapping
-        extern bool Word_Wrapping;
+        extern bool wordWrapping;
 
         // Given as --enableGammaCorrection
-        extern bool ENABLE_GAMMA_CORRECTION;
+        extern bool enableGammaCorrection;
 
         namespace LOGGER{
             // Given as --loggerFileName = "GGUI.log"
-            extern std::string File_Name;
+            extern std::string fileName;
         }
 
         // Given as --enableDRM

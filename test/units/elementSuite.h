@@ -23,7 +23,7 @@ namespace tester {
             add_test("overflow_and_wrap_flags", "allowOverflow / wrap flags", test_overflow_and_wrap_flags);
             add_test("anchor_and_flow_priority", "Anchor and flow priority setters", test_anchor_and_flow_priority);
             add_test("color_setters", "Background / Text / Border color setters", test_color_setters);
-            add_test("hover_focus_color_composition", "composeAllTextRGBValues precedence", test_hover_focus_color_composition);
+            add_test("hover_focus_color_composition", "composeAllTextRGBvalues precedence", test_hover_focus_color_composition);
             add_test("margin_setter", "setMargin copies values", test_margin_setter);
             add_test("name_and_lookup", "setName & getElement recursive search", test_name_and_lookup);
             // add_test("fitting_dimensions_basic", "getFittingDimensions base cases", test_fitting_dimensions_basic);
@@ -177,13 +177,13 @@ namespace tester {
             e.setHoverBackgroundColor({4,5,6});
             e.setFocusTextColor({70,80,90});
             e.setFocusBackgroundColor({7,8,9});
-            auto base = e.composeAllTextRGBValues();
+            auto base = e.composeAllTextRGBvalues();
             ASSERT_EQ(GGUI::RGB(10,20,30), base.first);
             e.setHoverState(true);
-            auto hov = e.composeAllTextRGBValues();
+            auto hov = e.composeAllTextRGBvalues();
             ASSERT_EQ(GGUI::RGB(40,50,60), hov.first);
             e.setFocus(true); // focus should override hover
-            auto foc = e.composeAllTextRGBValues();
+            auto foc = e.composeAllTextRGBvalues();
             ASSERT_EQ(GGUI::RGB(70,80,90), foc.first);
         }
 
@@ -191,10 +191,10 @@ namespace tester {
             GGUI::element e; 
             GGUI::margin m(1,2,3,4); e.setMargin(m);
             auto gm = e.getMargin();
-            ASSERT_EQ(1u, gm.Top.get<unsigned int>());
-            ASSERT_EQ(2u, gm.Bottom.get<unsigned int>());
-            ASSERT_EQ(3u, gm.Left.get<unsigned int>());
-            ASSERT_EQ(4u, gm.Right.get<unsigned int>());
+            ASSERT_EQ(1u, gm.top.get<unsigned int>());
+            ASSERT_EQ(2u, gm.bottom.get<unsigned int>());
+            ASSERT_EQ(3u, gm.left.get<unsigned int>());
+            ASSERT_EQ(4u, gm.right.get<unsigned int>());
         }
 
         static void test_name_and_lookup(){
@@ -221,8 +221,8 @@ namespace tester {
             parent.addChild(a); parent.addChild(b); parent.addChild(c);
             // After addChild calls reOrderChilds, order should be by Z ascending
             auto& childs = parent.getChilds();
-            ASSERT_TRUE(childs[0]->getPosition().Z <= childs[1]->getPosition().Z);
-            ASSERT_TRUE(childs[1]->getPosition().Z <= childs[2]->getPosition().Z);
+            ASSERT_TRUE(childs[0]->getPosition().z <= childs[1]->getPosition().z);
+            ASSERT_TRUE(childs[1]->getPosition().z <= childs[2]->getPosition().z);
         }
 
         static void test_mouse_on_hover() {
@@ -237,31 +237,31 @@ namespace tester {
                 true
             );
 
-            INTERNAL::Mouse = {0, 0};                   // Let's test it on all four corners
+            INTERNAL::mouse = {0, 0};                   // Let's test it on all four corners
             INTERNAL::eventHandler();                   // run pipeline 
             ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
 
-            INTERNAL::Mouse = {w + 1, h + 1};           // Let's move the mouse outside the perimeter to disable hover
+            INTERNAL::mouse = {w + 1, h + 1};           // Let's move the mouse outside the perimeter to disable hover
             INTERNAL::eventHandler();
             ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
             
-            INTERNAL::Mouse = {w - 1, 0};               // now let's try top right corner next
+            INTERNAL::mouse = {w - 1, 0};               // now let's try top right corner next
             INTERNAL::eventHandler();                   // run pipeline
             ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has onHover enabled
 
-            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::mouse = {w + 1, h + 1};           // now clear hover
             INTERNAL::eventHandler();                   // run pipeline
             ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has onHover disabled
 
-            INTERNAL::Mouse = {0, h - 1};               // now let's try bottom left corner next
+            INTERNAL::mouse = {0, h - 1};               // now let's try bottom left corner next
             INTERNAL::eventHandler();                   // run pipeline
             ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
 
-            INTERNAL::Mouse = {w + 1, h + 1};           // now clear hover
+            INTERNAL::mouse = {w + 1, h + 1};           // now clear hover
             INTERNAL::eventHandler();                   // run pipeline
             ASSERT_FALSE(hoverable.isHovered());        // now let's see if the hoverable has
 
-            INTERNAL::Mouse = {w - 1, h - 1};           // now let's try bottom right corner next
+            INTERNAL::mouse = {w - 1, h - 1};           // now let's try bottom right corner next
             INTERNAL::eventHandler();                   // run pipeline
             ASSERT_TRUE(hoverable.isHovered());         // now let's see if the hoverable has
         }

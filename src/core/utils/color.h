@@ -13,11 +13,11 @@
 namespace GGUI{
     class RGB{
     public:
-        unsigned char Red = 0;
-        unsigned char Green = 0;
-        unsigned char Blue = 0;
+        unsigned char red = 0;
+        unsigned char green = 0;
+        unsigned char blue = 0;
 
-        constexpr RGB(unsigned char r, unsigned char g, unsigned char b) : Red(r), Green(g), Blue(b) {}
+        constexpr RGB(unsigned char r, unsigned char g, unsigned char b) : red(r), green(g), blue(b) {}
 
         constexpr RGB() = default;
 
@@ -28,19 +28,19 @@ namespace GGUI{
          */
         constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
             // Add the red value to the string
-            Result->add(constants::ANSI::toCompactTable[Red]);
+            Result->add(constants::ANSI::toCompactTable[red]);
             
             // Add the separator to the string
             Result->add(constants::ANSI::SEPARATE);
             
             // Add the green value to the string
-            Result->add(constants::ANSI::toCompactTable[Green]);
+            Result->add(constants::ANSI::toCompactTable[green]);
             
             // Add the separator to the string
             Result->add(constants::ANSI::SEPARATE);
             
             // Add the blue value to the string
-            Result->add(constants::ANSI::toCompactTable[Blue]);
+            Result->add(constants::ANSI::toCompactTable[blue]);
         }
     
         /**
@@ -82,7 +82,7 @@ namespace GGUI{
     
         constexpr bool operator==(const RGB& Other) const{
             // only take the bits from the first 3 unsigned chars
-            return Red == Other.Red && Green == Other.Green && Blue == Other.Blue;
+            return red == Other.red && green == Other.green && blue == Other.blue;
         }
 
         constexpr bool operator!=(const RGB& Other) const{
@@ -90,15 +90,15 @@ namespace GGUI{
         }
 
         constexpr RGB operator+(const RGB& Other) const{
-            return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
+            return RGB(red + Other.red, green + Other.green, blue + Other.blue);
         }
 
         constexpr RGB operator*(const float Scalar) const{
-            return RGB((unsigned char)((float)Red * Scalar), (unsigned char)((float)Green * Scalar), (unsigned char)((float)Blue * Scalar));
+            return RGB((unsigned char)((float)red * Scalar), (unsigned char)((float)green * Scalar), (unsigned char)((float)blue * Scalar));
         }
 
         constexpr RGB operator!() const{
-            return RGB(UINT8_MAX - Red, UINT8_MAX - Green, UINT8_MAX - Blue);
+            return RGB(UINT8_MAX - red, UINT8_MAX - green, UINT8_MAX - blue);
         }
 
         constexpr void add(const RGB& other, float opacity){
@@ -106,9 +106,9 @@ namespace GGUI{
             float Reverse_Alpha = 1.0f - opacity;
 
             // Blend the colors based on the opacity
-            Red = (unsigned char)((float)Red * Reverse_Alpha + (float)other.Red * opacity);
-            Green = (unsigned char)((float)Green * Reverse_Alpha + (float)other.Green * opacity);
-            Blue = (unsigned char)((float)Blue * Reverse_Alpha + (float)other.Blue * opacity);
+            red = (unsigned char)((float)red * Reverse_Alpha + (float)other.red * opacity);
+            green = (unsigned char)((float)green * Reverse_Alpha + (float)other.green * opacity);
+            blue = (unsigned char)((float)blue * Reverse_Alpha + (float)other.blue * opacity);
         }
     };
 
@@ -297,9 +297,9 @@ namespace GGUI{
     }
 
     inline std::ostream& operator<<(std::ostream& os, const GGUI::RGB& color) {
-        os << "RGB(" << static_cast<int>(color.Red) << ", "
-           << static_cast<int>(color.Green) << ", "
-           << static_cast<int>(color.Blue) << ")";
+        os << "RGB(" << static_cast<int>(color.red) << ", "
+           << static_cast<int>(color.green) << ", "
+           << static_cast<int>(color.blue) << ")";
         return os;
     }
 }

@@ -13,25 +13,25 @@ namespace GGUI{
     class element;
     namespace INTERNAL{
 
-        extern element* Main;
+        extern element* main;
 
         namespace atomic{
             enum class status;
 
-            extern std::mutex Mutex;
-            extern std::condition_variable Condition;
+            extern std::mutex mutex;
+            extern std::condition_variable condition;
 
-            extern status Pause_Render_Thread;
+            extern status pauseRenderThread;
         }
 
         extern std::chrono::high_resolution_clock::time_point Previous_Time;
         extern std::chrono::high_resolution_clock::time_point Current_Time;
 
-        extern atomic::guard<Carry> Carry_Flags;
+        extern atomic::guard<carry> Carry_Flags;
 
         extern void Translate_Inputs();
 
-        bool Identical_Frame = true;
+        bool identicalFrame = true;
 
         int BEFORE_ENCODE_BUFFER_SIZE = 0;
         int AFTER_ENCODE_BUFFER_SIZE = 0;
@@ -55,60 +55,60 @@ namespace GGUI{
         void renderer(){
             while (true){
                 {
-                    std::unique_lock lock(atomic::Mutex);
-                    atomic::Condition.wait(lock, [&](){ return atomic::Pause_Render_Thread == atomic::status::REQUESTING_RENDERING; });
+                    std::unique_lock lock(atomic::mutex);
+                    atomic::condition.wait(lock, [&](){ return atomic::pauseRenderThread == atomic::status::REQUESTING_RENDERING; });
 
-                    atomic::Pause_Render_Thread = atomic::status::RENDERING;
+                    atomic::pauseRenderThread = atomic::status::RENDERING;
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
                 Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (Carry_Flags.read().Terminate){
+                if (Carry_Flags.read().terminate){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
-                if (Main){
+                if (main){
 
                     // Process the previous carry flags
-                    Carry_Flags([](Carry& previous_carry){
-                        if (previous_carry.Resize){
+                    Carry_Flags([](carry& previous_carry){
+                        if (previous_carry.resize){
                             // Clear the previous carry flag
-                            previous_carry.Resize = false;
+                            previous_carry.resize = false;
 
                             updateMaxWidthAndHeight();
                         }
                     });
 
-                    Identical_Frame = true; // Assume that the incoming frame will be identical.
+                    identicalFrame = true; // Assume that the incoming frame will be identical.
 
                     // Main is zero size, before the DRM sends us the correct window size.
-                    bool FirstDRMRender = GGUI::SETTINGS::enableDRM && (Main->getWidth() == 0 && Main->getHeight() == 0);
+                    bool FirstDRMRender = GGUI::SETTINGS::enableDRM && (main->getWidth() == 0 && main->getHeight() == 0);
 
                     // Skip rendering until DRM sends us the window size.
                     if (!FirstDRMRender) {
-                        Abstract_Frame_Buffer = &Main->render();
+                        abstractFrameBuffer = &main->render();
 
-                        if (!Identical_Frame){
+                        if (!identicalFrame){
                             if (SETTINGS::enableDRM) {
-                                DRM::sendBuffer(*Abstract_Frame_Buffer);
+                                DRM::sendBuffer(*abstractFrameBuffer);
                             }
                             else {
                                 // ENCODE for optimize
-                                encodeBuffer(Abstract_Frame_Buffer);
+                                encodeBuffer(abstractFrameBuffer);
 
                                 unsigned int Liquefied_Size = 0;
-                                fastVector<compactString> CS_Buffer = liquifyUTFText(Abstract_Frame_Buffer, Liquefied_Size, Main->getWidth(), Main->getHeight());
+                                fastVector<compactString> CS_Buffer = liquifyUTFText(abstractFrameBuffer, Liquefied_Size, main->getWidth(), main->getHeight());
                                 
-                                Frame_Buffer = To_String(CS_Buffer, Liquefied_Size);
+                                frameBuffer = toString(CS_Buffer, Liquefied_Size);
                                 
                                 renderFrame();
                             }
                         }
                         else{
                         #ifdef GGUI_DEBUG
-                            LOGGER::Log("Saved frame");
+                            LOGGER::log("Saved frame");
                         #endif
 
                             if (SETTINGS::enableDRM) {
@@ -122,36 +122,36 @@ namespace GGUI{
                 // Check the difference of the time captured before render and now after render
                 Current_Time = std::chrono::high_resolution_clock::now();
 
-                Render_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                renderDelay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 {
-                    std::unique_lock lock(atomic::Mutex);
+                    std::unique_lock lock(atomic::mutex);
                     // Now for itself set it to sleep.
-                    atomic::Pause_Render_Thread = atomic::status::PAUSED;
-                    atomic::Condition.notify_all();
+                    atomic::pauseRenderThread = atomic::status::PAUSED;
+                    atomic::condition.notify_all();
                 }
             }
 
-            LOGGER::Log("Render thread terminated!");
+            LOGGER::log("Render thread terminated!");
         
             // Give signal to other threads this one has paused for good.
-            std::unique_lock lock(atomic::Mutex);
+            std::unique_lock lock(atomic::mutex);
             // Now for itself set it to sleep.
-            atomic::Pause_Render_Thread = atomic::status::TERMINATED;
-            atomic::Condition.notify_all();
+            atomic::pauseRenderThread = atomic::status::TERMINATED;
+            atomic::condition.notify_all();
         }
 
         /**
          * @brief Iterates through all file stream handles and triggers change events.
-         * @details This function goes through each file stream handle in the `File_Streamer_Handles` map.
+         * @details This function goes through each file stream handle in the `fileStreamerHandles` map.
          *          It checks if the handle is not a standard output stream, and if so, calls the `Changed` method
          *          on the file stream to trigger any associated change events.
          */
         void Go_Through_File_Streams(){
-            for (auto& pair : File_Streamer_Handles){
+            for (auto& pair : fileStreamerHandles){
                 auto& handle = pair.second;
-                if (handle && handle->Get_type() == FILE_STREAM_TYPE::READ){
-                    handle->Changed();
+                if (handle && handle->getType() == FILE_STREAM_TYPE::READ){
+                    handle->changed();
                 }
             }
         }
@@ -164,7 +164,7 @@ namespace GGUI{
          */
         void Refresh_Multi_Frame_Canvas() {
             // Iterate over each multi-frame canvas
-            for (auto i : Multi_Frame_Canvas) {
+            for (auto i : multiFrameCanvas) {
                 // Advance the animation to the next frame
                 i.first->setNextAnimationFrame();
 
@@ -173,8 +173,8 @@ namespace GGUI{
             }
 
             // Adjust the event thread load if there are canvases to update
-            if (Multi_Frame_Canvas.size() > 0) {
-                Event_Thread_Load = Lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
+            if (multiFrameCanvas.size() > 0) {
+                eventThreadLoad = lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, TIME::MILLISECOND * 16);
             }
         }
 
@@ -196,19 +196,19 @@ namespace GGUI{
         void eventThread(){
             while (true){
                 {
-                    std::unique_lock lock(atomic::Mutex);
+                    std::unique_lock lock(atomic::mutex);
 
-                    atomic::Condition.wait(lock, [&](){ 
-                        return atomic::Pause_Render_Thread == atomic::status::PAUSED || atomic::Pause_Render_Thread == atomic::status::TERMINATED; 
+                    atomic::condition.wait(lock, [&](){ 
+                        return atomic::pauseRenderThread == atomic::status::PAUSED || atomic::pauseRenderThread == atomic::status::TERMINATED; 
                     });
 
-                    if (atomic::Pause_Render_Thread == atomic::status::TERMINATED){
+                    if (atomic::pauseRenderThread == atomic::status::TERMINATED){
                         break;
                     }
                 }
 
                 // Reset the thread load counter
-                Event_Thread_Load = 0;
+                eventThreadLoad = 0;
                 Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Order independent --------------
@@ -226,20 +226,20 @@ namespace GGUI{
                 Current_Time = std::chrono::high_resolution_clock::now();
 
                 // Calculate the delta time.
-                Event_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                eventDelay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
-                CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - Event_Thread_Load);
+                CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - eventThreadLoad);
 
                 // If ya want uncapped FPS, disable this sleep code:
                 std::this_thread::sleep_for(std::chrono::milliseconds(
                     Max(
-                        CURRENT_UPDATE_SPEED - Event_Delay, 
+                        CURRENT_UPDATE_SPEED - eventDelay, 
                         MIN_UPDATE_SPEED
                     )
                 ));
             }
         
-            LOGGER::Log("Event thread terminated!");
+            LOGGER::log("Event thread terminated!");
         }
     
         /**
@@ -290,7 +290,7 @@ namespace GGUI{
                 });
             }
         
-            LOGGER::Log("Input thread terminated!");
+            LOGGER::log("Input thread terminated!");
         }
     }
 }

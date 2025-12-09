@@ -167,7 +167,7 @@ namespace GGUI {
                      */
                     explicit connection(int socketFd) : handle(socketFd) {
                         if (socketFd < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Invalid socket file descriptor provided to connection constructor");
+                            GGUI::INTERNAL::LOGGER::log("Invalid socket file descriptor provided to connection constructor");
                         }
                     }
 
@@ -215,7 +215,7 @@ namespace GGUI {
                     template<typename T>
                     bool Send(const T* data, size_t count = 1) {
                         if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot send on closed socket");
+                            GGUI::INTERNAL::LOGGER::log("Cannot send on closed socket");
                         }
                         if (!data && count > 0) {
                             return false;
@@ -225,7 +225,7 @@ namespace GGUI {
                         ssize_t sent = send(handle, data, totalBytes, 0);
                         
                         if (sent < 0) {
-                            // Send failed due to error
+                            // send failed due to error
                             return false;
                         }
                         
@@ -245,9 +245,9 @@ namespace GGUI {
                      * @throws std::runtime_error if the socket is invalid or closed
                      */
                     template<typename T>
-                    bool Receive(T* data, size_t count = 1) {
+                    bool receive(T* data, size_t count = 1) {
                         if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot receive on closed socket");
+                            GGUI::INTERNAL::LOGGER::log("Cannot receive on closed socket");
                         }
                         if (!data && count > 0) {
                             return false;
@@ -257,7 +257,7 @@ namespace GGUI {
                         ssize_t recvd = recv(handle, data, totalBytes, 0);
                         
                         if (recvd < 0) {
-                            // Receive failed due to error
+                            // receive failed due to error
                             return false;
                         }
                         if (recvd == 0) {
@@ -319,14 +319,14 @@ namespace GGUI {
                         // Create socket
                         handle = socket(AF_INET, SOCK_STREAM, 0);
                         if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to create socket: " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to create socket: " + std::string(strerror(errno)));
                         }
 
                         // Set socket option to reuse address
                         int opt = 1;
                         if (setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
                             ::close(handle);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to set socket option SO_REUSEADDR: " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to set socket option SO_REUSEADDR: " + std::string(strerror(errno)));
                         }
 
                         // Bind socket to address
@@ -337,13 +337,13 @@ namespace GGUI {
                         
                         if (bind(handle, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
                             ::close(handle);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to bind socket to port " + std::to_string(port) + ": " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to bind socket to port " + std::to_string(port) + ": " + std::string(strerror(errno)));
                         }
 
                         // Start listening
                         if (listen(handle, 5) < 0) {
                             ::close(handle);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to start listening on socket: " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to start listening on socket: " + std::string(strerror(errno)));
                         }
                     }
 
@@ -386,12 +386,12 @@ namespace GGUI {
                      */
                     connection Accept() {
                         if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot accept on closed listener");
+                            GGUI::INTERNAL::LOGGER::log("Cannot accept on closed listener");
                         }
 
                         int connFd = accept(handle, nullptr, nullptr);
                         if (connFd < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to accept connection: " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to accept connection: " + std::string(strerror(errno)));
                         }
                         
                         return connection(connFd);
@@ -408,14 +408,14 @@ namespace GGUI {
                      */
                     uint16_t getPort() {
                         if (handle < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Cannot get port of closed listener");
+                            GGUI::INTERNAL::LOGGER::log("Cannot get port of closed listener");
                         }
 
                         sockaddr_in actual{};
                         socklen_t len = sizeof(actual);
                         
                         if (getsockname(handle, reinterpret_cast<sockaddr*>(&actual), &len) < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to get socket name: " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to get socket name: " + std::string(strerror(errno)));
                         }
 
                         return ntohs(actual.sin_port);
@@ -448,7 +448,7 @@ namespace GGUI {
                         // Create socket
                         int sockFd = socket(AF_INET, SOCK_STREAM, 0);
                         if (sockFd < 0) {
-                            GGUI::INTERNAL::LOGGER::Log("Failed to create socket: " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to create socket: " + std::string(strerror(errno)));
                         }
 
                         // Prepare address structure
@@ -461,16 +461,16 @@ namespace GGUI {
                         if (result <= 0) {
                             ::close(sockFd);
                             if (result == 0) {
-                                GGUI::INTERNAL::LOGGER::Log("Invalid IP address format: " + std::string(host));
+                                GGUI::INTERNAL::LOGGER::log("Invalid IP address format: " + std::string(host));
                             } else {
-                                GGUI::INTERNAL::LOGGER::Log("inet_pton failed: " + std::string(strerror(errno)));
+                                GGUI::INTERNAL::LOGGER::log("inet_pton failed: " + std::string(strerror(errno)));
                             }
                         }
 
                         // Connect to the remote host
                         if (connect(sockFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
                             ::close(sockFd);
-                            GGUI::INTERNAL::LOGGER::Log("Failed to connect to " + std::string(host) + ":" + std::to_string(port) + " - " + std::string(strerror(errno)));
+                            GGUI::INTERNAL::LOGGER::log("Failed to connect to " + std::string(host) + ":" + std::to_string(port) + " - " + std::string(strerror(errno)));
 
                             return connection();    // Return an empty connection with -1 as fd
                         }

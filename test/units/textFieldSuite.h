@@ -24,14 +24,14 @@ namespace tester {
         }
 
         static void hoverElement(GGUI::element& el) {
-            GGUI::INTERNAL::Mouse = {0, 0, 0};
+            GGUI::INTERNAL::mouse = {0, 0, 0};
             GGUI::INTERNAL::eventHandler();
             ASSERT_TRUE(el.isHovered());
         }
 
         static void focusElement(GGUI::element& el) {
             hoverElement(el);
-            GGUI::INTERNAL::Inputs.push_back(new GGUI::input(0, GGUI::constants::MOUSE_LEFT_CLICKED));
+            GGUI::INTERNAL::inputs.push_back(new GGUI::input(0, GGUI::constants::MOUSE_LEFT_CLICKED));
             GGUI::INTERNAL::eventHandler();
             ASSERT_TRUE(el.isFocused());
         }
@@ -47,7 +47,7 @@ namespace tester {
 
             const std::string typed = "Hi";
             for (char ch : typed) {
-                INTERNAL::Inputs.push_back(new input(ch, constants::KEY_PRESS));
+                INTERNAL::inputs.push_back(new input(ch, constants::KEY_PRESS));
                 INTERNAL::eventHandler();
             }
 
@@ -65,13 +65,13 @@ namespace tester {
 
             const std::string initial = "OK";
             for (char ch : initial) {
-                INTERNAL::Inputs.push_back(new input(ch, constants::KEY_PRESS));
+                INTERNAL::inputs.push_back(new input(ch, constants::KEY_PRESS));
                 INTERNAL::eventHandler();
             }
             ASSERT_EQ(initial, field.getText());
 
             INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE] = INTERNAL::buttonState(true);
-            INTERNAL::Inputs.push_back(new input(' ', constants::BACKSPACE));
+            INTERNAL::inputs.push_back(new input(' ', constants::BACKSPACE));
             INTERNAL::eventHandler();
             INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE] = INTERNAL::buttonState(false);
 

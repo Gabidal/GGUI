@@ -140,7 +140,7 @@ namespace GGUI{
                 fileStream maps("/proc/self/maps");
 
                 // Read the contents of /proc/self/maps
-                std::string maps_content = maps.Read();
+                std::string maps_content = maps.read();
                 
                 // Find the stack area in the maps content
                 size_t stack_start = maps_content.find("[stack]");
@@ -288,7 +288,7 @@ namespace GGUI{
          * @param value The unsigned long long integer to be converted to a hexadecimal string.
          * @return A std::string containing the uppercase hexadecimal representation of the input value.
          */
-        std::string Hex(unsigned long long value) {
+        std::string hex(unsigned long long value) {
             char buffer[17]; // Enough to hold the largest 64-bit hexadecimal value + null terminator
             std::snprintf(buffer, sizeof(buffer), "%llX", value); // Formats the value as uppercase hex
             return std::string(buffer);
@@ -306,11 +306,11 @@ namespace GGUI{
          * @param Identity Boolean value to return if the elements are the same.
          * @return true if the elements collide, false otherwise.
          */
-        bool Collides(GGUI::element* a, GGUI::element* b, bool Identity) {
+        bool collides(GGUI::element* a, GGUI::element* b, bool Identity) {
             if (a == b)
                 return Identity;    // For custom purposes, defaults into true
 
-            return Collides(
+            return collides(
                 a->getAbsolutePosition(), b->getAbsolutePosition(),
                 a->getWidth(), a->getHeight(), b->getWidth(), b->getHeight()
             );
@@ -327,10 +327,10 @@ namespace GGUI{
          * @param b The point (as GGUI::IVector3) to check for collision with the element.
          * @return true if the point collides with the element, false otherwise.
          */
-        bool Collides(GGUI::element* a, GGUI::IVector3 b) {
+        bool collides(GGUI::element* a, GGUI::IVector3 b) {
             if (!a) return false;   // Safe guard
             // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
-            return Collides(a->getAbsolutePosition(), b, a->getWidth(), a->getHeight(), 1, 1);
+            return collides(a->getAbsolutePosition(), b, a->getWidth(), a->getHeight(), 1, 1);
         }
 
         /**
@@ -346,17 +346,17 @@ namespace GGUI{
          * @param Parent The parent element to start the search from.
          * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
          */
-        element* Get_Accurate_Element_From(IVector3 c, element* Parent){
+        element* getAccurateElementFrom(IVector3 c, element* Parent){
             //first check if the c is in bounds of Parent.
-            if (!Collides(Parent, c)){
+            if (!collides(Parent, c)){
                 return nullptr;
             }
 
             // Check all the child elements of the parent.
             for (auto child : Parent->getChilds()){
-                if (Collides(child, c)){
+                if (collides(child, c)){
                     // If a child element contains the position, search in the child element.
-                    return Get_Accurate_Element_From(c, child);
+                    return getAccurateElementFrom(c, child);
                 }
             }
 
@@ -394,7 +394,7 @@ namespace GGUI{
 
                 // Calculate the distance between the candidate position and the start position
                 CC = candidate->getAbsolutePosition();
-                float Distance = std::sqrt(std::pow(CC.X - start.X, 2) + std::pow(CC.Y - start.Y, 2));
+                float Distance = std::sqrt(std::pow(CC.x - start.x, 2) + std::pow(CC.y - start.y, 2));
 
                 if (Distance < Shortest_Distance){
                     Shortest_Distance = Distance;
@@ -411,27 +411,27 @@ namespace GGUI{
          * @param Absolute_Position The position to get the contents of.
          * @return The contents of the given position, or nullptr if the position is out of bounds.
          */
-        GGUI::UTF* Get(GGUI::IVector3 Absolute_Position){
-            if (Absolute_Position.X >= INTERNAL::getMaxWidth() || 
-                Absolute_Position.Y >= INTERNAL::getMaxHeight() ||
-                Absolute_Position.X < 0 || 
-                Absolute_Position.Y < 0)
+        GGUI::UTF* get(GGUI::IVector3 Absolute_Position){
+            if (Absolute_Position.x >= INTERNAL::getMaxWidth() || 
+                Absolute_Position.y >= INTERNAL::getMaxHeight() ||
+                Absolute_Position.x < 0 || 
+                Absolute_Position.y < 0)
             {
                 // The position is out of bounds, return nullptr
                 return nullptr;
             }
             else{
                 // The position is in bounds, return the contents of that position
-                return &INTERNAL::Abstract_Frame_Buffer->at(Absolute_Position.Y * INTERNAL::getMaxWidth() + Absolute_Position.X);
+                return &INTERNAL::abstractFrameBuffer->at(Absolute_Position.y * INTERNAL::getMaxWidth() + Absolute_Position.x);
             }
         }
 
-        bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag){
-            return Has((unsigned long long)f, (unsigned long long)flag);
+        bool has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag){
+            return has((unsigned long long)f, (unsigned long long)flag);
         }
 
-        bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small){
-            return Contains((unsigned long long)big, (unsigned long long)small);
+        bool contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small){
+            return contains((unsigned long long)big, (unsigned long long)small);
         }
         
         /**
@@ -503,16 +503,16 @@ namespace GGUI{
             return (ALLOCATION_TYPE)Result;
         }
 
-        GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance) {
-            if (SETTINGS::ENABLE_GAMMA_CORRECTION) {
-                A.Red   = fast::Interpolate(A.Red,   B.Red, Distance);
-                A.Green = fast::Interpolate(A.Green, B.Green, Distance);
-                A.Blue  = fast::Interpolate(A.Blue,  B.Blue, Distance);
+        GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, float Distance) {
+            if (SETTINGS::enableGammaCorrection) {
+                A.red   = fast::interpolate(A.red,   B.red, Distance);
+                A.green = fast::interpolate(A.green, B.green, Distance);
+                A.blue  = fast::interpolate(A.blue,  B.blue, Distance);
             } else {
                 // Fast integer-based linear interpolation on 8-bit channels
-                A.Red   = fast::InterpolateLinearU8(A.Red,   B.Red, Distance);
-                A.Green = fast::InterpolateLinearU8(A.Green, B.Green, Distance);
-                A.Blue  = fast::InterpolateLinearU8(A.Blue,  B.Blue, Distance);
+                A.red   = fast::interpolateLinearU8(A.red,   B.red, Distance);
+                A.green = fast::interpolateLinearU8(A.green, B.green, Distance);
+                A.blue  = fast::interpolateLinearU8(A.blue,  B.blue, Distance);
             }
             return A;
         }

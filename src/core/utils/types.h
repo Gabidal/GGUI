@@ -15,8 +15,8 @@ namespace GGUI{
     // Literal type
     class FVector2{
     public:
-        float X = 0;
-        float Y = 0;
+        float x = 0;
+        float y = 0;
 
         /**
          * @brief Default constructor
@@ -26,8 +26,7 @@ namespace GGUI{
          * @param x The x-coordinate. Default is 0.0f.
          * @param y The y-coordinate. Default is 0.0f.
          */
-        constexpr FVector2(float x = 0.0f, float y = 0.0f) noexcept
-            : X(x), Y(y) {}
+        constexpr FVector2(float X = 0.0f, float Y = 0.0f) noexcept : x(X), y(Y) {}
 
         /**
          * @brief Copy constructor
@@ -76,7 +75,7 @@ namespace GGUI{
          * @return A new FVector2 with the added float.
          */
         constexpr FVector2 operator+(float num) const noexcept {
-            return FVector2(X + num, Y + num);
+            return FVector2(x + num, y + num);
         }
 
         /**
@@ -88,7 +87,7 @@ namespace GGUI{
          * @return A new FVector2 with the subtracted float.
          */
         constexpr FVector2 operator-(float num) const noexcept {
-            return FVector2(X - num, Y - num);
+            return FVector2(x - num, y - num);
         }
 
 
@@ -101,14 +100,14 @@ namespace GGUI{
          * @return A new FVector2 with the multiplied float.
          */
         constexpr FVector2 operator*(float num) const noexcept {
-            return FVector2(X * num, Y * num);
+            return FVector2(x * num, y * num);
         }
     };
     
     // Literal type
     class FVector3 : public FVector2 {
     public:
-        float Z = 0;
+        float z = 0;
 
         /**
          * @brief Default constructor
@@ -119,8 +118,7 @@ namespace GGUI{
          * @param y The y-coordinate. Default is 0.0f.
          * @param z The z-coordinate. Default is 0.0f.
          */
-        constexpr FVector3(float x = 0.0f, float y = 0.0f, float z = 0.0f) noexcept
-            : FVector2(x, y), Z(z) {}
+        constexpr FVector3(float X = 0.0f, float Y = 0.0f, float Z = 0.0f) noexcept : FVector2(X, Y), z(Z) {}
 
         /**
          * @brief Copy constructor
@@ -169,7 +167,7 @@ namespace GGUI{
          * @return A new FVector3 with the added float.
          */
         constexpr FVector3 operator+(float num) const noexcept {
-            return FVector3(X + num, Y + num, Z + num);
+            return FVector3(x + num, y + num, z + num);
         }
 
 
@@ -182,7 +180,7 @@ namespace GGUI{
          * @return A new FVector3 with the subtracted float.
          */
         constexpr FVector3 operator-(float num) const noexcept {
-            return FVector3(X - num, Y - num, Z - num);
+            return FVector3(x - num, y - num, z - num);
         }
 
         /**
@@ -194,7 +192,7 @@ namespace GGUI{
          * @return A new FVector3 with the multiplied float.
          */
         constexpr FVector3 operator*(float num) const noexcept {
-            return FVector3(X * num, Y * num, Z * num);
+            return FVector3(x * num, y * num, z * num);
         }
 
         /**
@@ -206,7 +204,7 @@ namespace GGUI{
          * @return A new FVector3 with the added values.
          */
         constexpr FVector3 operator+(const FVector3& other) const noexcept {
-            return FVector3(X + other.X, Y + other.Y, Z + other.Z);
+            return FVector3(x + other.x, y + other.y, z + other.z);
         }
 
         /**
@@ -218,7 +216,7 @@ namespace GGUI{
          * @return A new FVector3 with the subtracted values.
          */
         constexpr FVector3 operator-(const FVector3& other) const noexcept {
-            return FVector3(X - other.X, Y - other.Y, Z - other.Z);
+            return FVector3(x - other.x, y - other.y, z - other.z);
         }
 
         /**
@@ -230,14 +228,14 @@ namespace GGUI{
          * @return A new FVector3 with the component-wise multiplied values.
          */
         constexpr FVector3 operator*(const FVector3& other) const noexcept {
-            return FVector3(X * other.X, Y * other.Y, Z * other.Z);
+            return FVector3(x * other.x, y * other.y, z * other.z);
         }
     };
 
     class IVector2{
     public:
-        short X = 0;  //Horizontal
-        short Y = 0;  //Vertical
+        short x = 0;  //Horizontal
+        short y = 0;  //Vertical
 
         /**
          * @brief Default constructor
@@ -247,8 +245,7 @@ namespace GGUI{
          * @param x The x-coordinate. Default is 0.
          * @param y The y-coordinate. Default is 0.
          */
-        constexpr IVector2(short x = 0, short y = 0) noexcept
-            : X(x), Y(y) {}
+        constexpr IVector2(short X = 0, short Y = 0) noexcept : x(X), y(Y) {}
 
         /**
          * @brief Copy constructor
@@ -294,8 +291,8 @@ namespace GGUI{
          * @param other The pointer to the IVector2 to add.
          */
         constexpr void operator+=(IVector2* other) noexcept {
-            X += other->X;
-            Y += other->Y;
+            x += other->x;
+            y += other->y;
         }
 
         /**
@@ -306,8 +303,8 @@ namespace GGUI{
          * @param other The FVector2 to add.
          */
         constexpr void operator+=(FVector2 other) noexcept {
-            X += static_cast<short>(other.X);
-            Y += static_cast<short>(other.Y);
+            x += static_cast<short>(other.x);
+            y += static_cast<short>(other.y);
         }
 
         /**
@@ -318,8 +315,8 @@ namespace GGUI{
          * @param other The IVector2 to add.
          */
         constexpr void operator+=(IVector2 other) noexcept {
-            X += other.X;  // Add the x-coordinate
-            Y += other.Y;  // Add the y-coordinate
+            x += other.x;  // Add the x-coordinate
+            y += other.y;  // Add the y-coordinate
         }
 
         /**
@@ -331,7 +328,7 @@ namespace GGUI{
          * @return A new IVector2 with the added values.
          */
         constexpr IVector2 operator+(const IVector2& other) const noexcept {
-            return IVector2(X + other.X, Y + other.Y);
+            return IVector2(x + other.x, y + other.y);
         }
 
         /**
@@ -343,7 +340,7 @@ namespace GGUI{
          * @return A new IVector2 with the subtracted values.
          */
         constexpr IVector2 operator-(const IVector2& other) const noexcept {
-            return IVector2(X - other.X, Y - other.Y);
+            return IVector2(x - other.x, y - other.y);
         }
 
         /**
@@ -355,7 +352,7 @@ namespace GGUI{
          * @return A new IVector2 with the multiplied float.
          */
         constexpr IVector2 operator*(float num) const noexcept {
-            return IVector2(static_cast<short>(X * num), static_cast<short>(Y * num)); // Multiply each coordinate by num
+            return IVector2(static_cast<short>(x * num), static_cast<short>(y * num)); // Multiply each coordinate by num
         }
 
         /**
@@ -367,7 +364,7 @@ namespace GGUI{
          * @return True if the IVector2s are equal, otherwise false.
          */
         constexpr bool operator==(const IVector2& other) const noexcept {
-            return X == other.X && Y == other.Y; // Check if the coordinates are equal
+            return x == other.x && y == other.y; // Check if the coordinates are equal
         }
 
         /**
@@ -379,7 +376,7 @@ namespace GGUI{
          * @return False if the IVector2s are equal, otherwise true.
          */
         constexpr bool operator!=(const IVector2& other) const noexcept {
-            return X != other.X || Y != other.Y; // Check if the coordinates are not equal
+            return x != other.x || y != other.y; // Check if the coordinates are not equal
         }
 
         /**
@@ -390,13 +387,13 @@ namespace GGUI{
          * @return A string representation of the IVector2.
          */
         std::string To_String() const {
-            return std::to_string(X) + ", " + std::to_string(Y);
+            return std::to_string(x) + ", " + std::to_string(y);
         }
     };
 
     class IVector3 : public IVector2{
     public:
-        short Z = 0;  //priority (the higher the more likely it will be at top).
+        short z = 0;  //priority (the higher the more likely it will be at top).
 
         /**
          * @brief Default constructor
@@ -407,8 +404,7 @@ namespace GGUI{
          * @param y The y-coordinate. Default is 0.
          * @param z The z-coordinate. Default is 0.
          */
-        constexpr IVector3(short x = 0, short y = 0, short z = 0) noexcept
-            : IVector2(x, y), Z(z) {}
+        constexpr IVector3(short X = 0, short Y = 0, short Z = 0) noexcept : IVector2(X, Y), z(Z) {}
 
         /**
          * @brief Copy constructor
@@ -456,9 +452,9 @@ namespace GGUI{
          * @param other The pointer to the IVector3 to add.
          */
         constexpr void operator+=(IVector3* other) noexcept {
-            X += other->X;
-            Y += other->Y;
-            Z += other->Z;
+            x += other->x;
+            y += other->y;
+            z += other->z;
         }
 
         /**
@@ -469,9 +465,9 @@ namespace GGUI{
          * @param other The IVector3 to add.
          */
         constexpr void operator+=(IVector3 other) noexcept {
-            X += other.X;  // Add the x-coordinate
-            Y += other.Y;  // Add the y-coordinate
-            Z += other.Z;  // Add the z-coordinate
+            x += other.x;  // Add the x-coordinate
+            y += other.y;  // Add the y-coordinate
+            z += other.z;  // Add the z-coordinate
         }
 
         /**
@@ -483,19 +479,19 @@ namespace GGUI{
          * @return A new IVector3 with the added values.
          */
         constexpr IVector3 operator+(const IVector3& other) const noexcept {
-            return IVector3(X + other.X, Y + other.Y, Z + other.Z);
+            return IVector3(x + other.x, y + other.y, z + other.z);
         }
 
         constexpr IVector3 operator-(const IVector3& other) const noexcept {
-            return IVector3(X - other.X, Y - other.Y, Z - other.Z);
+            return IVector3(x - other.x, y - other.y, z - other.z);
         }
 
         constexpr IVector3 operator+(int constant) const noexcept {
-            return IVector3(X + constant, Y + constant, Z + constant); // Add the constant to each coordinate
+            return IVector3(x + constant, y + constant, z + constant); // Add the constant to each coordinate
         }
 
         constexpr IVector3 operator-(int constant) const noexcept {
-            return IVector3(X - constant, Y - constant, Z - constant); // Subtract the constant from each coordinate
+            return IVector3(x - constant, y - constant, z - constant); // Subtract the constant from each coordinate
         }
 
 
@@ -508,7 +504,7 @@ namespace GGUI{
          * @return A new IVector3 with the multiplied float.
          */
         constexpr IVector3 operator*(float num) const noexcept {
-            return IVector3(X * num, Y * num, Z * num); // Multiply each coordinate by num
+            return IVector3(x * num, y * num, z * num); // Multiply each coordinate by num
         }
 
         /**
@@ -520,7 +516,7 @@ namespace GGUI{
          * @return True if the IVector3s are equal, otherwise false.
          */
         constexpr bool operator==(const IVector3& other) const noexcept {
-            return X == other.X && Y == other.Y && Z == other.Z; // Check if the coordinates are equal
+            return x == other.x && y == other.y && z == other.z; // Check if the coordinates are equal
         }
 
         /**
@@ -532,7 +528,7 @@ namespace GGUI{
          * @return False if the IVector3s are equal, otherwise true.
          */
         constexpr bool operator!=(const IVector3& other) const noexcept {
-            return X != other.X || Y != other.Y || Z != other.Z; // Check if the coordinates are not equal
+            return x != other.x || y != other.y || z != other.z; // Check if the coordinates are not equal
         }
 
         /**
@@ -544,7 +540,7 @@ namespace GGUI{
          * @return A string representation of the IVector3.
          */
         std::string To_String(){
-            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
+            return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
         }
     
         /**
@@ -556,7 +552,7 @@ namespace GGUI{
          * @return A string representation of the IVector3.
          */
         std::string To_String() const {
-            return std::to_string(X) + ", " + std::to_string(Y) + ", " + std::to_string(Z);
+            return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
         }
     };
 
@@ -568,8 +564,8 @@ namespace GGUI{
 
     class input : public event{
     public:
-        unsigned short X = 0;
-        unsigned short Y = 0;
+        unsigned short x = 0;
+        unsigned short y = 0;
         char data = 0;
 
         // The input information like the character written.
@@ -579,8 +575,8 @@ namespace GGUI{
         }
 
         input(IVector3 c, unsigned long long t){
-            X = (unsigned short )c.X;
-            Y = (unsigned short )c.Y;
+            x = (unsigned short )c.x;
+            y = (unsigned short )c.y;
             criteria = t;
         }
     };
@@ -837,7 +833,7 @@ namespace GGUI{
         };
 
         namespace LOGGER{
-            extern void Log(std::string Text);
+            extern void log(std::string Text);
         }
 
         namespace atomic{
@@ -871,7 +867,7 @@ namespace GGUI{
                     try {
                         job(*data);
                     } catch (...) {
-                        INTERNAL::LOGGER::Log("Failed to execute the function!");
+                        INTERNAL::LOGGER::log("Failed to execute the function!");
                     }
                 }
 
@@ -904,12 +900,12 @@ namespace GGUI{
         }
     
         // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
-        class Carry{
+        class carry{
         public:
-            bool Resize = false;
-            bool Terminate = false;     // Signals the shutdown of subthreads.
+            bool resize = false;
+            bool terminate = false;     // Signals the shutdown of subthreads.
 
-            ~Carry() = default;
+            ~carry() = default;
         };
     }
 }

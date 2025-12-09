@@ -23,9 +23,9 @@ namespace GGUI{
     namespace INTERNAL{
         extern std::string constructLoggerFileName();
 
-        extern bool Identical_Frame;
+        extern bool identicalFrame;
 
-        extern void De_Initialize();
+        extern void deInitialize();
 
         extern int BEFORE_ENCODE_BUFFER_SIZE;
         extern int AFTER_ENCODE_BUFFER_SIZE;
@@ -89,7 +89,7 @@ namespace GGUI{
          * @param value The unsigned long long integer to be converted to a hexadecimal string.
          * @return A std::string containing the uppercase hexadecimal representation of the input value.
          */
-        extern std::string Hex(unsigned long long value);
+        extern std::string hex(unsigned long long value);
 
         /**
          * @brief Checks if two rectangles collide.
@@ -105,12 +105,12 @@ namespace GGUI{
          * @param B_Height The height of the second rectangle.
          * @return true if the rectangles overlap, false otherwise.
          */
-        constexpr bool Collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1) noexcept {
+        constexpr bool collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1) noexcept {
             return (
-                A.X < B.X + B_Width &&
-                A.X + A_Width > B.X &&
-                A.Y < B.Y + B_Height &&
-                A.Y + A_Height > B.Y
+                A.x < B.x + B_Width &&
+                A.x + A_Width > B.x &&
+                A.y < B.y + B_Height &&
+                A.y + A_Height > B.y
             );
         }
 
@@ -126,7 +126,7 @@ namespace GGUI{
          * @param Identity Boolean value to return if the elements are the same.
          * @return true if the elements collide, false otherwise.
          */
-        extern bool Collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
+        extern bool collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
 
         /**
          * @brief Checks if a given point collides with a specified element.
@@ -139,7 +139,7 @@ namespace GGUI{
          * @param b The point (as GGUI::IVector3) to check for collision with the element.
          * @return true if the point collides with the element, false otherwise.
          */
-        extern bool Collides(GGUI::element* a, GGUI::IVector3 b);
+        extern bool collides(GGUI::element* a, GGUI::IVector3 b);
 
         /**
          * @brief Recursively finds the most accurate element that contains the given position.
@@ -154,7 +154,7 @@ namespace GGUI{
          * @param Parent The parent element to start the search from.
          * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
          */
-        extern element* Get_Accurate_Element_From(IVector3 c, element* Parent);
+        extern element* getAccurateElementFrom(IVector3 c, element* Parent);
 
         /**
          * @brief Returns the smaller of two signed long long integers.
@@ -188,7 +188,7 @@ namespace GGUI{
          *
          * @return True if the bit is set, false if it is not.
          */
-        constexpr bool Has_Bit_At(char val, int i) noexcept { return (val & (1 << i)) != 0; }
+        constexpr bool hasBitAt(char val, int i) noexcept { return (val & (1 << i)) != 0; }
 
         /**
          * @brief Gets the contents of a given position in the buffer.
@@ -196,7 +196,7 @@ namespace GGUI{
          * @param Absolute_Position The position to get the contents of.
          * @return The contents of the given position, or nullptr if the position is out of bounds.
          */
-        extern GGUI::UTF* Get(GGUI::IVector3 Absolute_Position);
+        extern GGUI::UTF* get(GGUI::IVector3 Absolute_Position);
 
         /**
          * @brief Calculates the current load of the GGUI thread based on the given current position.
@@ -205,10 +205,10 @@ namespace GGUI{
          * @param Position The current position of the load.
          * @return The current load of the GGUI thread from 0 to 1.
          */
-        constexpr float Lerp(int Min, int Max, int Position) noexcept {
-            float Length_Of_Possible_Values = static_cast<float>(Max - Min);
+        constexpr float lerp(int Min, int Max, int Position) noexcept {
+            float Length_Of_Possible_values = static_cast<float>(Max - Min);
             float Offset_Of_Our_Load = GGUI::INTERNAL::Max(static_cast<signed long long>(Position - Min), 0);
-            return 1.0f - Offset_Of_Our_Load / Length_Of_Possible_Values;
+            return 1.0f - Offset_Of_Our_Load / Length_Of_Possible_values;
         }
 
         /**
@@ -219,7 +219,7 @@ namespace GGUI{
          * @param Flag The flag to check for.
          * @return True if the flag is set, otherwise false.
          */
-        constexpr bool Is(unsigned long long f, unsigned long long Flag) noexcept { return (f & Flag) == Flag; }
+        constexpr bool is(unsigned long long f, unsigned long long Flag) noexcept { return (f & Flag) == Flag; }
 
         /**
          * @brief Checks if a flag is set in a set of flags.
@@ -229,9 +229,9 @@ namespace GGUI{
          * @param flag The flag to check for.
          * @return True if the flag is set, otherwise false.
          */
-        constexpr bool Has(unsigned long long f, unsigned long long flag) noexcept { return (f & flag) != 0ULL; }
+        constexpr bool has(unsigned long long f, unsigned long long flag) noexcept { return (f & flag) != 0ULL; }
 
-        extern bool Has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
+        extern bool has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
 
         /**
          * @brief Checks if all flags in small are set in big.
@@ -241,9 +241,9 @@ namespace GGUI{
          * @param small The flags to check.
          * @return True if all flags in small are set in big, otherwise false.
          */
-        constexpr bool Contains(unsigned long long big, unsigned long long Small) noexcept { return (Small & big) == Small; }
+        constexpr bool contains(unsigned long long big, unsigned long long Small) noexcept { return (Small & big) == Small; }
 
-        extern bool Contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
+        extern bool contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
 
         /**
          * @brief Determines if a given pointer is likely deletable (heap-allocated).
@@ -280,7 +280,7 @@ namespace GGUI{
          * @return The interpolated value, gamma-corrected and cast back to type T.
          */
         template<typename T, typename P>
-        constexpr T Interpolate(T a, T b, P t) {
+        constexpr T interpolate(T a, T b, P t) {
             // Define gamma value for correction
             constexpr float gamma = 2.2F;
 
@@ -314,16 +314,16 @@ namespace GGUI{
                 return arr;
             }
 
-            struct GammaLUT {
+            struct gammaLUT {
                 std::array<float, 256> s2l;
                 std::array<unsigned char, 256> l2s_u8;
 
-                constexpr GammaLUT() : s2l(make_s2l()), l2s_u8(make_l2s()) {}
+                constexpr gammaLUT() : s2l(make_s2l()), l2s_u8(make_l2s()) {}
             };
 
-            constexpr GammaLUT LUT{};
+            constexpr gammaLUT LUT{};
 
-            inline unsigned char Interpolate(unsigned char a, unsigned char b, float t) {
+            inline unsigned char interpolate(unsigned char a, unsigned char b, float t) {
                 float la = LUT.s2l[a];
                 float lb = LUT.s2l[b];
                 float lc = la + (lb - la) * t; // linear blend in linear space
@@ -334,7 +334,7 @@ namespace GGUI{
 
             // Fast linear interpolate for 8-bit channels without gamma correction.
             // Uses fixed-point weights to avoid divisions and minimize float work.
-            constexpr unsigned char InterpolateLinearU8(unsigned char a, unsigned char b, float t) {
+            constexpr unsigned char interpolateLinearU8(unsigned char a, unsigned char b, float t) {
                 // Clamp t and convert to 0..256 fixed-point weight with rounding
                 int w = static_cast<int>(t * (float)UINT8_MAX + 0.5f);   // 0..256
                 int inv = UINT8_MAX - w;                             // 256..0
@@ -353,7 +353,7 @@ namespace GGUI{
          * @param Distance The interpolation factor, typically between 0 and 1.
          * @return The interpolated RGB color.
          */
-        extern GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
+        extern GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, float Distance);
 
         /**
          * @brief Convert a liquefied UTF fastVector into a cached std::string.
@@ -369,7 +369,7 @@ namespace GGUI{
          * @return Pointer to an internally cached std::string containing the concatenated bytes.
          * @warning The returned pointer becomes invalid after the next call to this function.
          */
-        inline std::string* To_String(fastVector<compactString> Data, unsigned int Liquefied_Size) noexcept {
+        inline std::string* toString(fastVector<compactString> Data, unsigned int Liquefied_Size) noexcept {
             static std::string result; // internal cache between renders
 
             if (result.size() != Liquefied_Size){
@@ -409,7 +409,7 @@ namespace GGUI{
          * @param cstr Source compactString.
          * @return Newly constructed std::string containing the character data (no caching).
          */
-        inline std::string To_String(compactString& cstr){
+        inline std::string toString(compactString& cstr){
             // Resize a std::string to the total size.
             std::string result;
             result.resize(cstr.size);

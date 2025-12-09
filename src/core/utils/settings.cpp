@@ -14,13 +14,13 @@ namespace GGUI {
     namespace SETTINGS {
         
         // Define the actual storage for the settings variables with their default values
-        unsigned long long Mouse_Press_Down_Cooldown = 365;  // Milliseconds
-        bool Word_Wrapping = true;
-        bool ENABLE_GAMMA_CORRECTION = false;
+        unsigned long long mousePressDownCooldown = 365;  // Milliseconds
+        bool wordWrapping = true;
+        bool enableGammaCorrection = false;
         bool enableDRM = false;
         
         namespace LOGGER {
-            std::string File_Name = "";
+            std::string fileName = "";
         }
 
         static std::string toLower(const std::string& in) {
@@ -84,92 +84,92 @@ namespace GGUI {
          * 
          * @param descriptors Vector of argument descriptors to display help for
          */
-        static void displayHelp(const std::vector<ArgumentDescriptor>& descriptors) {
-            INTERNAL::LOGGER::Log("GGUI - Professional Command Line Interface\n");
-            INTERNAL::LOGGER::Log("==========================================\n\n");
-            INTERNAL::LOGGER::Log("Usage: GGUI [OPTIONS]\n\n");
-            INTERNAL::LOGGER::Log("Available Options:\n");
+        static void displayHelp(const std::vector<argumentDescriptor>& descriptors) {
+            INTERNAL::LOGGER::log("GGUI - Professional Command Line Interface\n");
+            INTERNAL::LOGGER::log("==========================================\n\n");
+            INTERNAL::LOGGER::log("Usage: GGUI [OPTIONS]\n\n");
+            INTERNAL::LOGGER::log("Available Options:\n");
             
             for (const auto& desc : descriptors) {
-                INTERNAL::LOGGER::Log("  --" + desc.name);
+                INTERNAL::LOGGER::log("  --" + desc.name);
                 
-                if (desc.requiresValue()) {
-                    INTERNAL::LOGGER::Log("=<" + desc.getTypeName() + ">");
+                if (desc.requiresvalue()) {
+                    INTERNAL::LOGGER::log("=<" + desc.getTypeName() + ">");
                 }
                 
                 // Align descriptions
                 std::string spacing(std::max(1, 30 - static_cast<int>(desc.name.length() + 
-                    (desc.requiresValue() ? desc.getTypeName().length() + 3 : 0))), ' ');
-                INTERNAL::LOGGER::Log(spacing + desc.description + "\n");
+                    (desc.requiresvalue() ? desc.getTypeName().length() + 3 : 0))), ' ');
+                INTERNAL::LOGGER::log(spacing + desc.description + "\n");
             }
             
-            INTERNAL::LOGGER::Log("\nExamples:\n");
-            INTERNAL::LOGGER::Log("  GGUI --enableDRM --mousePressCooldown=500\n");
-            INTERNAL::LOGGER::Log("  GGUI -enableGammaCorrection --loggerFileName=\"debug.log\"\n");
-            INTERNAL::LOGGER::Log("  GGUI enableWordWrapping mousePressCooldown=1000\n\n");
+            INTERNAL::LOGGER::log("\nExamples:\n");
+            INTERNAL::LOGGER::log("  GGUI --enableDRM --mousePressCooldown=500\n");
+            INTERNAL::LOGGER::log("  GGUI -enableGammaCorrection --loggerFileName=\"debug.log\"\n");
+            INTERNAL::LOGGER::log("  GGUI enableWordWrapping mousePressCooldown=1000\n\n");
         }
 
         void parseCommandLineArguments(int argc, char** argv) {
             // Define argument descriptors with their handlers
-            std::vector<ArgumentDescriptor> argumentDescriptors = {
-                ArgumentDescriptor(
+            std::vector<argumentDescriptor> argumentDescriptors = {
+                argumentDescriptor(
                     "mousePressCooldown",
-                    ArgumentType::UNSIGNED_LONG,
+                    argumentType::UNSIGNED_LONG,
                     "Set mouse press cooldown in milliseconds (default: 365)",
                     [](const std::string& value) {
                         try {
-                            Mouse_Press_Down_Cooldown = std::stoull(value);
+                            mousePressDownCooldown = std::stoull(value);
                         } catch (const std::exception& e) {
-                            INTERNAL::LOGGER::Log("Error: Invalid value for mousePressCooldown: " + value);
-                            INTERNAL::LOGGER::Log("Expected an unsigned integer value.");
+                            INTERNAL::LOGGER::log("Error: Invalid value for mousePressCooldown: " + value);
+                            INTERNAL::LOGGER::log("Expected an unsigned integer value.");
                         }
                     }
                 ),
                 
-                ArgumentDescriptor(
+                argumentDescriptor(
                     "enableWordWrapping",
-                    ArgumentType::FLAG,
+                    argumentType::FLAG,
                     "Enable word wrapping (default: true)",
                     [](const std::string&) {
-                        Word_Wrapping = true;
+                        wordWrapping = true;
                     }
                 ),
                 
-                ArgumentDescriptor(
+                argumentDescriptor(
                     "enableGammaCorrection",
-                    ArgumentType::FLAG,
+                    argumentType::FLAG,
                     "Enable gamma correction (default: false)",
                     [](const std::string&) {
-                        ENABLE_GAMMA_CORRECTION = true;
+                        enableGammaCorrection = true;
                     }
                 ),
                 
-                ArgumentDescriptor(
+                argumentDescriptor(
                     "loggerFileName",
-                    ArgumentType::STRING,
+                    argumentType::STRING,
                     "Set logger file name (default: auto-generated)",
                     [](const std::string& value) {
-                        std::string cleanValue = value;
+                        std::string cleanvalue = value;
                         // Remove quotes if present
-                        if (cleanValue.length() >= 2 && cleanValue.front() == '"' && cleanValue.back() == '"') {
-                            cleanValue = cleanValue.substr(1, cleanValue.length() - 2);
+                        if (cleanvalue.length() >= 2 && cleanvalue.front() == '"' && cleanvalue.back() == '"') {
+                            cleanvalue = cleanvalue.substr(1, cleanvalue.length() - 2);
                         }
-                        LOGGER::File_Name = cleanValue;
+                        LOGGER::fileName = cleanvalue;
                     }
                 ),
                 
-                ArgumentDescriptor(
+                argumentDescriptor(
                     "enableDRM",
-                    ArgumentType::FLAG,
+                    argumentType::FLAG,
                     "Enable DRM backend for hardware acceleration (default: false)",
                     [](const std::string&) {
                         enableDRM = true;
                     }
                 ),
                 
-                ArgumentDescriptor(
+                argumentDescriptor(
                     "help",
-                    ArgumentType::FLAG,
+                    argumentType::FLAG,
                     "Display this help message and exit",
                     [&argumentDescriptors](const std::string&) {
                         displayHelp(argumentDescriptors);
@@ -177,9 +177,9 @@ namespace GGUI {
                     }
                 ),
                 
-                ArgumentDescriptor(
+                argumentDescriptor(
                     "h",
-                    ArgumentType::FLAG,
+                    argumentType::FLAG,
                     "Display help message (short form)",
                     [&argumentDescriptors](const std::string&) {
                         displayHelp(argumentDescriptors);
@@ -196,40 +196,40 @@ namespace GGUI {
                 std::string currentToken = tokens[i];
                 
                 // Handle argument=value format
-                std::string argName, argValue;
+                std::string argName, argvalue;
                 size_t equalPos = currentToken.find('=');
                 
                 if (equalPos != std::string::npos) {
                     argName = removeDashes(currentToken.substr(0, equalPos));
-                    argValue = currentToken.substr(equalPos + 1);
+                    argvalue = currentToken.substr(equalPos + 1);
                 } else {
                     argName = removeDashes(currentToken);
                 }
 
                 // Find matching argument descriptor
                 auto descriptorIt = std::find_if(argumentDescriptors.begin(), argumentDescriptors.end(),
-                    [&argName](const ArgumentDescriptor& desc) {
+                    [&argName](const argumentDescriptor& desc) {
                         return toLower(desc.name) == toLower(argName);
                     });
 
                 if (descriptorIt != argumentDescriptors.end()) {
                     // Found matching descriptor
-                    if (descriptorIt->requiresValue()) {
+                    if (descriptorIt->requiresvalue()) {
                         if (equalPos != std::string::npos) {
-                            // Value provided with = format
-                            descriptorIt->handler(argValue);
+                            // value provided with = format
+                            descriptorIt->handler(argvalue);
                         } else if (i + 1 < tokens.size()) {
-                            // Value should be in next token
+                            // value should be in next token
                             std::string nextToken = tokens[++i];
                             // Don't consume if next token looks like another argument
                             if (!nextToken.empty() && nextToken[0] == '-' && nextToken.length() > 1) {
-                                INTERNAL::LOGGER::Log("Error: Argument --" + argName + " requires a value.");
+                                INTERNAL::LOGGER::log("Error: Argument --" + argName + " requires a value.");
                                 i--; // Back up so this token gets processed
                             } else {
                                 descriptorIt->handler(nextToken);
                             }
                         } else {
-                            INTERNAL::LOGGER::Log("Error: Argument --" + argName + " requires a value.");
+                            INTERNAL::LOGGER::log("Error: Argument --" + argName + " requires a value.");
                         }
                     } else {
                         // Flag argument
@@ -238,7 +238,7 @@ namespace GGUI {
                 } else {
                     // Unknown argument
                     if (!argName.empty()) {
-                        INTERNAL::LOGGER::Log("Warning: Unknown argument '" + argName + "'. Use --help for available options.");
+                        INTERNAL::LOGGER::log("Warning: Unknown argument '" + argName + "'. Use --help for available options.");
                     }
                 }
             }
@@ -252,8 +252,8 @@ namespace GGUI {
          * construction method.
          */
         void initSettings(){
-            if (LOGGER::File_Name.empty())
-                LOGGER::File_Name = INTERNAL::constructLoggerFileName();
+            if (LOGGER::fileName.empty())
+                LOGGER::fileName = INTERNAL::constructLoggerFileName();
         }
     }
 }

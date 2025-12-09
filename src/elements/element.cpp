@@ -188,11 +188,11 @@ GGUI::element::~element(){
     Style = nullptr;    // For safety, if in future some destruction system is going to need to know if this is no longer accessble
 
     //now also update the event handlers.
-    for (size_t i = 0; i < INTERNAL::Event_Handlers.size();) {
-        if (INTERNAL::Event_Handlers[i]->host == this) {
-            delete INTERNAL::Event_Handlers[i];
+    for (size_t i = 0; i < INTERNAL::eventHandlers.size();) {
+        if (INTERNAL::eventHandlers[i]->host == this) {
+            delete INTERNAL::eventHandlers[i];
 
-            INTERNAL::Event_Handlers.erase(INTERNAL::Event_Handlers.begin() + i);
+            INTERNAL::eventHandlers.erase(INTERNAL::eventHandlers.begin() + i);
             // don't increment i, since elements shifted left
         }
         else ++i;   // Only increment if current index is not a match
@@ -200,11 +200,11 @@ GGUI::element::~element(){
 
     // Now make sure that if the Focused_On element points to this element, then set it to nullptr
     if (isFocused())
-        GGUI::INTERNAL::Focused_On = nullptr;
+        GGUI::INTERNAL::focusedOn = nullptr;
 
     // Now make sure that if the Hovered_On element points to this element, then set it to nullptr
     if (isHovered())
-        GGUI::INTERNAL::Hovered_On = nullptr;
+        GGUI::INTERNAL::hoveredOn = nullptr;
 }   
 
 /**
@@ -244,8 +244,8 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     }
 
     // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
-    if (this == GGUI::INTERNAL::Main && !Dirty.is(INTERNAL::STAIN_TYPE::CLEAN)){
-        GGUI::INTERNAL::Identical_Frame = false;
+    if (this == GGUI::INTERNAL::main && !Dirty.is(INTERNAL::STAIN_TYPE::CLEAN)){
+        GGUI::INTERNAL::identicalFrame = false;
     }
 
     if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
@@ -555,13 +555,13 @@ void GGUI::element::addChild(element* Child){
     int Border_Offset =  hasBorder() != Child->hasBorder() && hasBorder() ? 1 : 0;
 
     if (
-        Child->Style->Position.get().X + Child->getWidth() > (getWidth() - Border_Offset) || 
-        Child->Style->Position.get().Y + Child->getHeight() > (getHeight() - Border_Offset)
+        Child->Style->Position.get().x + Child->getWidth() > (getWidth() - Border_Offset) || 
+        Child->Style->Position.get().y + Child->getHeight() > (getHeight() - Border_Offset)
     ){
         if (Style->Allow_Dynamic_Size.value){
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = GGUI::INTERNAL::Max(Child->Style->Position.get().X + Child->getWidth() + Border_Offset*2, getWidth());
-            unsigned int New_Height = GGUI::INTERNAL::Max(Child->Style->Position.get().Y + Child->getHeight() + Border_Offset*2, getHeight());
+            unsigned int New_Width = GGUI::INTERNAL::Max(Child->Style->Position.get().x + Child->getWidth() + Border_Offset*2, getWidth());
+            unsigned int New_Height = GGUI::INTERNAL::Max(Child->Style->Position.get().y + Child->getHeight() + Border_Offset*2, getHeight());
 
             // Resize the parent element to fit the child element
             setHeight(New_Height);
@@ -585,7 +585,7 @@ void GGUI::element::addChild(element* Child){
     Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
 
     // Add the child element to the parent's child list
-    INTERNAL::Element_Names.insert({Child->getNameAsRaw(), Child});
+    INTERNAL::elementNames.insert({Child->getNameAsRaw(), Child});
 
     Style->Childs.push_back(Child);
 
@@ -637,8 +637,8 @@ bool GGUI::element::remove(element* handle){
     for (unsigned int i = 0; i < Style->Childs.size(); i++){
         if (Style->Childs[i] == handle){
             // If the mouse is focused on this about to be deleted element, change mouse position into it's parent Position.
-            if (INTERNAL::Focused_On == Style->Childs[i]){
-                INTERNAL::Mouse = Style->Childs[i]->Parent->Style->Position.get();
+            if (INTERNAL::focusedOn == Style->Childs[i]){
+                INTERNAL::mouse = Style->Childs[i]->Parent->Style->Position.get();
             }
 
             delete handle;
@@ -741,8 +741,8 @@ bool GGUI::element::remove(unsigned int index){
     element* tmp = Style->Childs[index];
 
     // If the mouse is currently focused on the element that is about to be deleted, change the mouse position into the element's parent position.
-    if (INTERNAL::Focused_On == tmp){
-        INTERNAL::Mouse = tmp->Parent->Style->Position.get();
+    if (INTERNAL::focusedOn == tmp){
+        INTERNAL::mouse = tmp->Parent->Style->Position.get();
     }
 
     // Delete the element at the specified index from the vector of child elements.
@@ -890,12 +890,12 @@ void GGUI::element::updateAbsolutePositionCache(){
 }
 
 void GGUI::element::setTitle(INTERNAL::compactString t){
-    Style->Title.Value = t;
+    Style->Title.value = t;
 }
 
 GGUI::INTERNAL::compactString GGUI::element::getTitle(){
     // Return the title of the element
-    return Style->Title.Value;
+    return Style->Title.value;
 }
 
 /**
@@ -942,7 +942,7 @@ GGUI::element* GGUI::element::copy() const {
 
     //now also update the event handlers.
     // NOTE: We don't have enough power to update the lambda captures of the this ptr value, so please use the self->host ptr instead!
-    for (auto& e : INTERNAL::Event_Handlers){
+    for (auto& e : INTERNAL::eventHandlers){
 
         if (e->host == this){
             //copy the event and make a new one
@@ -952,7 +952,7 @@ GGUI::element* GGUI::element::copy() const {
             new_action->host = new_element;
 
             //add the new action to the event handlers list
-            INTERNAL::Event_Handlers.push_back(new_action);
+            INTERNAL::eventHandlers.push_back(new_action);
         }
     }
 
@@ -1019,7 +1019,7 @@ std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(elemen
      */
     while (true){
         // If the width of the child element is still less than the width of this element minus the border offset
-        if (Current_Position.X + (++Result_Width) < getWidth() - Border_Offset){
+        if (Current_Position.x + (++Result_Width) < getWidth() - Border_Offset){
             // Increase the width of the child element
             Result_Width++;
         }
@@ -1028,7 +1028,7 @@ std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(elemen
         }
         
         // If the height of the child element is still less than the height of this element minus the border offset
-        if (Current_Position.Y + (++Result_Height) < getHeight() - Border_Offset){
+        if (Current_Position.y + (++Result_Height) < getHeight() - Border_Offset){
             // Increase the height of the child element
             Result_Height++;
         }
@@ -1039,7 +1039,7 @@ std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(elemen
         // Check if the child element is colliding with any other child elements.
         for (auto c : Style->Childs) {
             // Use local positioning since this is a civil dispute :)
-            if (child != c && INTERNAL::Collides(c->getPosition(), Current_Position, c->getWidth(), c->getHeight(), Result_Width, Result_Height)) {
+            if (child != c && INTERNAL::collides(c->getPosition(), Current_Position, c->getWidth(), c->getHeight(), Result_Width, Result_Height)) {
                 // If the child element is colliding with another child element, then we can stop here.
                 return {Result_Width, Result_Height};
             }
@@ -1164,7 +1164,7 @@ void GGUI::element::setTextColor(RGB color){
  */
 void GGUI::element::allowDynamicSize(bool True) {
     // Since dynamic size and percentage based size are two incompatible systems.
-    if (Style->Width.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.number.Get_Type() != INTERNAL::EVALUATION_TYPE::PERCENTAGE){
+    if (Style->Width.number.getType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && Style->Height.number.getType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE){
         Style->Allow_Dynamic_Size = True; 
     }
     // Set the Allow_Dynamic_Size property in the element's style
@@ -1404,12 +1404,12 @@ void GGUI::element::computeDynamicSize(){
 
             // Add the border offset to the width and the height to count for the border collision and evade it. 
             unsigned int New_Width = (unsigned int)GGUI::INTERNAL::Max(
-                (c->Style->Position.get().X + (signed int)c->getWidth() + Border_Offset) * Enable_Width_Modification,
+                (c->Style->Position.get().x + (signed int)c->getWidth() + Border_Offset) * Enable_Width_Modification,
                 (signed int)getWidth()
             );
 
             unsigned int New_Height = (unsigned int)GGUI::INTERNAL::Max(
-                (c->Style->Position.get().Y + (signed int)c->getHeight() + Border_Offset) * Enable_Height_Modification,
+                (c->Style->Position.get().y + (signed int)c->getHeight() + Border_Offset) * Enable_Height_Modification,
                 (signed int)getHeight()
             );
 
@@ -1437,7 +1437,7 @@ void GGUI::element::computeDynamicSize(){
 void GGUI::element::applyColors(std::vector<UTF>& Result){
     // Loop over each UTF-8 character in the rendered string and set its color to the
     // color specified in the style.
-    const auto composedRGB = composeAllTextRGBValues();
+    const auto composedRGB = composeAllTextRGBvalues();
 
     for (auto& utf : Result){
         utf.setColor(composedRGB);
@@ -1455,7 +1455,7 @@ void GGUI::element::renderBorders(std::vector<UTF>& Result){
 
     const unsigned int Width  = getWidth();
     const unsigned int Height = getHeight();
-    const auto composedRGB    = composeAllBorderRGBValues();
+    const auto composedRGB    = composeAllBorderRGBvalues();
     const auto& Border        = Style->Border_Style;
 
     // Corners
@@ -1491,7 +1491,7 @@ void GGUI::element::renderBorders(std::vector<UTF>& Result){
  * 
  * @details
  * - If the title is empty, the function returns immediately without modifying `Result`.
- * - The title's length is determined by the `Style->Title.Value.size`.
+ * - The title's length is determined by the `Style->Title.value.size`.
  * - The function calculates the writable length based on the element's width,
  *   taking into account borders and the space required for the ellipsis.
  * - If the title exceeds the writable length, an ellipsis is appended to indicate truncation.
@@ -1504,7 +1504,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
     if (Style->Title.empty())
         return;
 
-    unsigned int Title_Length = Style->Title.Value.size; // +1 for trailing, since Compact_Strings do not include trailing characters in their size.
+    unsigned int Title_Length = Style->Title.value.size; // +1 for trailing, since Compact_Strings do not include trailing characters in their size.
     unsigned int Horizontal_Offset = hasBorder();
     INTERNAL::compactString Ellipsis = "...";
     bool Enable_Ellipsis = false;
@@ -1516,7 +1516,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
 
     // Now we'll write what we can
     for (unsigned int x = Horizontal_Offset; x < Writable_Length + Horizontal_Offset; x++){
-        Result[x] = UTF(Style->Title.Value[x - Horizontal_Offset], composeAllTextRGBValues());
+        Result[x] = UTF(Style->Title.value[x - Horizontal_Offset], composeAllTextRGBvalues());
     }
 
     // And then we'll add the ellipsis
@@ -1524,7 +1524,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
         unsigned int Ellipsis_Offset = Writable_Length + Horizontal_Offset;
         for (unsigned int x = 0; x < Ellipsis.size; x++){
             if (Ellipsis_Offset + x < getWidth()){
-                Result[Ellipsis_Offset + x] = UTF(Ellipsis[x], composeAllTextRGBValues());
+                Result[Ellipsis_Offset + x] = UTF(Ellipsis[x], composeAllTextRGBvalues());
             }
         }
     }
@@ -1532,14 +1532,14 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
 
 inline bool Is_In_Bounds(GGUI::IVector3 index, GGUI::element* parent){
     // checks if the index is out of bounds
-    if (index.X < 0 || index.Y < 0 || index.X >= (signed)parent->getWidth() || index.Y >= (signed)parent->getHeight())
+    if (index.x < 0 || index.y < 0 || index.x >= (signed)parent->getWidth() || index.y >= (signed)parent->getHeight())
         return false;
 
     return true;
 }
 
 inline GGUI::UTF* From(GGUI::IVector3 index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::element* Parent){
-    return &Parent_Buffer[index.Y * Parent->getWidth() + index.X];
+    return &Parent_Buffer[index.y * Parent->getWidth() + index.x];
 }
 
 /**
@@ -1577,19 +1577,19 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
     // First calculate if the child is outside the parent.
     if (
-        B->Style->Position.get().X + (signed)B->getWidth() < A->Style->Position.get().X ||
-        B->Style->Position.get().X > A->Style->Position.get().X + (signed)A->getWidth() ||
-        B->Style->Position.get().Y + (signed)B->getHeight() < A->Style->Position.get().Y ||
-        B->Style->Position.get().Y > A->Style->Position.get().Y + (signed)A->getHeight()
+        B->Style->Position.get().x + (signed)B->getWidth() < A->Style->Position.get().x ||
+        B->Style->Position.get().x > A->Style->Position.get().x + (signed)A->getWidth() ||
+        B->Style->Position.get().y + (signed)B->getHeight() < A->Style->Position.get().y ||
+        B->Style->Position.get().y > A->Style->Position.get().y + (signed)A->getHeight()
     )
         return;
 
     // Now calculate if the child is inside the parent.
     if (
-        B->Style->Position.get().X > A->Style->Position.get().X &&
-        B->Style->Position.get().X + (signed)B->getWidth() < A->Style->Position.get().X + (signed)A->getWidth() &&
-        B->Style->Position.get().Y > A->Style->Position.get().Y &&
-        B->Style->Position.get().Y + (signed)B->getHeight() < A->Style->Position.get().Y + (signed)A->getHeight()
+        B->Style->Position.get().x > A->Style->Position.get().x &&
+        B->Style->Position.get().x + (signed)B->getWidth() < A->Style->Position.get().x + (signed)A->getWidth() &&
+        B->Style->Position.get().y > A->Style->Position.get().y &&
+        B->Style->Position.get().y + (signed)B->getHeight() < A->Style->Position.get().y + (signed)A->getHeight()
     )
         return;
 
@@ -1600,10 +1600,10 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
     // store the line x,y into a array for the nested loops to access.
     std::vector<int> Vertical_Line_X_Coordinates = {
         
-        B->Style->Position.get().X,
-        A->Style->Position.get().X,
-        B->Style->Position.get().X + (int)B->getWidth() - 1,
-        A->Style->Position.get().X + (int)A->getWidth() - 1,
+        B->Style->Position.get().x,
+        A->Style->Position.get().x,
+        B->Style->Position.get().x + (int)B->getWidth() - 1,
+        A->Style->Position.get().x + (int)A->getWidth() - 1,
 
                 
         // A->Style->Position.Get().X,
@@ -1615,10 +1615,10 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
     std::vector<int> Horizontal_Line_Y_Coordinates = {
         
-        A->Style->Position.get().Y,
-        B->Style->Position.get().Y + (int)B->getHeight() - 1,
-        A->Style->Position.get().Y,
-        B->Style->Position.get().Y + (int)B->getHeight() - 1,
+        A->Style->Position.get().y,
+        B->Style->Position.get().y + (int)B->getHeight() - 1,
+        A->Style->Position.get().y,
+        B->Style->Position.get().y + (int)B->getHeight() - 1,
 
         // B->Position.Y,
         // A->Position.Y + A->Height - 1,
@@ -1644,10 +1644,10 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
     // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
     for (auto c : Crossing_Indicies){
 
-        IVector3 Above = { c.X, c.Y - 1 };
-        IVector3 Below = { c.X, c.Y + 1 };
-        IVector3 Left = { c.X - 1, c.Y };
-        IVector3 Right = { c.X + 1, c.Y };
+        IVector3 Above = { c.x, c.y - 1 };
+        IVector3 Below = { c.x, c.y + 1 };
+        IVector3 Left = { c.x - 1, c.y };
+        IVector3 Right = { c.x + 1, c.y };
 
         INTERNAL::borderConnection Current_Masks = INTERNAL::borderConnection::NONE;
 
@@ -1731,8 +1731,8 @@ void GGUI::element::onClick(std::function<bool(GGUI::event*)> job){
         getName() + "::onClick::wrapper::enter"
     );
 
-    GGUI::INTERNAL::Event_Handlers.push_back(mouse);
-    GGUI::INTERNAL::Event_Handlers.push_back(enter);
+    GGUI::INTERNAL::eventHandlers.push_back(mouse);
+    GGUI::INTERNAL::eventHandlers.push_back(enter);
 }
 
 /**
@@ -1747,7 +1747,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
     action* a = new action(
         criteria,
         [this, job, GLOBAL](GGUI::event* e){
-            if (INTERNAL::Collides(this, INTERNAL::Mouse) || GLOBAL){
+            if (INTERNAL::collides(this, INTERNAL::mouse) || GLOBAL){
                 // action successfully executed.
                 return job(e);
             }
@@ -1757,7 +1757,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
         this,
         getName() + "::on::" + std::to_string(criteria)
     );
-    GGUI::INTERNAL::Event_Handlers.push_back(a);
+    GGUI::INTERNAL::eventHandlers.push_back(a);
 }
 
 /**
@@ -1842,7 +1842,7 @@ void GGUI::element::setName(std::string name){
     Name = name;
 
     // Store the element in the global Element_Names map.
-    INTERNAL::Element_Names[name] = this;
+    INTERNAL::elementNames[name] = this;
 }
 
 /**
@@ -1906,7 +1906,7 @@ void GGUI::element::reOrderChilds() {
     // Sort the child elements using a lambda function to compare the z-coordinates.
     std::sort(Style->Childs.begin(), Style->Childs.end(), [](element* a, element* b) {
         // Compare the z-position of the two elements.
-        return a->getPosition().Z < b->getPosition().Z;
+        return a->getPosition().z < b->getPosition().z;
     });
 }
 
@@ -1916,7 +1916,7 @@ void GGUI::element::reOrderChilds() {
  */
 void GGUI::element::focus() {
     // Set the mouse position to the element's position.
-    GGUI::INTERNAL::Mouse = this->Style->Position.get();
+    GGUI::INTERNAL::mouse = this->Style->Position.get();
     // Update the focused element.
     GGUI::INTERNAL::updateFocusedElement(this);
 }
@@ -1953,17 +1953,17 @@ std::vector<GGUI::IVector3> Get_Surrounding_Indicies(int Width, int Height, GGUI
     std::vector<GGUI::IVector3> Result;
 
     // First construct the first square.
-    int Bigger_Square_Start_X = start_offset.X - 1;
-    int Bigger_Square_Start_Y = start_offset.Y - 1;
+    int Bigger_Square_Start_X = start_offset.x - 1;
+    int Bigger_Square_Start_Y = start_offset.y - 1;
 
-    int Bigger_Square_End_X = start_offset.X + Width + 1;
-    int Bigger_Square_End_Y = start_offset.Y + Height + 1;
+    int Bigger_Square_End_X = start_offset.x + Width + 1;
+    int Bigger_Square_End_Y = start_offset.y + Height + 1;
 
-    int Smaller_Square_Start_X = start_offset.X + (Offset.X * GGUI::INTERNAL::Min(0, (int)Offset.X));
-    int Smaller_Square_Start_Y = start_offset.Y + (Offset.Y * GGUI::INTERNAL::Min(0, (int)Offset.Y));
+    int Smaller_Square_Start_X = start_offset.x + (Offset.x * GGUI::INTERNAL::Min(0, (int)Offset.x));
+    int Smaller_Square_Start_Y = start_offset.y + (Offset.y * GGUI::INTERNAL::Min(0, (int)Offset.y));
 
-    int Smaller_Square_End_X = start_offset.X + Width - (Offset.X * GGUI::INTERNAL::Max(0, (int)Offset.X));
-    int Smaller_Square_End_Y = start_offset.Y + Height - (Offset.Y * GGUI::INTERNAL::Max(0, (int)Offset.Y));
+    int Smaller_Square_End_X = start_offset.x + Width - (Offset.x * GGUI::INTERNAL::Max(0, (int)Offset.x));
+    int Smaller_Square_End_Y = start_offset.y + Height - (Offset.y * GGUI::INTERNAL::Max(0, (int)Offset.y));
 
     for (int y = Bigger_Square_Start_Y; y < Bigger_Square_End_Y; y++){
         for (int x = Bigger_Square_Start_X; x < Bigger_Square_End_X; x++){
@@ -1993,10 +1993,10 @@ bool GGUI::element::childIsShown(element* other){
     bool Border_Modifier = hasBorder() != other->hasBorder() && hasBorder() ? 1 : 0;
 
     // Calculate the minimum and maximum coordinates of the child element
-    int Minimum_X = other->Style->Position.get().X + other->getWidth();
-    int Minimum_Y = other->Style->Position.get().Y + other->getHeight();
-    int Maximum_X = other->Style->Position.get().X;
-    int Maximum_Y = other->Style->Position.get().Y;
+    int Minimum_X = other->Style->Position.get().x + other->getWidth();
+    int Minimum_Y = other->Style->Position.get().y + other->getHeight();
+    int Maximum_X = other->Style->Position.get().x;
+    int Maximum_Y = other->Style->Position.get().y;
 
     // Check if the child element is visible within the bounds of the parent
     bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < (signed)getWidth() - Border_Modifier;

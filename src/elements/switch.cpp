@@ -85,7 +85,7 @@ namespace GGUI{
             
             // Set the text with a space character added to the beginning
             Text.setText(container.toString());
-            setName(INTERNAL::To_String(text));
+            setName(INTERNAL::toString(text));
 
             // Update the switch element's dimensions to fit the new text
             setWidth(Text.getWidth() + hasBorder() * 2);

@@ -94,7 +94,7 @@ namespace GGUI{
              * @param Enable If true, enable the feature. Otherwise, disable it.
              * @return A Super_String object with the correct escape sequence to enable or disable the feature
              */
-            constexpr INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingPrivateSGRFeature> Enable_Private_SGR_Feature(const INTERNAL::compactString& command, bool Enable = true) { 
+            constexpr INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingPrivateSGRFeature> enablePrivateSGRFeature(const INTERNAL::compactString& command, bool Enable = true) { 
                 INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingPrivateSGRFeature> Result;
 
                 // Add the escape code
@@ -124,7 +124,7 @@ namespace GGUI{
              * @param command The command to enable
              * @return A Super_String object with the correct escape sequence to enable the feature
              */
-            constexpr INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingSGRFeature> Enable_SGR_Feature(const INTERNAL::compactString& command) {
+            constexpr INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingSGRFeature> enableSGRFeature(const INTERNAL::compactString& command) {
                 INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingSGRFeature> Result;
 
                 // Add the escape code
@@ -140,7 +140,7 @@ namespace GGUI{
             }
 
             // Build a cursor shape control sequence: ESC[ <Ps> q where fragment already provides "<digit> q".
-            constexpr INTERNAL::superString<maximumNeededPreAllocationForSettingCursorShape> Set_Cursor_Shape(const INTERNAL::compactString& fragment){
+            constexpr INTERNAL::superString<maximumNeededPreAllocationForSettingCursorShape> setCursorShape(const INTERNAL::compactString& fragment){
                 INTERNAL::superString<maximumNeededPreAllocationForSettingCursorShape> Result;
                 Result.add(ESC_CODE);
                 Result.add(fragment);
@@ -365,18 +365,18 @@ namespace GGUI{
 
     // autoGen: Ignore start
     namespace INTERNAL{
-        template <typename Key, typename Value, std::size_t N>
+        template <typename Key, typename value, std::size_t N>
         struct arrayMap {
-            std::array<std::pair<Key, Value>, N> data;
+            std::array<std::pair<Key, value>, N> data;
 
-            constexpr Value operator[](Key key) const {
+            constexpr value operator[](Key key) const {
                 for (auto&& kv : data) {
                     if (kv.first == key) return kv.second;
                 }
             #if defined(__cpp_exceptions)
                 throw std::out_of_range("key not found in array_map");
             #else
-                return Value{}; // fallback in no-exception builds
+                return value{}; // fallback in no-exception builds
             #endif
             }
         };

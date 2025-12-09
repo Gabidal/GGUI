@@ -37,24 +37,24 @@ namespace GGUI{
         namespace LOGGER{
 
             // File handle for logging to files for Atomic access across different threads.
-            INTERNAL::atomic::guard<fileStream> Handle;
+            INTERNAL::atomic::guard<fileStream> handle;
 
             // to enable default to nullptr for Guard
             class queue{
             public:
-                std::queue<std::string>* Handle;
+                std::queue<std::string>* handle;
 
                 queue(bool init = false){
                     if (init)
-                        Handle = new std::queue<std::string>();
+                        handle = new std::queue<std::string>();
                     else
-                        Handle = nullptr;
+                        handle = nullptr;
                 }
 
                 void flushInto(queue& dest) {
-                    while (!Handle->empty()) {
-                        dest.Handle->push(std::move(Handle->front()));
-                        Handle->pop();
+                    while (!handle->empty()) {
+                        dest.handle->push(std::move(handle->front()));
+                        handle->pop();
                     }
                 }
             };
@@ -74,18 +74,18 @@ namespace GGUI{
              * This function is safe to call multiple times and will only initialize the file stream
              * if it has not already been initialized.
              */
-            void Init(fileStream* pre_pausedSelf){
+            void init(fileStream* pre_pausedSelf){
                 auto task = [](fileStream& self){
-                    if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED){    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
-                        if (SETTINGS::LOGGER::File_Name.size() == 0){
+                    if (self.getType() == FILE_STREAM_TYPE::UN_INITIALIZED){    // If the Log is called before GGUI_Init, then we need to skip this in GGUI_Init
+                        if (SETTINGS::LOGGER::fileName.size() == 0){
                             SETTINGS::initSettings();
                         }
-                        new (&self) fileStream(SETTINGS::LOGGER::File_Name, [](){}, FILE_STREAM_TYPE::WRITE);
+                        new (&self) fileStream(SETTINGS::LOGGER::fileName, [](){}, FILE_STREAM_TYPE::WRITE);
                     }
                 };
 
                 if (!pre_pausedSelf)
-                    Handle(task);
+                    handle(task);
                 else
                     task(*pre_pausedSelf);
             }
@@ -99,11 +99,11 @@ namespace GGUI{
              *
              * @param Text The message to log. Multi-line messages will be indented for readability.
              */
-            void Log(std::string Text){
-                Handle([&Text](GGUI::fileStream& self){
+            void log(std::string Text){
+                handle([&Text](GGUI::fileStream& self){
                     // If this log is called before the normal GGUI_Init is called, then we need to manually init this.
-                    if (self.Get_type() == FILE_STREAM_TYPE::UN_INITIALIZED)
-                        Init(&self);
+                    if (self.getType() == FILE_STREAM_TYPE::UN_INITIALIZED)
+                        init(&self);
 
                     // Get the current time as string
                     std::string now = "[" + GGUI::INTERNAL::now() + "]: ";
@@ -118,7 +118,7 @@ namespace GGUI{
                     }
 
                     // Write the time and the text into the log file.
-                    self.Append(now + Text);
+                    self.append(now + Text);
 
                     // Check if DRM is enabled.
                     if (SETTINGS::enableDRM) {
@@ -136,12 +136,12 @@ namespace GGUI{
              * global collection of all queues via the `AllQueues` function.
              * This allows the logging system to keep track of all thread-local queues for message processing.
              */
-            void RegisterCurrentThread(){
+            void registerCurrentThread(){
                 (*localQueue)([](queue& current){
-                    if (current.Handle != nullptr)
+                    if (current.handle != nullptr)
                         return;
 
-                    current.Handle = new std::queue<std::string>();
+                    current.handle = new std::queue<std::string>();
                 });
 
                 AllQueues([](std::vector<guardedQueue*>& queues){
@@ -463,7 +463,7 @@ namespace GGUI{
 
             // Initialize DbgHelp symbol handler for the current process
             if (!InitSymbolHandler()) {
-                LOGGER::Log("Error: Failed to initialize symbol handler.");
+                LOGGER::log("Error: Failed to initialize symbol handler.");
                 return;
             }
 
@@ -476,7 +476,7 @@ namespace GGUI{
             );
 
             if (!symbolInfo) {
-                LOGGER::Log("Error: Memory allocation for SYMBOL_INFO failed.");
+                LOGGER::log("Error: Memory allocation for SYMBOL_INFO failed.");
                 return;
             }
 
@@ -484,7 +484,7 @@ namespace GGUI{
             symbolInfo->SizeOfStruct = sizeof(SYMBOL_INFO);
 
             // Ensure any global visual layout constants are updated
-            if (Max_Width == 0) {
+            if (maxWidth == 0) {
                 updateMaxWidthAndHeight(); // Presumed external function
             }
 
@@ -492,7 +492,7 @@ namespace GGUI{
             std::string formattedStackTrace = "Stack Trace:\n";
             int visualDepthIndex = 0;
 
-            const bool enableIndentation = capturedFrameCount < (Max((signed)Max_Width, 0) / 2);
+            const bool enableIndentation = capturedFrameCount < (Max((signed)maxWidth, 0) / 2);
 
             // Traverse stack frames in reverse (from newest to oldest)
             for (int frameIndex = capturedFrameCount - 1; frameIndex > 0; --frameIndex) {
@@ -685,12 +685,12 @@ namespace GGUI{
             }
 
             // Ensure UI constraints are initialized before printing
-            if (Max_Width == 0) {
+            if (maxWidth == 0) {
                 updateMaxWidthAndHeight();
             }
 
             std::string formattedTrace = "Stack Trace:\n";
-            bool useIndentation = static_cast<unsigned int>(capturedFrameCount) < (Max_Width / 2);
+            bool useIndentation = static_cast<unsigned int>(capturedFrameCount) < (maxWidth / 2);
             int currentIndentLevel = 0;
 
             // Iterate backwards through the captured frames, omitting the frame that called reportStack
@@ -758,16 +758,16 @@ namespace GGUI{
             const char* HISTORY = "_HISTORY_";
             try{
                 pauseGGUI([&problem, &ERROR_LOGGER, &HISTORY]{
-                    INTERNAL::LOGGER::Log(problem);
+                    INTERNAL::LOGGER::log(problem);
 
                     // reportStack is called when the height or width is zero at init, so we dont ned to compute further.
-                    if (INTERNAL::Max_Height == 0 || INTERNAL::Max_Width == 0){
+                    if (INTERNAL::maxHeight == 0 || INTERNAL::maxWidth == 0){
                         return;
                     }
 
                     std::string Problem = " " + problem + " ";
 
-                    if (INTERNAL::Main && (INTERNAL::Max_Width != 0 && INTERNAL::Max_Height != 0)){
+                    if (INTERNAL::main && (INTERNAL::maxWidth != 0 && INTERNAL::maxHeight != 0)){
                         bool Create_New_Line = true;
 
                         // First check if there already is a report log.
@@ -872,10 +872,10 @@ namespace GGUI{
                         }
 
                         // If the user has disabled the Inspect_Tool then the errors appear as an popup window ,which disappears after 30s.
-                        if (Error_Logger->getParent() == INTERNAL::Main){
+                        if (Error_Logger->getParent() == INTERNAL::main){
                             Error_Logger->display(true);
 
-                            INTERNAL::Remember([Error_Logger](std::vector<memory>& rememberable){
+                            INTERNAL::remember([Error_Logger](std::vector<memory>& rememberable){
                                 rememberable.push_back(memory(
                                     TIME::SECOND * 30,
                                     [Error_Logger](GGUI::event*){
@@ -892,7 +892,7 @@ namespace GGUI{
 
                     }
                     else{
-                        if (!INTERNAL::Platform_Initialized){
+                        if (!INTERNAL::platformInitialized){
                             INTERNAL::initPlatformStuff();
                         }
 
@@ -907,7 +907,7 @@ namespace GGUI{
             catch (std::exception& e){
                 try{
                     // First don't give up on local logging yet
-                    INTERNAL::LOGGER::Log("Problem: " + std::string(e.what()));
+                    INTERNAL::LOGGER::log("Problem: " + std::string(e.what()));
                 }
                 catch (std::exception& f){
                     // If logger is also down
@@ -930,11 +930,11 @@ namespace GGUI{
                     }
                 });
                 
-                int LinearQueueSize = LinearQueue.Handle->size();
+                int LinearQueueSize = LinearQueue.handle->size();
 
-                while (!LinearQueue.Handle->empty()){
-                    std::string CurrentProblem = LinearQueue.Handle->front();
-                    LinearQueue.Handle->pop();
+                while (!LinearQueue.handle->empty()){
+                    std::string CurrentProblem = LinearQueue.handle->front();
+                    LinearQueue.handle->pop();
 
                     renderLogger(CurrentProblem);
                 }
@@ -954,10 +954,10 @@ namespace GGUI{
 
     void report(const std::string& problem){
         (*INTERNAL::LOGGER::localQueue)([&problem](INTERNAL::LOGGER::queue& self){
-            if (self.Handle){
-                self.Handle->push(problem); // Push the problem to the local queue.
+            if (self.handle){
+                self.handle->push(problem); // Push the problem to the local queue.
             }else{
-                INTERNAL::LOGGER::Log("Unregistered thread: " + std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())) + " reported: " + problem);
+                INTERNAL::LOGGER::log("Unregistered thread: " + std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())) + " reported: " + problem);
             }
         });
     }

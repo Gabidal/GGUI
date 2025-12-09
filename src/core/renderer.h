@@ -41,43 +41,43 @@ namespace GGUI{
 
             extern int LOCKED;
 
-            extern std::mutex Mutex;
-            extern std::condition_variable Condition;
+            extern std::mutex mutex;
+            extern std::condition_variable condition;
 
-            extern status Pause_Render_Thread;
+            extern status pauseRenderThread;
         }
 
         // Inits with 'NOW()' when created
         class buttonState {
         public:
-            bool State;
-            std::chrono::high_resolution_clock::time_point Capture_Time;
+            bool state;
+            std::chrono::high_resolution_clock::time_point captureTime;
 
-            buttonState(bool state = false) : State(state), Capture_Time(std::chrono::high_resolution_clock::now()) {}
+            buttonState(bool State = false) : state(State), captureTime(std::chrono::high_resolution_clock::now()) {}
         };
 
-        extern std::vector<UTF>* Abstract_Frame_Buffer;                 //2D clean vector without bold nor color
-        extern std::string* Frame_Buffer;                                //string with bold and color, this what gets drawn to console.
+        extern std::vector<UTF>* abstractFrameBuffer;                 //2D clean vector without bold nor color
+        extern std::string* frameBuffer;                                //string with bold and color, this what gets drawn to console.
 
-        extern std::vector<INTERNAL::bufferCapture*> Global_Buffer_Captures;
+        extern std::vector<INTERNAL::bufferCapture*> globalBufferCaptures;
 
-        extern unsigned int Max_Width;
-        extern unsigned int Max_Height;
+        extern unsigned int maxWidth;
+        extern unsigned int maxHeight;
 
-        extern atomic::guard<std::vector<memory>> Remember;
+        extern atomic::guard<std::vector<memory>> remember;
 
-        extern std::vector<action*> Event_Handlers;
-        extern std::vector<input*> Inputs;
+        extern std::vector<action*> eventHandlers;
+        extern std::vector<input*> inputs;
         
-        extern std::unordered_map<std::string, element*> Element_Names;
+        extern std::unordered_map<std::string, element*> elementNames;
 
-        extern element* Focused_On;
-        extern element* Hovered_On;
+        extern element* focusedOn;
+        extern element* hoveredOn;
 
-        extern bool Platform_Initialized;
+        extern bool platformInitialized;
 
-        extern IVector3 Mouse;    
-        extern bool Mouse_Movement_Enabled;
+        extern IVector3 mouse;    
+        extern bool mouseMovementEnabled;
 
         extern std::unordered_map<std::string_view, buttonState> KEYBOARD_STATES;
 
@@ -87,23 +87,23 @@ namespace GGUI{
         inline constexpr time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 16;
         extern time_t CURRENT_UPDATE_SPEED; // dynamic depending on load
 
-        extern int Inputs_Per_Second;
-        extern int Inputs_Per_Query;
+        extern int inputsPerSecond;
+        extern int inputsPerQuery;
 
-        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-        extern unsigned long long Event_Delay;     // describes how long previous memory tasks took in ms
+        extern unsigned long long renderDelay;    // describes how long previous render cycle took in ms
+        extern unsigned long long eventDelay;     // describes how long previous memory tasks took in ms
 
-        extern atomic::guard<std::unordered_map<int, styling>> Classes;
-        extern std::unordered_map<std::string, int> Class_Names;
+        extern atomic::guard<std::unordered_map<int, styling>> classes;
+        extern std::unordered_map<std::string, int> classNames;
 
-        extern element* Main;  
+        extern element* main;  
 
-        extern std::unordered_map<GGUI::canvas*, bool> Multi_Frame_Canvas;
+        extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
 
-        extern float Event_Thread_Load;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
+        extern float eventThreadLoad;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
-        extern unsigned long long Render_Delay;    // describes how long previous render cycle took in ms
-        extern unsigned long long Event_Delay;     // describes how long previous memory tasks took in ms
+        extern unsigned long long renderDelay;    // describes how long previous render cycle took in ms
+        extern unsigned long long eventDelay;     // describes how long previous memory tasks took in ms
         extern unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
 
         extern std::string now();
@@ -183,13 +183,13 @@ namespace GGUI{
          */
         constexpr int getUnicodeLength(char first_char){
             // ASCII (0xxxxxxx)
-            if (!INTERNAL::Has_Bit_At(first_char, 7)) return 1;
+            if (!INTERNAL::hasBitAt(first_char, 7)) return 1;
             // 2-byte (110xxxxx)
-            if (INTERNAL::Has_Bit_At(first_char,7) && INTERNAL::Has_Bit_At(first_char,6) && !INTERNAL::Has_Bit_At(first_char,5)) return 2;
+            if (INTERNAL::hasBitAt(first_char,7) && INTERNAL::hasBitAt(first_char,6) && !INTERNAL::hasBitAt(first_char,5)) return 2;
             // 3-byte (1110xxxx)
-            if (INTERNAL::Has_Bit_At(first_char,7) && INTERNAL::Has_Bit_At(first_char,6) && INTERNAL::Has_Bit_At(first_char,5) && !INTERNAL::Has_Bit_At(first_char,4)) return 3;
+            if (INTERNAL::hasBitAt(first_char,7) && INTERNAL::hasBitAt(first_char,6) && INTERNAL::hasBitAt(first_char,5) && !INTERNAL::hasBitAt(first_char,4)) return 3;
             // 4-byte (11110xxx)
-            if (INTERNAL::Has_Bit_At(first_char,7) && INTERNAL::Has_Bit_At(first_char,6) && INTERNAL::Has_Bit_At(first_char,5) && INTERNAL::Has_Bit_At(first_char,4) && !INTERNAL::Has_Bit_At(first_char,3)) return 4;
+            if (INTERNAL::hasBitAt(first_char,7) && INTERNAL::hasBitAt(first_char,6) && INTERNAL::hasBitAt(first_char,5) && INTERNAL::hasBitAt(first_char,4) && !INTERNAL::hasBitAt(first_char,3)) return 4;
             return 1;
         }
 

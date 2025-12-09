@@ -74,7 +74,7 @@ struct ParsedFile {
  * Cost lines can be either "ln cost" or just "cost"; this extracts the last integral
  * token and converts it to 64-bit. Non-numeric lines return 0.
  */
-static long long parseCostValue(const std::string &line) {
+static long long parseCostvalue(const std::string &line) {
     std::istringstream iss(line);
     std::string tok, last;
     while (iss >> tok) last = tok;
@@ -162,7 +162,7 @@ static ParsedFile parseCallgrind(const std::string &path, bool captureBlocks) {
             if (captureBlocks) currentBlock.push_back(line);
             if (!t.empty() && std::isdigit(static_cast<unsigned char>(t[0]))) {
                 // Try to parse a cost at end of line
-                const long long val = parseCostValue(t);
+                const long long val = parseCostvalue(t);
                 if (val > 0) {
                     pf.fnCounts[currentFn] += val;
                 }

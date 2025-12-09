@@ -431,7 +431,7 @@ namespace GGUI{
                 result.resize(liquefiedSize);
 
                 // Copy the contents of the Data vector into the std::string.
-                int Current_UTF_Insert_Index = 0;
+                int currentUTFInsertIndex = 0;
                 for(unsigned int i = 0; i < currentIndex; i++){
                     const compactString& Data = data[i];
 
@@ -441,13 +441,13 @@ namespace GGUI{
                     // Size of ones are always already loaded from memory into a char.
                     if (Data.size > 1){
                         // Replace the current contents of the string with the contents of the Unicode Data.
-                        result.replace(Current_UTF_Insert_Index, Data.size, Data.getUnicode());
+                        result.replace(currentUTFInsertIndex, Data.size, Data.getUnicode());
 
-                        Current_UTF_Insert_Index += Data.size;
+                        currentUTFInsertIndex += Data.size;
                     }
                     else{
                         // Add the single character to the string.
-                        result[Current_UTF_Insert_Index++] = Data.getAscii();
+                        result[currentUTFInsertIndex++] = Data.getAscii();
                     }
                 }
                 return result;
