@@ -33,7 +33,7 @@ int main()
                 }
             })
         )) | 
-
+ 
         // Non-animated canvas with unicode emojis
         node(new canvas(
             // Set the canvas to third of screen size. 30%
