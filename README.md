@@ -48,6 +48,22 @@ int main()
 
 --- 
 
+# Building
+### ./bin/init.sh triggers meson to build the core library.
+### Manual build you could do something like this:
+```Bash
+g++ -std=c++17 -O3 -I./src ./src/**/*.cpp -o GGUI     # This will yank main.cpp into it as well, you can remove it if CLI is not needed.
+```
+### Manual library build
+```Bash
+g++ -std=c++17 -O3 -I./src -c ./src/**/*.cpp -o GGUI.lib   # This will compile all source files into a single library file.
+```
+### Then for the header export:
+```Bash
+g++ -std=c++17 -O3 -I./bin/export ./bin/export/buildGGUILib.cpp -o headerGenerator   # This will build the automated builder.
+./headerGenerator --headers-only --source-root ./           # This will generate automatically ggui.h, you can also add '--include-internal' for building ggui_dev.h 
+```
+
 # Contributing to development of **GGUI**
 - ### Initialize project locally with the `init.*` script.
 - ### Exporting this project as library is documented in [bin/export/README.md](./bin/export/README.md).

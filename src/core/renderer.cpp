@@ -25,6 +25,7 @@
     #include <termios.h>
     #include <unistd.h>
     #include <sys/uio.h> // Needed for writev
+    #include <errno.h>
     #include <cstring>
     #include <poll.h>
 #endif
@@ -833,7 +834,7 @@ namespace GGUI{
             };
 
             ssize_t wrote = writev(STDOUT_FILENO, vec, 2);
-            if (wrote != (ssize_t)cursorResetLength) {
+            if (wrote != (ssize_t)cursorResetLength + (ssize_t)frameBuffer->size()) {
                 LOGGER::log("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
             }
         }
