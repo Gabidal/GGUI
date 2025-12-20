@@ -83,6 +83,9 @@ namespace GGUI{
 
         bool platformInitialized = false;
 
+        // Whether STDIN is an interactive terminal (TTY). Used to decide input setup/teardown and whether to spawn the input thread.
+        static bool STDIN_IS_TTY = false;
+
         IVector3 mouse;
         //move 1 by 1, or element by element.
         bool mouseMovementEnabled = true;
@@ -155,6 +158,22 @@ namespace GGUI{
         INPUT_RECORD Raw_Input[Raw_Input_Capacity];
         int Raw_Input_Size = 0;
 
+        /**
+         * @brief Checks whether STDIN is connected to an interactive Windows Console.
+         * @details When input is redirected (piped / file), GetConsoleMode will fail.
+         * @return true if STDIN is a console, otherwise false.
+         */
+        bool Is_Stdin_TTY(){
+            if (GLOBAL_STD_INPUT_HANDLE == 0)
+                GLOBAL_STD_INPUT_HANDLE = GetStdHandle(STD_INPUT_HANDLE);
+
+            if (GLOBAL_STD_INPUT_HANDLE == NULL || GLOBAL_STD_INPUT_HANDLE == INVALID_HANDLE_VALUE)
+                return false;
+
+            DWORD Mode = 0;
+            return GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &Mode) != 0;
+        }
+
         
         /**
          * @brief De-initializes the renderer by cleaning up resources and restoring console states.
@@ -180,8 +199,16 @@ namespace GGUI{
             fileStreamerHandles.clear();
 
             // Restore previous console modes
-            SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
-            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
+            {
+                DWORD Mode = 0;
+                if (GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &Mode))
+                    SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, PREVIOUS_CONSOLE_OUTPUT_STATE);
+            }
+            {
+                DWORD Mode = 0;
+                if (GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &Mode))
+                    SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, PREVIOUS_CONSOLE_INPUT_STATE);
+            }
 
             // Restore code page if it was changed
             if (Platform_State.Previous_Windows_Codepage != 0){
@@ -558,15 +585,20 @@ namespace GGUI{
             GLOBAL_STD_OUTPUT_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
             GLOBAL_STD_INPUT_HANDLE = GetStdHandle(STD_INPUT_HANDLE);
 
+            // Detect whether STDIN is a TTY. When not a TTY (e.g. piped/timeout), avoid input-specific console mode setup.
+            STDIN_IS_TTY = Is_Stdin_TTY();
+
             // Retrieve and store previous console modes for restoration upon exit.
             GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &PREVIOUS_CONSOLE_OUTPUT_STATE);
-            GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
+            if (STDIN_IS_TTY)
+                GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &PREVIOUS_CONSOLE_INPUT_STATE);
 
             // Set new console modes with extended flags, mouse, and window input enabled (preserve existing output mode flags).
             DWORD Current_Output_Mode = 0;
             GetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, &Current_Output_Mode);
             // We do not forcibly overwrite output mode with -1. Input mode is extended for mouse + window events.
-            SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_PROCESSED_INPUT);
+            if (STDIN_IS_TTY)
+                SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_PROCESSED_INPUT);
 
             // Capture previous code page and switch to UTF-8 if different.
             Platform_State.Previous_Windows_Codepage = GetConsoleOutputCP();
@@ -574,10 +606,12 @@ namespace GGUI{
                 SetConsoleOutputCP(ENABLE_UTF8_MODE_FOR_WINDOWS);
 
             // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
-            std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
-            Platform_State.Mouse_Reporting_Enabled = true;
-            std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
-            Platform_State.Cursor_Hidden = true;
+            if (STDIN_IS_TTY){
+                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+                Platform_State.Mouse_Reporting_Enabled = true;
+                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
+                Platform_State.Cursor_Hidden = true;
+            }
             std::cout.flush();
 
             // Critical error handlers.
@@ -712,8 +746,11 @@ namespace GGUI{
         unsigned char Raw_Input[Raw_Input_Capacity];
         ssize_t Raw_Input_Size = 0;
 
-        // Whether STDIN is an interactive terminal (TTY). Used to decide input setup/teardown.
-        static bool STDIN_IS_TTY = false;
+        /**
+         * @brief Checks whether STDIN is connected to an interactive terminal (TTY).
+         * @return true if STDIN is a TTY, otherwise false.
+         */
+        bool Is_Stdin_TTY(){ return (isatty(STDIN_FILENO) == 1); }
 
         /**
          * @brief De-initializes platform-specific settings and resources.
@@ -1251,7 +1288,7 @@ namespace GGUI{
                 std::cout << std::flush;
 
                 // Detect whether STDIN is a TTY. When not a TTY (e.g. piped/timeout), avoid raw mode and polling setup.
-                STDIN_IS_TTY = (isatty(STDIN_FILENO) == 1);
+                STDIN_IS_TTY = Is_Stdin_TTY();
 
                 if (STDIN_IS_TTY) {
                     // Save the current flags and take a snapshot of the flags before GGUI
@@ -1875,12 +1912,6 @@ namespace GGUI{
             //      - If host present and is onHovered: Un-hover the host element and and set it to onFocused
             //      - If host present and is onFocused: Pipe input into the event handler job task
 
-            // TODO: probably remove this and move it somewhere else
-            // Disable hovered element if the mouse isn't on top of it anymore.
-            // if (INTERNAL::Hovered_On && !Collides(INTERNAL::Hovered_On, GGUI::INTERNAL::Mouse)){
-            //     unHoverElement();
-            // }
-
             // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
             Populate_Inputs_For_Held_Down_Keys();
 
@@ -2064,11 +2095,7 @@ namespace GGUI{
             
             // Start input thread only if DRM is enabled or STDIN is a TTY (interactive).
             std::unique_ptr<std::thread> Inquire_Scheduler_ptr;
-            if (SETTINGS::enableDRM
-                #if !_WIN32
-                || STDIN_IS_TTY
-                #endif
-            ){
+            if (SETTINGS::enableDRM || STDIN_IS_TTY){
                 Inquire_Scheduler_ptr = std::make_unique<std::thread>([](){
                     INTERNAL::LOGGER::registerCurrentThread();
                     INTERNAL::inputThread();
