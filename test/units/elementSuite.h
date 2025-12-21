@@ -38,8 +38,8 @@ namespace tester {
 
         static void test_default_construction(){
             GGUI::element e; // root-like element (no parent)
-            ASSERT_EQ((unsigned)1, e.getWidth());
-            ASSERT_EQ((unsigned)1, e.getHeight());
+            ASSERT_EQ(1, e.getWidth());
+            ASSERT_EQ(1, e.getHeight());
             ASSERT_FLOAT_EQ(1.0f, e.getOpacity(), 0.0001f);
             ASSERT_TRUE(e.isDisplayed());
             ASSERT_FALSE(e.hasBorder());
@@ -49,17 +49,17 @@ namespace tester {
         static void test_dimensions_set(){
             GGUI::element e;
             e.setDimensions(5,4);
-            ASSERT_EQ((unsigned)5, e.getWidth());
-            ASSERT_EQ((unsigned)4, e.getHeight());
+            ASSERT_EQ(5, e.getWidth());
+            ASSERT_EQ(4, e.getHeight());
             ASSERT_TRUE(hasFlag(&e, GGUI::INTERNAL::STAIN_TYPE::STRETCH) || hasFlag(&e, GGUI::INTERNAL::STAIN_TYPE::COLOR)); // fullyStain sets multiple
         }
 
         static void test_individual_width_height(){
             GGUI::element e; 
             e.setWidth(7);
-            ASSERT_EQ((unsigned)7, e.getWidth());
+            ASSERT_EQ(7, e.getWidth());
             e.setHeight(9);
-            ASSERT_EQ((unsigned)9, e.getHeight());
+            ASSERT_EQ(9, e.getHeight());
         }
 
         // static void test_position_and_absolute(){
@@ -101,7 +101,7 @@ namespace tester {
             parent.addChild(c1);
             parent.addChild(c2);
             ASSERT_EQ((size_t)2, parent.getChilds().size());
-            bool ok = parent.remove(0u);
+            bool ok = parent.remove(static_cast<size_t>(0));
             ASSERT_TRUE(ok);
             ASSERT_EQ((size_t)1, parent.getChilds().size());
         }
@@ -131,8 +131,8 @@ namespace tester {
             GGUI::element parent; parent.setDimensions(1,1); parent.allowDynamicSize(false);
             auto child = new GGUI::element(); child->setDimensions(6,4);
             parent.addChild(child);
-            ASSERT_EQ((unsigned)1, parent.getWidth());
-            ASSERT_EQ((unsigned)1, parent.getHeight());
+            ASSERT_EQ(1, parent.getWidth());
+            ASSERT_EQ(1, parent.getHeight());
         }
 
         static void test_overflow_and_wrap_flags(){

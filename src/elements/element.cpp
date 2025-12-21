@@ -740,7 +740,7 @@ bool GGUI::element::isDisplayed(){
  * @param index The index of the element to remove.
  * @return True if the element was successfully removed, false otherwise.
  */
-bool GGUI::element::remove(unsigned int index){
+bool GGUI::element::remove(size_t index){
     if (index > Style->Childs.size() - 1){
         return false;
     }
@@ -789,7 +789,7 @@ void GGUI::element::remove(){
  * @param width The new width of the element.
  * @param height The new height of the element.
  */
-void GGUI::element::setDimensions(unsigned int width, unsigned int height){
+void GGUI::element::setDimensions(int width, int height){
     if (width != getWidth() || height != getHeight()){
         setWidth(width);
         setHeight(height);
@@ -803,7 +803,7 @@ void GGUI::element::setDimensions(unsigned int width, unsigned int height){
  *          The Update_Frame() function is also called to update the frame.
  * @param width The new width of the element.
  */
-void GGUI::element::setWidth(unsigned int width){
+void GGUI::element::setWidth(int width){
     if (width != getWidth()){
         Style->Width.Set(width);
         // Set the STRETCH stain if the width is changed
@@ -820,7 +820,7 @@ void GGUI::element::setWidth(unsigned int width){
  *          The Update_Frame() function is also called to update the frame.
  * @param height The new height of the element.
  */
-void GGUI::element::setHeight(unsigned int height){
+void GGUI::element::setHeight(int height){
     if (height != getHeight()){
         Style->Height.Set(height);
         // Set the STRETCH stain if the height is changed
@@ -1002,11 +1002,11 @@ void GGUI::element::embedStyles(){
  * @param child The child element for which the fitting dimensions are calculated.
  * @return A pair containing the width and height of the fitting dimensions.
  */
-std::pair<unsigned int, unsigned int> GGUI::element::getFittingDimensions(element* child) {
+std::pair<int, int> GGUI::element::getFittingDimensions(element* child) {
     IVector3 Current_Position = child->getPosition();
 
-    unsigned int Result_Width = 0;
-    unsigned int Result_Height = 0;
+    int Result_Width = 0;
+    int Result_Height = 0;
 
     int Border_Offset = hasBorder() != child->hasBorder() && hasBorder() ? 1 * 2 : 0;
 
@@ -1410,14 +1410,14 @@ void GGUI::element::computeDynamicSize(){
             int Enable_Height_Modification = (c->getHeightType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && getHeightType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE) ? 1 : 0; // Enable checking height if the height attribute type is an relative one
 
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = (unsigned int)GGUI::INTERNAL::Max(
-                (c->Style->Position.get().x + (signed int)c->getWidth() + Border_Offset) * Enable_Width_Modification,
-                (signed int)getWidth()
+            int New_Width = GGUI::INTERNAL::Max(
+                (c->Style->Position.get().x + c->getWidth() + Border_Offset) * Enable_Width_Modification,
+                getWidth()
             );
 
-            unsigned int New_Height = (unsigned int)GGUI::INTERNAL::Max(
-                (c->Style->Position.get().y + (signed int)c->getHeight() + Border_Offset) * Enable_Height_Modification,
-                (signed int)getHeight()
+            int New_Height = GGUI::INTERNAL::Max(
+                (c->Style->Position.get().y + c->getHeight() + Border_Offset) * Enable_Height_Modification,
+                getHeight()
             );
 
             // but only update those who actually allow dynamic sizing.
@@ -1530,7 +1530,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
     if (Enable_Ellipsis){
         unsigned int Ellipsis_Offset = Writable_Length + Horizontal_Offset;
         for (unsigned int x = 0; x < Ellipsis.size; x++){
-            if (Ellipsis_Offset + x < getWidth()){
+            if ((int64_t)(Ellipsis_Offset + x) < (int64_t)getWidth()){
                 Result[Ellipsis_Offset + x] = UTF(Ellipsis[x], composeAllTextRGBvalues());
             }
         }
@@ -1539,7 +1539,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
 
 inline bool Is_In_Bounds(GGUI::IVector3 index, GGUI::element* parent){
     // checks if the index is out of bounds
-    if (index.x < 0 || index.y < 0 || index.x >= (signed)parent->getWidth() || index.y >= (signed)parent->getHeight())
+    if (index.x < 0 || index.y < 0 || index.x >= parent->getWidth() || index.y >= parent->getHeight())
         return false;
 
     return true;
@@ -1584,19 +1584,19 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
     // First calculate if the child is outside the parent.
     if (
-        B->Style->Position.get().x + (signed)B->getWidth() < A->Style->Position.get().x ||
-        B->Style->Position.get().x > A->Style->Position.get().x + (signed)A->getWidth() ||
-        B->Style->Position.get().y + (signed)B->getHeight() < A->Style->Position.get().y ||
-        B->Style->Position.get().y > A->Style->Position.get().y + (signed)A->getHeight()
+        B->Style->Position.get().x + B->getWidth() < A->Style->Position.get().x ||
+        B->Style->Position.get().x > A->Style->Position.get().x + A->getWidth() ||
+        B->Style->Position.get().y + B->getHeight() < A->Style->Position.get().y ||
+        B->Style->Position.get().y > A->Style->Position.get().y + A->getHeight()
     )
         return;
 
     // Now calculate if the child is inside the parent.
     if (
         B->Style->Position.get().x > A->Style->Position.get().x &&
-        B->Style->Position.get().x + (signed)B->getWidth() < A->Style->Position.get().x + (signed)A->getWidth() &&
+        B->Style->Position.get().x + B->getWidth() < A->Style->Position.get().x + A->getWidth() &&
         B->Style->Position.get().y > A->Style->Position.get().y &&
-        B->Style->Position.get().y + (signed)B->getHeight() < A->Style->Position.get().y + (signed)A->getHeight()
+        B->Style->Position.get().y + B->getHeight() < A->Style->Position.get().y + A->getHeight()
     )
         return;
 
@@ -1609,8 +1609,8 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
         
         B->Style->Position.get().x,
         A->Style->Position.get().x,
-        B->Style->Position.get().x + (int)B->getWidth() - 1,
-        A->Style->Position.get().x + (int)A->getWidth() - 1,
+        B->Style->Position.get().x + B->getWidth() - 1,
+        A->Style->Position.get().x + A->getWidth() - 1,
 
                 
         // A->Style->Position.Get().X,
@@ -1623,9 +1623,9 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
     std::vector<int> Horizontal_Line_Y_Coordinates = {
         
         A->Style->Position.get().y,
-        B->Style->Position.get().y + (int)B->getHeight() - 1,
+        B->Style->Position.get().y + B->getHeight() - 1,
         A->Style->Position.get().y,
-        B->Style->Position.get().y + (int)B->getHeight() - 1,
+        B->Style->Position.get().y + B->getHeight() - 1,
 
         // B->Position.Y,
         // A->Position.Y + A->Height - 1,
@@ -1637,7 +1637,7 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
     std::vector<IVector3> Crossing_Indicies;
 
     // Go through singular box
-    for (unsigned int Box_Index = 0; Box_Index < Horizontal_Line_Y_Coordinates.size(); Box_Index++){
+    for (size_t Box_Index = 0; Box_Index < Horizontal_Line_Y_Coordinates.size(); Box_Index++){
         // Now just pair the indicies from the two lists.
         Crossing_Indicies.push_back(
             // First pair
@@ -2006,8 +2006,8 @@ bool GGUI::element::childIsShown(element* other){
     int Maximum_Y = other->Style->Position.get().y;
 
     // Check if the child element is visible within the bounds of the parent
-    bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < (signed)getWidth() - Border_Modifier;
-    bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < (signed)getHeight() - Border_Modifier;
+    bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < getWidth() - Border_Modifier;
+    bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < getHeight() - Border_Modifier;
 
     // Return true if the child element is visible within the bounds of the parent
     return X_Is_Inside && Y_Is_Inside;

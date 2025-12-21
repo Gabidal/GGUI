@@ -149,7 +149,7 @@ void GGUI::listView::addChild(element* e) {
  *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
  * @param Starting_Offset The starting offset into the child array.
  */
-void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
+void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
     // If the childs are already clean then there is nothing to do here
     if (Dirty.Type == INTERNAL::STAIN_TYPE::CLEAN || Style->Childs.size() == 0)
         return;
@@ -157,16 +157,16 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
     // Out mission is quite similar to the Remove(Element* c) like behaviour.
     // Since there are two different flow directions we need to slice the code into 2 separate algorithms.
     element* Current = Style->Childs[Starting_Offset];
-    unsigned int Max_Width = Current->getWidth();
-    unsigned int Max_Height = Current->getHeight();
+    int Max_Width = Current->getWidth();
+    int Max_Height = Current->getHeight();
 
     if (Style->Flow_Priority.value == DIRECTION::ROW){
 
-        for (unsigned int i = Starting_Offset + 1; i < Style->Childs.size(); i++){
+        for (size_t i = Starting_Offset + 1; i < Style->Childs.size(); i++){
             element* Next = Style->Childs[i];
 
             // Affect minimum width needed, when current child has borders as well as the previous one.
-            signed int Width_Modifier = Next->hasBorder() & Current->hasBorder();
+            int Width_Modifier = Next->hasBorder() & Current->hasBorder();
 
             Next->setPosition({Current->getPosition().x + Current->getWidth() - Width_Modifier, Next->getPosition().y, Next->getPosition().z});
 
@@ -177,11 +177,11 @@ void GGUI::listView::calculateChildsHitboxes(unsigned int Starting_Offset){
         }
     }
     else{
-        for (unsigned int i = Starting_Offset + 1; i < Style->Childs.size(); i++){
+        for (size_t i = Starting_Offset + 1; i < Style->Childs.size(); i++){
             element* Next = Style->Childs[i];
 
             // Affect minimum height needed, when current child has borders as well as the previous one.
-            signed int Height_Modifier = Next->hasBorder() & Current->hasBorder();
+            int Height_Modifier = Next->hasBorder() & Current->hasBorder();
 
             Next->setPosition({Next->getPosition().x, Current->getPosition().y + Current->getHeight() - Height_Modifier, Next->getPosition().z});
 
@@ -236,12 +236,11 @@ bool GGUI::listView::remove(element* remove){
         // now sadly we need to branch the code into the vertical and horizontal calculations.
         if (Style->Flow_Priority.value == DIRECTION::ROW){
             // represents the horizontal list
-            unsigned int Gap = remove->getWidth();
-
-            unsigned int New_Stretched_Height = 0;
+            int Gap = remove->getWidth();
+            int New_Stretched_Height = 0;
 
             // all elements after the index, need to be removed from their x position the gap value.
-            for (unsigned int i = Index + 1; i < Style->Childs.size(); i++){
+            for (size_t i = Index + 1; i < Style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
                 Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().x - Gap, Style->Childs[i]->getPosition().y});
 
@@ -257,12 +256,11 @@ bool GGUI::listView::remove(element* remove){
         }   
         else{
             // represents the vertical list
-            unsigned int Gap = remove->getHeight();
-
-            unsigned int New_Stretched_Width = 0;
+            int Gap = remove->getHeight();
+            int New_Stretched_Width = 0;
 
             // all elements after the index, need to be removed from their y position the gap value.
-            for (unsigned int i = Index + 1; i < Style->Childs.size(); i++){
+            for (size_t i = Index + 1; i < Style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
                 Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().x, Style->Childs[i]->getPosition().y - Gap});
 

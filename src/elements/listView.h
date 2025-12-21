@@ -137,7 +137,7 @@ namespace GGUI{
          *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
          * @param Starting_Offset The starting offset into the child array.
          */
-        void calculateChildsHitboxes(unsigned int Starting_Offset = 0) override;
+        void calculateChildsHitboxes(size_t Starting_Offset = 0) override;
 
         /**
          * @brief Retrieves the dimension limits of the list view.

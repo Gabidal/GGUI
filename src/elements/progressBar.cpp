@@ -58,7 +58,7 @@ namespace GGUI{
          * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
          */
         void Bar::colorBar(){
-            if (Content.empty() || Content.size() != getWidth() - hasBorder() * 2){
+            if (Content.empty() || (signed)Content.size() != getWidth() - hasBorder() * 2){
                 // Resize the content to fit the width of the progress bar minus the borders
                 Content.clear();
                 Content.resize(getWidth() - hasBorder() * 2, UTF(Body, { Empty_Color, getBackgroundColor() }));

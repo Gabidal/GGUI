@@ -110,6 +110,10 @@ if [ -d "./build-release" ]; then
     echo "Removing existing build-release directory..."
     rm -rf ./build-release
 fi
+if [ -d "./build-profile" ]; then
+    echo "Removing existing build-profile directory..."
+    rm -rf ./build-profile
+fi
 if [ -d "./build-win" ]; then
     echo "Removing existing build-win directory..."
     rm -rf ./build-win

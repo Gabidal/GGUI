@@ -2161,17 +2161,17 @@ namespace GGUI{
 
             int i = 0;
             // Iterate over the parent buffer and copy the text buffer into the parent buffer at the correct position.
-            for (int Parent_Y = 0; Parent_Y < (signed)Parent->getHeight(); Parent_Y++)
+            for (int Parent_Y = 0; Parent_Y < Parent->getHeight(); Parent_Y++)
             {
-                for (int Parent_X = 0; Parent_X < (signed)Parent->getWidth(); Parent_X++)
+                for (int Parent_X = 0; Parent_X < Parent->getWidth(); Parent_X++)
                 {
                     if (
                         Parent_Y >= C.y && Parent_X >= C.x &&
-                        Parent_Y <= C.y + (signed)child->getHeight() &&
-                        Parent_X <= C.x + (signed)child->getWidth()
+                        Parent_Y <= C.y + child->getHeight() &&
+                        Parent_X <= C.x + child->getWidth()
                     )
                     {
-                        Parent_Buffer[Parent_Y * (signed)Parent->getWidth() + Parent_X] = Text[i++];
+                        Parent_Buffer[Parent_Y * Parent->getWidth() + Parent_X] = Text[i++];
                     }
                 }
             }

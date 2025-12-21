@@ -234,8 +234,8 @@ namespace GGUI{
 
     class IVector2{
     public:
-        short x = 0;  //Horizontal
-        short y = 0;  //Vertical
+        int x = 0;  //Horizontal
+        int y = 0;  //Vertical
 
         /**
          * @brief Default constructor
@@ -245,7 +245,7 @@ namespace GGUI{
          * @param x The x-coordinate. Default is 0.
          * @param y The y-coordinate. Default is 0.
          */
-        constexpr IVector2(short X = 0, short Y = 0) noexcept : x(X), y(Y) {}
+        constexpr IVector2(int X = 0, int Y = 0) noexcept : x(X), y(Y) {}
 
         /**
          * @brief Copy constructor
@@ -303,8 +303,8 @@ namespace GGUI{
          * @param other The FVector2 to add.
          */
         constexpr void operator+=(FVector2 other) noexcept {
-            x += static_cast<short>(other.x);
-            y += static_cast<short>(other.y);
+            x += static_cast<int>(other.x);
+            y += static_cast<int>(other.y);
         }
 
         /**
@@ -352,7 +352,7 @@ namespace GGUI{
          * @return A new IVector2 with the multiplied float.
          */
         constexpr IVector2 operator*(float num) const noexcept {
-            return IVector2(static_cast<short>(x * num), static_cast<short>(y * num)); // Multiply each coordinate by num
+            return IVector2(static_cast<int>(x * num), static_cast<int>(y * num)); // Multiply each coordinate by num
         }
 
         /**
@@ -393,7 +393,7 @@ namespace GGUI{
 
     class IVector3 : public IVector2{
     public:
-        short z = 0;  //priority (the higher the more likely it will be at top).
+        int z = 0;  //priority (the higher the more likely it will be at top).
 
         /**
          * @brief Default constructor
@@ -404,7 +404,7 @@ namespace GGUI{
          * @param y The y-coordinate. Default is 0.
          * @param z The z-coordinate. Default is 0.
          */
-        constexpr IVector3(short X = 0, short Y = 0, short Z = 0) noexcept : IVector2(X, Y), z(Z) {}
+        constexpr IVector3(int X = 0, int Y = 0, int Z = 0) noexcept : IVector2(X, Y), z(Z) {}
 
         /**
          * @brief Copy constructor
@@ -504,7 +504,7 @@ namespace GGUI{
          * @return A new IVector3 with the multiplied float.
          */
         constexpr IVector3 operator*(float num) const noexcept {
-            return IVector3(x * num, y * num, z * num); // Multiply each coordinate by num
+            return IVector3(static_cast<int>(x * num), static_cast<int>(y * num), static_cast<int>(z * num)); // Multiply each coordinate by num
         }
 
         /**

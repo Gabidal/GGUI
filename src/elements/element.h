@@ -391,7 +391,7 @@ namespace GGUI{
          * @param index The index of the element to remove.
          * @return True if the element was successfully removed, false otherwise.
          */
-        virtual bool remove(unsigned int index);
+        virtual bool remove(size_t index);
 
         /**
          * @brief Set the width and height of the element.
@@ -401,21 +401,21 @@ namespace GGUI{
          * @param width The new width of the element.
          * @param height The new height of the element.
          */
-        void setDimensions(unsigned int width, unsigned int height);
+        void setDimensions(int width, int height);
 
         /**
          * @brief Get the width of the element.
          * @details This function returns the width of the element.
          * @return The width of the element.
          */
-        constexpr unsigned int getWidth(){ return Style->Width.get(); }
+        constexpr int getWidth(){ return Style->Width.get(); }
 
         /**
          * @brief Get the height of the element.
          * @details This function returns the height of the element.
          * @return The height of the element.
          */
-        constexpr unsigned int getHeight() { return Style->Height.get(); }
+        constexpr int getHeight() { return Style->Height.get(); }
 
         /**
          * @brief Set the width of the element.
@@ -424,7 +424,7 @@ namespace GGUI{
          *          The Update_Frame() function is also called to update the frame.
          * @param width The new width of the element.
          */
-        void setWidth(unsigned int width);
+        void setWidth(int width);
 
         /**
          * @brief Set the height of the element.
@@ -433,7 +433,7 @@ namespace GGUI{
          *          The Update_Frame() function is also called to update the frame.
          * @param height The new height of the element.
          */
-        void setHeight(unsigned int height);
+        void setHeight(int height);
 
         /**
          * @brief Retrieves the evaluation type of the width property.
@@ -1337,7 +1337,7 @@ namespace GGUI{
          * @param child The child element for which the fitting dimensions are calculated.
          * @return A pair containing the width and height of the fitting dimensions.
          */
-        std::pair<unsigned int, unsigned int> getFittingDimensions(element* child);
+        std::pair<int, int> getFittingDimensions(element* child);
 
         /**
          * @brief Calculates the hitboxes of all child elements of the element.
@@ -1349,7 +1349,7 @@ namespace GGUI{
          * @param Starting_Offset The starting offset into the child array. If no argument is provided,
          *                         the function starts at the beginning of the child array.
          */
-        virtual void calculateChildsHitboxes([[maybe_unused]] unsigned int Starting_Offset = 0) {}
+        virtual void calculateChildsHitboxes([[maybe_unused]] size_t Starting_Offset = 0) {}
 
         /** 
          * @brief Marks the Element as fully dirty by setting all stain types.

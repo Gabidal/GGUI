@@ -14,8 +14,8 @@ int main()
             onRender([](element* self) {
                 canvas* actualSelf = dynamic_cast<canvas*>(self);
 
-                for (unsigned int y = 0; y < actualSelf->getHeight(); y++) {
-                    for (unsigned int x = 0; x < actualSelf->getWidth(); x++) {
+                for (int y = 0; y < actualSelf->getHeight(); y++) {
+                    for (int x = 0; x < actualSelf->getWidth(); x++) {
                         // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
                         GGUI::sprite initialSprite(
                             {
@@ -43,8 +43,8 @@ int main()
             onRender([](element* self) {
                 canvas* actualSelf = dynamic_cast<canvas*>(self);
 
-                for (unsigned int y = 0; y < actualSelf->getHeight(); y++) {
-                    for (unsigned int x = 0; x < actualSelf->getWidth(); x++) {
+                for (int y = 0; y < actualSelf->getHeight(); y++) {
+                    for (int x = 0; x < actualSelf->getWidth(); x++) {
                         // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
                         GGUI::sprite initialSprite(UTF(
                             "🗲",   // <-- Unicode characters are supported, but don't use too wide ones, since they currently break GGUI.
@@ -68,8 +68,8 @@ int main()
             onRender([](element* self) {
                 canvas* actualSelf = dynamic_cast<canvas*>(self);
 
-                for (unsigned int y = 0; y < actualSelf->getHeight(); y++) {
-                    for (unsigned int x = 0; x < actualSelf->getWidth(); x++) {
+                for (int y = 0; y < actualSelf->getHeight(); y++) {
+                    for (int x = 0; x < actualSelf->getWidth(); x++) {
                         // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
                         GGUI::sprite initialSprite(
                             {
