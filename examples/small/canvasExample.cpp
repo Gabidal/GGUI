@@ -92,8 +92,7 @@ int main()
             })
         ))
     );
-
-    while (true) {
-        // ... 
-    }
+    
+    // Your program...
+    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
 }

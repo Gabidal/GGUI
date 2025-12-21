@@ -326,11 +326,14 @@ parse_common_options() {
       type=debug|--type=debug|-t=debug|debug)
         BUILD_TYPE="debug"
         ;;
+      type=profile|--type=profile|-t=profile|profile)
+        BUILD_TYPE="profile"
+        ;;
       --type|-t)
         # Look ahead for the next value
         if [[ $((i+1)) -lt ${#ARGS[@]} ]]; then
           local next="${ARGS[$((i+1))]}"
-          if [[ "$next" == "release" || "$next" == "debug" ]]; then
+          if [[ "$next" == "release" || "$next" == "debug" || "$next" == "profile" ]]; then
             BUILD_TYPE="$next"
             i=$((i+1))
           fi

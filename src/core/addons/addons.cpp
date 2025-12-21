@@ -139,7 +139,7 @@ namespace GGUI{
             )) | 
 
             // Hide the inspect tool by default
-            // display(false) | 
+            display(false) | 
 
             onInit([](element* self){
                 // Register an event handler to toggle the inspect tool on and off

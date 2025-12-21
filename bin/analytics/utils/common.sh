@@ -201,7 +201,7 @@ ensure_executable() {
 # Compiles the Meson build for the requested type using meson compile -C <dir>.
 #
 # Arguments:
-#   $1 - build type: "debug" (default) or "release"
+#   $1 - build type: "debug" (default) or "release" or "profile"
 #
 # Usage:
 #   compile_meson_build "release"
@@ -213,6 +213,8 @@ compile_meson_build() {
     local build_dir="$current_dir/build"
     if [[ "$build_type" == "release" ]]; then
         build_dir="$current_dir/build-release"
+    elif [[ "$build_type" == "profile" ]]; then
+        build_dir="$current_dir/build-profile"
     fi
     log_info "Compiling ${build_type} build at ${build_dir}"
     meson compile -C "${build_dir}" || handle_error "Build failed for ${build_type} (${build_dir})"
@@ -232,6 +234,8 @@ get_build_dir_for_type() {
     base_dir=$(pwd)
     if [[ "$build_type" == "release" ]]; then
         echo "$base_dir/build-release"
+    elif [[ "$build_type" == "profile" ]]; then
+        echo "$base_dir/build-profile"
     else
         echo "$base_dir/build"
     fi

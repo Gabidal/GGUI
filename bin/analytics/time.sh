@@ -54,15 +54,6 @@ while [[ $i -lt ${#ARGS[@]} ]]; do
                 handle_error "--emit-callgrind-prefix requires a value"
             fi
             ;;
-        -h|--help|--h|-help)
-            show_help
-            ;;
-        --type|-t|--type=*|-t=*)
-            # handled by parse_common_options; skip
-            ;;
-        release|debug|type=release|type=debug|-t=release|-t=debug|--type=release|--type=debug)
-            # already handled by parse_common_options; skip these tokens
-            ;;
         *)
             if [[ "$arg" =~ ^[0-9]+$ ]]; then
                 NUM_ARGS+=("$arg")

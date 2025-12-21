@@ -1045,7 +1045,7 @@ namespace GGUI{
             }
 
             // For types of int and float, we can use basic std::fmod
-            if constexpr (std::is_same_v<P, float> || std::is_same_v<P, int> || std::is_same_v<P, unsigned char> || std::is_same_v<P, unsigned int>){
+            if constexpr (std::is_integral<P>() || std::is_floating_point<P>()){
                 return hasLeftover<P>(value, scalar);
             }
             else if constexpr (std::is_same_v<P, RGB>){
@@ -1080,7 +1080,7 @@ namespace GGUI{
                 // These are already strings
                 return value;
             }
-            else if constexpr (std::is_same_v<P, float> || std::is_same_v<P, int> || std::is_same_v<P, unsigned char> || std::is_same_v<P, unsigned int>){
+            else if constexpr (std::is_integral<P>() || std::is_floating_point<P>()){
                 return std::to_string(value);
             }
             else if constexpr (std::is_same_v<P, RGB>){

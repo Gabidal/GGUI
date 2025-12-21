@@ -27,6 +27,15 @@ else
 	meson setup --reconfigure "${BUILD_DIR}" "${SOURCE_DIR}"
 fi
 
+# extra step) initialize profiling artifacts for potential benchmarking session :)
+PROFILE_DIR="${SOURCE_DIR}/build-profile"
+log "initializing profiling artifacts"
+if [ ! -d "${PROFILE_DIR}" ]; then
+	meson setup "${PROFILE_DIR}" "${SOURCE_DIR}" -Dbuildtype=debugoptimized
+else
+	meson setup --reconfigure "${PROFILE_DIR}" "${SOURCE_DIR}" -Dbuildtype=debugoptimized
+fi
+
 # 2) Run Meson tests (will also build dependencies like header/lib if needed)
 log "running tests"
 if ! meson test -C "${BUILD_DIR}" -v --print-errorlogs; then
