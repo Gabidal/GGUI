@@ -23,6 +23,7 @@ namespace GGUI{
             // 1 to USE_RGB
             // 1 to SEPARATE
             constexpr unsigned int maximumNeededPreAllocationForOverHead = 1 + 1 + 1 + 1 + 1;
+            // constexpr unsigned int maximumNeededPreAllocationForOverHead = 1;
 
             // 1 to Red
             // 1 to SEPARATE

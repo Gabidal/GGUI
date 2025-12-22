@@ -99,14 +99,18 @@ namespace GGUI {
              * @return superString<mapSize> View writing into internal storage.
              */
             template<std::size_t mapSize>
-            superString<mapSize> getWindow() {
+            void getWindow(superString<mapSize>& result) {
                 if (size + mapSize > capacity) {
                     resize(size + mapSize);
                 }
 
                 compactString* view = reinterpret_cast<compactString*>(rawBuffer + size * sizeof(T));
 
-                return superString<mapSize>(view);
+                result.remap(
+                    view,
+                    0,
+                    0
+                );
             }
 
             /**

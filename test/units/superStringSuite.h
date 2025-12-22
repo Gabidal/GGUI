@@ -11,14 +11,14 @@ namespace tester {
         superStringSuite() : utils::TestSuite("super string tester") {
             add_test("compact_default_constructor", "Default constructed compactString is empty (size 0)", [](){
                 GGUI::INTERNAL::compactString cs; // size should be 0
-                ASSERT_EQ(0u, cs.size);
+                ASSERT_EQ((size_t)0, cs.size);
                 ASSERT_TRUE(cs.empty());
             });
 
             add_test("compact_char_ptr_empty", "Construct from empty C-string becomes ASCII with \\0", [](){
                 const char* empty = ""; // length 0 -> stored as ASCII '\\0'
                 GGUI::INTERNAL::compactString cs(empty);
-                ASSERT_EQ(1u, cs.size); // implementation sets to 1 via setAscii('\\0')
+                ASSERT_EQ((size_t)1, cs.size); // implementation sets to 1 via setAscii('\\0')
                 ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
                 ASSERT_EQ('\0', cs.getAscii());
             });
@@ -26,7 +26,7 @@ namespace tester {
             add_test("compact_char_ptr_single", "Single char C-string stored as ASCII", [](){
                 const char* one = "A";
                 GGUI::INTERNAL::compactString cs(one);
-                ASSERT_EQ(1u, cs.size);
+                ASSERT_EQ((size_t)1, cs.size);
                 ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
                 ASSERT_EQ('A', cs.getAscii());
                 ASSERT_TRUE(cs.is('A'));
@@ -36,7 +36,7 @@ namespace tester {
             add_test("compact_char_ptr_multi", "Multi char C-string stored as unicode pointer", [](){
                 const char* word = "Hello";
                 GGUI::INTERNAL::compactString cs(word);
-                ASSERT_EQ(5u, cs.size);
+                ASSERT_EQ((size_t)5, cs.size);
                 ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
                 ASSERT_TRUE(cs.is("Hello"));
                 ASSERT_EQ('H', cs[0]);
@@ -45,7 +45,7 @@ namespace tester {
 
             add_test("compact_char_constructor", "Single char constructor", [](){
                 GGUI::INTERNAL::compactString cs('Z');
-                ASSERT_EQ(1u, cs.size);
+                ASSERT_EQ((size_t)1, cs.size);
                 ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
                 ASSERT_EQ('Z', cs.getAscii());
             });
@@ -53,7 +53,7 @@ namespace tester {
             add_test("compact_explicit_size_unicode", "Explicit size constructor chooses unicode when size>1", [](){
                 const char* txt = "Hi";
                 GGUI::INTERNAL::compactString cs(txt, 2);
-                ASSERT_EQ(2u, cs.size);
+                ASSERT_EQ((size_t)2, cs.size);
                 ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
                 ASSERT_TRUE(cs.is("Hi"));
             });
@@ -61,7 +61,7 @@ namespace tester {
             add_test("compact_force_unicode_small", "Force unicode with size 1", [](){
                 const char* txt = "X"; // size parameter 1, force unicode
                 GGUI::INTERNAL::compactString cs(txt, 1, true);
-                ASSERT_EQ(1u, cs.size); // overridden to Size
+                ASSERT_EQ((size_t)1, cs.size); // overridden to Size
                 ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
                 ASSERT_EQ('X', cs[0]);
             });
@@ -77,12 +77,12 @@ namespace tester {
 
             add_test("compact_setters", "setAscii and setUnicode adjust size", [](){
                 GGUI::INTERNAL::compactString cs('A');
-                ASSERT_EQ(1u, cs.size);
+                ASSERT_EQ((size_t)1, cs.size);
                 cs.setAscii('B');
-                ASSERT_EQ(1u, cs.size);
+                ASSERT_EQ((size_t)1, cs.size);
                 ASSERT_EQ('B', cs.getAscii());
                 cs.setUnicode("Hello");
-                ASSERT_EQ(5u, cs.size);
+                ASSERT_EQ((size_t)5, cs.size);
                 ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
             });
 
@@ -99,24 +99,24 @@ namespace tester {
             // superString tests
             add_test("super_default_constructor", "superString default empty", [](){
                 GGUI::INTERNAL::superString<8> ss;
-                ASSERT_EQ(0u, ss.currentIndex);
-                ASSERT_EQ(0u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)0, ss.currentIndex);
+                ASSERT_EQ((size_t)0, ss.liquefiedSize);
             });
 
             add_test("super_add_char", "Adding chars increments size and liquefiedSize", [](){
                 GGUI::INTERNAL::superString<8> ss;
                 ss.add('A');
                 ss.add('B');
-                ASSERT_EQ(2u, ss.currentIndex);
-                ASSERT_EQ(2u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)2, ss.currentIndex);
+                ASSERT_EQ((size_t)2, ss.liquefiedSize);
                 ASSERT_EQ(std::string("AB"), ss.toString());
             });
 
             add_test("super_add_cstring", "Adding C-string with size", [](){
                 GGUI::INTERNAL::superString<8> ss;
                 ss.add("Hi", 2);
-                ASSERT_EQ(1u, ss.currentIndex);
-                ASSERT_EQ(2u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)1, ss.currentIndex);
+                ASSERT_EQ((size_t)2, ss.liquefiedSize);
                 ASSERT_EQ(std::string("Hi"), ss.toString());
             });
 
@@ -124,8 +124,8 @@ namespace tester {
                 GGUI::INTERNAL::superString<8> ss;
                 GGUI::INTERNAL::compactString cs("Hello");
                 ss.add(cs);
-                ASSERT_EQ(1u, ss.currentIndex);
-                ASSERT_EQ(5u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)1, ss.currentIndex);
+                ASSERT_EQ((size_t)5, ss.liquefiedSize);
                 ASSERT_EQ(std::string("Hello"), ss.toString());
             });
 
@@ -134,15 +134,15 @@ namespace tester {
                 ss.add("Hi", 2); // unicode
                 ss.add(' ');
                 ss.add("World", 5);
-                ASSERT_EQ(3u, ss.currentIndex);
-                ASSERT_EQ(2u + 1u + 5u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)3, ss.currentIndex);
+                ASSERT_EQ((size_t)2 + 1 + 5, ss.liquefiedSize);
                 ASSERT_EQ(std::string("Hi World"), ss.toString());
             });
 
             add_test("super_initializer_list", "Initializer list constructor", [](){
                 GGUI::INTERNAL::superString<5> ss{ GGUI::INTERNAL::compactString("A"), GGUI::INTERNAL::compactString("BC"), GGUI::INTERNAL::compactString('D') };
-                ASSERT_EQ(3u, ss.currentIndex);
-                ASSERT_EQ(1u + 2u + 1u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)3, ss.currentIndex);
+                ASSERT_EQ((size_t)1 + 2 + 1, ss.liquefiedSize);
                 ASSERT_EQ(std::string("ABCD"), ss.toString());
             });
 
@@ -150,8 +150,8 @@ namespace tester {
                 GGUI::INTERNAL::superString<8> a; a.add("Hi",2); a.add(' ');
                 GGUI::INTERNAL::superString<8> b; b.add("There",5);
                 a.add(b);
-                ASSERT_EQ(3u, a.currentIndex);
-                ASSERT_EQ(2u + 1u + 5u, a.liquefiedSize);
+                ASSERT_EQ((size_t)3, a.currentIndex);
+                ASSERT_EQ((size_t)2 + 1 + 5, a.liquefiedSize);
                 ASSERT_EQ(std::string("Hi There"), a.toString());
             });
 
@@ -159,16 +159,16 @@ namespace tester {
                 GGUI::INTERNAL::superString<8> a; a.add('X');
                 GGUI::INTERNAL::superString<8> b; b.add('Y'); b.add('Z');
                 a.add(&b);
-                ASSERT_EQ(3u, a.currentIndex);
-                ASSERT_EQ(3u, a.liquefiedSize);
+                ASSERT_EQ((size_t)3, a.currentIndex);
+                ASSERT_EQ((size_t)3, a.liquefiedSize);
                 ASSERT_EQ(std::string("XYZ"), a.toString());
             });
 
             add_test("super_clear", "clear resets indices and allows reuse", [](){
                 GGUI::INTERNAL::superString<8> ss; ss.add('A'); ss.add('B');
                 ss.clear();
-                ASSERT_EQ(0u, ss.currentIndex);
-                ASSERT_EQ(0u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)0, ss.currentIndex);
+                ASSERT_EQ((size_t)0, ss.liquefiedSize);
                 ss.add('C');
                 ASSERT_EQ(std::string("C"), ss.toString());
             });
@@ -180,8 +180,8 @@ namespace tester {
                 ss.data[ss.currentIndex++] = GGUI::INTERNAL::compactString(); // size=0
                 ss.add('B');
                 // liquefiedSize counts all adds including later ones
-                ASSERT_EQ(3u, ss.currentIndex);
-                ASSERT_EQ(1u + 0u + 1u, ss.liquefiedSize); // second added size 0, third size 1
+                ASSERT_EQ((size_t)3, ss.currentIndex);
+                ASSERT_EQ((size_t)1 + 0 + 1, ss.liquefiedSize); // second added size 0, third size 1
                 // toString stops copying once it encounters size 0; trailing capacity remains default (\0)
                 auto result = ss.toString();
                 ASSERT_EQ('A', result[0]);
@@ -196,8 +196,8 @@ namespace tester {
                     ss.add(c);
                     expected.push_back(c);
                 }
-                ASSERT_EQ(10u, ss.currentIndex);
-                ASSERT_EQ(10u, ss.liquefiedSize);
+                ASSERT_EQ((size_t)10, ss.currentIndex);
+                ASSERT_EQ((size_t)10, ss.liquefiedSize);
                 ASSERT_EQ(expected, ss.toString());
             });
 

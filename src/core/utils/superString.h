@@ -41,7 +41,7 @@ namespace GGUI{
         class compactString{
         public:
             std::variant<char, const char*> text;
-            unsigned int size = 0;
+            size_t size = 0;
 
             /**
              * @brief Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
@@ -142,7 +142,7 @@ namespace GGUI{
              * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
              * Otherwise, the data is stored as a single ASCII character.
              */
-            constexpr compactString(const char* data, const unsigned int Size, const bool forceUnicode = false){
+            constexpr compactString(const char* data, const size_t Size, const bool forceUnicode = false){
                 // Determine data storage based on size and Force_Unicode flag.
                 // Store as Unicode data if size is greater than 1 or forced.
                 // Store as a single ASCII character.
@@ -279,8 +279,8 @@ namespace GGUI{
         public:
             // Data points either to inlineStorage (default) or an external window provided by fastVector.
             compactString* data = nullptr;
-            unsigned int currentIndex = 0;
-            unsigned int liquefiedSize = 0;
+            size_t currentIndex = 0;
+            size_t liquefiedSize = 0;
 
         protected:
             // Inline storage to avoid dynamic allocations for the common case.
@@ -322,6 +322,13 @@ namespace GGUI{
                 liquefiedSize = 0;
             }
 
+            constexpr void remap(compactString* preAllocatedWindowHead, const size_t preAllocatedWindowCurrentIndex, const size_t preAllocatedWindowLiquefiedSize) {
+                // Use external window memory; caller manages its lifetime.
+                data = preAllocatedWindowHead;
+                currentIndex = preAllocatedWindowCurrentIndex;
+                liquefiedSize = preAllocatedWindowLiquefiedSize;
+            }
+
             /**
              * @brief Clears the contents of the Super_String.
              * 
@@ -332,6 +339,20 @@ namespace GGUI{
                 // Set the current index back to the start of the vector.
                 currentIndex = 0;
                 liquefiedSize = 0;
+            }
+
+            /**
+             * @brief Adds a Compact_String to the data vector.
+             * 
+             * This function appends the given Compact_String to the current position
+             * in the Data vector and then increments the Current_Index.
+             * 
+             * @param other The Compact_String to add to the data vector.
+             */
+            constexpr void add(const compactString& other){
+                // Store the Compact_String in the data vector.
+                data[currentIndex++] = other;
+                liquefiedSize += other.size; // Update the liquefied size with the size of the new Compact_String.
             }
 
             /**
@@ -347,8 +368,7 @@ namespace GGUI{
             constexpr void add(const char* Data, const int size){
                 // Store the string in the Data vector.
                 compactString tmp = compactString(Data, size);
-                data[currentIndex++] = tmp;
-                liquefiedSize += tmp.size; // Update the liquefied size with the size of the new string.
+                add(tmp);
             }
 
             /**
@@ -361,8 +381,7 @@ namespace GGUI{
              */
             constexpr void add(const char Data){
                 // Store the character in the data vector.
-                data[currentIndex++] = compactString(Data);
-                liquefiedSize += 1; // Update the liquefied size with the size of the new character.
+                add(compactString(Data));
             }
 
             /**
@@ -379,11 +398,9 @@ namespace GGUI{
             template<std::size_t OtherMaxSize>
             constexpr void add(const superString<OtherMaxSize>* other){
                 // Copy the contents of the other Super_String into the Data vector.
-                for (unsigned int i = 0; i < other->currentIndex; i++){
-                    data[currentIndex++] = other->data[i];
+                for (size_t i = 0; i < other->currentIndex; i++){
+                    add(other->data[i]);
                 }
-
-                liquefiedSize += other->liquefiedSize; // Update the liquefied size with the size of the new string.
             }
             
             /**
@@ -395,25 +412,9 @@ namespace GGUI{
             template<std::size_t OtherMaxSize>
             constexpr void add(const superString<OtherMaxSize>& other){
                 // Copy the contents of the other Super_String into the Data vector.
-                for (unsigned int i = 0; i < other.currentIndex; i++){
-                    data[currentIndex++] = other.data[i];
+                for (size_t i = 0; i < other.currentIndex; i++){
+                    add(other.data[i]);
                 }
-                
-                liquefiedSize += other.liquefiedSize; // Update the liquefied size with the size of the new string.
-            }
-
-            /**
-             * @brief Adds a Compact_String to the data vector.
-             * 
-             * This function appends the given Compact_String to the current position
-             * in the Data vector and then increments the Current_Index.
-             * 
-             * @param other The Compact_String to add to the data vector.
-             */
-            constexpr void add(const compactString& other){
-                // Store the Compact_String in the data vector.
-                data[currentIndex++] = other;
-                liquefiedSize += other.size; // Update the liquefied size with the size of the new Compact_String.
             }
 
             /**
@@ -432,7 +433,7 @@ namespace GGUI{
 
                 // Copy the contents of the Data vector into the std::string.
                 int currentUTFInsertIndex = 0;
-                for(unsigned int i = 0; i < currentIndex; i++){
+                for(size_t i = 0; i < currentIndex; i++){
                     const compactString& Data = data[i];
 
                     if (Data.size == 0)

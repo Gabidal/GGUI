@@ -1619,7 +1619,7 @@ namespace GGUI{
     
             for (int y = 0; y < Height; y++){
                 for (int x = 0; x < Width; x++){
-                    LIQUIFY_UTF_TEXT_TMP_CONTAINER = LIQUIFY_UTF_TEXT_RESULT_CACHE.getWindow<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>();
+                    LIQUIFY_UTF_TEXT_RESULT_CACHE.getWindow<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>(LIQUIFY_UTF_TEXT_TMP_CONTAINER);
 
                     Text->at(y * Width + x).toEncodedSuperString(
                         &LIQUIFY_UTF_TEXT_TMP_CONTAINER,

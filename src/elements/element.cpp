@@ -27,29 +27,23 @@
 void GGUI::UTF::toSuperString(
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
     bool TransparentBackground,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Text_Overhead,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Background_Overhead,
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
 ) const{
-    // Get the foreground colour and style as a string
-    foreground.getOverHeadAsSuperString(Text_Overhead, true);
     // Get the foreground colour as a string
     foreground.getColourAsSuperString(Text_Colour);
 
     if (!TransparentBackground) {
-        // Get the background colour and style as a string
-        background.getOverHeadAsSuperString(Background_Overhead, false);
         // Get the background colour as a string
         background.getColourAsSuperString(Background_Colour);
     }
 
-    Result->add(Text_Overhead);
+    Result->add(INTERNAL::textOverheadPrecompute);
     Result->add(Text_Colour);
     Result->add(constants::ANSI::END_COMMAND);
     
     if (!TransparentBackground) {
-        Result->add(Background_Overhead);
+        Result->add(INTERNAL::backgroundOverheadPrecompute);
         Result->add(Background_Colour);
         Result->add(constants::ANSI::END_COMMAND);
     }
