@@ -6,7 +6,7 @@
 #include "./addons/addons.h"
 #include "./utils/settings.h"
 #include "./utils/drm.h"
-#include "./utils/fastVector.h"
+#include "./utils/conveyorAllocator.h"
 
 #include <string>
 #include <cassert>
@@ -1587,13 +1587,7 @@ namespace GGUI{
             return maxHeight;
         }
 
-        static fastVector<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE(1000*1000);
-        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
-        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> LIQUIFY_UTF_TEXT_TEXT_OVERHEAD;
-        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> LIQUIFY_UTF_TEXT_BACKGROUND_OVERHEAD;
-        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor> LIQUIFY_UTF_TEXT_TEXT_COLOUR;
-        static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor> LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR;
-
+        
         /**
          * @brief Converts a vector of UTFs into a Super_String.
          * @details This function takes a vector of UTFs, and converts it into a Super_String. The resulting Super_String is stored in a cache, and the cache is resized if the window size has changed.
@@ -1602,7 +1596,10 @@ namespace GGUI{
          * @param Height The height of the window.
          * @return A pointer to the resulting Super_String.
          */
-        fastVector<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
+        conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
+            static conveyorAllocator<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE(1000*1000);
+            static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
+
             const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * constants::ANSI::maximumNeededPreAllocationForEncodedSuperString + !SETTINGS::wordWrapping * (Height - 1));
 
             // Since they are located as globals we need to remember to restart the starting offset.
@@ -1611,31 +1608,25 @@ namespace GGUI{
             // Ensure previous frame contents are not read again
             LIQUIFY_UTF_TEXT_RESULT_CACHE.clear();
             LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
-            LIQUIFY_UTF_TEXT_TEXT_COLOUR.clear();
-            LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.clear();
             
             // We need to dynamically resize this, since the window size will be potentially re-sized.
             LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
     
             for (int y = 0; y < Height; y++){
                 for (int x = 0; x < Width; x++){
-                    LIQUIFY_UTF_TEXT_RESULT_CACHE.getWindow<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>(LIQUIFY_UTF_TEXT_TMP_CONTAINER);
+                    LIQUIFY_UTF_TEXT_RESULT_CACHE.eatPlate<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>(LIQUIFY_UTF_TEXT_TMP_CONTAINER);
 
                     Text->at(y * Width + x).toEncodedSuperString(
-                        &LIQUIFY_UTF_TEXT_TMP_CONTAINER,
-                        &LIQUIFY_UTF_TEXT_TEXT_COLOUR,
-                        &LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR
+                        &LIQUIFY_UTF_TEXT_TMP_CONTAINER
                     );
 
-                    // Tell the fastVector the actual used size of the window.
-                    LIQUIFY_UTF_TEXT_RESULT_CACHE.releaseWindow(LIQUIFY_UTF_TEXT_TMP_CONTAINER.currentIndex);
+                    // Tell the conveyorAllocator the actual used size of the window.
+                    LIQUIFY_UTF_TEXT_RESULT_CACHE.returnPlate(LIQUIFY_UTF_TEXT_TMP_CONTAINER.currentIndex);
 
                     Liquefied_Size += LIQUIFY_UTF_TEXT_TMP_CONTAINER.liquefiedSize;
 
                     // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
                     LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
-                    LIQUIFY_UTF_TEXT_TEXT_COLOUR.clear();
-                    LIQUIFY_UTF_TEXT_BACKGROUND_COLOUR.clear();
                 }
 
                 // the system doesn't have word wrapping enabled then, use newlines as replacement.

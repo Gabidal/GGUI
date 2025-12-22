@@ -99,7 +99,7 @@ namespace GGUI{
                                 encodeBuffer(abstractFrameBuffer);
 
                                 unsigned int Liquefied_Size = 0;
-                                fastVector<compactString> CS_Buffer = liquifyUTFText(abstractFrameBuffer, Liquefied_Size, main->getWidth(), main->getHeight());
+                                conveyorAllocator<compactString> CS_Buffer = liquifyUTFText(abstractFrameBuffer, Liquefied_Size, main->getWidth(), main->getHeight());
                                 
                                 frameBuffer = toString(CS_Buffer, Liquefied_Size);
                                 

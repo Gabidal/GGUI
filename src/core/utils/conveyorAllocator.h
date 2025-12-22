@@ -11,42 +11,29 @@ namespace GGUI {
     namespace INTERNAL {
 
         /**
-         * @brief Cache-friendly, stack-like grow-only vector used in the text liquefaction pipeline.
-         *
-         * This container purposefully omits a large portion of the std::vector interface to
-         * provide a very small & predictable set of operations that map directly to the
-         * renderer's hot path requirements (sequential append + obtaining a raw writable
-         * "window" for in–place construction of a batch of compactString entries).
-         *
-         * Design characteristics:
-         * - Trivially relocatable raw byte buffer (unsigned char*) to keep type T layout opaque.
-         * - Manual resize without value–initialization of new capacity.
-         * - No element destruction (T must be trivially copyable / POD‑like for safe raw memcpy).
-         * - getWindow()/releaseWindow() allow reserving a compile‑time sized region that a
-         *   superString will write into directly, avoiding intermediate temporaries.
-         *
-         * @tparam T Trivially copyable element type stored contiguously.
+         * @brief based on the conveyor style restaurants, where the food is given in a conveyor belt and the customer takes a plate -> eats it -> and then returns it.
+         * The chef of the conveyor belt allocator will monitor how much did the customer like the serving and based on the returned plate it will give another.
          */
         template<typename T>
-        class fastVector {
+        class conveyorAllocator {
             unsigned char* rawBuffer = nullptr;
             std::size_t capacity = 0;
             std::size_t size = 0;   
             public:
             
             /**
-             * @brief Construct a fastVector with an initial element capacity.
+             * @brief Construct a conveyorAllocator with an initial element capacity.
              * @param initialSize Number of elements memory should be reserved for immediately.
              *
              * The memory is uninitialized (raw bytes) and the logical size is set to 0.
              */
-            fastVector(std::size_t initialSize) {
+            conveyorAllocator(std::size_t initialSize) {
                 rawBuffer = new unsigned char[sizeof(T) * initialSize];
                 capacity = initialSize;
                 clear();
             }
 
-            fastVector() = default;
+            conveyorAllocator() = default;
 
             /**
              * @brief Reset the logical size to zero without releasing capacity.
@@ -92,14 +79,14 @@ namespace GGUI {
              * @brief Acquire a writable window of compile-time size appended directly after current data.
              *
              * Ensures sufficient capacity (growing if necessary) and returns a superString that writes
-             * into the reserved region. After populating the window call releaseWindow() with the
+             * into the reserved region. After populating the window call returnPlate() with the
              * number of entries actually produced.
              *
              * @tparam mapSize Maximum number of compactString entries the returned superString may hold.
              * @return superString<mapSize> View writing into internal storage.
              */
             template<std::size_t mapSize>
-            void getWindow(superString<mapSize>& result) {
+            void eatPlate(superString<mapSize>& result) {
                 if (size + mapSize > capacity) {
                     resize(size + mapSize);
                 }
@@ -119,7 +106,7 @@ namespace GGUI {
              *
              * Increases the logical size so subsequent appends occur after the committed region.
              */
-            void releaseWindow(std::size_t finalSizeOfWindow) { size += finalSizeOfWindow; }
+            void returnPlate(std::size_t finalSizeOfWindow) { size += finalSizeOfWindow; }
 
             /**
              * @brief Get the number of logically stored elements.

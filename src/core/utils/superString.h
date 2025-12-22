@@ -277,7 +277,7 @@ namespace GGUI{
         template<std::size_t maxSize>
         class superString{
         public:
-            // Data points either to inlineStorage (default) or an external window provided by fastVector.
+            // Data points either to inlineStorage (default) or an external window provided by conveyorAllocator.
             compactString* data = nullptr;
             size_t currentIndex = 0;
             size_t liquefiedSize = 0;
@@ -415,6 +415,31 @@ namespace GGUI{
                 for (size_t i = 0; i < other.currentIndex; i++){
                     add(other.data[i]);
                 }
+            }
+
+            inline const compactString compress() const {
+                char* header = new char[liquefiedSize];
+                compactString result(header, liquefiedSize, true);
+
+                for (size_t i = 0, pos = 0; i < currentIndex; i++) {
+                    const compactString& Data = data[i];
+
+                    if (Data.size == 0)
+                        break;
+
+                    // Size of ones are always already loaded from memory into a char.
+                    if (Data.size > 1){
+                        // Replace the current contents of the string with the contents of the Unicode Data.
+                        std::memcpy((char*)header + pos, Data.getUnicode(), Data.size);
+                        pos += Data.size;
+                    }
+                    else{
+                        // Add the single character to the string.
+                        header[pos++] = Data.getAscii();
+                    }
+                }
+
+                return result;
             }
 
             /**

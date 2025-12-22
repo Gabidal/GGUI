@@ -26,7 +26,8 @@ namespace GGUI{
          *
          * @param Result The result string.
          */
-        constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
+        // constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
+        constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result) const {
             // Add the red value to the string
             Result->add(constants::ANSI::toCompactTable[red]);
             

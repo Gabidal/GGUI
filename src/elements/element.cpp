@@ -26,25 +26,15 @@
  */
 void GGUI::UTF::toSuperString(
     INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-    bool TransparentBackground,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
+    bool TransparentBackground
 ) const{
-    // Get the foreground colour as a string
-    foreground.getColourAsSuperString(Text_Colour);
-
-    if (!TransparentBackground) {
-        // Get the background colour as a string
-        background.getColourAsSuperString(Background_Colour);
-    }
-
     Result->add(INTERNAL::textOverheadPrecompute);
-    Result->add(Text_Colour);
+    foreground.getColourAsSuperString(Result);
     Result->add(constants::ANSI::END_COMMAND);
     
     if (!TransparentBackground) {
         Result->add(INTERNAL::backgroundOverheadPrecompute);
-        Result->add(Background_Colour);
+        background.getColourAsSuperString(Result);
         Result->add(constants::ANSI::END_COMMAND);
     }
 
@@ -74,21 +64,17 @@ void GGUI::UTF::toSuperString(
  * @param Background_Colour The Super_String where the background colour will be stored.
  */
 void GGUI::UTF::toEncodedSuperString(
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result
 ) const{
 
     if (is(INTERNAL::ENCODING_FLAG::START)) {
-        // Add the foreground and background colour and style to the result
-        foreground.getColourAsSuperString(Text_Colour);
-        background.getColourAsSuperString(Background_Colour);
-
         Result->add(INTERNAL::textOverheadPrecompute);
-        Result->add(Text_Colour);
+        foreground.getColourAsSuperString(Result);
+        
         Result->add(constants::ANSI::END_COMMAND);
         Result->add(INTERNAL::backgroundOverheadPrecompute);
-        Result->add(Background_Colour);
+
+        background.getColourAsSuperString(Result);
         Result->add(constants::ANSI::END_COMMAND);
     }
 

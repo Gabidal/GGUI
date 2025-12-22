@@ -160,9 +160,7 @@ namespace GGUI{
          */
         void toSuperString(
             INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-            bool TransparentBackground = false,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* TextColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>(),
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* BackgroundColour = new INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>()
+            bool TransparentBackground = false
         ) const;
 
         INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* toSuperString(bool TransparentBackground = false) const {
@@ -182,9 +180,7 @@ namespace GGUI{
          * @param Background_Colour The Super_String where the background colour will be stored.
          */
         void toEncodedSuperString(
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Text_Colour,
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForColor>* Background_Colour
+            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result
         ) const;
 
         // autoGen: Ignore end
@@ -228,8 +224,8 @@ namespace GGUI{
             return dummy.getOverHeadAsSuperString(isText);
         }
 
-        static const INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> textOverheadPrecompute  = makeOverhead(true);
-        static const  INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> backgroundOverheadPrecompute  = makeOverhead(false);
+        static const INTERNAL::compactString textOverheadPrecompute = makeOverhead(true).compress();
+        static const INTERNAL::compactString backgroundOverheadPrecompute = makeOverhead(false).compress();
     }
     // autoGen: Ignore end
 }

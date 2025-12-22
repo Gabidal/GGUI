@@ -19,7 +19,7 @@
 #include "../core/utils/color.h"
 #include "../core/utils/utf.h"
 #include "../core/utils/style.h"
-#include "../core/utils/fastVector.h"
+#include "../core/utils/conveyorAllocator.h"
 #include "./utils/utils.h"
 
 //GGUI uses the ANSI escape code
@@ -217,7 +217,7 @@ namespace GGUI{
          * @param Height The height of the window.
          * @return A pointer to the resulting Super_String.
          */
-        extern fastVector<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
+        extern conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
         
         /**
          * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.

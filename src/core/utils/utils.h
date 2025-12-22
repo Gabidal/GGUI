@@ -7,7 +7,7 @@
 #include "types.h"
 #include "superString.h"
 #include "color.h"
-#include "fastVector.h"
+#include "conveyorAllocator.h"
 
 #include <math.h>
 #include <cstring>
@@ -356,7 +356,7 @@ namespace GGUI{
         extern GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, int frameIndexRemainder, int Frame_Distance);
 
         /**
-         * @brief Convert a liquefied UTF fastVector into a cached std::string.
+         * @brief Convert a liquefied UTF conveyorAllocator into a cached std::string.
          *
          * Re-uses a static std::string buffer between calls to avoid heap churn. The
          * function expects that Liquefied_Size equals the sum of the sizes of all
@@ -369,7 +369,7 @@ namespace GGUI{
          * @return Pointer to an internally cached std::string containing the concatenated bytes.
          * @warning The returned pointer becomes invalid after the next call to this function.
          */
-        inline std::string* toString(fastVector<compactString> Data, unsigned int Liquefied_Size) noexcept {
+        inline std::string* toString(conveyorAllocator<compactString> Data, unsigned int Liquefied_Size) noexcept {
             static std::string result; // internal cache between renders
 
             if (result.size() != Liquefied_Size){
