@@ -27,15 +27,10 @@ namespace GGUI {
                     cell currentCell = {{}, abstractBuffer[i].foreground, abstractBuffer[i].background};
 
                     // now we need to unpack the UTF compactString
-                    if (abstractBuffer[i].is(COMPACT_STRING_FLAG::IS_ASCII))
-                        currentCell.utf[0] = abstractBuffer[i].getAscii();
-                    else {
-                        if (abstractBuffer[i].size > sizeof(currentCell.utf)) {
-                            reportStack("UTF data: " + std::string(abstractBuffer[i].getUnicode()) + " is too large for cell. Size: " + std::to_string(abstractBuffer[i].size) + ", max size: " + std::to_string(sizeof(currentCell.utf)));
-                        } else {
-                            memcpy(currentCell.utf, abstractBuffer[i].getUnicode(), abstractBuffer[i].size);
-                        }
-
+                    if (abstractBuffer[i].size > sizeof(currentCell.utf)) {
+                        reportStack("UTF data: " + std::string(abstractBuffer[i].text) + " is too large for cell. Size: " + std::to_string(abstractBuffer[i].size) + ", max size: " + std::to_string(sizeof(currentCell.utf)));
+                    } else {
+                        memcpy(currentCell.utf, abstractBuffer[i].text, abstractBuffer[i].size);
                     }
 
                     result[i] = currentCell;

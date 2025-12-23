@@ -88,7 +88,7 @@ link_args = []
 
 # Add custom flags based on Meson's buildtype
 if build_type == 'debugoptimized'
-  cpp_args += ['-DGGUI_DEBUG', '-Og']
+  cpp_args += ['-DGGUI_PROFILE', '-Og']
   link_args += ['-static']  # Link all libc and other libraries statically for maximum inline and true profiling.
 
 elif build_type == 'debug'

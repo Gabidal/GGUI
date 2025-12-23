@@ -115,7 +115,7 @@ namespace GGUI{
         for (INTERNAL::compactString& line : Text_Cache){
             // We need to take care of the "Force Unicode" shenanigans before we add it to this list.
             if (line.size == 1){
-                line.setAscii(line.getUnicode(true)[0]);
+                line.set(line.text[0]);
             }
         }
 

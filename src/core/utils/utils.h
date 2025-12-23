@@ -387,14 +387,9 @@ namespace GGUI{
             for (size_t i = 0; i < cachedSize; i++) {
                 const compactString& data = dataAddress[i];
 
-                // If current compact string data entry is a unicode
-                if (data.size > 1) {
-                    // Copy multi-byte unicode sequence directly
-                    std::memcpy(outputAddress + outputIndex, data.getUnicode(), data.size);
-                    outputIndex += data.size;
-                } else if (data.size == 1) {    // If current compact string data entry is a unicode
-                    outputAddress[outputIndex++] = data.getAscii();
-                } // else data.size == 0 -> skip
+                // Copy multi-byte unicode sequence directly
+                std::memcpy(outputAddress + outputIndex, data.text, data.size);
+                outputIndex += data.size;
             }
 
             return &result;
@@ -414,15 +409,8 @@ namespace GGUI{
             std::string result;
             result.resize(cstr.size);
 
-            // Copy the contents of the Compact_String into the std::string.
-            if (cstr.size > 1){
-                // Replace the current contents of the string with the contents of the Unicode data.
-                result.replace(0, cstr.size, cstr.getUnicode());
-            }
-            else{
-                // Add the single character to the string.
-                result[0] = cstr.getAscii();
-            }
+            // Replace the current contents of the string with the contents of the Unicode data.
+            result.replace(0, cstr.size, cstr.text);
 
             return result;
         }

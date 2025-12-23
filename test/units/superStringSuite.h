@@ -19,16 +19,14 @@ namespace tester {
                 const char* empty = ""; // length 0 -> stored as ASCII '\\0'
                 GGUI::INTERNAL::compactString cs(empty);
                 ASSERT_EQ((size_t)1, cs.size); // implementation sets to 1 via setAscii('\\0')
-                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-                ASSERT_EQ('\0', cs.getAscii());
+                ASSERT_EQ('\0', cs.text[0]);
             });
 
             add_test("compact_char_ptr_single", "Single char C-string stored as ASCII", [](){
                 const char* one = "A";
                 GGUI::INTERNAL::compactString cs(one);
                 ASSERT_EQ((size_t)1, cs.size);
-                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-                ASSERT_EQ('A', cs.getAscii());
+                ASSERT_EQ('A', cs.text[0]);
                 ASSERT_TRUE(cs.is('A'));
                 ASSERT_FALSE(cs.is("A")); // not unicode path
             });
@@ -37,7 +35,6 @@ namespace tester {
                 const char* word = "Hello";
                 GGUI::INTERNAL::compactString cs(word);
                 ASSERT_EQ((size_t)5, cs.size);
-                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
                 ASSERT_TRUE(cs.is("Hello"));
                 ASSERT_EQ('H', cs[0]);
                 ASSERT_EQ('o', cs[4]);
@@ -46,15 +43,13 @@ namespace tester {
             add_test("compact_char_constructor", "Single char constructor", [](){
                 GGUI::INTERNAL::compactString cs('Z');
                 ASSERT_EQ((size_t)1, cs.size);
-                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_ASCII));
-                ASSERT_EQ('Z', cs.getAscii());
+                ASSERT_EQ('Z', cs.text[0]);
             });
 
             add_test("compact_explicit_size_unicode", "Explicit size constructor chooses unicode when size>1", [](){
                 const char* txt = "Hi";
                 GGUI::INTERNAL::compactString cs(txt, 2);
                 ASSERT_EQ((size_t)2, cs.size);
-                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
                 ASSERT_TRUE(cs.is("Hi"));
             });
 
@@ -62,7 +57,6 @@ namespace tester {
                 const char* txt = "X"; // size parameter 1, force unicode
                 GGUI::INTERNAL::compactString cs(txt, 1, true);
                 ASSERT_EQ((size_t)1, cs.size); // overridden to Size
-                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
                 ASSERT_EQ('X', cs[0]);
             });
 
@@ -78,12 +72,11 @@ namespace tester {
             add_test("compact_setters", "setAscii and setUnicode adjust size", [](){
                 GGUI::INTERNAL::compactString cs('A');
                 ASSERT_EQ((size_t)1, cs.size);
-                cs.setAscii('B');
+                cs.set('B');
                 ASSERT_EQ((size_t)1, cs.size);
-                ASSERT_EQ('B', cs.getAscii());
-                cs.setUnicode("Hello");
+                ASSERT_EQ('B', cs.text[0]);
+                cs.set("Hello");
                 ASSERT_EQ((size_t)5, cs.size);
-                ASSERT_TRUE(cs.is(GGUI::INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE));
             });
 
             add_test("compact_has_default_text_ascii_space", "hasDefaultText true for ASCII space", [](){

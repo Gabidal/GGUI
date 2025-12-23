@@ -10,37 +10,16 @@
 
 namespace GGUI{
     namespace INTERNAL{
-        namespace COMPACT_STRING_FLAG{
-            constexpr inline unsigned char IS_ASCII          = 1 << 0;
-            constexpr inline unsigned char IS_UNICODE        = 1 << 1;
-        }
+        constexpr std::array<std::array<char, 2>, 256> asciiToString = [] {
+            std::array<std::array<char, 2>, 256> t{};
+            for (size_t i = 0; i < 256; ++i)
+                t[i] = { static_cast<char>(i), '\0' };
+            return t;
+        }();
 
-        /**
-         * @class Compact_String
-         * @brief A lightweight string class optimized for compact storage of ASCII and Unicode strings.
-         *
-         * The Compact_String class provides an efficient way to store and manipulate short strings,
-         * optimizing for the case where the string is a single ASCII character. For longer strings,
-         * it stores a pointer to a null-terminated C-style string. The class uses a std::variant to
-         * hold either a single character or a pointer to a string, and maintains the size of the string.
-         *
-         * Key Features:
-         * - Stores either a single ASCII character or a pointer to a C-style string.
-         * - Provides constructors for ASCII characters, C-style strings, and explicit size/force Unicode.
-         * - Offers fast type and content checks for ASCII and Unicode representations.
-         * - Supports subscript operator for character access.
-         * - Utility methods for getting and setting ASCII/Unicode data.
-         * - Designed for use in scenarios where memory efficiency and fast type checks are important.
-         *
-         * Usage Notes:
-         * - The default constructor is intended only for resizing containers and should not be used directly.
-         * - The class does not manage the lifetime of external string data; ensure that any pointer passed
-         *   to the class remains valid for the lifetime of the Compact_String instance.
-         * - The class is constexpr-friendly for compile-time usage where possible.
-         */
         class compactString{
         public:
-            std::variant<char, const char*> text;
+            const char* text = nullptr;
             size_t size = 0;
 
             /**
@@ -92,134 +71,57 @@ namespace GGUI{
              */
             constexpr compactString& operator=(compactString&&) = default;
 
-            /**
-             * @brief Constructs a Compact_String object from a C-style string.
-             * 
-             * This constructor initializes the Compact_String object by determining the length of the input string.
-             * If the length of the string is greater than 1, it stores the string data in Unicode_Data.
-             * If the length of the string is 1 or less, it stores the single character in Ascii_Data.
-             * 
-             * @param data A pointer to a null-terminated C-style string.
-             */
             constexpr compactString(const char* data){
-                // Store the string as Unicode data if its length is greater than 1.
-                // Store the single character as ASCII data.
-                size_t length = getLength(data);
+                size_t tmpSize = getLength(data);
 
-                // Check for the most cases
-                length > 1 ?    // Transfer larger than single char strings
-                    setUnicode(data) : 
-                    length == 1 ?   // Handle single character strings and zero length strings
-                        setAscii(data[0]) : 
-                        setAscii('\0'); // Handle empty string case
-
+                if (tmpSize == 0) {
+                    text = asciiToString[0].data();
+                    size = 1;
+                }
+                else {
+                    text = data;
+                    size = tmpSize;
+                }
             }
 
-            /**
-             * @brief Constructs a Compact_String object with a single ASCII character.
-             * 
-             * This constructor initializes the Compact_String with a single character.
-             * The character is stored in the Ascii_Data member of the Data union, and
-             * the Size is set to 1.
-             * 
-             * @param data The ASCII character to initialize the Compact_String with.
-             */
-            constexpr compactString(const char data) : text(data){
-                size = 1;
-            }
+            constexpr compactString(char data) : text(asciiToString[static_cast<unsigned char>(data)].data()), size(1) {}
 
-            /**
-             * @brief Constructs a Compact_String object.
-             * 
-             * This constructor initializes a Compact_String object with the given data and size.
-             * It determines the storage format based on the size of the data and the Force_Unicode flag.
-             * 
-             * @param data A pointer to the character data to be stored.
-             * @param size The size of the character data.
-             * @param Force_Unicode A boolean flag indicating whether to force the data to be stored as Unicode.
-             *                       Defaults to false.
-             * 
-             * If the size of the data is greater than 1 or if Force_Unicode is true, the data is stored as Unicode.
-             * Otherwise, the data is stored as a single ASCII character.
-             */
             constexpr compactString(const char* data, const size_t Size, const bool forceUnicode = false){
-                // Determine data storage based on size and Force_Unicode flag.
-                // Store as Unicode data if size is greater than 1 or forced.
-                // Store as a single ASCII character.
-                (Size > 1 || forceUnicode) ? 
-                setUnicode(data) : 
-                setAscii(data[0]);
-
-                // If force unicode has been issued, then the size is probably a non-unicode standard size of zero or one, so we need to override the size.
-                if (forceUnicode)
-                    size = Size;
-            }
-
-            /**
-             * @brief Checks if a specific UTF flag is set.
-             * @param cs_flag The UTF flag to check.
-             * @return True if the flag is set, otherwise false.
-             */
-            constexpr bool is(unsigned char cs_flag) const {
-                return (
-                    cs_flag == COMPACT_STRING_FLAG::IS_ASCII && std::holds_alternative<char>(text)
-                ) || (
-                    cs_flag == COMPACT_STRING_FLAG::IS_UNICODE && std::holds_alternative<const char*>(text)
-                ) ? true : false;
+                text = data;
+                
+                if (forceUnicode) size = Size;
+                else size = getLength(text);
             }
 
             // Fast comparison of type and content
             constexpr bool is(const char* other) const {
-                return is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::strcmp(std::get<const char*>(text), other) == 0 : false;
+                return size > 1 && text && std::strcmp(text, other) == 0;
             }
 
             // Fast comparison of type and content
             constexpr bool is(char other) const {
-                return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == other : false;
+                return size == 1 && text && text[0] == other;
             }
 
             /**
              * @brief Overloaded subscript operator to access character at a given index.
-             * 
-             * This operator allows access to the character at the specified index.
-             * If the size of the string is greater than 1, it returns the character
-             * from the Unicode data. If the size is 1, it returns the ASCII data.
-             * 
              * @param index The index of the character to access.
              * @return char The character at the specified index.
              */
             constexpr char operator[](int index) const {
-                return ((unsigned)index >= size || index < 0) ? 
+                return ((unsigned)index >= size || index < 0 || !text) ? 
                     '\0' : // Return null character if index is out of bounds.
-                    (is(COMPACT_STRING_FLAG::IS_UNICODE) ? std::get<const char*>(text)[index] : std::get<char>(text));  // Return the character from Unicode or ASCII data.
+                    text[index];
             }
 
-            constexpr const char* getUnicode(bool force = false) const {
-                // If the size is greater than 1, return the Unicode data.
-                // Otherwise, return a pointer to the ASCII data.
-                return is(COMPACT_STRING_FLAG::IS_UNICODE) || force ? 
-                    std::get<const char*>(text) : 
-                    nullptr;
+            constexpr void set(char val) {
+                size = 1;
+                text = asciiToString[static_cast<unsigned char>(val)].data();
             }
 
-            constexpr char getAscii() const {
-                // If the size is 1, return the ASCII data.
-                // Otherwise, return a null character.
-                return is(COMPACT_STRING_FLAG::IS_ASCII) ? 
-                    std::get<char>(text) : 
-                    '\0';
-            }
-
-            constexpr void setUnicode(const char* Text) {
-                // Set the Text to the Unicode data.
-                text = std::variant<char, const char*>(Text);
-                size = getLength(Text); // Update the size based on the new string.
-            }
-
-            constexpr void setAscii(const char Text) {
-                // Set the Text to the ASCII data.
-                text = std::variant<char, const char*>(Text);
-                size = 1; // Update the size to 1 since it's a single character.
+            constexpr void set(const char* val) {
+                text = val;
+                size = getLength(val);
             }
             
             /**
@@ -227,7 +129,7 @@ namespace GGUI{
              * @return true if the UTF object has a default text, false otherwise.
              */
             constexpr bool hasDefaultText() const {
-                return is(COMPACT_STRING_FLAG::IS_ASCII) ? std::get<char>(text) == ' ' : std::get<const char*>(text)[0] == ' ';
+                return !empty() && text[0] == ' ';
             }
 
             constexpr bool empty() const {
@@ -427,16 +329,9 @@ namespace GGUI{
                     if (Data.size == 0)
                         break;
 
-                    // Size of ones are always already loaded from memory into a char.
-                    if (Data.size > 1){
-                        // Replace the current contents of the string with the contents of the Unicode Data.
-                        std::memcpy((char*)header + pos, Data.getUnicode(), Data.size);
-                        pos += Data.size;
-                    }
-                    else{
-                        // Add the single character to the string.
-                        header[pos++] = Data.getAscii();
-                    }
+                    // Replace the current contents of the string with the contents of the Unicode Data.
+                    std::memcpy((char*)header + pos, Data.text, Data.size);
+                    pos += Data.size;
                 }
 
                 return result;
@@ -464,17 +359,9 @@ namespace GGUI{
                     if (Data.size == 0)
                         break;
 
-                    // Size of ones are always already loaded from memory into a char.
-                    if (Data.size > 1){
-                        // Replace the current contents of the string with the contents of the Unicode Data.
-                        result.replace(currentUTFInsertIndex, Data.size, Data.getUnicode());
-
-                        currentUTFInsertIndex += Data.size;
-                    }
-                    else{
-                        // Add the single character to the string.
-                        result[currentUTFInsertIndex++] = Data.getAscii();
-                    }
+                    // Replace the current contents of the string with the contents of the Unicode Data.
+                    result.replace(currentUTFInsertIndex, Data.size, Data.text);
+                    currentUTFInsertIndex += Data.size;
                 }
                 return result;
             }

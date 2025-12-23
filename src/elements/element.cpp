@@ -38,13 +38,7 @@ void GGUI::UTF::toSuperString(
         Result->add(constants::ANSI::END_COMMAND);
     }
 
-    if (is(INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE)){
-        // Add the const char* to the Result
-        Result->add(std::get<const char*>(text), size);
-    }
-    else{
-        Result->add(std::get<char>(text));
-    }
+    Result->add(text, size);
 
     // Add the reset ANSI code to the end of the string
     Result->add(constants::ANSI::RESET_COLOR);
@@ -78,13 +72,8 @@ void GGUI::UTF::toEncodedSuperString(
         Result->add(constants::ANSI::END_COMMAND);
     }
 
-    if (is(INTERNAL::COMPACT_STRING_FLAG::IS_UNICODE)) {
-        // Append the Unicode character to the result
-        Result->add(getUnicode(), size);
-    } else {
-        // Append the ASCII character to the result
-        Result->add(getAscii());
-    }
+    // Append the Unicode character to the result
+    Result->add(text, size);
 
     if (is(INTERNAL::ENCODING_FLAG::END)) {
         // Add the reset ANSI code to the end of the string
@@ -1641,8 +1630,8 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
         // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
         if (Is_In_Bounds(Above, this)){
             // Since the border above can be already processed we need to check all possible border variations.
-            INTERNAL::borderConnection borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getUnicode()) | 
-                                            B->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getUnicode());
+            INTERNAL::borderConnection borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->text) | 
+                                            B->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->text);
             
             if (borderAbove != INTERNAL::borderConnection::NONE)
                 Current_Masks |= INTERNAL::borderConnection::UP;
@@ -1650,8 +1639,8 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
         if (Is_In_Bounds(Below, this)){
             // Since the border below can be already processed we need to check all possible border variations.
-            INTERNAL::borderConnection borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getUnicode()) | 
-                                            B->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getUnicode());
+            INTERNAL::borderConnection borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->text) | 
+                                            B->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->text);
             
             if (borderBelow != INTERNAL::borderConnection::NONE)
                 Current_Masks |= INTERNAL::borderConnection::DOWN;
@@ -1659,8 +1648,8 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
         if (Is_In_Bounds(Left, this)){
             // Since the border left can be already processed we need to check all possible border variations.
-            INTERNAL::borderConnection borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getUnicode()) | 
-                                           B->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getUnicode());
+            INTERNAL::borderConnection borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->text) | 
+                                           B->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->text);
             
             if (borderLeft != INTERNAL::borderConnection::NONE)
                 Current_Masks |= INTERNAL::borderConnection::LEFT;
@@ -1668,8 +1657,8 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
 
         if (Is_In_Bounds(Right, this)){
             // Since the border right can be already processed we need to check all possible border variations.
-            INTERNAL::borderConnection borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getUnicode()) | 
-                                            B->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getUnicode());
+            INTERNAL::borderConnection borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->text) | 
+                                            B->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->text);
             
             if (borderRight != INTERNAL::borderConnection::NONE)
                 Current_Masks |= INTERNAL::borderConnection::RIGHT;

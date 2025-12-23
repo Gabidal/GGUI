@@ -825,8 +825,8 @@ namespace GGUI{
          */
         void renderFrame() {
             // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
-            const char* cursorReset = GGUI::constants::ANSI::SET_CURSOR_TO_START.getUnicode();
-            size_t cursorResetLength = strlen(cursorReset);
+            const char* cursorReset = GGUI::constants::ANSI::SET_CURSOR_TO_START.text;
+            size_t cursorResetLength = GGUI::constants::ANSI::SET_CURSOR_TO_START.size;
 
             iovec vec[2] = {
                 { (void*)cursorReset,           cursorResetLength },

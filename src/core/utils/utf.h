@@ -129,7 +129,7 @@ namespace GGUI{
          * @param data The character to set as the text.
          */
         constexpr void setText(const char data) {
-            compactString::setAscii(data);
+            compactString::set(data);
         }
 
         /**
@@ -137,7 +137,7 @@ namespace GGUI{
          * @param data The null-terminated string to set as the text.
          */
         constexpr void setText(const char* data) {
-            compactString::setUnicode(data);
+            compactString::set(data);
         }
 
         /**

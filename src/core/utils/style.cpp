@@ -373,7 +373,7 @@ namespace GGUI{
 
     INTERNAL::STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
         // TODO: Remove this with 0.1.9, with de-standardization of std::string.
-        std::string tmp = value.is(INTERNAL::COMPACT_STRING_FLAG::IS_ASCII) == 1 ? std::string(1, value.getAscii()) : std::string(value.getUnicode());
+        std::string tmp = std::string(value.text, value.size);
 
         owner->setName(tmp);
 
