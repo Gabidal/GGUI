@@ -379,10 +379,9 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            this,
             getName() + "::input::keypress"
         );
-        GGUI::INTERNAL::eventHandlers.push_back(key_press);
+        addEventhandler(key_press);
 
         action* enter = new action(
             constants::ENTER,
@@ -400,10 +399,9 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            this,
             getName() + "::input::enter"
         );
-        GGUI::INTERNAL::eventHandlers.push_back(enter);
+        addEventhandler(enter);
 
         action* back_space = new action(
             constants::BACKSPACE,
@@ -424,9 +422,8 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            this,
             getName() + "::input::backspace"
         );
-        GGUI::INTERNAL::eventHandlers.push_back(back_space);
+        addEventhandler(back_space);
     }
 }

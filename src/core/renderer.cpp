@@ -73,7 +73,7 @@ namespace GGUI{
 
         atomic::guard<std::vector<memory>> remember;
 
-        std::vector<action*> eventHandlers;
+        std::vector<element*> eventHandlers;
         std::vector<input*> inputs;
         std::chrono::system_clock::time_point Last_Input_Clear_Time;
 
@@ -81,6 +81,10 @@ namespace GGUI{
 
         element* focusedOn = nullptr;
         element* hoveredOn = nullptr;
+
+        // When true, hover is being controlled by keyboard navigation (TAB/SHIFT+TAB).
+        // Mouse-over logic in the event loop should not override the hovered element until the mouse moves.
+        bool Hover_Locked_To_Keyboard = false;
 
         bool platformInitialized = false;
 
@@ -1153,6 +1157,9 @@ namespace GGUI{
                                 mouse.x = Max(X - 32 - 1, 0);   // The additional -1 is so that the mouse cursor top left point works as the actual focus point of the mouse.
                                 mouse.y = Max(Y - 32 - 1, 0);
 
+                                // Mouse moved; release keyboard hover lock.
+                                Hover_Locked_To_Keyboard = false;
+
                                 Bit_Mask &= ~64;
                             }
 
@@ -1222,6 +1229,9 @@ namespace GGUI{
                             // Map reported coords directly
                             INTERNAL::mouse.x = mx;
                             INTERNAL::mouse.y = my;
+
+                            // Mouse moved; release keyboard hover lock.
+                            INTERNAL::Hover_Locked_To_Keyboard = false;
 
                             // Extract modifiers
                             bool shift   = (mask & 4) != 0;
@@ -1538,6 +1548,10 @@ namespace GGUI{
                 updateHoveredElement(focusedOn); // Update the hovered element to be the focused element before un-focusing it.
                 unFocusElement();
             }
+            else if (hoveredOn){
+                // If nothing is focused, ESC clears hover.
+                unHoverElement();
+            }
         }
 
         /**
@@ -1551,6 +1565,9 @@ namespace GGUI{
                 return;
 
             if (focusedOn) return;   // Tabulator is disabled from switching if an element is focused on, this gives us the ability to insert tabs into textFields.
+
+            if (eventHandlers.empty())
+                return;
             
             // Check if the shift key is pressed
             bool Shift_Is_Pressed = KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT].state;
@@ -1564,34 +1581,28 @@ namespace GGUI{
             if (Current){
                 // Find the first occurrence of the event handlers with this Current being their Host.
                 for (;(unsigned int)Current_Index < eventHandlers.size(); Current_Index++){
-                    if (eventHandlers[Current_Index]->host == Current)
+                    if (eventHandlers[Current_Index] == Current)
                         break;
                 }
-
-                // Now, we need to find the last occurrence of this Current in the event handlers
-                if (!Shift_Is_Pressed)
-                    for (int i = Current_Index + 1; i < (int)eventHandlers.size(); i++){
-                        if (eventHandlers[i]->host == Current){
-                            Current_Index = i; // Update the index to the last occurrence
-                        } else {
-                            break;
-                        }    
-                    }
             }
-    
-            // Generalize index hopping, if shift is pressed then go backwards.
-            Current_Index += 1 + (-2 * Shift_Is_Pressed);
+            
+            // Skip main::* handlers.
+            do {
+                // Generalize index hopping, if shift is pressed then go backwards.
+                Current_Index += 1 + (-2 * Shift_Is_Pressed);
 
-            // If the index is out of bounds, wrap it around to the other side of the list
-            if (Current_Index < 0){
-                Current_Index = eventHandlers.size() - 1;
-            }
-            else if ((size_t)Current_Index >= eventHandlers.size() - 1){
-                Current_Index = 0;
-            }
-
+                // If the index is out of bounds, wrap it around to the other side of the list
+                if (Current_Index < 0){
+                    Current_Index = eventHandlers.size() - 1;
+                }
+                else if ((size_t)Current_Index >= eventHandlers.size()){
+                    Current_Index = 0;
+                }
+            } while (Current_Index < eventHandlers.size() && eventHandlers[Current_Index] == INTERNAL::main);
+            
             // Now update the hovered element with the new index
-            updateHoveredElement(eventHandlers[Current_Index]->host);
+            Hover_Locked_To_Keyboard = true;
+            updateHoveredElement(eventHandlers[Current_Index]);
         }
 
         /**
@@ -1774,23 +1785,12 @@ namespace GGUI{
          * @param Focus The desired focus state.
          */
         void Recursively_Apply_Focus(element* current, bool Focus){
-            // Flag to determine if the current element is an event handler
-            bool Is_An_Event_handler = false;
-
-            // Check if the current element is an event handler
-            for (auto i : INTERNAL::eventHandlers){
-                if (i->host == current){
-                    Is_An_Event_handler = true;
-                    break;
-                }
-            } 
-
-            // If the element is an event handler and the focus state is unchanged, return
-            if (Is_An_Event_handler && current->isFocused() != Focus)
-                return;
-
-            // Set the focus state on the current element
-            current->setFocus(Focus);
+            
+            // Prior function calls would have set this into the correct Focus state.
+            if (current->isFocused() != Focus) {    // if not, then this means this is the child of an Focus setted element.
+                if (!current->getEventHandlers().empty())
+                    current->setFocus(Focus);
+            }
 
             // Recurse on all child elements
             for (auto c : current->getChilds()){
@@ -1808,20 +1808,13 @@ namespace GGUI{
          * @param Hover The desired hover state.
          */
         void Recursively_Apply_Hover(element* current, bool Hover){
-            // check if the current element is one of the Event handlers, if not, then apply the focus buff.
-            bool Is_An_Event_handler = false;
 
-            for (auto i : INTERNAL::eventHandlers){
-                if (i->host == current){
-                    Is_An_Event_handler = true;
-                    break;
-                }
+            // Prior function calls would have set this into the correct hover state.
+            if (current->isHovered() != Hover) {    // if not, then this means this is the child of an hover setted element.
+
+                if (!current->getEventHandlers().empty())
+                    current->setHoverState(Hover);
             }
-
-            if (Is_An_Event_handler && current->isHovered() != Hover)
-                return;
-
-            current->setHoverState(Hover);
 
             // Recurse on all child elements
             for (auto c : current->getChilds()){
@@ -1947,67 +1940,75 @@ namespace GGUI{
             Populate_Inputs_For_Held_Down_Keys();
 
             for (unsigned int i = 0; i < INTERNAL::eventHandlers.size(); i++){
-                action* currentEventHandler = INTERNAL::eventHandlers[i];
+                element* currentElement = INTERNAL::eventHandlers[i];
 
-                // The reason these are held over multitude of inputs, is for scenario where this memory thread has not run in a long time and has a long query of inputs-
-                // and in this same listing of inputs at the start is the mouse click or enter and the user given inputs for that specifically activated event handler.
-                bool Has_Mouse_Left_Click_Event = false;
-                bool Has_Enter_Press_Event = false;
-                
-                // If the current event handler has an host element present
-                if (currentEventHandler->host){
-                    if (!currentEventHandler->host->isDisplayed())
-                        continue;   // Skip eventhandlers where their host is not active
+                const std::vector<action*>& currentEventhandlers = currentElement->getEventHandlers();
 
-                    bool overlapsWithMouse = INTERNAL::collides(currentEventHandler->host, INTERNAL::mouse);
+                for (unsigned int j = 0; j < currentElement->getEventHandlers().size(); j++) {
+                    action* currentEventHandler = currentEventhandlers[j];
 
-                    // First let's go through all inputs and see if any selector inputs are present.
-                    for (size_t j = 0; j < INTERNAL::inputs.size();){
-                        input* currentInput = INTERNAL::inputs[j];      
-    
-                        Has_Mouse_Left_Click_Event = has(currentInput->criteria, constants::MOUSE_LEFT_CLICKED) && overlapsWithMouse;
-                        Has_Enter_Press_Event = has(currentInput->criteria, constants::ENTER) && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].state == true;
-    
-                        // Check if the host is prime to be focused on
-                        if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && currentEventHandler->host->isHovered()){
-                            updateFocusedElement(currentEventHandler->host);
-                            unHoverElement();
+                    // The reason these are held over multitude of inputs, is for scenario where this memory thread has not run in a long time and has a long query of inputs-
+                    // and in this same listing of inputs at the start is the mouse click or enter and the user given inputs for that specifically activated event handler.
+                    bool Has_Mouse_Left_Click_Event = false;
+                    bool Has_Enter_Press_Event = false;
+                    
+                    // If the current event handler has an host element present
+                    if (currentEventHandler){
+                        if (!currentElement->isDisplayed())
+                            continue;   // Skip eventhandlers where their host is not active
 
-                            // Remove the input, since it's job is used here:
-                            INTERNAL::inputs.erase(INTERNAL::inputs.begin() + j);
-                            continue;
-                        }
+                        bool overlapsWithMouse = INTERNAL::collides(currentElement, INTERNAL::mouse);
 
-                        // Criteria must be identical for more accurate criteria listing.
-                        if (currentEventHandler->criteria == currentInput->criteria && currentEventHandler->host->isFocused()){
-                            try{
-                                // Check if this job could be run successfully.
-                                if (currentEventHandler->Job(currentInput)){
-                                    //dont let anyone else react to this event.
-                                    INTERNAL::inputs.erase(INTERNAL::inputs.begin() + j);
-                                    continue;
-                                }
-                                else{
-                                    // TODO: report miscarried event job.
-                                    INTERNAL::reportStack("Job '" + currentEventHandler->ID + "' failed!");
-                                }
-                            }
-                            catch(std::exception& problem){
-                                INTERNAL::reportStack("In event: '" + currentEventHandler->ID + "' Problem: " + std::string(problem.what()));
-                            }
-                        }
-
-                        j++;
-                    }
-
-                    // If the current event handler is not focused, then we can check wether to set it on/off onHovering
-                    if (!currentEventHandler->host->isFocused()) {
-                        if (overlapsWithMouse){
-                            updateHoveredElement(currentEventHandler->host);
-                        }
-                        else {
-                            if (INTERNAL::hoveredOn == currentEventHandler->host)
+                        // First let's go through all inputs and see if any selector inputs are present.
+                        for (size_t k = 0; k < INTERNAL::inputs.size();){
+                            input* currentInput = INTERNAL::inputs[k];      
+        
+                            Has_Mouse_Left_Click_Event = has(currentInput->criteria, constants::MOUSE_LEFT_CLICKED) && overlapsWithMouse;
+                            Has_Enter_Press_Event = has(currentInput->criteria, constants::ENTER) && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].state == true;
+        
+                            // Check if the host is prime to be focused on
+                            if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && currentElement->isHovered()){
+                                updateFocusedElement(currentElement);
                                 unHoverElement();
+
+                                // Remove the input, since it's job is used here:
+                                INTERNAL::inputs.erase(INTERNAL::inputs.begin() + k);
+                                continue;
+                            }
+
+                            // Criteria must be identical for more accurate criteria listing.
+                            if (currentEventHandler->criteria == currentInput->criteria && currentElement->isFocused()){
+                                try{
+                                    // Check if this job could be run successfully.
+                                    if (currentEventHandler->Job(currentInput)){
+                                        //dont let anyone else react to this event.
+                                        INTERNAL::inputs.erase(INTERNAL::inputs.begin() + k);
+                                        continue;
+                                    }
+                                    else{
+                                        // TODO: report miscarried event job.
+                                        INTERNAL::reportStack("Job '" + currentEventHandler->ID + "' failed!");
+                                    }
+                                }
+                                catch(std::exception& problem){
+                                    INTERNAL::reportStack("In event: '" + currentEventHandler->ID + "' Problem: " + std::string(problem.what()));
+                                }
+                            }
+
+                            k++;
+                        }
+
+                        // If the current event handler is not focused, then we can check wether to set it on/off onHovering
+                        if (!currentElement->isFocused()) {
+                            if (!INTERNAL::Hover_Locked_To_Keyboard) {
+                                if (overlapsWithMouse){
+                                    updateHoveredElement(currentElement);
+                                }
+                                else {
+                                    if (INTERNAL::hoveredOn == currentElement)
+                                        unHoverElement();
+                                }
+                            }
                         }
                     }
                 }

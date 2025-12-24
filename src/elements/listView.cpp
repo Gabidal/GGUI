@@ -325,14 +325,13 @@ void GGUI::scrollView::allowScrolling(bool allow) {
     bool Scroll_Up_Event_Exists = false;
     bool Scroll_Down_Event_Exists = false;
 
-    // Check if scrolling events already exist for this Scroll_View
-    for (unsigned int i = 0; i < GGUI::INTERNAL::eventHandlers.size(); i++) {
-        if (GGUI::INTERNAL::eventHandlers[i]->host != this)
-            continue;
+    const std::vector<action*>& localEventHandlers = getEventHandlers();
 
-        if (GGUI::INTERNAL::eventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_UP)
+    // Check if scrolling events already exist for this Scroll_View
+    for (unsigned int i = 0; i < localEventHandlers.size(); i++) {
+        if (localEventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_UP)
             Scroll_Up_Event_Exists = true;
-        else if (GGUI::INTERNAL::eventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_DOWN)
+        else if (localEventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_DOWN)
             Scroll_Down_Event_Exists = true;
     }
 

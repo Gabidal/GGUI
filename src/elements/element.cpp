@@ -158,13 +158,17 @@ GGUI::element::~element(){
 
     //now also update the event handlers.
     for (size_t i = 0; i < INTERNAL::eventHandlers.size();) {
-        if (INTERNAL::eventHandlers[i]->host == this) {
-            delete INTERNAL::eventHandlers[i];
-
+        if (INTERNAL::eventHandlers[i] == this) {
             INTERNAL::eventHandlers.erase(INTERNAL::eventHandlers.begin() + i);
             // don't increment i, since elements shifted left
+
+            break;
         }
         else ++i;   // Only increment if current index is not a match
+    }
+
+    for (size_t i = 0; i < handlers.size(); i++) {
+        delete handlers[i];
     }
 
     // Now make sure that if the Focused_On element points to this element, then set it to nullptr
@@ -709,7 +713,7 @@ void GGUI::element::display(bool f){
  *          It returns true if the element is displayed and false if the element is hidden.
  * @return A boolean indicating whether the element is displayed (true) or hidden (false).
  */
-bool GGUI::element::isDisplayed(){
+bool GGUI::element::isDisplayed() const {
     bool Parent_Exists = Parent;
     return (Parent_Exists && Parent->isDisplayed()) || !Parent_Exists ? Show : false;
 }
@@ -932,20 +936,19 @@ GGUI::element* GGUI::element::copy() const {
     // copy the styles over.
     *new_element->Style = *this->Style;
 
-    //now also update the event handlers.
+    // now also update the event handlers.
     // NOTE: We don't have enough power to update the lambda captures of the this ptr value, so please use the self->host ptr instead!
-    for (auto& e : INTERNAL::eventHandlers){
+    for (auto& e : this->handlers){
 
-        if (e->host == this){
-            //copy the event and make a new one
-            action* new_action = new action(*e);
+        //copy the event and make a new one
+        action* new_action = new action(*e);
 
-            //update the host
-            new_action->host = new_element;
+        //add the new action to the event handlers list
+        new_element->handlers.push_back(new_action);
+    }
 
-            //add the new action to the event handlers list
-            INTERNAL::eventHandlers.push_back(new_action);
-        }
+    if (!new_element->handlers.empty()) {
+        INTERNAL::eventHandlers.push_back(new_element);
     }
 
     // Clear the Focused on bool
@@ -960,6 +963,21 @@ GGUI::element* GGUI::element::copy() const {
     }
 
     return new_element;
+}
+
+void GGUI::element::addEventhandler(action* handler) {
+    handlers.push_back(handler);
+
+    // Check if this element has been added to the INTERNAL::eventHandlers, if not, then append this into it.
+    bool found = false;
+    for (auto* h : GGUI::INTERNAL::eventHandlers){
+        if (h == this){
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) INTERNAL::eventHandlers.push_back(this);
 }
 
 void GGUI::element::embedStyles(){
@@ -1703,7 +1721,7 @@ void GGUI::element::onClick(std::function<bool(GGUI::event*)> job){
         // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
 
         // Construct an Action from the Event obj
-        GGUI::action* event2actionWrapper = new GGUI::action(e->criteria, job, this, getName() + "::onClick");
+        GGUI::action* event2actionWrapper = new GGUI::action(e->criteria, job, getName() + "::onClick");
 
         //action successfully executed.
         return job(event2actionWrapper);
@@ -1712,19 +1730,17 @@ void GGUI::element::onClick(std::function<bool(GGUI::event*)> job){
     action* mouse = new action(
         constants::MOUSE_LEFT_CLICKED,
         wrapper,
-        this,
         getName() + "::onClick::wrapper::mouse"
     );
 
     action* enter = new action(
         constants::ENTER,
         wrapper,
-        this,
         getName() + "::onClick::wrapper::enter"
     );
 
-    GGUI::INTERNAL::eventHandlers.push_back(mouse);
-    GGUI::INTERNAL::eventHandlers.push_back(enter);
+    addEventhandler(mouse);
+    addEventhandler(enter);
 }
 
 /**
@@ -1746,10 +1762,9 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
             // action failed.
             return false;
         },
-        this,
         getName() + "::on::" + std::to_string(criteria)
     );
-    GGUI::INTERNAL::eventHandlers.push_back(a);
+    addEventhandler(a);
 }
 
 /**

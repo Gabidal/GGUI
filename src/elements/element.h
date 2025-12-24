@@ -33,6 +33,8 @@ namespace GGUI{
 
         class element* Parent = nullptr;
 
+        std::vector<action*> handlers;
+
         // Determines if the element is rendered or not.
         bool Show = true;
         
@@ -160,6 +162,12 @@ namespace GGUI{
             return Dirty;
         }
 
+
+        const std::vector<action*>& getEventHandlers() const {
+            return handlers;
+        }
+
+        void addEventhandler(action* handler);
 
         /**
          * @brief Returns true if the element is currently focused.
@@ -348,7 +356,7 @@ namespace GGUI{
          *          It returns true if the element is displayed and false if the element is hidden.
          * @return A boolean indicating whether the element is displayed (true) or hidden (false).
          */
-        bool isDisplayed();
+        bool isDisplayed() const;
 
         /**
          * @brief Adds a child element to the element.

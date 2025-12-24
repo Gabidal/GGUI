@@ -66,7 +66,7 @@ namespace GGUI{
 
         extern atomic::guard<std::vector<memory>> remember;
 
-        extern std::vector<action*> eventHandlers;
+        extern std::vector<element*> eventHandlers;
         extern std::vector<input*> inputs;
         
         extern std::unordered_map<std::string, element*> elementNames;

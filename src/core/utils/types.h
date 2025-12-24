@@ -583,8 +583,6 @@ namespace GGUI{
 
     class action : public event{
     public:
-        class element* host = nullptr;
-
         std::function<bool(GGUI::event*)> Job;
         
         std::string ID; 
@@ -593,14 +591,6 @@ namespace GGUI{
         action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, std::string id){
             criteria = Criteria;
             Job = job;
-            host = nullptr;
-            ID = id;
-        }
-
-        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, class element* Host, std::string id){
-            criteria = Criteria;
-            Job = job;
-            host = Host;
             ID = id;
         }
     };
