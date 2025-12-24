@@ -908,7 +908,10 @@ GGUI::element* GGUI::element::copy() const {
     element* new_element = createInstance();
 
     // Make sure the name is also renewed to represent the memory.
-    new_element->setName(std::to_string((unsigned long long)new_element));
+    if (!hasEmptyName())
+        new_element->setName(getNameAsRaw() + "_copy");
+    else 
+        new_element->Name = "";
 
     // Ptr related members:
     // - Parent
@@ -1818,7 +1821,7 @@ std::string GGUI::element::getNameAsRaw() const {
  * @return true if the name of the element has no characters, false otherwise.
  */
 bool GGUI::element::hasEmptyName() const {
-    return Name.size() == 0;
+    return Name.empty();
 }
 
 /**

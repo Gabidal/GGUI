@@ -984,6 +984,10 @@ namespace GGUI{
                 return; // nothing to translate
             }
 
+            auto hasIndicies = [&](ssize_t index, ssize_t offset) -> bool {
+                return (index + offset) < Raw_Input_Size;
+            };
+
             for (ssize_t i = 0; i < Raw_Input_Size; i++) {                // Check if SHIFT has been modifying the keys
                 if ((Raw_Input[i] >= 'A' && Raw_Input[i] <= 'Z') || (Raw_Input[i] >= '!' && Raw_Input[i] <= '/')) {
                     // SHIFT key is pressed
@@ -1019,7 +1023,7 @@ namespace GGUI{
                     }
                 }                if (Raw_Input[i] == constants::ANSI::ESC_CODE[0]) {
                     // check if there are stuff after this escape code
-                    if (i + 1 >= Raw_Input_Size) {
+                    if (!hasIndicies(i, 1)) {
                         // Clearly the escape key was invoked
                         inputs.push_back(new GGUI::input(' ', constants::ESCAPE));
                         KEYBOARD_STATES[KEYBOARD_BUTTONS::ESC] = buttonState(true);
@@ -1034,9 +1038,17 @@ namespace GGUI{
                     if (Raw_Input[i] == constants::ANSI::ESC_CODE[1]) {
                         // Escape sequence codes:
 
+                        if (!hasIndicies(i, 1)) {
+                            break; // incomplete escape sequence at end of buffer
+                        }
+
                         // Check for modifiers with base [1;
-                        if (Raw_Input[i+1] == '1' && Raw_Input[i+2] == ';'){
+                        if (hasIndicies(i, 2) && Raw_Input[i+1] == '1' && Raw_Input[i+2] == ';'){
                             i += 2;
+
+                            if (!hasIndicies(i, 1)) {
+                                break;
+                            }
 
                             unsigned char Modifier = (Raw_Input[i + 1] - '0') - 1;
 
@@ -1067,9 +1079,17 @@ namespace GGUI{
                             }
 
                             i += 2; // Skip the modifier and the semicolon
+
+                            if (!hasIndicies(i, 1)) {
+                                break;
+                            }
                         }
 
                         // UP, DOWN LEFT, RIGHT keys
+                        if (!hasIndicies(i, 1)) {
+                            break;
+                        }
+
                         if (Raw_Input[i + 1] == 'A') {
                             inputs.push_back(new GGUI::input(0, constants::UP));
                             KEYBOARD_STATES[KEYBOARD_BUTTONS::UP] = buttonState(true);
@@ -1091,6 +1111,9 @@ namespace GGUI{
                             i++;
                         }
                         else if (Raw_Input[i + 1] == 'M') {  // Decode X10 Mouse handling
+                            if (!hasIndicies(i, 4)) {
+                                break; // incomplete X10 mouse packet
+                            }
                             // Payload structure: '\e[Mbxy' where the b is bitmask representing the buttons, x and y representing the location of the mouse. 
                             char Bit_Mask = Raw_Input[i + 2];
 
@@ -1168,7 +1191,7 @@ namespace GGUI{
 
                             i++;
                         }
-                        else if (Raw_Input[i + 1] == '<' && Raw_Input[i + 2] == 'b'){   // Decode SGR Mouse handling
+                        else if (hasIndicies(i, 2) && Raw_Input[i + 1] == '<' && Raw_Input[i + 2] == 'b'){   // Decode SGR Mouse handling
                             // SGR mouse: ESC [ < b ; x ; y ( M | m )
                             // ---------------------------------------
                             // layout: '[' '<' b ';' x ';' y ('M' = press | 'm' = release)
@@ -1277,17 +1300,6 @@ namespace GGUI{
          */
         void initPlatformStuff(){
             if (!SETTINGS::enableDRM) {
-                // Initialize the console for mouse and window input, and set UTF-8 mode for output.
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
-                Platform_State.Mouse_Reporting_Enabled = true;
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
-                Platform_State.Cursor_Hidden = true;
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
-                Platform_State.Screen_Capture_Enabled = true;
-                // std::cout << constants::RESET_CONSOLE;
-                // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
-                std::cout << std::flush;
-
                 // Detect whether STDIN is a TTY. When not a TTY (e.g. piped/timeout), avoid raw mode and polling setup.
                 STDIN_IS_TTY = Is_Stdin_TTY();
 
@@ -1300,11 +1312,35 @@ namespace GGUI{
                     struct termios Term_Handle;
                     if (tcgetattr(STDIN_FILENO, &Term_Handle) == 0) {
                         Previous_Raw = Term_Handle;
+                        // Disable echo + canonical mode so mouse packets are not echoed back into the terminal.
+                        // Keep ISIG enabled so Ctrl+C still works.
                         Term_Handle.c_lflag &= ~(ECHO | ICANON);
                         Term_Handle.c_cc[VMIN] = 1;   // return after 1 byte
                         Term_Handle.c_cc[VTIME] = 0;  // no timeout
-                        tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle);
-                        Platform_State.Raw_Mode_Enabled = true;
+
+                        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle) == 0) {
+                            Platform_State.Raw_Mode_Enabled = true;
+                        }
+                        else {
+                            LOGGER::log("Failed to enable raw mode (tcsetattr). Mouse reporting will remain disabled to avoid corrupting output.");
+                        }
+                    }
+                    else {
+                        LOGGER::log("Failed to snapshot terminal mode (tcgetattr). Mouse reporting will remain disabled to avoid corrupting output.");
+                    }
+
+                    // Only enable mouse-reporting features after raw mode is successfully applied.
+                    if (Platform_State.Raw_Mode_Enabled) {
+                        // Initialize the console for mouse input.
+                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+                        Platform_State.Mouse_Reporting_Enabled = true;
+                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
+                        Platform_State.Cursor_Hidden = true;
+                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
+                        Platform_State.Screen_Capture_Enabled = true;
+                        // std::cout << constants::RESET_CONSOLE;
+                        // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
+                        std::cout << std::flush;
                     }
 
                     // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
@@ -1496,7 +1532,7 @@ namespace GGUI{
             // Check if the escape key has been pressed
             if (!KEYBOARD_STATES[KEYBOARD_BUTTONS::ESC].state)
                 return;
-
+                    
             // If the focused element is not null, remove the focus
             if (focusedOn){
                 updateHoveredElement(focusedOn); // Update the hovered element to be the focused element before un-focusing it.
@@ -1533,13 +1569,16 @@ namespace GGUI{
                 }
 
                 // Now, we need to find the last occurrence of this Current in the event handlers
-                for (int i = Current_Index + 1; i < (int)eventHandlers.size(); i++){
-                    if (eventHandlers[i]->host == Current){
-                        Current_Index = i; // Update the index to the last occurrence
+                if (!Shift_Is_Pressed)
+                    for (int i = Current_Index + 1; i < (int)eventHandlers.size(); i++){
+                        if (eventHandlers[i]->host == Current){
+                            Current_Index = i; // Update the index to the last occurrence
+                        } else {
+                            break;
+                        }    
                     }
-                }
             }
-
+    
             // Generalize index hopping, if shift is pressed then go backwards.
             Current_Index += 1 + (-2 * Shift_Is_Pressed);
 
@@ -2179,6 +2218,13 @@ namespace GGUI{
         void encodeBuffer(std::vector<GGUI::UTF>* Buffer) {
             const size_t Count = Buffer->size();
             if (Count == 0) return;
+
+            // Flags are used as per-frame markers. If we don't reset them, stale END flags from
+            // earlier frames can cause an early RESET_COLOR and make the rest of the frame render
+            // with default colors.
+            // for (auto& cell : *Buffer) {
+            //     cell.flags = ENCODING_FLAG::NONE;
+            // }
 
             // Set START flag for the first element
             Buffer->front().setFlag(ENCODING_FLAG::START);

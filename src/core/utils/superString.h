@@ -269,7 +269,8 @@ namespace GGUI{
              */
             constexpr void add(const char* Data, const int size){
                 // Store the string in the Data vector.
-                compactString tmp = compactString(Data, size);
+                // `size` is an explicit byte length (often for UTF-8 fragments) and may not be null-terminated.
+                compactString tmp = compactString(Data, size, true);
                 add(tmp);
             }
 

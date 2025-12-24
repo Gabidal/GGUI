@@ -8,10 +8,10 @@ int main()
         childs({
             new listView(
                 childs({
-                    new textField(text("File")),
-                    new textField(text("Edit") | onClick([]([[maybe_unused]] element* self){ return true; })),
-                    new textField(text("View") | onClick([]([[maybe_unused]] element* self){ return true; })),
-                    new textField(text("Help") | onClick([]([[maybe_unused]] element* self){ return true; }))
+                    new textField(text("File") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),
+                    new textField(text("Edit") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),
+                    new textField(text("View") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),
+                    new textField(text("Help") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true))
                 }) |
                 enableBorder(true)
             ),
@@ -32,5 +32,5 @@ int main()
         enableBorder(true) 
     );
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(INT32_MAX));
 }
