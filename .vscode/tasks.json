@@ -8,7 +8,7 @@
                 "compile",
                 "-C",
                 "bin/build",
-                "GGUI"
+                "ggui"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

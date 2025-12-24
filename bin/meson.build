@@ -101,8 +101,11 @@ if build_type == 'debugoptimized' or build_type == 'release'
     link_args += ['-flto']
   endif
   if cppc.has_argument('-fwhole-program')
-    cpp_args += ['-fwhole-program']
+    # cpp_args += ['-fwhole-program']
     link_args += ['-fwhole-program']
+  endif
+  if cppc.has_argument('-fvisibility=hidden')
+    cpp_args += ['-fvisibility=hidden']
   endif
 endif
 
@@ -157,15 +160,6 @@ build_native_archive = custom_target(
   output: host_machine.system() == 'windows' ? 'libggui.lib' : 'libggui.a',
   command: archive_cmd,
   build_by_default: true
-)
-
-# Build the main demo executable linked with the core library
-executable(
-  'GGUI',
-  '../src/main.cpp',
-  link_with: ggui_core,
-  install: true,
-  pie: enable_pic_pie
 )
 
 # Header generator tool (reuse existing C++ file)
@@ -227,7 +221,20 @@ if not is_cross
 endif
 
 # Test target: use exported artifacts to mirror original run.sh
-tester_inc = include_directories('..', 'export')
+native_archive_directory = include_directories('..', 'export')
+
+# Build the main demo executable linked with the core library
+executable(
+  'ggui',
+  [
+  '../src/main.cpp',
+    generate_header,
+  ],
+  include_directories: native_archive_directory,
+  link_with: ggui_core,
+  install: true,
+  pie: enable_pic_pie
+)
 
 # Test target: link with exported lib and include exported header
 tester = executable(
@@ -236,7 +243,7 @@ tester = executable(
     '../test/tester.cpp',
     generate_dev_header,
   ],
-  include_directories: tester_inc,
+  include_directories: native_archive_directory,
   link_with: ggui_core,
   install: false,
   pie: enable_pic_pie
@@ -252,7 +259,7 @@ timing_standing = executable(
     'analytics/timingWrappers/standing.cpp',
     generate_header,
   ],
-  include_directories: tester_inc,
+  include_directories: native_archive_directory,
   link_with: ggui_core,
   install: false,
   pie: enable_pic_pie
@@ -264,7 +271,7 @@ timing_busy = executable(
     'analytics/timingWrappers/busy.cpp',
     generate_header,
   ],
-  include_directories: tester_inc,
+  include_directories: native_archive_directory,
   link_with: ggui_core,
   install: false,
   pie: enable_pic_pie

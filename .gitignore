@@ -28,7 +28,7 @@ build-linux/
 build-release/
 
 # Custom output locations, since the headers can be easily re-generated or fetched from github releases.
-/bin/GGUI.p/
+/bin/ggui.p/
 /bin/export/ggui.h
 /bin/export/ggui_dev.h
 
