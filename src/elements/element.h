@@ -273,6 +273,13 @@ namespace GGUI{
         float getOpacity() const; 
 
         /**
+         * @brief Gets the opacity as an 8-bit value.
+         * @details Returns 0..255 where 0 is fully transparent and 255 is fully opaque.
+         * @return The current opacity byte.
+         */
+        unsigned char getOpacityByte() const;
+
+        /**
          * @brief Checks if the element is transparent.
          * @details This function determines whether the element is transparent by checking
          *          if the element's opacity is not equal to 1.0f. An opacity less than 1.0f

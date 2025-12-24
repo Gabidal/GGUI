@@ -2318,13 +2318,13 @@ namespace GGUI{
          * @param Dest The destination element to which the source element will be blended.
          * @param Source The source element which will be blended to the destination element.
          */
-        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, float childOpacity){
+        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, unsigned char childOpacity){
             // If the Source element has full opacity, then the destination gets fully rewritten over.
-            if (childOpacity == 1.0f){
+            if (childOpacity == UINT8_MAX){
                 Dest = Source;
                 return;
             }
-            else if (childOpacity == 0.0f) return;         // Dont need to do anything.
+            else if (childOpacity == 0) return;         // Dont need to do anything.
 
             // Color the Destination UTF by the Source UTF background color.
             Dest.background.add(Source.background, childOpacity);
@@ -2355,7 +2355,7 @@ namespace GGUI{
                     // Calculate the position of the child element in its own buffer.
                     int Child_Buffer_Y = (y - Limits.start.y + Limits.negativeOffset.y) * child->getWidth();
                     int Child_Buffer_X = (x - Limits.start.x + Limits.negativeOffset.x); 
-                    computeAlphaToNesting(Parent_Buffer[y * parent->getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacity());
+                    computeAlphaToNesting(Parent_Buffer[y * parent->getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacityByte());
                 }
             }
         }

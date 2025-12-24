@@ -4,7 +4,7 @@
 #include <string>
 #include <limits>
 #include <math.h>
-#include <stdint.h>
+#include <cstdint>
 #include <ostream>
 
 #include "superString.h"
@@ -102,14 +102,34 @@ namespace GGUI{
             return RGB(UINT8_MAX - red, UINT8_MAX - green, UINT8_MAX - blue);
         }
 
-        constexpr void add(const RGB& other, float opacity){
-            // Calculate the reverse alpha
-            float Reverse_Alpha = 1.0f - opacity;
+        // Integer-only alpha blend: opacity in [0..255] where 0 = transparent, 255 = fully opaque.
+        // Uses /256 (shift) for speed, with a special-case that maps 255 -> 256 so full opacity is exact.
+        constexpr void add(const RGB& other, unsigned char opacity){
+            if (opacity == 0) return;
+            if (opacity == UINT8_MAX){
+                red = other.red;
+                green = other.green;
+                blue = other.blue;
+                return;
+            }
 
-            // Blend the colors based on the opacity
-            red = (unsigned char)((float)red * Reverse_Alpha + (float)other.red * opacity);
-            green = (unsigned char)((float)green * Reverse_Alpha + (float)other.green * opacity);
-            blue = (unsigned char)((float)blue * Reverse_Alpha + (float)other.blue * opacity);
+            red = computeAlpha(red, other.red, opacity);
+            green = computeAlpha(green, other.green, opacity);
+            blue = computeAlpha(blue, other.blue, opacity);
+        }
+
+    private:
+        constexpr inline unsigned char computeAlpha(unsigned char A, unsigned char B, unsigned char opacity) {
+            constexpr unsigned int UINT8_MAX_AS_256 = UINT8_MAX + 1;            // 256
+            constexpr unsigned int UINT8_HALF = UINT8_MAX_AS_256 / 2;           // 128
+
+            #ifndef UINT8_WIDTH // For some compilers in windows side do not have cstdint::UINT8_WIDTH defined.
+            constexpr unsigned int UINT8_WIDTH = 8;
+            #endif
+
+            const unsigned int alpha = (unsigned int)opacity;                   // 1..254
+            const unsigned int inv = UINT8_MAX_AS_256 - alpha;
+            return (unsigned char)(((unsigned int)A * inv + (unsigned int)B * alpha + UINT8_HALF) >> UINT8_WIDTH);
         }
     };
 

@@ -17,8 +17,8 @@ int main() {
             onRender([](element* self) {
                 canvas* actualSelf = dynamic_cast<canvas*>(self);
 
-                for (unsigned int y = 0; y < actualSelf->getHeight(); y++) {
-                    for (unsigned int x = 0; x < actualSelf->getWidth(); x++) {
+                for (int y = 0; y < actualSelf->getHeight(); y++) {
+                    for (int x = 0; x < actualSelf->getWidth(); x++) {
                         // Set an initial sprite at each position
                         GGUI::sprite initialSprite(
                             {

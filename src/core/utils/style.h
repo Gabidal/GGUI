@@ -1785,9 +1785,20 @@ namespace GGUI{
 
     class opacity : public STYLING_INTERNAL::styleBase{
     protected:
-        float value = 1.0f;
+        unsigned char value = UINT8_MAX;        // 0..255 where 255 is fully opaque
+
+        static constexpr unsigned char To_Opacity_Byte(const float v){
+            constexpr float FULL_TRANSPARENCY = 0.0f;
+            constexpr float FULL_OPACITY = 1.0f;
+            constexpr float HALF_OPACITY = FULL_OPACITY / 2.0f;
+
+            if (v <= FULL_TRANSPARENCY) return 0;
+            if (v >= FULL_OPACITY) return UINT8_MAX;
+            // Round to nearest so 1.0f reliably maps to 255 and mid values are stable.
+            return (unsigned char)(v * (float)UINT8_MAX + HALF_OPACITY);
+        }
     public:
-        constexpr opacity(const float Value, const VALUE_STATE state = VALUE_STATE::VALUE) : styleBase(state), value(Value){}
+        constexpr opacity(const float Value, const VALUE_STATE state = VALUE_STATE::VALUE) : styleBase(state), value(To_Opacity_Byte(Value)){}
 
         inline ~opacity() override { styleBase::~styleBase(); }
 
@@ -1812,9 +1823,14 @@ namespace GGUI{
         
         INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        constexpr float Get() const { return value; }
+        constexpr unsigned char Get() const { return value; }
 
         constexpr void Set(const float Value){
+            value = To_Opacity_Byte(Value);
+            status = VALUE_STATE::VALUE;
+        }
+
+        constexpr void Set(const unsigned char Value){
             value = Value;
             status = VALUE_STATE::VALUE;
         }

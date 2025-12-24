@@ -9,7 +9,7 @@
 
 project(
   'GGUI', 'cpp',
-  version : '0.1.8.2',
+  version : '0.1.8.3',
   default_options : [
     'warning_level=3',
     'cpp_std=c++17'
@@ -19,7 +19,7 @@ project(
 
 # --- User Configuration ------------------------------------------------------
 # PIC/PIE for ASLR security benefits (Can slow down on 32-bit hardware)
-enable_pic_pie = true
+enable_pic_pie = false
 # -----------------------------------------------------------------------------
 
 # Source files for the project
@@ -86,22 +86,8 @@ endforeach
 # Linker arguments (collected project-wide)
 link_args = []
 
-# Add custom flags based on Meson's buildtype
-if build_type == 'debugoptimized'
-  cpp_args += ['-DGGUI_PROFILE', '-Og']
-  link_args += ['-static']  # Link all libc and other libraries statically for maximum inline and true profiling.
-
-elif build_type == 'debug'
-  cpp_args += ['-DGGUI_DEBUG']  # no flto nor -Og since debugging becomes an hassle with weird line skipping.
-
-  if host_machine.system() == 'windows'
-    link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library and export all symbols for stacktrace
-  elif host_machine.system() == 'linux'
-    cpp_args += ['-rdynamic']   # Export all symbols for stacktrace
-  endif
-
-elif build_type == 'release'
-  cpp_args += ['-DGGUI_RELEASE']
+# Add shared flags for debugoptimized and release builds
+if build_type == 'debugoptimized' or build_type == 'release'
 
   # NOTE: -static doesn't react similar to how it behaves in linux.
   link_args += ['-static'] # Link all libc and other libraries statically for maximum inline.
@@ -118,6 +104,22 @@ elif build_type == 'release'
     cpp_args += ['-fwhole-program']
     link_args += ['-fwhole-program']
   endif
+endif
+
+# Add custom flags based on Meson's buildtype
+if build_type == 'debugoptimized'
+  cpp_args += ['-DGGUI_PROFILE', '-Og']
+elif build_type == 'debug'
+  cpp_args += ['-DGGUI_DEBUG']  # no flto nor -Og since debugging becomes an hassle with weird line skipping.
+
+  if host_machine.system() == 'windows'
+    link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library and export all symbols for stacktrace
+  elif host_machine.system() == 'linux'
+    cpp_args += ['-rdynamic']   # Export all symbols for stacktrace
+  endif
+
+elif build_type == 'release'
+  cpp_args += ['-DGGUI_RELEASE']
 endif
 
 # Apply computed flags project-wide so individual targets don't need to repeat them

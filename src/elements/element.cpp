@@ -335,14 +335,24 @@ void GGUI::element::setOpacity(float Opacity){
  * @param[in] Opacity The opacity percentage to set.
  */
 void GGUI::element::setOpacity(unsigned int Opacity) {
+    constexpr unsigned int MAX_OPACITY = 100;
+    constexpr unsigned int HALF_OPACITY = 50;
     // Check if the provided opacity is within valid range (0-100)
-    if (Opacity > 100) {
+    if (Opacity > MAX_OPACITY) {
         // Report an error if the opacity value is too high
         INTERNAL::reportStack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + getName());
     }
 
-    // Convert the opacity percentage to a float value between 0.0 and 1.0 and set it
-    Style->Opacity.Set((float)Opacity / 100.f);
+    // Convert the opacity percentage to an 8-bit value (0..255) and set it.
+    // Keep behavior consistent with existing code: even if Opacity > 100 is reported, we still set (saturated).
+    unsigned int P = Opacity;
+    if (P >= MAX_OPACITY) {
+        Style->Opacity.Set((unsigned char)UINT8_MAX);
+    } else {
+        // Rounded mapping: 0..99 -> 0..252/253, 100 -> 255
+        const unsigned int Byte = (P * (unsigned)UINT8_MAX + HALF_OPACITY) / MAX_OPACITY;
+        Style->Opacity.Set((unsigned char)Byte);
+    }
 
     // Mark the element as dirty to trigger a visual update
     Dirty.Dirty(INTERNAL::STAIN_TYPE::RESET);
@@ -357,6 +367,10 @@ void GGUI::element::setOpacity(unsigned int Opacity) {
  * @return The current opacity of the element.
  */
 float GGUI::element::getOpacity() const {
+    return (float)getOpacityByte() / (float)UINT8_MAX;
+}
+
+unsigned char GGUI::element::getOpacityByte() const {
     return Style->Opacity.Get();
 }
 
@@ -368,8 +382,7 @@ float GGUI::element::getOpacity() const {
  * @return True if the element is transparent; otherwise, false.
  */
 bool GGUI::element::isTransparent() const {
-    // Get the current opacity of the element and compare it with 1.0f
-    return getOpacity() != 1.0f;
+    return getOpacityByte() != UINT8_MAX;
 }
 
 /**

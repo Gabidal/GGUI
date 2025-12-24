@@ -129,7 +129,7 @@ namespace GGUI{
              * @return true if the UTF object has a default text, false otherwise.
              */
             constexpr bool hasDefaultText() const {
-                return !empty() && text[0] == ' ';
+                return !empty() && text && text[0] == ' ';
             }
 
             constexpr bool empty() const {
