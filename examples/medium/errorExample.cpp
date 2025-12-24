@@ -24,22 +24,22 @@ void foo(element* self){
         C->updatePosition(C_velocity);
 
         // Check if any window hits an edge and reverse its direction
-        if (A->getPosition().X <= 0 || A->getPosition().X + A->getWidth() >= self->getWidth())
-            A_velocity.X = -A_velocity.X;
-        if (A->getPosition().Y <= 0 || A->getPosition().Y + A->getHeight() >= self->getHeight())
-            A_velocity.Y = -A_velocity.Y;
+        if (A->getPosition().x <= 0 || A->getPosition().x + A->getWidth() >= self->getWidth())
+            A_velocity.x = -A_velocity.x;
+        if (A->getPosition().y <= 0 || A->getPosition().y + A->getHeight() >= self->getHeight())
+            A_velocity.y = -A_velocity.y;
 
-        if (B->getPosition().X <= 0 || B->getPosition().X + B->getWidth() >= self->getWidth())
-            B_velocity.X = -B_velocity.X;
-        if (B->getPosition().Y <= 0 || B->getPosition().Y + B->getHeight() >= self->getHeight())
-            B_velocity.Y = -B_velocity.Y;
+        if (B->getPosition().x <= 0 || B->getPosition().x + B->getWidth() >= self->getWidth())
+            B_velocity.x = -B_velocity.x;
+        if (B->getPosition().y <= 0 || B->getPosition().y + B->getHeight() >= self->getHeight())
+            B_velocity.y = -B_velocity.y;
 
-        if (C->getPosition().X <= 0 || C->getPosition().X + C->getWidth() >= self->getWidth())
-            C_velocity.X = -C_velocity.X;
-        if (C->getPosition().Y <= 0 || C->getPosition().Y + C->getHeight() >= self->getHeight())
-            C_velocity.Y = -C_velocity.Y;
+        if (C->getPosition().x <= 0 || C->getPosition().x + C->getWidth() >= self->getWidth())
+            C_velocity.x = -C_velocity.x;
+        if (C->getPosition().y <= 0 || C->getPosition().y + C->getHeight() >= self->getHeight())
+            C_velocity.y = -C_velocity.y;
 
-        GGUI::report(to_string(A->getPosition().X));
+        GGUI::report(to_string(A->getPosition().x));
         resumeGGUI();
 
         // press 'CTRL + SHIFT + I' to open the inspect window. 
@@ -80,5 +80,5 @@ int main(){
         name("Main window")
     );
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
+    std::this_thread::sleep_for(std::chrono::seconds(INT32_MAX));
 }

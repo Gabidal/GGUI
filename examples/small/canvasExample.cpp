@@ -2,6 +2,86 @@
 
 using namespace GGUI;
 
+canvas* canvas1 = new canvas(
+    width(0.33f) | height(0.5f) | position(STYLES::center)
+);
+
+void directSetToCanvas() {
+    for (int y = 0; y < canvas1->getHeight(); y++) {
+        for (int x = 0; x < canvas1->getWidth(); x++) {
+            // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
+            GGUI::sprite initialSprite(
+                {
+                    // UTF A
+                    {"∆", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
+                },
+                x+y,  // <-- Animation offset, you can use perlin noise to make some nice wind styled animations
+                1   // <-- Animation speed of the linear interpolation
+            );
+
+            canvas1->set(x, y, initialSprite, false);
+        }
+    }
+}
+
+struct block {
+    unsigned int ID = 0;
+};
+
+sprite getSpriteFromId(block b) {
+    if (b.ID == 0) {    // water
+        return sprite({'~', {COLOR::BLUE, COLOR::BLUE}});
+    } else if (b.ID == 1) { // sand
+        return sprite({'.', {COLOR::YELLOW, COLOR::YELLOW}});
+    } else if (b.ID == 2) { // grass
+        return sprite({',', {COLOR::GREEN, COLOR::GREEN}});
+    } else if (b.ID == 3) { // mountain
+        return sprite({'^', {COLOR::GRAY, COLOR::GRAY}});
+    } else {    // default
+        return sprite({'#', {COLOR::WHITE, COLOR::BLACK}});
+    }
+}
+
+IVector2 playerPosition = {0, 0};
+void addMovementKeybinds(element* self);
+
+canvas* canvas2 = new canvas(
+    width(0.33f) | height(0.5f) | position(STYLES::right) | 
+
+    onDraw([](unsigned int x, unsigned int y){
+        srand((playerPosition.y + y) * 256 + (playerPosition.x + x));
+
+        return getSpriteFromId(block{static_cast<unsigned int>(rand() % 4)});
+    }) | 
+
+    onInit([](element* self){
+        addMovementKeybinds(self);
+    })
+);
+
+void addMovementKeybinds(element* self) {
+    self->on(constants::UP, [](event*){
+        playerPosition.y -= 1;
+        return true;
+    });
+
+    self->on(constants::DOWN, [](event*){
+        playerPosition.y += 1;
+        return true;
+    });
+
+    self->on(constants::LEFT, [](event*){
+        playerPosition.x -= 1;
+        return true;
+    });
+
+    self->on(constants::RIGHT, [](event*){
+        playerPosition.x += 1;
+        return true;
+    });
+}
+
+
 int main() 
 {
     GGUI::GGUI(
@@ -14,8 +94,8 @@ int main()
             onRender([](element* self) {
                 canvas* actualSelf = dynamic_cast<canvas*>(self);
 
-                for (unsigned int y = 0; y < actualSelf->getHeight(); y++) {
-                    for (unsigned int x = 0; x < actualSelf->getWidth(); x++) {
+                for (int y = 0; y < actualSelf->getHeight(); y++) {
+                    for (int x = 0; x < actualSelf->getWidth(); x++) {
                         // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
                         GGUI::sprite initialSprite(
                             {
@@ -34,65 +114,19 @@ int main()
             })
         )) | 
 
-        // Non-animated canvas with unicode emojis
-        node(new canvas(
-            // Set the canvas to third of screen size. 30%
-            width(0.33f) | height(0.5f) | position(STYLES::center) |
+        node(canvas1) |
 
-            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
-            onRender([](element* self) {
-                canvas* actualSelf = dynamic_cast<canvas*>(self);
+        onInit([](element*){
+            std::thread t([](){
+                directSetToCanvas();
+            });
 
-                for (unsigned int y = 0; y < actualSelf->getHeight(); y++) {
-                    for (unsigned int x = 0; x < actualSelf->getWidth(); x++) {
-                        // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
-                        GGUI::sprite initialSprite(UTF(
-                            "🗲",   // <-- Unicode characters are supported, but don't use too wide ones, since they currently break GGUI.
-                            {
-                                COLOR::WHITE,       // <-- Text color
-                                COLOR::BLACK        // <-- back. 
-                            }
-                        ));
+            t.detach();
+        }) |
 
-                        actualSelf->set(x, y, initialSprite, false);
-                    }
-                }
-            })
-        )) | 
-
-        node(new canvas(
-            // Set the canvas to third of screen size. 30%
-            width(0.33f) | height(0.5f) | position(STYLES::right) |
-
-            // This is called when the render for canvas is ready to comb through the sprite cells in this canvas.
-            onRender([](element* self) {
-                canvas* actualSelf = dynamic_cast<canvas*>(self);
-
-                for (unsigned int y = 0; y < actualSelf->getHeight(); y++) {
-                    for (unsigned int x = 0; x < actualSelf->getWidth(); x++) {
-                        // Giving more than one UTF to Sprite, will make the Sprite an animated Sprite, where the different colors are linearly interpolated.
-                        GGUI::sprite initialSprite(
-                            {
-                                // UTF A
-                                {' ', {COLOR::BLACK /*text color*/, COLOR::BLACK /*background color*/}}, 
-                                // UTF B
-                                {' ', {COLOR::LIGHT_GRAY /*text color*/, COLOR::LIGHT_GRAY /*background color*/}}, 
-
-                                {"A", {COLOR::LIGHT_RED /*text color*/, COLOR::LIGHT_GREEN /*background color*/}}, 
-
-                                {' ', {COLOR::BLACK /*text color*/, COLOR::BLACK /*background color*/}}
-                            },
-                            x-y*y,  // <-- Animation offset, you can use perlin noise to make some nice wind styled animations
-                            1+x   // <-- Animation speed of the linear interpolation
-                        );
-
-                        actualSelf->set(x, y, initialSprite, false);
-                    }
-                }
-            })
-        ))
+        node(canvas2)
     );
     
     // Your program...
-    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
+    std::this_thread::sleep_for(std::chrono::seconds(INT32_MAX));
 }

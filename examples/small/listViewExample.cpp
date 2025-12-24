@@ -49,5 +49,5 @@ int main(){
     );
 
     // Your program...
-    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
+    std::this_thread::sleep_for(std::chrono::seconds(INT32_MAX));
 }

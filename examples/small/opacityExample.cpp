@@ -24,5 +24,5 @@ int main(){
     );
 
     // You can also use the GGUI's internal sleep function to wait.
-    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
+    std::this_thread::sleep_for(std::chrono::seconds(INT32_MAX));
 }
