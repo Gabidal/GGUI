@@ -17,60 +17,80 @@ namespace GGUI{
             return t;
         }();
 
+        /**
+         * @class compactString
+         * @brief Lightweight string view optimized for tiny tokens.
+         *
+         * `compactString` is a small, trivially copyable wrapper around a `const char*` and a byte length.
+         * It is used heavily by `superString` to store many small fragments without allocating.
+         *
+         * Storage model:
+         * - For single-byte values (characters), it points into the static `asciiToString` lookup table.
+         * - For C-strings, it points to the provided memory and computes the length once.
+         * - For externally sized buffers, it can be constructed with an explicit byte length.
+         *
+         * Lifetime:
+         * - This type does not own memory.
+         * - Any pointer passed in must outlive the `compactString` and all of its consumers.
+         *
+         * Encoding:
+         * - `size` is measured in bytes and may represent UTF-8 byte length when used with text.
+         */
         class compactString{
         public:
             const char* text = nullptr;
             size_t size = 0;
 
             /**
-             * @brief Empty constructor for the Compact_String class. This is only used for resizing a vector of Compact_Strings, and should not be used directly.
-             * @warning Do not use this constructor directly, as it will not initialize the Data property.
-             * This constructor initializes a Compact_String object with default values.
+             * @brief Default constructor.
+             *
+             * Creates an empty `compactString` (`text == nullptr`, `size == 0`).
+             *
+             * @note This is commonly used by containers (e.g., `std::array`) that value-initialize elements.
              */
             constexpr compactString() = default;
 
             /**
-             * @brief Default copy constructor for Compact_String.
-             *
-             * Creates a new Compact_String object as a copy of an existing one.
-             * This constructor performs a member-wise copy of the source object.
-             *
-             * @param other The Compact_String instance to copy from.
+             * @brief Copy constructor.
+             * @param other Source view.
              */
             constexpr compactString(const compactString&) = default;
 
             /**
-             * @brief Move constructor for Compact_String.
+             * @brief Move constructor.
+             * @param other Source view.
              *
-             * Constructs a new Compact_String by transferring the resources from another
-             * Compact_String instance. The source object is left in a valid but unspecified state.
-             *
-             * @param other The Compact_String instance to move from.
+             * @note Moving is equivalent to copying because the type is non-owning.
              */
             constexpr compactString(compactString&&) = default;
 
             /**
-             * @brief Default copy assignment operator for Compact_String.
-             *
-             * Assigns the contents of another Compact_String to this one.
-             * The default implementation performs a member-wise copy of all fields.
-             *
-             * @param other The Compact_String instance to copy from.
-             * @return Reference to this Compact_String after assignment.
+             * @brief Copy assignment.
+             * @param other Source view.
+             * @return `*this`.
              */
             constexpr compactString& operator=(const compactString&) = default;
 
             /**
-             * @brief Default move assignment operator for Compact_String.
+             * @brief Move assignment.
+             * @param other Source view.
+             * @return `*this`.
              *
-             * Allows assigning the contents of another Compact_String to this one using move semantics.
-             * The default implementation efficiently transfers resources from the source object,
-             * leaving it in a valid but unspecified state.
-             *
-             * @return Reference to this Compact_String after assignment.
+             * @note Moving is equivalent to copying because the type is non-owning.
              */
             constexpr compactString& operator=(compactString&&) = default;
 
+            /**
+             * @brief Construct from a null-terminated C-string.
+             *
+             * Computes the byte length up-front.
+             *
+             * Special case:
+             * - If the computed length is 0 (i.e., `""`), this will point at the static `"\0"` from
+             *   `asciiToString[0]` and set `size = 1`.
+             *
+             * @param data Null-terminated string pointer. May be null.
+             */
             constexpr compactString(const char* data){
                 size_t tmpSize = getLength(data);
 
@@ -84,8 +104,24 @@ namespace GGUI{
                 }
             }
 
+            /**
+             * @brief Construct a single-byte character view.
+             * @param data Character to represent.
+             *
+             * Points into `asciiToString` and sets `size = 1`.
+             */
             constexpr compactString(char data) : text(asciiToString[static_cast<unsigned char>(data)].data()), size(1) {}
 
+            /**
+             * @brief Construct from a pointer and size.
+             *
+             * Use this for buffers that are not necessarily null-terminated (e.g., UTF-8 fragments).
+             *
+             * @param data Pointer to character data (not owned).
+             * @param Size Byte length to use when `forceUnicode` is true.
+             * @param forceUnicode If true, `size` is taken from `Size`; otherwise, `size` is computed by
+             *        scanning for a null terminator.
+             */
             constexpr compactString(const char* data, const size_t Size, const bool forceUnicode = false){
                 text = data;
                 
@@ -93,20 +129,33 @@ namespace GGUI{
                 else size = getLength(text);
             }
 
-            // Fast comparison of type and content
+            /**
+             * @brief Check whether this represents the given null-terminated C-string.
+             *
+             * @param other Null-terminated string to compare against.
+             * @return True if this is a multi-byte string view (`size > 1`) and `strcmp(text, other) == 0`.
+             *
+             * @note This intentionally returns false for single-character views.
+             */
             constexpr bool is(const char* other) const {
                 return size > 1 && text && std::strcmp(text, other) == 0;
             }
 
-            // Fast comparison of type and content
+            /**
+             * @brief Check whether this represents the given character.
+             * @param other Character to compare against.
+             * @return True if this is a single-byte view (`size == 1`) and the byte matches.
+             */
             constexpr bool is(char other) const {
                 return size == 1 && text && text[0] == other;
             }
 
             /**
-             * @brief Overloaded subscript operator to access character at a given index.
-             * @param index The index of the character to access.
-             * @return char The character at the specified index.
+             * @brief Safe byte access.
+             * @param index Byte index to read.
+             * @return The byte at `index`, or `'\0'` if out of bounds or `text` is null.
+             *
+             * @note This is byte-oriented; it does not decode UTF-8 codepoints.
              */
             constexpr char operator[](int index) const {
                 return ((unsigned)index >= size || index < 0 || !text) ? 
@@ -114,24 +163,40 @@ namespace GGUI{
                     text[index];
             }
 
+            /**
+             * @brief Replace this view with a single-byte character.
+             * @param val Character to represent.
+             */
             constexpr void set(char val) {
                 size = 1;
                 text = asciiToString[static_cast<unsigned char>(val)].data();
             }
 
+            /**
+             * @brief Replace this view with a null-terminated C-string.
+             * @param val Null-terminated string pointer. May be null.
+             */
             constexpr void set(const char* val) {
                 text = val;
                 size = getLength(val);
             }
             
             /**
-             * @brief Checks if the UTF object has a default text.
-             * @return true if the UTF object has a default text, false otherwise.
+             * @brief Check whether this view uses the sentinel "default text" representation.
+             *
+             * In this codebase, a non-empty string starting with a space (`' '`) is sometimes used as a
+             * sentinel for "default"/"unset" UI text.
+             *
+             * @return True if non-empty and the first byte is `' '`.
              */
             constexpr bool hasDefaultText() const {
                 return !empty() && text && text[0] == ' ';
             }
 
+            /**
+             * @brief Check whether this view is empty.
+             * @return True when `size == 0`.
+             */
             constexpr bool empty() const {
                 // Check if the Compact_String is empty.
                 // An empty Compact_String has a size of 0.
@@ -140,13 +205,10 @@ namespace GGUI{
 
         protected:
             /**
-             * @brief Computes the length of a null-terminated C-string at compile time.
+             * @brief Compute the byte length of a null-terminated C-string.
              *
-             * This constexpr function iterates through the input string until it encounters
-             * the null terminator ('\0'), counting the number of characters.
-             *
-             * @param str Pointer to the null-terminated C-string.
-             * @return The number of characters in the string, excluding the null terminator.
+             * @param str Pointer to a null-terminated string.
+             * @return Number of bytes before the first `'\0'`. Returns 0 when `str` is null.
              */
             constexpr size_t getLength(const char* str) {
                 size_t length = 0;
@@ -160,41 +222,66 @@ namespace GGUI{
             }
         };
 
+
         /**
-         * @class Super_String
-         * @brief A container class for efficiently managing and concatenating multiple Compact_String objects.
+         * @class superString
+         * @brief Fixed-capacity fragment buffer for efficient string assembly.
          *
-         * The Super_String class provides a fixed-size array of Compact_String objects, allowing for efficient
-         * storage, addition, and concatenation of strings and characters. It maintains an internal index to track
-         * the current number of stored elements and a liquefied size representing the total number of characters
-         * across all stored strings. The class supports various methods for adding strings, characters, and other
-         * Super_String instances, as well as clearing its contents and converting the stored data into a single
-         * std::string.
+         * `superString` stores up to `maxSize` non-owning string fragments (`compactString`).
+         * It is designed to build output strings with minimal allocations by:
+         * - storing many tiny tokens (often 1-byte) as views,
+         * - keeping a running total byte length (`liquefiedSize`),
+         * - optionally operating over a caller-provided fragment window.
          *
-         * @tparam maxSize The maximum number of Compact_String objects that can be stored in the Super_String.
+         * Lifetime/ownership:
+         * - Fragment text is never owned by `superString` (it stores views).
+         * - If you use external storage via `remap()` / external constructor, that memory must outlive
+         *   the `superString` instance.
          *
-         * @note This class is designed for performance and memory efficiency, making it suitable for scenarios
-         *       where frequent string concatenation and manipulation are required.
+         * Encoding:
+         * - All sizes are byte lengths. When used with UTF-8, `liquefiedSize` is the UTF-8 byte count.
          */
         template<std::size_t maxSize>
         class superString{
         public:
-            // Data points either to inlineStorage (default) or an external window provided by conveyorAllocator.
+            /**
+             * @brief Active storage pointer.
+             *
+             * Points either to the internal inline storage (`inlineStorage`) or to an externally provided
+             * contiguous window (see `superString(compactString*)` and `remap()`).
+             *
+             * @note This class does not own external windows.
+             */
             compactString* data = nullptr;
+
+            /**
+             * @brief Number of fragments currently stored in `data`.
+             *
+             * Valid range: `[0, maxSize]` for inline storage.
+             */
             size_t currentIndex = 0;
+
+            /**
+             * @brief Total number of bytes across all stored fragments.
+             *
+             * This is the sum of `data[i].size` for all added fragments.
+             */
             size_t liquefiedSize = 0;
 
         protected:
-            // Inline storage to avoid dynamic allocations for the common case.
+            /**
+             * @brief Inline storage to avoid dynamic allocations.
+             *
+             * The default constructor sets `data = inlineStorage.data()`.
+             */
             std::array<compactString, maxSize> inlineStorage{};
         
         public:
 
             /**
-             * @brief Default constexpr constructor for the Super_String class.
+             * @brief Construct an empty `superString` using inline storage.
              *
-             * Initializes a Super_String object with default values at compile time.
-             * This constructor does not perform any custom initialization logic.
+             * Initializes `data` to point at `inlineStorage` and resets indices.
              */
             constexpr superString() {
                 // By default, use inline storage to avoid heap allocations.
@@ -204,12 +291,11 @@ namespace GGUI{
             }
 
             /**
-             * @brief Constructs a Super_String from an initializer list of Compact_String objects.
+             * @brief Construct from an initializer-list of fragments.
              *
-             * This constructor allows you to initialize a Super_String with a list of Compact_String
-             * instances. Each item in the initializer list is added to the Super_String using the Add method.
+             * Each item is appended in order via `add(const compactString&)`.
              *
-             * @param data An initializer list containing Compact_String objects to be added to the Super_String.
+             * @param Data Initial fragments to append.
              */
             constexpr superString(const std::initializer_list<compactString>& Data) : superString() {
                 for (const auto& item : Data) {
@@ -217,6 +303,15 @@ namespace GGUI{
                 }
             }
 
+            /**
+             * @brief Construct an empty `superString` over an external fragment window.
+             *
+             * This is used to avoid even the inline array when some higher-level allocator provides
+             * a reusable `compactString[]` window.
+             *
+             * @param preAllocatedWindow Pointer to at least `maxSize` `compactString` slots.
+             * @warning The window is not owned; it must outlive this `superString`.
+             */
             constexpr superString(compactString* preAllocatedWindow) {
                 // Use external window memory; caller manages its lifetime.
                 data = preAllocatedWindow;
@@ -224,6 +319,16 @@ namespace GGUI{
                 liquefiedSize = 0;
             }
 
+            /**
+             * @brief Rebind this instance to a different external window and restore state.
+             *
+             * This is effectively a “move” of the logical contents into a new backing window.
+             *
+             * @param preAllocatedWindowHead New backing array.
+             * @param preAllocatedWindowCurrentIndex Fragment count to restore.
+             * @param preAllocatedWindowLiquefiedSize Total byte length to restore.
+             * @warning This does not copy fragments; it only repoints internal pointers.
+             */
             constexpr void remap(compactString* preAllocatedWindowHead, const size_t preAllocatedWindowCurrentIndex, const size_t preAllocatedWindowLiquefiedSize) {
                 // Use external window memory; caller manages its lifetime.
                 data = preAllocatedWindowHead;
@@ -232,10 +337,10 @@ namespace GGUI{
             }
 
             /**
-             * @brief Clears the contents of the Super_String.
-             * 
-             * This function resets the current index back to the start of the vector,
-             * effectively clearing any stored data.
+             * @brief Clear all stored fragments.
+             *
+             * Resets `currentIndex` and `liquefiedSize` to zero.
+             * Does not modify the fragment storage contents.
              */
             constexpr void clear(){
                 // Set the current index back to the start of the vector.
@@ -244,12 +349,12 @@ namespace GGUI{
             }
 
             /**
-             * @brief Adds a Compact_String to the data vector.
-             * 
-             * This function appends the given Compact_String to the current position
-             * in the Data vector and then increments the Current_Index.
-             * 
-             * @param other The Compact_String to add to the data vector.
+             * @brief Append a fragment view.
+             *
+             * @param other Fragment to append.
+             *
+             * @warning No bounds checking is performed. Exceeding the available capacity
+             *          will write out of bounds.
              */
             constexpr void add(const compactString& other){
                 // Store the Compact_String in the data vector.
@@ -258,14 +363,14 @@ namespace GGUI{
             }
 
             /**
-             * @brief Adds a new string to the data vector.
-             * 
-             * This function stores the provided string in the data vector by creating a 
-             * Compact_String object from the given data and size, and then adds it to 
-             * the Data vector at the current index.
-             * 
-             * @param data Pointer to the character array containing the string to be added.
-             * @param size The size of the string to be added.
+             * @brief Append a sized byte fragment.
+             *
+             * This is commonly used for UTF-8 fragments that are not null-terminated.
+             *
+             * @param Data Pointer to byte data (not owned).
+             * @param size Byte length to append.
+             *
+             * @warning No bounds checking is performed.
              */
             constexpr void add(const char* Data, const int size){
                 // Store the string in the Data vector.
@@ -275,12 +380,9 @@ namespace GGUI{
             }
 
             /**
-             * @brief Adds a character to the Super_String.
-             * 
-             * This function stores the given character in the data vector
-             * and increments the current index.
-             * 
-             * @param data The character to be added to the Super_String.
+             * @brief Append a single byte.
+             * @param Data Byte/character to append.
+             * @warning No bounds checking is performed.
              */
             constexpr void add(const char Data){
                 // Store the character in the data vector.
@@ -288,15 +390,12 @@ namespace GGUI{
             }
 
             /**
-             * @brief Adds the contents of another Super_String to this Super_String.
+             * @brief Append another `superString`'s fragments (pointer overload).
              *
-             * This function appends the contents of the provided Super_String to the current
-             * Super_String. If the Expected parameter is false, the function will resize the
-             * Data vector to accommodate the additional characters.
+             * @tparam OtherMaxSize Source capacity.
+             * @param other Source `superString` to append.
              *
-             * @param other A pointer to the Super_String to be added.
-             * @param Expected A boolean flag indicating whether the reservation size is already
-             *                 expected to be sufficient. If false, the Data vector will be resized.
+             * @warning No bounds checking is performed.
              */
             template<std::size_t OtherMaxSize>
             constexpr void add(const superString<OtherMaxSize>* other){
@@ -307,10 +406,12 @@ namespace GGUI{
             }
             
             /**
-             * @brief Add the contents of another Super_String to this one.
-             * @param other The Super_String to add.
-             * @param Expected If true, the size of the Data vector will not be changed.
-             * @details This function is used to concatenate Super_Strings.
+             * @brief Append another `superString`'s fragments (reference overload).
+             *
+             * @tparam OtherMaxSize Source capacity.
+             * @param other Source `superString` to append.
+             *
+             * @warning No bounds checking is performed.
              */
             template<std::size_t OtherMaxSize>
             constexpr void add(const superString<OtherMaxSize>& other){
@@ -320,6 +421,20 @@ namespace GGUI{
                 }
             }
 
+            /**
+             * @brief Materialize all fragments into a single contiguous byte buffer (view return).
+             *
+             * Concatenates all fragments in order and returns a `compactString` view of the resulting
+             * buffer.
+             *
+             * @return A `compactString` whose `text` points to a newly allocated byte buffer and whose
+             *         `size` equals `liquefiedSize`.
+             *
+             * @warning Ownership/lifetime: this function allocates with `new[]` and returns a non-owning
+             *          view (`compactString`) that has no way to release that allocation. As written, this
+             *          is a leak unless some external convention frees the returned pointer.
+             *          Prefer `toString()` if you need an owning result.
+             */
             inline const compactString compress() const {
                 char* header = new char[liquefiedSize];
                 compactString result(header, liquefiedSize, true);
@@ -339,13 +454,11 @@ namespace GGUI{
             }
 
             /**
-             * @brief Converts the Super_String object to a std::string.
-             * 
-             * This function goes through the Data vector and calculates the total size of all
-             * the strings stored in the vector. It then resizes a std::string to that size and
-             * then copies the contents of the Data vector into the std::string.
-             * 
-             * @return A std::string that contains all the strings stored in the Data vector.
+             * @brief Materialize all fragments into an owning `std::string`.
+             *
+             * Copies all fragments in order into a single `std::string` of size `liquefiedSize`.
+             *
+             * @return Owning string containing the concatenated bytes.
              */
             std::string toString() {
                 // Resize a std::string to the total size.

@@ -23,6 +23,8 @@ namespace GGUI{
             // 1 to USE_RGB
             // 1 to SEPARATE
             constexpr unsigned int maximumNeededPreAllocationForOverHead = 1 + 1 + 1 + 1 + 1;
+
+            // 1 to maximumNeededPreAllocationForOverHead as compressed single compactString
             constexpr unsigned int maximumNeededPreAllocationForCompressedOverHead = 1;
 
             // 1 to Red
@@ -32,10 +34,10 @@ namespace GGUI{
             // 1 to Blue
             constexpr unsigned int maximumNeededPreAllocationForColor = 1 + 1 + 1 + 1 + 1;
             
-            // 1 to Text_Overhead
+            // 1 to Text_Overhead   (5 compressed into 1)
             // 5 to Text_Colour
             // 1 to END_COMMAND
-            // 1 to Background_Overhead
+            // 1 to Background_Overhead   (5 compressed into 1)
             // 5 to Background_Colour
             // 1 to END_COMMAND
             constexpr unsigned int maximumNeededPreAllocationForOverhead = 
@@ -45,10 +47,10 @@ namespace GGUI{
             // 1 to RESET_COLOR
             constexpr unsigned int maximumNeededPreAllocationForReset = 1;
 
-            // 1 to Text_Overhead
+            // 1 to Text_Overhead   (5 compressed into 1)
             // 5 to Text_Colour
             // 1 to END_COMMAND
-            // 1 to Background_Overhead
+            // 1 to Background_Overhead   (5 compressed into 1)
             // 5 to Background_Colour
             // 1 to END_COMMAND
             // 1 to Data

@@ -308,7 +308,6 @@ test_project_structure() {
     # Test essential project files
     local essential_files=(
         "bin/meson.build:Main build file"
-        "src/ggui.h:Main header"
         "bin/build.sh:Build script"
         "bin/init.sh:Init script"
     )

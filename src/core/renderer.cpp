@@ -1569,6 +1569,18 @@ namespace GGUI{
             if (eventHandlers.empty())
                 return;
             
+            // return if there are only INTERNAL::main handlers
+            bool Only_Main_Handlers = true;
+            for (const auto* Handler : eventHandlers){  // yes this is kinda dumb way of doing this but it works well...
+                if (Handler != INTERNAL::main){
+                    Only_Main_Handlers = false;
+                    break;
+                }
+            }
+
+            if (Only_Main_Handlers)
+                return;
+
             // Check if the shift key is pressed
             bool Shift_Is_Pressed = KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT].state;
 
@@ -1580,12 +1592,12 @@ namespace GGUI{
             // Find the index of the current element in the list of event handlers
             if (Current){
                 // Find the first occurrence of the event handlers with this Current being their Host.
-                for (;(unsigned int)Current_Index < eventHandlers.size(); Current_Index++){
-                    if (eventHandlers[Current_Index] == Current)
+                for (;(size_t)Current_Index < eventHandlers.size(); Current_Index++){
+                    if (eventHandlers[(size_t)Current_Index] == Current)
                         break;
                 }
             }
-            
+
             // Skip main::* handlers.
             do {
                 // Generalize index hopping, if shift is pressed then go backwards.
@@ -1598,11 +1610,11 @@ namespace GGUI{
                 else if ((size_t)Current_Index >= eventHandlers.size()){
                     Current_Index = 0;
                 }
-            } while (Current_Index < eventHandlers.size() && eventHandlers[Current_Index] == INTERNAL::main);
-            
+            } while ((size_t)Current_Index < eventHandlers.size() && eventHandlers[(size_t)Current_Index] == INTERNAL::main);
+
             // Now update the hovered element with the new index
             Hover_Locked_To_Keyboard = true;
-            updateHoveredElement(eventHandlers[Current_Index]);
+            updateHoveredElement(eventHandlers[(size_t)Current_Index]);
         }
 
         /**
