@@ -29,7 +29,7 @@ namespace GGUI{
         extern std::chrono::high_resolution_clock::time_point Current_Time;
 
         extern atomic::guard<carry> Carry_Flags;
-        extern volatile sig_atomic_t requestTermination;
+        extern sig_atomic_t requestTermination;
 
         extern void Translate_Inputs();
 
@@ -236,8 +236,6 @@ namespace GGUI{
             }
         
             LOGGER::log("Event thread terminated!");
-
-            std::exit(0);
         }
     
         /**
@@ -289,8 +287,6 @@ namespace GGUI{
             }
         
             LOGGER::log("Input thread terminated!");
-            
-            std::exit(0);
         }
     }
 }

@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <exception>
 #include <csignal>
+#include <atomic>
 
 #if _WIN32
     #include <windows.h>
@@ -614,7 +615,7 @@ namespace GGUI{
                     SIGTERM
                 }){
                 std::signal(i, [](int){
-                    waitForThreadTermination();
+                    SignalThreadTermination();
                 });
             }
 
@@ -1353,7 +1354,7 @@ namespace GGUI{
             // Register the exit handler for the following signals
             struct sigaction normal_exit = {};
             normal_exit.sa_handler = [](int){
-                waitForThreadTermination();
+                SignalThreadTermination();
             };
             sigemptyset(&normal_exit.sa_mask);
             normal_exit.sa_flags = 0;
@@ -1421,7 +1422,7 @@ namespace GGUI{
         #endif
 
         void Cleanup(){
-            waitForThreadTermination();
+            SignalThreadTermination();
 
             LOGGER::log("Reverting to normal console mode...");
 
@@ -1704,7 +1705,7 @@ namespace GGUI{
             return LIQUIFY_UTF_TEXT_RESULT_CACHE;
         }
 
-        void waitForThreadTermination(){
+        void SignalThreadTermination(){
             // Gracefully shutdown event and rendering threads.
             requestTermination = true;
 
@@ -2411,10 +2412,15 @@ namespace GGUI{
      * @param signum The exit code for the application.
      */
     void EXIT(int signum){
-        // INTERNAL::waitForThreadTermination();
+        INTERNAL::SignalThreadTermination();
 
         // Exit the application with the specified exit code
         exit(signum);
+    }
+
+    void waitForTermination() {
+        std::unique_lock lock(INTERNAL::atomic::mutex);
+        INTERNAL::atomic::condition.wait(lock, [&](){ return INTERNAL::requestTermination; });
     }
 
     element* getRoot() {

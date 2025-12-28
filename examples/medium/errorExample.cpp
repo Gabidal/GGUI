@@ -80,5 +80,5 @@ int main(){
         name("Main window")
     );
 
-    std::this_thread::sleep_for(std::chrono::seconds(INT32_MAX));
+    GGUI::waitForTermination();
 }

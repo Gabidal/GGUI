@@ -152,5 +152,5 @@ int main()
     );
     
     // Your program...
-    std::this_thread::sleep_for(std::chrono::seconds(INT32_MAX));
+    GGUI::waitForTermination();
 }

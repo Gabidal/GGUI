@@ -171,7 +171,7 @@ namespace GGUI{
          */
         extern void queryInputs();
 
-        extern void waitForThreadTermination();
+        extern void SignalThreadTermination();
 
         /**
          * @brief Processes mouse input events and updates the input list.
@@ -405,6 +405,8 @@ namespace GGUI{
      * @param signum The exit code to be used when terminating the application.
      */
     extern void EXIT(int Signum = 0);
+
+    extern void waitForTermination();
 
     /**
      * @brief Returns the Main element of the GGUI system.
