@@ -40,22 +40,9 @@ namespace GGUI{
 
     namespace INTERNAL{
         std::vector<UTF>* abstractFrameBuffer = nullptr;              // 2D clean vector without bold nor color
-        struct platformState {
-            bool Screen_Capture_Enabled = false;
-            bool Alternative_Screen_Enabled = false;
-            bool Mouse_Reporting_Enabled = false;
-            bool Cursor_Hidden = false;
-            bool Raw_Mode_Enabled = false;          // POSIX only
-            bool Initialized = false;
-            bool Extended_Into_SGR_Mode = false;
-            bool VT200_Mode_Enabled = false;
-#if _WIN32
-            unsigned long Previous_Windows_Codepage = 0;
-#endif
-            bool De_Initialized = false;
-        } Platform_State;
-
         std::string* frameBuffer;                                      // string with bold and color, this what gets drawn to console.
+        
+        platformState Platform_State;
 
         // For threading system
         namespace atomic{
@@ -87,8 +74,6 @@ namespace GGUI{
         // When true, hover is being controlled by keyboard navigation (TAB/SHIFT+TAB).
         // Mouse-over logic in the event loop should not override the hovered element until the mouse moves.
         bool Hover_Locked_To_Keyboard = false;
-
-        bool platformInitialized = false;
 
         // Whether STDIN is an interactive terminal (TTY). Used to decide input setup/teardown and whether to spawn the input thread.
         static bool STDIN_IS_TTY = false;
@@ -601,12 +586,19 @@ namespace GGUI{
 
             // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
             if (STDIN_IS_TTY){
-                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE).toString();
+                Platform_State.VT200_Mode_Enabled = true;
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
                 Platform_State.Mouse_Reporting_Enabled = true;
-                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
                 Platform_State.Cursor_Hidden = true;
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
+                Platform_State.Screen_Capture_Enabled = true;
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
+                Platform_State.Extended_Into_SGR_Mode = true;
             }
-            std::cout.flush();
+            
+            std::cout << std::flush;
 
             // Critical error handlers.
             SetUnhandledExceptionFilter(Critical_Error_Handler);
@@ -615,23 +607,33 @@ namespace GGUI{
                 reportStack("Failed to set console handler!");
             }
 
-            // These are for most generic cases not needed, but could be useful if GGUI is called inside another utility, like windows version of timeout utility.
             for (
                 auto i : {
                     SIGINT,
-                    SIGILL,
                     SIGABRT,
-                    SIGFPE,
-                    SIGSEGV,
                     SIGTERM
                 }){
-                std::signal(i, []([[maybe_unused]] int dummy){
-                    GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);  // trigger the Console_Handler
+                std::signal(i, [](int){
+                    waitForThreadTermination();
                 });
             }
 
+            for (
+                auto i : {
+                    SIGILL,
+                    SIGFPE,
+                    SIGSEGV
+                }){
+                std::signal(i, [](int signal){
+                    _exit(128 + signal);
+                });
+            }
+
+            if (atexit([](){Cleanup();})){
+                LOGGER::log("Failed to register exit handler.");
+            }
+
             // Mark the platform as initialized.
-            platformInitialized = true;
             Platform_State.Initialized = true;
         }
 

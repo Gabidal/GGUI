@@ -13,6 +13,7 @@ rem ============================================================================
 set "SCRIPT_DIR=%~dp0"
 set "BUILD_DIR=%SCRIPT_DIR%build"
 set "BUILD_DIR_RELEASE=%SCRIPT_DIR%build-release"
+set "BUILD_DIR_PROFILE=%SCRIPT_DIR%build-profile"
 set "EXPORT_DIR=%SCRIPT_DIR%export"
 
 set "LOG_PREFIX=[export]"
@@ -53,15 +54,19 @@ if errorlevel 1 (
 )
 
 rem 3) Prepare dedicated release build directory
+echo %LOG_PREFIX% configuring release build at "%BUILD_DIR_PROFILE%" (buildtype=release)
+if not exist "%BUILD_DIR_PROFILE%\" (
+  meson setup "%BUILD_DIR_PROFILE%" -Dbuildtype=debugoptimized
+) else (
+  meson setup --reconfigure "%BUILD_DIR_PROFILE%" -Dbuildtype=debugoptimized
+)
+
+rem 3) Prepare dedicated release build directory
 echo %LOG_PREFIX% configuring release build at "%BUILD_DIR_RELEASE%" (buildtype=release)
 if not exist "%BUILD_DIR_RELEASE%\" (
   meson setup "%BUILD_DIR_RELEASE%" -Dbuildtype=release
 ) else (
-  rem Try meson configure to set buildtype; fall back to reconfigure when needed
-  meson configure "%BUILD_DIR_RELEASE%" -Dbuildtype=release >nul 2>nul
-  if errorlevel 1 (
-    meson setup --reconfigure "%BUILD_DIR_RELEASE%" -Dbuildtype=release
-  )
+  meson setup --reconfigure "%BUILD_DIR_RELEASE%" -Dbuildtype=release
 )
 if errorlevel 1 (
   echo %LOG_PREFIX% ERROR: Failed to configure release build.

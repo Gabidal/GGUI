@@ -30,6 +30,23 @@ namespace GGUI{
     namespace INTERNAL{
         class bufferCapture;
 
+        struct platformState {
+            bool Screen_Capture_Enabled = false;
+            bool Alternative_Screen_Enabled = false;
+            bool Mouse_Reporting_Enabled = false;
+            bool Cursor_Hidden = false;
+            bool Raw_Mode_Enabled = false;          // POSIX only
+            bool Initialized = false;
+            bool Extended_Into_SGR_Mode = false;
+            bool VT200_Mode_Enabled = false;
+        #if _WIN32
+            unsigned long Previous_Windows_Codepage = 0;
+        #endif
+            bool De_Initialized = false;
+        };
+
+        extern platformState Platform_State;
+
         namespace atomic{
             enum class status{
                 PAUSED,
@@ -72,8 +89,6 @@ namespace GGUI{
 
         extern element* focusedOn;
         extern element* hoveredOn;
-
-        extern bool platformInitialized;
 
         extern IVector3 mouse;    
         extern bool mouseMovementEnabled;
