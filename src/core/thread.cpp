@@ -8,6 +8,7 @@
 #include <thread>
 #include <memory>
 #include <mutex>
+#include <csignal>
 
 namespace GGUI{
     class element;
@@ -28,6 +29,7 @@ namespace GGUI{
         extern std::chrono::high_resolution_clock::time_point Current_Time;
 
         extern atomic::guard<carry> Carry_Flags;
+        extern volatile sig_atomic_t requestTermination;
 
         extern void Translate_Inputs();
 
@@ -56,7 +58,7 @@ namespace GGUI{
             while (true){
                 {
                     std::unique_lock lock(atomic::mutex);
-                    atomic::condition.wait(lock, [&](){ return atomic::pauseRenderThread == atomic::status::REQUESTING_RENDERING; });
+                    atomic::condition.wait(lock, [&](){ return atomic::pauseRenderThread == atomic::status::REQUESTING_RENDERING || requestTermination; });
 
                     atomic::pauseRenderThread = atomic::status::RENDERING;
                 }
@@ -65,7 +67,7 @@ namespace GGUI{
                 Previous_Time = std::chrono::high_resolution_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (Carry_Flags.read().terminate){
+                if (requestTermination){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
@@ -133,12 +135,10 @@ namespace GGUI{
             }
 
             LOGGER::log("Render thread terminated!");
-        
-            // Give signal to other threads this one has paused for good.
-            std::unique_lock lock(atomic::mutex);
-            // Now for itself set it to sleep.
-            atomic::pauseRenderThread = atomic::status::TERMINATED;
-            atomic::condition.notify_all();
+            
+            Cleanup();
+
+            std::exit(0);
         }
 
         /**
@@ -199,10 +199,10 @@ namespace GGUI{
                     std::unique_lock lock(atomic::mutex);
 
                     atomic::condition.wait(lock, [&](){ 
-                        return atomic::pauseRenderThread == atomic::status::PAUSED || atomic::pauseRenderThread == atomic::status::TERMINATED; 
+                        return atomic::pauseRenderThread == atomic::status::PAUSED || INTERNAL::requestTermination; 
                     });
 
-                    if (atomic::pauseRenderThread == atomic::status::TERMINATED){
+                    if (INTERNAL::requestTermination){
                         break;
                     }
                 }

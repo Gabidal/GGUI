@@ -47,6 +47,8 @@ namespace GGUI{
             bool Cursor_Hidden = false;
             bool Raw_Mode_Enabled = false;          // POSIX only
             bool Initialized = false;
+            bool Extended_Into_SGR_Mode = false;
+            bool VT200_Mode_Enabled = false;
 #if _WIN32
             unsigned long Previous_Windows_Codepage = 0;
 #endif
@@ -121,6 +123,7 @@ namespace GGUI{
         element* main = nullptr;
 
         atomic::guard<carry> Carry_Flags; 
+        volatile sig_atomic_t requestTermination = false;
 
         /**
          * @brief Temporary function to return the current date and time in a string.
@@ -221,10 +224,14 @@ namespace GGUI{
             }
 
             // Symmetric disabling of features we enabled.
-            if (Platform_State.Cursor_Hidden)
-                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
+            if (Platform_State.Extended_Into_SGR_Mode)
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
             if (Platform_State.Mouse_Reporting_Enabled)
                 std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+            if (Platform_State.VT200_Mode_Enabled)
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE, false).toString();
+            if (Platform_State.Cursor_Hidden)
+                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
             if (Platform_State.Screen_Capture_Enabled)
                 std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
             if (Platform_State.Alternative_Screen_Enabled)
@@ -236,24 +243,6 @@ namespace GGUI{
             std::cout << std::flush; // Ensure all output is flushed to console
 
             Platform_State.De_Initialized = true;
-        }
-
-        void Cleanup(){
-            if (!Carry_Flags.read().terminate){
-                waitForThreadTermination();
-
-                // Join the threads
-                for (auto& thread : Sub_Threads){
-                    if (thread.joinable()) thread.join();
-                }
-
-                LOGGER::log("Reverting to normal console mode...");
-
-                // Clean up platform-specific resources and settings (idempotent)
-                deInitialize();
-
-                LOGGER::log("GGUI shutdown successful.");
-            }
         }
 
         /**
@@ -777,18 +766,20 @@ namespace GGUI{
             fileStreamerHandles.clear();
 
             if (!SETTINGS::enableDRM) {
-                if (Platform_State.Cursor_Hidden)
-                    std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
+                if (Platform_State.Extended_Into_SGR_Mode)
+                    std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
                 if (Platform_State.Mouse_Reporting_Enabled)
                     std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+                if (Platform_State.VT200_Mode_Enabled)
+                    std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE, false).toString();
+                if (Platform_State.Cursor_Hidden)
+                    std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
                 if (Platform_State.Screen_Capture_Enabled)
                     std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
                 if (Platform_State.Alternative_Screen_Enabled)
                     std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
-                std::cout << GGUI::constants::ANSI::enableSGRFeature(GGUI::constants::ANSI::RESET_SGR).toString();
 
-                // Do NOT force a cursor shape; leave user / outer environment shape intact (we never changed shape explicitly).
-                std::cout << std::flush;
+                std::cout << GGUI::constants::ANSI::enableSGRFeature(GGUI::constants::ANSI::RESET_SGR).toString();
 
                 if (STDIN_IS_TTY && Platform_State.Raw_Mode_Enabled) {
                     fcntl(STDIN_FILENO, F_SETFL, Previous_Flags);
@@ -797,28 +788,12 @@ namespace GGUI{
                 } else if (!STDIN_IS_TTY) {
                     LOGGER::log("STDIN was not a TTY; no terminal mode restoration needed.");
                 }
+
+                // Do NOT force a cursor shape; leave user / outer environment shape intact (we never changed shape explicitly).
+                std::cout << std::flush;
             }
 
             Platform_State.De_Initialized = true;
-        }
-
-        void Cleanup(){
-            if (!Carry_Flags.read().terminate){
-                waitForThreadTermination();
-                
-                for (auto& thread : Sub_Threads){
-                    if (thread.joinable()) thread.join();
-                }
-
-                LOGGER::log("Reverting to normal console mode...");
-
-                if (SETTINGS::enableDRM)
-                    DRM::close();
-
-                deInitialize();
-
-                LOGGER::log("GGUI shutdown successful.");
-            }
         }
 
         /**
@@ -1198,7 +1173,7 @@ namespace GGUI{
 
                             i++;
                         }
-                        else if (hasIndicies(i, 2) && Raw_Input[i + 1] == '<' && Raw_Input[i + 2] == 'b'){   // Decode SGR Mouse handling
+                        else if (hasIndicies(i, 1) && Raw_Input[i + 1] == '<'){   // Decode SGR Mouse handling
                             // SGR mouse: ESC [ < b ; x ; y ( M | m )
                             // ---------------------------------------
                             // layout: '[' '<' b ';' x ';' y ('M' = press | 'm' = release)
@@ -1342,12 +1317,16 @@ namespace GGUI{
                     // Only enable mouse-reporting features after raw mode is successfully applied.
                     if (Platform_State.Raw_Mode_Enabled) {
                         // Initialize the console for mouse input.
+                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE).toString();
+                        Platform_State.VT200_Mode_Enabled = true;
                         std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
                         Platform_State.Mouse_Reporting_Enabled = true;
                         std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
                         Platform_State.Cursor_Hidden = true;
                         std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
                         Platform_State.Screen_Capture_Enabled = true;
+                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
+                        Platform_State.Extended_Into_SGR_Mode = true;
                         // std::cout << constants::RESET_CONSOLE;
                         // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
                         std::cout << std::flush;
@@ -1371,22 +1350,33 @@ namespace GGUI{
 
             // Register the exit handler for the following signals
             struct sigaction normal_exit = {};
-            normal_exit.sa_handler = []([[maybe_unused]] int dummy){
-                exit(EXIT_SUCCESS);  // Ensures `atexit()` is triggered
+            normal_exit.sa_handler = [](int){
+                waitForThreadTermination();
             };
             sigemptyset(&normal_exit.sa_mask);
             normal_exit.sa_flags = 0;
 
+            struct sigaction hard_exit = {};
+            hard_exit.sa_handler = [](int signal) { _exit(128 + signal); };
+            sigemptyset(&hard_exit.sa_mask);
+            hard_exit.sa_flags = 0;
+
             for (
                 auto i : {
                     SIGINT,
-                    SIGILL,
                     SIGABRT,
-                    SIGFPE,
-                    SIGSEGV,
                     SIGTERM
                 }){
                 sigaction(i, &normal_exit, NULL);
+            }
+
+            for (
+                auto i : {
+                    SIGILL,
+                    SIGFPE,
+                    SIGSEGV
+                }){
+                sigaction(i, &hard_exit, NULL);
             }
 
             if (atexit([](){Cleanup();})){
@@ -1427,6 +1417,24 @@ namespace GGUI{
         }
 
         #endif
+
+        void Cleanup(){
+            if (requestTermination){
+                // Join the threads
+                for (auto& thread : Sub_Threads){
+                    if (thread.joinable() && thread.get_id() != std::this_thread::get_id()) thread.join();
+                }
+
+                LOGGER::log("Reverting to normal console mode...");
+
+                // Clean up platform-specific resources and settings (idempotent)
+                deInitialize();
+
+                LOGGER::log("GGUI shutdown successful.");
+
+                requestTermination = false;
+            }
+        }
 
         /**
          * @brief Populate inputs for keys that are held down.
@@ -1702,25 +1710,12 @@ namespace GGUI{
         }
 
         void waitForThreadTermination(){
-            LOGGER::log("Sending termination signals to subthreads...");
-
-            std::unique_lock lock(atomic::mutex);
+            // LOGGER::log("Sending termination signals to subthreads...");
             
             // Gracefully shutdown event and rendering threads.
-            Carry_Flags([](carry& self){
-                self.terminate = true;
-            });
-            
-            // Give the rendering thread one ticket.
-            atomic::pauseRenderThread = atomic::status::REQUESTING_RENDERING;
+            requestTermination = true;
 
-            // Notify all waiting threads that the frame has been updated.
             atomic::condition.notify_all();
-
-            // await until the rendering thread has used it's rendering ticket.
-            atomic::condition.wait(lock, []{
-                return atomic::pauseRenderThread == atomic::status::TERMINATED;
-            });
         }
 
         /**
@@ -2131,6 +2126,8 @@ namespace GGUI{
                 INTERNAL::LOGGER::registerCurrentThread();
                 INTERNAL::renderer();
             });
+
+            INTERNAL::Sub_Threads.back().detach();  // Let the rendering thread able to std::exit.
             
             INTERNAL::Sub_Threads.emplace_back([](){
                 INTERNAL::LOGGER::registerCurrentThread();
@@ -2427,7 +2424,7 @@ namespace GGUI{
      * @param signum The exit code for the application.
      */
     void EXIT(int signum){
-        INTERNAL::Cleanup();
+        INTERNAL::waitForThreadTermination();
 
         // Exit the application with the specified exit code
         exit(signum);

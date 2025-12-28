@@ -94,9 +94,9 @@ namespace GGUI{
             constexpr compactString(const char* data){
                 size_t tmpSize = getLength(data);
 
-                if (tmpSize == 0) {
+                if (tmpSize == 0) { //  If the given string is something like this: "\0", point to the global array at zero index.
                     text = asciiToString[0].data();
-                    size = 1;
+                    size = 1;   // {"\0", "\0"};
                 }
                 else {
                     text = data;

@@ -894,7 +894,6 @@ namespace GGUI{
         class carry{
         public:
             bool resize = false;
-            bool terminate = false;     // Signals the shutdown of subthreads.
 
             ~carry() = default;
         };

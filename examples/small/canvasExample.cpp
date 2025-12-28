@@ -14,6 +14,8 @@ void directSetToCanvas() {
                 {
                     // UTF A
                     {"∆", {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
+                    // UTF B
+                    {"∇", {GGUI::COLOR::YELLOW /*text color*/, GGUI::COLOR::RED /*background color*/}}, 
                 },
                 x+y,  // <-- Animation offset, you can use perlin noise to make some nice wind styled animations
                 1   // <-- Animation speed of the linear interpolation
@@ -22,6 +24,8 @@ void directSetToCanvas() {
             canvas1->set(x, y, initialSprite, false);
         }
     }
+
+    // canvas1->flush();    // No need, since this is called inside onInit().
 }
 
 struct block {
@@ -43,7 +47,8 @@ sprite getSpriteFromId(block b) {
 }
 
 IVector2 playerPosition = {0, 0};
-void addMovementKeybinds(element* self);
+void addMovementKeybindsBasedOnArrowKeys(element* self);
+void addMovementKeybindsBasedOnWASD(element* self);
 
 canvas* canvas2 = new canvas(
     width(0.33f) | height(0.5f) | position(STYLES::right) | 
@@ -55,11 +60,11 @@ canvas* canvas2 = new canvas(
     }) | 
 
     onInit([](element* self){
-        addMovementKeybinds(self);
+        addMovementKeybindsBasedOnWASD(self);
     })
 );
 
-void addMovementKeybinds(element* self) {
+void addMovementKeybindsBasedOnArrowKeys(element* self) {
     self->on(constants::UP, [](event*){
         playerPosition.y -= 1;
         return true;
@@ -81,12 +86,32 @@ void addMovementKeybinds(element* self) {
     });
 }
 
+void addMovementKeybindsBasedOnWASD(element* self) {
+    self->on(constants::KEY_PRESS, [](event* e){
+        auto* key = static_cast<input*>(e);
+
+        if (key->data == 'w' || key->data == 'W') {
+            playerPosition.y -= 1;
+        } else if (key->data == 's' || key->data == 'S') {
+            playerPosition.y += 1;
+        } else if (key->data == 'a' || key->data == 'A') {
+            playerPosition.x -= 1;
+        } else if (key->data == 'd' || key->data == 'D') {
+            playerPosition.x += 1;
+        } else {
+            return false;   // unknown input.
+        }
+
+        return true;
+    });
+}
+
 
 int main() 
 {
     GGUI::GGUI(
         // Animated canvas
-        node(new canvas(
+        node(new canvas(    // canvas0
             // Set the canvas to third of screen size. 30%
             width(0.33f) | height(0.5f) | position(STYLES::left) |
 
@@ -115,7 +140,6 @@ int main()
         )) | 
 
         node(canvas1) |
-
         onInit([](element*){
             std::thread t([](){
                 directSetToCanvas();

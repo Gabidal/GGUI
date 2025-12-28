@@ -183,9 +183,11 @@ namespace GGUI{
             constexpr INTERNAL::compactString DEFAULT_BACKGROUND_COLOR = "49";                 // Sets the default color.
 
             // Private SGR codes
-            constexpr INTERNAL::compactString REPORT_MOUSE_HIGHLIGHTS = "1000";
+            constexpr INTERNAL::compactString SET_X10_MOUSE = "9";
+            constexpr INTERNAL::compactString SET_VT200_MOUSE = "1000";
             constexpr INTERNAL::compactString REPORT_MOUSE_BUTTON_WHILE_MOVING = "1002";
             constexpr INTERNAL::compactString REPORT_MOUSE_ALL_EVENTS = "1003";
+            constexpr INTERNAL::compactString EXTEND_TO_SGR_MODE = "1006";
 
             constexpr INTERNAL::compactString MOUSE_CURSOR = "25";
             constexpr INTERNAL::compactString SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen

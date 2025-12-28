@@ -1755,7 +1755,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
     action* a = new action(
         criteria,
         [this, job, GLOBAL](GGUI::event* e){
-            if (INTERNAL::collides(this, INTERNAL::mouse) || GLOBAL){
+            if (this->isFocused() || GLOBAL){
                 // action successfully executed.
                 return job(e);
             }
