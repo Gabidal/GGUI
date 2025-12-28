@@ -126,8 +126,7 @@ run_callgrind_profile() {
     validate_tools "valgrind"
     
     # Run the profiling
-    valgrind $valgrind_settings --callgrind-out-file="$output_file" "$executable" $exe_args \
-        || handle_error "Valgrind Callgrind profiling failed."
+    valgrind $valgrind_settings --callgrind-out-file="$output_file" "$executable" $exe_args
     
     log_info "Profiling completed. Output saved to: $output_file"
 }

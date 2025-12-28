@@ -135,10 +135,6 @@ namespace GGUI{
             }
 
             LOGGER::log("Render thread terminated!");
-            
-            Cleanup();
-
-            std::exit(0);
         }
 
         /**
@@ -240,6 +236,8 @@ namespace GGUI{
             }
         
             LOGGER::log("Event thread terminated!");
+
+            std::exit(0);
         }
     
         /**
@@ -291,6 +289,8 @@ namespace GGUI{
             }
         
             LOGGER::log("Input thread terminated!");
+            
+            std::exit(0);
         }
     }
 }

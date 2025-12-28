@@ -108,7 +108,7 @@ namespace GGUI{
         element* main = nullptr;
 
         atomic::guard<carry> Carry_Flags; 
-        volatile sig_atomic_t requestTermination = false;
+        sig_atomic_t requestTermination = false;
 
         /**
          * @brief Temporary function to return the current date and time in a string.
@@ -1421,21 +1421,14 @@ namespace GGUI{
         #endif
 
         void Cleanup(){
-            if (requestTermination){
-                // Join the threads
-                for (auto& thread : Sub_Threads){
-                    if (thread.joinable() && thread.get_id() != std::this_thread::get_id()) thread.join();
-                }
+            waitForThreadTermination();
 
-                LOGGER::log("Reverting to normal console mode...");
+            LOGGER::log("Reverting to normal console mode...");
 
-                // Clean up platform-specific resources and settings (idempotent)
-                deInitialize();
+            // Clean up platform-specific resources and settings (idempotent)
+            deInitialize();
 
-                LOGGER::log("GGUI shutdown successful.");
-
-                requestTermination = false;
-            }
+            LOGGER::log("GGUI shutdown successful.");
         }
 
         /**
@@ -1712,8 +1705,6 @@ namespace GGUI{
         }
 
         void waitForThreadTermination(){
-            // LOGGER::log("Sending termination signals to subthreads...");
-            
             // Gracefully shutdown event and rendering threads.
             requestTermination = true;
 
@@ -2124,17 +2115,17 @@ namespace GGUI{
                 name("Main")
             , true);
 
-            INTERNAL::Sub_Threads.emplace_back([](){
+            std::thread renderingThread([](){
                 INTERNAL::LOGGER::registerCurrentThread();
                 INTERNAL::renderer();
             });
-
-            INTERNAL::Sub_Threads.back().detach();  // Let the rendering thread able to std::exit.
+            renderingThread.detach();  // Let the rendering thread able to std::exit.
             
-            INTERNAL::Sub_Threads.emplace_back([](){
+            std::thread eventThread([](){
                 INTERNAL::LOGGER::registerCurrentThread();
                 INTERNAL::eventThread();
             });
+            eventThread.detach();  // Let the rendering thread able to std::exit.
             
             // Start input thread only if DRM is enabled or STDIN is a TTY (interactive).
             std::unique_ptr<std::thread> Inquire_Scheduler_ptr;
@@ -2150,15 +2141,9 @@ namespace GGUI{
                 INTERNAL::loggerThread();
             });
             
-            // INTERNAL::Sub_Threads.push_back(std::move(Inquire_Scheduler));
-            // INTERNAL::Sub_Threads.back().detach();    // the Inquire scheduler cannot never stop and thus needs to be as an separate thread.
-            
             if (Inquire_Scheduler_ptr) Inquire_Scheduler_ptr->detach();
             Logging_Scheduler.detach();
 
-            // INTERNAL::Sub_Threads.push_back(std::move(Logging_Scheduler));
-            // INTERNAL::Sub_Threads.back().detach();    // the Logging scheduler cannot never stop and thus needs to be as an separate thread.
-            
             INTERNAL::LOGGER::log("GGUI Core initialization complete.");
 
             {
@@ -2426,7 +2411,7 @@ namespace GGUI{
      * @param signum The exit code for the application.
      */
     void EXIT(int signum){
-        INTERNAL::waitForThreadTermination();
+        // INTERNAL::waitForThreadTermination();
 
         // Exit the application with the specified exit code
         exit(signum);

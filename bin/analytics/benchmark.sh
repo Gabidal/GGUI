@@ -47,7 +47,7 @@ ensure_bin_directory
 # Build the selected configuration via Meson so the executable exists
 compile_meson_build "$BUILD_TYPE"
 # Select executable based on requested build type
-preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/GGUI"
+preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/ggui"
 executable=$(ensure_executable "$preferred_exec")
 
 # Validate Valgrind installation
@@ -62,7 +62,7 @@ log_info "Profiling mode: $PROFILING_MODE"
 log_info "DRM mode: ${ENABLE_DRM:-disabled}"
 
 # Run Callgrind profiling
-run_callgrind_profile "$executable" "$PROFILING_MODE" "$output_file" "$ENABLE_DRM"
+run_callgrind_profile "$preferred_exec" "$PROFILING_MODE" "$output_file" "$ENABLE_DRM"
 
 # Open results in KCachegrind for analysis
 open_profile_in_kcachegrind "$output_file"
