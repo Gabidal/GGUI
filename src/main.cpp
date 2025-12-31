@@ -2,8 +2,11 @@
 
 using namespace GGUI;
 
-int main() 
-{
+int main(int argc, char* argv[]){
+    
+    // This will enable whatever the user gave the args with GGUI
+    GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
+
     GGUI::GGUI(
         childs({
             new listView(

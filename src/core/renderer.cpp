@@ -1003,7 +1003,8 @@ namespace GGUI{
                         inputs.push_back(new GGUI::input(' ', constants::CONTROL));
                         KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = buttonState(true);
                     }
-                }                if (Raw_Input[i] == constants::ANSI::ESC_CODE[0]) {
+                }                
+                if (Raw_Input[i] == constants::ANSI::ESC_CODE[0]) {
                     // check if there are stuff after this escape code
                     if (!hasIndicies(i, 1)) {
                         // Clearly the escape key was invoked
@@ -1353,37 +1354,33 @@ namespace GGUI{
 
             // Register the exit handler for the following signals
             struct sigaction normal_exit = {};
-            normal_exit.sa_handler = [](int){
+            normal_exit.sa_handler = [](int status){
                 SignalThreadTermination();
+
+                signal(status, SIG_DFL);        // Restore default behavior
+                raise(status);                  // Terminate properly (may core dump if appropriate)
             };
             sigemptyset(&normal_exit.sa_mask);
-            normal_exit.sa_flags = 0;
-
-            struct sigaction hard_exit = {};
-            hard_exit.sa_handler = [](int signal) { _exit(128 + signal); };
-            sigemptyset(&hard_exit.sa_mask);
-            hard_exit.sa_flags = 0;
+            normal_exit.sa_flags = SA_RESTART;
 
             for (
                 auto i : {
                     SIGINT,
-                    SIGABRT,
                     SIGTERM
                 }){
                 sigaction(i, &normal_exit, NULL);
             }
 
-            for (
-                auto i : {
-                    SIGILL,
-                    SIGFPE,
-                    SIGSEGV
-                }){
-                sigaction(i, &hard_exit, NULL);
+            if (std::atexit(Cleanup)){
+                LOGGER::log("Failed to register exit handler.");
             }
 
-            if (atexit([](){Cleanup();})){
-                LOGGER::log("Failed to register exit handler.");
+            if (std::at_quick_exit(Cleanup)) {
+                LOGGER::log("Failed to register quick exit handler.");
+            }
+
+            if (std::get_terminate() != Cleanup) {
+                std::set_terminate(Cleanup);
             }
 
             Platform_State.Initialized = true;
