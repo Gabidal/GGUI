@@ -3,25 +3,9 @@
 # =============================================================================
 # Common Utility Functions for GGUI Analytics Scripts
 # =============================================================================
-# This module provides common functionality used across analytics scripts:
-# - Directory management and navigation
-# - Error handling and logging
-# - Project building
-# - User interaction utilities
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# Global Configuration
-# -----------------------------------------------------------------------------
-PROJECT_NAME="${PROJECT_NAME:-GGUI}"
-BIN_DIR_NAME="${BIN_DIR_NAME:-bin}"
 
 # Mark that common utilities have been sourced
 COMMON_SOURCED=true
-
-# -----------------------------------------------------------------------------
-# Error Handling
-# -----------------------------------------------------------------------------
 
 ##
 # Handles errors and exits gracefully with an error message.
@@ -67,67 +51,57 @@ log_warning() {
     echo "[WARNING] $message" >&2
 }
 
-# -----------------------------------------------------------------------------
-# Directory Management
-# -----------------------------------------------------------------------------
-
 ##
-# Checks if the script is run from the project root directory or a subdirectory
-# and navigates to the appropriate bin directory. This function ensures all
-# analytics scripts run from the correct working directory.
-#
-# The function:
-# 1. Finds the project root using git
-# 2. If in project root, changes to bin directory
-# 3. If not in bin directory, navigates to bin directory
-#
-# Exits with error code 1 if:
-# - Project root cannot be determined
-# - Navigation to bin directory fails
+# Returns project root directory. And changes directory into there.
 #
 # Usage:
-#   ensure_bin_directory
+#   go_to_project_root
 ##
-ensure_bin_directory() {
+go_to_project_root() {
     local current_dir=$(pwd)
     
     # Find the project root directory by looking for the .git directory
-    local project_root
-    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+    local project_root=$(git rev-parse --show-toplevel 2>/dev/null)
     
     # If git is not found or the project root is not determined
     if [ -z "$project_root" ]; then
-        handle_error "Unable to determine the project root directory. Ensure you're in the $PROJECT_NAME project."
+        handle_error "Unable to determine the project root directory."
     fi
     
     # If we're in the project root, change to the 'bin' directory
-    if [ "$(basename "$project_root")" == "$PROJECT_NAME" ] && [ "$current_dir" == "$project_root" ]; then
-        log_info "Project root directory detected. Changing to the '$BIN_DIR_NAME' directory."
-        cd "$project_root/$BIN_DIR_NAME" || handle_error "Failed to navigate to $BIN_DIR_NAME directory"
-    # Otherwise, navigate to the 'bin' directory from anywhere in the project
-    elif [[ "$current_dir" != *"$project_root/$BIN_DIR_NAME"* ]]; then
-        log_info "Navigating to the '$BIN_DIR_NAME' directory within the project."
-        cd "$project_root/$BIN_DIR_NAME" || handle_error "Failed to navigate to $BIN_DIR_NAME directory"
+    if [ "$current_dir" != "$project_root" ]; then
+        cd "$project_root" || handle_error "Failed to change to project root directory."
     fi
+
+    echo $(pwd)
 }
 
 ##
-# Gets the current working directory after ensuring we're in the bin directory.
+# Returns the absolute Meson build directory for a given build type.
 #
-# Returns:
-#   Absolute path to the current bin directory
+# Arguments:
+#   $1 - build type: "debug" (default) or "release"
+#   $2 - platform-specific (win, linux) [optional]
 #
-# Usage:
-#   current_dir=$(get_bin_directory)
+# Echoes the absolute path to the build directory.
 ##
-get_bin_directory() {
-    ensure_bin_directory
-    pwd
-}
+get_build_dir_for_type() {
+    local build_type="${1:-debug}"
+    local base_dir="$(go_to_project_root)/bin"
+    local result="$base_dir/build"
+    if [[ "$build_type" == "release" ]]; then
+        result="$base_dir/build-release"
+    elif [[ "$build_type" == "profile" ]]; then
+        result="$base_dir/build-profile"
+    fi
 
-# -----------------------------------------------------------------------------
-# Build Management
-# -----------------------------------------------------------------------------
+    # Check for platform specific, is exists, add it
+    if [[ -n "${2:-}" ]]; then
+        local result="${result}-${2}"
+    fi
+
+    echo "$result"
+}
 
 ##
 # Verifies that the build script exists and executes it.
@@ -135,57 +109,43 @@ get_bin_directory() {
 # before running analytics tools.
 #
 # Arguments:
-#   $1 - (Optional) Path to build script. Defaults to "./build.sh"
+#   $1 - Build type to build for
+#   $2+ - Target name(s) (defaults to ggui)
 #
 # Usage:
-#   build_project
-#   build_project "/path/to/custom/build.sh"
+#   build_project profile
+#   build_project release
+#   build_project debug
 ##
 build_project() {
-    local build_script="${1:-$(pwd)/build.sh}"
-    
-    if [[ ! -f "$build_script" ]]; then
-        handle_error "Build script '$build_script' not found."
-    fi
-    
-    log_info "Building the project using: $build_script"
-    "$build_script" || handle_error "Build process failed."
-    log_info "Build completed successfully."
+    local build_type="$1"
+    local build_target="${2:-ggui}"
+    local build_script="$(go_to_project_root)/bin/build.sh"
+    $build_script $build_type $build_target || handle_error "Build process failed."
 }
 
 ##
-# Verifies that the GGUI executable exists, building it if necessary.
+# Verifies that the ggui executable exists, building it if necessary.
 #
 # Arguments:
-#   $1 - (Optional) Path to executable. Defaults to auto-detected path
+#   $1 - Build type
 #
 # Returns:
 #   Absolute path to the verified executable
 #
 # Usage:
-#   executable=$(ensure_executable)
-#   executable=$(ensure_executable "/custom/path/to/GGUI")
+#   executable=$(ensure_executable profile)
+#   executable=$(ensure_executable release)
+#   executable=$(ensure_executable debug)
 ##
 ensure_executable() {
-    local executable_path="$1"
-    
-    # Auto-detect executable path if not provided
-    if [[ -z "$executable_path" ]]; then
-        local current_dir=$(pwd)
-        # Try common build directory locations (prefer release if present)
-        if [[ -f "$current_dir/build-release/GGUI" ]]; then
-            executable_path="$current_dir/build-release/GGUI"
-        elif [[ -f "$current_dir/build/GGUI" ]]; then
-            executable_path="$current_dir/build/GGUI"
-        else
-            # Default to debug path; will trigger build below if missing
-            executable_path="$current_dir/build/GGUI"
-        fi
-    fi
-    
+    local build_type="$1"
+    local build_dir=$(get_build_dir_for_type "$build_type")
+    local executable_path="$build_dir/ggui"
+
     if [[ ! -f "$executable_path" ]]; then
         log_warning "Executable '$executable_path' not found. Attempting to build..."
-        build_project
+        build_project $build_type
         
         # Verify the executable was created
         if [[ ! -f "$executable_path" ]]; then
@@ -202,42 +162,33 @@ ensure_executable() {
 #
 # Arguments:
 #   $1 - build type: "debug" (default) or "release" or "profile"
+#   $2 - target (defaults into build_native_archive)
+#   $3 - platform type (optional)
 #
 # Usage:
-#   compile_meson_build "release"
+#   meson_compile_target release
 ##
-compile_meson_build() {
+meson_compile_target() {
     local build_type="${1:-debug}"
-    local current_dir
-    current_dir=$(pwd)
-    local build_dir="$current_dir/build"
-    if [[ "$build_type" == "release" ]]; then
-        build_dir="$current_dir/build-release"
-    elif [[ "$build_type" == "profile" ]]; then
-        build_dir="$current_dir/build-profile"
-    fi
+    local targets="${2:-build_native_archive}"
+    local platform_types="${3:-}"
+    local build_dir="$(get_build_dir_for_type "$build_type" "$platform_types")"
+
     log_info "Compiling ${build_type} build at ${build_dir}"
-    meson compile -C "${build_dir}" || handle_error "Build failed for ${build_type} (${build_dir})"
+    meson compile -C "${build_dir}" ${targets} "${additional_targets[@]}" || handle_error "Build failed for ${build_type} (${build_dir})"
 }
 
-##
-# Returns the absolute Meson build directory for a given build type.
-#
-# Arguments:
-#   $1 - build type: "debug" (default) or "release"
-#
-# Echoes the absolute path to the build directory.
-##
-get_build_dir_for_type() {
-    local build_type="${1:-debug}"
-    local base_dir
-    base_dir=$(pwd)
-    if [[ "$build_type" == "release" ]]; then
-        echo "$base_dir/build-release"
+meson_remap_build_type() {
+    local build_type="$1"
+
+    if ([[ "$build_type" == "debug" ]] || [[ -z "$build_type" ]]); then
+        echo "debug"
+    elif [[ "$build_type" == "release" ]]; then
+        echo "release"
     elif [[ "$build_type" == "profile" ]]; then
-        echo "$base_dir/build-profile"
+        echo "debugoptimized"
     else
-        echo "$base_dir/build"
+        handle_error "Unknown build type: $build_type"
     fi
 }
 
@@ -245,63 +196,36 @@ get_build_dir_for_type() {
 # Ensures a Meson build directory is configured (setup or reconfigure).
 #
 # Arguments:
-#   $1 - build directory (absolute path)
-#   $2 - source directory (absolute path, typically bin dir)
-#   $3 - (optional) buildtype (debug|release); if provided, enforced via -Dbuildtype
+#   $1 - build type (profile, release, debug)
+#   $2 - cross platform type (optional)
+#   $3 - cross.ini file (if $2 is given)
 ##
 meson_setup_or_reconfigure() {
-    local build_dir="$1"
-    local src_dir="$2"
-    local build_type_opt=""
-    local cross_file_opt=""
-    if [[ -n "${3:-}" ]]; then
-        build_type_opt="-Dbuildtype=${3}"
-    fi
-    if [[ -n "${4:-}" ]]; then
-        cross_file_opt=(--cross-file "${4}")
+    local build_type="$1"
+    local platform_type="${2:-}"    # Default to unknown, because we don't always know what the current platform even is.
+    local platform_ini_file="${3:-}"
+
+    local build_dir="$(get_build_dir_for_type "$build_type" "$platform_type")"
+    local meson_build_location="$(go_to_project_root)/bin"
+
+    # Finalize the cross file argument if given
+    if [[ -n "$platform_ini_file" ]]; then
+        cross_file_opt=(--cross-file "$platform_ini_file")
     else
         cross_file_opt=()
     fi
 
-    # Determine if this is an initialized Meson build dir (has build.ninja)
-    local has_ninja="false"
-    if [[ -f "$build_dir/build.ninja" ]]; then
-        has_ninja="true"
-    fi
+    local meson_build_type="-Dbuildtype=$(meson_remap_build_type "$build_type")"
 
-    if [[ "$has_ninja" != "true" ]]; then
-        log_info "Configuring Meson build directory: $build_dir"
-        meson setup "${cross_file_opt[@]}" "$build_dir" "$src_dir" $build_type_opt || handle_error "Meson setup failed for $build_dir"
-    else
-        log_info "Reconfiguring Meson build directory: $build_dir"
-        if ! meson setup --reconfigure "${cross_file_opt[@]}" "$build_dir" "$src_dir" $build_type_opt; then
-            # If reconfigure fails, retry a fresh setup (e.g., broken/partial dir)
-            log_warning "Reconfigure failed; attempting fresh setup for $build_dir"
-            rm -rf "$build_dir"
-            meson setup "${cross_file_opt[@]}" "$build_dir" "$src_dir" $build_type_opt || handle_error "Meson setup failed for $build_dir"
+    if [[ -d "$build_dir" ]]; then
+        if ! meson setup --reconfigure "${cross_file_opt[@]}" "$build_dir" "$meson_build_location" "$meson_build_type"; then
+            rm -rf "$build_dir" # If reconfirmation fails, we can try fro a clean slate.
         fi
     fi
+    
+    log_info "Configuring Meson build directory: $build_dir"
+    meson setup "${cross_file_opt[@]}" "$build_dir" "$meson_build_location" "$meson_build_type" || handle_error "Meson setup failed for $build_dir"
 }
-
-##
-# Builds specific Meson targets inside a build directory.
-#
-# Arguments:
-#   $1 - build directory (absolute path)
-#   $2+ - target names to build
-##
-meson_build_targets() {
-    local build_dir="$1"; shift
-    if [[ $# -eq 0 ]]; then
-        handle_error "meson_build_targets requires at least one target"
-    fi
-    log_info "Building targets in $build_dir: $*"
-    meson compile -C "$build_dir" "$@" || handle_error "Failed to build Meson targets: $*"
-}
-
-# -----------------------------------------------------------------------------
-# User Interaction
-# -----------------------------------------------------------------------------
 
 ##
 # Prompts user with a yes/no question and returns the result.
@@ -360,10 +284,6 @@ countdown_timer() {
     done
 }
 
-# -----------------------------------------------------------------------------
-# Validation
-# -----------------------------------------------------------------------------
-
 ##
 # Validates that required tools are available on the system.
 #
@@ -405,10 +325,6 @@ validate_tool_path() {
         handle_error "'$tool_path' ($tool_name) is not installed or not executable."
     fi
 }
-
-# -----------------------------------------------------------------------------
-# File Management
-# -----------------------------------------------------------------------------
 
 ##
 # Generates a timestamp-based backup filename.

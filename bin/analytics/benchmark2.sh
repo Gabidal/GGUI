@@ -45,7 +45,7 @@ fi
 
 # Setup environment and build project
 log_info "Setting up environment for perf performance analysis..."
-ensure_bin_directory
+go_to_project_root
 preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/GGUI"
 executable=$(ensure_executable "$preferred_exec")
 

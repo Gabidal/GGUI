@@ -80,7 +80,7 @@ test_common_module() {
     # Module should already be sourced from test_module
     test_function "error handling" "type handle_error"
     test_function "logging functions" "type log_info && type log_warning"
-    test_function "directory management" "type ensure_bin_directory"
+    test_function "directory management" "type go_to_project_root"
     test_function "user interaction" "type prompt_yes_no"
     test_function "validation functions" "type validate_tools"
     test_function "backup name generation" "generate_backup_name 'test.out' | grep -q '$(date +%Y)'"

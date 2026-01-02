@@ -1,59 +1,17 @@
 #!/usr/bin/env bash
 
 # =============================================================================
-# GGUI Project Initialization Script (Linux)
+# GGUI Project Initialization Script
 # =============================================================================
 # This script initializes and builds the GGUI project locally. It validates
 # the environment, checks for required tools, manages the build setup, and
-# ensures analytics tools are properly configured.
-#
-# Features:
-# - Environment and requirements validation
-# - Automated build directory setup
-# - Project compilation with meson
-# - Analytics tools validation and setup
-# - Proper file permissions configuration
-#
+# ensures analytics tools are configured.
 # =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/analytics/utils/common.sh"
 
-# Function to check if the script is being run from the project root directory
-check_directory() {
-    local current_dir=$(pwd)
-    local project_root_name="GGUI"
-    local bin_dir_name="bin"
-
-    # Attempt to find the project root directory by looking for the .git directory
-    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
-
-    # If the project root is not found, exit with an error message
-    if [ -z "$project_root" ]; then
-        echo "Error: Unable to determine the project root directory. Ensure you're in the GGUI project."
-        exit 1
-    fi
-
-    # Navigate to the 'bin' directory if not already there
-    if [ "$(basename "$project_root")" == "$project_root_name" ] && [ "$current_dir" == "$project_root" ]; then
-        echo "Project root directory detected. Changing to the 'bin' directory."
-        cd "$project_root/$bin_dir_name" || exit 1
-    elif [[ "$current_dir" != "$project_root/$bin_dir_name"* ]]; then
-        echo "Navigating to the 'bin' directory within the project."
-        cd "$project_root/$bin_dir_name" || exit 1
-    fi
-}
-
-# Function to check if a command is available and exit if not
-check_command() {
-    local cmd="$1"
-    local cmd_name="$2"
-
-    if ! command -v "$cmd" &>/dev/null; then
-        echo "Error: '$cmd_name' is required but not installed. Please install it before running this script."
-        exit 1
-    fi
-}
-
-# Check if we're in the correct directory
-check_directory
+# Reset location.
+go_to_project_root
 
 echo "=== GGUI Project Initialization ==="
 echo
@@ -63,72 +21,50 @@ echo "Setting execution permissions..."
 find . -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
 
 # Step 1: Run analytics validation
-echo "Step 1: Validating environment and analytics tools..."
-if [[ -f "./analytics/utils/validate.sh" ]]; then
-    if bash "./analytics/utils/validate.sh"; then
-        echo "Environment validation completed successfully."
+echo "Validating environment and analytics tools..."
+if bash "$SCRIPT_DIR/analytics/utils/validate.sh"; then
+    echo "Environment validation completed successfully."
+else
+    echo "Environment validation failed. Please address the issues above."
+    echo "You can continue with basic build, but analytics tools may not work properly."
+    # Allow non-interactive/CI environments to bypass the prompt.
+    # Conditions to auto-continue:
+    #  - CI environment (GitHub Actions sets CI=true)
+    if [[ -n "$CI" ]]; then
+        echo "Force/CI mode detected (CI=$CI). Skipping question..." >&2
     else
-        echo "Environment validation failed. Please address the issues above."
-        echo "You can continue with basic build, but analytics tools may not work properly."
-        # Allow non-interactive/CI environments to bypass the prompt.
-        # Conditions to auto-continue:
-        #  - CI environment (GitHub Actions sets CI=true)
-        if [[ -n "$CI" ]]; then
-            echo "Force/CI mode detected (CI=$CI). Continuing despite validation failure." >&2
-        else
-            read -p "Continue anyway? [y/N]: " -r
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                echo "Initialization cancelled."
-                exit 1
-            fi
+        if ! prompt_yes_no "Continue regardless?"; then
+            echo "Initialization aborted by user."
+            exit 1
         fi
     fi
-else
-    echo "Warning: Analytics validation script not found. Continuing with basic checks..."
-    # Ensure the required tools are installed
-    check_command "meson" "meson"
-    check_command "g++" "g++"
 fi
 
 echo
 
 # Step 2: Set up build environment
-echo "Step 2: Setting up build environment..."
+echo "Setting up build environment..."
 
-# Ensure the CXX variable is set (default to 'g++' if not)
+# Ensure the CXX variable is set (default to 'c++' if not)
 if [ -z "$CXX" ]; then
-    export CXX=g++
-    echo "CXX environment variable was not set. Defaulting to 'g++'."
+    export CXX=c++
+    echo "CXX environment variable was not set. Defaulting to 'c++'."
 fi
 
 # Check if ./build, ./build-win, ./build-release, ./build-linux exists, if so then remove them
-if [ -d "./build" ]; then
-    echo "Removing existing build directory..."
-    rm -rf ./build
-fi
-if [ -d "./build-release" ]; then
-    echo "Removing existing build-release directory..."
-    rm -rf ./build-release
-fi
-if [ -d "./build-profile" ]; then
-    echo "Removing existing build-profile directory..."
-    rm -rf ./build-profile
-fi
-if [ -d "./build-win" ]; then
-    echo "Removing existing build-win directory..."
-    rm -rf ./build-win
-fi
-if [ -d "./build-linux" ]; then
-    echo "Removing existing build-linux directory..."
-    rm -rf ./build-linux
-fi
+for dir in "$SCRIPT_DIR"/build*/; do
+    if [ -d "$dir" ]; then
+        echo "Removing existing build directory: $dir"
+        rm -rf "$dir"
+    fi
+done
 
 echo "Setting up the default build configure..."
-meson setup build -Dbuildtype=debug || exit 1
+meson_setup_or_reconfigure debug
 
-# Step 4: Compile the project using meson
-echo "Step 4: Compiling the project..."
-meson compile -C build ggui_core || exit 1
+# Step 3: Compile the project using meson
+echo "Compiling the project..."
+meson_compile_target debug ggui_core
 
 echo
 echo "=== Initialization Complete ==="

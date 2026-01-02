@@ -6,16 +6,6 @@
 # This script measures instruction execution over two different time periods
 # to analyze performance characteristics and detect potential issues like
 # memory leaks or performance degradation over time.
-#
-# The analysis computes:
-# - Slope1: Instructions per second during the short run
-# - Slope2: Additional instructions per second during extended execution
-# - Ratio: Slope2 / Slope1, indicating performance change over time
-#
-# A ratio significantly different from 1.0 may indicate:
-# - Memory leaks (increasing instruction counts)
-# - Performance degradation
-# - Initialization overhead vs. steady-state performance
 # =============================================================================
 
 # Source utility modules
@@ -85,21 +75,16 @@ fi
 # =============================================================================
 
 ensure_wrappers_built() {
-    ensure_bin_directory
+    go_to_project_root
 
-    local BIN_DIR
-    BIN_DIR="$(pwd)"              # .../GGUI/bin
-    local BUILD_DIR
-    BUILD_DIR="$(get_build_dir_for_type "$BUILD_TYPE")"
+    local BUILD_DIR="$(get_build_dir_for_type "$BUILD_TYPE")"
 
     # Ensure build directory is configured for the selected build type
-    meson_setup_or_reconfigure "$BUILD_DIR" "$BIN_DIR" "$BUILD_TYPE"
+    meson_setup_or_reconfigure "$BUILD_TYPE"
 
     # Build the selected configuration via Meson so the executables exist
-    compile_meson_build "$BUILD_TYPE"
-
-    # Build the wrapper executables explicitly to be safe
-    meson_build_targets "$BUILD_DIR" timingStanding timingBusy
+    meson_compile_target "$BUILD_TYPE" timingStanding 
+    meson_compile_target "$BUILD_TYPE" timingBusy
 
     # Paths to built executables inside build dir
     STANDING_EXE="$BUILD_DIR/timingStanding"
@@ -127,11 +112,13 @@ measure_instruction_count() {
     local executable="$2"
     local label="${3:-run}"
 
+    local root=$(go_to_project_root)
+
     local output_file
     if [[ -n "$EMIT_PREFIX" ]]; then
-        output_file="${EMIT_PREFIX}_${label}.out"
+        output_file="${root}/${EMIT_PREFIX}_${label}.out"
     else
-        output_file="callgrind_temp.out"
+        output_file="${root}/callgrind_temp.out"
     fi
 
     log_info "Measuring instruction count for ${duration}s execution (label='${label}')..."

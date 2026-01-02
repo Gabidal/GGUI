@@ -15,10 +15,6 @@ if [[ -z "${COMMON_SOURCED:-}" ]]; then
     COMMON_SOURCED=true
 fi
 
-# -----------------------------------------------------------------------------
-# Help Text Generation
-# -----------------------------------------------------------------------------
-
 ##
 # Generates standardized help header for analytics scripts.
 #
@@ -505,10 +501,6 @@ The `utils/` directory contains reusable modules:
 For detailed help on any script, run it with --help option.
 EOF
 }
-
-# -----------------------------------------------------------------------------
-# Validation and Setup
-# -----------------------------------------------------------------------------
 
 ##
 # Validates that help utilities are properly configured.

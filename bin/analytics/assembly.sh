@@ -65,12 +65,9 @@ fi
 
 # Setup environment and build project
 log_info "Setting up environment for assembly generation..."
-ensure_bin_directory
+go_to_project_root
 # Build the selected configuration via Meson so the executable exists
-compile_meson_build "$BUILD_TYPE"
-# Select executable based on requested build type
-preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/GGUI"
-executable=$(ensure_executable "$preferred_exec")
+executable=$(ensure_executable "$BUILD_TYPE")
 
 # Validate objdump installation
 validate_tools "objdump"

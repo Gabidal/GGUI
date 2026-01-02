@@ -43,9 +43,9 @@ fi
 
 # Setup environment and build project
 log_info "Setting up environment for Callgrind profiling..."
-ensure_bin_directory
+go_to_project_root
 # Build the selected configuration via Meson so the executable exists
-compile_meson_build "$BUILD_TYPE"
+meson_compile_target "$BUILD_TYPE"
 # Select executable based on requested build type
 preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/ggui"
 executable=$(ensure_executable "$preferred_exec")

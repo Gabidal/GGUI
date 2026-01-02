@@ -8,7 +8,6 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${SCRIPT_DIR}/../.."
 BIN_DIR="${ROOT_DIR}/bin"
-BUILD_DIR="${BIN_DIR}/build"
 
 source "${SCRIPT_DIR}/utils/common.sh"
 source "${SCRIPT_DIR}/utils/valgrind.sh"
@@ -18,6 +17,7 @@ show_help() {
   echo "  short_sec  - duration for first run (seconds)"
   echo "  long_sec   - duration for second run (seconds)"
   echo "  threshold  - ratio threshold (e.g., 5.0)"
+  echo "  build_type - {debug, profile, release}"
 }
 
 if [[ "$#" -lt 3 || "$1" =~ ^(-h|--help)$ ]]; then
@@ -27,12 +27,15 @@ fi
 
 SHORT_SEC="$1"; shift
 LONG_SEC="$1"; shift
-THRESHOLD="$1"; shift
+THRESHOLD="${1:-"5.0"}"; shift
+BUILD_TYPE="${1:-debug}"; shift
 
 # Ensure we're in bin and build the 'time2' tool
-ensure_bin_directory
-meson_setup_or_reconfigure "${BUILD_DIR}" "${BIN_DIR}"
-meson_build_targets "${BUILD_DIR}" time2 timingStanding timingBusy
+go_to_project_root
+meson_setup_or_reconfigure "${BUILD_TYPE}" "${BIN_DIR}"
+meson_compile_target "${BUILD_TYPE}" time2
+meson_compile_target "${BUILD_TYPE}" timingStanding
+meson_compile_target "${BUILD_TYPE}" timingBusy
 
 # Generate two callgrind outputs using analytics/time.sh but keep files
 STAMP="cg$(date +%Y%m%d_%H%M%S)"
@@ -46,6 +49,8 @@ RUN2="${STAMP}_busy_long.out"
 # We'll compare long vs long to highlight steady-state growth differences between modes, as an example.
 RUN1="${STAMP}_standing_long.out"
 RUN2="${STAMP}_busy_long.out"
+
+BUILD_DIR=$(get_build_dir_for_type $BUILD_TYPE)
 
 # Run the comparison tool (from build dir)
 TOOL="${BUILD_DIR}/time2"

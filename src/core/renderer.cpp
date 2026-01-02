@@ -1357,8 +1357,8 @@ namespace GGUI{
             normal_exit.sa_handler = [](int status){
                 SignalThreadTermination();
 
-                signal(status, SIG_DFL);        // Restore default behavior
-                raise(status);                  // Terminate properly (may core dump if appropriate)
+                // signal(status, SIG_DFL);        // Restore default behavior
+                // raise(status);                  // Terminate properly (may core dump if appropriate)
             };
             sigemptyset(&normal_exit.sa_mask);
             normal_exit.sa_flags = SA_RESTART;

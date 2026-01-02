@@ -11,6 +11,6 @@ int main() {
         GGUI::backgroundColor(GGUI::COLOR::BLACK)
     );
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(UINT32_MAX));
+    GGUI::waitForTermination();
 }
 
