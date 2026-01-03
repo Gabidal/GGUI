@@ -278,7 +278,7 @@ namespace GGUI{
             LOGGER::log("Exception Code: " + std::to_string(exceptionInfo->ExceptionRecord->ExceptionCode));
             LOGGER::log("Exception Address: " + std::to_string(reinterpret_cast<uintptr_t>(exceptionInfo->ExceptionRecord->ExceptionAddress)));
             LOGGER::log(Exception_To_String(exceptionInfo));    // Dump
-            EXIT(EXIT_FAILURE); // Graceful termination
+            SignalThreadTermination(); // Graceful termination
             return EXCEPTION_EXECUTE_HANDLER;   // For warning fillers, since the execution should not extend to this line.
         }
 
@@ -307,7 +307,7 @@ namespace GGUI{
 
             if (signal_name.size() != 0) {
                 LOGGER::log("Terminated via " + signal_name + " signal.");
-                EXIT(EXIT_SUCCESS); 
+                SignalThreadTermination();
                 return TRUE;
             }
             return FALSE;
@@ -608,30 +608,27 @@ namespace GGUI{
                 reportStack("Failed to set console handler!");
             }
 
-            for (
-                auto i : {
-                    SIGINT,
-                    SIGABRT,
-                    SIGTERM
-                }){
+            std::vector<int> triggerSignals = {
+                SIGINT,
+                SIGTERM
+            };
+
+            for (auto i : triggerSignals){
                 std::signal(i, [](int){
                     SignalThreadTermination();
                 });
             }
 
-            for (
-                auto i : {
-                    SIGILL,
-                    SIGFPE,
-                    SIGSEGV
-                }){
-                std::signal(i, [](int signal){
-                    _exit(128 + signal);
-                });
+            if (std::atexit(Cleanup)){
+                LOGGER::log("Failed to register exit handler.");
             }
 
-            if (atexit([](){Cleanup();})){
-                LOGGER::log("Failed to register exit handler.");
+            // if (std::at_quick_exit(Cleanup)) {
+            //     LOGGER::log("Failed to register quick exit handler.");
+            // }
+
+            if (std::get_terminate() != Cleanup) {
+                std::set_terminate(Cleanup);
             }
 
             // Mark the platform as initialized.
@@ -1281,6 +1278,24 @@ namespace GGUI{
             Raw_Input_Size = 0;
         }
 
+        // Signal handler thread function
+        void onTerminationCleanupThread() {
+            sigset_t sigSet;
+            sigemptyset(&sigSet);
+            sigaddset(&sigSet, SIGINT);
+            sigaddset(&sigSet, SIGTERM);
+            sigaddset(&sigSet, SIGQUIT);
+
+            int sig;
+            while (true) {
+                if (sigwait(&sigSet, &sig) == 0) {
+                    // Got signal: safe context here!
+                    SignalThreadTermination();
+                    break;  // Or handle multiple if needed
+                }
+            }
+        }
+
         /**
          * @brief Initializes platform-specific settings for console handling.
          * @details This function sets up the console handles and modes required for input and output operations.
@@ -1343,34 +1358,6 @@ namespace GGUI{
                 }
             }
 
-            /*
-            SIGINT -> This is on by default, if then user makes an element to be focused with capabilities to capture this, then well remove it from the Exit codes.
-            SIGILL
-            SIGABRT
-            SIGFPE
-            SIGSEGV
-            SIGTERM
-            */
-
-            // Register the exit handler for the following signals
-            struct sigaction normal_exit = {};
-            normal_exit.sa_handler = [](int status){
-                SignalThreadTermination();
-
-                // signal(status, SIG_DFL);        // Restore default behavior
-                // raise(status);                  // Terminate properly (may core dump if appropriate)
-            };
-            sigemptyset(&normal_exit.sa_mask);
-            normal_exit.sa_flags = SA_RESTART;
-
-            for (
-                auto i : {
-                    SIGINT,
-                    SIGTERM
-                }){
-                sigaction(i, &normal_exit, NULL);
-            }
-
             if (std::atexit(Cleanup)){
                 LOGGER::log("Failed to register exit handler.");
             }
@@ -1382,6 +1369,22 @@ namespace GGUI{
             if (std::get_terminate() != Cleanup) {
                 std::set_terminate(Cleanup);
             }
+
+            std::vector<int> triggerSignals = {
+                SIGINT,
+                SIGTERM
+            };
+
+            // Setup on termination cleanup thread
+            sigset_t sigSet;
+            sigemptyset(&sigSet);
+            for (auto i : triggerSignals){
+                sigaddset(&sigSet, i);
+            }
+            pthread_sigmask(SIG_BLOCK, &sigSet, nullptr);  // Block in all current/future threads
+
+            std::thread sigThread(onTerminationCleanupThread);
+            sigThread.detach(); // Make it independent.
 
             Platform_State.Initialized = true;
         }
