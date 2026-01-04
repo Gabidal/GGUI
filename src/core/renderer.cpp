@@ -32,18 +32,12 @@
 #endif
 
 namespace GGUI{
-
-    // User provided cleanup callbacks.
-    static std::vector<std::function<void()>> User_Cleanup_Callbacks;
-    void registerCleanupCallback(std::function<void()> Callback) {
-        User_Cleanup_Callbacks.push_back(Callback);
-    }
-
     namespace INTERNAL{
-        std::vector<UTF>* abstractFrameBuffer = nullptr;              // 2D clean vector without bold nor color
-        std::string* frameBuffer;                                      // string with bold and color, this what gets drawn to console.
+        std::vector<UTF>* abstractFrameBuffer = nullptr;                // Terminal Cell buffer
+        std::string* frameBuffer;                                       // ANSI Escape sequenced string, this what gets drawn to console
+        std::vector<std::function<void()>> userCleanupCallbacks;        // User defined functions to be called on cleanup
         
-        platformState Platform_State;
+        // platformState platformState;
 
         // For threading system
         namespace atomic{
@@ -180,14 +174,14 @@ namespace GGUI{
          * - Flushes the output to ensure all data is written to the console.
          */
         void deInitialize(){
-            if (Platform_State.De_Initialized)
+            if (platformState.deInitialized)
                 return; // Guard against double execution.
 
             // Execute user-provided cleanup callbacks first (they may rely on live terminal state).
-            for (auto& Callback : User_Cleanup_Callbacks){
+            for (auto& Callback : userCleanupCallbacks){
                 if (Callback) Callback();
             }
-            User_Cleanup_Callbacks.clear();
+            userCleanupCallbacks.clear();
 
             // fileStreamerHandles now holds unique_ptr; clearing map will destroy streams.
             fileStreamerHandles.clear();
@@ -205,30 +199,13 @@ namespace GGUI{
             }
 
             // Restore code page if it was changed
-            if (Platform_State.Previous_Windows_Codepage != 0){
-                SetConsoleOutputCP(Platform_State.Previous_Windows_Codepage);
+            if (platformState.previousWindowsCodepage != 0){
+                SetConsoleOutputCP(platformState.previousWindowsCodepage);
             }
 
-            // Symmetric disabling of features we enabled.
-            if (Platform_State.Extended_Into_SGR_Mode)
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
-            if (Platform_State.Mouse_Reporting_Enabled)
-                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
-            if (Platform_State.VT200_Mode_Enabled)
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE, false).toString();
-            if (Platform_State.Cursor_Hidden)
-                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
-            if (Platform_State.Screen_Capture_Enabled)
-                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
-            if (Platform_State.Alternative_Screen_Enabled)
-                std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
+            deinitTerminalANSICodes();
 
-            // Reset all SGR (text style / color) attributes so the parent shell is not left with altered colors.
-            std::cout << GGUI::constants::ANSI::enableSGRFeature(GGUI::constants::ANSI::RESET_SGR).toString();
-            // We don't want to touch the cursor shape.
-            std::cout << std::flush; // Ensure all output is flushed to console
-
-            Platform_State.De_Initialized = true;
+            platformState.deInitialized = true;
         }
 
         /**
@@ -581,22 +558,13 @@ namespace GGUI{
                 SetConsoleMode(GLOBAL_STD_INPUT_HANDLE, ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_PROCESSED_INPUT);
 
             // Capture previous code page and switch to UTF-8 if different.
-            Platform_State.Previous_Windows_Codepage = GetConsoleOutputCP();
-            if (Platform_State.Previous_Windows_Codepage != (unsigned long)ENABLE_UTF8_MODE_FOR_WINDOWS)
+            platformState.previousWindowsCodepage = GetConsoleOutputCP();
+            if (platformState.previousWindowsCodepage != (unsigned long)ENABLE_UTF8_MODE_FOR_WINDOWS)
                 SetConsoleOutputCP(ENABLE_UTF8_MODE_FOR_WINDOWS);
 
             // Enable specific ANSI features for mouse event reporting and hide the mouse cursor.
             if (STDIN_IS_TTY){
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE).toString();
-                Platform_State.VT200_Mode_Enabled = true;
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
-                Platform_State.Mouse_Reporting_Enabled = true;
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
-                Platform_State.Cursor_Hidden = true;
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
-                Platform_State.Screen_Capture_Enabled = true;
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
-                Platform_State.Extended_Into_SGR_Mode = true;
+                initTerminalWithANSICodes();
             }
             
             std::cout << std::flush;
@@ -632,7 +600,7 @@ namespace GGUI{
             }
 
             // Mark the platform as initialized.
-            Platform_State.Initialized = true;
+            platformState.initialized = true;
         }
 
         /**
@@ -753,35 +721,22 @@ namespace GGUI{
          *          before the application exits.
          */
         void deInitialize(){
-            if (Platform_State.De_Initialized)
+            if (platformState.deInitialized)
                 return; // Guard against double execution.
 
             // Execute user cleanup callbacks.
-            for (auto& Callback : User_Cleanup_Callbacks){
+            for (auto& Callback : userCleanupCallbacks){
                 if (Callback) Callback();
             }
-            User_Cleanup_Callbacks.clear();
+            userCleanupCallbacks.clear();
 
             // Unique_ptr map cleanup.
             fileStreamerHandles.clear();
 
             if (!SETTINGS::enableDRM) {
-                if (Platform_State.Extended_Into_SGR_Mode)
-                    std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
-                if (Platform_State.Mouse_Reporting_Enabled)
-                    std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
-                if (Platform_State.VT200_Mode_Enabled)
-                    std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE, false).toString();
-                if (Platform_State.Cursor_Hidden)
-                    std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR).toString();
-                if (Platform_State.Screen_Capture_Enabled)
-                    std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::SCREEN_CAPTURE, false).toString();
-                if (Platform_State.Alternative_Screen_Enabled)
-                    std::cout << GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
+                deinitTerminalANSICodes();
 
-                std::cout << GGUI::constants::ANSI::enableSGRFeature(GGUI::constants::ANSI::RESET_SGR).toString();
-
-                if (STDIN_IS_TTY && Platform_State.Raw_Mode_Enabled) {
+                if (STDIN_IS_TTY && platformState.rawModeEnabled) {
                     fcntl(STDIN_FILENO, F_SETFL, Previous_Flags);
                     tcsetattr(STDIN_FILENO, TCSAFLUSH, &Previous_Raw);
                     LOGGER::log("Restored previous terminal raw mode configuration.");
@@ -793,7 +748,7 @@ namespace GGUI{
                 std::cout << std::flush;
             }
 
-            Platform_State.De_Initialized = true;
+            platformState.deInitialized = true;
         }
 
         /**
@@ -1001,7 +956,7 @@ namespace GGUI{
                         KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = buttonState(true);
                     }
                 }                
-                if (Raw_Input[i] == constants::ANSI::ESC_CODE[0]) {
+                if (Raw_Input[i] == constants::ANSI::CSI_CODE[0]) {
                     // check if there are stuff after this escape code
                     if (!hasIndicies(i, 1)) {
                         // Clearly the escape key was invoked
@@ -1015,7 +970,7 @@ namespace GGUI{
                     i++;
 
                     // The current data can either be an ALT key initiative or an escape sequence followed by '['
-                    if (Raw_Input[i] == constants::ANSI::ESC_CODE[1]) {
+                    if (Raw_Input[i] == constants::ANSI::CSI_CODE[1]) {
                         // Escape sequence codes:
 
                         if (!hasIndicies(i, 1)) {
@@ -1278,13 +1233,20 @@ namespace GGUI{
             Raw_Input_Size = 0;
         }
 
+        
+        static std::vector<int> triggerSignals = {
+            SIGINT,
+            SIGTERM,
+            SIGQUIT
+        };
+
         // Signal handler thread function
         void onTerminationCleanupThread() {
             sigset_t sigSet;
             sigemptyset(&sigSet);
-            sigaddset(&sigSet, SIGINT);
-            sigaddset(&sigSet, SIGTERM);
-            sigaddset(&sigSet, SIGQUIT);
+            for (auto i : triggerSignals) {
+                sigaddset(&sigSet, i);
+            }
 
             int sig;
             while (true) {
@@ -1323,7 +1285,7 @@ namespace GGUI{
                         Term_Handle.c_cc[VTIME] = 0;  // no timeout
 
                         if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle) == 0) {
-                            Platform_State.Raw_Mode_Enabled = true;
+                            platformState.rawModeEnabled = true;
                         }
                         else {
                             LOGGER::log("Failed to enable raw mode (tcsetattr). Mouse reporting will remain disabled to avoid corrupting output.");
@@ -1334,21 +1296,8 @@ namespace GGUI{
                     }
 
                     // Only enable mouse-reporting features after raw mode is successfully applied.
-                    if (Platform_State.Raw_Mode_Enabled) {
-                        // Initialize the console for mouse input.
-                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SET_VT200_MOUSE).toString();
-                        Platform_State.VT200_Mode_Enabled = true;
-                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
-                        Platform_State.Mouse_Reporting_Enabled = true;
-                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
-                        Platform_State.Cursor_Hidden = true;
-                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
-                        Platform_State.Screen_Capture_Enabled = true;
-                        std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
-                        Platform_State.Extended_Into_SGR_Mode = true;
-                        // std::cout << constants::RESET_CONSOLE;
-                        // std::cout << constants::EnableFeature(constants::ALTERNATIVE_SCREEN_BUFFER);    // For double buffer if needed
-                        std::cout << std::flush;
+                    if (platformState.rawModeEnabled) {
+                        initTerminalWithANSICodes();
                     }
 
                     // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
@@ -1370,23 +1319,21 @@ namespace GGUI{
                 std::set_terminate(Cleanup);
             }
 
-            std::vector<int> triggerSignals = {
-                SIGINT,
-                SIGTERM
-            };
-
-            // Setup on termination cleanup thread
+            /*
+            * As mentioned by https://docs.oracle.com/cd/E19120-01/open.solaris/816-5137/gen-75415/index.html
+            * "All signals identified by the set argument must be blocked on all threads, including the calling thread. Otherwise, sigwait() might not work correctly."
+            */
             sigset_t sigSet;
             sigemptyset(&sigSet);
             for (auto i : triggerSignals){
-                sigaddset(&sigSet, i);
+                sigaddset(&sigSet, i);  // Add signals to blacklist.
             }
             pthread_sigmask(SIG_BLOCK, &sigSet, nullptr);  // Block in all current/future threads
 
             std::thread sigThread(onTerminationCleanupThread);
             sigThread.detach(); // Make it independent.
 
-            Platform_State.Initialized = true;
+            platformState.initialized = true;
         }
 
 
@@ -1420,6 +1367,40 @@ namespace GGUI{
         }
 
         #endif
+
+        void initTerminalWithANSICodes() {
+            // Initialize the console for mouse input.
+            std::cout << constants::ANSI::SAVE_CURSOR_POSITION.toString();
+            platformState.mousePositionSaved = true;
+            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
+            platformState.screenCaptureEnabled = true;
+            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
+            platformState.cursorHidden = true;
+            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+            platformState.mouseReportingEnabled = true;
+            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
+            platformState.extendedIntoSGRMode = true;
+            std::cout << std::flush;
+        }
+
+        void deinitTerminalANSICodes() {
+            if (platformState.extendedIntoSGRMode)
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
+            if (platformState.mouseReportingEnabled)
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+            if (platformState.cursorHidden)
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR).toString();
+            if (platformState.screenCaptureEnabled)
+                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE, false).toString();
+
+            // This is here for scenarios where the rendering did not finish and there is some rogue coloring going on. This will reset all colors to default.
+            std::cout << constants::ANSI::enableSGRFeature(constants::ANSI::RESET_SGR).toString();
+
+            if (platformState.mousePositionSaved)
+                std::cout << constants::ANSI::RESTORE_CURSOR_POSITION.toString();
+
+            std::cout << std::flush;
+        }
 
         void Cleanup(){
             SignalThreadTermination();
@@ -2418,6 +2399,12 @@ namespace GGUI{
         exit(signum);
     }
 
+    /**
+     * @brief Blocks the calling thread until a termination request is signaled.
+     * 
+     * It is typically used to keep the main thread alive until the application is
+     * requested to terminate (e.g., via signal or internal shutdown logic).
+     */
     void waitForTermination() {
         std::unique_lock lock(INTERNAL::atomic::mutex);
         INTERNAL::atomic::condition.wait(lock, [&](){ return INTERNAL::requestTermination; });
@@ -2425,6 +2412,13 @@ namespace GGUI{
 
     element* getRoot() {
         return INTERNAL::main;
+    }
+    
+    /**
+     * @brief Register cleanup functions to be called on SIGINT, SIGTERM, std::exit(), std::quick_exit(), std::termination
+     */
+    void registerCleanupCallback(std::function<void()> Callback) {
+        INTERNAL::userCleanupCallbacks.push_back(Callback);
     }
 
     /**

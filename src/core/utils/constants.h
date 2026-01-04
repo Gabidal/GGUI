@@ -17,7 +17,7 @@ namespace GGUI{
 
     namespace constants{
         namespace ANSI{
-            // 1 to ESC_CODE
+            // 1 to CSI_CODE
             // 1 to Text_Color | Background_Color
             // 1 to SEPARATE
             // 1 to USE_RGB
@@ -73,7 +73,8 @@ namespace GGUI{
             constexpr unsigned int maximumNeededPreAllocationForSettingCursorShape = 1 + 1;
 
             // CSI (Control Sequence Introducer) sequences.
-            constexpr INTERNAL::compactString ESC_CODE = "\x1B[";      // Also known as \e[ or \o33
+            constexpr INTERNAL::compactString ESC_CODE = "\x1B";       // Also known as \e or \o33
+            constexpr INTERNAL::compactString CSI_CODE = "\x1B[";       // Also known as \e[ or \o33[
             constexpr INTERNAL::compactString SEPARATE = ';';
             constexpr INTERNAL::compactString USE_RGB = '2';
             constexpr INTERNAL::compactString END_COMMAND = 'm';
@@ -101,7 +102,7 @@ namespace GGUI{
                 INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingPrivateSGRFeature> Result;
 
                 // Add the escape code
-                Result.add(ESC_CODE);
+                Result.add(CSI_CODE);
 
                 // Add the private SGR telltale '?'
                 Result.add('?');
@@ -131,7 +132,7 @@ namespace GGUI{
                 INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingSGRFeature> Result;
 
                 // Add the escape code
-                Result.add(ESC_CODE);
+                Result.add(CSI_CODE);
 
                 // Add the command to enable
                 Result.add(command);
@@ -145,7 +146,7 @@ namespace GGUI{
             // Build a cursor shape control sequence: ESC[ <Ps> q where fragment already provides "<digit> q".
             constexpr INTERNAL::superString<maximumNeededPreAllocationForSettingCursorShape> setCursorShape(const INTERNAL::compactString& fragment){
                 INTERNAL::superString<maximumNeededPreAllocationForSettingCursorShape> Result;
-                Result.add(ESC_CODE);
+                Result.add(CSI_CODE);
                 Result.add(fragment);
                 return Result;
             }
@@ -257,6 +258,9 @@ namespace GGUI{
                 INTERNAL::compactString("240", 3, true), INTERNAL::compactString("241", 3, true), INTERNAL::compactString("242", 3, true), INTERNAL::compactString("243", 3, true), INTERNAL::compactString("244", 3, true), INTERNAL::compactString("245", 3, true), INTERNAL::compactString("246", 3, true), INTERNAL::compactString("247", 3, true), INTERNAL::compactString("248", 3, true), INTERNAL::compactString("249", 3, true),
                 INTERNAL::compactString("250", 3, true), INTERNAL::compactString("251", 3, true), INTERNAL::compactString("252", 3, true), INTERNAL::compactString("253", 3, true), INTERNAL::compactString("254", 3, true), INTERNAL::compactString("255", 3, true)
             };
+
+            constexpr const INTERNAL::superString<2> SAVE_CURSOR_POSITION = {ESC_CODE, toCompactTable[7]};
+            constexpr const INTERNAL::superString<2> RESTORE_CURSOR_POSITION = {ESC_CODE, toCompactTable[8]};
         }
 
         constexpr unsigned long long NONE = (unsigned long long)1 << 0;

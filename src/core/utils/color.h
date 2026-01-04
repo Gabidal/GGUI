@@ -54,7 +54,7 @@ namespace GGUI{
          * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
          */
         constexpr void getOverHeadAsSuperString(INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Result, const bool Is_Text_Color = true) const {
-            Result->add(constants::ANSI::ESC_CODE);
+            Result->add(constants::ANSI::CSI_CODE);
             
             Is_Text_Color ? 
                 Result->add(constants::ANSI::TEXT_COLOR) :
@@ -68,7 +68,7 @@ namespace GGUI{
         constexpr INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> getOverHeadAsSuperString(const bool Is_Text_Color = true) const {
             INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> Result;
 
-            Result.add(constants::ANSI::ESC_CODE);
+            Result.add(constants::ANSI::CSI_CODE);
             
             Is_Text_Color ? 
                 Result.add(constants::ANSI::TEXT_COLOR) :

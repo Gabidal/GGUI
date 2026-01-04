@@ -460,7 +460,7 @@ namespace GGUI{
              *
              * @return Owning string containing the concatenated bytes.
              */
-            std::string toString() {
+            std::string toString() const {
                 // Resize a std::string to the total size.
                 std::string result;
                 result.resize(liquefiedSize);

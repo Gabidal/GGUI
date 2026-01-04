@@ -30,22 +30,19 @@ namespace GGUI{
     namespace INTERNAL{
         class bufferCapture;
 
-        struct platformState {
-            bool Screen_Capture_Enabled = false;
-            bool Alternative_Screen_Enabled = false;
-            bool Mouse_Reporting_Enabled = false;
-            bool Cursor_Hidden = false;
-            bool Raw_Mode_Enabled = false;          // POSIX only
-            bool Initialized = false;
-            bool Extended_Into_SGR_Mode = false;
-            bool VT200_Mode_Enabled = false;
+        static struct {
+            bool screenCaptureEnabled = false;
+            bool mouseReportingEnabled = false;
+            bool cursorHidden = false;
+            bool initialized = false;
+            bool extendedIntoSGRMode = false;
+            bool mousePositionSaved = false;
         #if _WIN32
-            unsigned long Previous_Windows_Codepage = 0;
+            unsigned long previousWindowsCodepage = 0;
         #endif
-            bool De_Initialized = false;
-        };
-
-        extern platformState Platform_State;
+            bool rawModeEnabled = false;
+            bool deInitialized = false;
+        } platformState;
 
         namespace atomic{
             enum class status{
@@ -132,6 +129,10 @@ namespace GGUI{
          */
         extern void initPlatformStuff();
         
+        extern void initTerminalWithANSICodes();
+
+        extern void deinitTerminalANSICodes();
+
         extern void Cleanup();
 
         /**
@@ -405,7 +406,13 @@ namespace GGUI{
      * @param signum The exit code to be used when terminating the application.
      */
     extern void EXIT(int Signum = 0);
-
+    
+    /**
+     * @brief Blocks the calling thread until a termination request is signaled.
+     * 
+     * It is typically used to keep the main thread alive until the application is
+     * requested to terminate (e.g., via signal or internal shutdown logic).
+     */
     extern void waitForTermination();
 
     /**
@@ -414,6 +421,11 @@ namespace GGUI{
      * @return A pointer to the main element of the GGUI system.
      */
     extern element* getRoot();
+    
+    /**
+     * @brief Register cleanup functions to be called on SIGINT, SIGTERM, std::exit(), std::quick_exit(), std::termination
+     */
+    extern void registerCleanupCallback(std::function<void()> Callback);
 
     /**
      * @brief Updates the frame.

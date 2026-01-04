@@ -892,7 +892,7 @@ namespace GGUI{
 
                     }
                     else{
-                        if (!INTERNAL::Platform_State.Initialized){
+                        if (!INTERNAL::platformState.initialized){
                             INTERNAL::initPlatformStuff();
                         }
 
