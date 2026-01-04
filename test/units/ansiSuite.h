@@ -29,10 +29,10 @@ namespace tester {
         }
 
         static void test_private_sgr_enable_disable() {
-            auto cursor_on = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR, true).toString();
-            auto cursor_off = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
-            auto alt_on = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, true).toString();
-            auto alt_off = GGUI::constants::ANSI::enablePrivateSGRFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
+            auto cursor_on = GGUI::constants::ANSI::enablePrivateDECFeature(GGUI::constants::ANSI::MOUSE_CURSOR, true).toString();
+            auto cursor_off = GGUI::constants::ANSI::enablePrivateDECFeature(GGUI::constants::ANSI::MOUSE_CURSOR, false).toString();
+            auto alt_on = GGUI::constants::ANSI::enablePrivateDECFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, true).toString();
+            auto alt_off = GGUI::constants::ANSI::enablePrivateDECFeature(GGUI::constants::ANSI::ALTERNATIVE_SCREEN_BUFFER, false).toString();
 
             ASSERT_EQ(std::string("\x1B[?25h"), cursor_on);
             ASSERT_EQ(std::string("\x1B[?25l"), cursor_off);

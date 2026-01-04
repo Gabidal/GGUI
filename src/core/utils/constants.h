@@ -98,7 +98,7 @@ namespace GGUI{
              * @param Enable If true, enable the feature. Otherwise, disable it.
              * @return A Super_String object with the correct escape sequence to enable or disable the feature
              */
-            constexpr INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingPrivateSGRFeature> enablePrivateSGRFeature(const INTERNAL::compactString& command, bool Enable = true) { 
+            constexpr INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingPrivateSGRFeature> enablePrivateDECFeature(const INTERNAL::compactString& command, bool Enable = true) { 
                 INTERNAL::superString<maximumNeededPreAllocationForEnablingOrDisablingPrivateSGRFeature> Result;
 
                 // Add the escape code

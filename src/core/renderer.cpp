@@ -1372,26 +1372,26 @@ namespace GGUI{
             // Initialize the console for mouse input.
             std::cout << constants::ANSI::SAVE_CURSOR_POSITION.toString();
             platformState.mousePositionSaved = true;
-            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
+            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
             platformState.screenCaptureEnabled = true;
-            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
+            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
             platformState.cursorHidden = true;
-            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
+            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
             platformState.mouseReportingEnabled = true;
-            std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
+            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
             platformState.extendedIntoSGRMode = true;
             std::cout << std::flush;
         }
 
         void deinitTerminalANSICodes() {
             if (platformState.extendedIntoSGRMode)
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
+                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
             if (platformState.mouseReportingEnabled)
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
+                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
             if (platformState.cursorHidden)
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::MOUSE_CURSOR).toString();
+                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::MOUSE_CURSOR).toString();
             if (platformState.screenCaptureEnabled)
-                std::cout << constants::ANSI::enablePrivateSGRFeature(constants::ANSI::SCREEN_CAPTURE, false).toString();
+                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::SCREEN_CAPTURE, false).toString();
 
             // This is here for scenarios where the rendering did not finish and there is some rogue coloring going on. This will reset all colors to default.
             std::cout << constants::ANSI::enableSGRFeature(constants::ANSI::RESET_SGR).toString();
