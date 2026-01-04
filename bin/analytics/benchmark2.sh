@@ -1,21 +1,7 @@
 #!/usr/bin/env bash
 
 # =============================================================================
-# GGUI Linux Perf Performance Analysis Script
-# =============================================================================
-# This script automates performance analysis for the GGUI project using Linux
-# perf tools with pprof web interface integration. It supports multiple
-# performance events and provides comprehensive CPU performance insights.
-#
-# Features:
-# - Multiple performance counter support (branches, cycles, instructions)
-# - Automated project building and environment setup
-# - pprof web interface for interactive analysis
-# - Profile data management with backup options
-# - Configurable performance events and sampling rates
-#
-# Author: GGUI Analytics Team
-# Version: 2.0 (Refactored with modular utilities)
+# Automatic pprof with web UI benchmark.
 # =============================================================================
 
 # Source utility modules
@@ -39,15 +25,10 @@ if [[ "$HELP_REQUESTED" == "true" ]]; then
     show_help
 fi
 
-# =============================================================================
-# Main Execution
-# =============================================================================
-
 # Setup environment and build project
 log_info "Setting up environment for perf performance analysis..."
 go_to_project_root
-preferred_exec="$(get_build_dir_for_type "$BUILD_TYPE")/GGUI"
-executable=$(ensure_executable "$preferred_exec")
+executable=$(ensure_executable "$BUILD_TYPE")
 
 # Validate perf and pprof installations
 validate_perf_installation

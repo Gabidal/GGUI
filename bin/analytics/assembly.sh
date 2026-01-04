@@ -7,14 +7,6 @@
 # objdump disassembler. It provides comprehensive disassembly output with
 # Intel syntax, source code interleaving, and symbol demangling for detailed
 # binary analysis.
-#
-# Features:
-# - Automated project building and environment setup
-# - Multiple build type support (debug/release)
-# - Intel syntax assembly output with source annotations
-# - C++ symbol demangling for readability
-# - Output file management with backup options
-#
 # =============================================================================
 
 # Source utility modules

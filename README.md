@@ -18,9 +18,7 @@ int main()
         ))
     );
 
-    while (true) {
-        // ... 
-    }
+    GGUI::waitForTermination();
 }
 ```
 
@@ -45,7 +43,7 @@ int main()
     g++ GGUI.lib ...
     ```
  - ### **Optimized** for **Blazing fast** runtime with c++17 constexpr!
-
+ - ### **Graceful exit** be it ctrl+c or normal exit, GGUI cleans up after itself 
 --- 
 
 # Building
@@ -64,18 +62,34 @@ g++ -std=c++17 -O3 -I./bin/export ./bin/export/buildGGUILib.cpp -o headerGenerat
 ./headerGenerator --headers-only --source-root ./           # This will generate automatically ggui.h, you can also add '--include-internal' for building ggui_dev.h 
 ```
 
-# Contributing to development of **GGUI**
-- ### Initialize project locally with the `init.*` script.
-- ### Exporting this project as library is documented in [bin/export/README.md](./bin/export/README.md).
+# Build **GGUI**
+- ### Initialize project locally with the `init.sh` script.
+  - Will also remove any existing build directory
+  - only builds ggui_core 
+- ### Build specific targets with: `build.sh` script.
+  - uses positional arguments!
+  - give the build type first and then the target(s)
+    ```bash
+    ./bin/build.sh profile ggui     # Links ggui_core with main.cpp
+    ./bin/build.sh release build_native_archive # builds a usable archive and auto generates headers under ./bin/export/
+    ```
+- ### Cross-platform export static libraries and headers with: `export.sh` script.
+  - Basically a helper script for `./bin/build.sh release build_native_archive` and the cross-platform configuration
+  - Cross-platform configs are located in `./bin/export/`, you can add your own platforms if needed (needs some hassling)
+  - Old system without meson:
+    ```bash
+    g++ buildGGUILib.cpp && ./a.exe
+    ```
+- ### Run test suite with: `test.sh` script.
+  - Takes build type as args
+  - Cannot recognize faulty rendering `:(`
 
-
-## Release Validation
-### Run these following commands to check if the current changes meet the stability requirements.
+## How i measure performance?
 ```bash
-./bin/analytics/leaks.sh -F         # Full memory analysis
-./bin/analytics/benchmark.sh -F     # Full CPU profiling
-./bin/analytics/benchmark2.sh -a    # Multi-event perf analysis
-./bin/analytics/time.sh 15 120      # Extended growth analysis
+# Build types are: release, debug, profile
+./bin/analytics/benchmark.sh -Full release      # Full CPU profiling
+./bin/analytics/time.sh 5 120 release           # short duration 5s, long duration 120s; This is to check if opcodes explode with time growth or stay stabile.
+./bin/analytics/assembly.sh profile             # Helper script to make a large asm file of the whole thing.
 ```
-### More about scripts at [bin/analytics/README.md](./bin/analytics/README.md)
+### More about optimization and analytic scripts at [bin/analytics/README.md](./bin/analytics/README.md)
 
