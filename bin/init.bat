@@ -14,18 +14,16 @@ set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
 rem =============================================================================
-rem Source common utility functions (like 'source common.sh' in bash)
+rem Set path to common utility functions
 rem =============================================================================
 set "COMMON_BAT=%SCRIPT_DIR%\analytics\utils\common.bat"
-if exist "%COMMON_BAT%" (
-    call "%COMMON_BAT%"
-) else (
+if not exist "%COMMON_BAT%" (
     echo Error: Could not find common.bat at %COMMON_BAT% 1>&2
     exit /b 1
 )
 
 rem Initialize project root
-call :go_to_project_root
+call "%COMMON_BAT%" go_to_project_root
 if errorlevel 1 exit /b 1
 
 echo === GGUI Project Initialization ===
@@ -33,7 +31,7 @@ echo.
 
 rem Step 1: Run analytics validation
 echo Validating environment and analytics tools...
-call :run_analytics_validation
+call "%COMMON_BAT%" run_analytics_validation
 set "validation_result=%errorlevel%"
 
 if %validation_result% neq 0 (
@@ -44,7 +42,7 @@ if %validation_result% neq 0 (
     if defined CI (
         echo Force/CI mode detected ^(CI=%CI%^). Skipping question...
     ) else (
-        call :prompt_yes_no "Continue regardless?" "n"
+        call "%COMMON_BAT%" prompt_yes_no "Continue regardless?" "n"
         if errorlevel 1 (
             echo Initialization aborted by user.
             exit /b 1
@@ -63,17 +61,17 @@ if "%CXX%"=="" (
 )
 
 rem Remove all existing build directories matching build*
-call :remove_build_directories
+call "%COMMON_BAT%" remove_build_directories
 if errorlevel 1 exit /b 1
 
 rem Step 3: Setting up the default build configure
 echo Setting up the default build configure...
-call :meson_setup_or_reconfigure "debug"
+call "%COMMON_BAT%" meson_setup_or_reconfigure "debug"
 if errorlevel 1 exit /b 1
 
 rem Step 4: Compile the project using meson
 echo Compiling the project...
-call :meson_compile_target "debug" "ggui_core"
+call "%COMMON_BAT%" meson_compile_target "debug" "ggui_core"
 if errorlevel 1 exit /b 1
 
 echo.
@@ -83,4 +81,5 @@ echo Run .\bin\export.bat to export GGUI as linkable libraries and auto generate
 echo Run .\bin\analytics\* scripts for performance and memory leak checks
 
 endlocal
+exit /b 0
 exit /b 0

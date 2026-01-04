@@ -14,11 +14,9 @@ rem Store the script directory
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
-rem Source common utility functions
+rem Set path to common utility functions
 set "COMMON_BAT=%SCRIPT_DIR%\analytics\utils\common.bat"
-if exist "%COMMON_BAT%" (
-    call "%COMMON_BAT%"
-) else (
+if not exist "%COMMON_BAT%" (
     echo Error: Could not find common.bat at %COMMON_BAT% 1>&2
     exit /b 1
 )
@@ -27,7 +25,7 @@ rem Get build type from first argument
 set "build_type=%~1"
 
 rem Configure if needed
-call :meson_setup_or_reconfigure "%build_type%"
+call "%COMMON_BAT%" meson_setup_or_reconfigure "%build_type%"
 if errorlevel 1 exit /b 1
 
 rem Build (pass remaining arguments as targets)
@@ -44,7 +42,7 @@ goto :collect_targets
 rem Trim leading space if any
 if defined targets set "targets=%targets:~1%"
 
-call :meson_compile_target "%build_type%" "%targets%"
+call "%COMMON_BAT%" meson_compile_target "%build_type%" "%targets%"
 if errorlevel 1 exit /b 1
 
 echo Build completed successfully

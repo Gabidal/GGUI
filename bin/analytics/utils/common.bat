@@ -1,7 +1,22 @@
-
+@echo off
 rem =============================================================================
 rem Common Utility Functions (Windows equivalents of common.sh)
 rem =============================================================================
+rem
+rem Usage: call common.bat <function_name> [args...]
+rem Example: call common.bat go_to_project_root
+rem Example: call common.bat meson_setup_or_reconfigure debug
+rem =============================================================================
+
+rem ##
+rem # If called with arguments, dispatch to the requested function
+rem # On call: %~0 caller script, %~1 function label, %~2+ actual args
+rem # Shift by one: %~0 function label (wrong but what can you do :/) %~1+ args
+rem ##
+if "%~1"=="" exit /b 0
+set "_fn=%~1"
+shift /1
+goto :%_fn%
 
 rem ##
 rem # Handles errors and exits gracefully with an error message.
