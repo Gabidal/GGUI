@@ -13,5 +13,3 @@ meson_setup_or_reconfigure "$BUILD_TYPE"
 
 # Run tests (verbose + print error logs). Extra args are forwarded to meson test.
 meson test -C "$(get_build_dir_for_type $BUILD_TYPE)" -v --print-errorlogs "$@"
-
-popd >/dev/null

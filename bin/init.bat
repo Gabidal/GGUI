@@ -1,125 +1,86 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableDelayedExpansion
 
 rem =============================================================================
 rem GGUI Project Initialization Script (Windows)
 rem =============================================================================
 rem This script initializes and builds the GGUI project locally. It validates
 rem the environment, checks for required tools, manages the build setup, and
-rem ensures analytics tools are properly configured.
-rem
-rem Features:
-rem - Environment and requirements validation
-rem - Automated build directory setup
-rem - Project compilation with meson
-rem - Analytics tools validation and setup
-rem - Proper file permissions configuration
-rem
+rem ensures analytics tools are configured.
 rem =============================================================================
+
+rem Store the script directory
+set "SCRIPT_DIR=%~dp0"
+set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+
+rem =============================================================================
+rem Source common utility functions (like 'source common.sh' in bash)
+rem =============================================================================
+set "COMMON_BAT=%SCRIPT_DIR%\analytics\utils\common.bat"
+if exist "%COMMON_BAT%" (
+    call "%COMMON_BAT%"
+) else (
+    echo Error: Could not find common.bat at %COMMON_BAT% 1>&2
+    exit /b 1
+)
+
+rem Initialize project root
+call :go_to_project_root
+if errorlevel 1 exit /b 1
 
 echo === GGUI Project Initialization ===
 echo.
 
-rem Step 0: Detect project root and cd into bin
-for /f "delims=" %%i in ('git rev-parse --show-toplevel 2^>nul') do set "project_root=%%i"
-if "%project_root%"=="" (
-    echo Error: Unable to determine the project root directory. Ensure you're in the GGUI project.
-    exit /b 1
-)
-cd /d "%project_root%\bin" || (
-    echo Error: Failed to change to 'bin' directory.
-    exit /b 1
-)
+rem Step 1: Run analytics validation
+echo Validating environment and analytics tools...
+call :run_analytics_validation
+set "validation_result=%errorlevel%"
 
-rem Helper: check if a command exists in PATH
-set "_missingTool="
-where meson >nul 2>nul || set "_missingTool=meson"
-where g++   >nul 2>nul || set "_missingTool=g++"
-
-rem Also detect bash for analytics validation (Git Bash or similar)
-where bash  >nul 2>nul && set "HAS_BASH=1"
-
-echo Step 1: Validating environment and analytics tools...
-if exist ".\analytics\utils\validate.sh" (
-    if defined HAS_BASH (
-        rem Normalize line endings to avoid $'\r' issues in Git Bash
-        bash -lc "sed -i 's/\r$//' ./analytics/utils/validate.sh 2>/dev/null || true; sed -i 's/\r$//' ./analytics/*.sh 2>/dev/null || true; sed -i 's/\r$//' ./analytics/utils/*.sh 2>/dev/null || true; sed -i 's/\r$//' ./build.sh 2>/dev/null || true" >nul 2>nul
-        bash "./analytics/utils/validate.sh"
+if %validation_result% neq 0 (
+    echo Environment validation failed. Please address the issues above.
+    echo You can continue with basic build, but analytics tools may not work properly.
+    
+    rem Allow CI environments to bypass the prompt
+    if defined CI (
+        echo Force/CI mode detected ^(CI=%CI%^). Skipping question...
     ) else (
-        echo Warning: 'bash' not found. Skipping analytics validation.
-        if defined _missingTool (
-            echo Error: Required tool not found: %_missingTool%
+        call :prompt_yes_no "Continue regardless?" "n"
+        if errorlevel 1 (
+            echo Initialization aborted by user.
             exit /b 1
         )
     )
-) else (
-    echo Warning: Analytics validation script not found. Continuing with basic checks...
-    if defined _missingTool (
-        echo Error: Required tool not found: %_missingTool%
-        exit /b 1
-    )
 )
-
 echo.
-echo Step 2: Setting up build environment...
+
+rem Step 2: Set up build environment
+echo Setting up build environment...
+
+rem Ensure the CXX variable is set (default to 'g++' if not)
 if "%CXX%"=="" (
     set "CXX=g++"
     echo CXX environment variable was not set. Defaulting to 'g++'.
 )
 
-rem Check if ./build, ./build-win, ./build-release, ./build-linux exists, if so then remove them
-echo Checking for old build directories...
-if exist "build" (
-    echo Removing old 'build' directory...
-    rmdir /s /q "build"
-    if errorlevel 1 (
-        echo Error: Failed to remove old 'build' directory.
-        exit /b 1
-    )
-)
-if exist "build-release" (
-    echo Removing old 'build-release' directory...
-    rmdir /s /q "build-release"
-    if errorlevel 1 (
-        echo Error: Failed to remove old 'build-release' directory. 
-        exit /b 1
-    )
-)
-if exist "build-win" (
-    echo Removing old 'build-win' directory...
-    rmdir /s /q "build-win"
-    if errorlevel 1 (
-        echo Error: Failed to remove old 'build-win' directory.
-        exit /b 1
-    )
-)
-if exist "build-linux" (
-    echo Removing old 'build-linux' directory...
-    rmdir /s /q "build-linux"
-    if errorlevel 1 (
-        echo Error: Failed to remove old 'build-linux' directory.
-        exit /b 1
-    )
-)
+rem Remove all existing build directories matching build*
+call :remove_build_directories
+if errorlevel 1 exit /b 1
 
-echo Step 3: Setting up the debug build directory...
-rem Since the build directories are already removed, we can just assume build dir is gone.
-meson setup build -Dbuildtype=debug
-if errorlevel 1 (
-    echo Error: Failed to configure the build directory.
-    exit /b 1
-)
+rem Step 3: Setting up the default build configure
+echo Setting up the default build configure...
+call :meson_setup_or_reconfigure "debug"
+if errorlevel 1 exit /b 1
 
-echo Step 4: Compiling basic debug build...
-meson compile -C build ggui_core
-if errorlevel 1 (
-    echo Error: Compilation failed while building GGUI.
-    exit /b 1
-)
+rem Step 4: Compile the project using meson
+echo Compiling the project...
+call :meson_compile_target "debug" "ggui_core"
+if errorlevel 1 exit /b 1
 
+echo.
 echo === Initialization Complete ===
-echo Run ./bin/test.sh to test GGUI integrity
-echo Run ./bin/export.sh to export GGUI as linkable libraries and auto generate headers
-echo Run ./bin/analytics/* scripts for performance and memory leak checks
+echo Run .\bin\test.bat to test GGUI integrity
+echo Run .\bin\export.bat to export GGUI as linkable libraries and auto generate headers
+echo Run .\bin\analytics\* scripts for performance and memory leak checks
 
 endlocal
+exit /b 0

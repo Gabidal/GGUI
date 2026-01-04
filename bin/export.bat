@@ -1,95 +1,70 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableDelayedExpansion
 
 rem =============================================================================
-rem GGUI Export Orchestrator (Windows)
-rem Mirrors behavior of bin/export.sh:
-rem - Ensure native build exists and tests pass (bin/build)
-rem - Prepare a release build (bin/build-release)
-rem - Export native artifacts (header + platform lib) via Meson run target
-rem - Attempt Linux cross export via export-linux if bat and script available
+rem GGUI Project Export Script (Windows)
+rem =============================================================================
+rem This script initializes the GGUI project with release options enabled.
+rem Builds it for native and other platforms and moves the builded libraries into ./bin/export/*
 rem =============================================================================
 
+rem Store the script directory
 set "SCRIPT_DIR=%~dp0"
-set "BUILD_DIR=%SCRIPT_DIR%build"
-set "BUILD_DIR_RELEASE=%SCRIPT_DIR%build-release"
-set "BUILD_DIR_PROFILE=%SCRIPT_DIR%build-profile"
-set "EXPORT_DIR=%SCRIPT_DIR%export"
+set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
-set "LOG_PREFIX=[export]"
-
-echo %LOG_PREFIX% starting export
-
-pushd "%SCRIPT_DIR%" >nul || (
-  echo %LOG_PREFIX% ERROR: Failed to change directory to script location.
-  exit /b 1
-)
-
-where meson >nul 2>nul || (
-  echo %LOG_PREFIX% ERROR: 'meson' not found in PATH. Please install Meson and ensure it's on PATH.
-  popd >nul
-  exit /b 1
-)
-
-rem 1) Configure native build directory (debug by default)
-echo %LOG_PREFIX% configuring native build at "%BUILD_DIR%"
-if not exist "%BUILD_DIR%\" (
-  meson setup "%BUILD_DIR%"
+rem Source common utility functions
+set "COMMON_BAT=%SCRIPT_DIR%\analytics\utils\common.bat"
+if exist "%COMMON_BAT%" (
+    call "%COMMON_BAT%"
 ) else (
-  meson setup --reconfigure "%BUILD_DIR%"
-)
-if errorlevel 1 (
-  echo %LOG_PREFIX% ERROR: Meson setup/reconfigure failed for native build.
-  popd >nul
-  exit /b 1
+    echo Error: Could not find common.bat at %COMMON_BAT% 1>&2
+    exit /b 1
 )
 
-rem 2) Run tests (verbose + error logs)
-echo %LOG_PREFIX% running tests
+rem Initialize project root
+call :go_to_project_root
+if errorlevel 1 exit /b 1
+
+set "EXPORT_DIR=%PROJECT_ROOT%\bin\export"
+
+call :meson_setup_or_reconfigure "release"
+if errorlevel 1 exit /b 1
+
+echo running tests...
+call :get_build_dir_for_type "release"
 meson test -C "%BUILD_DIR%" -v --print-errorlogs
 if errorlevel 1 (
-  echo %LOG_PREFIX% ERROR: Tests failed; aborting export.
-  popd >nul
-  exit /b 1
+    echo Error: meson tests failed; aborting export 1>&2
+    exit /b 1
 )
 
-rem 3) Prepare dedicated release build directory
-echo %LOG_PREFIX% configuring release build at "%BUILD_DIR_PROFILE%" (buildtype=release)
-if not exist "%BUILD_DIR_PROFILE%\" (
-  meson setup "%BUILD_DIR_PROFILE%" -Dbuildtype=debugoptimized
+rem Export native artifacts (header + native static lib) via Meson run target from release build
+call :meson_compile_target "release" "build_native_archive"
+if errorlevel 1 exit /b 1
+
+rem Export Linux cross-compiled lib, if Linux cross-compiler is available (use release build)
+rem Detect common Linux cross-compilers or allow user to provide CROSS_COMPILE_PREFIX env var
+set "LINUX_PREFIX=%CROSS_COMPILE_PREFIX%"
+if "%LINUX_PREFIX%"=="" (
+    for %%p in (x86_64-linux-gnu- x86_64-unknown-linux-gnu- i686-linux-gnu-) do (
+        where %%pg++ >nul 2>nul
+        if not errorlevel 1 (
+            set "LINUX_PREFIX=%%p"
+            goto :found_linux_prefix
+        )
+    )
+)
+:found_linux_prefix
+
+if not "%LINUX_PREFIX%"=="" (
+    echo exporting Linux artifacts ^(cross-compile^) using prefix %LINUX_PREFIX% from release build
+    call :meson_compile_target "release" "export-linux"
+    if errorlevel 1 exit /b 1
 ) else (
-  meson setup --reconfigure "%BUILD_DIR_PROFILE%" -Dbuildtype=debugoptimized
+    echo Linux cross-compiler not found; skipping Linux export.
 )
-
-rem 3) Prepare dedicated release build directory
-echo %LOG_PREFIX% configuring release build at "%BUILD_DIR_RELEASE%" (buildtype=release)
-if not exist "%BUILD_DIR_RELEASE%\" (
-  meson setup "%BUILD_DIR_RELEASE%" -Dbuildtype=release
-) else (
-  meson setup --reconfigure "%BUILD_DIR_RELEASE%" -Dbuildtype=release
-)
-if errorlevel 1 (
-  echo %LOG_PREFIX% ERROR: Failed to configure release build.
-  popd >nul
-  exit /b 1
-)
-
-rem 4) Export native artifacts from release build (manual path for reliability on Windows)
-echo %LOG_PREFIX% exporting native artifacts (manual)
-if not exist "%EXPORT_DIR%\" mkdir "%EXPORT_DIR%" >nul 2>nul
-
-rem 5) Build native archive
-meson compile -C "%BUILD_DIR_RELEASE%" build_native_archive
-if errorlevel 1 (
-  echo %LOG_PREFIX% ERROR: Failed to build native archive.
-  popd >nul
-  exit /b 1
-)
-
-rem 6) Cross-compile for linux as well.
-meson compile -C "%BUILD_DIR_RELEASE%" export-linux
-
-popd >nul
-exit /b 0
 
 echo Exported artifacts are available in %EXPORT_DIR%\
+
+endlocal
+exit /b 0

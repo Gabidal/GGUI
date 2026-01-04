@@ -1,51 +1,43 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableDelayedExpansion
 
 rem =============================================================================
 rem GGUI Test Runner (Windows)
-rem Mirrors behavior of bin/test.sh:
-rem - Configure or reconfigure Meson build directory (bin/build)
-rem - Run meson tests with verbose output and error logs
-rem - Forward any extra args to meson test
 rem =============================================================================
 
+rem Store the script directory
 set "SCRIPT_DIR=%~dp0"
-set "BUILD_DIR=%SCRIPT_DIR%build"
+set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
-echo [test] Starting test runner
-
-pushd "%SCRIPT_DIR%" >nul || (
-    echo [test] ERROR: Failed to change directory to script location.
+rem Source common utility functions
+set "COMMON_BAT=%SCRIPT_DIR%\analytics\utils\common.bat"
+if exist "%COMMON_BAT%" (
+    call "%COMMON_BAT%"
+) else (
+    echo Error: Could not find common.bat at %COMMON_BAT% 1>&2
     exit /b 1
 )
 
-where meson >nul 2>nul || (
-    echo [test] ERROR: 'meson' not found in PATH. Please install Meson and ensure it's on PATH.
-    popd >nul
-    exit /b 1
-)
+rem Get build type from first argument
+set "BUILD_TYPE=%~1"
 
-if not exist "%BUILD_DIR%\" (
-    echo [test] Configuring build directory: "%BUILD_DIR%"
-    meson setup "%BUILD_DIR%"
-    if errorlevel 1 (
-        echo [test] ERROR: Meson setup failed.
-        popd >nul
-        exit /b 1
-    )
- ) else (
-    echo [test] Reconfiguring build directory: "%BUILD_DIR%"
-    meson setup --reconfigure "%BUILD_DIR%"
-    if errorlevel 1 (
-        echo [test] ERROR: Meson reconfigure failed.
-        popd >nul
-        exit /b 1
-    )
-)
+call :meson_setup_or_reconfigure "%BUILD_TYPE%"
+if errorlevel 1 exit /b 1
 
-echo [test] Running test suite...
-meson test -C "%BUILD_DIR%" -v --print-errorlogs %*
+rem Run tests (verbose + print error logs). Extra args are forwarded to meson test.
+rem Shift past first argument and collect remaining args for meson test
+set "extra_args="
+shift
+:collect_test_args
+if "%~1"=="" goto :done_test_args
+set "extra_args=%extra_args% %~1"
+shift
+goto :collect_test_args
+
+:done_test_args
+call :get_build_dir_for_type "%BUILD_TYPE%"
+meson test -C "%BUILD_DIR%" -v --print-errorlogs %extra_args%
 set "ERR=%ERRORLEVEL%"
 
-popd >nul
+endlocal
 exit /b %ERR%
