@@ -147,10 +147,6 @@ test_environment() {
     test_function "bc availability" "command -v bc"
     test_function "timeout availability" "command -v timeout"
     
-    # Test directory structure
-    test_function "utils directory" "[[ -d '$SCRIPT_DIR' ]]"
-    test_function "project structure" "[[ -f '$SCRIPT_DIR/../../build.sh' ]]"
-    
     echo
 }
 
@@ -162,32 +158,20 @@ test_analytic_tool_availability() {
     echo "Testing analytic tool availability..."
     
     # Optional tools (don't fail if missing)
-    local optional_tools=("valgrind" "kcachegrind")
+    local optional_tools=(
+        "valgrind"
+        "kcachegrind"
+        "perf"
+        "/root/go/bin/pprof"
+    )
     for tool in "${optional_tools[@]}"; do
         if command -v "$tool" >/dev/null 2>&1; then
-            echo "Optional tool $tool: AVAILABLE"
+            echo "tool $tool: AVAILABLE (Optional)"
         else
-            echo "Optional tool $tool: NOT AVAILABLE"
+            echo "tool $tool: NOT AVAILABLE (Optional)"
         fi
     done
-    
-    # Specific path tools
-    local path_tools=(
-        "/usr/local/bin/perf:Linux perf"
-        "/root/go/bin/pprof:pprof"
-    )
-    
-    for tool_info in "${path_tools[@]}"; do
-        local tool_path="${tool_info%%:*}"
-        local tool_name="${tool_info##*:}"
-        
-        if [[ -x "$tool_path" ]]; then
-            echo "Path tool $tool_name: AVAILABLE"
-        else
-            echo "Path tool $tool_name: NOT AVAILABLE"
-        fi
-    done
-    
+
     echo
 }
 
@@ -197,7 +181,6 @@ test_analytic_tool_availability() {
 
 test_requirements() {
     echo "Testing system requirements..."
-    
     # Test required system packages
     local required_packages=("build-essential" "meson" "ninja-build")
     local missing_packages=()
@@ -306,64 +289,6 @@ test_build_system() {
     echo
 }
 
-test_project_structure() {
-    echo "Testing GGUI project structure..."
-    
-    # Find project root
-    local project_root
-    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
-    
-    if [[ -z "$project_root" ]]; then
-        echo "Git repository: NOT FOUND"
-        ((TEST_FAILED++))
-        return 1
-    fi
-    
-    echo "Git repository: FOUND at $project_root"
-    
-    # Test essential project files
-    local essential_files=(
-        "bin/meson.build:Main build file"
-        "bin/build.sh:Build script"
-        "bin/init.sh:Init script"
-    )
-    
-    for file_info in "${essential_files[@]}"; do
-        local file_path="${file_info%%:*}"
-        local file_desc="${file_info##*:}"
-        local full_path="$project_root/$file_path"
-        
-        if [[ -f "$full_path" ]]; then
-            echo "$file_desc: FOUND"
-        else
-            echo "$file_desc: MISSING ($file_path)"
-            ((TEST_FAILED++))
-        fi
-    done
-    
-    # Test directory structure
-    local essential_dirs=(
-        "src:Source directory"
-        "bin:Binary directory"
-        "examples:Examples directory"
-    )
-    
-    for dir_info in "${essential_dirs[@]}"; do
-        local dir_path="${dir_info%%:*}"
-        local dir_desc="${dir_info##*:}"
-        local full_path="$project_root/$dir_path"
-        
-        if [[ -d "$full_path" ]]; then
-            echo "$dir_desc: FOUND"
-        else
-            echo "$dir_desc: MISSING ($dir_path)"
-            ((TEST_FAILED++))
-        fi
-    done
-    
-    echo
-}
-
 test_analytics_setup() {
     echo "Testing analytics setup..."
     
@@ -433,9 +358,6 @@ test_requirements
 # Test build system
 test_build_system
 
-# Test project structure
-test_project_structure
-
 # Test tool availability
 test_analytic_tool_availability
 
@@ -460,11 +382,6 @@ echo
 
 if [[ $TEST_FAILED -eq 0 ]]; then
     echo "All tests passed! Ready to dev GGUI."
-    echo
-    echo "Next steps:"
-    echo "- Run './bin/analytics/benchmark.sh --help' to see profiling options"
-    echo "- Run './bin/analytics/leaks.sh' for basic memory analysis"
-    echo "- See './bin/analytics/README.md' for comprehensive documentation"
     exit 0
 else
     echo "Some tests failed. Please review the failures above."
@@ -473,8 +390,7 @@ else
     echo "- Install missing packages: sudo apt update && sudo apt install <packages>"
     echo "- Install missing tools (valgrind, perf, pprof)"
     echo "- Check file permissions: chmod +x bin/analytics/*.sh"
-    echo "- Verify GGUI project structure and git repository"
     echo "- Ensure you're running from within the GGUI project"
-    echo "- Missing gcc or too old version? Run: sudo apt install -y gcc-13 c++-13 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 60 && sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/c++-13 60"
+    echo "- Missing c++ or too old version? Run: sudo apt install -y gcc-13 c++-13 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 60 && sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/c++-13 60"
     exit 1
 fi

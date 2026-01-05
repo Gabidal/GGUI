@@ -188,26 +188,12 @@ for /d %%d in ("%SCRIPT_DIR%\build*") do (
 exit /b 0
 
 rem ##
-rem # Runs analytics validation via bash if available, otherwise does basic checks.
+rem # Runs analytics validation via validate.bat.
 rem ##
 :run_analytics_validation
-where bash >nul 2>nul
-if errorlevel 1 (
-    call :log_warning "'bash' not found. Performing basic tool validation..."
-    call :validate_basic_tools
-    exit /b %errorlevel%
-)
-
-rem Bash is available - normalize line endings and run validation script
-if exist "%SCRIPT_DIR%\analytics\utils\validate.sh" (
-    bash -lc "sed -i 's/\r$//' '%SCRIPT_DIR%/analytics/utils/validate.sh' 2>/dev/null || true; sed -i 's/\r$//' '%SCRIPT_DIR%/analytics'/*.sh 2>/dev/null || true; sed -i 's/\r$//' '%SCRIPT_DIR%/analytics/utils'/*.sh 2>/dev/null || true; sed -i 's/\r$//' '%SCRIPT_DIR%'/*.sh 2>/dev/null || true" >nul 2>nul
-    bash "%SCRIPT_DIR%\analytics\utils\validate.sh"
-    exit /b %errorlevel%
-) else (
-    call :log_warning "Analytics validation script not found. Continuing with basic checks..."
-    call :validate_basic_tools
-    exit /b %errorlevel%
-)
+rem Use the full check
+call "%SCRIPT_DIR%\analytics\utils\validate.bat"
+exit /b %errorlevel%
 
 rem ##
 rem # Validates that basic required tools are available.
