@@ -112,7 +112,7 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
     }
 }
 
-/// @brief Gathers all cpp files under GGUI/src and returns them as usable source files for g++
+/// @brief Gathers all cpp files under GGUI/src and returns them as usable source files for c++
 std::vector<std::string> Get_Cpp_Files(){
     std::vector<std::string> cpp_files = {
         // Core utilities
@@ -258,7 +258,7 @@ int main(int argc, char** argv){
         const std::string& cpp_file = CPP_Files[i];
         const std::string& obj_file = Object_Files[i];
         
-        std::string compile_command = "g++" + Base_Args + " -o " + obj_file + " " + cpp_file;
+        std::string compile_command = "c++" + Base_Args + " -o " + obj_file + " " + cpp_file;
         
         std::cout << "Compiling: " << cpp_file << " -> " << obj_file << std::endl;
         int result = system((virtualRoot + compile_command).c_str());
@@ -297,7 +297,7 @@ int main(int argc, char** argv){
         const std::string& cpp_file = CPP_Files[i];
         const std::string& obj_file = Object_Files[i];
         
-        std::string compile_command = "x86_64-w64-mingw32-g++" + Base_Args + " -o " + obj_file + " " + cpp_file;
+        std::string compile_command = "x86_64-w64-mingw32-c++" + Base_Args + " -o " + obj_file + " " + cpp_file;
         
         int result = system((virtualRoot + compile_command).c_str());
         if (result != 0) {
@@ -320,8 +320,8 @@ int main(int argc, char** argv){
         const std::string& cpp_file = CPP_Files[i];
         const std::string& obj_file = Object_Files[i];
         
-        // If this is not found install it with: sudo apt install g++-mingw-w64-x86-64-posix
-        std::string compile_command = "x86_64-w64-mingw32-g++-posix" + Base_Args + " -o " + obj_file + " " + cpp_file;
+        // If this is not found install it with: sudo apt install c++-mingw-w64-x86-64-posix
+        std::string compile_command = "x86_64-w64-mingw32-c++-posix" + Base_Args + " -o " + obj_file + " " + cpp_file;
         
         int result = system((virtualRoot + compile_command).c_str());
         if (result != 0) {

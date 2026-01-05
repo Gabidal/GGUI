@@ -126,7 +126,7 @@
     },
 
     "C_Cpp.default.compileCommands": "${workspaceFolder}/bin/build/compile_commands.json",
-    "C_Cpp.default.compilerPath": "/usr/bin/g++",
+    "C_Cpp.default.compilerPath": "/usr/bin/c++",
     "C_Cpp.default.cppStandard": "c++17",
     "C_Cpp.intelliSenseEngine": "default"
 }

@@ -1,10 +1,9 @@
-# Code of Conduct
+# Code of Conduct 🫘+🧊=❤️
 
 We follow the [Contributor Covenant](https://www.contributor-covenant.org/version/3/0/code_of_conduct/).
 
 ### Short Version
 Be respectful, constructive, and inclusive. Harassment or discrimination is not tolerated.  
-🫘+🧊=❤️
 
 ### Competitive Spirit
 This project encourages **strong technical debate and competitiveness**.  

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ Dev, main ]
+    branches: [ dev, main ]
   pull_request:
     branches: [ main ]
 
@@ -22,10 +22,11 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest, windows-latest]
-        compiler: [gcc]
+        compiler: [gcc, clang]
 
     env:
-      CXX: g++
+      CXX: ${{ matrix.compiler == 'clang' && 'clang++' || 'g++' }}
+      CC: ${{ matrix.compiler == 'clang' && 'clang' || 'gcc' }}
 
     steps:
       - name: Checkout
@@ -35,13 +36,19 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential python3 python3-pip ninja-build g++ meson valgrind
+          sudo apt-get install -y build-essential python3 python3-pip ninja-build meson valgrind
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            sudo apt-get install -y clang
+          fi
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           choco install -y ninja git mingw-w64
+          if ("${{ matrix.compiler }}" -eq "clang") {
+            choco install -y llvm
+          }
           python -m pip install --upgrade meson
 
       - name: Configure (Meson) Ubuntu

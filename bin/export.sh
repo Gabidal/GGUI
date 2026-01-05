@@ -28,8 +28,8 @@ meson_compile_target "release" "build_native_archive"
 MINGW_PREFIX="${CROSS_COMPILE_PREFIX:-}"
 if [ -z "${MINGW_PREFIX}" ]; then
 	for pfx in x86_64-w64-mingw32- x86_64-w64-mingw32-gnu- i686-w64-mingw32-; do
-		if command -v "${pfx}g++" >/dev/null 2>&1; then
-			MINGW_PREFIX="${pfx%g++}"
+		if command -v "${pfx}c++" >/dev/null 2>&1; then
+			MINGW_PREFIX="${pfx%c++}"
 			break
 		fi
 	done
@@ -39,7 +39,7 @@ if [ -n "${MINGW_PREFIX}" ]; then
 	echo "exporting Windows artifacts (cross-compile) using prefix ${MINGW_PREFIX} from release build"
 	meson_compile_target "release" "export-win"
 else
-	echo "MinGW cross-compiler not found; skipping Windows export. Install: sudo apt install g++-mingw-w64-x86-64-posix"
+	echo "MinGW cross-compiler not found; skipping Windows export. Install: sudo apt install c++-mingw-w64-x86-64-posix"
 fi
 
 echo "Exported artifacts are available in ${EXPORT_DIR}/"

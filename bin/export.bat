@@ -45,7 +45,7 @@ rem Detect common Linux cross-compilers or allow user to provide CROSS_COMPILE_P
 set "LINUX_PREFIX=%CROSS_COMPILE_PREFIX%"
 if "%LINUX_PREFIX%"=="" (
     for %%p in (x86_64-linux-gnu- x86_64-unknown-linux-gnu- i686-linux-gnu-) do (
-        where %%pg++ >nul 2>nul
+        where %%pc++ >nul 2>nul
         if not errorlevel 1 (
             set "LINUX_PREFIX=%%p"
             goto :found_linux_prefix

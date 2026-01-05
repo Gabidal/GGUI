@@ -212,27 +212,43 @@ test_requirements() {
     done
     
     # Test compiler availability    
-    if command -v g++ >/dev/null 2>&1; then
-        local gpp_version_output=$(g++ --version | head -n1)
-        echo "G++ compiler: AVAILABLE ($gpp_version_output)"
-        
-        # Check if g++ is actually clang in disguise
-        if echo "$gpp_version_output" | grep -qi "clang"; then
-            echo "ERROR: g++ command points to clang, GGUI relies on GCC specific C++ standard 17 constexpr tricks!"
-            ((TEST_FAILED++))
+    if command -v c++ >/dev/null 2>&1; then
+        # this will puke out a really long list of all macros and preprocessor definitions
+        local macros=$(c++ -dM -E - < /dev/null)
+        local compiler_name=""
+        local compiler_version=0
+        local required_version=123  # Set this to be larger to than zero so that unknown compilers don't pass version check.
+        local skip_version_check_for_unknown_compilers=0
+
+        if echo "$macros" | grep -q "^#define __clang__"; then
+            compiler_name="clang++"
+            compiler_version=$(awk '/__clang_major__/ {print $3}' <<< "$macros")
+            required_version=14
+
+        elif echo "$macros" | grep -q "^#define __GNUC__"; then
+            compiler_name="g++"
+            compiler_version=$(awk '/__GNUC__/ {print $3}' <<< "$macros")
+            required_version=13
+
         else
-            # Extract and validate G++ version (must be 13 or higher)
-            local gpp_version=$(echo "$gpp_version_output" | grep -oP '\d+(\.\d+)?' | head -n1 | cut -d. -f1)
-            if [[ -n "$gpp_version" && "$gpp_version" -ge 13 ]]; then
-                echo "G++ version: SUFFICIENT (version $gpp_version)"
+            echo "WARNING: Unknown c++ compiler"
+            skip_version_check_for_unknown_compilers=1
+            compiler_name=$(c++ --version | head -n1 | awk '{print $1}')
+        fi
+
+        if [ $skip_version_check_for_unknown_compilers -eq 1 ]; then
+            echo "c++ compiler $compiler_name: AVAILABLE"
+        else
+            if (( $compiler_version >= $required_version )); then
+                echo "c++ version ${compiler_version}: SUFFICIENT"
             else
-                echo "ERROR: G++ version $gpp_version is too old (minimum version 13 required)"
+                echo "ERROR: ${compiler_name} too old (minimum ${required_version} required)"
                 ((TEST_FAILED++))
             fi
         fi
     else
-        echo "G++ compiler: NOT AVAILABLE"
-        missing_packages+=("g++")
+        echo "c++ compiler: NOT AVAILABLE"
+        missing_packages+=("c++")
     fi
     
     # Test pkg-config
@@ -459,6 +475,6 @@ else
     echo "- Check file permissions: chmod +x bin/analytics/*.sh"
     echo "- Verify GGUI project structure and git repository"
     echo "- Ensure you're running from within the GGUI project"
-    echo "- Missing gcc or too old version? Run: sudo apt install -y gcc-13 g++-13 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 60 && sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 60"
+    echo "- Missing gcc or too old version? Run: sudo apt install -y gcc-13 c++-13 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 60 && sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/c++-13 60"
     exit 1
 fi

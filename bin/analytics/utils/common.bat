@@ -215,7 +215,7 @@ rem ##
 :validate_basic_tools
 set "missing_tools="
 where meson >nul 2>nul || set "missing_tools=meson"
-where g++ >nul 2>nul || set "missing_tools=%missing_tools% g++"
+where c++ >nul 2>nul || set "missing_tools=%missing_tools% c++"
 
 if not "%missing_tools%"=="" (
     call :handle_error "Missing required tools:%missing_tools%. Please install them before continuing."

@@ -7,22 +7,21 @@ Describe the intent of this change.
 - [ ] Bug fix
 - [ ] Refactor / Cleanup
 - [ ] Docs / Examples
-- [ ] Build / CI
+- [ ] Build or CI scripts
 - [ ] Tests
 
 ## Checklist
-- [ ] Builds locally with `./bin/init.sh` or `./bin/build.sh`
-- [ ] Tests pass with `./bin/test.sh`
+- [ ] Is able to generate libs `./bin/export.*`
+- [ ] Tests pass with `./bin/test.*`
 - [ ] Added/updated tests (if applicable)
 - [ ] Public API changes documented
-- [ ] No new warnings on GCC (cross-compilation may warn, but host build must be warning-free)
+- [ ] No new warnings (cross-compilation may warn, but native build must be warning-free)
 
 ## Style & Guidelines
-- K&R braces, 4-space indentation, C++17.
 - See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 ## Related Issues
-Closes # (issue)
+Closes #issue_number
 
 ## Additional Notes
 (Optional) Anything reviewers should focus on - e.g. performance impact, API ergonomics, portability, edge cases.

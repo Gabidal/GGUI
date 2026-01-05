@@ -2,34 +2,37 @@
 
 Thanks for considering contributing!
 
-## Quick Start
-```bash
-./bin/init.sh
-./bin/test.sh
-./bin/analytics/benchmark.sh    # For testing your code in main.cpp and see how it performs.
-```
-
-## Coding Style
+## Coding style
 - C++17
-- 4 spaces
-- K&R Indentation style
-- Keep includes grouped: standard, third-party (if any), project-local
-- Avoid global `using namespace`; internal-only within functions or small scopes
-- Prefer `constexpr`, `noexcept`, `[[nodiscard]]` where meaningful
-- Cover user accessible API's with doxygen comments
-- Avoid using abbreviations
-- Add enough comments, so that other developers can easily follow the code structure.
-- Use std::unique_ptr/std::shared_ptr only if ownership semantics require it
+- 4 spaces in indentation
+- K&R brace style
+- Avoid global `using namespace`
+- Prefer `constexpr`, `noexcept` where meaningful
+- Add `const` qualification where possible
+- Maintain doxygen documentation for all functions
+  - if lazy, at least generate them with AI
+- Avoid using abbreviations in naming, unless it is something everyone knows like `RGB`, `TCP`
+- Add enough comments, so that other developers can easily follow the code structure
+- Avoid std::unique_ptr/std::shared_ptr if possible
+  - Objects are registered into global registries or an object tree, and are destroyed during cleanup phase.
+- Avoid associative containers (`std::map`, `std::unordered_map`) in hot paths,
+  especially with `std::string` or complex keys, unless justified
 
 ## Tests
-Unit tests live under `test/`. Add focused tests for new logic.
+Cover with test cases where possible under `./test/units/*`.
 
-## Commit Messages
-Conventional-ish style encouraged:
-`feat: add XYZ`, `fix: correct crash in renderer`, `chore: update CI`.
+## GPG keys
+Please prefer using GPG or some method of git commit verification.
+
+## Commit messages
+- Add issue number around parenthesis: `(#132)`
+- Prefer imperative mood, instead of past tense
+- Examples:
+  - `Fix rendering bug. (#123)`
+  - `Fix sigsev on exit.`
+  - `Rewrite ./foo/bar/abc.cpp.`
+  - `Replace UB on condition::notify_all() inside signal handlers with sigwait based cleanup thread (linux side only).`
+  - `Implement new input system. (#51)`
 
 ## Questions
-Open a discussion or draft PR early if unsure.
-
-## Releases
-For larger releases FixCom and DMC is required to comb through all changes for proper release note creation.
+Open a discussion or draft PR/Issue early when needed.

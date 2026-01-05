@@ -54,10 +54,10 @@ echo.
 rem Step 2: Set up build environment
 echo Setting up build environment...
 
-rem Ensure the CXX variable is set (default to 'g++' if not)
+rem Ensure the CXX variable is set (default to 'c++' if not)
 if "%CXX%"=="" (
-    set "CXX=g++"
-    echo CXX environment variable was not set. Defaulting to 'g++'.
+    set "CXX=c++"
+    echo CXX environment variable was not set. Defaulting to 'c++'.
 )
 
 rem Remove all existing build directories matching build*
