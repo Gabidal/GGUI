@@ -177,6 +177,7 @@ namespace GGUI{
              * @return True if synchronization was successful, false otherwise.
              */
             bool sync(bufferCapture* Informer);
+            using std::streambuf::sync; // Keep the base class virtual function. (Maybe we should add this as an proper override in bufferCapture?...)
 
             /**
              * @brief Gets the name of this BUFFER_CAPTURE.

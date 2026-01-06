@@ -93,7 +93,7 @@ void GGUI::listView::addChild(element* e) {
         // Determine the flow direction for the list view.
         if (Style->Flow_Priority.value == DIRECTION::ROW) {
             // Adjust for minimum width needed when borders are present.
-            signed int Width_Modifier = e->hasBorder() & Last_Child->hasBorder();
+            signed int Width_Modifier = e->hasBorder() && Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
                 unsigned long long Proposed_Height = INTERNAL::Max(Child_Needs_Minimum_Height_Of, getHeight());
                 unsigned long long Proposed_Width = INTERNAL::Max(Last_Child->getPosition().x + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
@@ -110,7 +110,7 @@ void GGUI::listView::addChild(element* e) {
             Last_Child->setDimensions(e->getWidth(), e->getHeight());
         } else {
             // Adjust for minimum height needed when borders are present.
-            signed int Height_Modifier = e->hasBorder() & Last_Child->hasBorder();
+            signed int Height_Modifier = e->hasBorder() && Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
                 unsigned long long Proposed_Width = INTERNAL::Max(Child_Needs_Minimum_Width_Of, getWidth());
                 unsigned long long Proposed_Height = INTERNAL::Max(Last_Child->getPosition().y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
@@ -166,7 +166,7 @@ void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
             element* Next = Style->Childs[i];
 
             // Affect minimum width needed, when current child has borders as well as the previous one.
-            int Width_Modifier = Next->hasBorder() & Current->hasBorder();
+            int Width_Modifier = Next->hasBorder() && Current->hasBorder();
 
             Next->setPosition({Current->getPosition().x + Current->getWidth() - Width_Modifier, Next->getPosition().y, Next->getPosition().z});
 
@@ -181,7 +181,7 @@ void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
             element* Next = Style->Childs[i];
 
             // Affect minimum height needed, when current child has borders as well as the previous one.
-            int Height_Modifier = Next->hasBorder() & Current->hasBorder();
+            int Height_Modifier = Next->hasBorder() && Current->hasBorder();
 
             Next->setPosition({Next->getPosition().x, Current->getPosition().y + Current->getHeight() - Height_Modifier, Next->getPosition().z});
 

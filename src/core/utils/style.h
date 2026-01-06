@@ -1890,7 +1890,7 @@ namespace GGUI{
 
         inline ~node() override { styleBase::~styleBase(); }
 
-        inline styleBase* copy() const override;
+        styleBase* copy() const override;
 
         constexpr node& operator=(const node& other){
             // Only copy the information if the other is enabled.
@@ -1924,7 +1924,7 @@ namespace GGUI{
 
         inline ~childs() override { styleBase::~styleBase(); }
 
-        inline styleBase* copy() const override;
+        styleBase* copy() const override;
 
         constexpr childs& operator=(const childs& other){
             // Only copy the information if the other is enabled.

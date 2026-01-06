@@ -14,6 +14,9 @@
     #if _WIN32
         #include <windows.h>
         #include <dbghelp.h>
+        #undef min
+        #undef max
+        #undef small
     #else
         #if !defined(__ANDROID__)   // Currently Termux does not support execinfo libraries as part of cpplib.
         #include <execinfo.h>   // For stacktrace

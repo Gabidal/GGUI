@@ -4,7 +4,7 @@ on:
   push:
     branches: [ dev, main ]
   pull_request:
-    branches: [ main ]
+    branches: [ dev, main ]
 
 permissions:
   contents: read
@@ -16,17 +16,21 @@ concurrency:
 
 jobs:
   build-test:
-    name: Build & Test (${{ matrix.os }} / ${{ matrix.compiler }})
+    name: Build & Test (${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false  # We want to test on all compilers, so stopping jobs when other job fails is not good.
       matrix:
         os: [ubuntu-latest, windows-latest]
-        compiler: [gcc, clang]
+        compiler: [g++, clang]
+        platform: [x86, x64]
 
     env:
-      CXX: ${{ matrix.compiler == 'clang' && 'clang++' || 'g++' }}
-      CC: ${{ matrix.compiler == 'clang' && 'clang' || 'gcc' }}
+      CXX: ${{ matrix.compiler == 'clang' && 'clang++-14' || 'g++-13' }}
+      CC: ${{ matrix.compiler == 'clang' && 'clang-14' || 'gcc-13' }}
+      CFLAGS: ${{ matrix.platform == 'x86' && '-m32' || '-m64' }}
+      CXXFLAGS: ${{ matrix.platform == 'x86' && '-m32' || '-m64' }}
+      LDFLAGS: ${{ matrix.platform == 'x86' && '-m32' || '-m64' }}
 
     steps:
       - name: Checkout
@@ -36,9 +40,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential python3 python3-pip ninja-build meson valgrind
+          sudo apt-get install -y build-essential python3 python3-pip ninja-build meson
+          if [ "${{ matrix.platform }}" = "x86" ]; then
+            sudo apt-get install -y gcc-13-multilib g++-13-multilib
+          fi
           if [ "${{ matrix.compiler }}" = "clang" ]; then
-            sudo apt-get install -y clang
+            sudo apt-get install -y clang-14
+          else
+            sudo apt-get install -y gcc-13 g++-13
           fi
 
       - name: Install dependencies (Windows)
@@ -58,14 +67,6 @@ jobs:
       - name: Configure (Meson) Windows
         if: matrix.os == 'windows-latest'
         run: .\bin\init.bat
-
-      - name: Compile Ubuntu
-        if: matrix.os == 'ubuntu-latest'
-        run: ./bin/build.sh
-
-      - name: Compile Windows
-        if: matrix.os == 'windows-latest'
-        run: .\bin\build.bat
 
       - name: Run tests Ubuntu
         if: matrix.os == 'ubuntu-latest'

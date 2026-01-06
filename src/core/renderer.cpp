@@ -16,10 +16,14 @@
 #include <exception>
 #include <csignal>
 #include <atomic>
+#include <iomanip>
 
 #if _WIN32
     #include <windows.h>
     #include <dbghelp.h>
+    #undef min
+    #undef max
+    #undef small
 #else
     #include <sys/ioctl.h>
     #include <signal.h>
@@ -112,13 +116,14 @@ namespace GGUI{
          */
         std::string now(){
             // This function takes the current time and returns a string of the time.
-            // Format: DD.MM.YYYY: SS.MM.HH
             std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+            std::tm* tm_ptr = std::localtime(&now);
+            
+            std::ostringstream oss;
+            // Format: DD.MM.YYYY: SS.MM.HH
+            oss << std::put_time(tm_ptr, "%d.%m.%Y: %S.%M.%H");
 
-            std::string Result = std::ctime(&now);
-
-            // Remove the newline at the end of the string
-            return Result.substr(0, Result.size() - 1);
+            return oss.str();
         }
         
         /**

@@ -5,6 +5,9 @@
 
 #if _WIN32
     #include <windows.h>
+    #undef min
+    #undef max
+    #undef small
 #else
     #include <sys/types.h>
     #include <sys/wait.h>

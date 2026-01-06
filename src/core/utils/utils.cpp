@@ -13,16 +13,12 @@ namespace GGUI{
         extern void* Stack_Start_Address;
         extern void* Heap_Start_Address;
         
-        /**
-         * @brief Initializes the Stack_Start_Address and Heap_Start_Address variables
-         *
-         * This function captures the nearest stack address and the nearest heap address
-         * and assigns them to the Stack_Start_Address and Heap_Start_Address variables
-         * respectively. This only happens if the variables are not already set.
-         */
-        #if _WIN32
+    #if _WIN32
         #include <windows.h>
         #include <winternl.h>
+        #undef min
+        #undef max
+        #undef small
 
         /**
          * @typedef NtQueryInformationThread_t
@@ -118,7 +114,8 @@ namespace GGUI{
                 Heap_Start_Address = new int;
             }
         }
-        #else
+    #else
+
         /**
          * @brief Reads the start addresses of the stack and heap memory areas.
          * 
@@ -184,9 +181,9 @@ namespace GGUI{
                 Heap_Start_Address = new int;
             }
         }
-        #endif
+    #endif
     
-    /**
+        /**
          * @brief Extracts the directory path from a full executable path.
          *
          * This function takes a full path to an executable and returns the directory
@@ -210,8 +207,11 @@ namespace GGUI{
             return ""; // Fallback if separator not found
         }
 
-        #if defined(_WIN32) || defined(_WIN64)
+    #if defined(_WIN32) || defined(_WIN64)
         #include <windows.h>
+        #undef min
+        #undef max
+        #undef small
 
         /**
          * @brief Retrieves the path of the executable file of the current process.
@@ -231,7 +231,7 @@ namespace GGUI{
             return path;
         }
 
-        #elif defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+    #elif defined(__linux__) || defined(__unix__) || defined(__APPLE__)
         #include <unistd.h>
         #include <limits.h>
 
@@ -256,7 +256,7 @@ namespace GGUI{
             return path;
         }
 
-        #else
+    #else
         /**
          * @brief Retrieves the path of the executable.
          * 
@@ -265,7 +265,7 @@ namespace GGUI{
         const char* Get_Executable_Path() {
             return "";
         }
-        #endif
+    #endif
 
         /**
          * @brief Constructs the file name for the logger.

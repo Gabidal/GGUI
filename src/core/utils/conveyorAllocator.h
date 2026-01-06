@@ -16,7 +16,7 @@ namespace GGUI {
          */
         template<typename T>
         class conveyorAllocator {
-            unsigned char* rawBuffer = nullptr;
+            T* rawBuffer = nullptr;
             std::size_t capacity = 0;
             std::size_t size = 0;   
             public:
@@ -28,7 +28,7 @@ namespace GGUI {
              * The memory is uninitialized (raw bytes) and the logical size is set to 0.
              */
             conveyorAllocator(std::size_t initialSize) {
-                rawBuffer = new unsigned char[sizeof(T) * initialSize];
+                rawBuffer = new T[initialSize];
                 capacity = initialSize;
                 clear();
             }
@@ -52,7 +52,7 @@ namespace GGUI {
             void resize(std::size_t newCapacity) {
                 if (newCapacity > capacity) {
                     // Allocate new mem
-                    unsigned char* newBuffer = new unsigned char[sizeof(T) * newCapacity];
+                    T* newBuffer = new T[newCapacity];
                     // Copy existing contents (based on current logical size)
                     if (rawBuffer && size > 0) {
                         std::memcpy(newBuffer, rawBuffer, sizeof(T) * size);
@@ -91,7 +91,7 @@ namespace GGUI {
                     resize(size + mapSize);
                 }
 
-                compactString* view = reinterpret_cast<compactString*>(rawBuffer + size * sizeof(T));
+                compactString* view = reinterpret_cast<compactString*>(rawBuffer + size);
 
                 result.remap(
                     view,
@@ -117,7 +117,7 @@ namespace GGUI {
              * @brief Obtain a mutable pointer to the contiguous element data.
              * @return Pointer to first element (reinterpret_cast from raw bytes).
              */
-            T* getData() { return (T*)rawBuffer; }
+            T* getData() { return rawBuffer; }
         };
 
     }
