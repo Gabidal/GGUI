@@ -59,20 +59,14 @@ jobs:
             choco install -y llvm
           }
           python -m pip install --upgrade meson
-          
-      - name: Reroute mingw-w64 into 32bit g++ (Windows x86)
-        # This whole segment is solely put here because windows side mingw-w64 cannot setup 32 bit platform correctly >:(
+
+      - name: Download and extract MinGW-w64 32-bit (Windows x86)
         if: matrix.os == 'windows-latest' && matrix.compiler == 'g++' && matrix.platform == 'x86'
         shell: pwsh
         run: |
-          # Find the 32-bit MinGW-w64 bin directory
-          $mingw32 = "${env:ChocolateyInstall}\lib\mingw-w64\tools\mingw32\bin"
-          if (-Not (Test-Path $mingw32)) {
-            # Fallback for some choco versions
-            $mingw32 = "${env:ChocolateyInstall}\lib\mingw\tools\install\mingw32\bin"
-          }
-          echo "Adding $mingw32 to PATH"
-          echo "$mingw32" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
+          Invoke-WebRequest -Uri "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r5/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r5.7z" -OutFile mingw32.7z
+          7z x mingw32.7z -oC:\mingw32
+          echo "C:\mingw32\mingw32\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
 
       - name: Configure (Meson) Ubuntu
         if: matrix.os == 'ubuntu-latest'
