@@ -26,8 +26,8 @@ jobs:
         platform: [x86, x64]
 
     env:
-      CXX: ${{ matrix.compiler == 'clang' && 'clang++-14' || 'g++-13' }}
-      CC: ${{ matrix.compiler == 'clang' && 'clang-14' || 'gcc-13' }}
+      CXX: ${{ matrix.os == 'windows-latest' && matrix.compiler == 'clang' && 'clang++' || matrix.os == 'windows-latest' && matrix.compiler == 'g++' && 'g++' || matrix.compiler == 'clang' && 'clang++-14' || 'g++-13' }}
+      CC: ${{ matrix.os == 'windows-latest' && matrix.compiler == 'clang' && 'clang' || matrix.os == 'windows-latest' && matrix.compiler == 'g++' && 'gcc' || matrix.compiler == 'clang' && 'clang-14' || 'gcc-13' }}
       CFLAGS: ${{ matrix.platform == 'x86' && '-m32' || '-m64' }}
       CXXFLAGS: ${{ matrix.platform == 'x86' && '-m32' || '-m64' }}
       LDFLAGS: ${{ matrix.platform == 'x86' && '-m32' || '-m64' }}
