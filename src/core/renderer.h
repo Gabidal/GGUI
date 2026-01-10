@@ -64,9 +64,9 @@ namespace GGUI{
         class buttonState {
         public:
             bool state;
-            std::chrono::high_resolution_clock::time_point captureTime;
+            std::chrono::steady_clock::time_point captureTime;
 
-            buttonState(bool State = false) : state(State), captureTime(std::chrono::high_resolution_clock::now()) {}
+            buttonState(bool State = false) : state(State), captureTime(std::chrono::steady_clock::now()) {}
         };
 
         extern std::vector<UTF>* abstractFrameBuffer;                 //2D clean vector without bold nor color

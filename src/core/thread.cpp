@@ -25,8 +25,8 @@ namespace GGUI{
             extern status pauseRenderThread;
         }
 
-        extern std::chrono::high_resolution_clock::time_point Previous_Time;
-        extern std::chrono::high_resolution_clock::time_point Current_Time;
+        extern std::chrono::steady_clock::time_point Previous_Time;
+        extern std::chrono::steady_clock::time_point Current_Time;
 
         extern atomic::guard<carry> Carry_Flags;
         extern sig_atomic_t requestTermination;
@@ -64,7 +64,7 @@ namespace GGUI{
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
-                Previous_Time = std::chrono::high_resolution_clock::now();
+                Previous_Time = std::chrono::steady_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
                 if (requestTermination){
@@ -122,7 +122,7 @@ namespace GGUI{
                 }
 
                 // Check the difference of the time captured before render and now after render
-                Current_Time = std::chrono::high_resolution_clock::now();
+                Current_Time = std::chrono::steady_clock::now();
 
                 renderDelay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
@@ -205,7 +205,7 @@ namespace GGUI{
 
                 // Reset the thread load counter
                 eventThreadLoad = 0;
-                Previous_Time = std::chrono::high_resolution_clock::now();
+                Previous_Time = std::chrono::steady_clock::now();
 
                 // Order independent --------------
                 recallMemories();
@@ -219,7 +219,7 @@ namespace GGUI{
                 */  
                 // Resume_GGUI();
 
-                Current_Time = std::chrono::high_resolution_clock::now();
+                Current_Time = std::chrono::steady_clock::now();
 
                 // Calculate the delta time.
                 eventDelay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
@@ -262,7 +262,7 @@ namespace GGUI{
                 }
 
                 pauseGGUI([&](){
-                    Previous_Time = std::chrono::high_resolution_clock::now();
+                    Previous_Time = std::chrono::steady_clock::now();
 
                     if (SETTINGS::enableDRM) {
                         DRM::translateInputs();
@@ -279,7 +279,7 @@ namespace GGUI{
                     // Now call upon event handlers which may react to the parsed input.
                     eventHandler();
 
-                    Current_Time = std::chrono::high_resolution_clock::now();
+                    Current_Time = std::chrono::steady_clock::now();
 
                     // Calculate the delta time.
                     Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();

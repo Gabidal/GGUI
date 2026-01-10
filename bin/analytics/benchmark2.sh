@@ -2,6 +2,7 @@
 
 # =============================================================================
 # Automatic pprof with web UI benchmark.
+# TODO: add c2c record for shared thread cache miss details
 # =============================================================================
 
 # Source utility modules

@@ -88,8 +88,8 @@ namespace GGUI{
         time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
         inline float eventThreadLoad = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
-        std::chrono::high_resolution_clock::time_point Previous_Time;
-        std::chrono::high_resolution_clock::time_point Current_Time;
+        std::chrono::steady_clock::time_point Previous_Time;
+        std::chrono::steady_clock::time_point Current_Time;
 
         unsigned long long renderDelay;    // describes how long previous render cycle took in ms
         unsigned long long eventDelay;    // describes how long previous memory tasks took in ms
@@ -486,7 +486,7 @@ namespace GGUI{
                     if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
                         //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].state = true;
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::high_resolution_clock::now();
+                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::steady_clock::now();
                     }
                     else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
                         //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].State;
@@ -496,7 +496,7 @@ namespace GGUI{
                     if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
                         //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State;
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].state = true;
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::high_resolution_clock::now();
+                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::steady_clock::now();
                     }
                     else if ((Raw_Input[i].Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED) == 0) {
                         //PREVIOUS_KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State = KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].State;
@@ -512,13 +512,13 @@ namespace GGUI{
                             INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP].state = true;
                             INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN].state = false;
 
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP].captureTime = std::chrono::high_resolution_clock::now();
+                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP].captureTime = std::chrono::steady_clock::now();
                         }
                         else if (Scroll_Direction < 0){
                             INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN].state = true;
                             INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP].state = false;
 
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN].captureTime = std::chrono::high_resolution_clock::now();
+                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN].captureTime = std::chrono::steady_clock::now();
                         }
                     }
                 }
@@ -1104,15 +1104,15 @@ namespace GGUI{
 
                             if (Bit_Mask == 0) {
                                 KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT] = buttonState(true);
-                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::high_resolution_clock::now();
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::steady_clock::now();
                             }
                             else if (Bit_Mask == 1) {
                                 KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE] = buttonState(true);
-                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime = std::chrono::high_resolution_clock::now();
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime = std::chrono::steady_clock::now();
                             }
                             else if (Bit_Mask == 2) {
                                 KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT] = buttonState(true);
-                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::high_resolution_clock::now();
+                                KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::steady_clock::now();
                             }
                             else if (Bit_Mask == 3) {
                                 KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].state = false;
@@ -1194,15 +1194,15 @@ namespace GGUI{
                             switch (btn) {
                                 case 0: // left
                                     KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT] = buttonState(pressed);
-                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::high_resolution_clock::now();
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::steady_clock::now();
                                     break;
                                 case 1: // middle
                                     KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE] = buttonState(pressed);
-                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime = std::chrono::high_resolution_clock::now();
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime = std::chrono::steady_clock::now();
                                     break;
                                 case 2: // right
                                     KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT] = buttonState(pressed);
-                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::high_resolution_clock::now();
+                                    KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::steady_clock::now();
                                     break;
                                 case 3: // release all buttons
                                     // you may want to clear all three
@@ -1463,7 +1463,7 @@ namespace GGUI{
          */
         void mouseAPI() {
             // Get the duration the left mouse button has been pressed
-            unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime)).count();
+            unsigned long long Mouse_Left_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime).count();
 
             // Check if the left mouse button is pressed and for how long
             if (INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].state && Mouse_Left_Pressed_For >= SETTINGS::mousePressDownCooldown) {
@@ -1475,7 +1475,7 @@ namespace GGUI{
             }
 
             // Get the duration the right mouse button has been pressed
-            unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime)).count();
+            unsigned long long Mouse_Right_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime).count();
 
             // Check if the right mouse button is pressed and for how long
             if (INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].state && Mouse_Right_Pressed_For >= SETTINGS::mousePressDownCooldown) {
@@ -1487,7 +1487,7 @@ namespace GGUI{
             }
 
             // Get the duration the middle mouse button has been pressed
-            unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(abs(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime)).count();
+            unsigned long long Mouse_Middle_Pressed_For = (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime).count();
 
             // Check if the middle mouse button is pressed and for how long
             if (INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].state && Mouse_Middle_Pressed_For >= SETTINGS::mousePressDownCooldown) {
@@ -1705,7 +1705,7 @@ namespace GGUI{
          */
         void recallMemories(){
             INTERNAL::remember([](std::vector<memory>& rememberable){
-                std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+                std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
 
                 // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
                 size_t Shortest_Time = INTERNAL::MAX_UPDATE_SPEED;
@@ -2091,7 +2091,7 @@ namespace GGUI{
             }
 
             // Save the state before the init
-            INTERNAL::Current_Time = std::chrono::high_resolution_clock::now();
+            INTERNAL::Current_Time = std::chrono::steady_clock::now();
             INTERNAL::Previous_Time = INTERNAL::Current_Time;
 
             INTERNAL::initPlatformStuff();

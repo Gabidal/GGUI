@@ -173,30 +173,30 @@ namespace GGUI {
                     case additionalKey::LEFT_CLICK:
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT] = INTERNAL::buttonState(isPressed);
                         if (isPressed) {
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::high_resolution_clock::now();
+                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::steady_clock::now();
                         }
                         break;
                     case additionalKey::MIDDLE_CLICK:
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE] = INTERNAL::buttonState(isPressed);
                         if (isPressed) {
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime = std::chrono::high_resolution_clock::now();
+                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime = std::chrono::steady_clock::now();
                         }
                         break;
                     case additionalKey::RIGHT_CLICK:
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT] = INTERNAL::buttonState(isPressed);
                         if (isPressed) {
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::high_resolution_clock::now();
+                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::steady_clock::now();
                         }
                         break;
                     case additionalKey::SCROLL_UP:
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP] = INTERNAL::buttonState(true);
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN] = INTERNAL::buttonState(false);
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP].captureTime = std::chrono::high_resolution_clock::now();
+                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP].captureTime = std::chrono::steady_clock::now();
                         break;
                     case additionalKey::SCROLL_DOWN:
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN] = INTERNAL::buttonState(true);
                         INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP] = INTERNAL::buttonState(false);
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN].captureTime = std::chrono::high_resolution_clock::now();
+                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN].captureTime = std::chrono::steady_clock::now();
                         break;
                     case additionalKey::UNKNOWN:
                     default:
