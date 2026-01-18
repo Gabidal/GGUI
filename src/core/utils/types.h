@@ -706,6 +706,62 @@ namespace GGUI{
             return a | static_cast<unsigned int>(b);
         }
 
+        template<typename T, typename containerType = std::conditional_t<std::is_enum_v<T>, std::underlying_type_t<T>, T>>
+        class bitMask {
+        private:
+            T data;
+        public:
+
+            bitMask() {
+                clear();
+            }
+
+            bitMask(T initialFlag) {
+                data = initialFlag;
+            }
+
+            bool has(T flags) const {
+                return (static_cast<containerType>(data) & static_cast<containerType>(flags)) != containerType(0);
+            }
+
+            void set(T flags, bool value = true) {
+                data = static_cast<T>(
+                    value ? 
+                    (static_cast<containerType>(data) | static_cast<containerType>(flags)) :
+                    (static_cast<containerType>(data) & ~static_cast<containerType>(flags))
+                );
+            }
+
+            T get() const {
+                return data;
+            }
+
+            void clear() {
+                data = static_cast<T>(0);
+            }
+
+            bool operator==(const bitMask<T, containerType>& other) const {
+                return data == other.data;
+            }
+
+            bool operator!=(const bitMask<T, containerType>& other) const {
+                return data != other.data;
+            }
+
+            bitMask<T, containerType> operator|(const bitMask<T, containerType>& other) const {
+                return bitMask<T, containerType>(static_cast<T>(static_cast<containerType>(data) | static_cast<containerType>(other.data)));
+            }
+
+            bitMask<T, containerType> operator&(const bitMask<T, containerType>& other) const {
+                return bitMask<T, containerType>(static_cast<T>(static_cast<containerType>(data) & static_cast<containerType>(other.data)));
+            }
+
+            bitMask<T, containerType>& operator|=(const bitMask<T, containerType>& other) {
+                data = static_cast<T>(static_cast<containerType>(data) | static_cast<containerType>(other.data));
+                return *this;
+            }
+        };
+
         class STAIN{
         public:
             STAIN_TYPE Type = STAIN_TYPE::CLEAN;

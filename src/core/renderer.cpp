@@ -7,6 +7,7 @@
 #include "./utils/settings.h"
 #include "./utils/drm.h"
 #include "./utils/conveyorAllocator.h"
+#include "./terminal/terminal.h"
 
 #include <string>
 #include <cassert>
@@ -1271,45 +1272,10 @@ namespace GGUI{
          */
         void initPlatformStuff(){
             if (!SETTINGS::enableDRM) {
-                // Detect whether STDIN is a TTY. When not a TTY (e.g. piped/timeout), avoid raw mode and polling setup.
-                STDIN_IS_TTY = Is_Stdin_TTY();
+                terminal::init();
 
-                if (STDIN_IS_TTY) {
-                    // Save the current flags and take a snapshot of the flags before GGUI
-                    Previous_Flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-
-                    // Ensure we don't leave the descriptor in an unexpected mode; do not force non-blocking here.
-                    // Configure terminal to raw mode
-                    struct termios Term_Handle;
-                    if (tcgetattr(STDIN_FILENO, &Term_Handle) == 0) {
-                        Previous_Raw = Term_Handle;
-                        // Disable echo + canonical mode so mouse packets are not echoed back into the terminal.
-                        // Keep ISIG enabled so Ctrl+C still works.
-                        Term_Handle.c_lflag &= ~(ECHO | ICANON);
-                        Term_Handle.c_cc[VMIN] = 1;   // return after 1 byte
-                        Term_Handle.c_cc[VTIME] = 0;  // no timeout
-
-                        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &Term_Handle) == 0) {
-                            platformState.rawModeEnabled = true;
-                        }
-                        else {
-                            LOGGER::log("Failed to enable raw mode (tcsetattr). Mouse reporting will remain disabled to avoid corrupting output.");
-                        }
-                    }
-                    else {
-                        LOGGER::log("Failed to snapshot terminal mode (tcgetattr). Mouse reporting will remain disabled to avoid corrupting output.");
-                    }
-
-                    // Only enable mouse-reporting features after raw mode is successfully applied.
-                    if (platformState.rawModeEnabled) {
-                        initTerminalWithANSICodes();
-                    }
-
-                    // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
-                    Add_Automatic_Terminal_Size_Update_Handler();
-                } else {
-                    LOGGER::log("STDIN is not a TTY; input thread will be disabled unless DRM is enabled.");
-                }
+                // Add a signal handler to automatically update the terminal size whenever a SIGWINCH signal is received.
+                Add_Automatic_Terminal_Size_Update_Handler();
             }
 
             if (std::atexit(Cleanup)){

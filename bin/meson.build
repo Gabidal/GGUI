@@ -47,6 +47,11 @@ lib_sources = [
   '../src/core/renderer.cpp',
   '../src/core/thread.cpp',
   '../src/core/addons/addons.cpp',
+
+  # Terminal sources
+  '../src/core/terminal/terminal.cpp',
+  '../src/core/terminal/linux.cpp',
+  '../src/core/terminal/win.cpp',
 ]
 
 # Compiler handle
