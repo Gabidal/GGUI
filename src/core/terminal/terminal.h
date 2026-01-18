@@ -25,7 +25,7 @@ namespace GGUI {
             VT102       = 1 << 3,               // Insert/Delete line/character support
             VT220       = 1 << 4,               //
         };
-        extern types type;
+        extern types type; 
 
         extern INTERNAL::bitMask<types> features;
 
