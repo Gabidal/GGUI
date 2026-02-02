@@ -23,7 +23,7 @@ namespace GGUI {
             ANSI        = 1 << 1,               // Supports sequences but not known DEC terminal, based on: X3.41-1974 and X3.64-1977
             VT100       = 1 << 2,               // Base lowest DEC terminal, with support for some private SGR sequences
             VT102       = 1 << 3,               // Insert/Delete line/character support
-            VT220       = 1 << 4,               //
+            VT220       = 1 << 4,               // 
         };
         extern types type; 
 
