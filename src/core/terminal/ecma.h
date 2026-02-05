@@ -47,8 +47,8 @@ namespace GGUI {
                  * @return true if val is within the inclusive range [E::__min, E::__max]
                  * @return false otherwise
                  */
-                template<typename E>
-                bool contains(auto val) {
+                template<typename E, typename V>
+                bool contains(V val) {
                     return val >= static_cast<uint8_t>(E::__min) && val <= static_cast<uint8_t>(E::__max);
                 }
 
@@ -200,7 +200,7 @@ namespace GGUI {
                     constexpr static uint8_t sub_delimeter  = table::toInt(3, 10); // Translates into ':'
                     constexpr static uint8_t delimeter      = table::toInt(3, 11); // Translates into ';'
 
-                    parameter(std::string_view input, int& length);
+                    parameter(std::string_view input, size_t& length);
 
                     std::string toString();
                 };
@@ -222,7 +222,8 @@ namespace GGUI {
                 protected:
                     std::variant<table::C0, table::C1> function;
                 public:
-                    basic(std::string_view input, int& length);
+                    static void parse(std::string_view input, size_t& length, std::vector<base*>& output);
+
                     basic(table::C0 func) : base(specialType::BASIC, bitType::_7bit), function(func) {}
                     basic(table::C1 func) : base(specialType::BASIC, bitType::_8bit), function(func) {}
 
@@ -240,7 +241,7 @@ namespace GGUI {
                         table::finalWithIntermediate            // Each range between: 04/00 - 07/14
                     > finalByte;
                 public:
-                    controlSequence(std::string_view input, int& length);
+                    static void parse(std::string_view input, size_t& length, std::vector<base*>& output);
 
                     controlSequence(
                         std::vector<parameter> params,
@@ -271,7 +272,7 @@ namespace GGUI {
                     bool hasSpace = false;                      // Can be: 02/03 (' ')
                     table::independentFunctions function;
                 public:
-                    independent(std::string_view input, int& length);
+                    static void parse(std::string_view input, size_t& length, std::vector<base*>& output);
 
                     independent(
                         table::independentFunctions func,
@@ -284,19 +285,18 @@ namespace GGUI {
                 class controlString : public base {
                 protected:
                     table::C1 openingDelimiter;                 // APC, DCS, OSC, PM or SOS
-                    std::vector<basic*> commands;               // In the range 00/08 to 00/13 and 02/00 to 07/14
-                    std::vector<uint8_t> characters;            // For when SOS is used in the opening delimeter, can contain in range of 00/00 to 07/15
+                    std::vector<uint8_t> characters;            // For when SOS is used in the opening delimeter, can contain in range of 00/00 to 07/15 or the command strings In the range 00/08 to 00/13 and 02/00 to 07/14
                 public:
-                    controlString(std::string_view input, int& length);
-
+                    static void parse(std::string_view input, size_t& length, std::vector<base*>& output);
+                    
                     controlString(
-                        table::C1 delimiter,
-                        std::vector<basic*> cmds
-                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(delimiter), commands(cmds) {}
-
-                    controlString(
+                        table::C1 delimeter,
                         std::vector<uint8_t> chars
-                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(table::C1::SOS), characters(chars) {}
+                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(delimeter), characters(chars) {}
+
+                    controlString(
+                        table::C1 delimeter
+                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(delimeter) {}
 
                     std::string toString() override;
                 };
@@ -307,207 +307,207 @@ namespace GGUI {
             namespace sequences {
 
                 namespace delimiters {
-                    static const auto APPLICATION_PROGRAM_COMMAND                   =       sequence::basic(table::C1::APC);
-                    static const auto CODING_METHOD_DELIMITER                       =       sequence::independent(table::independentFunctions::CMD);
-                    static const auto DEVICE_CONTROL_STRING                         =       sequence::basic(table::C1::DCS);
-                    static const auto OPERATING_SYSTEM_COMMAND                      =       sequence::basic(table::C1::OSC);
-                    static const auto PRIVACY_MESSAGE                               =       sequence::basic(table::C1::PM);
-                    static const auto START_OF_STRING                               =       sequence::basic(table::C1::SOS);
-                    static const auto STRING_TERMINATOR                             =       sequence::basic(table::C1::ST);
+                    inline const auto APPLICATION_PROGRAM_COMMAND                   =       sequence::basic(table::C1::APC);
+                    inline const auto CODING_METHOD_DELIMITER                       =       sequence::independent(table::independentFunctions::CMD);
+                    inline const auto DEVICE_CONTROL_STRING                         =       sequence::basic(table::C1::DCS);
+                    inline const auto OPERATING_SYSTEM_COMMAND                      =       sequence::basic(table::C1::OSC);
+                    inline const auto PRIVACY_MESSAGE                               =       sequence::basic(table::C1::PM);
+                    inline const auto START_OF_STRING                               =       sequence::basic(table::C1::SOS);
+                    inline const auto STRING_TERMINATOR                             =       sequence::basic(table::C1::ST);
                 };
 
                 namespace introducers {
-                    static const auto CONTROL_SEQUENCE_INTRODUCER                   =       sequence::basic(table::C1::CSI);
-                    static const auto ESCAPE                                        =       sequence::basic(table::C0::ESC);
-                    static const auto SINGLE_CHARACTER_INTRODUCER                   =       sequence::basic(table::C1::SCI);
+                    inline const auto CONTROL_SEQUENCE_INTRODUCER                   =       sequence::basic(table::C1::CSI);
+                    inline const auto ESCAPE                                        =       sequence::basic(table::C0::ESC);
+                    inline const auto SINGLE_CHARACTER_INTRODUCER                   =       sequence::basic(table::C1::SCI);
                 }
 
                 namespace shiftFunctions {
-                    static const auto LOCKING_SHIFT_ZERO                            =       sequence::basic(table::C0::LS0);
-                    static const auto LOCKING_SHIFT_ONE                             =       sequence::basic(table::C0::LS1);
-                    static const auto LOCKING_SHIFT_ONE_RIGHT                       =       sequence::independent(table::independentFunctions::LS1R);
-                    static const auto LOCKING_SHIFT_TWO                             =       sequence::independent(table::independentFunctions::LS2);
-                    static const auto LOCKING_SHIFT_TWO_RIGHT                       =       sequence::independent(table::independentFunctions::LS2R);
-                    static const auto LOCKING_SHIFT_THREE                           =       sequence::independent(table::independentFunctions::LS3);
-                    static const auto LOCKING_SHIFT_THREE_RIGHT                     =       sequence::independent(table::independentFunctions::LS3R);
-                    static const auto SHIFT_IN                                      =       sequence::basic(table::C0::SI);
-                    static const auto SHIFT_OUT                                     =       sequence::basic(table::C0::SO);
-                    static const auto SS2                                           =       sequence::basic(table::C1::SS2);
-                    static const auto SS3                                           =       sequence::basic(table::C1::SS3);
+                    inline const auto LOCKING_SHIFT_ZERO                            =       sequence::basic(table::C0::LS0);
+                    inline const auto LOCKING_SHIFT_ONE                             =       sequence::basic(table::C0::LS1);
+                    inline const auto LOCKING_SHIFT_ONE_RIGHT                       =       sequence::independent(table::independentFunctions::LS1R);
+                    inline const auto LOCKING_SHIFT_TWO                             =       sequence::independent(table::independentFunctions::LS2);
+                    inline const auto LOCKING_SHIFT_TWO_RIGHT                       =       sequence::independent(table::independentFunctions::LS2R);
+                    inline const auto LOCKING_SHIFT_THREE                           =       sequence::independent(table::independentFunctions::LS3);
+                    inline const auto LOCKING_SHIFT_THREE_RIGHT                     =       sequence::independent(table::independentFunctions::LS3R);
+                    inline const auto SHIFT_IN                                      =       sequence::basic(table::C0::SI);
+                    inline const auto SHIFT_OUT                                     =       sequence::basic(table::C0::SO);
+                    inline const auto SS2                                           =       sequence::basic(table::C1::SS2);
+                    inline const auto SS3                                           =       sequence::basic(table::C1::SS3);
                 }
 
                 namespace formatEffectors {
-                    static const auto BACKSPACE                                     =       sequence::basic(table::C0::BS);
-                    static const auto CARRIAGE_RETURN                               =       sequence::basic(table::C0::CR);
-                    static const auto FORM_FEED                                     =       sequence::basic(table::C0::FF);
-                    static const auto CHARACTER_POSITION_ABSOLUTE                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPA);
-                    static const auto CHARACTER_POSITION_BACKWARD                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPB);
-                    static const auto CHARACTER_POSITION_FORWARD                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPR);
-                    static const auto CHARACTER_TABULATION                          =       sequence::basic(table::C0::HT);
-                    static const auto CHARACTER_TABULATION_WITH_JUSTIFICATION       =       sequence::basic(table::C1::HTJ);
-                    static const auto CHARACTER_TABULATION_SET                      =       sequence::basic(table::C1::HTS);
-                    static const auto CHARACTER_AND_LINE_POSITION                   =       sequence::controlSequence(2, table::finalWithoutIntermediate::HVP);
-                    static const auto LINE_FEED                                     =       sequence::basic(table::C0::LF);
-                    static const auto NEXT_LINE                                     =       sequence::basic(table::C1::NEL);
-                    static const auto PARTIAL_LINE_FORWARD                          =       sequence::basic(table::C1::PLD);
-                    static const auto PARTIAL_LINE_BACKWARD                         =       sequence::basic(table::C1::PLU);
-                    static const auto PAGE_POSITION_ABSOLUTE                        =       sequence::controlSequence(1, table::finalWithIntermediate::PPA);
-                    static const auto PAGE_POSITION_BACKWARD                        =       sequence::controlSequence(1, table::finalWithIntermediate::PPB);
-                    static const auto PAGE_POSITION_FORWARD                         =       sequence::controlSequence(1, table::finalWithIntermediate::PPR);
-                    static const auto REVERSE_LINE_FEED                             =       sequence::basic(table::C1::RI);
-                    static const auto TABULATION_CLEAR                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::TBC);
-                    static const auto TABULATION_STOP_REMOVE                        =       sequence::controlSequence(1, table::finalWithIntermediate::TSR);
-                    static const auto LINE_POSITION_ABSOLUTE                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPA);
-                    static const auto LINE_POSITION_BACKWARD                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPB);
-                    static const auto LINE_POSITION_FORWARD                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPR);
-                    static const auto LINE_TABULATION                               =       sequence::basic(table::C0::VT);
-                    static const auto LINE_TABULATION_SET                           =       sequence::basic(table::C1::VTS);
+                    inline const auto BACKSPACE                                     =       sequence::basic(table::C0::BS);
+                    inline const auto CARRIAGE_RETURN                               =       sequence::basic(table::C0::CR);
+                    inline const auto FORM_FEED                                     =       sequence::basic(table::C0::FF);
+                    inline const auto CHARACTER_POSITION_ABSOLUTE                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPA);
+                    inline const auto CHARACTER_POSITION_BACKWARD                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPB);
+                    inline const auto CHARACTER_POSITION_FORWARD                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPR);
+                    inline const auto CHARACTER_TABULATION                          =       sequence::basic(table::C0::HT);
+                    inline const auto CHARACTER_TABULATION_WITH_JUSTIFICATION       =       sequence::basic(table::C1::HTJ);
+                    inline const auto CHARACTER_TABULATION_SET                      =       sequence::basic(table::C1::HTS);
+                    inline const auto CHARACTER_AND_LINE_POSITION                   =       sequence::controlSequence(2, table::finalWithoutIntermediate::HVP);
+                    inline const auto LINE_FEED                                     =       sequence::basic(table::C0::LF);
+                    inline const auto NEXT_LINE                                     =       sequence::basic(table::C1::NEL);
+                    inline const auto PARTIAL_LINE_FORWARD                          =       sequence::basic(table::C1::PLD);
+                    inline const auto PARTIAL_LINE_BACKWARD                         =       sequence::basic(table::C1::PLU);
+                    inline const auto PAGE_POSITION_ABSOLUTE                        =       sequence::controlSequence(1, table::finalWithIntermediate::PPA);
+                    inline const auto PAGE_POSITION_BACKWARD                        =       sequence::controlSequence(1, table::finalWithIntermediate::PPB);
+                    inline const auto PAGE_POSITION_FORWARD                         =       sequence::controlSequence(1, table::finalWithIntermediate::PPR);
+                    inline const auto REVERSE_LINE_FEED                             =       sequence::basic(table::C1::RI);
+                    inline const auto TABULATION_CLEAR                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::TBC);
+                    inline const auto TABULATION_STOP_REMOVE                        =       sequence::controlSequence(1, table::finalWithIntermediate::TSR);
+                    inline const auto LINE_POSITION_ABSOLUTE                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPA);
+                    inline const auto LINE_POSITION_BACKWARD                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPB);
+                    inline const auto LINE_POSITION_FORWARD                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPR);
+                    inline const auto LINE_TABULATION                               =       sequence::basic(table::C0::VT);
+                    inline const auto LINE_TABULATION_SET                           =       sequence::basic(table::C1::VTS);
                 }
 
                 namespace presentationControlFunctions {
-                    static const auto BREAK_PERMITTED_HERE                          =       sequence::basic(table::C1::BPH);
-                    static const auto DIMENSION_TEXT_AREA                           =       sequence::controlSequence(2, table::finalWithIntermediate::DTA);
-                    static const auto FONT_SELECTION                                =       sequence::controlSequence(2, table::finalWithIntermediate::FNT);
-                    static const auto GRAPHIC_CHARACTER_COMBINATION                 =       sequence::controlSequence(1, table::finalWithIntermediate::GCC);
-                    static const auto GRAPHIC_SIZE_MODIFICATION                     =       sequence::controlSequence(2, table::finalWithIntermediate::GSM);
-                    static const auto GRAPHIC_SIZE_SELECTION                        =       sequence::controlSequence(1, table::finalWithIntermediate::GSS);
-                    static const auto JUSTIFY                                       =       sequence::controlSequence(-1, table::finalWithIntermediate::JFY);
-                    static const auto NO_BREAK_HERE                                 =       sequence::basic(table::C1::NBH);
-                    static const auto PRESENTATION_EXPAND_OR_CONTRACT               =       sequence::controlSequence(1, table::finalWithIntermediate::PEC);
-                    static const auto PAGE_FORMAT_SELECTION                         =       sequence::controlSequence(1, table::finalWithIntermediate::PFS);
-                    static const auto PARALLEL_TEXTS                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::PTX);
-                    static const auto QUAD                                          =       sequence::controlSequence(-1, table::finalWithIntermediate::QUAD);
-                    static const auto SET_ADDITIONAL_CHARACTER_SEPARATION           =       sequence::controlSequence(1, table::finalWithIntermediate::SACS);
-                    static const auto SELECT_ALTERNATIVE_PRESENTATION_VARIANTS      =       sequence::controlSequence(-1, table::finalWithIntermediate::SAPV);
-                    static const auto SET_CHARACTER_ORIENTATION                     =       sequence::controlSequence(1, table::finalWithIntermediate::SCO);
-                    static const auto SELECT_CHARACTER_PATH                         =       sequence::controlSequence(2, table::finalWithIntermediate::SCP);
-                    static const auto SET_CHARACTER_SPACING                         =       sequence::controlSequence(1, table::finalWithIntermediate::SCS);
-                    static const auto START_DIRECTED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SDS);
-                    static const auto SELECT_GRAPHIC_RENDITION                      =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SGR);
-                    static const auto SELECT_CHARACTER_SPACING                      =       sequence::controlSequence(1, table::finalWithIntermediate::SHS);
-                    static const auto SELECT_IMPLICIT_MOVEMENT_DIRECTION            =       sequence::controlSequence(1, table::finalWithoutIntermediate::SIMD);
-                    static const auto SET_LINE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SHL);
-                    static const auto SET_LINE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SLL);
-                    static const auto SET_LINE_SPACING                              =       sequence::controlSequence(1, table::finalWithIntermediate::SLS);
-                    static const auto SELECT_PRESENTATION_DIRECTIONS                =       sequence::controlSequence(2, table::finalWithIntermediate::SPD);
-                    // static const auto SET_PAGE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
-                    static const auto SPACING_INCREMENT                             =       sequence::controlSequence(2, table::finalWithIntermediate::SPI);
-                    // static const auto SET_PAGE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SPL); // Ecma lists these, but there are no mentions in the tables.
-                    static const auto SELECT_PRINT_QUALITY_AND_RAPIDITY             =       sequence::controlSequence(1, table::finalWithIntermediate::SPQR);
-                    static const auto SET_REDUCED_CHARACTER_SEPARATION              =       sequence::controlSequence(1, table::finalWithIntermediate::SRCS);
-                    static const auto START_REVERSED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SRS);
-                    static const auto SELECT_SIZE_UNIT                              =       sequence::controlSequence(1, table::finalWithIntermediate::SSU);
-                    static const auto SELECT_SPACE_WIDTH                            =       sequence::controlSequence(1, table::finalWithIntermediate::SSW);
-                    static const auto SELECTIVE_TABULATION                          =       sequence::controlSequence(1, table::finalWithIntermediate::STAB);
-                    static const auto SELECT_LINE_SPACING                           =       sequence::controlSequence(1, table::finalWithIntermediate::SVS);
-                    static const auto TABULATION_ALIGNED_CENTRED                    =       sequence::controlSequence(1, table::finalWithIntermediate::TAC);
-                    static const auto TABULATION_ALIGNED_LEADING_EDGE               =       sequence::controlSequence(1, table::finalWithIntermediate::TALE);
-                    static const auto TABULATION_ALIGNED_TRAILING_EDGE              =       sequence::controlSequence(1, table::finalWithIntermediate::TATE);
-                    static const auto TABULATION_CENTRED_ON_CHARACTER               =       sequence::controlSequence(2, table::finalWithIntermediate::TCC);
-                    static const auto THIN_SPACE_SPECIFICATION                      =       sequence::controlSequence(1, table::finalWithIntermediate::TSS);
+                    inline const auto BREAK_PERMITTED_HERE                          =       sequence::basic(table::C1::BPH);
+                    inline const auto DIMENSION_TEXT_AREA                           =       sequence::controlSequence(2, table::finalWithIntermediate::DTA);
+                    inline const auto FONT_SELECTION                                =       sequence::controlSequence(2, table::finalWithIntermediate::FNT);
+                    inline const auto GRAPHIC_CHARACTER_COMBINATION                 =       sequence::controlSequence(1, table::finalWithIntermediate::GCC);
+                    inline const auto GRAPHIC_SIZE_MODIFICATION                     =       sequence::controlSequence(2, table::finalWithIntermediate::GSM);
+                    inline const auto GRAPHIC_SIZE_SELECTION                        =       sequence::controlSequence(1, table::finalWithIntermediate::GSS);
+                    inline const auto JUSTIFY                                       =       sequence::controlSequence(-1, table::finalWithIntermediate::JFY);
+                    inline const auto NO_BREAK_HERE                                 =       sequence::basic(table::C1::NBH);
+                    inline const auto PRESENTATION_EXPAND_OR_CONTRACT               =       sequence::controlSequence(1, table::finalWithIntermediate::PEC);
+                    inline const auto PAGE_FORMAT_SELECTION                         =       sequence::controlSequence(1, table::finalWithIntermediate::PFS);
+                    inline const auto PARALLEL_TEXTS                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::PTX);
+                    inline const auto QUAD                                          =       sequence::controlSequence(-1, table::finalWithIntermediate::QUAD);
+                    inline const auto SET_ADDITIONAL_CHARACTER_SEPARATION           =       sequence::controlSequence(1, table::finalWithIntermediate::SACS);
+                    inline const auto SELECT_ALTERNATIVE_PRESENTATION_VARIANTS      =       sequence::controlSequence(-1, table::finalWithIntermediate::SAPV);
+                    inline const auto SET_CHARACTER_ORIENTATION                     =       sequence::controlSequence(1, table::finalWithIntermediate::SCO);
+                    inline const auto SELECT_CHARACTER_PATH                         =       sequence::controlSequence(2, table::finalWithIntermediate::SCP);
+                    inline const auto SET_CHARACTER_SPACING                         =       sequence::controlSequence(1, table::finalWithIntermediate::SCS);
+                    inline const auto START_DIRECTED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SDS);
+                    inline const auto SELECT_GRAPHIC_RENDITION                      =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SGR);
+                    inline const auto SELECT_CHARACTER_SPACING                      =       sequence::controlSequence(1, table::finalWithIntermediate::SHS);
+                    inline const auto SELECT_IMPLICIT_MOVEMENT_DIRECTION            =       sequence::controlSequence(1, table::finalWithoutIntermediate::SIMD);
+                    inline const auto SET_LINE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SHL);
+                    inline const auto SET_LINE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SLL);
+                    inline const auto SET_LINE_SPACING                              =       sequence::controlSequence(1, table::finalWithIntermediate::SLS);
+                    inline const auto SELECT_PRESENTATION_DIRECTIONS                =       sequence::controlSequence(2, table::finalWithIntermediate::SPD);
+                    // inline const auto SET_PAGE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
+                    inline const auto SPACING_INCREMENT                             =       sequence::controlSequence(2, table::finalWithIntermediate::SPI);
+                    // inline const auto SET_PAGE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SPL); // Ecma lists these, but there are no mentions in the tables.
+                    inline const auto SELECT_PRINT_QUALITY_AND_RAPIDITY             =       sequence::controlSequence(1, table::finalWithIntermediate::SPQR);
+                    inline const auto SET_REDUCED_CHARACTER_SEPARATION              =       sequence::controlSequence(1, table::finalWithIntermediate::SRCS);
+                    inline const auto START_REVERSED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SRS);
+                    inline const auto SELECT_SIZE_UNIT                              =       sequence::controlSequence(1, table::finalWithIntermediate::SSU);
+                    inline const auto SELECT_SPACE_WIDTH                            =       sequence::controlSequence(1, table::finalWithIntermediate::SSW);
+                    inline const auto SELECTIVE_TABULATION                          =       sequence::controlSequence(1, table::finalWithIntermediate::STAB);
+                    inline const auto SELECT_LINE_SPACING                           =       sequence::controlSequence(1, table::finalWithIntermediate::SVS);
+                    inline const auto TABULATION_ALIGNED_CENTRED                    =       sequence::controlSequence(1, table::finalWithIntermediate::TAC);
+                    inline const auto TABULATION_ALIGNED_LEADING_EDGE               =       sequence::controlSequence(1, table::finalWithIntermediate::TALE);
+                    inline const auto TABULATION_ALIGNED_TRAILING_EDGE              =       sequence::controlSequence(1, table::finalWithIntermediate::TATE);
+                    inline const auto TABULATION_CENTRED_ON_CHARACTER               =       sequence::controlSequence(2, table::finalWithIntermediate::TCC);
+                    inline const auto THIN_SPACE_SPECIFICATION                      =       sequence::controlSequence(1, table::finalWithIntermediate::TSS);
                 }
 
                 namespace editorFunctions {
-                    static const auto DELETE_CHARACTER                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::DCH);
-                    static const auto DELETE_LINE                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::DL);
-                    static const auto ERASE_IN_AREA                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::EA);
-                    static const auto ERASE_CHARACTER                               =       sequence::controlSequence(1, table::finalWithoutIntermediate::ECH);
-                    static const auto ERASE_IN_PAGE                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::ED);
-                    static const auto ERASE_IN_FIELD                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::EF);
-                    static const auto ERASE_IN_LINE                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::EL);
-                    static const auto INSERT_CHARACTER                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::ICH);
-                    static const auto INSERT_LINE                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::IL);
+                    inline const auto DELETE_CHARACTER                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::DCH);
+                    inline const auto DELETE_LINE                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::DL);
+                    inline const auto ERASE_IN_AREA                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::EA);
+                    inline const auto ERASE_CHARACTER                               =       sequence::controlSequence(1, table::finalWithoutIntermediate::ECH);
+                    inline const auto ERASE_IN_PAGE                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::ED);
+                    inline const auto ERASE_IN_FIELD                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::EF);
+                    inline const auto ERASE_IN_LINE                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::EL);
+                    inline const auto INSERT_CHARACTER                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::ICH);
+                    inline const auto INSERT_LINE                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::IL);
                 }
 
                 namespace cursorControlFunctions {
-                    static const auto CURSOR_BACKWARD_TABULATION                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::CBT);
-                    static const auto CURSOR_CHARACTER_ABSOLUTE                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CHA);
-                    static const auto CURSOR_FORWARD_TABULATION                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CHT);
-                    static const auto CURSOR_NEXT_LINE                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::CNL);
-                    static const auto CURSOR_PRECEDING_LINE                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::CPL);
-                    static const auto CURSOR_TABULATION_CONTROL                     =       sequence::controlSequence(-1, table::finalWithoutIntermediate::CTC);
-                    static const auto CURSOR_LEFT                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUB);
-                    static const auto CURSOR_DOWN                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUD);
-                    static const auto CURSOR_RIGHT                                  =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUF);
-                    static const auto CURSOR_POSITION                               =       sequence::controlSequence(2, table::finalWithoutIntermediate::CUP);
-                    static const auto CURSOR_UP                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUU);
-                    static const auto CURSOR_LINE_TABULATION                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::CVT);
+                    inline const auto CURSOR_BACKWARD_TABULATION                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::CBT);
+                    inline const auto CURSOR_CHARACTER_ABSOLUTE                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CHA);
+                    inline const auto CURSOR_FORWARD_TABULATION                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CHT);
+                    inline const auto CURSOR_NEXT_LINE                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::CNL);
+                    inline const auto CURSOR_PRECEDING_LINE                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::CPL);
+                    inline const auto CURSOR_TABULATION_CONTROL                     =       sequence::controlSequence(-1, table::finalWithoutIntermediate::CTC);
+                    inline const auto CURSOR_LEFT                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUB);
+                    inline const auto CURSOR_DOWN                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUD);
+                    inline const auto CURSOR_RIGHT                                  =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUF);
+                    inline const auto CURSOR_POSITION                               =       sequence::controlSequence(2, table::finalWithoutIntermediate::CUP);
+                    inline const auto CURSOR_UP                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUU);
+                    inline const auto CURSOR_LINE_TABULATION                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::CVT);
                 }
 
                 namespace displayControlFunctions {
-                    static const auto NEXT_PAGE                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::NP);
-                    static const auto PRECEDING_PAGE                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::PP);
-                    static const auto SCROLL_DOWN                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::SD);
-                    static const auto SCROLL_LEFT                                   =       sequence::controlSequence(1, table::finalWithIntermediate::SL);
-                    static const auto SCROLL_RIGHT                                  =       sequence::controlSequence(1, table::finalWithIntermediate::SR);
-                    static const auto SCROLL_UP                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::SU);
+                    inline const auto NEXT_PAGE                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::NP);
+                    inline const auto PRECEDING_PAGE                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::PP);
+                    inline const auto SCROLL_DOWN                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::SD);
+                    inline const auto SCROLL_LEFT                                   =       sequence::controlSequence(1, table::finalWithIntermediate::SL);
+                    inline const auto SCROLL_RIGHT                                  =       sequence::controlSequence(1, table::finalWithIntermediate::SR);
+                    inline const auto SCROLL_UP                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::SU);
                 }
 
                 namespace deviceControlFunctions {
-                    static const auto DEVICE_CONTROL_ONE                            =       sequence::basic(table::C0::DC1);
-                    static const auto DEVICE_CONTROL_TWO                            =       sequence::basic(table::C0::DC2);
-                    static const auto DEVICE_CONTROL_THREE                          =       sequence::basic(table::C0::DC3);
-                    static const auto DEVICE_CONTROL_FOUR                           =       sequence::basic(table::C0::DC4);
+                    inline const auto DEVICE_CONTROL_ONE                            =       sequence::basic(table::C0::DC1);
+                    inline const auto DEVICE_CONTROL_TWO                            =       sequence::basic(table::C0::DC2);
+                    inline const auto DEVICE_CONTROL_THREE                          =       sequence::basic(table::C0::DC3);
+                    inline const auto DEVICE_CONTROL_FOUR                           =       sequence::basic(table::C0::DC4);
                 }
 
                 namespace informationSeparators {
-                    static const auto INFORMATION_SEPARATOR_ONE                     =       sequence::basic(table::C0::IS1);
-                    static const auto INFORMATION_SEPARATOR_TWO                     =       sequence::basic(table::C0::IS2);
-                    static const auto INFORMATION_SEPARATOR_THREE                   =       sequence::basic(table::C0::IS3);
-                    static const auto INFORMATION_SEPARATOR_FOUR                    =       sequence::basic(table::C0::IS4);
+                    inline const auto INFORMATION_SEPARATOR_ONE                     =       sequence::basic(table::C0::IS1);
+                    inline const auto INFORMATION_SEPARATOR_TWO                     =       sequence::basic(table::C0::IS2);
+                    inline const auto INFORMATION_SEPARATOR_THREE                   =       sequence::basic(table::C0::IS3);
+                    inline const auto INFORMATION_SEPARATOR_FOUR                    =       sequence::basic(table::C0::IS4);
                 }
 
                 namespace areaDefinitions {
-                    static const auto DEFINE_AREA_QUALIFICATION                     =       sequence::controlSequence(-1, table::finalWithoutIntermediate::DAQ);
-                    static const auto END_OF_GUARDED_AREA                           =       sequence::basic(table::C1::EPA);
-                    static const auto END_OF_SELECTED_AREA                          =       sequence::basic(table::C1::ESA);
-                    static const auto START_OF_GUARDED_AREA                         =       sequence::basic(table::C1::SPA);
-                    static const auto START_OF_SELECTED_AREA                        =       sequence::basic(table::C1::SSA);
+                    inline const auto DEFINE_AREA_QUALIFICATION                     =       sequence::controlSequence(-1, table::finalWithoutIntermediate::DAQ);
+                    inline const auto END_OF_GUARDED_AREA                           =       sequence::basic(table::C1::EPA);
+                    inline const auto END_OF_SELECTED_AREA                          =       sequence::basic(table::C1::ESA);
+                    inline const auto START_OF_GUARDED_AREA                         =       sequence::basic(table::C1::SPA);
+                    inline const auto START_OF_SELECTED_AREA                        =       sequence::basic(table::C1::SSA);
                 }
 
                 namespace modeSettings {
-                    static const auto RESET_MODE                                  =       sequence::controlSequence(-1, table::finalWithoutIntermediate::RM);
-                    static const auto SET_MODE                                    =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SM);
+                    inline const auto RESET_MODE                                  =       sequence::controlSequence(-1, table::finalWithoutIntermediate::RM);
+                    inline const auto SET_MODE                                    =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SM);
                 }
 
                 namespace transmissionControlFunctions {
-                    static const auto ACKNOWLEDGE                                   =       sequence::basic(table::C0::ACK);
-                    static const auto DATA_LINK_ESCAPE                              =       sequence::basic(table::C0::DLE);
-                    static const auto ENQUIRY                                       =       sequence::basic(table::C0::ENQ);
-                    static const auto END_OF_TRANSMISSION                           =       sequence::basic(table::C0::EOT);
-                    static const auto END_OF_TRANSMISSION_BLOCK                     =       sequence::basic(table::C0::ETB);
-                    static const auto END_OF_TEXT                                   =       sequence::basic(table::C0::ETX);
-                    static const auto NEGATIVE_ACKNOWLEDGE                          =       sequence::basic(table::C0::NAK);
-                    static const auto START_OF_HEADING                              =       sequence::basic(table::C0::SOH);
-                    static const auto START_OF_TEXT                                 =       sequence::basic(table::C0::STX);
-                    static const auto SYNCHRONOUS_IDLE                              =       sequence::basic(table::C0::SYN);
+                    inline const auto ACKNOWLEDGE                                   =       sequence::basic(table::C0::ACK);
+                    inline const auto DATA_LINK_ESCAPE                              =       sequence::basic(table::C0::DLE);
+                    inline const auto ENQUIRY                                       =       sequence::basic(table::C0::ENQ);
+                    inline const auto END_OF_TRANSMISSION                           =       sequence::basic(table::C0::EOT);
+                    inline const auto END_OF_TRANSMISSION_BLOCK                     =       sequence::basic(table::C0::ETB);
+                    inline const auto END_OF_TEXT                                   =       sequence::basic(table::C0::ETX);
+                    inline const auto NEGATIVE_ACKNOWLEDGE                          =       sequence::basic(table::C0::NAK);
+                    inline const auto START_OF_HEADING                              =       sequence::basic(table::C0::SOH);
+                    inline const auto START_OF_TEXT                                 =       sequence::basic(table::C0::STX);
+                    inline const auto SYNCHRONOUS_IDLE                              =       sequence::basic(table::C0::SYN);
                 }
 
                 namespace miscellaneousControlFunctions {
-                    static const auto BELL                                          =       sequence::basic(table::C0::BEL);
-                    static const auto CANCEL                                        =       sequence::basic(table::C0::CAN);
-                    static const auto CANCEL_CHARACTER                              =       sequence::basic(table::C1::CCH);
-                    static const auto ACTIVE_POSITION_REPORT                        =       sequence::controlSequence(2, table::finalWithoutIntermediate::CPR);
-                    static const auto DEVICE_ATTRIBUTES                             =       sequence::controlSequence(1, table::finalWithoutIntermediate::DA);
-                    static const auto DISABLE_MANUAL_INPUT                          =       sequence::independent(table::independentFunctions::DMI);
-                    static const auto DEVICE_STATUS_REPORT                          =       sequence::controlSequence(1, table::finalWithoutIntermediate::DSR);
-                    static const auto END_OF_MEDIUM                                 =       sequence::basic(table::C0::EM);
-                    static const auto ENABLE_MANUAL_INPUT                           =       sequence::independent(table::independentFunctions::EMI);
-                    static const auto FUNCTION_KEY                                  =       sequence::controlSequence(1, table::finalWithIntermediate::FNK);
-                    static const auto IDENTIFY_DEVICE_CONTROL_STRING                =       sequence::controlSequence(1, table::finalWithIntermediate::IDCS);
-                    static const auto IDENTIFY_GRAPHIC_SUBREPERTOIRE                =       sequence::controlSequence(1, table::finalWithIntermediate::IGS);
-                    static const auto INTERRUPT                                     =       sequence::independent(table::independentFunctions::INT);
-                    static const auto MEDIA_COPY                                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::MC);
-                    static const auto MESSAGE_WAITING                               =       sequence::basic(table::C1::MW);
-                    static const auto NULL_CHARACTER                                =       sequence::basic(table::C0::NUL);
-                    static const auto PRIVATE_USE_ONE                               =       sequence::basic(table::C1::PU1);
-                    static const auto PRIVATE_USE_TWO                               =       sequence::basic(table::C1::PU2);
-                    static const auto REPEAT                                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::REP);
-                    static const auto RESET_TO_INITIAL_STATE                        =       sequence::independent(table::independentFunctions::RIS);
-                    static const auto SELECT_EDITING_EXTENT                         =       sequence::controlSequence(2, table::finalWithoutIntermediate::SSE);
-                    static const auto SHEET_EJECT_AND_FEED                          =       sequence::controlSequence(2, table::finalWithIntermediate::SEF);
-                    static const auto SET_TRANSMIT_STATE                            =       sequence::basic(table::C1::STS);
-                    static const auto SUBSTITUTE                                    =       sequence::basic(table::C0::SUB);
+                    inline const auto BELL                                          =       sequence::basic(table::C0::BEL);
+                    inline const auto CANCEL                                        =       sequence::basic(table::C0::CAN);
+                    inline const auto CANCEL_CHARACTER                              =       sequence::basic(table::C1::CCH);
+                    inline const auto ACTIVE_POSITION_REPORT                        =       sequence::controlSequence(2, table::finalWithoutIntermediate::CPR);
+                    inline const auto DEVICE_ATTRIBUTES                             =       sequence::controlSequence(1, table::finalWithoutIntermediate::DA);
+                    inline const auto DISABLE_MANUAL_INPUT                          =       sequence::independent(table::independentFunctions::DMI);
+                    inline const auto DEVICE_STATUS_REPORT                          =       sequence::controlSequence(1, table::finalWithoutIntermediate::DSR);
+                    inline const auto END_OF_MEDIUM                                 =       sequence::basic(table::C0::EM);
+                    inline const auto ENABLE_MANUAL_INPUT                           =       sequence::independent(table::independentFunctions::EMI);
+                    inline const auto FUNCTION_KEY                                  =       sequence::controlSequence(1, table::finalWithIntermediate::FNK);
+                    inline const auto IDENTIFY_DEVICE_CONTROL_STRING                =       sequence::controlSequence(1, table::finalWithIntermediate::IDCS);
+                    inline const auto IDENTIFY_GRAPHIC_SUBREPERTOIRE                =       sequence::controlSequence(1, table::finalWithIntermediate::IGS);
+                    inline const auto INTERRUPT                                     =       sequence::independent(table::independentFunctions::INT);
+                    inline const auto MEDIA_COPY                                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::MC);
+                    inline const auto MESSAGE_WAITING                               =       sequence::basic(table::C1::MW);
+                    inline const auto NULL_CHARACTER                                =       sequence::basic(table::C0::NUL);
+                    inline const auto PRIVATE_USE_ONE                               =       sequence::basic(table::C1::PU1);
+                    inline const auto PRIVATE_USE_TWO                               =       sequence::basic(table::C1::PU2);
+                    inline const auto REPEAT                                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::REP);
+                    inline const auto RESET_TO_INITIAL_STATE                        =       sequence::independent(table::independentFunctions::RIS);
+                    inline const auto SELECT_EDITING_EXTENT                         =       sequence::controlSequence(2, table::finalWithoutIntermediate::SSE);
+                    inline const auto SHEET_EJECT_AND_FEED                          =       sequence::controlSequence(2, table::finalWithIntermediate::SEF);
+                    inline const auto SET_TRANSMIT_STATE                            =       sequence::basic(table::C1::STS);
+                    inline const auto SUBSTITUTE                                    =       sequence::basic(table::C0::SUB);
                 }
             }
 
