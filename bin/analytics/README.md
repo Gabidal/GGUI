@@ -10,7 +10,7 @@
 
 ## Scripts
 
-### `benchmark.sh` - Valgrind Callgrind Profiling
+### `benchmark.sh` - Callgrind Profiling
 Run benchmark.sh with sudo if you are in WSL2, otherwise the kcachegrind will not work (Not positional)
 
 **Usage:**

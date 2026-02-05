@@ -3,8 +3,6 @@
 namespace GGUI {
     namespace terminal {
         namespace ecma {
-
-
             namespace sequence {
                 /**
                  * As stated by 5.4.2.b, f, g and h
@@ -101,7 +99,8 @@ namespace GGUI {
 
                     if (C1_8bitPresent(input[functionPosition])) {
                         output.push_back(new basic(
-                            static_cast<table::C1>(table::shiftColumns(static_cast<uint8_t>(input[functionPosition]), table::columns::FOUR, true))
+                            static_cast<table::C1>(table::shiftColumns(static_cast<uint8_t>(input[functionPosition]), table::columns::FOUR, true)),
+                            bitType::_8bit
                         ));
                         length++;
                     } else if (ESCPresent(input[functionPosition])) {
@@ -116,7 +115,8 @@ namespace GGUI {
 
                         if (table::contains<table::C1>(input[functionPosition])) {
                             output.push_back(new basic(
-                                static_cast<table::C1>(input[functionPosition])
+                                static_cast<table::C1>(input[functionPosition]),
+                                bitType::_7bit
                             ));
 
                             length += 1 + functionPosition;
@@ -127,6 +127,37 @@ namespace GGUI {
                             static_cast<table::C0>(input[functionPosition])
                         ));
                     }
+                }
+
+                /**
+                 * Converts the basic function to its string representation.
+                 * 
+                 * For C0 functions, the byte is directly output.
+                 * For C1 functions, based on escapeType:
+                 *   - 7-bit: ESC (01/11) followed by the C1 function byte from table 2a (columns 4-5)
+                 *   - 8-bit: The C1 function byte shifted to table 2b (columns 8-9)
+                 */
+                std::string basic::toString() {
+                    std::string result = "";
+
+                    if (std::holds_alternative<table::C0>(function)) {
+                        // C0 functions are single-byte, directly output
+                        result += static_cast<char>(std::get<table::C0>(function));
+                    } else {
+                        // C1 functions require either ESC prefix (7-bit) or column-shifted byte (8-bit)
+                        table::C1 functionValue = std::get<table::C1>(function);
+
+                        if (escapeType == bitType::_7bit) {
+                            // 7-bit representation: ESC + C1 byte from table 2a
+                            result += static_cast<char>(table::C0::ESC);
+                            result += static_cast<char>(functionValue);
+                        } else {
+                            // 8-bit representation: C1 byte shifted from columns 4-5 to columns 8-9
+                            result += static_cast<char>(table::to8bit(functionValue));
+                        }
+                    }
+
+                    return result;
                 }
 
                 void independent::parse(std::string_view input, size_t& length, std::vector<base*>& output) {
@@ -147,6 +178,29 @@ namespace GGUI {
                     ));
 
                     length += 1 + intermediateOffset + functionPosition;
+                }
+
+                /**
+                 * Converts the independent function to its string representation.
+                 * 
+                 * Independent functions are always 7-bit and follow the format:
+                 *   ESC (01/11) + optional space (02/03) + function byte from table 5 (columns 6-7)
+                 */
+                std::string independent::toString() {
+                    std::string result = "";
+
+                    // Independent functions always start with ESC
+                    result += static_cast<char>(table::C0::ESC);
+
+                    // Optional intermediate space byte (02/03)
+                    if (hasSpace) {
+                        result += static_cast<char>(table::toInt(2, 3));
+                    }
+
+                    // The function byte from the independentFunctions table
+                    result += static_cast<char>(function);
+
+                    return result;
                 }
 
                 void controlSequence::parse(std::string_view input, size_t& length, std::vector<base*>& output) {
@@ -238,6 +292,52 @@ namespace GGUI {
                         }
                     }
                 }
+                
+                /**
+                 * Converts the control sequence to its string representation.
+                 * 
+                 * Control sequences follow the format:
+                 *   - 7-bit: ESC (01/11) + CSI byte (05/11) + parameters + intermediates + final byte
+                 *   - 8-bit: 8-bit CSI (09/11) + parameters + intermediates + final byte
+                 * 
+                 * Parameters are separated by ';' (03/11) delimiter.
+                 * The final byte determines if intermediates are required based on the variant held.
+                 */
+                std::string controlSequence::toString() {
+                    std::string result = "";
+
+                    // Output the Control Sequence Introducer based on escape type
+                    if (escapeType == bitType::_7bit) {
+                        // 7-bit representation: ESC + CSI from table 2a
+                        result += static_cast<char>(table::C0::ESC);
+                        result += static_cast<char>(table::C1::CSI);
+                    } else {
+                        // 8-bit representation: CSI shifted to column 8-9
+                        result += static_cast<char>(table::to8bit(table::C1::CSI));
+                    }
+
+                    // Output all parameters, separated by the parameter delimiter (03/11 ';')
+                    for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
+                        if (parameterIndex > 0) {
+                            result += static_cast<char>(parameter::delimeter);
+                        }
+                        result += parameters[parameterIndex].toString();
+                    }
+
+                    // Output all intermediate bytes (range 02/00 - 02/15)
+                    for (uint8_t intermediateByte : intermediates) {
+                        result += static_cast<char>(intermediateByte);
+                    }
+
+                    // Output the final byte based on which variant is held
+                    if (std::holds_alternative<table::finalWithoutIntermediate>(finalByte)) {
+                        result += static_cast<char>(std::get<table::finalWithoutIntermediate>(finalByte));
+                    } else {
+                        result += static_cast<char>(std::get<table::finalWithIntermediate>(finalByte));
+                    }
+
+                    return result;
+                }
 
                 void controlString::parse(std::string_view input, size_t& length, std::vector<base*>& output) {
                     if (input.size() < 2) return;
@@ -267,6 +367,46 @@ namespace GGUI {
                     ));
 
                     length += stringTerminatorOffset + 1; // +1 for the ST character
+                }
+
+                /**
+                 * Converts the control string to its string representation.
+                 * 
+                 * Control strings follow the format:
+                 *   - 7-bit: ESC (01/11) + opening delimiter (C1) + characters + ESC + ST (05/12)
+                 *   - 8-bit: 8-bit opening delimiter + characters + 8-bit ST (09/12)
+                 * 
+                 * The opening delimiter can be one of: APC, DCS, OSC, PM, or SOS from the C1 table.
+                 */
+                std::string controlString::toString() {
+                    std::string result = "";
+
+                    // Output the opening delimiter based on escape type
+                    if (escapeType == bitType::_7bit) {
+                        // 7-bit representation: ESC + opening delimiter from table 2a
+                        result += static_cast<char>(table::C0::ESC);
+                        result += static_cast<char>(openingDelimiter);
+                    } else {
+                        // 8-bit representation: opening delimiter shifted to columns 8-9
+                        result += static_cast<char>(table::to8bit(openingDelimiter));
+                    }
+
+                    // Output all character bytes
+                    for (uint8_t characterByte : characters) {
+                        result += static_cast<char>(characterByte);
+                    }
+
+                    // Output the String Terminator (ST) based on escape type
+                    if (escapeType == bitType::_7bit) {
+                        // 7-bit representation: ESC + ST from table 2a
+                        result += static_cast<char>(table::C0::ESC);
+                        result += static_cast<char>(table::C1::ST);
+                    } else {
+                        // 8-bit representation: ST shifted to columns 8-9
+                        result += static_cast<char>(table::to8bit(table::C1::ST));
+                    }
+
+                    return result;
                 }
 
                 std::vector<base*> parse(std::string_view input) {

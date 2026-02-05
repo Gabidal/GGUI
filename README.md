@@ -46,7 +46,7 @@ int main()
  - ### **Graceful exit** be it ctrl+c or normal exit, GGUI cleans up after itself 
 --- 
 
-# Building
+# Manual Building
 ### ./bin/init.sh triggers meson to build the core library.
 ### Manual build you could do something like this:
 ```Bash
@@ -62,7 +62,7 @@ c++ -std=c++17 -O3 -I./bin/export ./bin/export/buildGGUILib.cpp -o headerGenerat
 ./headerGenerator --headers-only --source-root ./           # This will generate automatically ggui.h, you can also add '--include-internal' for building ggui_dev.h 
 ```
 
-# Build **GGUI**
+# Automatic Building
 - ### Initialize project locally with the `init.sh` script.
   - Will also remove any existing build directory
   - only builds ggui_core 
@@ -88,7 +88,7 @@ c++ -std=c++17 -O3 -I./bin/export ./bin/export/buildGGUILib.cpp -o headerGenerat
 ```bash
 # Build types are: release, debug, profile
 ./bin/analytics/benchmark.sh -Full release      # Full CPU profiling
-./bin/analytics/time.sh 5 120 release           # short duration 5s, long duration 120s; This is to check if opcodes explode with time growth or stay stabile.
+./bin/analytics/time.sh 5 120 release           # short duration 5s, long duration 120s; This is to check if opcodes explode with time growth or stay stable.
 ./bin/analytics/assembly.sh profile             # Helper script to make a large asm file of the whole thing.
 ```
 ### More about optimization and analytic scripts at [bin/analytics/README.md](./bin/analytics/README.md)

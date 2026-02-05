@@ -225,7 +225,7 @@ namespace GGUI {
                     static void parse(std::string_view input, size_t& length, std::vector<base*>& output);
 
                     basic(table::C0 func) : base(specialType::BASIC, bitType::_7bit), function(func) {}
-                    basic(table::C1 func) : base(specialType::BASIC, bitType::_8bit), function(func) {}
+                    basic(table::C1 func, bitType variant = bitType::_7bit) : base(specialType::BASIC, variant), function(func) {}
 
                     std::string toString() override;
                 };

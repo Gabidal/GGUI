@@ -49,6 +49,7 @@ lib_sources = [
   '../src/core/addons/addons.cpp',
 
   # Terminal sources
+  '../src/core/terminal/ecma.cpp',
   '../src/core/terminal/terminal.cpp',
   '../src/core/terminal/linux.cpp',
   '../src/core/terminal/win.cpp',
