@@ -241,7 +241,6 @@ namespace GGUI {
                         // No parameters or intermediates
                         output.push_back(
                             new controlSequence(
-                                finalByteOffset,
                                 static_cast<table::finalWithoutIntermediate>(finalByte)
                             )
                         );

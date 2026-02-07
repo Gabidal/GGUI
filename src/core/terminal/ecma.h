@@ -303,17 +303,25 @@ namespace GGUI {
             }
 
             namespace sequences {
+
+                enum class specialTypes {
+                    NORMAL,
+                    HAS_INFINITE_PARAMETERS
+                };
+
                 template<
                     typename codeType,
                     typename parameterType              = sequence::parameter,
                     std::size_t paramCount              = 0,
-                    std::size_t intermediateCount       = 0
+                    std::size_t intermediateCount       = 0,
+                    specialTypes parameterExtension     = specialTypes::HAS_INFINITE_PARAMETERS
                 >
                 class base {
                 public:
                     codeType function;
                     std::array<parameterType, paramCount> parameterDefaultValue;
                     std::array<uint8_t, intermediateCount> intermediateDefaultValues;
+                    const specialTypes parameterExtensionType = parameterExtension;
 
                     base(codeType code, std::array<parameterType, paramCount> defaultParamValues = {}, std::array<uint8_t, intermediateCount> defaultIntermediates = {}) : function(code), parameterDefaultValue(defaultValue), intermediateDefaultValues(defaultIntermediates) {}
                 };
@@ -681,15 +689,15 @@ namespace GGUI {
                      */
                     namespace TABULATION_CLEAR {
                         enum class types {
-                            ACTIVE_CHARACTER_POSITION,
-                            ACTIVE_LINE_TABULATION,
-                            ALL_CHARACTERS_IN_ACTIVE_LINE,
-                            ALL_SINGLE_TABULATOR_CHARACTERS,
-                            ALL_LINE_TABULATOR_CHARACTERS,
-                            ALL_LINE_AND_SINGLE_TABULATOR_CHARACTERS
+                            CHARACTER_TABULATOR_IN_ACTIVE_POSITION,
+                            LINE_TABULATOR_IN_ACTIVE_LINE,
+                            ALL_CHARACTER_TABULATORS_IN_ACTIVE_LINE,
+                            ALL_CHARACTER_TABULATORS,
+                            ALL_LINE_TABULATORS,
+                            ALL_LINE_AND_CHARACTER_TABULATORS
                         };
 
-                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::TBC), {types::ACTIVE_CHARACTER_POSITION});
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::TBC), {types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION});
                     }
 
                     /**
@@ -739,46 +747,290 @@ namespace GGUI {
                 }
 
                 namespace presentationControlFunctions {
-                    inline const auto BREAK_PERMITTED_HERE                          =       sequence::basic(table::C1::BPH);
-                    inline const auto DIMENSION_TEXT_AREA                           =       sequence::controlSequence(2, table::finalWithIntermediate::DTA);
-                    inline const auto FONT_SELECTION                                =       sequence::controlSequence(2, table::finalWithIntermediate::FNT);
-                    inline const auto GRAPHIC_CHARACTER_COMBINATION                 =       sequence::controlSequence(1, table::finalWithIntermediate::GCC);
-                    inline const auto GRAPHIC_SIZE_MODIFICATION                     =       sequence::controlSequence(2, table::finalWithIntermediate::GSM);
-                    inline const auto GRAPHIC_SIZE_SELECTION                        =       sequence::controlSequence(1, table::finalWithIntermediate::GSS);
-                    inline const auto JUSTIFY                                       =       sequence::controlSequence(-1, table::finalWithIntermediate::JFY);
-                    inline const auto NO_BREAK_HERE                                 =       sequence::basic(table::C1::NBH);
-                    inline const auto PRESENTATION_EXPAND_OR_CONTRACT               =       sequence::controlSequence(1, table::finalWithIntermediate::PEC);
-                    inline const auto PAGE_FORMAT_SELECTION                         =       sequence::controlSequence(1, table::finalWithIntermediate::PFS);
-                    inline const auto PARALLEL_TEXTS                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::PTX);
-                    inline const auto QUAD                                          =       sequence::controlSequence(-1, table::finalWithIntermediate::QUAD);
-                    inline const auto SET_ADDITIONAL_CHARACTER_SEPARATION           =       sequence::controlSequence(1, table::finalWithIntermediate::SACS);
-                    inline const auto SELECT_ALTERNATIVE_PRESENTATION_VARIANTS      =       sequence::controlSequence(-1, table::finalWithIntermediate::SAPV);
-                    inline const auto SET_CHARACTER_ORIENTATION                     =       sequence::controlSequence(1, table::finalWithIntermediate::SCO);
-                    inline const auto SELECT_CHARACTER_PATH                         =       sequence::controlSequence(2, table::finalWithIntermediate::SCP);
-                    inline const auto SET_CHARACTER_SPACING                         =       sequence::controlSequence(1, table::finalWithIntermediate::SCS);
-                    inline const auto START_DIRECTED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SDS);
-                    inline const auto SELECT_GRAPHIC_RENDITION                      =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SGR);
-                    inline const auto SELECT_CHARACTER_SPACING                      =       sequence::controlSequence(1, table::finalWithIntermediate::SHS);
-                    inline const auto SELECT_IMPLICIT_MOVEMENT_DIRECTION            =       sequence::controlSequence(1, table::finalWithoutIntermediate::SIMD);
-                    inline const auto SET_LINE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SHL);
-                    inline const auto SET_LINE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SLL);
-                    inline const auto SET_LINE_SPACING                              =       sequence::controlSequence(1, table::finalWithIntermediate::SLS);
-                    inline const auto SELECT_PRESENTATION_DIRECTIONS                =       sequence::controlSequence(2, table::finalWithIntermediate::SPD);
-                    // inline const auto SET_PAGE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
-                    inline const auto SPACING_INCREMENT                             =       sequence::controlSequence(2, table::finalWithIntermediate::SPI);
-                    // inline const auto SET_PAGE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SPL); // Ecma lists these, but there are no mentions in the tables.
-                    inline const auto SELECT_PRINT_QUALITY_AND_RAPIDITY             =       sequence::controlSequence(1, table::finalWithIntermediate::SPQR);
-                    inline const auto SET_REDUCED_CHARACTER_SEPARATION              =       sequence::controlSequence(1, table::finalWithIntermediate::SRCS);
-                    inline const auto START_REVERSED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SRS);
-                    inline const auto SELECT_SIZE_UNIT                              =       sequence::controlSequence(1, table::finalWithIntermediate::SSU);
-                    inline const auto SELECT_SPACE_WIDTH                            =       sequence::controlSequence(1, table::finalWithIntermediate::SSW);
-                    inline const auto SELECTIVE_TABULATION                          =       sequence::controlSequence(1, table::finalWithIntermediate::STAB);
-                    inline const auto SELECT_LINE_SPACING                           =       sequence::controlSequence(1, table::finalWithIntermediate::SVS);
-                    inline const auto TABULATION_ALIGNED_CENTRED                    =       sequence::controlSequence(1, table::finalWithIntermediate::TAC);
-                    inline const auto TABULATION_ALIGNED_LEADING_EDGE               =       sequence::controlSequence(1, table::finalWithIntermediate::TALE);
-                    inline const auto TABULATION_ALIGNED_TRAILING_EDGE              =       sequence::controlSequence(1, table::finalWithIntermediate::TATE);
-                    inline const auto TABULATION_CENTRED_ON_CHARACTER               =       sequence::controlSequence(2, table::finalWithIntermediate::TCC);
-                    inline const auto THIN_SPACE_SPECIFICATION                      =       sequence::controlSequence(1, table::finalWithIntermediate::TSS);
+                    /**
+                     * @brief BPH is used to indicate a point where a line break may occur when text is formatted. BPH may occur
+                        between two graphic characters, either or both of which may be SPACE. 
+                     * @example `08/02` or `01/11 04/02`
+                     */
+                    inline base<sequence::basic> BREAK_PERMITTED_HERE(sequence::basic(table::C1::BPH));
+
+                    /**
+                     * @brief DTA is used to establish the dimensions of the text area for subsequent pages.
+                        The established dimensions remain in effect until the next occurrence of DTA in the data stream. 
+                     * @example `01/11 05/11 Pn1;Pn2 02/00 05/04` or `9/11 Pn1;Pn2 02/00 05/04`
+                     * @param Pn1 default(none)
+                     * @param Pn2 default(none)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 2, 1> DIMENSION_TEXT_AREA(sequence::controlSequence(table::finalWithIntermediate::DTA), {-1, -1}, {table::toInt(02, 00)});
+
+                    /**
+                     * @brief FNT is used to identify the character font to be selected as primary or alternative font by subsequent
+                        occurrences of SELECT GRAPHIC RENDITION (SGR) in the data stream. Ps1 specifies the primary or alternative font concerned.
+                     * @example `01/11 05/11 Ps1;Ps2 02/00 04/04` or `9/11 Ps1;Ps2 02/00 04/04`
+                     * @param Ps1 default(0)
+                     * @param Ps2 default(0)
+                     */
+                    namespace FONT_SELECTION {
+                        enum class alternatives {
+                            PRIMARY,
+                            FIRST,
+                            SECOND,
+                            THIRD,
+                            FOURTH,
+                            FIFTH,
+                            SIXTH,
+                            SEVENTH,
+                            EIGHT,
+                            NINTH
+                        };
+
+                        inline base<sequence::controlSequence, alternatives, 2, 1> code(sequence::controlSequence(table::finalWithIntermediate::FNT), {alternatives::PRIMARY, alternatives::PRIMARY}, {table::toInt(02, 00)});
+                    }
+
+                    /**
+                     * @brief GCC is used to indicate that two or more graphic characters are to be imaged as one single graphic
+                        symbol. GCC with a parameter value of 0 indicates that the following two graphic characters are to be
+                        imaged as one single graphic symbol; GCC with a parameter value of 1 and GCC with a parameter value
+                        of 2 indicate respectively the beginning and the end of a string of graphic characters which are to be
+                        imaged as one single graphic symbol.
+                     * @note GCC does not explicitly specify the relative sizes or placements of the component parts of a composite graphic symbol. 
+                        In the simplest case, two components may be "half-width" and side-by-side. For example, 
+                        in Japanese text a pair of characters may be presented side-by-side, and occupy the space of a normal-size Kanji character. 
+                     * @example `01/11 05/11 Ps1 02/00 05/15` or `9/11 Ps1 02/00 05/15`
+                     * @param Ps default(0)
+                     */
+                    namespace GRAPHIC_CHARACTER_COMBINATION {
+                        enum class types {
+                            DOUBLE_WIDE,    // Expect next two characters to be as one
+                            START,          // beginning and the - 
+                            END             //                     end of string characters to be images as a single graphic symbol.
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::GCC), {types::DOUBLE_WIDE}, {table::toInt(02, 00)});
+                    }
+
+                    /**
+                     * @brief GSM is used to modify for subsequent text the height and/or the width of all primary and alternative
+                        fonts identified by FONT SELECTION (FNT) and established by GRAPHIC SIZE SELECTION (GSS).
+                        The established values remain in effect until the next occurrence of GSM or GSS in the data steam. 
+                     * @example `01/11 05/11 Pn1;Pn2 02/00 04/02` or `9/11 Pn1;Pn2 02/00 04/02`
+                     * @param Pn1 default(100) specifies the height as a percentage of the height established by GSS
+                     * @param Pn2 default(100) specifies the width as a percentage of the width established by GSS 
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 2, 1> GRAPHIC_SIZE_MODIFICATION(sequence::controlSequence(table::finalWithIntermediate::GSM), {100,100}, {table::toInt(02, 00)});
+
+                    /**
+                     * @brief GSS is used to establish for subsequent text the height and the width of all primary and alternative fonts
+                        identified by FONT SELECTION (FNT). The established values remain in effect until the next
+                        occurrence of GSS in the data stream.
+                        Pn specifies the height, the width is implicitly defined by the height.
+                        The unit in which the parameter value is expressed is that established by the parameter value of SELECT
+                        SIZE UNIT (SSU).
+                     * @example `01/11 05/11 Pn 02/00 04/03` or `9/11 Pn 02/00 04/03`
+                     * @param Pn default(none) specifies the height, the width is implicitly defined by the height.
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> GRAPHIC_SIZE_SELECTION(sequence::controlSequence(table::finalWithIntermediate::GSS), {-1}, {table::toInt(02, 00)});
+                    
+                    /**
+                     * @brief JFY is used to indicate the beginning of a string of graphic characters in the presentation component that
+                        are to be justified according to the layout specified by the parameter values. The end of the string to be justified is indicated by the next occurrence of JFY in the data stream. 
+                        The line home position is established by the parameter value of SET LINE HOME (SLH). 
+                        The line limit position is established by the parameter value of SET LINE LIMIT (SLL).
+                     * @example `01/11 05/11 Ps ... 02/00 04/06` or `9/11 Ps ... 02/00 04/06`
+                     * @param Ps default(0)
+                     * @param ...  adjusted characters
+                     */
+                    namespace JUSTIFY {
+                        enum class types {
+                            NO_JUSTIFICATION,
+                            WORD_FILL,
+                            WORD_SPACE,
+                            LETTER_SPACE,
+                            HYPHENATION,
+                            FLUSH_TO_LINE_HOME_POSITION_MARGIN,
+                            CENTER_BETWEEN_LINE_HOME_POSITION_AND_LINE_LIMIT_POSITION_MARGINS,
+                            FLUSH_TO_LINE_LIMIT_POSITION_MARGIN,
+                            ITALIAN_HYPHENATION
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence(table::finalWithIntermediate::JFY), {types::NO_JUSTIFICATION}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief NBH is used to indicate a point where a line break shall not occur when text is formatted. 
+                            NBH may occur between two graphic characters either or both of which may be SPACE. 
+                     * @example `08/03` or `01/11 04/03`
+                     */
+                    inline base<sequence::basic> NO_BREAK_HERE(sequence::basic(table::C1::NBH));
+
+                    /**
+                     * @brief PEC is used to establish the spacing and the extent of the graphic characters for subsequent text. 
+                        The spacing is specified in the line as multiples of the spacing established by the most recent occurrence of
+                        SET CHARACTER SPACING (SCS) or of SELECT CHARACTER SPACING (SHS) or of SPACING
+                        INCREMENT (SPI) in the data stream. The extent of the characters is implicitly established by these control functions. 
+                        The established spacing and the extent remain in effect until the next occurrence of
+                        PEC, of SCS, of SHS or of SPI in the data stream.
+                     * @example `01/11 05/11 Ps 02/00 05/10` or `9/11 Ps 02/00 05/10`
+                     * @param Ps default(0)
+                     */
+                    namespace PRESENTATION_EXPAND_OR_CONTRACT {
+                        enum class types {
+                            NORMAL,             // as specified by SCS, SHS or SP
+                            EXPANDED,           // multiplied by a factor not greater than 2
+                            CONDENSED           // multiplied by a factor not less than 0,5
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::PEC), {types::NORMAL}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief PFS is used to establish the available area for the imaging of pages of text based on paper size. 
+                        The pages are introduced by the subsequent occurrence of FORM FEED (FF) in the data stream.
+                        The established image area remains in effect until the next occurrence of PFS in the data stream.
+                        The page home position is established by the parameter value of SET PAGE HOME (SPH), 
+                        the page limit position is established by the parameter value of SET PAGE LIMIT (SPL). 
+                     * @example `01/11 05/11 Ps 02/00 04/10` or `9/11 Ps 02/00 04/10`
+                     * @param Ps default(0)
+                     */
+                    namespace PAGE_FORMAT_SELECTION {
+                        enum class format {
+                            TALL_BASIC_COMMUNICATION,
+                            WIDE_BASIC_COMMUNICATION,
+                            TALL_BASIC_A4,
+                            WIDE_BASIC_A4,
+                            TALL_NORTH_AMERICAN_LETTER,
+                            WIDE_NORTH_AMERICAN_LETTER,
+                            TALL_EXTENDED_A4,
+                            WIDE_EXTENDED_A4,
+                            TALL_NORTH_AMERICAN_LEGAL,
+                            WIDE_NORTH_AMERICAN_LEGAL,
+                            A4_SHORT_LINES,
+                            A4_LONG_LINES,
+                            B5_SHORT_LINES,
+                            B5_LONG_LINES,
+                            B4_SHORT_LINES,
+                            B4_LONG_LINES
+                        };
+
+                        inline base<sequence::controlSequence, format, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::PFS), {format::TALL_BASIC_COMMUNICATION}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief PTX is used to delimit strings of graphic characters that are communicated one after another in the data
+                        stream but that are intended to be presented in parallel with one another, usually in adjacent lines. 
+                        PTX with a parameter value of 1 indicates the beginning of the string of principal text intended to be
+                        presented in parallel with one or more strings of supplementary text.
+                        PTX with a parameter value of 2, 3 or 4 indicates the beginning of a string of supplementary text that is
+                        intended to be presented in parallel with either a string of principal text or the immediately preceding
+                        string of supplementary text, if any; at the same time it indicates the end of the preceding string of
+                        principal text or of the immediately preceding string of supplementary text, if any. The end of a string of
+                        supplementary text is indicated by a subsequent occurrence of PTX with a parameter value other than 1.
+                        PTX with a parameter value of 0 indicates the end of the strings of text intended to be presented in
+                        parallel with one another.
+                     * @note PTX does not explicitly specify the relative placement of the strings of principal and supplementary
+                        parallel texts, or the relative sizes of graphic characters in the strings of parallel text. A string of
+                        supplementary text is normally presented in a line adjacent to the line containing the string of principal
+                        text, or adjacent to the line containing the immediately preceding string of supplementary text, if any.
+                        The first graphic character of the string of principal text and the first graphic character of a string of
+                        supplementary text are normally presented in the same position of their respective lines. However, a
+                        string of supplementary text longer (when presented) than the associated string of principal text may be
+                        centred on that string. In the case of long strings of text, such as paragraphs in different languages, the
+                        strings may be presented in successive lines in parallel columns, with their beginnings aligned with one
+                        another and the shorter of the paragraphs followed by an appropriate amount of "white space".
+                        Japanese phonetic annotation typically consists of a few half-size or smaller Kana characters which
+                        indicate the pronunciation or interpretation of one or more Kanji characters and are presented above
+                        those Kanji characters if the character path is horizontal, or to the right of them if the character path is
+                        vertical.
+                        Chinese phonetic annotation typically consists of a few Pinyin characters which indicate the
+                        pronunciation of one or more Hanzi characters and are presented above those Hanzi characters.
+                        Alternatively, the Pinyin characters may be presented in the same line as the Hanzi characters and
+                        following the respective Hanzi characters. The Pinyin characters will then be presented within enclosing
+                        pairs of parentheses. 
+                     * @example `01/11 05/11 Ps 05/12` or `9/11 Ps 05/12`
+                     * @param Ps default(0)
+                     */
+                    namespace PARALLEL_TEXTS {
+                        enum class types {
+                            END,
+                            BEGINNING_OF_PRINCIPAL_PARALLEL_TEXT,
+                            BEGINNING_OF_SUPPLEMENTARY_PARALLEL_TEXT,
+                            BEGINNING_OF_SUPPLEMENTARY_JAPANESE_PHONETIC_ANNOTATION,
+                            BEGINNING_OF_SUPPLEMENTARY_CHINESE_PHONETIC_ANNOTATION
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::PTX), {types::END});
+                    }
+
+                    /**
+                     * @brief QUAD is used to indicate the end of a string of graphic characters that are to be positioned on a single
+                        line according to the layout specified by the parameter values.
+                        The beginning of the string to be positioned is indicated by the preceding occurrence in the data stream
+                        of either QUAD or one of the following formater functions: FORM FEED (FF), CHARACTER AND
+                        LINE POSITION (HVP), LINE FEED (LF), NEXT LINE (NEL), PAGE POSITION ABSOLUTE (PPA),
+                        PAGE POSITION BACKWARD (PPB), PAGE POSITION FORWARD (PPR), REVERSE LINE FEED
+                        (RI), LINE POSITION ABSOLUTE (VPA), LINE POSITION BACKWARD (VPB), LINE POSITION
+                        FORWARD (VPR), or LINE TABULATION (VT).
+                        The line home position is established by the parameter value of SET LINE HOME (SLH). The line limit
+                        position is established by the parameter value of SET LINE LIMIT (SLL). 
+                     * @example `01/11 05/11 Ps ... 02/00 04/08` or `9/11 Ps ... 02/00 04/08`
+                     * @param Ps default(0)
+                     * @param ...
+                     */
+                    namespace QUAD {
+                        enum class types {
+                            FLUSH_TO_LINE_HOME_POSITION_MARGIN,
+                            FLUSH_TO_LINE_HOME_POSITION_MARGIN_AND_FILL_WITH_HEADER,
+                            CENTRE_BETWEEN_LINE_HOME_POSITION_AND_LINE_LIMIT_POSITION_MARGINS,
+                            CENTRE_BETWEEN_LINE_HOME_POSITION_AND_LINE_LIMIT_POSITION_MARGINS_AND_FILL_WITH_HEADER,
+                            FLUSH_TO_LINE_LIMIT_POSITION_MARGIN,
+                            FLUSH_TO_LINE_LIMIT_POSITION_MARGIN_AND_FILL_WITH_HEADER,
+                            FLUSH_TO_BOTH_MARGINS
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence(table::finalWithIntermediate::QUAD), {types::FLUSH_TO_LINE_HOME_POSITION_MARGIN}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief SACS is used to establish extra inter-character escapement for subsequent text. The established extra
+                        escapement remains in effect until the next occurrence of SACS or of SET REDUCED CHARACTER
+                        SEPARATION (SRCS) in the data stream or until it is reset to the default value by a subsequent
+                        occurrence of CARRIAGE RETURN/LINE FEED (CR LF) or of NEXT LINE (NEL) in the data stream
+                        The unit in which the parameter value is expressed is that established by the parameter value of SELECT SIZE UNIT (SSU). 
+                     * @example `01/11 05/11 Pn 02/00 05/12` or `9/11 Pn 02/00 05/12`
+                     * @param Pn default(0)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_ADDITIONAL_CHARACTER_SEPARATION(sequence::controlSequence(table::finalWithIntermediate::SACS), {0}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief 
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_ALTERNATIVE_PRESENTATION_VARIANTS      =       sequence::controlSequence(-1, table::finalWithIntermediate::SAPV);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_CHARACTER_ORIENTATION                     =       sequence::controlSequence(1, table::finalWithIntermediate::SCO);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_CHARACTER_PATH                         =       sequence::controlSequence(2, table::finalWithIntermediate::SCP);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_CHARACTER_SPACING                         =       sequence::controlSequence(1, table::finalWithIntermediate::SCS);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> START_DIRECTED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SDS);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_GRAPHIC_RENDITION                      =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SGR);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_CHARACTER_SPACING                      =       sequence::controlSequence(1, table::finalWithIntermediate::SHS);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_IMPLICIT_MOVEMENT_DIRECTION            =       sequence::controlSequence(1, table::finalWithoutIntermediate::SIMD);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_LINE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SHL);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_LINE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SLL);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_LINE_SPACING                              =       sequence::controlSequence(1, table::finalWithIntermediate::SLS);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_PRESENTATION_DIRECTIONS                =       sequence::controlSequence(2, table::finalWithIntermediate::SPD);
+                    // inline base<sequence::controlSequence, sequence::parameter, 1> SET_PAGE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SPACING_INCREMENT                             =       sequence::controlSequence(2, table::finalWithIntermediate::SPI);
+                    // inline base<sequence::controlSequence, sequence::parameter, 1> SET_PAGE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SPL); // Ecma lists these, but there are no mentions in the tables.
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_PRINT_QUALITY_AND_RAPIDITY             =       sequence::controlSequence(1, table::finalWithIntermediate::SPQR);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_REDUCED_CHARACTER_SEPARATION              =       sequence::controlSequence(1, table::finalWithIntermediate::SRCS);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> START_REVERSED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SRS);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_SIZE_UNIT                              =       sequence::controlSequence(1, table::finalWithIntermediate::SSU);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_SPACE_WIDTH                            =       sequence::controlSequence(1, table::finalWithIntermediate::SSW);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECTIVE_TABULATION                          =       sequence::controlSequence(1, table::finalWithIntermediate::STAB);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_LINE_SPACING                           =       sequence::controlSequence(1, table::finalWithIntermediate::SVS);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_ALIGNED_CENTRED                    =       sequence::controlSequence(1, table::finalWithIntermediate::TAC);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_ALIGNED_LEADING_EDGE               =       sequence::controlSequence(1, table::finalWithIntermediate::TALE);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_ALIGNED_TRAILING_EDGE              =       sequence::controlSequence(1, table::finalWithIntermediate::TATE);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_CENTRED_ON_CHARACTER               =       sequence::controlSequence(2, table::finalWithIntermediate::TCC);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> THIN_SPACE_SPECIFICATION                      =       sequence::controlSequence(1, table::finalWithIntermediate::TSS);
                 }
 
                 namespace editorFunctions {
