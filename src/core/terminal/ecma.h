@@ -201,6 +201,8 @@ namespace GGUI {
                     constexpr static uint8_t delimeter      = table::toInt(3, 11); // Translates into ';'
 
                     parameter(std::string_view input, size_t& length);
+                    parameter(std::vector<uint32_t> values) : subNumbers(values) {}
+                    parameter(uint32_t values) : subNumbers({values}) {}
 
                     std::string toString();
                 };
@@ -232,8 +234,6 @@ namespace GGUI {
 
                 class controlSequence : public base {
                 protected:
-                    int parameterCount = 0;                     // If -1, then no constraints.
-                    int intermediateCount = 0;                  // if 1 and no specified, defaults into 02/00 (' ')
                     std::vector<parameter> parameters;          // Each range between: 03/00 - 03/15, delimeetered by 03/11 (';')
                     std::vector<uint8_t> intermediates;         // Each range between: 02/00 - 02/15
                     std::variant<
@@ -255,14 +255,12 @@ namespace GGUI {
                     ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameters(params), intermediates(inters), finalByte(finalByte) {}
 
                     controlSequence(
-                        int maxParamCount,
                         table::finalWithoutIntermediate finalByte
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameterCount(maxParamCount), finalByte(finalByte) {}
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), finalByte(finalByte) {}
 
                     controlSequence(
-                        int maxParamCount,
                         table::finalWithIntermediate finalByte
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameterCount(maxParamCount), intermediateCount(1), intermediates({table::toInt(2, 0)}), finalByte(finalByte) {}
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), intermediates({table::toInt(2, 0)}), finalByte(finalByte) {}
 
                     std::string toString() override;
                 };
@@ -305,63 +303,439 @@ namespace GGUI {
             }
 
             namespace sequences {
+                template<
+                    typename codeType,
+                    typename parameterType              = sequence::parameter,
+                    std::size_t paramCount              = 0,
+                    std::size_t intermediateCount       = 0
+                >
+                class base {
+                public:
+                    codeType function;
+                    std::array<parameterType, paramCount> parameterDefaultValue;
+                    std::array<uint8_t, intermediateCount> intermediateDefaultValues;
+
+                    base(codeType code, std::array<parameterType, paramCount> defaultParamValues = {}, std::array<uint8_t, intermediateCount> defaultIntermediates = {}) : function(code), parameterDefaultValue(defaultValue), intermediateDefaultValues(defaultIntermediates) {}
+                };
 
                 namespace delimiters {
-                    inline const auto APPLICATION_PROGRAM_COMMAND                   =       sequence::basic(table::C1::APC);
-                    inline const auto CODING_METHOD_DELIMITER                       =       sequence::independent(table::independentFunctions::CMD);
-                    inline const auto DEVICE_CONTROL_STRING                         =       sequence::basic(table::C1::DCS);
-                    inline const auto OPERATING_SYSTEM_COMMAND                      =       sequence::basic(table::C1::OSC);
-                    inline const auto PRIVACY_MESSAGE                               =       sequence::basic(table::C1::PM);
-                    inline const auto START_OF_STRING                               =       sequence::basic(table::C1::SOS);
-                    inline const auto STRING_TERMINATOR                             =       sequence::basic(table::C1::ST);
+                    /**
+                     * @brief APC is used as the opening delimiter of a control string for application program use. The command
+                        string following may consist of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14. The
+                        control string is closed by the terminating delimiter STRING TERMINATOR (ST). The interpretation of
+                        the command string depends on the relevant application program. 
+                     * @example `09/15` or `01/11 05/15`
+                    */
+                    inline base<sequence::basic> APPLICATION_PROGRAM_COMMAND(sequence::basic(table::C1::APC));
+
+                    /**
+                     * @brief CMD is used as the delimiter of a string of data coded according to Standard ECMA-35 and to switch to
+                        a general level of control. The use of CMD is not mandatory if the higher level protocol defines means of delimiting the string, 
+                        for instance, by specifying the length of the string. 
+                     * @example `01/11 06/04`
+                     */
+                    inline base<sequence::independent> CODING_METHOD_DELIMITER(sequence::independent(table::independentFunctions::CMD));
+
+                    /**
+                     * @brief DCS is used as the opening delimiter of a control string for device control use. The command string
+                        following may consist of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14. The control
+                        string is closed by the terminating delimiter STRING TERMINATOR (ST).
+                        The command string represents either one or more commands for the receiving device, or one or more
+                        status reports from the sending device. The purpose and the format of the command string are specified
+                        by the most recent occurrence of IDENTIFY DEVICE CONTROL STRING (IDCS), if any, or depend on
+                        the sending and/or the receiving device. 
+                     * @example `09/00` or `01/11 05/00` 
+                     */
+                    inline base<sequence::basic> DEVICE_CONTROL_STRING(sequence::basic(table::C1::DCS));
+
+                    /**
+                     * @brief OSC is used as the opening delimiter of a control string for operating system use. The command string
+                        following may consist of a sequence of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14.
+                        The control string is closed by the terminating delimiter STRING TERMINATOR (ST). The
+                        interpretation of the command string depends on the relevant operating system. 
+                     * @example `09/13` or `01/11 05/13` 
+                     */
+                    inline base<sequence::basic> OPERATING_SYSTEM_COMMAND(sequence::basic(table::C1::OSC));
+
+                    /**
+                     * @brief PM is used as the opening delimiter of a control string for privacy message use. The command string
+                        following may consist of a sequence of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14.
+                        The control string is closed by the terminating delimiter STRING TERMINATOR (ST). The
+                        interpretation of the command string depends on the relevant privacy discipline.
+                     * @example `09/14` or `01/11 05/14` 
+                     */
+                    inline base<sequence::basic> PRIVACY_MESSAGE(sequence::basic(table::C1::PM));
+
+                    /**
+                     * @brief SOS is used as the opening delimiter of a control string. The character string following may consist of
+                        any bit combination, except those representing SOS or STRING TERMINATOR (ST). The control string
+                        is closed by the terminating delimiter STRING TERMINATOR (ST). The interpretation of the character
+                        string depends on the application.
+                     * @example `09/08` or `01/11 05/08`
+                     */
+                    inline base<sequence::basic> START_OF_STRING(sequence::basic(table::C1::SOS));
+
+                    /**
+                     * @brief ST is used as the closing delimiter of a control string opened by APPLICATION PROGRAM
+                        COMMAND (APC), DEVICE CONTROL STRING (DCS), OPERATING SYSTEM COMMAND
+                        (OSC), PRIVACY MESSAGE (PM), or START OF STRING (SOS).
+                     * @example `09/12` or `01/11 05/12` 
+                     */
+                    inline base<sequence::basic> STRING_TERMINATOR(sequence::basic(table::C1::ST));
                 };
 
                 namespace introducers {
-                    inline const auto CONTROL_SEQUENCE_INTRODUCER                   =       sequence::basic(table::C1::CSI);
-                    inline const auto ESCAPE                                        =       sequence::basic(table::C0::ESC);
-                    inline const auto SINGLE_CHARACTER_INTRODUCER                   =       sequence::basic(table::C1::SCI);
+                    /**
+                     * @brief CSI is used as the first character of a control sequence.
+                     * @example `09/11` or `01/11 05/11`
+                     */
+                    inline base<sequence::basic> CONTROL_SEQUENCE_INTRODUCER(sequence::basic(table::C1::CSI));
+
+                    /**
+                     * @brief ESC is used for code extension purposes. It causes the meanings of a limited number of bit combinations
+                        following it in the data stream to be changed. 
+                     * @example `01/11`
+                     */
+                    inline base<sequence::basic> ESCAPE(sequence::basic(table::C0::ESC));
+
+                    /**
+                     * @brief SCI and the bit combination following it are used to represent a control function or a graphic character.
+                        The bit combination following SCI must be from 00/08 to 00/13 or 02/00 to 07/14. The use of SCI is
+                        reserved for future standardization.
+                     * @example `09/10` or `01/11 05/10`
+                     */
+                    inline base<sequence::basic> SINGLE_CHARACTER_INTRODUCER(sequence::basic(table::C1::SCI));
                 }
 
                 namespace shiftFunctions {
-                    inline const auto LOCKING_SHIFT_ZERO                            =       sequence::basic(table::C0::LS0);
-                    inline const auto LOCKING_SHIFT_ONE                             =       sequence::basic(table::C0::LS1);
-                    inline const auto LOCKING_SHIFT_ONE_RIGHT                       =       sequence::independent(table::independentFunctions::LS1R);
-                    inline const auto LOCKING_SHIFT_TWO                             =       sequence::independent(table::independentFunctions::LS2);
-                    inline const auto LOCKING_SHIFT_TWO_RIGHT                       =       sequence::independent(table::independentFunctions::LS2R);
-                    inline const auto LOCKING_SHIFT_THREE                           =       sequence::independent(table::independentFunctions::LS3);
-                    inline const auto LOCKING_SHIFT_THREE_RIGHT                     =       sequence::independent(table::independentFunctions::LS3R);
-                    inline const auto SHIFT_IN                                      =       sequence::basic(table::C0::SI);
-                    inline const auto SHIFT_OUT                                     =       sequence::basic(table::C0::SO);
-                    inline const auto SS2                                           =       sequence::basic(table::C1::SS2);
-                    inline const auto SS3                                           =       sequence::basic(table::C1::SS3);
+                    /**
+                     * @brief LS0 is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed.
+                     * @example `00/15`
+                     */
+                    inline base<sequence::basic> LOCKING_SHIFT_ZERO(sequence::basic(table::C0::LS0));
+
+                    /**
+                     * @brief LS1 is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed.
+                     * @example `00/14`
+                     */
+                    inline base<sequence::basic> LOCKING_SHIFT_ONE(sequence::basic(table::C0::LS1));
+
+                    /**
+                     * @brief LS1R is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed. 
+                     * @example `07/14`
+                     */
+                    inline base<sequence::independent> LOCKING_SHIFT_ONE_RIGHT(sequence::independent(table::independentFunctions::LS1R));
+
+                    /**
+                     * @brief LS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed. 
+                     * @example `01/11 06/14`
+                     */
+                    inline base<sequence::independent> LOCKING_SHIFT_TWO(sequence::independent(table::independentFunctions::LS2));
+
+                    /**
+                     * @brief LS2R is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed.
+                    * @example `01/11 07/13`
+                     */
+                    inline base<sequence::independent> LOCKING_SHIFT_TWO_RIGHT(sequence::independent(table::independentFunctions::LS2R));
+
+                    /**
+                     * @brief LS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed. 
+                     * @example `01/11 06/15`
+                     */
+                    inline base<sequence::independent> LOCKING_SHIFT_THREE(sequence::independent(table::independentFunctions::LS3));
+
+                    /**
+                     * @brief LS3R is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed. 
+                     * @example `01/11 07/12`
+                     */
+                    inline base<sequence::independent> LOCKING_SHIFT_THREE_RIGHT(sequence::independent(table::independentFunctions::LS3R));
+
+                    /**
+                     * @brief SI is used for code extension purposes. It causes the meanings of the bit combinations following it in the
+                        data stream to be changed. 
+                     * @example `00/15`
+                     */
+                    inline base<sequence::basic> SHIFT_IN(sequence::basic(table::C0::SI));
+
+                    /**
+                     * @brief SO is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed. 
+                     * @example `00/14`
+                     */
+                    inline base<sequence::basic> SHIFT_OUT(sequence::basic(table::C0::SO));
+
+                    /**
+                     * @brief SS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed. 
+                     * @example `08/14` or `01/11 04/14`
+                     */
+                    inline base<sequence::basic> SS2(sequence::basic(table::C1::SS2));
+
+                    /**
+                     * @brief SS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
+                        the data stream to be changed. 
+                     * @example `08/15` or `01/11 04/15` 
+                     */
+                    inline base<sequence::basic> SS3(sequence::basic(table::C1::SS3));
+
                 }
 
                 namespace formatEffectors {
-                    inline const auto BACKSPACE                                     =       sequence::basic(table::C0::BS);
-                    inline const auto CARRIAGE_RETURN                               =       sequence::basic(table::C0::CR);
-                    inline const auto FORM_FEED                                     =       sequence::basic(table::C0::FF);
-                    inline const auto CHARACTER_POSITION_ABSOLUTE                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPA);
-                    inline const auto CHARACTER_POSITION_BACKWARD                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPB);
-                    inline const auto CHARACTER_POSITION_FORWARD                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::HPR);
-                    inline const auto CHARACTER_TABULATION                          =       sequence::basic(table::C0::HT);
-                    inline const auto CHARACTER_TABULATION_WITH_JUSTIFICATION       =       sequence::basic(table::C1::HTJ);
-                    inline const auto CHARACTER_TABULATION_SET                      =       sequence::basic(table::C1::HTS);
-                    inline const auto CHARACTER_AND_LINE_POSITION                   =       sequence::controlSequence(2, table::finalWithoutIntermediate::HVP);
-                    inline const auto LINE_FEED                                     =       sequence::basic(table::C0::LF);
-                    inline const auto NEXT_LINE                                     =       sequence::basic(table::C1::NEL);
-                    inline const auto PARTIAL_LINE_FORWARD                          =       sequence::basic(table::C1::PLD);
-                    inline const auto PARTIAL_LINE_BACKWARD                         =       sequence::basic(table::C1::PLU);
-                    inline const auto PAGE_POSITION_ABSOLUTE                        =       sequence::controlSequence(1, table::finalWithIntermediate::PPA);
-                    inline const auto PAGE_POSITION_BACKWARD                        =       sequence::controlSequence(1, table::finalWithIntermediate::PPB);
-                    inline const auto PAGE_POSITION_FORWARD                         =       sequence::controlSequence(1, table::finalWithIntermediate::PPR);
-                    inline const auto REVERSE_LINE_FEED                             =       sequence::basic(table::C1::RI);
-                    inline const auto TABULATION_CLEAR                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::TBC);
-                    inline const auto TABULATION_STOP_REMOVE                        =       sequence::controlSequence(1, table::finalWithIntermediate::TSR);
-                    inline const auto LINE_POSITION_ABSOLUTE                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPA);
-                    inline const auto LINE_POSITION_BACKWARD                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPB);
-                    inline const auto LINE_POSITION_FORWARD                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::VPR);
-                    inline const auto LINE_TABULATION                               =       sequence::basic(table::C0::VT);
-                    inline const auto LINE_TABULATION_SET                           =       sequence::basic(table::C1::VTS);
+                    /**
+                     * @brief BS causes the active data position to be moved one character position in the data component in the
+                        direction opposite to that of the implicit movement.
+                        The direction of the implicit movement depends on the parameter value of SELECT IMPLICIT
+                        MOVEMENT DIRECTION (SIMD). 
+                     * @example `00/08`
+                     */
+                    inline base<sequence::basic> BACKSPACE(sequence::basic(table::C0::BS));
+
+                    /**
+                     * @brief The effect of CR depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
+                        on the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD).
+                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION and with the
+                        parameter value of SIMD equal to 0, CR causes the active presentation position to be moved to the line
+                        home position of the same line in the presentation component. The line home position is established by
+                        the parameter value of SET LINE HOME (SLH).
+                        With a parameter value of SIMD equal to 1, CR causes the active presentation position to be moved to
+                        the line limit position of the same line in the presentation component. The line limit position is
+                        established by the parameter value of SET LINE LIMIT (SLL).
+                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA and with a parameter value of
+                        SIMD equal to 0, CR causes the active data position to be moved to the line home position of the same
+                        line in the data component. The line home position is established by the parameter value of SET LINE
+                        HOME (SLH).
+                        With a parameter value of SIMD equal to 1, CR causes the active data position to be moved to the line
+                        limit position of the same line in the data component. The line limit position is established by the
+                        parameter value of SET LINE LIMIT (SLL).
+                     * @example `00/13`
+                     */
+                    inline base<sequence::basic> CARRIAGE_RETURN(sequence::basic(table::C0::CR));
+
+                    /**
+                     * @brief FF causes the active presentation position to be moved to the corresponding character position of the
+                        line at the page home position of the next form or page in the presentation component. The page home
+                        position is established by the parameter value of SET PAGE HOME (SPH). 
+                     * @example `00/12`
+                     */
+                    inline base<sequence::basic> FORM_FEED(sequence::basic(table::C0::FF));
+
+                    /**
+                     * @brief HPA causes the active data position to be moved to character position n in the active line (the line in the
+                        data component that contains the active data position), where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 06/00` or `9/11 Pn 06/00`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CHARACTER_POSITION_ABSOLUTE(sequence::controlSequence(table::finalWithoutIntermediate::HPA), {1});
+
+                    /**
+                     * @brief HPB causes the active data position to be moved by n character positions in the data component in the
+                        direction opposite to that of the character progression, where n equals the value of Pn.
+                     * @example `01/11 05/11 Pn 06/10` or `9/11 Pn 06/10`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CHARACTER_POSITION_BACKWARD(sequence::controlSequence(table::finalWithoutIntermediate::HPB), {1});
+
+                    /**
+                     * @brief HPR causes the active data position to be moved by n character positions in the data component in the
+                        direction of the character progression, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 06/01` or `9/11 Pn 06/01`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CHARACTER_POSITION_FORWARD(sequence::controlSequence(table::finalWithoutIntermediate::HPR), {1});
+
+                    /**
+                     * @brief HT causes the active presentation position to be moved to the following character tabulation stop in the presentation component.
+                        In addition, if that following character tabulation stop has been set by TABULATION ALIGN CENTRE
+                        (TAC), TABULATION ALIGN LEADING EDGE (TALE), TABULATION ALIGN TRAILING EDGE
+                        (TATE) or TABULATION CENTRED ON CHARACTER (TCC), HT indicates the beginning of a string
+                        of text which is to be positioned within a line according to the properties of that tabulation stop. The end
+                        of the string is indicated by the next occurrence of HT or CARRIAGE RETURN (CR) or NEXT LINE
+                        (NEL) in the data stream
+                     * @example `00/09`
+                     */
+                    inline base<sequence::basic> CHARACTER_TABULATION(sequence::basic(table::C0::HT));
+
+                    /**
+                     * @brief HTJ causes the contents of the active field (the field in the presentation component that contains the
+                        active presentation position) to be shifted forward so that it ends at the character position preceding the
+                        following character tabulation stop. The active presentation position is moved to that following character
+                        tabulation stop. The character positions which precede the beginning of the shifted string are put into the
+                        erased state. 
+                     * @example `08/09` or `01/11 04/09` 
+                     */
+                    inline base<sequence::basic> CHARACTER_TABULATION_WITH_JUSTIFICATION(sequence::basic(table::C1::HTJ));
+
+                    /**
+                     * @brief HTS causes a character tabulation stop to be set at the active presentation position in the presentation
+                        component.
+                        The number of lines affected depends on the setting of the TABULATION STOP MODE (TSM). 
+                     * @example `08/08` or `01/11 04/08`
+                     */
+                    inline base<sequence::basic> CHARACTER_TABULATION_SET(sequence::basic(table::C1::HTS));
+
+                    /**
+                     * @brief HVP causes the active data position to be moved in the data component to the n-th line position
+                        according to the line progression and to the m-th character position according to the character
+                        progression, where n equals the value of Pn1 and m equals the value of Pn2. 
+                     * @example `01/11 05/11 Pn1;Pn2 06/06` or `9/11 Pn1;Pn2 06/06`
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 2> CHARACTER_AND_LINE_POSITION(sequence::controlSequence(table::finalWithoutIntermediate::HVP), {1, 1});
+
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, LF causes the
+                        active presentation position to be moved to the corresponding character position of the following line in
+                        the presentation component.
+                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, LF causes the active data
+                        position to be moved to the corresponding character position of the following line in the data
+                        component. 
+                     * @example `00/10`
+                     */
+                    inline base<sequence::basic> LINE_FEED(sequence::basic(table::C0::LF));
+
+                    /**
+                     * @brief The effect of NEL depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
+                        on the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD).
+                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION and with a
+                        parameter value of SIMD equal to 0, NEL causes the active presentation position to be moved to the line
+                        home position of the following line in the presentation component. The line home position is established
+                        by the parameter value of SET LINE HOME (SLH).
+                        With a parameter value of SIMD equal to 1, NEL causes the active presentation position to be moved to
+                        the line limit position of the following line in the presentation component. The line limit position is
+                        established by the parameter value of SET LINE LIMIT (SLL).
+                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA and with a parameter value of
+                        SIMD equal to 0, NEL causes the active data position to be moved to the line home position of the
+                        following line in the data component. The line home position is established by the parameter value of
+                        SET LINE HOME (SLH).
+                        With a parameter value of SIMD equal to 1, NEL causes the active data position to be moved to the line
+                        limit position of the following line in the data component. The line limit position is established by the
+                        parameter value of SET LINE LIMIT (SLL). 
+                     * @example `08/05` or `01/11 04/05`
+                     */
+                    inline base<sequence::basic> NEXT_LINE(sequence::basic(table::C1::NEL));
+
+                    /**
+                     * @brief PLD causes the active presentation position to be moved in the presentation component to the
+                        corresponding position of an imaginary line with a partial offset in the direction of the line progression.
+                        This offset should be sufficient either to image following characters as subscripts until the first
+                        following occurrence of PARTIAL LINE BACKWARD (PLU) in the data stream, or, if preceding
+                        characters were imaged as superscripts, to restore imaging of following characters to the active line (the
+                        line that contains the active presentation position).
+                     * @example `08/11` or `01/11 04/11`
+                     */
+                    inline base<sequence::basic> PARTIAL_LINE_FORWARD(sequence::basic(table::C1::PLD));
+
+                    /**
+                     * @brief PLU causes the active presentation position to be moved in the presentation component to the
+                        corresponding position of an imaginary line with a partial offset in the direction opposite to that of the
+                        line progression. This offset should be sufficient either to image following characters as superscripts
+                        until the first following occurrence of PARTIAL LINE FORWARD (PLD) in the data stream, or, if
+                        preceding characters were imaged as subscripts, to restore imaging of following characters to the active
+                        line (the line that contains the active presentation position). 
+                     * @example `08/12` or `01/11 04/12` 
+                     */
+                    inline base<sequence::basic> PARTIAL_LINE_BACKWARD(sequence::basic(table::C1::PLU));
+
+                    /**
+                     * @brief PPA causes the active data position to be moved in the data component to the corresponding character
+                        position on the n-th page, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 02/00 05/00` or `9/11 Pn 02/00 05/00`
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> PAGE_POSITION_ABSOLUTE(sequence::controlSequence(table::finalWithIntermediate::PPA), {1}, {table::toInt(02, 00)});
+
+                    /**
+                     * @brief PPB causes the active data position to be moved in the data component to the corresponding character
+                        position on the n-th preceding page, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 02/00 05/02` or `9/11 Pn 02/00 05/02`
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> PAGE_POSITION_BACKWARD(sequence::controlSequence(table::finalWithIntermediate::PPB), {1}, {table::toInt(02, 00)});
+                    
+                    /**
+                     * @brief PPR causes the active data position to be moved in the data component to the corresponding character
+                        position on the n-th following page, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 02/00 05/01` or `9/11 Pn 02/00 05/01`
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> PAGE_POSITION_FORWARD(sequence::controlSequence(table::finalWithIntermediate::PPR), {1}, {table::toInt(02, 00)});
+                    
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, RI causes the
+                        active presentation position to be moved in the presentation component to the corresponding character
+                        position of the preceding line.
+                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, RI causes the active data
+                        position to be moved in the data component to the corresponding character position of the preceding line.
+                     @example `08/13` or `ESC 04/13`
+                     */
+                    inline base<sequence::basic> REVERSE_LINE_FEED(sequence::basic(table::C1::RI));
+
+                    /**
+                     * @brief TBC causes one or more tabulation stops in the presentation component to be cleared, depending on the
+                        parameter value. In the case of parameter value 0 or 2 the number of lines affected depends on the setting of the
+                        TABULATION STOP MODE (TSM).
+                     * @example `01/11 05/11 Ps 06/07` or `9/11 Ps 06/07`
+                     */
+                    namespace TABULATION_CLEAR {
+                        enum class types {
+                            ACTIVE_CHARACTER_POSITION,
+                            ACTIVE_LINE_TABULATION,
+                            ALL_CHARACTERS_IN_ACTIVE_LINE,
+                            ALL_SINGLE_TABULATOR_CHARACTERS,
+                            ALL_LINE_TABULATOR_CHARACTERS,
+                            ALL_LINE_AND_SINGLE_TABULATOR_CHARACTERS
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::TBC), {types::ACTIVE_CHARACTER_POSITION});
+                    }
+
+                    /**
+                     * @brief TSR causes any character tabulation stop at character position n in the active line (the line that contains
+                        the active presentation position) and lines of subsequent text in the presentation component to be
+                        cleared, but does not affect other tabulation stops. n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 02/00 06/04` or `9/11 Pn 02/00 06/04`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> TABULATION_STOP_REMOVE(sequence::controlSequence(table::finalWithIntermediate::TSR), {-1}, {table::toInt(02, 00)});
+                    
+                    /**
+                     * @brief VPA causes the active data position to be moved to line position n in the data component in a direction
+                        parallel to the line progression, where n equals the value of Pn.
+                     * @example `01/11 05/11 Pn 06/04` or `9/11 Pn 06/04`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> LINE_POSITION_ABSOLUTE(sequence::controlSequence(table::finalWithoutIntermediate::VPA), {1});
+
+                    /**
+                     * @brief VPB causes the active data position to be moved by n line positions in the data component in a direction
+                        opposite to that of the line progression, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 06/11` or `9/11 Pn 06/11`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> LINE_POSITION_BACKWARD(sequence::controlSequence(table::finalWithoutIntermediate::VPB), {1});
+
+                    /**
+                     * @brief VPR causes the active data position to be moved by n line positions in the data component in a direction
+                        parallel to the line progression, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 06/05` or `9/11 Pn 06/05`
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> LINE_POSITION_FORWARD(sequence::controlSequence(table::finalWithoutIntermediate::VPR), {1});
+
+                    /**
+                     * @brief VT causes the active presentation position to be moved in the presentation component to the
+                        corresponding character position on the line at which the following line tabulation stop is set. 
+                     * @example `00/11`
+                     */
+                    inline base<sequence::basic> LINE_TABULATION(sequence::basic(table::C0::VT));
+
+                    /**
+                     * @brief VTS causes a line tabulation stop to be set at the active line (the line that contains the active presentation position). 
+                     * @example `08/10` or `01/11 04/10`
+                     */
+                    inline base<sequence::basic> LINE_TABULATION_SET(sequence::basic(table::C1::VTS));
                 }
 
                 namespace presentationControlFunctions {
