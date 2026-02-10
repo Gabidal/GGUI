@@ -59,16 +59,38 @@ log_warning() {
 ##
 go_to_project_root() {
     local current_dir=$(pwd)
+    local project_root=""
     
-    # Find the project root directory by looking for the .git directory
-    local project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+    # Try git first (works in most development environments)
+    project_root=$(git rev-parse --show-toplevel 2>/dev/null)
     
-    # If git is not found or the project root is not determined
+    # Fallback for Docker/CI environments where git might not work
+    if [ -z "$project_root" ]; then
+        # Check if we're in /workspace (Docker standard)
+        if [ -d "/workspace/bin" ] && [ -f "/workspace/meson.build" ]; then
+            project_root="/workspace"
+        # Check current directory
+        elif [ -d "$current_dir/bin" ] && [ -f "$current_dir/meson.build" ]; then
+            project_root="$current_dir"
+        # Search upward for project markers
+        else
+            local search_dir="$current_dir"
+            while [ "$search_dir" != "/" ]; do
+                if [ -d "$search_dir/bin" ] && [ -f "$search_dir/meson.build" ]; then
+                    project_root="$search_dir"
+                    break
+                fi
+                search_dir=$(dirname "$search_dir")
+            done
+        fi
+    fi
+    
+    # If still not found, error out
     if [ -z "$project_root" ]; then
         handle_error "Unable to determine the project root directory."
     fi
     
-    # If we're in the project root, change to the 'bin' directory
+    # Change to project root if not already there
     if [ "$current_dir" != "$project_root" ]; then
         cd "$project_root" || handle_error "Failed to change to project root directory."
     fi
