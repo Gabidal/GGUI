@@ -90,8 +90,11 @@ link_args = []
 if build_type == 'debugoptimized' or build_type == 'release'
 
   # NOTE: -static doesn't react similar to how it behaves in linux.
-  link_args += ['-static'] # Link all libc and other libraries statically for maximum inline.
-
+  # Some embedded platforms do not support statically linkable libc, so check first
+  if cppc.has_link_argument('-static')
+    link_args += ['-static'] # Link all libc and other libraries statically for maximum inline.
+  endif
+  
   # Avoid -march=native for cross builds (e.g., MinGW)
   if not is_cross and cppc.has_argument('-march=native')
     cpp_args += ['-march=native']
