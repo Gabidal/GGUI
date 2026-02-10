@@ -59,6 +59,14 @@ for dir in "$SCRIPT_DIR"/build*/; do
     fi
 done
 
+# Check if ./export/*.a or ./export/*.lib files exist, if so then remove them
+for file in "$SCRIPT_DIR"/export/*.{a,lib}; do
+    if [ -e "$file" ]; then
+        echo "Removing existing export file: $file"
+        rm -f "$file"
+    fi
+done
+
 echo "Setting up the default build configure..."
 meson_setup_or_reconfigure debug
 

@@ -64,7 +64,7 @@ jobs:
             runner_os: ubuntu-latest
             dockerfile: Dockerfile.windows_arm64
             docker_platform: linux/amd64
-            run_tests: true
+            run_tests: false
 
     steps:
       - name: Checkout

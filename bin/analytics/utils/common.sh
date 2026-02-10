@@ -187,9 +187,10 @@ meson_compile_target() {
     local build_type="${1:-debug}"
     local targets="${2:-build_native_archive}"
     local build_dir="$(get_build_dir_for_type "$build_type")"
+    local jobs="${MESON_JOBS:-0}"  # 0 = auto-detect all cores
 
     log_info "Compiling ${build_type} build at ${build_dir}"
-    meson compile -C "${build_dir}" ${targets} || handle_error "Build failed for ${build_type} (${build_dir})"
+    meson compile -C "${build_dir}" -j "${jobs}" ${targets} || handle_error "Build failed for ${build_type} (${build_dir})"
 }
 
 ##
@@ -263,9 +264,10 @@ meson_compile_target_arch() {
     local arch_name="$3"
     local targets="${4:-build_native_archive}"
     local build_dir="$(get_build_dir_for_arch "$build_type" "$os_name" "$arch_name")"
+    local jobs="${MESON_JOBS:-0}"  # 0 = auto-detect all cores
 
     log_info "Compiling ${build_type} build for ${os_name}/${arch_name} at ${build_dir}"
-    meson compile -C "${build_dir}" ${targets} || handle_error "Build failed for ${build_dir}"
+    meson compile -C "${build_dir}" -j "${jobs}" ${targets} || handle_error "Build failed for ${build_dir}"
 }
 
 meson_remap_build_type() {

@@ -24,10 +24,17 @@ RUN apt-get update && apt-get install -y \
     ninja-build \
     meson \
     git \
+    ccache \
     && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 \
     && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-13 100 \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure ccache
+ENV PATH="/usr/lib/ccache:$PATH"
+ENV CCACHE_DIR=/root/.ccache
+ENV CCACHE_MAXSIZE=500M
+ENV CCACHE_SLOPPINESS=pch_defines,time_macros
 
 WORKDIR /workspace
 

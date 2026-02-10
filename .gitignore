@@ -27,6 +27,9 @@ build-win/
 build-linux/
 build-release/
 
+# ccache directory for CI caching
+.ccache/
+
 # Custom output locations, since the headers can be easily re-generated or fetched from github releases.
 /bin/ggui.p/
 /bin/export/ggui.h
