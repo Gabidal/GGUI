@@ -66,17 +66,17 @@ go_to_project_root() {
     
     # Fallback for Docker/CI environments where git might not work
     if [ -z "$project_root" ]; then
-        # Check if we're in /workspace (Docker standard)
-        if [ -d "/workspace/bin" ] && [ -f "/workspace/meson.build" ]; then
+        # Check if we're in /workspace (Docker standard mount point)
+        if [ -d "/workspace/bin" ] && [ -f "/workspace/bin/meson.build" ]; then
             project_root="/workspace"
-        # Check current directory
-        elif [ -d "$current_dir/bin" ] && [ -f "$current_dir/meson.build" ]; then
+        # Check current directory (look for bin/meson.build as project marker)
+        elif [ -d "$current_dir/bin" ] && [ -f "$current_dir/bin/meson.build" ]; then
             project_root="$current_dir"
         # Search upward for project markers
         else
             local search_dir="$current_dir"
             while [ "$search_dir" != "/" ]; do
-                if [ -d "$search_dir/bin" ] && [ -f "$search_dir/meson.build" ]; then
+                if [ -d "$search_dir/bin" ] && [ -f "$search_dir/bin/meson.build" ]; then
                     project_root="$search_dir"
                     break
                 fi
