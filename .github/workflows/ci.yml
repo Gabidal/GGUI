@@ -122,15 +122,25 @@ jobs:
             ggui-${{ matrix.target_os }}_${{ matrix.platform }}:latest \
             bash -c "source bin/analytics/utils/common.sh && meson test -C \$(get_build_dir_for_arch release ${{ matrix.target_os }} ${{ matrix.platform }}) -v --print-errorlogs"
 
-      - name: Run tests (Windows via Wine)
-        if: matrix.run_tests == true && matrix.target_os == 'windows'
+      - name: Run tests (Windows x86_64 via Wine)
+        if: matrix.run_tests == true && matrix.target_os == 'windows' && matrix.platform == 'x86_64'
         run: |
           docker run \
             --platform ${{ matrix.docker_platform }} \
             --rm \
             -v ${{ github.workspace }}:/workspace \
             ggui-${{ matrix.target_os }}_${{ matrix.platform }}:latest \
-            bash -c "apt-get update && apt-get install -y wine64 wine32 && source bin/analytics/utils/common.sh && meson test -C \$(get_build_dir_for_arch release ${{ matrix.target_os }} ${{ matrix.platform }}) -v --print-errorlogs"
+            bash -c "apt-get update && apt-get install -y wine64 && source bin/analytics/utils/common.sh && meson test -C \$(get_build_dir_for_arch release ${{ matrix.target_os }} ${{ matrix.platform }}) -v --print-errorlogs"
+
+      - name: Run tests (Windows x86 via Wine)
+        if: matrix.run_tests == true && matrix.target_os == 'windows' && matrix.platform == 'x86'
+        run: |
+          docker run \
+            --platform ${{ matrix.docker_platform }} \
+            --rm \
+            -v ${{ github.workspace }}:/workspace \
+            ggui-${{ matrix.target_os }}_${{ matrix.platform }}:latest \
+            bash -c "dpkg --add-architecture i386 && apt-get update && apt-get install -y wine wine32:i386 && source bin/analytics/utils/common.sh && meson test -C \$(get_build_dir_for_arch release ${{ matrix.target_os }} ${{ matrix.platform }}) -v --print-errorlogs"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
