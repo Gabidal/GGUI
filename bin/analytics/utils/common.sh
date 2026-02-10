@@ -81,7 +81,6 @@ go_to_project_root() {
 #
 # Arguments:
 #   $1 - build type: "debug" (default) or "release"
-#   $2 - platform-specific (win, linux) [optional]
 #
 # Echoes the absolute path to the build directory.
 ##
@@ -93,11 +92,6 @@ get_build_dir_for_type() {
         result="$base_dir/build-release"
     elif [[ "$build_type" == "profile" ]]; then
         result="$base_dir/build-profile"
-    fi
-
-    # Check for platform specific, is exists, add it
-    if [[ -n "${2:-}" ]]; then
-        local result="${result}-${2}"
     fi
 
     echo "$result"
@@ -163,7 +157,6 @@ ensure_executable() {
 # Arguments:
 #   $1 - build type: "debug" (default) or "release" or "profile"
 #   $2 - target (defaults into build_native_archive)
-#   $3 - platform type (optional)
 #
 # Usage:
 #   meson_compile_target release
@@ -171,11 +164,86 @@ ensure_executable() {
 meson_compile_target() {
     local build_type="${1:-debug}"
     local targets="${2:-build_native_archive}"
-    local platform_types="${3:-}"
-    local build_dir="$(get_build_dir_for_type "$build_type" "$platform_types")"
+    local build_dir="$(get_build_dir_for_type "$build_type")"
 
     log_info "Compiling ${build_type} build at ${build_dir}"
-    meson compile -C "${build_dir}" ${targets} "${additional_targets[@]}" || handle_error "Build failed for ${build_type} (${build_dir})"
+    meson compile -C "${build_dir}" ${targets} || handle_error "Build failed for ${build_type} (${build_dir})"
+}
+
+##
+# Returns the absolute Meson build directory for a given build type and architecture.
+#
+# Arguments:
+#   $1 - build type: "debug", "release", or "profile"
+#   $2 - OS name: e.g., "linux", "windows"
+#   $3 - architecture: e.g., "arm32", "arm64", "x86", etc.
+#
+# Echoes the absolute path to the build directory.
+##
+get_build_dir_for_arch() {
+    local build_type="$1"
+    local os_name="$2"
+    local architecture="$3"
+    local base_dir="$(go_to_project_root)/bin"
+    
+    echo "$base_dir/build-${build_type}-${os_name}-${architecture}"
+}
+
+##
+# Ensures a Meson build directory is configured for a specific architecture.
+#
+# Arguments:
+#   $1 - build type (profile, release, debug)
+#   $2 - OS name (linux, windows)
+#   $3 - architecture name (arm32, arm64, x86, x86_64, etc.)
+#   $4 - (Optional) cross-file path for cross-compilation
+##
+meson_setup_or_reconfigure_arch() {
+    local build_type="$1"
+    local os_name="$2"
+    local arch_name="$3"
+    local cross_file="${4:-}"
+    local build_dir="$(get_build_dir_for_arch "$build_type" "$os_name" "$arch_name")"
+    local meson_build_location="$(go_to_project_root)/bin"
+    local meson_build_type="-Dbuildtype=$(meson_remap_build_type "$build_type")"
+    local meson_args=("$meson_build_type")
+    
+    # Add cross-file if provided
+    if [[ -n "$cross_file" ]]; then
+        meson_args+=("--cross-file" "$cross_file")
+    fi
+
+    if [[ -d "$build_dir" ]]; then
+        if ! meson setup --reconfigure "$build_dir" "$meson_build_location" "${meson_args[@]}"; then
+            rm -rf "$build_dir" # If reconfiguration fails, try from a clean slate.
+        fi
+    fi
+    
+    log_info "Configuring Meson build directory: $build_dir (${os_name}/${arch_name})"
+    meson setup "$build_dir" "$meson_build_location" "${meson_args[@]}" || handle_error "Meson setup failed for $build_dir"
+}
+
+##
+# Compiles the Meson build for a specific architecture.
+#
+# Arguments:
+#   $1 - build type: "debug", "release", or "profile"
+#   $2 - OS name: e.g., "linux", "windows"
+#   $3 - architecture name: e.g., "arm32", "arm64", "x86", "x86_64"
+#   $4 - target (defaults to build_native_archive)
+#
+# Usage:
+#   meson_compile_target_arch release linux arm32 build_native_archive
+##
+meson_compile_target_arch() {
+    local build_type="$1"
+    local os_name="$2"
+    local arch_name="$3"
+    local targets="${4:-build_native_archive}"
+    local build_dir="$(get_build_dir_for_arch "$build_type" "$os_name" "$arch_name")"
+
+    log_info "Compiling ${build_type} build for ${os_name}/${arch_name} at ${build_dir}"
+    meson compile -C "${build_dir}" ${targets} || handle_error "Build failed for ${build_dir}"
 }
 
 meson_remap_build_type() {
@@ -197,34 +265,21 @@ meson_remap_build_type() {
 #
 # Arguments:
 #   $1 - build type (profile, release, debug)
-#   $2 - cross platform type (optional)
-#   $3 - cross.ini file (if $2 is given)
 ##
 meson_setup_or_reconfigure() {
     local build_type="$1"
-    local platform_type="${2:-}"    # Default to unknown, because we don't always know what the current platform even is.
-    local platform_ini_file="${3:-}"
-
-    local build_dir="$(get_build_dir_for_type "$build_type" "$platform_type")"
+    local build_dir="$(get_build_dir_for_type "$build_type")"
     local meson_build_location="$(go_to_project_root)/bin"
-
-    # Finalize the cross file argument if given
-    if [[ -n "$platform_ini_file" ]]; then
-        cross_file_opt=(--cross-file "$platform_ini_file")
-    else
-        cross_file_opt=()
-    fi
-
     local meson_build_type="-Dbuildtype=$(meson_remap_build_type "$build_type")"
 
     if [[ -d "$build_dir" ]]; then
-        if ! meson setup --reconfigure "${cross_file_opt[@]}" "$build_dir" "$meson_build_location" "$meson_build_type"; then
-            rm -rf "$build_dir" # If reconfirmation fails, we can try fro a clean slate.
+        if ! meson setup --reconfigure "$build_dir" "$meson_build_location" "$meson_build_type"; then
+            rm -rf "$build_dir" # If reconfiguration fails, try from a clean slate.
         fi
     fi
     
     log_info "Configuring Meson build directory: $build_dir"
-    meson setup "${cross_file_opt[@]}" "$build_dir" "$meson_build_location" "$meson_build_type" || handle_error "Meson setup failed for $build_dir"
+    meson setup "$build_dir" "$meson_build_location" "$meson_build_type" || handle_error "Meson setup failed for $build_dir"
 }
 
 ##

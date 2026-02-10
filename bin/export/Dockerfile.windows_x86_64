@@ -1,0 +1,28 @@
+# =============================================================================
+# GGUI Windows x86_64 (64-bit) Build Image
+# =============================================================================
+# Uses MinGW-w64 cross-compiler to build Windows 64-bit binaries.
+# A minimal cross-file is generated at runtime.
+#
+# Build:  docker build -f bin/export/Dockerfile.windows_x86_64 -t ggui-windows-x86_64 .
+# Usage:  docker run --rm -v $(pwd):/workspace ggui-windows-x86_64
+# =============================================================================
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    mingw-w64 \
+    g++-mingw-w64-x86-64-posix \
+    python3 \
+    python3-pip \
+    ninja-build \
+    meson \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+CMD ["bash", "-c", "source bin/analytics/utils/common.sh && meson_setup_or_reconfigure_arch release windows x86_64 bin/export/cross-windows-x86_64.ini && meson_compile_target_arch release windows x86_64 build_native_archive"]

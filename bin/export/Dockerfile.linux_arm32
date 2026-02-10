@@ -1,0 +1,34 @@
+# =============================================================================
+# GGUI Linux ARM 32-bit (ARMv7) Build Image
+# =============================================================================
+# Uses Docker multi-arch with QEMU emulation for ARM 32-bit builds.
+# Targets ARMv7 with hardware floating point (armhf).
+#
+# Build:  docker build --platform linux/arm/v7 -f bin/export/Dockerfile.linux_arm32 -t ggui-linux-arm32 .
+# Usage:  docker run --platform linux/arm/v7 --rm -v $(pwd):/workspace ggui-linux-arm32
+# =============================================================================
+
+ARG TARGETPLATFORM
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository -y ppa:ubuntu-toolchain-r/test \
+    && apt-get update && apt-get install -y \
+    gcc-13 \
+    g++-13 \
+    python3 \
+    python3-pip \
+    ninja-build \
+    meson \
+    git \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 \
+    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-13 100 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+CMD ["bash", "-c", "source bin/analytics/utils/common.sh && meson_setup_or_reconfigure_arch release linux arm32 bin/export/cross-linux-arm32.ini && meson_compile_target_arch release linux arm32 build_native_archive"]

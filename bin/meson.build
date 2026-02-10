@@ -51,7 +51,6 @@ lib_sources = [
 
 # Compiler handle
 cppc = meson.get_compiler('cpp')
-is_cross = meson.is_cross_build()   # This is to stop infinite recursion, since cross-platform will start meson but with other host OS, which could trigger second cross-platform
 
 # Use Meson's buildtype instead of a custom TYPE variable
 build_type = get_option('buildtype')
@@ -94,9 +93,9 @@ if build_type == 'debugoptimized' or build_type == 'release'
   if cppc.has_link_argument('-static')
     link_args += ['-static'] # Link all libc and other libraries statically for maximum inline.
   endif
-  
-  # Avoid -march=native for cross builds (e.g., MinGW)
-  if not is_cross and cppc.has_argument('-march=native')
+
+  # Use native architecture optimizations when available
+  if cppc.has_argument('-march=native')
     cpp_args += ['-march=native']
   endif
   if cppc.has_argument('-flto')
@@ -167,10 +166,12 @@ build_native_archive = custom_target(
 )
 
 # Header generator tool (reuse existing C++ file)
+# Native: true ensures this runs on the build machine, not the cross-compile target
 headergen = executable(
   'ggui_headergen',
   'export/buildGGUILib.cpp',
-  install: false
+  install: false,
+  native: true
 )
 
 # Generate amalgamated header into the build directory
@@ -199,30 +200,6 @@ generate_dev_header = custom_target(
   ],
   build_by_default: false
 )
-
-# Only create export targets when not cross-compiling
-# (avoids recursive calls when export scripts invoke meson with cross files)
-if not is_cross
-  if host_machine.system() == 'windows'
-    # Cross-compile for Linux using a Meson cross file (requires a Linux cross toolchain on PATH)
-    export_linux_script = files('export/meson_export_linux.bat')
-
-    run_target(
-      'export-linux',
-      command: ['cmd', export_linux_script[0]],
-      depends: []
-    )
-  else
-    # Cross-compile for Windows using a Meson cross file (requires MinGW tools)
-    export_win_script = files('export/meson_export_win.sh')
-
-    run_target(
-      'export-win',
-      command: ['bash', export_win_script[0]],
-      depends: []
-    )
-  endif
-endif
 
 # Test target: use exported artifacts to mirror original run.sh
 native_archive_directory = include_directories('..', 'export')

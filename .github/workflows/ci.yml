@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ dev, main ]
+    branches: [ dev, docker, main ]
   pull_request:
     branches: [ dev, main ]
 
@@ -16,83 +16,132 @@ concurrency:
 
 jobs:
   build-test:
-    name: Build & Test (${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.platform }})
-    runs-on: ${{ matrix.os }}
+    name: Build & Test (${{ matrix.target_os }}-${{ matrix.platform }})
+    runs-on: ${{ matrix.runner_os }}
     strategy:
-      fail-fast: false  # We want to test on all compilers, so stopping jobs when other job fails is not good.
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        compiler: [g++, clang]
-        platform: [x86, x64, arm64]
-
-    env:
-      CXX: ${{ matrix.os == 'windows-latest' && matrix.compiler == 'clang' && 'clang++' || matrix.os == 'windows-latest' && matrix.compiler == 'g++' && 'g++' || matrix.compiler == 'clang' && 'clang++-14' || 'g++-13' }}
-      CC: ${{ matrix.os == 'windows-latest' && matrix.compiler == 'clang' && 'clang' || matrix.os == 'windows-latest' && matrix.compiler == 'g++' && 'gcc' || matrix.compiler == 'clang' && 'clang-14' || 'gcc-13' }}
-      CFLAGS: ${{ matrix.platform == 'x86' && '-m32' || matrix.platform == 'arm64' && '' || '-m64' }}
-      CXXFLAGS: ${{ matrix.platform == 'x86' && '-m32' || matrix.platform == 'arm64' && '' || '-m64' }}
-      LDFLAGS: ${{ matrix.platform == 'x86' && '-m32' || matrix.platform == 'arm64' && '' || '-m64' }}
+        include:
+          # Linux builds
+          - target_os: linux
+            platform: x86_64
+            runner_os: ubuntu-latest
+            dockerfile: Dockerfile.linux_x86_64
+            docker_platform: linux/amd64
+            run_tests: true
+          
+          - target_os: linux
+            platform: arm64
+            runner_os: ubuntu-latest
+            dockerfile: Dockerfile.linux_arm64
+            docker_platform: linux/arm64
+            run_tests: true
+          
+          - target_os: linux
+            platform: arm32
+            runner_os: ubuntu-latest
+            dockerfile: Dockerfile.linux_arm32
+            docker_platform: linux/arm/v7
+            run_tests: true
+          
+          # Windows builds (cross-compiled, tested with Wine)
+          - target_os: windows
+            platform: x86_64
+            runner_os: ubuntu-latest
+            dockerfile: Dockerfile.windows_x86_64
+            docker_platform: linux/amd64
+            run_tests: true
+          
+          - target_os: windows
+            platform: x86
+            runner_os: ubuntu-latest
+            dockerfile: Dockerfile.windows_x86
+            docker_platform: linux/amd64
+            run_tests: true
+          
+          - target_os: windows
+            platform: arm64
+            runner_os: ubuntu-latest
+            dockerfile: Dockerfile.windows_arm64
+            docker_platform: linux/amd64
+            run_tests: true
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install x86 dependencies (Ubuntu x86)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU (for ARM emulation)
+        if: matrix.platform == 'arm64' || matrix.platform == 'arm32'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64,linux/arm/v7
+
+      - name: Build Docker image
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3 python3-pip ninja-build meson
-          if [ "${{ matrix.platform }}" = "x86" ]; then
-            sudo apt-get install -y gcc-13-multilib g++-13-multilib
-          fi
-          if [ "${{ matrix.compiler }}" = "clang" ]; then
-            sudo apt-get install -y clang-14
+          docker buildx build \
+            --platform ${{ matrix.docker_platform }} \
+            --load \
+            -f bin/export/${{ matrix.dockerfile }} \
+            -t ggui-${{ matrix.target_os }}_${{ matrix.platform }}:latest \
+            .
+
+      - name: Run build in Docker container
+        run: |
+          docker run \
+            --platform ${{ matrix.docker_platform }} \
+            --rm \
+            -v ${{ github.workspace }}:/workspace \
+            ggui-${{ matrix.target_os }}_${{ matrix.platform }}:latest
+
+      - name: Verify build artifact
+        run: |
+          if [ "${{ matrix.target_os }}" = "linux" ]; then
+            EXT=".a"
           else
-            sudo apt-get install -y gcc-13 g++-13
+            EXT=".lib"
+          fi
+          ARTIFACT="bin/export/libggui${EXT}"
+          if [ -f "$ARTIFACT" ]; then
+            echo "Build artifact created: $ARTIFACT"
+            ls -lh "$ARTIFACT"
+          else
+            echo "Build artifact not found: $ARTIFACT"
+            exit 1
           fi
 
-      - name: Install ARM cross-compilers (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-latest' && matrix.platform == 'arm64'
+      - name: Run tests (Linux native/QEMU)
+        if: matrix.run_tests == true && matrix.target_os == 'linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          docker run \
+            --platform ${{ matrix.docker_platform }} \
+            --rm \
+            -v ${{ github.workspace }}:/workspace \
+            ggui-${{ matrix.target_os }}_${{ matrix.platform }}:latest \
+            bash -c "source bin/analytics/utils/common.sh && meson test -C \$(get_build_dir_for_arch release ${{ matrix.target_os }} ${{ matrix.platform }}) -v --print-errorlogs"
 
-      - name: Install dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
+      - name: Run tests (Windows via Wine)
+        if: matrix.run_tests == true && matrix.target_os == 'windows'
         run: |
-          choco install -y ninja git mingw-w64
-          if ("${{ matrix.compiler }}" -eq "clang") {
-            choco install -y llvm
-          }
-          python -m pip install --upgrade meson
+          docker run \
+            --platform ${{ matrix.docker_platform }} \
+            --rm \
+            -v ${{ github.workspace }}:/workspace \
+            ggui-${{ matrix.target_os }}_${{ matrix.platform }}:latest \
+            bash -c "apt-get update && apt-get install -y wine64 wine32 && source bin/analytics/utils/common.sh && meson test -C \$(get_build_dir_for_arch release ${{ matrix.target_os }} ${{ matrix.platform }}) -v --print-errorlogs"
 
-      - name: Download and extract MinGW-w64 32-bit (Windows x86)
-        if: matrix.os == 'windows-latest' && matrix.compiler == 'g++' && matrix.platform == 'x86'
-        shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r5/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r5.7z" -OutFile mingw32.7z
-          7z x mingw32.7z -oC:\mingw32
-          echo "C:\mingw32\mingw32\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
-
-      - name: Configure (Meson) Ubuntu
-        if: matrix.os == 'ubuntu-latest'
-        run: CI=1 ./bin/init.sh
-
-      - name: Configure (Meson) Windows
-        if: matrix.os == 'windows-latest'
-        run: .\bin\init.bat
-
-      - name: Run tests Ubuntu
-        if: matrix.os == 'ubuntu-latest'
-        run: ./bin/test.sh
-
-      - name: Run tests Windows
-        if: matrix.os == 'windows-latest'
-        run: .\bin\test.bat
-
-      - name: Upload test logs if tests fail
-        if: failure()
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs-${{ matrix.os }}
+          name: libggui-${{ matrix.target_os }}-${{ matrix.platform }}
+          path: bin/export/libggui*
+          retention-days: 7
+
+      - name: Upload test logs if tests fail
+        if: failure() && matrix.run_tests == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.target_os }}-${{ matrix.platform }}
           path: ./test/logs/

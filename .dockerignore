@@ -1,0 +1,60 @@
+# =============================================================================
+# Docker Build Context Ignore File
+# =============================================================================
+# This file excludes unnecessary files from the Docker build context to speed
+# up image builds and reduce context size.
+# =============================================================================
+
+# Build artifacts
+bin/build*/
+bin/export/*.a
+bin/export/*.lib
+bin/export/*.o
+bin/export/ggui.h
+bin/export/ggui_dev.h
+*.o
+*.a
+*.so
+*.lib
+*.exe
+
+# Git metadata (already copied in Dockerfiles if needed)
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation (not needed for builds)
+*.md
+!README.md
+docs/
+
+# Test outputs and logs
+test/logs/
+*.log
+
+# Analytics outputs
+bin/analytics/**/*.out
+bin/analytics/**/*.data
+bin/analytics/**/*.asm
+callgrind.*
+massif.*
+perf.data*
+
+# Version history
+bin/versions/
+
+# Examples (not needed for library builds)
+examples/
+
+# Temporary files
+tmp/
+*.tmp
