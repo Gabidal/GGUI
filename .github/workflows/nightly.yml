@@ -1,0 +1,51 @@
+name: Nightly Builds
+
+# Basically a automated ./bin/export.sh with platformed tests.
+
+on:
+  push:
+    branches: [ dev, docker, main ]
+  pull_request:
+    branches: [ dev, main ]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: branch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            image: ubuntu-latest
+            arch: x86_64
+
+          - os: linux
+            image: ubuntu-24.04-arm
+            arch: arm64
+
+          - os: linux
+            image: ubuntu-latest  # our dockerfile will take care of the QEMU usage.
+            arch: arm32
+
+          - os: windows
+            image: windows-latest
+            arch: x86_64
+
+    runs-on: ${{ matrix.image }}
+    name: ${{ matrix.os }}/${{ matrix.arch }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: ./bin/export.sh ${{ matrix.os }} ${{ matrix.arch }}
+
+      - name: Test
+        run: ./bin/test.sh ${{ matrix.os }} ${{ matrix.arch }}

@@ -44,69 +44,42 @@ get_lib_extension() {
 }
 
 ##
-# Returns the Docker platform flag for multi-arch builds.
+# Remap platform name to Docker platform specification
+#
+# Maps OS and architecture to Docker's platform format for cross-compilation.
+# Returns empty string for native builds or unsupported combinations.
+#
+# Docker Platform Format: <os>/<arch>[/<variant>]
 #
 # Arguments:
-#   $1 - OS name
-#   $2 - Architecture name
+#   $1 - OS name (linux, windows)
+#   $2 - Architecture name (x86, x86_64, arm32, arm64)
 #
 # Returns:
-#   Docker platform string or empty if not needed
+#   Docker platform string (e.g., "linux/arm64") or empty for native/unsupported
 ##
-get_docker_platform() {
+remap_platform_name() {
     local os="$1"
     local arch="$2"
+    local platform=""
     
     case "${os}_${arch}" in
-        linux_arm64)  echo "linux/arm64" ;;
-        linux_arm32)  echo "linux/arm/v7" ;;
-        *)            echo "" ;;
-    esac
-}
-
-# =============================================================================
-# Helper Functions
-# =============================================================================
-
-##
-# Detect host OS and architecture
-##
-detect_host_platform() {
-    local os arch
-    
-    case "$(uname -s)" in
-        Linux*)  os="linux" ;;
-        Darwin*) os="macos" ;;
-        MINGW*|MSYS*|CYGWIN*) os="windows" ;;
-        *)       os="unknown" ;;
+        # Linux platforms
+        linux_x86_64)  platform="linux/amd64" ;;
+        linux_x86)     platform="linux/386" ;;
+        linux_arm64)   platform="linux/arm64" ;;
+        linux_arm32)   platform="linux/arm/v7" ;;
+        
+        # Windows platforms (requires Windows containers or MinGW cross-compilation)
+        windows_x86_64) platform="linux/amd64" ;;  # Cross-compile with MinGW on Linux
+        windows_x86)    platform="linux/386" ;;    # Cross-compile with MinGW on Linux
+        windows_arm64)  platform="linux/arm64" ;;  # Cross-compile with MinGW on ARM64 Linux
+        
+        # Unsupported or native - return empty
+        *)             platform="" ;;
     esac
     
-    case "$(uname -m)" in
-        x86_64|amd64)     arch="x86_64" ;;
-        i386|i686)        arch="x86" ;;
-        aarch64|arm64)    arch="arm64" ;;
-        armv7l)           arch="arm32" ;;
-        *)                arch="unknown" ;;
-    esac
-    
-    echo "${os}:${arch}"
-}
-
-##
-# Check if Docker is available
-##
-check_docker() {
-    if ! command -v docker >/dev/null 2>&1; then
-        log_warning "Docker is not installed - only native builds will be available"
-        return 1
-    fi
-    
-    if ! docker info >/dev/null 2>&1; then
-        log_warning "Docker daemon is not running - only native builds will be available"
-        return 1
-    fi
-    
-    return 0
+    echo "$platform"
 }
 
 ##
@@ -121,8 +94,7 @@ build_docker_image() {
     local arch="$2"
     local image_name="ggui-${os}_${arch}:latest"
     local dockerfile_path="$EXPORT_DIR/Dockerfile.${os}_${arch}"
-    local docker_platform
-    docker_platform="$(get_docker_platform "$os" "$arch")"
+    local docker_platform="$(remap_platform_name "$os" "$arch")"
     
     if [[ ! -f "$dockerfile_path" ]]; then
         handle_error "Dockerfile not found: $dockerfile_path"
@@ -159,7 +131,7 @@ run_docker_build() {
     local arch="$2"
     local image_name="ggui-${os}_${arch}:latest"
     local docker_platform
-    docker_platform="$(get_docker_platform "$os" "$arch")"
+    docker_platform="$(remap_platform_name "$os" "$arch")"
     local project_root
     project_root="$(go_to_project_root)"
     
@@ -213,25 +185,15 @@ rename_artifact() {
 # Arguments:
 #   $1 - OS name
 #   $2 - Architecture name
-#   $3 - Host OS
-#   $4 - Host architecture
 ##
-build_platform() {
+build_binaries() {
     local os="$1"
     local arch="$2"
-    local host_os="$3"
-    local host_arch="$4"
     
-    # Check if this is the native platform (host matches target)
-    if [[ "$os" == "$host_os" && "$arch" == "$host_arch" ]]; then
-        log_info "Building native: ${os}_${arch}"
-        meson_setup_or_reconfigure_arch "release" "$os" "$arch"
-        meson_compile_target_arch "release" "$os" "$arch" "build_native_archive"
-        rename_artifact "$os" "$arch"
-        return $?
+    if [[ -z "$os" || -z "$arch" ]]; then
+        handle_error "Usage: build_binaries <os> <arch>"
     fi
-    
-    # Non-native build via Docker
+
     if ! build_docker_image "$os" "$arch"; then
         return 1
     fi
@@ -244,34 +206,7 @@ build_platform() {
     return $?
 }
 
-# =============================================================================
-# Main Export Logic
-# =============================================================================
-
-main() {
-    local host_platform
-    host_platform="$(detect_host_platform)"
-    local host_os host_arch
-    host_os="$(echo "$host_platform" | cut -d: -f1)"
-    host_arch="$(echo "$host_platform" | cut -d: -f2)"
-    
-    echo "=============================================="
-    echo "GGUI Export - Host: ${host_os}/${host_arch}"
-    echo "=============================================="
-    
-    # Check Docker availability for non-native platforms
-    local docker_available=false
-    if check_docker; then
-        docker_available=true
-    fi
-    
-    # Run tests first
-    log_info "Running tests..."
-    meson_setup_or_reconfigure_arch "release" "$host_os" "$host_arch"
-    if ! meson test -C "$(get_build_dir_for_arch "release" "$host_os" "$host_arch")" -v --print-errorlogs; then
-        handle_error "Tests failed - aborting export"
-    fi
-    
+build_all() {
     # Track results
     local successful=()
     local failed=()
@@ -279,50 +214,25 @@ main() {
     # Build all platforms
     for os in "${SUPPORTED_OS[@]}"; do
         for arch in "${SUPPORTED_ARCH[@]}"; do
+
+            local type=${os}_${arch}
+
             # Check if Dockerfile exists for this combination
-            local dockerfile_path="$EXPORT_DIR/Dockerfile.${os}_${arch}"
+            local dockerfile_path="$EXPORT_DIR/Dockerfile.${type}"
             if [[ ! -f "$dockerfile_path" ]]; then
-                log_warning "No Dockerfile for ${os}_${arch} - skipping"
+                log_warning "No Dockerfile for ${type} - skipping"
                 continue
             fi
-            
-            # Check if this is native or requires Docker
-            local is_native=false
-            if [[ "$os" == "$host_os" && "$arch" == "$host_arch" ]]; then
-                is_native=true
-            fi
-            
-            # Non-native builds require Docker
-            if [[ "$is_native" == "false" && "$docker_available" == "false" ]]; then
-                log_warning "Skipping ${os}_${arch} - Docker not available"
-                failed+=("${os}_${arch}")
-                continue
-            fi
-            
-            echo ""
-            if [[ "$is_native" == "true" ]]; then
-                echo "--- Building: ${os}_${arch} (native) ---"
+
+            if build_binaries "$os" "$arch"; then
+                successful+=("${type}")
             else
-                echo "--- Building: ${os}_${arch} (docker) ---"
-            fi
-            
-            local ext
-            ext="$(get_lib_extension "$os")"
-            
-            if build_platform "$os" "$arch" "$host_os" "$host_arch"; then
-                successful+=("libggui_${os}_${arch}${ext}")
-            else
-                failed+=("${os}_${arch}")
+                failed+=("${type}")
             fi
         done
     done
     
     # Summary
-    echo ""
-    echo "=============================================="
-    echo "Export Summary"
-    echo "=============================================="
-    
     if [[ ${#successful[@]} -gt 0 ]]; then
         echo "Successful builds:"
         for artifact in "${successful[@]}"; do
@@ -347,4 +257,13 @@ main() {
     return 0
 }
 
-main "$@"
+#---------------------------------------------------------------------#
+
+# Check if no arguments given, if so then call build_all
+if [[ $# -eq 0 ]]; then
+    build_all
+else
+    #   $1 - OS name
+    #   $2 - Architecture name
+    build_binaries "$@"
+fi

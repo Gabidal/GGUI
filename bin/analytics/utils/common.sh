@@ -193,6 +193,25 @@ meson_compile_target() {
     meson compile -C "${build_dir}" -j "${jobs}" ${targets} || handle_error "Build failed for ${build_type} (${build_dir})"
 }
 
+get_host_os() {
+    case "$(uname -s)" in
+        Linux*)                 echo        "linux" ;;
+        Darwin*)                echo        "macos" ;;
+        MINGW*|MSYS*|CYGWIN*)   echo        "windows" ;;
+        *)                      echo        "unknown" ;;
+    esac
+}
+
+get_host_arch() {
+    case "$(uname -m)" in
+        x86_64|amd64)           echo        "x86_64" ;;
+        i386|i686)              echo        "x86" ;;
+        aarch64|arm64)          echo        "arm64" ;;
+        armv7l)                 echo        "arm32" ;;
+        *)                      echo        "unknown" ;;
+    esac
+}
+
 ##
 # Returns the absolute Meson build directory for a given build type and architecture.
 #

@@ -5,7 +5,7 @@ rem ============================================================================
 rem GGUI Project Export Script (Windows)
 rem =============================================================================
 rem This script initializes the GGUI project with release options enabled.
-rem Builds it for native and other platforms and moves the builded libraries into ./bin/export/*
+rem Builds it for native platform ONLY!
 rem =============================================================================
 
 rem Store the script directory
@@ -39,30 +39,6 @@ if errorlevel 1 (
 rem Export native artifacts (header + native static lib) via Meson run target from release build
 call "%COMMON_BAT%" meson_compile_target "release" "build_native_archive"
 if errorlevel 1 exit /b 1
-
-rem Export Linux cross-compiled lib, if Linux cross-compiler is available (use release build)
-rem Detect common Linux cross-compilers or allow user to provide CROSS_COMPILE_PREFIX env var
-set "LINUX_PREFIX=%CROSS_COMPILE_PREFIX%"
-if "%LINUX_PREFIX%"=="" (
-    for %%p in (x86_64-linux-gnu- x86_64-unknown-linux-gnu- i686-linux-gnu-) do (
-        where %%pc++ >nul 2>nul
-        if not errorlevel 1 (
-            set "LINUX_PREFIX=%%p"
-            goto :found_linux_prefix
-        )
-    )
-)
-:found_linux_prefix
-
-if not "%LINUX_PREFIX%"=="" (
-    echo exporting Linux artifacts ^(cross-compile^) using prefix %LINUX_PREFIX% from release build
-    call "%COMMON_BAT%" meson_compile_target "release" "export-linux"
-    if errorlevel 1 exit /b 1
-) else (
-    echo Linux cross-compiler not found; skipping Linux export.
-)
-
-echo Exported artifacts are available in %EXPORT_DIR%\
 
 endlocal
 exit /b 0
