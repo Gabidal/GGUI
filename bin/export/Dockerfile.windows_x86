@@ -22,6 +22,8 @@ RUN apt-get update && apt-get install -y \
     meson \
     git \
     ccache \
+    wine \
+    wine64 \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure ccache
@@ -29,6 +31,17 @@ ENV PATH="/usr/lib/ccache:$PATH"
 ENV CCACHE_DIR=/root/.ccache
 ENV CCACHE_MAXSIZE=500M
 ENV CCACHE_SLOPPINESS=pch_defines,time_macros
+
+# Initialize Wine prefix to avoid first-run issues
+ENV WINEDEBUG=-all
+ENV WINEPREFIX=/root/.wine
+ENV WINEARCH=win32
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y wine32 && \
+    rm -rf /var/lib/apt/lists/* && \
+    wineboot --init && \
+    wineserver -w
 
 WORKDIR /workspace
 
