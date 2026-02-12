@@ -48,4 +48,19 @@ jobs:
         run: ./bin/export.sh ${{ matrix.os }} ${{ matrix.arch }}
 
       - name: Test
-        run: ./bin/test.sh ${{ matrix.os }} ${{ matrix.arch }}
+        run: ./bin/test.sh release ${{ matrix.os }} ${{ matrix.arch }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libggui-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            bin/export/libggui*
+            bin/export/*.h
+
+      - name: Upload ggui log when fail
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-logs-${{ matrix.os }}-${{ matrix.arch }}
+          path: ./bin/build-release-${{ matrix.os }}-${{ matrix.arch }}/log.txt
