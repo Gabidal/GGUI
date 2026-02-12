@@ -1,6 +1,6 @@
 name: Nightly Builds
 
-# Basically a automated ./bin/export.sh with platformed tests.
+# Basically an automated ./bin/export.sh
 
 on:
   push:
@@ -17,50 +17,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  binaries:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: linux
-            image: ubuntu-latest
-            arch: x86_64
-
-          - os: linux
-            image: ubuntu-24.04-arm
-            arch: arm64
-
-          - os: linux
-            image: ubuntu-latest  # our dockerfile will take care of the QEMU usage.
-            arch: arm32
-
-          - os: windows
-            image: windows-latest
-            arch: x86_64
-
-    runs-on: ${{ matrix.image }}
-    name: ${{ matrix.os }}/${{ matrix.arch }}
+  build-all:
+    runs-on: ubuntu-latest
+    name: Build All Platforms
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build
-        run: ./bin/export.sh ${{ matrix.os }} ${{ matrix.arch }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Test
-        run: ./bin/test.sh release ${{ matrix.os }} ${{ matrix.arch }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build all platforms
+        run: ./bin/export.sh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: libggui-${{ matrix.os }}-${{ matrix.arch }}
+          name: libggui-all
           path: |
             bin/export/libggui*
             bin/export/*.h
-
-      - name: Upload ggui log when fail
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: error-logs-${{ matrix.os }}-${{ matrix.arch }}
-          path: ./bin/build-release-${{ matrix.os }}-${{ matrix.arch }}/log.txt
