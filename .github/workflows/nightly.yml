@@ -24,8 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -34,11 +34,9 @@ jobs:
         run: ./bin/export.sh
 
       - name: Upload build artifacts
-        run: |
-          for f in bin/export/libggui* bin/export/*.h; do
-            [ -e "$f" ] || continue
-            name=$(basename "$f")
-            gh run upload-artifact "$name" "$f"
-          done
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-binaries
+          path: |
+            bin/export/libggui*
+            bin/export/*.h
