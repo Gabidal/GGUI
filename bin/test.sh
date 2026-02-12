@@ -7,6 +7,20 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/analytics/utils/common.sh"
 
+compile_meson_test_commands() {
+    # $1, $2, $3 = build_type, os, arch
+    # $4+ = extra test args (optional test name filters)
+    local build_type="$1"
+    local os="$2"
+    local arch="$3"
+    shift 3
+    local extra_args="$*"
+    
+    echo "source bin/analytics/utils/common.sh && " \
+        "meson_setup_or_reconfigure_arch $build_type $os $arch && " \
+        "meson test -C \$(get_build_dir_for_arch $build_type $os $arch) -v --print-errorlogs $extra_args"
+}
+
 # Check if given arguments is one or more
 if [[ $# -ge 1 && $# -lt 3 ]]; then   # This means simple mode is active
     BUILD_TYPE=$1
@@ -16,35 +30,18 @@ if [[ $# -ge 1 && $# -lt 3 ]]; then   # This means simple mode is active
 
     # Run tests (verbose + print error logs). Extra args are forwarded to meson test.
     meson test -C "$(get_build_dir_for_type $BUILD_TYPE)" -v --print-errorlogs "$@"
-elif [[ $# -ge 3 ]]; then
+elif [[ $# -ge 3 ]]; then    # Outside Docker, will call docker and run test.sh inside it.
     BUILD_TYPE=$1
     OS=$2
     ARCHITECTURE=$3
     shift 3  # Remove first 3 args, leaving only extras
 
-    # Detect host platform
-    HOST_OS="$(get_host_os)"
-    HOST_ARCH="$(get_host_arch)"
-
-    # Check if this is native OR if we're already inside Docker container
     # (to avoid recursive Docker calls)
-    if [[ "$OS" == "$HOST_OS" && "$ARCHITECTURE" == "$HOST_ARCH" ]] || [[ -f /.dockerenv ]]; then
-        # Native or inside Docker: configure Meson and run tests directly
-        meson_setup_or_reconfigure_arch "$BUILD_TYPE" "$OS" "$ARCHITECTURE"
-        meson test -C "$(get_build_dir_for_arch $BUILD_TYPE $OS $ARCHITECTURE)" -v --print-errorlogs "$@"
+    if [[ -f /.dockerenv ]]; then
+        # Inside Docker: configure Meson and run tests directly
+        bash -c "$(compile_meson_test_commands "$BUILD_TYPE" "$OS" "$ARCHITECTURE" "$@")"
     else
-        # Non-native: run inside Docker
-        IMAGE="ggui-${OS}_${ARCHITECTURE}:latest"
-        if ! docker inspect "$IMAGE" >/dev/null 2>&1; then
-            echo "Docker image $IMAGE not found. Please build it first."
-            exit 1
-        fi
-
-        echo "Running tests inside Docker for $OS/$ARCHITECTURE..."
-        docker run --rm \
-            -v "$PWD:/workspace" \
-            "$IMAGE" \
-            bash -c "./bin/test.sh $BUILD_TYPE $OS $ARCHITECTURE $@"
+        run_docker_build "$OS" "$ARCHITECTURE" "$(compile_meson_test_commands "$BUILD_TYPE" "$OS" "$ARCHITECTURE" "$@")"
     fi
 else
     echo "Usage:"

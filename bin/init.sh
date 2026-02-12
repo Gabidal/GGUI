@@ -67,6 +67,14 @@ for file in "$SCRIPT_DIR"/export/*.{a,lib}; do
     fi
 done
 
+# Check if ./export/ggui.h or ./export/ggui_dev.h exist, if so then remove them
+for header in "$SCRIPT_DIR"/export/ggui*.h; do
+    if [ -e "$header" ]; then
+        echo "Removing existing export header: $header"
+        rm -f "$header"
+    fi
+done
+
 echo "Setting up the default build configure..."
 meson_setup_or_reconfigure debug
 
