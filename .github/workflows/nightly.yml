@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build-all:
     runs-on: ubuntu-latest
-    name: Build All Platforms
+    name: Build All binaries
 
     steps:
       - uses: actions/checkout@v4
@@ -30,13 +30,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build all platforms
+      - name: Build
         run: ./bin/export.sh
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: libggui-all
-          path: |
-            bin/export/libggui*
-            bin/export/*.h
+        run: |
+          for f in bin/export/libggui* bin/export/*.h; do
+            [ -e "$f" ] || continue
+            name=$(basename "$f")
+            gh run upload-artifact "$name" "$f"
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
