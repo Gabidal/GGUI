@@ -57,12 +57,13 @@ rename_artifact() {
 # Arguments:
 #   $1 - OS name
 #   $2 - Architecture name
+#   $3 - Target
 ##
 compile_command_for_docker_run() {
     #"source bin/analytics/utils/common.sh && meson_setup_or_reconfigure_arch release linux arm64 bin/export/cross-linux-arm64.ini && meson_compile_target_arch release linux arm64 build_native_archive"
     echo "source bin/analytics/utils/common.sh && " \
         "meson_setup_or_reconfigure_arch release $1 $2 bin/export/cross-$1-$2.ini && " \
-        "meson_compile_target_arch release $1 $2 build_native_archive"
+        "meson_compile_target_arch release $1 $2 $3"
 }
 
 ##
@@ -84,7 +85,7 @@ build_binaries() {
         return 1
     fi
     
-    if ! run_docker_build "$os" "$arch" $(compile_command_for_docker_run $os $arch); then
+    if ! run_docker_build "$os" "$arch" $(compile_command_for_docker_run $os $arch build_native_archive); then
         return 1
     fi
     
@@ -142,22 +143,39 @@ build_all() {
 
 #---------------------------------------------------------------------#
 
+header_os=""
+header_arch=""
+compile_headers=1
+
 # Check if no arguments given, if so then call build_all
 if [[ $# -eq 0 ]]; then
     build_all
+
+    # Put linux x86_64 as the default header generation platform
+    header_os="linux"
+    header_arch="x86_64"
 else
     #   $1 - OS name
     #   $2 - Architecture name
-    build_binaries "$@"
+    build_binaries "$1" "$2"
 
     header_os="$1"
     header_arch="$2"
+
+    # Check if a third argument was passed and if so, check if it is "--no-header"
+    if [[ $# -eq 3 && "$3" == "--no-header" ]]; then
+        log_info "Skipping header generation"
+        compile_headers=0
+    fi
 fi
 
-# Build headers
-meson_setup_or_reconfigure release
-meson_compile_target release generate_header
-meson_compile_target release generate_dev_header
+# Build headers if applicable
+if [[ $compile_headers -eq 1 ]]; then
+    echo ""
+    log_info "Building headers for ${header_os} ${header_arch}"
+    run_docker_build "$header_os" "$header_arch" $(compile_command_for_docker_run $header_os $header_arch generate_header)
+    run_docker_build "$header_os" "$header_arch" $(compile_command_for_docker_run $header_os $header_arch generate_dev_header)
+fi
 
 echo ""
 echo "Artifacts location: $EXPORT_DIR/"

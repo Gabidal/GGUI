@@ -17,9 +17,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-all:
+  build:
     runs-on: ubuntu-latest
-    name: Build All binaries
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: x86_64
+            name: Linux x86_64
+            no_header: false
+          - os: linux
+            arch: arm64
+            name: Linux ARM64
+            no_header: true
+          - os: linux
+            arch: arm32
+            name: Linux ARM32
+            no_header: true
+          - os: windows
+            arch: x86_64
+            name: Windows x86_64
+            no_header: true
+
+    name: ${{ matrix.name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -31,12 +52,22 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build
-        run: ./bin/export.sh
+        run: |
+          if [[ "${{ matrix.no_header }}" == "true" ]]; then
+            ./bin/export.sh ${{ matrix.os }} ${{ matrix.arch }} --no-header
+          else
+            ./bin/export.sh ${{ matrix.os }} ${{ matrix.arch }}
+          fi
 
-      - name: Upload build artifacts
+      - name: Upload library
         uses: actions/upload-artifact@v4
         with:
-          name: all-binaries
-          path: |
-            bin/export/libggui*
-            bin/export/*.h
+          name: libggui-${{ matrix.os }}-${{ matrix.arch }}
+          path: bin/export/libggui_${{ matrix.os }}_${{ matrix.arch }}.*
+
+      - name: Upload headers
+        if: matrix.no_header == false
+        uses: actions/upload-artifact@v4
+        with:
+          name: headers
+          path: bin/export/*.h
