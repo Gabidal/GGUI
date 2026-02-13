@@ -25,22 +25,21 @@ jobs:
         include:
           - os: linux
             arch: x86_64
-            name: Linux x86_64
-            no_header: false
+            skip_header_generation: false
+
           - os: linux
             arch: arm64
-            name: Linux ARM64
-            no_header: true
+            skip_header_generation: true
+
           - os: linux
             arch: arm32
-            name: Linux ARM32
-            no_header: true
+            skip_header_generation: true
+
           - os: windows
             arch: x86_64
-            name: Windows x86_64
-            no_header: true
+            skip_header_generation: true
 
-    name: ${{ matrix.name }}
+    name: ${{ matrix.os }}/${{ matrix.arch }}
 
     steps:
       - uses: actions/checkout@v4
@@ -53,11 +52,15 @@ jobs:
 
       - name: Build
         run: |
-          if [[ "${{ matrix.no_header }}" == "true" ]]; then
+          if [[ "${{ matrix.skip_header_generation }}" == "true" ]]; then
             ./bin/export.sh ${{ matrix.os }} ${{ matrix.arch }} --no-header
           else
             ./bin/export.sh ${{ matrix.os }} ${{ matrix.arch }}
           fi
+      
+      # test.sh builds the headers if the non linux x86_64 finish first.
+      - name: Run tests
+        run: ./bin/test.sh release ${{ matrix.os }} ${{ matrix.arch }}
 
       - name: Upload library
         uses: actions/upload-artifact@v4
@@ -66,7 +69,7 @@ jobs:
           path: bin/export/libggui_${{ matrix.os }}_${{ matrix.arch }}.*
 
       - name: Upload headers
-        if: matrix.no_header == false
+        if: matrix.skip_header_generation == false
         uses: actions/upload-artifact@v4
         with:
           name: headers
