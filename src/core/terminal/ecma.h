@@ -275,7 +275,7 @@ namespace GGUI {
                     independent(
                         table::independentFunctions func,
                         bool space = false
-                    ) : base(specialType::INDEPENDENT, bitType::_7bit), function(func), hasSpace(space) {}
+                    ) : base(specialType::INDEPENDENT, bitType::_7bit), hasSpace(space), function(func) {}
 
                     std::string toString() override;
                 };
@@ -323,7 +323,7 @@ namespace GGUI {
                     std::array<uint8_t, intermediateCount> intermediateDefaultValues;
                     const specialTypes parameterExtensionType = parameterExtension;
 
-                    base(codeType code, std::array<parameterType, paramCount> defaultParamValues = {}, std::array<uint8_t, intermediateCount> defaultIntermediates = {}) : function(code), parameterDefaultValue(defaultValue), intermediateDefaultValues(defaultIntermediates) {}
+                    base(codeType code, std::array<parameterType, paramCount> defaultParamValues = {}, std::array<uint8_t, intermediateCount> defaultIntermediates = {}) : function(code), parameterDefaultValue(defaultParamValues), intermediateDefaultValues(defaultIntermediates) {}
                 };
 
                 namespace delimiters {
@@ -334,7 +334,7 @@ namespace GGUI {
                         the command string depends on the relevant application program. 
                      * @example `09/15` or `01/11 05/15`
                     */
-                    inline base<sequence::basic> APPLICATION_PROGRAM_COMMAND(sequence::basic(table::C1::APC));
+                    inline base<sequence::basic> APPLICATION_PROGRAM_COMMAND = base<sequence::basic>(sequence::basic(table::C1::APC));
 
                     /**
                      * @brief CMD is used as the delimiter of a string of data coded according to Standard ECMA-35 and to switch to

@@ -32,6 +32,9 @@ build-release/
 /bin/export/ggui.h
 /bin/export/ggui_dev.h
 
+.cache/
+.continue/
+
 # Probably from analytics? i don't quite remember why these are here :/
 /export/*.json
 /export/json.hpp
