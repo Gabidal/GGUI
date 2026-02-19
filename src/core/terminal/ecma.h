@@ -193,6 +193,7 @@ namespace GGUI {
                     CONTROL_STRING,                 // Contains the control string functions: OSC, DCS, APC, PM
                 };
 
+                // TODO: make this a inheritable simpler base type which numeric and selective classes inherit
                 class parameter {
                 protected:
                     std::vector<uint32_t> subNumbers;       // For instances where 1:2, these can be used as decimals.
@@ -200,6 +201,7 @@ namespace GGUI {
                     constexpr static uint8_t sub_delimeter  = table::toInt(3, 10); // Translates into ':'
                     constexpr static uint8_t delimeter      = table::toInt(3, 11); // Translates into ';'
 
+                    parameter() = default;
                     parameter(std::string_view input, size_t& length);
                     parameter(std::vector<uint32_t> values) : subNumbers(values) {}
                     parameter(uint32_t values) : subNumbers({values}) {}
@@ -323,7 +325,11 @@ namespace GGUI {
                     std::array<uint8_t, intermediateCount> intermediateDefaultValues;
                     const specialTypes parameterExtensionType = parameterExtension;
 
-                    base(codeType code, std::array<parameterType, paramCount> defaultParamValues = {}, std::array<uint8_t, intermediateCount> defaultIntermediates = {}) : function(code), parameterDefaultValue(defaultParamValues), intermediateDefaultValues(defaultIntermediates) {}
+                    base(
+                        codeType code,
+                        std::array<parameterType, paramCount> defaultParamValues = {},
+                        std::array<uint8_t, intermediateCount> defaultIntermediates = {}
+                    ) : function(code), parameterDefaultValue(defaultParamValues), intermediateDefaultValues(defaultIntermediates) {}
                 };
 
                 namespace delimiters {
@@ -342,7 +348,7 @@ namespace GGUI {
                         for instance, by specifying the length of the string. 
                      * @example `01/11 06/04`
                      */
-                    inline base<sequence::independent> CODING_METHOD_DELIMITER(sequence::independent(table::independentFunctions::CMD));
+                    inline base<sequence::independent> CODING_METHOD_DELIMITER = base<sequence::independent>(sequence::independent(table::independentFunctions::CMD));
 
                     /**
                      * @brief DCS is used as the opening delimiter of a control string for device control use. The command string
@@ -354,7 +360,7 @@ namespace GGUI {
                         the sending and/or the receiving device. 
                      * @example `09/00` or `01/11 05/00` 
                      */
-                    inline base<sequence::basic> DEVICE_CONTROL_STRING(sequence::basic(table::C1::DCS));
+                    inline base<sequence::basic> DEVICE_CONTROL_STRING = base<sequence::basic>(sequence::basic(table::C1::DCS));
 
                     /**
                      * @brief OSC is used as the opening delimiter of a control string for operating system use. The command string
@@ -363,7 +369,7 @@ namespace GGUI {
                         interpretation of the command string depends on the relevant operating system. 
                      * @example `09/13` or `01/11 05/13` 
                      */
-                    inline base<sequence::basic> OPERATING_SYSTEM_COMMAND(sequence::basic(table::C1::OSC));
+                    inline base<sequence::basic> OPERATING_SYSTEM_COMMAND = base<sequence::basic>(sequence::basic(table::C1::OSC));
 
                     /**
                      * @brief PM is used as the opening delimiter of a control string for privacy message use. The command string
@@ -372,7 +378,7 @@ namespace GGUI {
                         interpretation of the command string depends on the relevant privacy discipline.
                      * @example `09/14` or `01/11 05/14` 
                      */
-                    inline base<sequence::basic> PRIVACY_MESSAGE(sequence::basic(table::C1::PM));
+                    inline base<sequence::basic> PRIVACY_MESSAGE = base<sequence::basic>(sequence::basic(table::C1::PM));
 
                     /**
                      * @brief SOS is used as the opening delimiter of a control string. The character string following may consist of
@@ -381,7 +387,7 @@ namespace GGUI {
                         string depends on the application.
                      * @example `09/08` or `01/11 05/08`
                      */
-                    inline base<sequence::basic> START_OF_STRING(sequence::basic(table::C1::SOS));
+                    inline base<sequence::basic> START_OF_STRING = base<sequence::basic>(sequence::basic(table::C1::SOS));
 
                     /**
                      * @brief ST is used as the closing delimiter of a control string opened by APPLICATION PROGRAM
@@ -389,7 +395,7 @@ namespace GGUI {
                         (OSC), PRIVACY MESSAGE (PM), or START OF STRING (SOS).
                      * @example `09/12` or `01/11 05/12` 
                      */
-                    inline base<sequence::basic> STRING_TERMINATOR(sequence::basic(table::C1::ST));
+                    inline base<sequence::basic> STRING_TERMINATOR = base<sequence::basic>(sequence::basic(table::C1::ST));
                 };
 
                 namespace introducers {
@@ -397,14 +403,14 @@ namespace GGUI {
                      * @brief CSI is used as the first character of a control sequence.
                      * @example `09/11` or `01/11 05/11`
                      */
-                    inline base<sequence::basic> CONTROL_SEQUENCE_INTRODUCER(sequence::basic(table::C1::CSI));
+                    inline base<sequence::basic> CONTROL_SEQUENCE_INTRODUCER = base<sequence::basic>(sequence::basic(table::C1::CSI));
 
                     /**
                      * @brief ESC is used for code extension purposes. It causes the meanings of a limited number of bit combinations
                         following it in the data stream to be changed. 
                      * @example `01/11`
                      */
-                    inline base<sequence::basic> ESCAPE(sequence::basic(table::C0::ESC));
+                    inline base<sequence::basic> ESCAPE = base<sequence::basic>(sequence::basic(table::C0::ESC));
 
                     /**
                      * @brief SCI and the bit combination following it are used to represent a control function or a graphic character.
@@ -412,7 +418,7 @@ namespace GGUI {
                         reserved for future standardization.
                      * @example `09/10` or `01/11 05/10`
                      */
-                    inline base<sequence::basic> SINGLE_CHARACTER_INTRODUCER(sequence::basic(table::C1::SCI));
+                    inline base<sequence::basic> SINGLE_CHARACTER_INTRODUCER = base<sequence::basic>(sequence::basic(table::C1::SCI));
                 }
 
                 namespace shiftFunctions {
@@ -421,77 +427,77 @@ namespace GGUI {
                         the data stream to be changed.
                      * @example `00/15`
                      */
-                    inline base<sequence::basic> LOCKING_SHIFT_ZERO(sequence::basic(table::C0::LS0));
+                    inline base<sequence::basic> LOCKING_SHIFT_ZERO = base<sequence::basic>(sequence::basic(table::C0::LS0));
 
                     /**
                      * @brief LS1 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed.
                      * @example `00/14`
                      */
-                    inline base<sequence::basic> LOCKING_SHIFT_ONE(sequence::basic(table::C0::LS1));
+                    inline base<sequence::basic> LOCKING_SHIFT_ONE = base<sequence::basic>(sequence::basic(table::C0::LS1));
 
                     /**
                      * @brief LS1R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed. 
                      * @example `07/14`
                      */
-                    inline base<sequence::independent> LOCKING_SHIFT_ONE_RIGHT(sequence::independent(table::independentFunctions::LS1R));
+                    inline base<sequence::independent> LOCKING_SHIFT_ONE_RIGHT = base<sequence::independent>(sequence::independent(table::independentFunctions::LS1R));
 
                     /**
                      * @brief LS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed. 
                      * @example `01/11 06/14`
                      */
-                    inline base<sequence::independent> LOCKING_SHIFT_TWO(sequence::independent(table::independentFunctions::LS2));
+                    inline base<sequence::independent> LOCKING_SHIFT_TWO = base<sequence::independent>(sequence::independent(table::independentFunctions::LS2));
 
                     /**
                      * @brief LS2R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed.
                     * @example `01/11 07/13`
                      */
-                    inline base<sequence::independent> LOCKING_SHIFT_TWO_RIGHT(sequence::independent(table::independentFunctions::LS2R));
+                    inline base<sequence::independent> LOCKING_SHIFT_TWO_RIGHT = base<sequence::independent>(sequence::independent(table::independentFunctions::LS2R));
 
                     /**
                      * @brief LS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed. 
                      * @example `01/11 06/15`
                      */
-                    inline base<sequence::independent> LOCKING_SHIFT_THREE(sequence::independent(table::independentFunctions::LS3));
+                    inline base<sequence::independent> LOCKING_SHIFT_THREE = base<sequence::independent>(sequence::independent(table::independentFunctions::LS3));
 
                     /**
                      * @brief LS3R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed. 
                      * @example `01/11 07/12`
                      */
-                    inline base<sequence::independent> LOCKING_SHIFT_THREE_RIGHT(sequence::independent(table::independentFunctions::LS3R));
+                    inline base<sequence::independent> LOCKING_SHIFT_THREE_RIGHT = base<sequence::independent>(sequence::independent(table::independentFunctions::LS3R));
 
                     /**
                      * @brief SI is used for code extension purposes. It causes the meanings of the bit combinations following it in the
                         data stream to be changed. 
                      * @example `00/15`
                      */
-                    inline base<sequence::basic> SHIFT_IN(sequence::basic(table::C0::SI));
+                    inline base<sequence::basic> SHIFT_IN = base<sequence::basic>(sequence::basic(table::C0::SI));
 
                     /**
                      * @brief SO is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed. 
                      * @example `00/14`
                      */
-                    inline base<sequence::basic> SHIFT_OUT(sequence::basic(table::C0::SO));
+                    inline base<sequence::basic> SHIFT_OUT = base<sequence::basic>(sequence::basic(table::C0::SO));
 
                     /**
                      * @brief SS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed. 
                      * @example `08/14` or `01/11 04/14`
                      */
-                    inline base<sequence::basic> SS2(sequence::basic(table::C1::SS2));
+                    inline base<sequence::basic> SS2 = base<sequence::basic>(sequence::basic(table::C1::SS2));
 
                     /**
                      * @brief SS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                         the data stream to be changed. 
                      * @example `08/15` or `01/11 04/15` 
                      */
-                    inline base<sequence::basic> SS3(sequence::basic(table::C1::SS3));
+                    inline base<sequence::basic> SS3 = base<sequence::basic>(sequence::basic(table::C1::SS3));
 
                 }
 
@@ -503,7 +509,7 @@ namespace GGUI {
                         MOVEMENT DIRECTION (SIMD). 
                      * @example `00/08`
                      */
-                    inline base<sequence::basic> BACKSPACE(sequence::basic(table::C0::BS));
+                    inline base<sequence::basic> BACKSPACE = base<sequence::basic>(sequence::basic(table::C0::BS));
 
                     /**
                      * @brief The effect of CR depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
@@ -524,7 +530,7 @@ namespace GGUI {
                         parameter value of SET LINE LIMIT (SLL).
                      * @example `00/13`
                      */
-                    inline base<sequence::basic> CARRIAGE_RETURN(sequence::basic(table::C0::CR));
+                    inline base<sequence::basic> CARRIAGE_RETURN = base<sequence::basic>(sequence::basic(table::C0::CR));
 
                     /**
                      * @brief FF causes the active presentation position to be moved to the corresponding character position of the
@@ -532,7 +538,7 @@ namespace GGUI {
                         position is established by the parameter value of SET PAGE HOME (SPH). 
                      * @example `00/12`
                      */
-                    inline base<sequence::basic> FORM_FEED(sequence::basic(table::C0::FF));
+                    inline base<sequence::basic> FORM_FEED = base<sequence::basic>(sequence::basic(table::C0::FF));
 
                     /**
                      * @brief HPA causes the active data position to be moved to character position n in the active line (the line in the
@@ -568,7 +574,7 @@ namespace GGUI {
                         (NEL) in the data stream
                      * @example `00/09`
                      */
-                    inline base<sequence::basic> CHARACTER_TABULATION(sequence::basic(table::C0::HT));
+                    inline base<sequence::basic> CHARACTER_TABULATION = base<sequence::basic>(sequence::basic(table::C0::HT));
 
                     /**
                      * @brief HTJ causes the contents of the active field (the field in the presentation component that contains the
@@ -578,7 +584,7 @@ namespace GGUI {
                         erased state. 
                      * @example `08/09` or `01/11 04/09` 
                      */
-                    inline base<sequence::basic> CHARACTER_TABULATION_WITH_JUSTIFICATION(sequence::basic(table::C1::HTJ));
+                    inline base<sequence::basic> CHARACTER_TABULATION_WITH_JUSTIFICATION = base<sequence::basic>(sequence::basic(table::C1::HTJ));
 
                     /**
                      * @brief HTS causes a character tabulation stop to be set at the active presentation position in the presentation
@@ -586,7 +592,7 @@ namespace GGUI {
                         The number of lines affected depends on the setting of the TABULATION STOP MODE (TSM). 
                      * @example `08/08` or `01/11 04/08`
                      */
-                    inline base<sequence::basic> CHARACTER_TABULATION_SET(sequence::basic(table::C1::HTS));
+                    inline base<sequence::basic> CHARACTER_TABULATION_SET = base<sequence::basic>(sequence::basic(table::C1::HTS));
 
                     /**
                      * @brief HVP causes the active data position to be moved in the data component to the n-th line position
@@ -605,7 +611,7 @@ namespace GGUI {
                         component. 
                      * @example `00/10`
                      */
-                    inline base<sequence::basic> LINE_FEED(sequence::basic(table::C0::LF));
+                    inline base<sequence::basic> LINE_FEED = base<sequence::basic>(sequence::basic(table::C0::LF));
 
                     /**
                      * @brief The effect of NEL depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
@@ -626,7 +632,7 @@ namespace GGUI {
                         parameter value of SET LINE LIMIT (SLL). 
                      * @example `08/05` or `01/11 04/05`
                      */
-                    inline base<sequence::basic> NEXT_LINE(sequence::basic(table::C1::NEL));
+                    inline base<sequence::basic> NEXT_LINE = base<sequence::basic>(sequence::basic(table::C1::NEL));
 
                     /**
                      * @brief PLD causes the active presentation position to be moved in the presentation component to the
@@ -637,7 +643,7 @@ namespace GGUI {
                         line that contains the active presentation position).
                      * @example `08/11` or `01/11 04/11`
                      */
-                    inline base<sequence::basic> PARTIAL_LINE_FORWARD(sequence::basic(table::C1::PLD));
+                    inline base<sequence::basic> PARTIAL_LINE_FORWARD = base<sequence::basic>(sequence::basic(table::C1::PLD));
 
                     /**
                      * @brief PLU causes the active presentation position to be moved in the presentation component to the
@@ -648,7 +654,7 @@ namespace GGUI {
                         line (the line that contains the active presentation position). 
                      * @example `08/12` or `01/11 04/12` 
                      */
-                    inline base<sequence::basic> PARTIAL_LINE_BACKWARD(sequence::basic(table::C1::PLU));
+                    inline base<sequence::basic> PARTIAL_LINE_BACKWARD = base<sequence::basic>(sequence::basic(table::C1::PLU));
 
                     /**
                      * @brief PPA causes the active data position to be moved in the data component to the corresponding character
@@ -679,7 +685,7 @@ namespace GGUI {
                         position to be moved in the data component to the corresponding character position of the preceding line.
                      @example `08/13` or `ESC 04/13`
                      */
-                    inline base<sequence::basic> REVERSE_LINE_FEED(sequence::basic(table::C1::RI));
+                    inline base<sequence::basic> REVERSE_LINE_FEED = base<sequence::basic>(sequence::basic(table::C1::RI));
 
                     /**
                      * @brief TBC causes one or more tabulation stops in the presentation component to be cleared, depending on the
@@ -737,13 +743,13 @@ namespace GGUI {
                         corresponding character position on the line at which the following line tabulation stop is set. 
                      * @example `00/11`
                      */
-                    inline base<sequence::basic> LINE_TABULATION(sequence::basic(table::C0::VT));
+                    inline base<sequence::basic> LINE_TABULATION = base<sequence::basic>(sequence::basic(table::C0::VT));
 
                     /**
                      * @brief VTS causes a line tabulation stop to be set at the active line (the line that contains the active presentation position). 
                      * @example `08/10` or `01/11 04/10`
                      */
-                    inline base<sequence::basic> LINE_TABULATION_SET(sequence::basic(table::C1::VTS));
+                    inline base<sequence::basic> LINE_TABULATION_SET = base<sequence::basic>(sequence::basic(table::C1::VTS));
                 }
 
                 namespace presentationControlFunctions {
@@ -752,7 +758,7 @@ namespace GGUI {
                         between two graphic characters, either or both of which may be SPACE. 
                      * @example `08/02` or `01/11 04/02`
                      */
-                    inline base<sequence::basic> BREAK_PERMITTED_HERE(sequence::basic(table::C1::BPH));
+                    inline base<sequence::basic> BREAK_PERMITTED_HERE = base<sequence::basic>(sequence::basic(table::C1::BPH));
 
                     /**
                      * @brief DTA is used to establish the dimensions of the text area for subsequent pages.
@@ -861,7 +867,7 @@ namespace GGUI {
                             NBH may occur between two graphic characters either or both of which may be SPACE. 
                      * @example `08/03` or `01/11 04/03`
                      */
-                    inline base<sequence::basic> NO_BREAK_HERE(sequence::basic(table::C1::NBH));
+                    inline base<sequence::basic> NO_BREAK_HERE = base<sequence::basic>(sequence::basic(table::C1::NBH));
 
                     /**
                      * @brief PEC is used to establish the spacing and the extent of the graphic characters for subsequent text. 
@@ -1002,71 +1008,949 @@ namespace GGUI {
                     inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_ADDITIONAL_CHARACTER_SEPARATION(sequence::controlSequence(table::finalWithIntermediate::SACS), {0}, {table::toInt(2, 00)});
                     
                     /**
-                     * @brief 
+                     * @brief SAPV is used to specify one or more variants for the presentation of subsequent text.
+                     * @example `01/11 05/11 Ps... 02/00 05/13` or `9/11 Ps... 02/00 05/13`
+                     * @param Ps default(0)
+                     * @param ...
                      */
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_ALTERNATIVE_PRESENTATION_VARIANTS      =       sequence::controlSequence(-1, table::finalWithIntermediate::SAPV);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_CHARACTER_ORIENTATION                     =       sequence::controlSequence(1, table::finalWithIntermediate::SCO);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_CHARACTER_PATH                         =       sequence::controlSequence(2, table::finalWithIntermediate::SCP);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_CHARACTER_SPACING                         =       sequence::controlSequence(1, table::finalWithIntermediate::SCS);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> START_DIRECTED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SDS);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_GRAPHIC_RENDITION                      =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SGR);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_CHARACTER_SPACING                      =       sequence::controlSequence(1, table::finalWithIntermediate::SHS);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_IMPLICIT_MOVEMENT_DIRECTION            =       sequence::controlSequence(1, table::finalWithoutIntermediate::SIMD);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_LINE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SHL);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_LINE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SLL);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_LINE_SPACING                              =       sequence::controlSequence(1, table::finalWithIntermediate::SLS);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_PRESENTATION_DIRECTIONS                =       sequence::controlSequence(2, table::finalWithIntermediate::SPD);
+                    namespace SELECT_ALTERNATIVE_PRESENTATION_VARIANTS {
+                        enum class types {
+                            DEFAULT,                                        // default presentation (implementation-defined); cancels the effect of any preceding occurrence of SAPV in the data stream
+                            LATIN_DECIMAL_DIGITS,                           // the decimal digits are presented by means of the graphic symbols used in the Latin script
+                            ARABIC_DECIMAL_DIGITS,                          // the decimal digits are presented by means of the graphic symbols used in the Arabic script, i.e. the Hindi symbols
+                            MIRROR_PAIRED_CHARACTERS,                       // when the direction of the character path is right-to-left, each of the graphic characters in the graphic character set(s) in use which is one of a left/right-handed pair (parentheses, square brackets, curly brackets, greater-than/less-than signs, etc.) is presented as "mirrored", i.e. as the other member of the pair. For example, the coded graphic character given the name LEFT PARENTHESIS is presented as RIGHT PARENTHESIS, and vice versa
+                            MIRROR_OPERATORS_AND_DELIMITERS,                // when the direction of the character path is right-to-left, all graphic characters which represent operators and delimiters in mathematical formulae and which are not symmetrical about a vertical axis are presented as mirrored about that vertical axis
+                            ISOLATED_FORM,                                  // the following graphic character is presented in its isolated form
+                            INITIAL_FORM,                                   // the following graphic character is presented in its initial form
+                            MEDIAL_FORM,                                    // the following graphic character is presented in its medial form
+                            FINAL_FORM,                                     // the following graphic character is presented in its final form
+                            DECIMAL_MARK_FULL_STOP,                         // where the bit combination 02/14 is intended to represent a decimal mark in a decimal number it shall be presented by means of the graphic symbol FULL STOP
+                            DECIMAL_MARK_COMMA,                             // where the bit combination 02/14 is intended to represent a decimal mark in a decimal number it shall be presented by means of the graphic symbol COMMA
+                            VOWELS_ABOVE_OR_BELOW,                          // vowels are presented above or below the preceding character
+                            VOWELS_AFTER,                                   // vowels are presented after the preceding character
+                            ARABIC_CONTEXTUAL_WITH_LAM_ALEPH,               // contextual shape determination of Arabic scripts, including the LAM-ALEPH ligature but excluding all other Arabic ligatures
+                            ARABIC_CONTEXTUAL_NO_LIGATURES,                 // contextual shape determination of Arabic scripts, excluding all Arabic ligatures
+                            CANCEL_MIRRORING,                               // cancels the effect of parameter values 3 and 4
+                            VOWELS_NOT_PRESENTED,                           // vowels are not presented
+                            CONTEXTUAL_ITALIC_SLANT,                        // when the string direction is right-to-left, the italicized characters are slanted to the left; when the string direction is left-to-right, the italicized characters are slanted to the right
+                            ARABIC_PASSTHROUGH_WITH_DIGITS,                 // contextual shape determination of Arabic scripts is not used, the graphic characters - including the digits - are presented in the form they are stored (Pass-through)
+                            ARABIC_PASSTHROUGH_WITHOUT_DIGITS,              // contextual shape determination of Arabic scripts is not used, the graphic characters- excluding the digits - are presented in the form they are stored (Pass-through)
+                            DECIMAL_DIGITS_DEVICE_DEPENDENT,                // the graphic symbols used to present the decimal digits are device dependent
+                            ENABLE_PERSISTENT_FORM_MODE,                    // establishes the effect of parameter values 5, 6, 7, and 8 for the following graphic characters until cancelled
+                            CANCEL_PERSISTENT_FORM_MODE                     // cancels the effect of parameter value 21, i.e. re-establishes the effect of parameter values 5, 6, 7, and 8 for the next single graphic character only
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence(table::finalWithIntermediate::SAPV), {types::DEFAULT}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief SCO is used to establish the amount of rotation of the graphic characters following in the data stream. 
+                     * The established value remains in effect until the next occurrence of SCO in the data stream.
+                     * NOTE: Rotation is positive, i.e. counter-clockwise and applies to the normal presentation of the graphic
+                     * characters along the character path. The centre of rotation of the affected graphic characters is not defined by this Standard.
+                     * @example `01/11 05/11 Ps 02/00 06/05` or `9/11 Ps 02/00 06/05`
+                     * @param Ps default(0)
+                     */
+                    namespace SET_CHARACTER_ORIENTATION {
+                        enum class types {
+                            DEFAULT,                                        // 0 degrees.
+                            ROTATE_45,                                      // 45 degrees.
+                            ROTATE_90,                                      // 90 degrees.
+                            ROTATE_135,                                     // 135 degrees.
+                            ROTATE_180,                                     // 180 degrees.
+                            ROTATE_225,                                     // 225 degrees.
+                            ROTATE_270,                                     // 270 degrees.
+                            ROTATE_315                                      // 315 degrees.
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::SCO), {types::DEFAULT}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief SCP is used to select the character path, relative to the line orientation, for the active line (the line that
+                     * contains the active presentation position) and subsequent lines in the presentation component. It is also
+                     * used to update the content of the active line in the presentation component and the content of the active
+                     * line (the line that contains the active data position) in the data component. This takes effect immediately.
+                     * NOTE: The second parameter may also permit the effect to take place after the next occurrence of CR, NEL or any control
+                     * function which initiates an absolute movement of the active presentation position or the active data position.
+                     * @example `01/11 05/11 Ps1;Ps2 02/00 06/11` or `9/11 Ps1;Ps2 02/00 06/11`
+                     * @param Ps1 default(None)
+                     * @param Ps2 default(None)
+                     */
+                    namespace SELECT_CHARACTER_PATH {
+                        enum class types {
+                            LEFT_TO_RIGHT       = 1,        // Ps1: In the case of horizontal line orientation
+                            TOP_TO_BOTTOM       = 1,        // Ps1: In the case of vertical line orientation
+
+                            RIGHT_TOLEFT        = 2,        // Ps1: In the case of horizontal line orientation
+                            BOTTOM_TO_TOP       = 2,        // Ps1: In the case of vertical line orientation
+
+
+                            BUFFER_TO_DISPLAY   = 1,        /* Ps2: the content of the active line in the presentation component (the line that contains the active presentation position)
+                                                                    is updated to correspond to the content of the active line in the data component (the line that contains the active data position) 
+                                                                    according to the newly established character path characteristics in the presentation component; 
+                                                                    the active data position is moved to the first character position in the active line in the data component, 
+                                                                    the active presentation position in the presentation component is updated accordingly */
+                            DISPLAY_TO_BUFFER   = 2         /* Ps2: the content of the active line in the data component (the line that contains the active data position) 
+                                                                    is updated to correspond to the content of the active line in the presentation component (the line that contains the active presentation position)
+                                                                    according to the newly established character path characteristics of the presentation component; 
+                                                                    the active presentation position is moved to the first character position in the active line in the presentation component, 
+                                                                    the active data position in the data component is updated accordingly.  */
+                        };
+
+                        inline base<sequence::controlSequence, types, 2, 1> code(sequence::controlSequence(table::finalWithIntermediate::SCP), {types::LEFT_TO_RIGHT, types::BUFFER_TO_DISPLAY}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief SCS is used to establish the character spacing for subsequent text. The established spacing remains in
+                     * effect until the next occurrence of SCS, or of SELECT CHARACTER SPACING (SHS) or of SPACING INCREMENT (SPI) in the data stream, see annex C
+                     * @example `01/11 05/11 Pn 02/00 06/07` or `9/11 Pn 02/00 06/07`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_CHARACTER_SPACING(sequence::controlSequence(table::finalWithIntermediate::SCS), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief SDS is used to establish in the data component the beginning and the end of a string of characters as
+                     * well as the direction of the string. This direction may be different from that currently established. 
+                     * The indicated string follows the preceding text. The established character progression is not affected.
+                     * The beginning of a directed string is indicated by SDS with a parameter value not equal to 0. 
+                     * A directed string may contain one or more nested strings. 
+                     * These nested strings may be directed strings the beginnings of which are indicated by SDS with a parameter value not equal to 0,
+                     * or reversed strings the beginnings of which are indicated by START REVERSED STRING (SRS) with a parameter value of 1.
+                     * Every beginning of such a string invokes the next deeper level of nesting.
+                     * This Standard does not define the location of the active data position within any such nested string.
+                     * The end of a directed string is indicated by SDS with a parameter value of 0. 
+                     * Every end of such a string re-establishes the next higher level of nesting (the one in effect prior to the string just ended).
+                     * The direction is re-established to that in effect prior to the string just ended. 
+                     * The active data position is moved to the character position following the characters of the string just ended. 
+                     * NOTE: 1) The effect of receiving a CVT, HT, SCP, SPD or VT control function within an SDS string is not defined by this Standard.
+                     * NOTE: 2) The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SDS string. 
+                     * @example `01/11 05/11 Ps 05/13` or `9/11 Ps 05/13`
+                     * @param Ps default(0)
+                     */
+                    namespace START_DIRECTED_STRING {
+                        enum class type {
+                            END_OF_DIRECTED_STRING,                     // Re-establish the previous direction
+                            START_OF_A_DIRECTED_LEFT_TO_RIGHT_STRING,   // Establish the direction left-to-right
+                            START_OF_A_DIRECTED_RIGHT_TO_LEFT_STRING,   // Establish the direction right-to-left
+                        };
+
+                        inline base<sequence::controlSequence, type, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::SDS), {type::END_OF_DIRECTED_STRING});
+                    }
+
+                    /**
+                     * @brief SGR is used to establish one or more graphic rendition aspects for subsequent text. 
+                     * The established aspects remain in effect until the next occurrence of SGR in the data stream, 
+                     * depending on the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM). 
+                     * Each graphic rendition aspect is specified by a parameter value.
+                     * NOTE: The usable combinations of parameter values are determined by the implementation. 
+                     * @example `01/11 05/11 Ps... 06/13` or `9/11 Ps... 06/13`
+                     * @param Ps default(0)
+                     * @param ...
+                     */
+                    namespace SELECT_GRAPHIC_RENDITION {
+                        enum class types {
+                            DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
+                            BOLD,                                           // bold or increased intensity
+                            FAINT,                                          // faint, decreased intensity or second colour
+                            ITALIC,                                         // italicized
+                            UNDERLINE,                                      // singly underlined
+                            SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
+                            RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
+                            REVERSE_VIDEO,                                  // negative image
+                            CONCEAL,                                        // concealed characters
+                            CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
+                            PRIMARY_FONT,                                   // primary (default) font
+                            ALT_FONT_1,                                     // first alternative font
+                            ALT_FONT_2,                                     // second alternative font
+                            ALT_FONT_3,                                     // third alternative font
+                            ALT_FONT_4,                                     // fourth alternative font
+                            ALT_FONT_5,                                     // fifth alternative font
+                            ALT_FONT_6,                                     // sixth alternative font
+                            ALT_FONT_7,                                     // seventh alternative font
+                            ALT_FONT_8,                                     // eighth alternative font
+                            ALT_FONT_9,                                     // ninth alternative font
+                            FRAKTUR,                                        // Fraktur (Gothic)
+                            DOUBLY_UNDERLINED,                              // doubly underlined
+                            NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
+                            NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
+                            NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
+                            NOT_BLINKING,                                   // steady (not blinking)
+                            RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
+                            POSITIVE_IMAGE,                                 // positive image
+                            REVEAL,                                         // revealed characters
+                            NOT_CROSSED_OUT,                                // not crossed out
+                            FG_BLACK,                                       // black display
+                            FG_RED,                                         // red display
+                            FG_GREEN,                                       // green display
+                            FG_YELLOW,                                      // yellow display
+                            FG_BLUE,                                        // blue display
+                            FG_MAGENTA,                                     // magenta display
+                            FG_CYAN,                                        // cyan display
+                            FG_WHITE,                                       // white display
+                            RESERVED_FG_COLOR,                              // (reserved for future standardization; intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                            FG_DEFAULT,                                     // default display colour (implementation-defined)
+                            BG_BLACK,                                       // black background
+                            BG_RED,                                         // red background
+                            BG_GREEN,                                       // green background
+                            BG_YELLOW,                                      // yellow background
+                            BG_BLUE,                                        // blue background
+                            BG_MAGENTA,                                     // magenta background
+                            BG_CYAN,                                        // cyan background
+                            BG_WHITE,                                       // white background
+                            RESERVED_BG_COLOR,                              // (reserved for future standardization; intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                            BG_DEFAULT,                                     // default background colour (implementation-defined)
+                            RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
+                            FRAMED,                                         // framed
+                            ENCIRCLED,                                      // encircled
+                            OVERLINED,                                      // overlined
+                            NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
+                            NOT_OVERLINED,                                  // not overlined
+                            RESERVED_56,                                    // (reserved for future standardization)
+                            RESERVED_57,                                    // (reserved for future standardization)
+                            RESERVED_58,                                    // (reserved for future standardization)
+                            RESERVED_59,                                    // (reserved for future standardization)
+                            IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
+                            IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
+                            IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
+                            IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
+                            IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
+                            IDEOGRAM_ATTRIBUTES_OFF                         // cancels the effect of the rendition aspects established by parameter values 60 to 64
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence(table::finalWithoutIntermediate::SGR), {types::DEFAULT});
+                    }
+
+                    /**
+                     * @brief SHS is used to establish the character spacing for subsequent text. 
+                     * The established spacing remains in effect until the next occurrence of SHS or of SET CHARACTER SPACING (SCS) or of SPACING INCREMENT (SPI) in the data stream.
+                     * @example `01/11 05/11 Ps 02/00 04/11` or `9/11 Ps 02/00 04/11`
+                     * @param Ps default(0)
+                     */
+                    namespace SELECT_CHARACTER_SPACING {
+                        enum class types {
+                            FIT_10_CHARACTERS_PER_25_4_MM,
+                            FIT_12_CHARACTERS_PER_25_4_MM,
+                            FIT_15_CHARACTERS_PER_25_4_MM,
+                            FIT_6_CHARACTERS_PER_25_4_MM,
+                            FIT_3_CHARACTERS_PER_25_4_MM,
+                            FIT_9_CHARACTERS_PER_50_8_MM,
+                            FIT_4_CHARACTERS_PER_24_4_MM
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::SHS), {types::FIT_10_CHARACTERS_PER_25_4_MM}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief  SIMD is used to select the direction of implicit movement of the data position relative to the character progression.
+                     * The direction selected remains in effect until the next occurrence of SIMD. 
+                     * @example `01/11 05/11 Ps 05/14` or `9/11 Ps 05/14`
+                     * @param Ps default(0)
+                     */
+                    namespace SELECT_IMPLICIT_MOVEMENT_DIRECTION {
+                        enum class types {
+                            DIRECTION_OF_CHARACTER_PROGRESSION,             // The direction of implicit movement is the same as that of the character progression
+                            OPPOSITE_DIRECTION_OF_CHARACTER_PROGRESSION     // The direction of implicit movement is opposite to that of the character progression. 
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::SIMD), {types::DIRECTION_OF_CHARACTER_PROGRESSION});
+                    }
+
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE is set to PRESENTATION, 
+                     * SLH is used to establish at character position n in the active line (the line that contains the active presentation position) 
+                     * and lines of subsequent text in the presentation component the position to which the active presentation position will be moved by subsequent occurrences of:
+                     * CARRIAGE RETURN (CR), DELETE LINE (DL), INSERT LINE (IL) or NEXT LINE (NEL) in the data stream; 
+                     * where n equals the value of Pn. 
+                     * In the case of a device without data component, it is also the position ahead of which no implicit movement of the active presentation position shall occur.
+                     * If the DEVICE COMPONENT SELECT MODE is set to DATA, SLH is used to establish at character position n in the active line (the line that contains the active data position) 
+                     * and lines of subsequent text in the data component the position to which the active data position will be moved by subsequent
+                     * occurrences of CARRIAGE RETURN (CR), DELETE LINE (DL), INSERT LINE (IL) or NEXT LINE (NEL) in the data stream; where n equals the value of Pn.
+                     * It is also the position ahead of which no implicit movement of the active data position shall occur.
+                     * The established position is called the line home position and remains in effect until the next occurrence of SLH in the data stream. 
+                     * @example `01/11 05/11 Pn 02/00 05/05` or `9/11 Pn 02/00 05/05`
+                     * @param Pn default(None)
+                    */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_LINE_HOME(sequence::controlSequence(table::finalWithIntermediate::SHL), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE is set to PRESENTATION, SLL is used to establish at character position n in the active line (the line that contains the active presentation position) 
+                     * and lines of subsequent text in the presentation component the position to which the active presentation position will be moved by subsequent occurrences of CARRIAGE RETURN (CR), or NEXT LINE (NEL) in the data stream if the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD) is equal to 1;
+                     * where n equals the value of Pn. 
+                     * In the case of a device without data component, it is also the position beyond which no implicit movement of the active presentation position shall occur.
+                     * If the DEVICE COMPONENT SELECT MODE is set to DATA, SLL is used to establish at character position n in the active line (the line that contains the active data position) 
+                     * and lines of subsequent text in the data component the position beyond which no implicit movement of the active data position shall occur.
+                     * It is also the position in the data component to which the active data position will be moved by subsequent occurrences of CR or NEL in the data stream, 
+                     * if the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD) is equal to 1.
+                     * The established position is called the line limit position and remains in effect until the next occurrence of SLL in the data stream. 
+                     * @example `01/11 05/11 Pn 02/00 05/06` or `9/11 Pn 02/00 05/06`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_LINE_LIMIT(sequence::controlSequence(table::finalWithIntermediate::SLL), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief SLS is used to establish the line spacing for subsequent text. 
+                     * The established spacing remains in effect until the next occurrence of SLS or of SELECT LINE SPACING (SVS) 
+                     * or of SPACING INCREMENT (SPI) in the data stream. 
+                     * NOTE: The unit in which the parameter value is expressed is that established by the parameter value of SELECT SIZE UNIT (SSU). 
+                     * @example `01/11 05/11 Pn 02/00 06/08` or `9/11 Pn 02/00 06/08`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_LINE_SPACING(sequence::controlSequence(table::finalWithIntermediate::SLS), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief SPD is used to select the line orientation, the line progression, and the character path in the presentation component.
+                     * It is also used to update the content of the presentation component and the content of the data component. 
+                     * This takes effect immediately.
+                     * Ps1 specifies the line orientation, the line progression and the character path.
+                     * Ps2 specifies the effect on the content of the presentation component and the content of the data component.
+                     * NOTE: This may also permit the effect to take place after the next occurrence of CR, FF or any control function which initiates an absolute movement of the active presentation position or the active data position. 
+                     * @example `01/11 05/11 Ps1;Ps2 02/00 05/03` or `9/11 Ps1;Ps2 02/00 05/03`
+                     * @param Ps1 default(0)
+                     * @param Ps2 default(0)
+                     */
+                    namespace SELECT_PRESENTATION_DIRECTIONS {
+                        enum class types {
+                            HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT = 0,            /*  Ps1:
+                                                                                line orientation:   horizontal
+                                                                                line progression:   top-to-bottom
+                                                                                character path:     left-to-right */ 
+
+                            VERTICAL_TOP_RIGHT_TO_BOTTOM_LEFT = 1,              /*  Ps1:
+                                                                                line orientation:   vertical
+                                                                                line progression:   right-to-left
+                                                                                character path:     top-to-bottom */
+
+                            VERTICAL_TOP_LEFT_TO_BOTTOM_RIGHT = 2,              /*  Ps1:
+                                                                                line orientation:   vertical
+                                                                                line progression:   left-to-right
+                                                                                character path:     top-to-bottom */
+
+                            HORIZONTAL_TOP_RIGHT_TO_BOTTOM_LEFT = 3,            /*  Ps1:
+                                                                                line orientation:   horizontal
+                                                                                line progression:   top-to-bottom
+                                                                                character path:     right-to-left */
+
+                            VERTICAL_BOTTOM_LEFT_TO_TOP_RIGHT = 4,              /*  Ps1:
+                                                                                line orientation:   vertical
+                                                                                line progression:   left-to-right
+                                                                                character path:     bottom-to-top */
+
+                            HORIZONTAL_BOTTOM_RIGHT_TO_TOP_LEFT = 5,            /*  Ps1:
+                                                                                line orientation:   horizontal
+                                                                                line progression:   bottom-to-top
+                                                                                character path:     right-to-left */
+
+                            HORIZONTAL_BOTTOM_LEFT_TO_TOP_RIGHT = 6,            /*  Ps1:
+                                                                                line orientation:   horizontal
+                                                                                line progression:   bottom-to-top
+                                                                                character path:     left-to-right */
+
+                            VERTICAL_BOTTOM_RIGHT_TO_TOP_LEFT = 7,              /*  Ps1:
+                                                                                line orientation:   vertical
+                                                                                line progression:   right-to-left
+                                                                                character path:     bottom-to-top */
+
+
+                            STALL                           = 0,                // Ps2: Undefined (implementation-dependent) 
+
+                            BUFFER_TO_DISPLAY               = 1,                /* Ps2: The content of the presentation component is updated to correspond to the content of the data
+                                                                                        component according to the newly established characteristics of the presentation component; 
+                                                                                        the active data position is moved to the first character position in the first line in the data component, 
+                                                                                        the active presentation position in the presentation component is updated accordingly */
+
+                            DISPLAY_TO_BUFFER               = 2,                /* Ps2: The content of the data component is updated to correspond to the content of the presentation
+                                                                                        component according to the newly established characteristics of the presentation component; 
+                                                                                        the active presentation position is moved to the first character position in the first line in the presentation component,
+                                                                                        the active data position in the data component is updated accordingly. */
+                        };
+
+                        inline base<sequence::controlSequence, types, 2, 1> code(sequence::controlSequence(table::finalWithIntermediate::SPD), {types::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT, types::STALL}, {table::toInt(2, 00)});
+                    }
+
                     // inline base<sequence::controlSequence, sequence::parameter, 1> SET_PAGE_HOME                                 =       sequence::controlSequence(1, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SPACING_INCREMENT                             =       sequence::controlSequence(2, table::finalWithIntermediate::SPI);
+                    
+                    /**
+                     * @brief SPI is used to establish the line spacing and the character spacing for subsequent text. 
+                     * The established line spacing remains in effect until the next occurrence of SPI or of SET LINE SPACING (SLS) or of SELECT LINE SPACING (SVS) in the data stream. 
+                     * The established character spacing remains in effect until the next occurrence of SET CHARACTER SPACING (SCS) or of SELECT CHARACTER SPACING (SHS) in the data stream, see annex C. 
+                     * NOTE: The unit in which the parameter values are expressed is that established by the parameter value of SELECT SIZE UNIT (SSU). 
+                     * @example `01/11 05/11 Pn1;Pn2 02/00 04/07` or `9/11 Pn1;Pn2 02/00 04/07`
+                     * @param Pn1 default(None)
+                     * @param Pn2 default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 2, 1> SPACING_INCREMENT(sequence::controlSequence(table::finalWithIntermediate::SPI), {}, {table::toInt(2, 00)});
+                    
                     // inline base<sequence::controlSequence, sequence::parameter, 1> SET_PAGE_LIMIT                                =       sequence::controlSequence(1, table::finalWithIntermediate::SPL); // Ecma lists these, but there are no mentions in the tables.
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_PRINT_QUALITY_AND_RAPIDITY             =       sequence::controlSequence(1, table::finalWithIntermediate::SPQR);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SET_REDUCED_CHARACTER_SEPARATION              =       sequence::controlSequence(1, table::finalWithIntermediate::SRCS);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> START_REVERSED_STRING                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::SRS);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_SIZE_UNIT                              =       sequence::controlSequence(1, table::finalWithIntermediate::SSU);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_SPACE_WIDTH                            =       sequence::controlSequence(1, table::finalWithIntermediate::SSW);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECTIVE_TABULATION                          =       sequence::controlSequence(1, table::finalWithIntermediate::STAB);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SELECT_LINE_SPACING                           =       sequence::controlSequence(1, table::finalWithIntermediate::SVS);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_ALIGNED_CENTRED                    =       sequence::controlSequence(1, table::finalWithIntermediate::TAC);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_ALIGNED_LEADING_EDGE               =       sequence::controlSequence(1, table::finalWithIntermediate::TALE);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_ALIGNED_TRAILING_EDGE              =       sequence::controlSequence(1, table::finalWithIntermediate::TATE);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> TABULATION_CENTRED_ON_CHARACTER               =       sequence::controlSequence(2, table::finalWithIntermediate::TCC);
-                    inline base<sequence::controlSequence, sequence::parameter, 1> THIN_SPACE_SPECIFICATION                      =       sequence::controlSequence(1, table::finalWithIntermediate::TSS);
+                    
+                    /**
+                     * @brief SPQR is used to select the relative print quality and the print speed for devices the output quality and speed of which are inversely related.
+                     * The selected values remain in effect until the next occurrence of SPQR in the data stream.
+                     * @example `01/11 05/11 Ps 02/00 05/08` or `9/11 Ps 02/00 05/08`
+                     * @param Ps default(0)
+                     */
+                    namespace SELECT_PRINT_QUALITY_AND_RAPIDITY {
+                        enum class types {
+                            SLOW_SPEED,             // Highest quality
+                            MEDIUM_SPEED,           // Medium quality
+                            FAST_SPEED              // Draft quality
+                        };
+
+                        inline base<sequence::controlSequence,types, 1, 1>code(sequence::controlSequence(table::finalWithIntermediate::SPQR), {types::SLOW_SPEED}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief SRCS is used to establish reduced inter-character escapement for subsequent text. 
+                     * The established reduced escapement remains in effect until the next occurrence of SRCS or of SET ADDITIONAL CHARACTER SEPARATION (SACS) in the data stream or until it is reset to the default value by a
+                     * subsequent occurrence of CARRIAGE RETURN/LINE FEED (CR/LF) or of NEXT LINE (NEL) in the data stream, see annex C.
+                     * Pn specifies the number of units by which the inter-character escapement is reduced. 
+                     * The unit in which the parameter values are expressed is that established by the parameter value of SELECT SIZE UNIT (SSU). 
+                     * @example `01/11 05/11 Pn 02/00 06/06` or `9/11 Pn 02/00 06/06`
+                     * @param Pn default(0)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_REDUCED_CHARACTER_SEPARATION(sequence::controlSequence(table::finalWithIntermediate::SRCS), {0}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief SRS is used to establish in the data component the beginning and the end of a string of characters as well
+                     * as the direction of the string. This direction is opposite to that currently established. The indicated string
+                     * follows the preceding text. The established character progression is not affected.
+                     * The beginning of a reversed string is indicated by SRS with a parameter value of 1. A reversed string
+                     * may contain one or more nested strings. These nested strings may be reversed strings the beginnings of
+                     * which are indicated by SRS with a parameter value of 1, or directed strings the beginnings of which are
+                     * indicated by START DIRECTED STRING (SDS) with a parameter value not equal to 0. Every
+                     * beginning of such a string invokes the next deeper level of nesting.
+                     * This Standard does not define the location of the active data position within any such nested string.
+                     * The end of a reversed string is indicated by SRS with a parameter value of 0. Every end of such a string
+                     * re-establishes the next higher level of nesting (the one in effect prior to the string just ended). The
+                     * direction is re-established to that in effect prior to the string just ended. The active data position is
+                     * moved to the character position following the characters of the string just ended.
+                     * NOTE 1: The effect of receiving a CVT, HT, SCP, SPD or VT control function within an SRS string is not defined by this Standard.
+                     * NOTE 2: The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string.
+                     * @example `01/11 05/11 Ps 05/11` or `9/11 Ps 05/11`
+                     * @param Ps default(0)
+                     */
+                    namespace START_REVERSED_STRING {
+                        enum class types {
+                            END_OF_REVERSED_STRING,                     // end of a reversed string; re-establish the previous direction
+                            START_OF_REVERSED_STRING                    // beginning of a reversed string; reverse the direction
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::SRS), {types::END_OF_REVERSED_STRING});
+                    }
+
+                    /**
+                     * @brief SSU is used to establish the unit in which the numeric parameters of certain control functions are expressed. 
+                     * The established unit remains in effect until the next occurrence of SSU in the data stream.
+                     * @example `01/11 05/11 Ps 02/00 04/09` or `9/11 Ps 02/00 04/09`
+                     * @param Ps default(0)
+                     */
+                    namespace SELECT_SIZE_UNIT {
+                        enum class types {
+                            CHARACTER,                          // The dimensions of this unit are device-dependent
+                            MILLIMETRE,                         // 1 mm
+                            COMPUTER_DECIPOINT,                 // 0,035 28 mm (1/720 of 25,4 mm)
+                            DECIDIDOT,                          // 0,037 59 mm (10/266 mm)
+                            MIL,                                // 0,025 4 mm (1/1 000 of 25,4 mm)
+                            BASIC_MEASURING_UNIT,               // (BMU) - 0,021 17 mm (1/1 200 of 25,4 mm)
+                            MICROMETRE,                         // 0,001 mm
+                            PIXEL,                              // The smallest increment that can be specified in a device
+                            DECIPOINT                           // 0,035 14 mm (35/996 mm)
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::SSU), {types::CHARACTER}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief SSW is used to establish for subsequent text the character escapement associated with the character SPACE. 
+                     * The established escapement remains in effect until the next occurrence of SSW in the data stream or until it is reset to the default value by a subsequent 
+                     * occurrence of CARRIAGE RETURN/LINE FEED (CR/LF), CARRIAGE RETURN/FORM FEED (CR/FF), or of NEXT LINE (NEL) in the data stream, see annex C.
+                     * Pn specifies the escapement.
+                     * The unit in which the parameter value is expressed is that established by the parameter value of SELECT SIZE UNIT (SSU).
+                     * The default character escapement of SPACE is specified by the most recent occurrence of SET CHARACTER SPACING (SCS) or of SELECT CHARACTER SPACING (SHS) 
+                     * or of SELECT SPACING INCREMENT (SPI) in the data stream if the current font has constant spacing, or is specified by the nominal width of the character SPACE 
+                     * in the current font if that font has proportional spacing.
+                     * @example `01/11 05/11 Pn 02/00 05/11` or `9/11 Pn 02/00 05/11`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SET_SPACE_WIDTH(sequence::controlSequence(table::finalWithIntermediate::SSW), {}, {table::toInt(2, 00)});
+
+                    /**
+                     * @brief STAB causes subsequent text in the presentation component to be aligned according to the position and
+                     * the properties of a tabulation stop which is selected from a list according to the value of the parameter Ps.
+                     * The use of this control function and means of specifying a list of tabulation stops to be referenced by the
+                     * control function are specified in other standards, for example ISO 8613-6.
+                     * @example `01/11 05/11 Ps 02/00 05/14` or `9/11 Ps 02/00 05/14`
+                     * @param Ps default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SELECTIVE_TABULATION(sequence::controlSequence(table::finalWithIntermediate::STAB), {}, {table::toInt(2, 00)});
+
+                    /**
+                     * @brief SVS is used to establish the line spacing for subsequent text. The established spacing remains in effect
+                     * until the next occurrence of SVS or of SET LINE SPACING (SLS) or of SPACING INCREMENT (SPI) in the data stream.
+                     * @example `01/11 05/11 Ps 02/00 04/12` or `9/11 Ps 02/00 04/12`
+                     * @param Ps default(0)
+                     */
+                    namespace SELECT_LINE_SPACING {
+                        enum class types {
+                            SIX_LINES_PER_25_4_MM,      // 6 lines per 25,4 mm
+                            FOUR_LINES_PER_25_4_MM,     // 4 lines per 25,4 mm
+                            THREE_LINES_PER_25_4_MM,    // 3 lines per 25,4 mm
+                            TWELVE_LINES_PER_25_4_MM,   // 12 lines per 25,4 mm
+                            EIGHT_LINES_PER_25_4_MM,    // 8 lines per 25,4 mm
+                            SIX_LINES_PER_30_0_MM,      // 6 lines per 30,0 mm
+                            FOUR_LINES_PER_30_0_MM,     // 4 lines per 30,0 mm
+                            THREE_LINES_PER_30_0_MM,    // 3 lines per 30,0 mm
+                            TWELVE_LINES_PER_30_0_MM,   // 12 lines per 30,0 mm
+                            TWO_LINES_PER_25_4_MM       // 2 lines per 25,4 mm
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::SVS), {types::SIX_LINES_PER_25_4_MM}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief TAC causes a character tabulation stop calling for centring to be set at character position n in the active line (the line that contains the active presentation position) and lines of subsequent text in the presentation component, where n equals the value of Pn. 
+                     * TAC causes the replacement of any tabulation stop previously set at that character position, but does not affect other tabulation stops.
+                     * A text string centred upon a tabulation stop set by TAC will be positioned so that the (trailing edge of the) first graphic character and the (leading edge of the) last graphic character are at approximately equal distances from the tabulation stop. 
+                     * @example `01/11 05/11 Pn 02/00 06/02` or `9/11 Pn 02/00 06/02`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> TABULATION_ALIGNED_CENTRED(sequence::controlSequence(table::finalWithIntermediate::TAC), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief TALE causes a character tabulation stop calling for leading edge alignment to be set at character position n in the active line (the line that contains the active presentation position) and lines of subsequent text in the presentation component, where n equals the value of Pn.
+                     * TALE causes the replacement of any tabulation stop previously set at that character position, but does not affect other tabulation stops.
+                     * A text string aligned with a tabulation stop set by TALE will be positioned so that the (leading edge of the) last graphic character of the string is placed at the tabulation stop. 
+                     * @example `01/11 05/11 Pn 02/00 06/01` or `9/11 Pn 02/00 06/01`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> TABULATION_ALIGNED_LEADING_EDGE(sequence::controlSequence(table::finalWithIntermediate::TALE), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief TATE causes a character tabulation stop calling for trailing edge alignment to be set at character
+                     * position n in the active line (the line that contains the active presentation position) and lines of
+                     * subsequent text in the presentation component, where n equals the value of Pn. 
+                     * TATE causes the replacement of any tabulation stop previously set at that character position, but does not affect other tabulation stops.
+                     * A text string aligned with a tabulation stop set by TATE will be positioned so that the (trailing edge of the) first graphic character of the string is placed at the tabulation stop. 
+                     * @example `01/11 05/11 Pn 02/00 06/00` or `9/11 Pn 02/00 06/00`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> TABULATION_ALIGNED_TRAILING_EDGE(sequence::controlSequence(table::finalWithIntermediate::TATE), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief TCC causes a character tabulation stop calling for alignment of a target graphic character to be set at
+                     * character position n in the active line (the line that contains the active presentation position) and lines of
+                     * subsequent text in the presentation component, where n equals the value of Pn1, and the target character
+                     * about which centring is to be performed is specified by Pn2. TCC causes the replacement of any
+                     * tabulation stop previously set at that character position, but does not affect other tabulation stops.
+                     * The positioning of a text string aligned with a tabulation stop set by TCC will be determined by the first
+                     * occurrence in the string of the target graphic character; that character will be centred upon the tabulation
+                     * stop. If the target character does not occur within the string, then the trailing edge of the first character
+                     * of the string will be positioned at the tabulation stop.
+                     * The value of Pn2 indicates the code table position (binary value) of the target character in the currently
+                     * invoked code. For a 7-bit code, the permissible range of values is 32 to 127; for an 8-bit code, the
+                     * permissible range of values is 32 to 127 and 160 to 255. 
+                     * @example `01/11 05/11 Pn1;Pn2 02/00 06/03` or `9/11 Pn1;Pn2 02/00 06/03`
+                     * @param Pn1 default(None)
+                     * @param Pn2 default(32)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 2, 1> TABULATION_CENTRED_ON_CHARACTER(sequence::controlSequence(table::finalWithIntermediate::TCC), {0, 32}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief TSS is used to establish the width of a thin space for subsequent text. 
+                     * The established width remains in effect until the next occurrence of TSS in the data stream, see annex C.
+                     * Pn specifies the width of the thin space. 
+                     * The unit in which the parameter value is expressed is that established by the parameter value of SELECT SIZE UNIT (SSU). 
+                     * @example `01/11 05/11 Pn 02/00 04/05` or `9/11 Pn 02/00 04/05`
+                     * @param Pn default(None) 
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> THIN_SPACE_SPECIFICATION(sequence::controlSequence(table::finalWithIntermediate::TSS), {}, {table::toInt(2, 00)});
                 }
 
                 namespace editorFunctions {
-                    inline const auto DELETE_CHARACTER                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::DCH);
-                    inline const auto DELETE_LINE                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::DL);
-                    inline const auto ERASE_IN_AREA                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::EA);
-                    inline const auto ERASE_CHARACTER                               =       sequence::controlSequence(1, table::finalWithoutIntermediate::ECH);
-                    inline const auto ERASE_IN_PAGE                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::ED);
-                    inline const auto ERASE_IN_FIELD                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::EF);
-                    inline const auto ERASE_IN_LINE                                 =       sequence::controlSequence(1, table::finalWithoutIntermediate::EL);
-                    inline const auto INSERT_CHARACTER                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::ICH);
-                    inline const auto INSERT_LINE                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::IL);
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, DCH causes the
+                     * contents of the active presentation position and, depending on the setting of the CHARACTER
+                     * EDITING MODE (HEM), the contents of the n-1 preceding or following character positions to be
+                     * removed from the presentation component, where n equals the value of Pn. The resulting gap is closed
+                     * by shifting the contents of the adjacent character positions towards the active presentation position. At
+                     * the other end of the shifted part, n character positions are put into the erased state.
+                     * The extent of the shifted part is established by SELECT EDITING EXTENT (SEE).
+                     * The effect of DCH on the start or end of a selected area, the start or end of a qualified area, or a
+                     * tabulation stop in the shifted part is not defined by this Standard.
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, DCH causes the contents of
+                     * the active data position and, depending on the setting of the CHARACTER EDITING MODE (HEM),
+                     * the contents of the n-1 preceding or following character positions to be removed from the data
+                     * component, where n equals the value of Pn. The resulting gap is closed by shifting the contents of the
+                     * adjacent character positions towards the active data position. At the other end of the shifted part, n
+                     * character positions are put into the erased state. 
+                     * @example `01/11 05/11 Pn 05/00` or `9/11 Pn 05/00`
+                     * @param Pn default(1) 
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> DELETE_CHARACTER(sequence::controlSequence(table::finalWithoutIntermediate::DCH), {1});
+                    
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, DL causes the
+                        contents of the active line (the line that contains the active presentation position) and, depending on the
+                        setting of the LINE EDITING MODE (VEM), the contents of the n-1 preceding or following lines to be
+                        removed from the presentation component, where n equals the value of Pn. 
+                        The resulting gap is closed by shifting the contents of a number of adjacent lines towards the active line. 
+                        At the other end of the shifted part, n lines are put into the erased state.
+                        The active presentation position is moved to the line home position in the active line. The line home
+                        position is established by the parameter value of SET LINE HOME (SLH). If the TABULATION STOP
+                        MODE (TSM) is set to SINGLE, character tabulation stops are cleared in the lines that are put into the erased state.
+                        The extent of the shifted part is established by SELECT EDITING EXTENT (SEE).
+                        Any occurrences of the start or end of a selected area, the start or end of a qualified area, or a tabulation stop in the shifted part, are also shifted.
+                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, DL causes the contents of the
+                        active line (the line that contains the active data position) and, depending on the setting of the LINE
+                        EDITING MODE (VEM), the contents of the n-1 preceding or following lines to be removed from the
+                        data component, where n equals the value of Pn. 
+                        The resulting gap is closed by shifting the contents of a number of adjacent lines towards the active line. 
+                        At the other end of the shifted part, n lines are put into the erased state. 
+                        The active data position is moved to the line home position in the active line. 
+                        The line home position is established by the parameter value of SET LINE HOME (SLH). 
+                     * @example `01/11 05/11 Pn 04/13` or `9/11 Pn 04/13`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> DELETE_LINE(sequence::controlSequence(table::finalWithoutIntermediate::DL), {1});
+
+                    /**
+                     * @brief This sequence means two different things based on previous sequence.
+                     * 1) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, EA causes some or
+                     * all character positions in the active qualified area (the qualified area in the presentation component
+                     * which contains the active presentation position) to be put into the erased state, depending on the parameter values
+                     * 2) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, EA causes some or all
+                     * character positions in the active qualified area (the qualified area in the data component which contains the active data position) 
+                     * to be put into the erased state, depending on the parameter values
+                     * NOTE: Whether the character positions of protected areas are put into the erased state, or the character positions
+                     * of unprotected areas only, depends on the setting of the ERASURE MODE (ERM). 
+                     * @example `01/11 05/11 Pn 04/15` or `9/11 Pn 04/15`
+                     * @param Ps default(0)
+                     */
+                    namespace ERASE_IN_AREA {
+                        enum class types {
+                            FROM_ACTIVE_POSITION_UNTIL_QUALIFIED_AREA_END,          /* 1) The active presentation position and the character positions up to the end of the qualified area are put into the erased state 
+                                                                                       2) The active data position and the character positions up to the end of the qualified area are put into the erased state  */
+                        
+                            FROM_QUALIFIED_AREA_START_UNTIL_ACTIVE_POSITION,        /* 1) The character positions from the beginning of the qualified area up to and including the active presentation position are put into the erased state 
+                                                                                       2) The character positions from the beginning of the qualified area up to and including the active data position are put into the erased state   */
+
+                            ALL_OF_QUALIFIED_AREA,                                  /* 1) All character positions of the qualified area are put into the erased state
+                                                                                       2) All character positions in the qualified area are put into the erased state  */
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::EA), {types::FROM_ACTIVE_POSITION_UNTIL_QUALIFIED_AREA_END});
+                    }
+
+                    /**
+                     * @brief This sequence means two different things based on previous sequence.
+                     * 1) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, ECH causes the
+                     * active presentation position and the n-1 following character positions in the presentation component to
+                     * be put into the erased state, where n equals the value of Pn.
+                     * 2) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, ECH causes the active data
+                     * position and the n-1 following character positions in the data component to be put into the erased state, where n equals the value of Pn.
+                     * NOTE: Whether the character positions of protected areas are put into the erased state, or the character positions
+                     * of unprotected areas only, depends on the setting of the ERASURE MODE (ERM). 
+                     * @example `01/11 05/11 Pn 05/08` or `9/11 Pn 05/08`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> ERASE_CHARACTER(sequence::controlSequence(table::finalWithoutIntermediate::ECH), {1});
+                    
+                    /**
+                     * @brief This sequence means two different things based on previous sequence.
+                     * 1) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, ED causes some or
+                     * all character positions of the active page (the page which contains the active presentation position in the presentation component) to be put into the erased state, 
+                     * depending on the parameter values.
+                     * 2) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, ED causes some or all
+                     * character positions of the active page (the page which contains the active data position in the data component)
+                     * to be put into the erased state, depending on the parameter values.
+                     * NOTE: Whether the character positions of protected areas are put into the erased state, or the character positions
+                     * of unprotected areas only, depends on the setting of the ERASURE MODE (ERM). 
+                     * @example `01/11 05/11 Ps 04/10` or `9/11 Ps 04/10`
+                     * @param Ps default(0)
+                     */
+                    namespace ERASE_IN_PAGE {
+                        enum class types {
+                            FROM_ACTIVE_POSITION_UNTIL_END_OF_PAGE,                 /* 1) The active presentation position and the character positions up to the end of the page are put into the erased state 
+                                                                                       2) The active data position and the character positions up to the end of the page are put into the erased state  */
+                        
+                            FROM_PAGE_START_UNTIL_ACTIVE_POSITION,                  /* 1) The character positions from the beginning of the page up to and including the active presentation position are put into the erased state 
+                                                                                       2) The character positions from the beginning of the page up to and including the active data position are put into the erased state    */
+
+                            WHOLE_PAGE,                                             /* 1) All character positions of the page are put into the erased state 
+                                                                                       2) All character positions of the page are put into the erased state  */
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::ED), {types::FROM_ACTIVE_POSITION_UNTIL_END_OF_PAGE});
+                    }
+
+                    /**
+                     * @brief This sequence means two different things based on previous sequence.
+                     * 1) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, EF causes some or
+                     * all character positions of the active field (the field which contains the active presentation position in the presentation component)
+                     * to be put into the erased state, depending on the parameter values.
+                     * 2) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, EF causes some or all
+                     * character positions of the active field (the field which contains the active data position in the data component) 
+                     * to be put into the erased state, depending on the parameter values.
+                     * NOTE: Whether the character positions of protected areas are put into the erased state, or the character positions of unprotected areas only, depends on the setting of the ERASURE MODE (ERM). 
+                     * @example `01/11 05/11 Ps 04/14` or `9/11 Ps 04/14`
+                     * @param Ps default(0)
+                     */
+                    namespace ERASE_IN_FIELD {
+                        enum class types {
+                            FROM_ACTIVE_POSITION_UNTIL_END_OF_FIELD,                 /* 1) The active presentation position and the character positions up to the end of the field are put into the erased state 
+                                                                                        2) The active data position and the character positions up to the end of the field are put into the erased state  */
+                        
+                            FROM_FIELD_START_UNTIL_ACTIVE_POSITION,                  /* 1) The character positions from the beginning of the field up to and including the active presentation position are put into the erased state
+                                                                                        2) The character positions from the beginning of the field up to and including the active data position are put into the erased state     */
+
+                            WHOLE_FIELD,                                             /* 1) All character positions of the field are put into the erased state
+                                                                                        2) All character positions of the field are put into the erased state  */
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::EF), {types::FROM_ACTIVE_POSITION_UNTIL_END_OF_FIELD});
+                    }
+
+                    /**
+                     * @brief This sequence means two different things based on previous sequence.
+                     * 1) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, EL causes some or
+                     * all character positions of the active line (the line which contains the active presentation position in the presentation component) to be put into the erased state, 
+                     * depending on the parameter values.
+                     * 2) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, EL causes some or all
+                     * character positions of the active line (the line which contains the active data position in the data component) to be put into the erased state, 
+                     * depending on the parameter values.
+                     * NOTE: Whether the character positions of protected areas are put into the erased state, or the character positions of unprotected areas only, depends on the setting of the ERASURE MODE (ERM). 
+                     * @example `01/11 05/11 Ps 04/11` or `9/11 Ps 04/11`
+                     * @param Ps default(0)
+                     */
+                    namespace ERASE_IN_LINE {
+                        enum class types {
+                            FROM_ACTIVE_POSITION_UNTIL_END_OF_LINE,              /* 1) The active presentation position and the character positions up to the end of the line are put into the erased state 
+                                                                                    2) The active data position and the character positions up to the end of the line are put into the erased state  */
+                        
+                            FROM_LINE_START_UNTIL_ACTIVE_POSITION,               /* 1) The character positions from the beginning of the line up to and including the active presentation position are put into the erased state
+                                                                                    2) The character positions from the beginning of the line up to and including the active data position are put into the erased state     */
+
+                            WHOLE_LINE,                                          /* 1) All character positions of the line are put into the erased state
+                                                                                    2) All character positions of the line are put into the erased state  */
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::EL), {types::FROM_ACTIVE_POSITION_UNTIL_END_OF_LINE});
+                    }
+
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, ICH is used to
+                     * prepare the insertion of n characters, by putting into the erased state the active presentation position and,
+                     * depending on the setting of the CHARACTER EDITING MODE (HEM), the n-1 preceding or following
+                     * character positions in the presentation component, where n equals the value of Pn. 
+                     * The previous contents of the active presentation position and an adjacent string of character positions are shifted away from the
+                     * active presentation position. The contents of n character positions at the other end of the shifted part are removed. 
+                     * The active presentation position is moved to the line home position in the active line. 
+                     * The line home position is established by the parameter value of SET LINE HOME (SLH).
+                     * The extent of the shifted part is established by SELECT EDITING EXTENT (SEE).
+                     * The effect of ICH on the start or end of a selected area, the start or end of a qualified area, or a
+                     * tabulation stop in the shifted part, is not defined by this Standard.
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, ICH is used to prepare the
+                     * insertion of n characters, by putting into the erased state the active data position and, depending on the
+                     * setting of the CHARACTER EDITING MODE (HEM), the n-1 preceding or following character
+                     * positions in the data component, where n equals the value of Pn. The previous contents of the active data
+                     * position and an adjacent string of character positions are shifted away from the active data position. 
+                     * The contents of n character positions at the other end of the shifted part are removed. 
+                     * The active data position is moved to the line home position in the active line. 
+                     * The line home position is established by the parameter value of SET LINE HOME (SLH). 
+                     * @example `01/11 05/11 Pn 04/00` or `9/11 Pn 04/00`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> INSERT_CHARACTER(sequence::controlSequence(table::finalWithoutIntermediate::ICH), {1});
+                    
+                    /**
+                     * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, IL is used to
+                     * prepare the insertion of n lines, by putting into the erased state in the presentation component the active
+                     * line (the line that contains the active presentation position) and, depending on the setting of the LINE
+                     * EDITING MODE (VEM), the n-1 preceding or following lines, where n equals the value of Pn. 
+                     * The previous contents of the active line and of adjacent lines are shifted away from the active line. 
+                     * The contents of n lines at the other end of the shifted part are removed. The active presentation position is
+                     * moved to the line home position in the active line. The line home position is established by the
+                     * parameter value of SET LINE HOME (SLH).
+                     * The extent of the shifted part is established by SELECT EDITING EXTENT (SEE).
+                     * Any occurrences of the start or end of a selected area, the start or end of a qualified area, or a tabulation
+                     * stop in the shifted part, are also shifted.
+                     * If the TABULATION STOP MODE (TSM) is set to SINGLE, character tabulation stops are cleared in
+                     * the lines that are put into the erased state.
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, IL is used to prepare the
+                     * insertion of n lines, by putting into the erased state in the data component the active line (the line that
+                     * contains the active data position) and, depending on the setting of the LINE EDITING MODE (VEM),
+                     * the n-1 preceding or following lines, where n equals the value of Pn. 
+                     * The previous contents of the active line and of adjacent lines are shifted away from the active line. The contents of n lines at the other end
+                     * of the shifted part are removed. 
+                     * The active data position is moved to the line home position in the active line.
+                     * The line home position is established by the parameter value of SET LINE HOME (SLH). 
+                     * @example `01/11 05/11 Pn 04/12` or `9/11 Pn 04/12`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> INSERT_LINE(sequence::controlSequence(table::finalWithoutIntermediate::IL), {1});
                 }
 
                 namespace cursorControlFunctions {
-                    inline const auto CURSOR_BACKWARD_TABULATION                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::CBT);
-                    inline const auto CURSOR_CHARACTER_ABSOLUTE                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CHA);
-                    inline const auto CURSOR_FORWARD_TABULATION                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CHT);
-                    inline const auto CURSOR_NEXT_LINE                              =       sequence::controlSequence(1, table::finalWithoutIntermediate::CNL);
-                    inline const auto CURSOR_PRECEDING_LINE                         =       sequence::controlSequence(1, table::finalWithoutIntermediate::CPL);
-                    inline const auto CURSOR_TABULATION_CONTROL                     =       sequence::controlSequence(-1, table::finalWithoutIntermediate::CTC);
-                    inline const auto CURSOR_LEFT                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUB);
-                    inline const auto CURSOR_DOWN                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUD);
-                    inline const auto CURSOR_RIGHT                                  =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUF);
-                    inline const auto CURSOR_POSITION                               =       sequence::controlSequence(2, table::finalWithoutIntermediate::CUP);
-                    inline const auto CURSOR_UP                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::CUU);
-                    inline const auto CURSOR_LINE_TABULATION                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::CVT);
+                    /**
+                     * @brief CBT causes the active presentation position to be moved to the character position corresponding to the
+                     * n-th preceding character tabulation stop in the presentation component, according to the character path,
+                     * where n equals the value of Pn
+                     * @example `01/11 05/11 Pn 05/10` or `9/11 Pn 05/10`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_BACKWARD_TABULATION(sequence::controlSequence(table::finalWithoutIntermediate::CBT), {1});
+                    
+                    /**
+                     * @brief CHA causes the active presentation position to be moved to character position n in the active line in the
+                     * presentation component, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/07` or `9/11 Pn 04/07`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_CHARACTER_ABSOLUTE(sequence::controlSequence(table::finalWithoutIntermediate::CHA), {1});
+                    
+                    /**
+                     * @brief CHT causes the active presentation position to be moved to the character position corresponding to the
+                     * n-th following character tabulation stop in the presentation component, according to the character path,
+                     * where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/09` or `9/11 Pn 04/09`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_FORWARD_TABULATION(sequence::controlSequence(table::finalWithoutIntermediate::CHT), {1});
+                    
+                    /**
+                     * @brief CNL causes the active presentation position to be moved to the first character position of the n-th
+                     * following line in the presentation component, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/05` or `9/11 Pn 04/05`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_NEXT_LINE(sequence::controlSequence(table::finalWithoutIntermediate::CNL), {1});
+                    
+                    /**
+                     * @brief CPL causes the active presentation position to be moved to the first character position of the n-th
+                     * preceding line in the presentation component, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/06` or `9/11 Pn 04/06`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_PRECEDING_LINE(sequence::controlSequence(table::finalWithoutIntermediate::CPL), {1});
+                    
+                    /**
+                     * @brief CTC causes one or more tabulation stops to be set or cleared in the presentation component, depending on the parameter values.
+                     * NOTE: In the case of parameter values 0, 2 or 4 the number of lines affected depends on the setting of the TABULATION STOP MODE (TSM). 
+                     * @example `01/11 05/11 Ps... 05/07` or `9/11 Ps... 05/07`
+                     * @param Ps default(0)
+                     */
+                    namespace CURSOR_TABULATION_CONTROL {
+                        enum class types {
+                            INSERT_CHARACTER_STOP_AT_ACTIVE_POSITION,                       // A character tabulation stop is set at the active presentation position
+                            INSERT_LINE_STOP_AT_ACTIVE_POSITION,                            // A line tabulation stop is set at the active line (the line that contains the active presentation position)
+                            CLEAR_CHARACTER_STOP_AT_ACTIVE_POSITION,                        // The character tabulation stop at the active presentation position is cleared 
+                            CLEAR_LINE_STOP_AT_ACTIVE_POSITION,                             // The line tabulation stop at the active line is cleared 
+                            CLEAR_ALL_CHARACTER_STOPS,                                      // All character tabulation stops are cleared 
+                            CLEAR_ALL_LINE_STOPS,                                           // All line tabulation stops are cleared
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence( table::finalWithoutIntermediate::CTC), {types::INSERT_CHARACTER_STOP_AT_ACTIVE_POSITION});
+                    }
+
+                    /**
+                     * @brief CUB causes the active presentation position to be moved leftwards in the presentation component by n
+                     * character positions if the character path is horizontal, or by n line positions if the character path is
+                     * vertical, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/04` or `9/11 Pn 04/04`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_LEFT(sequence::controlSequence(table::finalWithoutIntermediate::CUB), {1});
+                    
+                    /**
+                     * @brief CUD causes the active presentation position to be moved downwards in the presentation component by n
+                     * line positions if the character path is horizontal, or by n character positions if the character path is
+                     * vertical, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/02` or `9/11 Pn 04/02`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_DOWN(sequence::controlSequence(table::finalWithoutIntermediate::CUD), {1});
+                    
+                    /**
+                     * @brief CUF causes the active presentation position to be moved rightwards in the presentation component by n
+                     * character positions if the character path is horizontal, or by n line positions if the character path is
+                     * vertical, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/03` or `9/11 Pn 04/03`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_RIGHT(sequence::controlSequence(table::finalWithoutIntermediate::CUF), {1});
+                    
+                    /**
+                     * @brief CUP causes the active presentation position to be moved in the presentation component to the n-th line
+                     * position according to the line progression and to the m-th character position according to the character
+                     * path, where n equals the value of Pn1 and m equals the value of Pn2. 
+                     * @example `01/11 05/11 Pn1;Pn2 04/08` or `9/11 Pn1;Pn2 04/08`
+                     * @param Pn1 default(1)
+                     * @param Pn2 default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 2> CURSOR_POSITION(sequence::controlSequence(table::finalWithoutIntermediate::CUP), {1, 1});
+                    
+                    /**
+                     * @brief CUU causes the active presentation position to be moved upwards in the presentation component by n
+                     * line positions if the character path is horizontal, or by n character positions if the character path is
+                     * vertical, where n equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 04/01` or `9/11 Pn 04/01`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_UP(sequence::controlSequence(table::finalWithoutIntermediate::CUU), {1});
+                    
+                    /**
+                     * @brief CVT causes the active presentation position to be moved to the corresponding character position of the
+                     * line corresponding to the n-th following line tabulation stop in the presentation component, where n
+                     * equals the value of Pn. 
+                     * @example `01/11 05/11 Pn 05/09` or `9/11 Pn 05/09`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> CURSOR_LINE_TABULATION(sequence::controlSequence(table::finalWithoutIntermediate::CVT), {1});
                 }
 
                 namespace displayControlFunctions {
-                    inline const auto NEXT_PAGE                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::NP);
-                    inline const auto PRECEDING_PAGE                                =       sequence::controlSequence(1, table::finalWithoutIntermediate::PP);
-                    inline const auto SCROLL_DOWN                                   =       sequence::controlSequence(1, table::finalWithoutIntermediate::SD);
-                    inline const auto SCROLL_LEFT                                   =       sequence::controlSequence(1, table::finalWithIntermediate::SL);
-                    inline const auto SCROLL_RIGHT                                  =       sequence::controlSequence(1, table::finalWithIntermediate::SR);
-                    inline const auto SCROLL_UP                                     =       sequence::controlSequence(1, table::finalWithoutIntermediate::SU);
+                    
+                    /**
+                     * @brief 
+                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
+                     * @param Pn default(?)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> NEXT_PAGE(sequence::controlSequence(table::finalWithoutIntermediate::NP), {});
+                    
+                    /**
+                     * @brief 
+                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
+                     * @param Pn default(?)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> PRECEDING_PAGE(sequence::controlSequence(table::finalWithoutIntermediate::PP), {});
+                    
+                    /**
+                     * @brief 
+                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
+                     * @param Pn default(?)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_DOWN(sequence::controlSequence(table::finalWithoutIntermediate::SD), {});
+                    
+                    /**
+                     * @brief 
+                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
+                     * @param Pn default(?)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_LEFT(sequence::controlSequence(table::finalWithIntermediate::SL), {});
+                    
+                    /**
+                     * @brief 
+                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
+                     * @param Pn default(?)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_RIGHT(sequence::controlSequence(table::finalWithIntermediate::SR), {});
+                    
+                    /**
+                     * @brief 
+                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
+                     * @param Pn default(?)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_UP(sequence::controlSequence(table::finalWithoutIntermediate::SU), {});
                 }
 
                 namespace deviceControlFunctions {
