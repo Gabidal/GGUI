@@ -1911,113 +1911,538 @@ namespace GGUI {
                 namespace displayControlFunctions {
                     
                     /**
-                     * @brief 
-                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
-                     * @param Pn default(?)
+                     * @brief NP causes the n-th following page in the presentation component to be displayed, where n equals the value of Pn.
+                     * NOTE: The effect of this control function on the active presentation position is not defined by this Standard. 
+                     * @example `01/11 05/11 Pn 05/05` or `9/11 Pn 05/05`
+                     * @param Pn default(1)
                      */
-                    inline base<sequence::controlSequence, sequence::parameter, 1> NEXT_PAGE(sequence::controlSequence(table::finalWithoutIntermediate::NP), {});
+                    inline base<sequence::controlSequence, sequence::parameter, 1> NEXT_PAGE(sequence::controlSequence(table::finalWithoutIntermediate::NP), {1});
                     
                     /**
-                     * @brief 
-                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
-                     * @param Pn default(?)
+                     * @brief PP causes the n-th preceding page in the presentation component to be displayed, where n equals the value of Pn. 
+                     * The effect of this control function on the active presentation position is not defined by this Standard. 
+                     * @example `01/11 05/11 Pn 05/06` or `9/11 Pn 05/06`
+                     * @param Pn default(1)
                      */
-                    inline base<sequence::controlSequence, sequence::parameter, 1> PRECEDING_PAGE(sequence::controlSequence(table::finalWithoutIntermediate::PP), {});
+                    inline base<sequence::controlSequence, sequence::parameter, 1> PRECEDING_PAGE(sequence::controlSequence(table::finalWithoutIntermediate::PP), {1});
                     
                     /**
-                     * @brief 
-                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
-                     * @param Pn default(?)
+                     * @brief SD causes the data in the presentation component to be moved by n line positions if the line orientation
+                     * is horizontal, or by n character positions if the line orientation is vertical, such that the data appear to move down; 
+                     * where n equals the value of Pn.
+                     * NOTE: The active presentation position is not affected by this control function.
+                     * @example `01/11 05/11 Pn 05/04` or `9/11 Pn 05/04`
+                     * @param Pn default(1)
                      */
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_DOWN(sequence::controlSequence(table::finalWithoutIntermediate::SD), {});
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_DOWN(sequence::controlSequence(table::finalWithoutIntermediate::SD), {1});
                     
                     /**
-                     * @brief 
-                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
-                     * @param Pn default(?)
+                     * @brief SL causes the data in the presentation component to be moved by n character positions if the line
+                     * orientation is horizontal, or by n line positions if the line orientation is vertical, such that the data appear to move to the left; where n equals the value of Pn.
+                     * NOTE: The active presentation position is not affected by this control function. 
+                     * @example `01/11 05/11 Pn 02/00 04/00` or `9/11 Pn 02/00 04/00`
+                     * @param Pn default(1)
                      */
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_LEFT(sequence::controlSequence(table::finalWithIntermediate::SL), {});
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SCROLL_LEFT(sequence::controlSequence(table::finalWithIntermediate::SL), {1}, {table::toInt(2, 00)});
                     
                     /**
-                     * @brief 
-                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
-                     * @param Pn default(?)
+                     * @brief SR causes the data in the presentation component to be moved by n character positions if the line
+                     * orientation is horizontal, or by n line positions if the line orientation is vertical, such that the data appear to move to the right; where n equals the value of Pn.
+                     * NOTE: The active presentation position is not affected by this control function. 
+                     * @example `01/11 05/11 Pn 02/00 04/01` or `9/11 Pn 02/00 04/01`
+                     * @param Pn default(1)
                      */
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_RIGHT(sequence::controlSequence(table::finalWithIntermediate::SR), {});
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> SCROLL_RIGHT(sequence::controlSequence(table::finalWithIntermediate::SR), {1}, {table::toInt(2, 00)});
                     
                     /**
-                     * @brief 
-                     * @example `01/11 05/11 Pn ?` or `9/11 Pn ?`
-                     * @param Pn default(?)
+                     * @brief SU causes the data in the presentation component to be moved by n line positions if the line orientation
+                     * is horizontal, or by n character positions if the line orientation is vertical, such that the data appear to move up; where n equals the value of Pn.
+                     * NOTE: The active presentation position is not affected by this control function. 
+                     * @example `01/11 05/11 Pn 05/03` or `9/11 Pn 05/03`
+                     * @param Pn default(1)
                      */
-                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_UP(sequence::controlSequence(table::finalWithoutIntermediate::SU), {});
+                    inline base<sequence::controlSequence, sequence::parameter, 1> SCROLL_UP(sequence::controlSequence(table::finalWithoutIntermediate::SU), {1});
                 }
 
                 namespace deviceControlFunctions {
-                    inline const auto DEVICE_CONTROL_ONE                            =       sequence::basic(table::C0::DC1);
-                    inline const auto DEVICE_CONTROL_TWO                            =       sequence::basic(table::C0::DC2);
-                    inline const auto DEVICE_CONTROL_THREE                          =       sequence::basic(table::C0::DC3);
-                    inline const auto DEVICE_CONTROL_FOUR                           =       sequence::basic(table::C0::DC4);
+                    /**
+                     * @brief DC1 is primarily intended for turning on or starting an ancillary device. 
+                     * If it is not required for this purpose, it may be used to restore a device to the basic mode of operation (see also DC2 and DC3), or
+                     * any other device control function not provided by other DCs.
+                     * NOTE: When used for data flow control, DC1 is sometimes called "X-ON". 
+                     * @example `01/01`
+                     */
+                     inline base<sequence::basic> DEVICE_CONTROL_ONE             = base<sequence::basic>(sequence::basic(table::C0::DC1));
+                    
+                    /**
+                     * @brief DC2 is primarily intended for turning on or starting an ancillary device. 
+                     * If it is not required for this purpose, it may be used to set a device to a special mode of operation (in which case DC1 is used to restore the device to the basic mode), 
+                     * or for any other device control function not provided by other DCs.
+                     * @example `01/02`
+                     */
+                    inline base<sequence::basic> DEVICE_CONTROL_TWO             = base<sequence::basic>(sequence::basic(table::C0::DC2));
+                    
+                    /**
+                     * @brief DC3 is primarily intended for turning off or stopping an ancillary device. 
+                     * This function may be a secondary level stop, for example wait, pause, stand-by or halt (in which case DC1 is used to restore normal operation). 
+                     * If it is not required for this purpose, it may be used for any other device control function not provided by other DCs.
+                     * NOTE: When used for data flow control, DC3 is sometimes called "X-OFF". 
+                     * @example `01/03`
+                     */
+                    inline base<sequence::basic> DEVICE_CONTROL_THREE           = base<sequence::basic>(sequence::basic(table::C0::DC3));
+                    
+                    /**
+                     * @brief DC4 is primarily intended for turning off, stopping or interrupting an ancillary device. 
+                     * If it is not required for this purpose, it may be used for any other device control function not provided by other DCs. 
+                     * @example `01/04`
+                     */
+                    inline base<sequence::basic> DEVICE_CONTROL_FOUR            = base<sequence::basic>(sequence::basic(table::C0::DC4));
                 }
 
                 namespace informationSeparators {
-                    inline const auto INFORMATION_SEPARATOR_ONE                     =       sequence::basic(table::C0::IS1);
-                    inline const auto INFORMATION_SEPARATOR_TWO                     =       sequence::basic(table::C0::IS2);
-                    inline const auto INFORMATION_SEPARATOR_THREE                   =       sequence::basic(table::C0::IS3);
-                    inline const auto INFORMATION_SEPARATOR_FOUR                    =       sequence::basic(table::C0::IS4);
+                    
+                    /**
+                     * @brief IS1 is used to separate and qualify data logically; its specific meaning has to be defined for each application. 
+                     * If this control function is used in hierarchical order, it may delimit a data item called a unit, see 8.2.10. 
+                     * @example `01/15`
+                     */
+                    inline base<sequence::basic> INFORMATION_SEPARATOR_ONE      = base<sequence::basic>(sequence::basic(table::C0::IS1));
+                    
+                    /**
+                     * @brief IS2 is used to separate and qualify data logically; its specific meaning has to be defined for each application. 
+                     * If this control function is used in hierarchical order, it may delimit a data item called a record, see 8.2.10. 
+                     * @example `01/14`
+                     */
+                    inline base<sequence::basic> INFORMATION_SEPARATOR_TWO      = base<sequence::basic>(sequence::basic(table::C0::IS2));
+                    
+                    /**
+                     * @brief IS3 is used to separate and qualify data logically; its specific meaning has to be defined for each application. 
+                     * If this control function is used in hierarchical order, it may delimit a data item called a group, see 8.2.10. 
+                     * @example `01/13`
+                     */
+                    inline base<sequence::basic> INFORMATION_SEPARATOR_THREE    = base<sequence::basic>(sequence::basic(table::C0::IS3));
+                    
+                    /**
+                     * @brief IS4 is used to separate and qualify data logically; its specific meaning has to be defined for each application. 
+                     * If this control function is used in hierarchical order, it may delimit a data item called a file, see 8.2.10. 
+                     * @example `01/12`
+                     */
+                    inline base<sequence::basic> INFORMATION_SEPARATOR_FOUR     = base<sequence::basic>(sequence::basic(table::C0::IS4));
                 }
 
                 namespace areaDefinitions {
-                    inline const auto DEFINE_AREA_QUALIFICATION                     =       sequence::controlSequence(-1, table::finalWithoutIntermediate::DAQ);
-                    inline const auto END_OF_GUARDED_AREA                           =       sequence::basic(table::C1::EPA);
-                    inline const auto END_OF_SELECTED_AREA                          =       sequence::basic(table::C1::ESA);
-                    inline const auto START_OF_GUARDED_AREA                         =       sequence::basic(table::C1::SPA);
-                    inline const auto START_OF_SELECTED_AREA                        =       sequence::basic(table::C1::SSA);
+                    inline base<sequence::controlSequence, sequence::parameter, 1> DEFINE_AREA_QUALIFICATION(sequence::controlSequence(table::finalWithoutIntermediate::DAQ), {});
+                    
+                    /**
+                     * @brief EPA is used to indicate that the active presentation position is the last of a string of character positions
+                     * in the presentation component, the contents of which are protected against manual alteration, are
+                     * guarded against transmission or transfer, depending on the setting of the GUARDED AREA TRANSFER MODE (GATM), 
+                     * and may be protected against erasure, depending on the setting of the ERASURE MODE (ERM). 
+                     * The beginning of this string is indicated by START OF GUARDED AREA (SPA).
+                     * NOTE: The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string. 
+                     * @example `09/07` or `01/11 05/07` 
+                     */
+                    inline base<sequence::basic> END_OF_GUARDED_AREA            = base<sequence::basic>(sequence::basic(table::C1::EPA));
+                    
+                    /**
+                     * @brief ESA is used to indicate that the active presentation position is the last of a string of character positions
+                     * in the presentation component, the contents of which are eligible to be transmitted in the form of a data
+                     * stream or transferred to an auxiliary input/output device. 
+                     * The beginning of this string is indicated by START OF SELECTED AREA (SSA).
+                     * NOTE: The control function for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string. 
+                     * @example `08/07` or `01/11 04/07` 
+                     */
+                    inline base<sequence::basic> END_OF_SELECTED_AREA           = base<sequence::basic>(sequence::basic(table::C1::ESA));
+                    
+                    /**
+                     * @brief SPA is used to indicate that the active presentation position is the first of a string of character positions
+                     * in the presentation component, the contents of which are protected against manual alteration, are
+                     * guarded against transmission or transfer, depending on the setting of the GUARDED AREA TRANSFER MODE (GATM) and may be protected against erasure, 
+                     * depending on the setting of the ERASURE MODE (ERM). 
+                     * The end of this string is indicated by END OF GUARDED AREA (EPA).
+                     * NOTE: The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string.
+                     * @example `09/06` or `01/11 05/06` 
+                     */
+                    inline base<sequence::basic> START_OF_GUARDED_AREA          = base<sequence::basic>(sequence::basic(table::C1::SPA));
+                    
+                    /**
+                     * @brief SSA is used to indicate that the active presentation position is the first of a string of character positions
+                     * in the presentation component, the contents of which are eligible to be transmitted in the form of a data
+                     * stream or transferred to an auxiliary input/output device.
+                     * The end of this string is indicated by END OF SELECTED AREA (ESA). 
+                     * The string of characters actually transmitted or transferred depends on the setting of the GUARDED AREA TRANSFER MODE (GATM) 
+                     * and on any guarded areas established by DEFINE AREA QUALIFICATION (DAQ), 
+                     * or by START OF GUARDED AREA (SPA) and END OF GUARDED AREA (EPA).
+                     * NOTE: The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string. 
+                     * @example `08/06` or `01/11 04/06` 
+                     */
+                    inline base<sequence::basic> START_OF_SELECTED_AREA         = base<sequence::basic>(sequence::basic(table::C1::SSA));
                 }
 
                 namespace modeSettings {
-                    inline const auto RESET_MODE                                  =       sequence::controlSequence(-1, table::finalWithoutIntermediate::RM);
-                    inline const auto SET_MODE                                    =       sequence::controlSequence(-1, table::finalWithoutIntermediate::SM);
+                    /**
+                     * @brief RM causes the modes of the receiving device to be reset as specified by the parameter values.
+                     * NOTE: Private modes may be implemented using private parameters, see 5.4.1 and 7.4. 
+                     * @example `01/11 05/11 Ps... 06/12` or `9/11 Ps... 06/12`
+                     * @param Ps default(None)
+                     * @param ...
+                     */
+                    namespace RESET_MODE {
+                        enum class types {
+                            GUARDED_AREA_TRANSFER_MODE          = 1,
+                            KEYBOARD_ACTION_MODE,
+                            CONTROL_REPRESENTATION_MODE,
+                            INSERTION_REPLACEMENT_MODE,
+                            STATUS_REPORT_TRANSFER_MODE,
+                            ERASURE_MODE,
+                            LINE_EDITING_MODE,
+                            BI_DIRECTIONAL_SUPPORT_MODE,
+                            DEVICE_COMPONENT_SELECT_MODE,
+                            CHARACTER_EDITING_MODE,
+                            POSITIONING_UNIT_MODE,
+                            SEND_RECEIVE_MODE,
+                            FORMAT_EFFECTOR_ACTION_MODE,
+                            FORMAT_EFFECTOR_TRANSFER_MODE,
+                            MULTIPLE_AREA_TRANSFER_MODE,
+                            TRANSFER_TERMINATION_MODE,
+                            SELECTED_AREA_TRANSFER_MODE,
+                            TABULATION_STOP_MODE                = 18,
+                            GRAPHIC_RENDITION_COMBINATION_MODE  = 21,
+                            ZERO_DEFAULT_MODE,
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence(table::finalWithoutIntermediate::RM), {});
+                    }
+
+                    /**
+                     * @brief SM causes the modes of the receiving device to be set as specified by the parameter values.
+                     * NOTE: Private modes may be implemented using private parameters, see 5.4.1 and 7.4. 
+                     * @example `01/11 05/11 Ps... 06/08` or `9/11 Ps... 06/08`
+                     * @param Ps default(None)
+                     * @param ...
+                     */
+                    namespace SET_MODE {
+                        using types = RESET_MODE::types;
+
+                        inline base<sequence::controlSequence, types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence(table::finalWithoutIntermediate::SM), {});
+                    }
                 }
 
                 namespace transmissionControlFunctions {
-                    inline const auto ACKNOWLEDGE                                   =       sequence::basic(table::C0::ACK);
-                    inline const auto DATA_LINK_ESCAPE                              =       sequence::basic(table::C0::DLE);
-                    inline const auto ENQUIRY                                       =       sequence::basic(table::C0::ENQ);
-                    inline const auto END_OF_TRANSMISSION                           =       sequence::basic(table::C0::EOT);
-                    inline const auto END_OF_TRANSMISSION_BLOCK                     =       sequence::basic(table::C0::ETB);
-                    inline const auto END_OF_TEXT                                   =       sequence::basic(table::C0::ETX);
-                    inline const auto NEGATIVE_ACKNOWLEDGE                          =       sequence::basic(table::C0::NAK);
-                    inline const auto START_OF_HEADING                              =       sequence::basic(table::C0::SOH);
-                    inline const auto START_OF_TEXT                                 =       sequence::basic(table::C0::STX);
-                    inline const auto SYNCHRONOUS_IDLE                              =       sequence::basic(table::C0::SYN);
+                    
+                    /**
+                     * @brief ACK is transmitted by a receiver as an affirmative response to the sender.
+                     * The use of ACK is defined in ISO 1745. 
+                     * @example `00/06`
+                     */
+                    inline base<sequence::basic> ACKNOWLEDGE                    = base<sequence::basic>(sequence::basic(table::C0::ACK));
+                    
+                    /**
+                     * @brief DLE is used exclusively to provide supplementary transmission control functions.
+                     * The use of DLE is defined in ISO 1745. 
+                     * @example `01/00`
+                     */
+                    inline base<sequence::basic> DATA_LINK_ESCAPE               = base<sequence::basic>(sequence::basic(table::C0::DLE));
+                    
+                    /**
+                     * @brief ENQ is transmitted by a sender as a request for a response from a receiver.
+                     * The use of ENQ is defined in ISO 1745. 
+                     * @example `00/05`
+                     */
+                    inline base<sequence::basic> ENQUIRY                        = base<sequence::basic>(sequence::basic(table::C0::ENQ));
+                    
+                    /**
+                     * @brief EOT is used to indicate the conclusion of the transmission of one or more texts.
+                     * The use of EOT is defined in ISO 1745. 
+                     * @example `00/04`
+                     */
+                    inline base<sequence::basic> END_OF_TRANSMISSION            = base<sequence::basic>(sequence::basic(table::C0::EOT));
+                    
+                    /**
+                     * @brief ETB is used to indicate the end of a block of data where the data are divided into such blocks for transmission purposes.
+                     * The use of ETB is defined in ISO 1745. 
+                     * @example `01/07`
+                     */
+                    inline base<sequence::basic> END_OF_TRANSMISSION_BLOCK      = base<sequence::basic>(sequence::basic(table::C0::ETB));
+                    
+                    /**
+                     * @brief ETX is used to indicate the end of a text.
+                     * The use of ETX is defined in ISO 1745.
+                     * @example `00/03`
+                     */
+                    inline base<sequence::basic> END_OF_TEXT                    = base<sequence::basic>(sequence::basic(table::C0::ETX));
+                    
+                    /**
+                     * @brief NAK is transmitted by a receiver as a negative response to the sender.
+                     * The use of NAK is defined in ISO 1745.
+                     * @example `01/05`
+                     */
+                    inline base<sequence::basic> NEGATIVE_ACKNOWLEDGE           = base<sequence::basic>(sequence::basic(table::C0::NAK));
+                    
+                    /**
+                     * @brief SOH is used to indicate the beginning of a heading.
+                     * The use of SOH is defined in ISO 1745. 
+                     * @example `00/01`
+                     */
+                    inline base<sequence::basic> START_OF_HEADING               = base<sequence::basic>(sequence::basic(table::C0::SOH));
+                    
+                    /**
+                     * @brief STX is used to indicate the beginning of a text and the end of a heading.
+                     * The use of STX is defined in ISO 1745. 
+                     * @example `00/02`
+                     */
+                    inline base<sequence::basic> START_OF_TEXT                  = base<sequence::basic>(sequence::basic(table::C0::STX));
+                    
+                    /**
+                     * @brief SYN is used by a synchronous transmission system in the absence of any other character (idle condition) to
+                     * provide a signal from which synchronism may be achieved or retained between data terminal equipment.
+                     * The use of SYN is defined in ISO 1745. 
+                     * @example `01/06`
+                     */
+                    inline base<sequence::basic> SYNCHRONOUS_IDLE               = base<sequence::basic>(sequence::basic(table::C0::SYN));
                 }
 
                 namespace miscellaneousControlFunctions {
-                    inline const auto BELL                                          =       sequence::basic(table::C0::BEL);
-                    inline const auto CANCEL                                        =       sequence::basic(table::C0::CAN);
-                    inline const auto CANCEL_CHARACTER                              =       sequence::basic(table::C1::CCH);
-                    inline const auto ACTIVE_POSITION_REPORT                        =       sequence::controlSequence(2, table::finalWithoutIntermediate::CPR);
-                    inline const auto DEVICE_ATTRIBUTES                             =       sequence::controlSequence(1, table::finalWithoutIntermediate::DA);
-                    inline const auto DISABLE_MANUAL_INPUT                          =       sequence::independent(table::independentFunctions::DMI);
-                    inline const auto DEVICE_STATUS_REPORT                          =       sequence::controlSequence(1, table::finalWithoutIntermediate::DSR);
-                    inline const auto END_OF_MEDIUM                                 =       sequence::basic(table::C0::EM);
-                    inline const auto ENABLE_MANUAL_INPUT                           =       sequence::independent(table::independentFunctions::EMI);
-                    inline const auto FUNCTION_KEY                                  =       sequence::controlSequence(1, table::finalWithIntermediate::FNK);
-                    inline const auto IDENTIFY_DEVICE_CONTROL_STRING                =       sequence::controlSequence(1, table::finalWithIntermediate::IDCS);
-                    inline const auto IDENTIFY_GRAPHIC_SUBREPERTOIRE                =       sequence::controlSequence(1, table::finalWithIntermediate::IGS);
-                    inline const auto INTERRUPT                                     =       sequence::independent(table::independentFunctions::INT);
-                    inline const auto MEDIA_COPY                                    =       sequence::controlSequence(1, table::finalWithoutIntermediate::MC);
-                    inline const auto MESSAGE_WAITING                               =       sequence::basic(table::C1::MW);
-                    inline const auto NULL_CHARACTER                                =       sequence::basic(table::C0::NUL);
-                    inline const auto PRIVATE_USE_ONE                               =       sequence::basic(table::C1::PU1);
-                    inline const auto PRIVATE_USE_TWO                               =       sequence::basic(table::C1::PU2);
-                    inline const auto REPEAT                                        =       sequence::controlSequence(1, table::finalWithoutIntermediate::REP);
-                    inline const auto RESET_TO_INITIAL_STATE                        =       sequence::independent(table::independentFunctions::RIS);
-                    inline const auto SELECT_EDITING_EXTENT                         =       sequence::controlSequence(2, table::finalWithoutIntermediate::SSE);
-                    inline const auto SHEET_EJECT_AND_FEED                          =       sequence::controlSequence(2, table::finalWithIntermediate::SEF);
-                    inline const auto SET_TRANSMIT_STATE                            =       sequence::basic(table::C1::STS);
-                    inline const auto SUBSTITUTE                                    =       sequence::basic(table::C0::SUB);
+                    
+                    /**
+                     * @brief BEL is used when there is a need to call for attention; it may control alarm or attention devices.
+                     * @example `00/07`
+                     */
+                    inline base<sequence::basic> BELL                           = base<sequence::basic>(sequence::basic(table::C0::BEL));
+                    
+                    /**
+                     * @brief CAN is used to indicate that the data preceding it in the data stream is in error. 
+                     * As a result, this data shall be ignored. 
+                     * The specific meaning of this control function shall be defined for each application and/or between sender and recipient.
+                     * @example `01/08`
+                     */
+                    inline base<sequence::basic> CANCEL                         = base<sequence::basic>(sequence::basic(table::C0::CAN));
+                    
+                    /**
+                     * @brief CCH is used to indicate that both the preceding graphic character in the data stream, 
+                     * (represented by one or more bit combinations) including SPACE, and the control function CCH itself are to be ignored for further interpretation of the data stream.
+                     * If the character preceding CCH in the data stream is a control function (represented by one or more bit combinations), the effect of CCH is not defined by this Standard
+                     * @example `09/04` or `01/11 05/04` 
+                     */
+                    inline base<sequence::basic> CANCEL_CHARACTER               = base<sequence::basic>(sequence::basic(table::C1::CCH));
+                    
+                    /**
+                     * @brief This sequence means two different things based on previous sequence.
+                     * 1) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, CPR is used to
+                     * report the active presentation position of the sending device as residing in the presentation component at
+                     * the n-th line position according to the line progression and at the m-th character position according to
+                     * the character path, where n equals the value of Pn1 and m equals the value of Pn2.
+                     * 2) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, CPR is used to report the
+                     * active data position of the sending device as residing in the data component at the n-th line position
+                     * according to the line progression and at the m-th character position according to the character
+                     * progression, where n equals the value of Pn1 and m equals the value of Pn2.
+                     * NOTE: CPR may be solicited by a DEVICE STATUS REPORT (DSR) or be sent unsolicited. 
+                     * @example `01/11 05/11 Pn1;Pn2 05/02` or `9/11 Pn1;Pn2 05/02`
+                     * @param Pn1 default(1)
+                     * @param Pn2 default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 2> ACTIVE_POSITION_REPORT(sequence::controlSequence(table::finalWithoutIntermediate::CPR), {1, 1});
+                    
+                    /**
+                     * @brief With a parameter value not equal to 0, DA is used to identify the device which sends the DA. 
+                     * The parameter value is a device type identification code according to a register which is to be established. 
+                     * If the parameter value is 0, DA is used to request an identifying DA from a device.
+                     * @example `01/11 05/11 Ps 06/03` or `9/11 Ps 06/03`
+                     * @param Ps default(0)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> DEVICE_ATTRIBUTES(sequence::controlSequence(table::finalWithoutIntermediate::DA), {0});
+                    
+                    /**
+                     * @brief DMI causes the manual input facilities of a device to be disabled.
+                     * @example `01/11 06/00` 
+                     */
+                    inline base<sequence::independent> DISABLE_MANUAL_INPUT = base<sequence::independent>(sequence::independent(table::independentFunctions::DMI));
+                    
+                    /**
+                     * @brief DSR is used either to report the status of the sending device or to request a status report from the receiving device, depending on the parameter values.
+                     * NOTE: DSR with parameter value 0, 1, 2, 3 or 4 may be sent either unsolicited or as a response to a request such as a DSR with a parameter value 5 or MESSAGE WAITING (MW). 
+                     * @example `01/11 05/11 Ps 06/14` or `9/11 Ps 06/14`
+                     * @param Ps default(0)
+                     */
+                    namespace DEVICE_STATUS_REPORT {
+                        enum class types {
+                            READY,                                  // Ready, no malfunction detected
+                            BUSY_REQUEST_LATER,                     // Busy, another DSR must be requested later
+                            BUSY_SEND_LATER,                        // Busy, another DSR will be sent later 
+                            ERROR_REQUEST_LATER,                    // Some malfunction detected, another DSR must be requested later 
+                            ERROR_SEND_LATER,                       // Some malfunction detected, another DSR will be sent later 
+                            DSR_REQUESTED,                          // A DSR is requested
+                            ACTIVE_POSITION_REQUESTED,              // A report of the active presentation position or of the active data position in the form of ACTIVE POSITION REPORT (CPR) is requested 
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::DSR), {types::READY});
+                    }
+
+                    /**
+                     * @brief EM is used to identify the physical end of a medium, or the end of the used portion of a medium, or the end of the wanted portion of data recorded on a medium.
+                     * @example `01/09`
+                     */
+                    inline base<sequence::basic> END_OF_MEDIUM                  = base<sequence::basic>(sequence::basic(table::C0::EM));
+                    
+                    /**
+                     * @brief EMI is used to enable the manual input facilities of a device.
+                     * @example `01/11 06/02`
+                     */
+                    inline base<sequence::independent> ENABLE_MANUAL_INPUT = base<sequence::independent>(sequence::independent(table::independentFunctions::EMI));
+                    
+                    /**
+                     * @brief FNK is a control function in which the parameter value identifies the function key which has been operated. 
+                     * @example `01/11 05/11 Pn 02/00 05/07` or `9/11 Pn 02/00 05/07`
+                     * @param Pn default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> FUNCTION_KEY(sequence::controlSequence(table::finalWithIntermediate::FNK), {}, {table::toInt(2, 00)});
+                    
+                    /**
+                     * @brief IDCS is used to specify the purpose and format of the command string of subsequent DEVICE CONTROL STRINGs (DCS). 
+                     * The specified purpose and format remain in effect until the next occurrence of IDCS in the data stream. 
+                     * The format and interpretation of the command string corresponding to these parameter values are to be defined in appropriate standards. 
+                     * if this control function is used to identify a private command string, a private parameter value shall be used
+                     * @example `01/11 05/11 Ps 02/00 04/15` or `9/11 Ps 02/00 04/15`
+                     * @param Ps default(None)
+                     */
+                    namespace IDENTIFY_DEVICE_CONTROL_STRING {
+                        enum class types {
+                            DIAGNOSTIC_STATE_OF_STATUS_REPORT_TRANSFER_MODE,            // Reserved for use with the DIAGNOSTIC state of the STATUS REPORT TRANSFER MODE (SRTM)
+                            DYNAMICALLY_REDEFINE_CHARACTER_SETS                         // Reserved for Dynamically Redefinable Character Sets (DRCS) according to Standard ECMA-35. 
+                        };
+
+                        inline base<sequence::controlSequence, types, 1, 1> code(sequence::controlSequence(table::finalWithIntermediate::IDCS), {}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief IGS is used to indicate that a repertoire of the graphic characters of ISO/IEC 10367 is used in the subsequent text.
+                     * The parameter value of IGS identifies a graphic character repertoire registered in accordance with ISO/IEC 7350. 
+                     * @example `01/11 05/11 Ps 02/00 04/13` or `9/11 Ps 02/00 04/13`
+                     * @param Ps default(None)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1, 1> IDENTIFY_GRAPHIC_SUBREPERTOIRE(sequence::controlSequence(table::finalWithIntermediate::IGS), {}, {table::toInt(2, 00)});
+
+                    /**
+                     * @brief INT is used to indicate to the receiving device that the current process is to be interrupted and an agreed procedure is to be initiated. 
+                     * This control function is applicable to either direction of transmission. 
+                     * @example `01/11 06/01`
+                     */
+                    inline base<sequence::independent> INTERRUPT = base<sequence::independent>(sequence::independent(table::independentFunctions::INT));
+
+                    /**
+                     * @brief MC is used either to initiate a transfer of data from or to an auxiliary input/output device or to enable or disable the relay of the received data stream to an auxiliary input/output device, depending on the parameter value.
+                     * NOTE: This control function may not be used to switch on or off an auxiliary device. 
+                     * @example `01/11 05/11 Ps 06/09` or `9/11 Ps 06/09`
+                     * @param Ps default(0)
+                     */
+                    namespace MEDIA_COPY {
+                        enum class types {
+                            TRANSFER_TO_PRIMARY_AUXILIARY_DEVICE,           //initiate transfer to a primary auxiliary device
+                            TRANSFER_FROM_PRIMARY_AUXILIARY_DEVICE,         //initiate transfer from a primary auxiliary device
+                            TRANSFER_TO_SECONDARY_AUXILIARY_DEVICE,         //initiate transfer to a secondary auxiliary device
+                            TRANSFER_FROM_SECONDARY_AUXILIARY_DEVICE,       //initiate transfer from a secondary auxiliary device
+                            STOP_RELAY_TOPRIMARY_AUXILIARY_DEVICE,          //stop relay to a primary auxiliary device
+                            START_RELAY_TO_PRIMARY_AUXILIARY_DEVICE,        //start relay to a primary auxiliary device
+                            STOP_RELAY_TO_SECONDARY_AUXILIARY_DEVICE,       //stop relay to a secondary auxiliary device
+                            START_RELAY_TO_SECONDARY_AUXILIARY_DEVICE,      //start relay to a secondary auxiliary device 
+                        };  
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::MC), {types::TRANSFER_TO_PRIMARY_AUXILIARY_DEVICE});
+                    }
+
+                    /**
+                     * @brief MW is used to set a message waiting indicator in the receiving device. 
+                     * An appropriate acknowledgement to the receipt of MW may be given by using DEVICE STATUS REPORT (DSR).
+                     * @example `09/05` or `01/11 05/05` 
+                     */
+                    inline base<sequence::basic> MESSAGE_WAITING                = base<sequence::basic>(sequence::basic(table::C1::MW));
+
+                    /**
+                     * @brief NUL is used for media-fill or time-fill. NUL characters may be inserted into, or removed from, a data
+                     * stream without affecting the information content of that stream, but such action may affect the information layout and/or the control of equipment. 
+                     * @example `00/00`
+                     */
+                    inline base<sequence::basic> NULL_CHARACTER                 = base<sequence::basic>(sequence::basic(table::C0::NUL));
+
+                    /**
+                     * @brief PU1 is reserved for a function without standardized meaning for private use as required, subject to the prior agreement between the sender and the recipient of the data. 
+                     * @example `09/01` or `01/11 05/01`
+                     */
+                    inline base<sequence::basic> PRIVATE_USE_ONE                = base<sequence::basic>(sequence::basic(table::C1::PU1));
+
+                    /**
+                     * @brief PU2 is reserved for a function without standardized meaning for private use as required, subject to the prior agreement between the sender and the recipient of the data
+                     * @example `09/02` or `01/11 05/02`
+                     */
+                    inline base<sequence::basic> PRIVATE_USE_TWO                = base<sequence::basic>(sequence::basic(table::C1::PU2));
+
+                    /**
+                     * @brief REP is used to indicate that the preceding character in the data stream, if it is a graphic character
+                     * (represented by one or more bit combinations) including SPACE, is to be repeated n times, where n
+                     * equals the value of Pn. If the character preceding REP is a control function or part of a control function,
+                     * the effect of REP is not defined by this Standard. 
+                     * @example `01/11 05/11 Pn 06/02` or `9/11 Pn 06/02`
+                     * @param Pn default(1)
+                     */
+                    inline base<sequence::controlSequence, sequence::parameter, 1> REPEAT(sequence::controlSequence(table::finalWithoutIntermediate::REP), {1});
+
+                    /**
+                     * @brief RIS causes a device to be reset to its initial state, i.e. the state it has after it is made operational. 
+                     * This may imply, if applicable: clear tabulation stops, remove qualified areas, reset graphic rendition, put all
+                     * character positions into the erased state, move the active presentation position to the first position of the
+                     * first line in the presentation component, move the active data position to the first character position of
+                     * the first line in the data component, set the modes into the reset state, etc. 
+                     * @example `01/11 06/03`
+                     */
+                    inline base<sequence::independent> RESET_TO_INITIAL_STATE = base<sequence::independent>(sequence::independent(table::independentFunctions::RIS));
+
+                    /**
+                     * @brief SEE is used to establish the editing extent for subsequent character or line insertion or deletion. 
+                     * The established extent remains in effect until the next occurrence of SEE in the data stream. 
+                     * The editing extent depends on the parameter value.
+                     * @example `01/11 05/11 Ps 05/01` or `9/11 Ps 05/01`
+                     * @param Ps default(0)
+                     */
+                    namespace SELECT_EDITING_EXTENT {
+                        enum class types {
+                            ACTIVE_PAGE,                    // the shifted part is limited to the active page in the presentation component
+                            ACTIVE_LINE,                    // the shifted part is limited to the active line in the presentation component
+                            ACTIVE_FIELD,                   // the shifted part is limited to the active field in the presentation component
+                            ACTIVE_QUALIFIED_AREA,          // the shifted part is limited to the active qualified area
+                            ENTIRE_PRESENTATION_COMPONENT   // the shifted part consists of the relevant part of the entire presentation component
+                        };
+
+                        inline base<sequence::controlSequence, types, 1> code(sequence::controlSequence(table::finalWithoutIntermediate::SSE), {types::ACTIVE_PAGE});
+                    }
+
+                    /**
+                     * @brief SEF causes a sheet of paper to be ejected from a printing device into a specified output stacker and
+                     * another sheet to be loaded into the printing device from a specified paper bin.
+                     * NOTE: Normally the parameters are Ps1;Ps2, but since they have an unlimited amount of value and only the zero value is special, GGUI will treat them as Pn1;Pn2
+                     * @example `01/11 05/11 Pn1;Pn2 02/00 05/09` or `9/11 Pn1;Pn2 02/00 05/09`
+                     * @param Pn1 default(0) - 0: eject sheet, no new sheet loaded; 1-n: eject sheet and load another from bin n
+                     * @param Pn2 default(0) - 0: eject sheet, no stacker specified; 1-n: eject sheet into stacker n
+                     */
+                    namespace SHEET_EJECT_AND_FEED {
+                        inline base<sequence::controlSequence, sequence::parameter, 2, 1> code(sequence::controlSequence(table::finalWithIntermediate::SEF), {0, 0}, {table::toInt(2, 00)});
+                    }
+
+                    /**
+                     * @brief STS is used to establish the transmit state in the receiving device. 
+                     * In this state the transmission of data from the device is possible.
+                     * The actual initiation of transmission of data is performed by a data communication or input/output
+                     * interface control procedure which is outside the scope of this Standard.
+                     * The transmit state is established either by STS appearing in the received data stream or by the operation of an appropriate key on a keyboard. 
+                     * @example `09/03` or `01/11 05/03`
+                     */
+                    inline base<sequence::basic> SET_TRANSMIT_STATE             = base<sequence::basic>(sequence::basic(table::C1::STS));
+
+                    /**
+                     * @brief SUB is used in the place of a character that has been found to be invalid or in error. 
+                     * SUB is intended to be introduced by automatic means.
+                     * @example `01/10`
+                     */
+                    inline base<sequence::basic> SUBSTITUTE                     = base<sequence::basic>(sequence::basic(table::C0::SUB));
                 }
             }
 
