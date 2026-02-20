@@ -5,7 +5,26 @@
 #include "terminal.h"
 
 /**
- * Source: https://ecma-international.org/wp-content/uploads/ECMA-48_5th_edition_june_1991.pdf
+ * (c) Ecma International
+ * By obtaining and/or copying this work, you (the licensee) agree that you have read, understood, and will comply with the following terms and conditions.
+ * This document may be copied, published and distributed to others, and certain derivative works of it may be prepared, copied, published, and distributed, in whole or in part, provided that the above copyright notice and this Copyright License and Disclaimer are included on all such copies and derivative works. The only derivative works that are permissible under this Copyright License and Disclaimer are:
+ * (i) works which incorporate all or portion of this document for the purpose of providing commentary or explanation (such as an annotated version of the document),
+ * (ii) works which incorporate all or portion of this document for the purpose of incorporating features that provide accessibility,
+ * (iii) translations of this document into languages other than English and into different formats and
+ * (iv) works by making use of this specification in standard conformant products by implementing (e.g. by copy and paste wholly or partly) the functionality therein.
+ * However, the content of this document itself may not be modified in any way, including by removing the copyright notice or references to Ecma International, except as required to translate it into languages other than English or into a different format.
+ * The official version of an Ecma International document is the English language version on the Ecma International website. In the event of discrepancies between a translated version and the official version, the official version shall govern.
+ * The limited permissions granted above are perpetual and will not be revoked by Ecma International or its successors or assigns.
+ * This document and the information contained herein is provided on an “AS IS” basis and ECMA INTERNATIONAL DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY OWNERSHIP RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+/**
+ * Portions of the documentation in the `sequences` namespace are
+ * copied verbatim from ECMA-48 (Control Functions for Coded Character Sets), 5th edition. 
+ * Copied from: https://ecma-international.org/wp-content/uploads/ECMA-48_5th_edition_june_1991.pdf
+ *
+ * Used under clause (iv) of Ecma International Text Copyright Policy (December 2025, version 3).
+ * Stated here: https://ecma-international.org/policies/by-ipr/ecma-text-copyright-policy/
 */
 
 namespace GGUI {
@@ -565,64 +584,64 @@ namespace GGUI {
                 namespace delimiters {
                     /**
                      * @brief APC is used as the opening delimiter of a control string for application program use. The command
-                        string following may consist of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14. The
-                        control string is closed by the terminating delimiter STRING TERMINATOR (ST). The interpretation of
-                        the command string depends on the relevant application program. 
+                     * string following may consist of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14. The
+                     * control string is closed by the terminating delimiter STRING TERMINATOR (ST). The interpretation of
+                     * the command string depends on the relevant application program. 
                      * @example `09/15` or `01/11 05/15`
                     */
                     inline base<sequence::basic> APPLICATION_PROGRAM_COMMAND = base<sequence::basic>(sequence::basic(table::C1::APC));
 
                     /**
                      * @brief CMD is used as the delimiter of a string of data coded according to Standard ECMA-35 and to switch to
-                        a general level of control. The use of CMD is not mandatory if the higher level protocol defines means of delimiting the string, 
-                        for instance, by specifying the length of the string. 
+                     * a general level of control. The use of CMD is not mandatory if the higher level protocol defines means of delimiting the string, 
+                     * for instance, by specifying the length of the string. 
                      * @example `01/11 06/04`
                      */
                     inline base<sequence::independent> CODING_METHOD_DELIMITER = base<sequence::independent>(sequence::independent(table::independentFunctions::CMD));
 
                     /**
                      * @brief DCS is used as the opening delimiter of a control string for device control use. The command string
-                        following may consist of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14. The control
-                        string is closed by the terminating delimiter STRING TERMINATOR (ST).
-                        The command string represents either one or more commands for the receiving device, or one or more
-                        status reports from the sending device. The purpose and the format of the command string are specified
-                        by the most recent occurrence of IDENTIFY DEVICE CONTROL STRING (IDCS), if any, or depend on
-                        the sending and/or the receiving device. 
+                     * following may consist of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14. The control
+                     * string is closed by the terminating delimiter STRING TERMINATOR (ST).
+                     * The command string represents either one or more commands for the receiving device, or one or more
+                     * status reports from the sending device. The purpose and the format of the command string are specified
+                     * by the most recent occurrence of IDENTIFY DEVICE CONTROL STRING (IDCS), if any, or depend on
+                     * the sending and/or the receiving device. 
                      * @example `09/00` or `01/11 05/00` 
                      */
                     inline base<sequence::basic> DEVICE_CONTROL_STRING = base<sequence::basic>(sequence::basic(table::C1::DCS));
 
                     /**
                      * @brief OSC is used as the opening delimiter of a control string for operating system use. The command string
-                        following may consist of a sequence of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14.
-                        The control string is closed by the terminating delimiter STRING TERMINATOR (ST). The
-                        interpretation of the command string depends on the relevant operating system. 
+                     * following may consist of a sequence of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14.
+                     * The control string is closed by the terminating delimiter STRING TERMINATOR (ST). The
+                     * interpretation of the command string depends on the relevant operating system. 
                      * @example `09/13` or `01/11 05/13` 
                      */
                     inline base<sequence::basic> OPERATING_SYSTEM_COMMAND = base<sequence::basic>(sequence::basic(table::C1::OSC));
 
                     /**
                      * @brief PM is used as the opening delimiter of a control string for privacy message use. The command string
-                        following may consist of a sequence of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14.
-                        The control string is closed by the terminating delimiter STRING TERMINATOR (ST). The
-                        interpretation of the command string depends on the relevant privacy discipline.
+                     * following may consist of a sequence of bit combinations in the range 00/08 to 00/13 and 02/00 to 07/14.
+                     * The control string is closed by the terminating delimiter STRING TERMINATOR (ST). The
+                     * interpretation of the command string depends on the relevant privacy discipline.
                      * @example `09/14` or `01/11 05/14` 
                      */
                     inline base<sequence::basic> PRIVACY_MESSAGE = base<sequence::basic>(sequence::basic(table::C1::PM));
 
                     /**
                      * @brief SOS is used as the opening delimiter of a control string. The character string following may consist of
-                        any bit combination, except those representing SOS or STRING TERMINATOR (ST). The control string
-                        is closed by the terminating delimiter STRING TERMINATOR (ST). The interpretation of the character
-                        string depends on the application.
+                     * any bit combination, except those representing SOS or STRING TERMINATOR (ST). The control string
+                     * is closed by the terminating delimiter STRING TERMINATOR (ST). The interpretation of the character
+                     * string depends on the application.
                      * @example `09/08` or `01/11 05/08`
                      */
                     inline base<sequence::basic> START_OF_STRING = base<sequence::basic>(sequence::basic(table::C1::SOS));
 
                     /**
                      * @brief ST is used as the closing delimiter of a control string opened by APPLICATION PROGRAM
-                        COMMAND (APC), DEVICE CONTROL STRING (DCS), OPERATING SYSTEM COMMAND
-                        (OSC), PRIVACY MESSAGE (PM), or START OF STRING (SOS).
+                     * COMMAND (APC), DEVICE CONTROL STRING (DCS), OPERATING SYSTEM COMMAND
+                     * (OSC), PRIVACY MESSAGE (PM), or START OF STRING (SOS).
                      * @example `09/12` or `01/11 05/12` 
                      */
                     inline base<sequence::basic> STRING_TERMINATOR = base<sequence::basic>(sequence::basic(table::C1::ST));
@@ -637,15 +656,15 @@ namespace GGUI {
 
                     /**
                      * @brief ESC is used for code extension purposes. It causes the meanings of a limited number of bit combinations
-                        following it in the data stream to be changed. 
+                     * following it in the data stream to be changed. 
                      * @example `01/11`
                      */
                     inline base<sequence::basic> ESCAPE = base<sequence::basic>(sequence::basic(table::C0::ESC));
 
                     /**
                      * @brief SCI and the bit combination following it are used to represent a control function or a graphic character.
-                        The bit combination following SCI must be from 00/08 to 00/13 or 02/00 to 07/14. The use of SCI is
-                        reserved for future standardization.
+                     * The bit combination following SCI must be from 00/08 to 00/13 or 02/00 to 07/14. The use of SCI is
+                     * reserved for future standardization.
                      * @example `09/10` or `01/11 05/10`
                      */
                     inline base<sequence::basic> SINGLE_CHARACTER_INTRODUCER = base<sequence::basic>(sequence::basic(table::C1::SCI));
@@ -654,77 +673,77 @@ namespace GGUI {
                 namespace shiftFunctions {
                     /**
                      * @brief LS0 is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed.
+                     * the data stream to be changed.
                      * @example `00/15`
                      */
                     inline base<sequence::basic> LOCKING_SHIFT_ZERO = base<sequence::basic>(sequence::basic(table::C0::LS0));
 
                     /**
                      * @brief LS1 is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed.
+                     * the data stream to be changed.
                      * @example `00/14`
                      */
                     inline base<sequence::basic> LOCKING_SHIFT_ONE = base<sequence::basic>(sequence::basic(table::C0::LS1));
 
                     /**
                      * @brief LS1R is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed. 
+                     * the data stream to be changed. 
                      * @example `07/14`
                      */
                     inline base<sequence::independent> LOCKING_SHIFT_ONE_RIGHT = base<sequence::independent>(sequence::independent(table::independentFunctions::LS1R));
 
                     /**
                      * @brief LS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed. 
+                     * the data stream to be changed. 
                      * @example `01/11 06/14`
                      */
                     inline base<sequence::independent> LOCKING_SHIFT_TWO = base<sequence::independent>(sequence::independent(table::independentFunctions::LS2));
 
                     /**
                      * @brief LS2R is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed.
+                     * the data stream to be changed.
                     * @example `01/11 07/13`
                      */
                     inline base<sequence::independent> LOCKING_SHIFT_TWO_RIGHT = base<sequence::independent>(sequence::independent(table::independentFunctions::LS2R));
 
                     /**
                      * @brief LS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed. 
+                     * the data stream to be changed. 
                      * @example `01/11 06/15`
                      */
                     inline base<sequence::independent> LOCKING_SHIFT_THREE = base<sequence::independent>(sequence::independent(table::independentFunctions::LS3));
 
                     /**
                      * @brief LS3R is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed. 
+                     * the data stream to be changed. 
                      * @example `01/11 07/12`
                      */
                     inline base<sequence::independent> LOCKING_SHIFT_THREE_RIGHT = base<sequence::independent>(sequence::independent(table::independentFunctions::LS3R));
 
                     /**
                      * @brief SI is used for code extension purposes. It causes the meanings of the bit combinations following it in the
-                        data stream to be changed. 
+                     * data stream to be changed. 
                      * @example `00/15`
                      */
                     inline base<sequence::basic> SHIFT_IN = base<sequence::basic>(sequence::basic(table::C0::SI));
 
                     /**
                      * @brief SO is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed. 
+                     * the data stream to be changed. 
                      * @example `00/14`
                      */
                     inline base<sequence::basic> SHIFT_OUT = base<sequence::basic>(sequence::basic(table::C0::SO));
 
                     /**
                      * @brief SS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed. 
+                     * the data stream to be changed. 
                      * @example `08/14` or `01/11 04/14`
                      */
                     inline base<sequence::basic> SS2 = base<sequence::basic>(sequence::basic(table::C1::SS2));
 
                     /**
                      * @brief SS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
-                        the data stream to be changed. 
+                     * the data stream to be changed. 
                      * @example `08/15` or `01/11 04/15` 
                      */
                     inline base<sequence::basic> SS3 = base<sequence::basic>(sequence::basic(table::C1::SS3));
@@ -734,45 +753,45 @@ namespace GGUI {
                 namespace formatEffectors {
                     /**
                      * @brief BS causes the active data position to be moved one character position in the data component in the
-                        direction opposite to that of the implicit movement.
-                        The direction of the implicit movement depends on the parameter value of SELECT IMPLICIT
-                        MOVEMENT DIRECTION (SIMD). 
+                     * direction opposite to that of the implicit movement.
+                     * The direction of the implicit movement depends on the parameter value of SELECT IMPLICIT
+                     * MOVEMENT DIRECTION (SIMD). 
                      * @example `00/08`
                      */
                     inline base<sequence::basic> BACKSPACE = base<sequence::basic>(sequence::basic(table::C0::BS));
 
                     /**
                      * @brief The effect of CR depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
-                        on the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD).
-                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION and with the
-                        parameter value of SIMD equal to 0, CR causes the active presentation position to be moved to the line
-                        home position of the same line in the presentation component. The line home position is established by
-                        the parameter value of SET LINE HOME (SLH).
-                        With a parameter value of SIMD equal to 1, CR causes the active presentation position to be moved to
-                        the line limit position of the same line in the presentation component. The line limit position is
-                        established by the parameter value of SET LINE LIMIT (SLL).
-                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA and with a parameter value of
-                        SIMD equal to 0, CR causes the active data position to be moved to the line home position of the same
-                        line in the data component. The line home position is established by the parameter value of SET LINE
-                        HOME (SLH).
-                        With a parameter value of SIMD equal to 1, CR causes the active data position to be moved to the line
-                        limit position of the same line in the data component. The line limit position is established by the
-                        parameter value of SET LINE LIMIT (SLL).
+                     * on the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD).
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION and with the
+                     * parameter value of SIMD equal to 0, CR causes the active presentation position to be moved to the line
+                     * home position of the same line in the presentation component. The line home position is established by
+                     * the parameter value of SET LINE HOME (SLH).
+                     * With a parameter value of SIMD equal to 1, CR causes the active presentation position to be moved to
+                     * the line limit position of the same line in the presentation component. The line limit position is
+                     * established by the parameter value of SET LINE LIMIT (SLL).
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA and with a parameter value of
+                     * SIMD equal to 0, CR causes the active data position to be moved to the line home position of the same
+                     * line in the data component. The line home position is established by the parameter value of SET LINE
+                     * HOME (SLH).
+                     * With a parameter value of SIMD equal to 1, CR causes the active data position to be moved to the line
+                     * limit position of the same line in the data component. The line limit position is established by the
+                     * parameter value of SET LINE LIMIT (SLL).
                      * @example `00/13`
                      */
                     inline base<sequence::basic> CARRIAGE_RETURN = base<sequence::basic>(sequence::basic(table::C0::CR));
 
                     /**
                      * @brief FF causes the active presentation position to be moved to the corresponding character position of the
-                        line at the page home position of the next form or page in the presentation component. The page home
-                        position is established by the parameter value of SET PAGE HOME (SPH). 
+                     * line at the page home position of the next form or page in the presentation component. The page home
+                     * position is established by the parameter value of SET PAGE HOME (SPH). 
                      * @example `00/12`
                      */
                     inline base<sequence::basic> FORM_FEED = base<sequence::basic>(sequence::basic(table::C0::FF));
 
                     /**
                      * @brief HPA causes the active data position to be moved to character position n in the active line (the line in the
-                        data component that contains the active data position), where n equals the value of Pn. 
+                     * data component that contains the active data position), where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 06/00` or `9/11 Pn 06/00`
                      * @param Pn default(1)
                      */
@@ -780,7 +799,7 @@ namespace GGUI {
 
                     /**
                      * @brief HPB causes the active data position to be moved by n character positions in the data component in the
-                        direction opposite to that of the character progression, where n equals the value of Pn.
+                     * direction opposite to that of the character progression, where n equals the value of Pn.
                      * @example `01/11 05/11 Pn 06/10` or `9/11 Pn 06/10`
                      * @param Pn default(1)
                      */
@@ -788,7 +807,7 @@ namespace GGUI {
 
                     /**
                      * @brief HPR causes the active data position to be moved by n character positions in the data component in the
-                        direction of the character progression, where n equals the value of Pn. 
+                     * direction of the character progression, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 06/01` or `9/11 Pn 06/01`
                      * @param Pn default(1)
                      */
@@ -796,131 +815,131 @@ namespace GGUI {
 
                     /**
                      * @brief HT causes the active presentation position to be moved to the following character tabulation stop in the presentation component.
-                        In addition, if that following character tabulation stop has been set by TABULATION ALIGN CENTRE
-                        (TAC), TABULATION ALIGN LEADING EDGE (TALE), TABULATION ALIGN TRAILING EDGE
-                        (TATE) or TABULATION CENTRED ON CHARACTER (TCC), HT indicates the beginning of a string
-                        of text which is to be positioned within a line according to the properties of that tabulation stop. The end
-                        of the string is indicated by the next occurrence of HT or CARRIAGE RETURN (CR) or NEXT LINE
-                        (NEL) in the data stream
+                     * In addition, if that following character tabulation stop has been set by TABULATION ALIGN CENTRE
+                     * (TAC), TABULATION ALIGN LEADING EDGE (TALE), TABULATION ALIGN TRAILING EDGE
+                     * (TATE) or TABULATION CENTRED ON CHARACTER (TCC), HT indicates the beginning of a string
+                     * of text which is to be positioned within a line according to the properties of that tabulation stop. The end
+                     * of the string is indicated by the next occurrence of HT or CARRIAGE RETURN (CR) or NEXT LINE
+                     * (NEL) in the data stream
                      * @example `00/09`
                      */
                     inline base<sequence::basic> CHARACTER_TABULATION = base<sequence::basic>(sequence::basic(table::C0::HT));
 
                     /**
                      * @brief HTJ causes the contents of the active field (the field in the presentation component that contains the
-                        active presentation position) to be shifted forward so that it ends at the character position preceding the
-                        following character tabulation stop. The active presentation position is moved to that following character
-                        tabulation stop. The character positions which precede the beginning of the shifted string are put into the
-                        erased state. 
+                     * active presentation position) to be shifted forward so that it ends at the character position preceding the
+                     * following character tabulation stop. The active presentation position is moved to that following character
+                     * tabulation stop. The character positions which precede the beginning of the shifted string are put into the
+                     * erased state. 
                      * @example `08/09` or `01/11 04/09` 
                      */
                     inline base<sequence::basic> CHARACTER_TABULATION_WITH_JUSTIFICATION = base<sequence::basic>(sequence::basic(table::C1::HTJ));
 
                     /**
                      * @brief HTS causes a character tabulation stop to be set at the active presentation position in the presentation
-                        component.
-                        The number of lines affected depends on the setting of the TABULATION STOP MODE (TSM). 
+                     * component.
+                     * The number of lines affected depends on the setting of the TABULATION STOP MODE (TSM). 
                      * @example `08/08` or `01/11 04/08`
                      */
                     inline base<sequence::basic> CHARACTER_TABULATION_SET = base<sequence::basic>(sequence::basic(table::C1::HTS));
 
                     /**
                      * @brief HVP causes the active data position to be moved in the data component to the n-th line position
-                        according to the line progression and to the m-th character position according to the character
-                        progression, where n equals the value of Pn1 and m equals the value of Pn2. 
+                     * according to the line progression and to the m-th character position according to the character
+                     * progression, where n equals the value of Pn1 and m equals the value of Pn2. 
                      * @example `01/11 05/11 Pn1;Pn2 06/06` or `9/11 Pn1;Pn2 06/06`
                      */
                     inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CHARACTER_AND_LINE_POSITION(sequence::controlSequence<sequence::parameter::numeric>(table::finalWithoutIntermediate::HVP), {1, 1});
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, LF causes the
-                        active presentation position to be moved to the corresponding character position of the following line in
-                        the presentation component.
-                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, LF causes the active data
-                        position to be moved to the corresponding character position of the following line in the data
-                        component. 
+                     * active presentation position to be moved to the corresponding character position of the following line in
+                     * the presentation component.
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, LF causes the active data
+                     * position to be moved to the corresponding character position of the following line in the data
+                     * component. 
                      * @example `00/10`
                      */
                     inline base<sequence::basic> LINE_FEED = base<sequence::basic>(sequence::basic(table::C0::LF));
 
                     /**
                      * @brief The effect of NEL depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
-                        on the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD).
-                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION and with a
-                        parameter value of SIMD equal to 0, NEL causes the active presentation position to be moved to the line
-                        home position of the following line in the presentation component. The line home position is established
-                        by the parameter value of SET LINE HOME (SLH).
-                        With a parameter value of SIMD equal to 1, NEL causes the active presentation position to be moved to
-                        the line limit position of the following line in the presentation component. The line limit position is
-                        established by the parameter value of SET LINE LIMIT (SLL).
-                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA and with a parameter value of
-                        SIMD equal to 0, NEL causes the active data position to be moved to the line home position of the
-                        following line in the data component. The line home position is established by the parameter value of
-                        SET LINE HOME (SLH).
-                        With a parameter value of SIMD equal to 1, NEL causes the active data position to be moved to the line
-                        limit position of the following line in the data component. The line limit position is established by the
-                        parameter value of SET LINE LIMIT (SLL). 
+                     * on the parameter value of SELECT IMPLICIT MOVEMENT DIRECTION (SIMD).
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION and with a
+                     * parameter value of SIMD equal to 0, NEL causes the active presentation position to be moved to the line
+                     * home position of the following line in the presentation component. The line home position is established
+                     * by the parameter value of SET LINE HOME (SLH).
+                     * With a parameter value of SIMD equal to 1, NEL causes the active presentation position to be moved to
+                     * the line limit position of the following line in the presentation component. The line limit position is
+                     * established by the parameter value of SET LINE LIMIT (SLL).
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA and with a parameter value of
+                     * SIMD equal to 0, NEL causes the active data position to be moved to the line home position of the
+                     * following line in the data component. The line home position is established by the parameter value of
+                     * SET LINE HOME (SLH).
+                     * With a parameter value of SIMD equal to 1, NEL causes the active data position to be moved to the line
+                     * limit position of the following line in the data component. The line limit position is established by the
+                     * parameter value of SET LINE LIMIT (SLL). 
                      * @example `08/05` or `01/11 04/05`
                      */
                     inline base<sequence::basic> NEXT_LINE = base<sequence::basic>(sequence::basic(table::C1::NEL));
 
                     /**
                      * @brief PLD causes the active presentation position to be moved in the presentation component to the
-                        corresponding position of an imaginary line with a partial offset in the direction of the line progression.
-                        This offset should be sufficient either to image following characters as subscripts until the first
-                        following occurrence of PARTIAL LINE BACKWARD (PLU) in the data stream, or, if preceding
-                        characters were imaged as superscripts, to restore imaging of following characters to the active line (the
-                        line that contains the active presentation position).
+                     * corresponding position of an imaginary line with a partial offset in the direction of the line progression.
+                     * This offset should be sufficient either to image following characters as subscripts until the first
+                     * following occurrence of PARTIAL LINE BACKWARD (PLU) in the data stream, or, if preceding
+                     * characters were imaged as superscripts, to restore imaging of following characters to the active line (the
+                     * line that contains the active presentation position).
                      * @example `08/11` or `01/11 04/11`
                      */
                     inline base<sequence::basic> PARTIAL_LINE_FORWARD = base<sequence::basic>(sequence::basic(table::C1::PLD));
 
                     /**
                      * @brief PLU causes the active presentation position to be moved in the presentation component to the
-                        corresponding position of an imaginary line with a partial offset in the direction opposite to that of the
-                        line progression. This offset should be sufficient either to image following characters as superscripts
-                        until the first following occurrence of PARTIAL LINE FORWARD (PLD) in the data stream, or, if
-                        preceding characters were imaged as subscripts, to restore imaging of following characters to the active
-                        line (the line that contains the active presentation position). 
+                     * corresponding position of an imaginary line with a partial offset in the direction opposite to that of the
+                     * line progression. This offset should be sufficient either to image following characters as superscripts
+                     * until the first following occurrence of PARTIAL LINE FORWARD (PLD) in the data stream, or, if
+                     * preceding characters were imaged as subscripts, to restore imaging of following characters to the active
+                     * line (the line that contains the active presentation position). 
                      * @example `08/12` or `01/11 04/12` 
                      */
                     inline base<sequence::basic> PARTIAL_LINE_BACKWARD = base<sequence::basic>(sequence::basic(table::C1::PLU));
 
                     /**
                      * @brief PPA causes the active data position to be moved in the data component to the corresponding character
-                        position on the n-th page, where n equals the value of Pn. 
+                     * position on the n-th page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/00` or `9/11 Pn 02/00 05/00`
                      */
                     inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 1, 1> PAGE_POSITION_ABSOLUTE(sequence::controlSequence<sequence::parameter::numeric>(table::finalWithIntermediate::PPA), {1}, {table::toInt(02, 00)});
 
                     /**
                      * @brief PPB causes the active data position to be moved in the data component to the corresponding character
-                        position on the n-th preceding page, where n equals the value of Pn. 
+                     * position on the n-th preceding page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/02` or `9/11 Pn 02/00 05/02`
                      */
                     inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 1, 1> PAGE_POSITION_BACKWARD(sequence::controlSequence<sequence::parameter::numeric>(table::finalWithIntermediate::PPB), {1}, {table::toInt(02, 00)});
                     
                     /**
                      * @brief PPR causes the active data position to be moved in the data component to the corresponding character
-                        position on the n-th following page, where n equals the value of Pn. 
+                     * position on the n-th following page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/01` or `9/11 Pn 02/00 05/01`
                      */
                     inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 1, 1> PAGE_POSITION_FORWARD(sequence::controlSequence<sequence::parameter::numeric>(table::finalWithIntermediate::PPR), {1}, {table::toInt(02, 00)});
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, RI causes the
-                        active presentation position to be moved in the presentation component to the corresponding character
-                        position of the preceding line.
-                        If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, RI causes the active data
-                        position to be moved in the data component to the corresponding character position of the preceding line.
+                     * active presentation position to be moved in the presentation component to the corresponding character
+                     * position of the preceding line.
+                     * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, RI causes the active data
+                     * position to be moved in the data component to the corresponding character position of the preceding line.
                      @example `08/13` or `ESC 04/13`
                      */
                     inline base<sequence::basic> REVERSE_LINE_FEED = base<sequence::basic>(sequence::basic(table::C1::RI));
 
                     /**
                      * @brief TBC causes one or more tabulation stops in the presentation component to be cleared, depending on the
-                        parameter value. In the case of parameter value 0 or 2 the number of lines affected depends on the setting of the
-                        TABULATION STOP MODE (TSM).
+                     * parameter value. In the case of parameter value 0 or 2 the number of lines affected depends on the setting of the
+                     * TABULATION STOP MODE (TSM).
                      * @example `01/11 05/11 Ps 06/07` or `9/11 Ps 06/07`
                      */
                     namespace TABULATION_CLEAR {
@@ -938,8 +957,8 @@ namespace GGUI {
 
                     /**
                      * @brief TSR causes any character tabulation stop at character position n in the active line (the line that contains
-                        the active presentation position) and lines of subsequent text in the presentation component to be
-                        cleared, but does not affect other tabulation stops. n equals the value of Pn. 
+                     * the active presentation position) and lines of subsequent text in the presentation component to be
+                     * cleared, but does not affect other tabulation stops. n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 06/04` or `9/11 Pn 02/00 06/04`
                      * @param Pn default(None)
                      */
@@ -947,7 +966,7 @@ namespace GGUI {
                     
                     /**
                      * @brief VPA causes the active data position to be moved to line position n in the data component in a direction
-                        parallel to the line progression, where n equals the value of Pn.
+                     * parallel to the line progression, where n equals the value of Pn.
                      * @example `01/11 05/11 Pn 06/04` or `9/11 Pn 06/04`
                      * @param Pn default(1)
                      */
@@ -955,7 +974,7 @@ namespace GGUI {
 
                     /**
                      * @brief VPB causes the active data position to be moved by n line positions in the data component in a direction
-                        opposite to that of the line progression, where n equals the value of Pn. 
+                     * opposite to that of the line progression, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 06/11` or `9/11 Pn 06/11`
                      * @param Pn default(1)
                      */
@@ -963,14 +982,14 @@ namespace GGUI {
 
                     /**
                      * @brief VPR causes the active data position to be moved by n line positions in the data component in a direction
-                        parallel to the line progression, where n equals the value of Pn. 
+                     * parallel to the line progression, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 06/05` or `9/11 Pn 06/05`
                      */
                     inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_FORWARD(sequence::controlSequence<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPR), {1});
 
                     /**
                      * @brief VT causes the active presentation position to be moved in the presentation component to the
-                        corresponding character position on the line at which the following line tabulation stop is set. 
+                     * corresponding character position on the line at which the following line tabulation stop is set. 
                      * @example `00/11`
                      */
                     inline base<sequence::basic> LINE_TABULATION = base<sequence::basic>(sequence::basic(table::C0::VT));
@@ -985,14 +1004,14 @@ namespace GGUI {
                 namespace presentationControlFunctions {
                     /**
                      * @brief BPH is used to indicate a point where a line break may occur when text is formatted. BPH may occur
-                        between two graphic characters, either or both of which may be SPACE. 
+                     * between two graphic characters, either or both of which may be SPACE. 
                      * @example `08/02` or `01/11 04/02`
                      */
                     inline base<sequence::basic> BREAK_PERMITTED_HERE = base<sequence::basic>(sequence::basic(table::C1::BPH));
 
                     /**
                      * @brief DTA is used to establish the dimensions of the text area for subsequent pages.
-                        The established dimensions remain in effect until the next occurrence of DTA in the data stream. 
+                     * The established dimensions remain in effect until the next occurrence of DTA in the data stream. 
                      * @example `01/11 05/11 Pn1;Pn2 02/00 05/04` or `9/11 Pn1;Pn2 02/00 05/04`
                      * @param Pn1 default(none)
                      * @param Pn2 default(none)
@@ -1001,7 +1020,7 @@ namespace GGUI {
 
                     /**
                      * @brief FNT is used to identify the character font to be selected as primary or alternative font by subsequent
-                        occurrences of SELECT GRAPHIC RENDITION (SGR) in the data stream. Ps1 specifies the primary or alternative font concerned.
+                     * occurrences of SELECT GRAPHIC RENDITION (SGR) in the data stream. Ps1 specifies the primary or alternative font concerned.
                      * @example `01/11 05/11 Ps1;Ps2 02/00 04/04` or `9/11 Ps1;Ps2 02/00 04/04`
                      * @param Ps1 default(0)
                      * @param Ps2 default(0)
@@ -1025,13 +1044,13 @@ namespace GGUI {
 
                     /**
                      * @brief GCC is used to indicate that two or more graphic characters are to be imaged as one single graphic
-                        symbol. GCC with a parameter value of 0 indicates that the following two graphic characters are to be
-                        imaged as one single graphic symbol; GCC with a parameter value of 1 and GCC with a parameter value
-                        of 2 indicate respectively the beginning and the end of a string of graphic characters which are to be
-                        imaged as one single graphic symbol.
+                     * symbol. GCC with a parameter value of 0 indicates that the following two graphic characters are to be
+                     * imaged as one single graphic symbol; GCC with a parameter value of 1 and GCC with a parameter value
+                     * of 2 indicate respectively the beginning and the end of a string of graphic characters which are to be
+                     * imaged as one single graphic symbol.
                      * @note GCC does not explicitly specify the relative sizes or placements of the component parts of a composite graphic symbol. 
-                        In the simplest case, two components may be "half-width" and side-by-side. For example, 
-                        in Japanese text a pair of characters may be presented side-by-side, and occupy the space of a normal-size Kanji character. 
+                     * In the simplest case, two components may be "half-width" and side-by-side. For example, 
+                     * in Japanese text a pair of characters may be presented side-by-side, and occupy the space of a normal-size Kanji character. 
                      * @example `01/11 05/11 Ps1 02/00 05/15` or `9/11 Ps1 02/00 05/15`
                      * @param Ps default(0)
                      */
@@ -1047,8 +1066,8 @@ namespace GGUI {
 
                     /**
                      * @brief GSM is used to modify for subsequent text the height and/or the width of all primary and alternative
-                        fonts identified by FONT SELECTION (FNT) and established by GRAPHIC SIZE SELECTION (GSS).
-                        The established values remain in effect until the next occurrence of GSM or GSS in the data steam. 
+                     * fonts identified by FONT SELECTION (FNT) and established by GRAPHIC SIZE SELECTION (GSS).
+                     * The established values remain in effect until the next occurrence of GSM or GSS in the data steam. 
                      * @example `01/11 05/11 Pn1;Pn2 02/00 04/02` or `9/11 Pn1;Pn2 02/00 04/02`
                      * @param Pn1 default(100) specifies the height as a percentage of the height established by GSS
                      * @param Pn2 default(100) specifies the width as a percentage of the width established by GSS 
@@ -1057,11 +1076,11 @@ namespace GGUI {
 
                     /**
                      * @brief GSS is used to establish for subsequent text the height and the width of all primary and alternative fonts
-                        identified by FONT SELECTION (FNT). The established values remain in effect until the next
-                        occurrence of GSS in the data stream.
-                        Pn specifies the height, the width is implicitly defined by the height.
-                        The unit in which the parameter value is expressed is that established by the parameter value of SELECT
-                        SIZE UNIT (SSU).
+                     * identified by FONT SELECTION (FNT). The established values remain in effect until the next
+                     * occurrence of GSS in the data stream.
+                     * Pn specifies the height, the width is implicitly defined by the height.
+                     * The unit in which the parameter value is expressed is that established by the parameter value of SELECT
+                     * SIZE UNIT (SSU).
                      * @example `01/11 05/11 Pn 02/00 04/03` or `9/11 Pn 02/00 04/03`
                      * @param Pn default(none) specifies the height, the width is implicitly defined by the height.
                      */
@@ -1069,9 +1088,9 @@ namespace GGUI {
                     
                     /**
                      * @brief JFY is used to indicate the beginning of a string of graphic characters in the presentation component that
-                        are to be justified according to the layout specified by the parameter values. The end of the string to be justified is indicated by the next occurrence of JFY in the data stream. 
-                        The line home position is established by the parameter value of SET LINE HOME (SLH). 
-                        The line limit position is established by the parameter value of SET LINE LIMIT (SLL).
+                     * are to be justified according to the layout specified by the parameter values. The end of the string to be justified is indicated by the next occurrence of JFY in the data stream. 
+                     * The line home position is established by the parameter value of SET LINE HOME (SLH). 
+                     * The line limit position is established by the parameter value of SET LINE LIMIT (SLL).
                      * @example `01/11 05/11 Ps ... 02/00 04/06` or `9/11 Ps ... 02/00 04/06`
                      * @param Ps default(0)
                      * @param ...  adjusted characters
@@ -1094,18 +1113,18 @@ namespace GGUI {
 
                     /**
                      * @brief NBH is used to indicate a point where a line break shall not occur when text is formatted. 
-                            NBH may occur between two graphic characters either or both of which may be SPACE. 
+                     * NBH may occur between two graphic characters either or both of which may be SPACE. 
                      * @example `08/03` or `01/11 04/03`
                      */
                     inline base<sequence::basic> NO_BREAK_HERE = base<sequence::basic>(sequence::basic(table::C1::NBH));
 
                     /**
                      * @brief PEC is used to establish the spacing and the extent of the graphic characters for subsequent text. 
-                        The spacing is specified in the line as multiples of the spacing established by the most recent occurrence of
-                        SET CHARACTER SPACING (SCS) or of SELECT CHARACTER SPACING (SHS) or of SPACING
-                        INCREMENT (SPI) in the data stream. The extent of the characters is implicitly established by these control functions. 
-                        The established spacing and the extent remain in effect until the next occurrence of
-                        PEC, of SCS, of SHS or of SPI in the data stream.
+                     * The spacing is specified in the line as multiples of the spacing established by the most recent occurrence of
+                     * SET CHARACTER SPACING (SCS) or of SELECT CHARACTER SPACING (SHS) or of SPACING
+                     * INCREMENT (SPI) in the data stream. The extent of the characters is implicitly established by these control functions. 
+                     * The established spacing and the extent remain in effect until the next occurrence of
+                     * PEC, of SCS, of SHS or of SPI in the data stream.
                      * @example `01/11 05/11 Ps 02/00 05/10` or `9/11 Ps 02/00 05/10`
                      * @param Ps default(0)
                      */
@@ -1121,10 +1140,10 @@ namespace GGUI {
 
                     /**
                      * @brief PFS is used to establish the available area for the imaging of pages of text based on paper size. 
-                        The pages are introduced by the subsequent occurrence of FORM FEED (FF) in the data stream.
-                        The established image area remains in effect until the next occurrence of PFS in the data stream.
-                        The page home position is established by the parameter value of SET PAGE HOME (SPH), 
-                        the page limit position is established by the parameter value of SET PAGE LIMIT (SPL). 
+                     * The pages are introduced by the subsequent occurrence of FORM FEED (FF) in the data stream.
+                     * The established image area remains in effect until the next occurrence of PFS in the data stream.
+                     * The page home position is established by the parameter value of SET PAGE HOME (SPH), 
+                     * the page limit position is established by the parameter value of SET PAGE LIMIT (SPL). 
                      * @example `01/11 05/11 Ps 02/00 04/10` or `9/11 Ps 02/00 04/10`
                      * @param Ps default(0)
                      */
@@ -1153,35 +1172,35 @@ namespace GGUI {
 
                     /**
                      * @brief PTX is used to delimit strings of graphic characters that are communicated one after another in the data
-                        stream but that are intended to be presented in parallel with one another, usually in adjacent lines. 
-                        PTX with a parameter value of 1 indicates the beginning of the string of principal text intended to be
-                        presented in parallel with one or more strings of supplementary text.
-                        PTX with a parameter value of 2, 3 or 4 indicates the beginning of a string of supplementary text that is
-                        intended to be presented in parallel with either a string of principal text or the immediately preceding
-                        string of supplementary text, if any; at the same time it indicates the end of the preceding string of
-                        principal text or of the immediately preceding string of supplementary text, if any. The end of a string of
-                        supplementary text is indicated by a subsequent occurrence of PTX with a parameter value other than 1.
-                        PTX with a parameter value of 0 indicates the end of the strings of text intended to be presented in
-                        parallel with one another.
+                     * stream but that are intended to be presented in parallel with one another, usually in adjacent lines. 
+                     * PTX with a parameter value of 1 indicates the beginning of the string of principal text intended to be
+                     * presented in parallel with one or more strings of supplementary text.
+                     * PTX with a parameter value of 2, 3 or 4 indicates the beginning of a string of supplementary text that is
+                     * intended to be presented in parallel with either a string of principal text or the immediately preceding
+                     * string of supplementary text, if any; at the same time it indicates the end of the preceding string of
+                     * principal text or of the immediately preceding string of supplementary text, if any. The end of a string of
+                     * supplementary text is indicated by a subsequent occurrence of PTX with a parameter value other than 1.
+                     * PTX with a parameter value of 0 indicates the end of the strings of text intended to be presented in
+                     * parallel with one another.
                      * @note PTX does not explicitly specify the relative placement of the strings of principal and supplementary
-                        parallel texts, or the relative sizes of graphic characters in the strings of parallel text. A string of
-                        supplementary text is normally presented in a line adjacent to the line containing the string of principal
-                        text, or adjacent to the line containing the immediately preceding string of supplementary text, if any.
-                        The first graphic character of the string of principal text and the first graphic character of a string of
-                        supplementary text are normally presented in the same position of their respective lines. However, a
-                        string of supplementary text longer (when presented) than the associated string of principal text may be
-                        centred on that string. In the case of long strings of text, such as paragraphs in different languages, the
-                        strings may be presented in successive lines in parallel columns, with their beginnings aligned with one
-                        another and the shorter of the paragraphs followed by an appropriate amount of "white space".
-                        Japanese phonetic annotation typically consists of a few half-size or smaller Kana characters which
-                        indicate the pronunciation or interpretation of one or more Kanji characters and are presented above
-                        those Kanji characters if the character path is horizontal, or to the right of them if the character path is
-                        vertical.
-                        Chinese phonetic annotation typically consists of a few Pinyin characters which indicate the
-                        pronunciation of one or more Hanzi characters and are presented above those Hanzi characters.
-                        Alternatively, the Pinyin characters may be presented in the same line as the Hanzi characters and
-                        following the respective Hanzi characters. The Pinyin characters will then be presented within enclosing
-                        pairs of parentheses. 
+                     * parallel texts, or the relative sizes of graphic characters in the strings of parallel text. A string of
+                     * supplementary text is normally presented in a line adjacent to the line containing the string of principal
+                     * text, or adjacent to the line containing the immediately preceding string of supplementary text, if any.
+                     * The first graphic character of the string of principal text and the first graphic character of a string of
+                     * supplementary text are normally presented in the same position of their respective lines. However, a
+                     * string of supplementary text longer (when presented) than the associated string of principal text may be
+                     * centred on that string. In the case of long strings of text, such as paragraphs in different languages, the
+                     * strings may be presented in successive lines in parallel columns, with their beginnings aligned with one
+                     * another and the shorter of the paragraphs followed by an appropriate amount of "white space".
+                     * Japanese phonetic annotation typically consists of a few half-size or smaller Kana characters which
+                     * indicate the pronunciation or interpretation of one or more Kanji characters and are presented above
+                     * those Kanji characters if the character path is horizontal, or to the right of them if the character path is
+                     * vertical.
+                     * Chinese phonetic annotation typically consists of a few Pinyin characters which indicate the
+                     * pronunciation of one or more Hanzi characters and are presented above those Hanzi characters.
+                     * Alternatively, the Pinyin characters may be presented in the same line as the Hanzi characters and
+                     * following the respective Hanzi characters. The Pinyin characters will then be presented within enclosing
+                     * pairs of parentheses. 
                      * @example `01/11 05/11 Ps 05/12` or `9/11 Ps 05/12`
                      * @param Ps default(0)
                      */
@@ -1199,15 +1218,15 @@ namespace GGUI {
 
                     /**
                      * @brief QUAD is used to indicate the end of a string of graphic characters that are to be positioned on a single
-                        line according to the layout specified by the parameter values.
-                        The beginning of the string to be positioned is indicated by the preceding occurrence in the data stream
-                        of either QUAD or one of the following formater functions: FORM FEED (FF), CHARACTER AND
-                        LINE POSITION (HVP), LINE FEED (LF), NEXT LINE (NEL), PAGE POSITION ABSOLUTE (PPA),
-                        PAGE POSITION BACKWARD (PPB), PAGE POSITION FORWARD (PPR), REVERSE LINE FEED
-                        (RI), LINE POSITION ABSOLUTE (VPA), LINE POSITION BACKWARD (VPB), LINE POSITION
-                        FORWARD (VPR), or LINE TABULATION (VT).
-                        The line home position is established by the parameter value of SET LINE HOME (SLH). The line limit
-                        position is established by the parameter value of SET LINE LIMIT (SLL). 
+                     * line according to the layout specified by the parameter values.
+                     * The beginning of the string to be positioned is indicated by the preceding occurrence in the data stream
+                     * of either QUAD or one of the following formater functions: FORM FEED (FF), CHARACTER AND
+                     * LINE POSITION (HVP), LINE FEED (LF), NEXT LINE (NEL), PAGE POSITION ABSOLUTE (PPA),
+                     * PAGE POSITION BACKWARD (PPB), PAGE POSITION FORWARD (PPR), REVERSE LINE FEED
+                     * (RI), LINE POSITION ABSOLUTE (VPA), LINE POSITION BACKWARD (VPB), LINE POSITION
+                     * FORWARD (VPR), or LINE TABULATION (VT).
+                     * The line home position is established by the parameter value of SET LINE HOME (SLH). The line limit
+                     * position is established by the parameter value of SET LINE LIMIT (SLL). 
                      * @example `01/11 05/11 Ps ... 02/00 04/08` or `9/11 Ps ... 02/00 04/08`
                      * @param Ps default(0)
                      * @param ...
@@ -1228,10 +1247,10 @@ namespace GGUI {
 
                     /**
                      * @brief SACS is used to establish extra inter-character escapement for subsequent text. The established extra
-                        escapement remains in effect until the next occurrence of SACS or of SET REDUCED CHARACTER
-                        SEPARATION (SRCS) in the data stream or until it is reset to the default value by a subsequent
-                        occurrence of CARRIAGE RETURN/LINE FEED (CR LF) or of NEXT LINE (NEL) in the data stream
-                        The unit in which the parameter value is expressed is that established by the parameter value of SELECT SIZE UNIT (SSU). 
+                     * escapement remains in effect until the next occurrence of SACS or of SET REDUCED CHARACTER
+                     * SEPARATION (SRCS) in the data stream or until it is reset to the default value by a subsequent
+                     * occurrence of CARRIAGE RETURN/LINE FEED (CR LF) or of NEXT LINE (NEL) in the data stream
+                     * The unit in which the parameter value is expressed is that established by the parameter value of SELECT SIZE UNIT (SSU). 
                      * @example `01/11 05/11 Pn 02/00 05/12` or `9/11 Pn 02/00 05/12`
                      * @param Pn default(0)
                      */
