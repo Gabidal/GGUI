@@ -8,11 +8,10 @@
 #include "ascii.h"
 #include "../utils/types.h"
 
-/**
- * Contains the interface for terminal handling in terminal emulators.
-*/
-
 namespace GGUI {
+    /**
+     * Contains the interface for terminal handling in terminal emulators.
+    */
     namespace terminal {
         enum class types : uint32_t {
             PLAIN       = 0 << 0,               // No sequence codes stylings or colors, just simple plain text

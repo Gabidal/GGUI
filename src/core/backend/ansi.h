@@ -9,7 +9,7 @@ namespace GGUI {
         /**
          * @brief Builds upon the ECMA-48 standard, by renames and reroutes of basically same information, just more consumer friendly codes.
          * URL: https://nvlpubs.nist.gov/nistpubs/Legacy/FIPS/fipspub1-2-1977.pdf
-         */
+        */
         namespace ansi {
 
             template<typename source, typename sourceBaseType = std::underlying_type_t<source>>
