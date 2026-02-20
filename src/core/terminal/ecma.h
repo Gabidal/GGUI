@@ -212,7 +212,6 @@ namespace GGUI {
                     CONTROL_STRING,                 // Contains the control string functions: OSC, DCS, APC, PM
                 };
 
-                // TODO: make this a inheritable simpler base type which numeric and selective classes inherit
                 namespace parameter {
                     constexpr static uint8_t sub_delimeter  = table::toInt(3, 10); // Translates into ':'
                     constexpr static uint8_t delimeter      = table::toInt(3, 11); // Translates into ';'
@@ -220,11 +219,11 @@ namespace GGUI {
                     template<typename containerType>
                     class base {
                     protected:
-                        std::vector<containerType> subNumbers;       // For instances where 1:2, these can be used as decimals.
+                        std::vector<std::variant<containerType, char>> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
                     
                     public:
                         base() = default;
-                        base(std::vector<containerType> values) : subNumbers(values) {}
+                        base(std::vector<std::variant<containerType, char>> values) : subNumbers(values) {}
                         base(containerType values) : subNumbers({values}) {}
 
                         /**
@@ -240,11 +239,17 @@ namespace GGUI {
                             for (char i : input) {
                                 uint8_t currentChar = static_cast<uint8_t>(i);
 
-                                if (currentChar == sub_delimeter) { // 03/10 ':'
-                                    if (has_digit) {
-                                        subNumbers.push_back(static_cast<containerType>(currentNumber));
-                                    } else {
-                                        subNumbers.push_back(static_cast<containerType>(0)); // empty sub-string → default / zero
+                                // Special values where currentChar >= 03/09 - 03/15
+                                if (currentChar >= table::toInt(3, 10) && currentChar <= table::toInt(3, 15)) {
+
+                                    if (currentChar == sub_delimeter) { // 03/10 ':'
+                                        if (has_digit) {
+                                            subNumbers.push_back(static_cast<containerType>(currentNumber));
+                                        } else {
+                                            subNumbers.push_back(static_cast<containerType>(0)); // empty sub-string -> default / zero
+                                        }
+                                    } else {    // Special parameter values like '?'
+                                        subNumbers.push_back(static_cast<char>(currentChar));
                                     }
 
                                     // Reset
@@ -275,15 +280,20 @@ namespace GGUI {
                             std::string result = "";
 
                             for (size_t i = 0; i < subNumbers.size(); i++) {
-                                uint32_t currentNumber = static_cast<uint32_t>(subNumbers[i]); 
-                                
-                                if (currentNumber == 0 || i > 0) { 
-                                    // This means section f was triggered and we need to insert a pre-fix of 03/10
-                                    // Or this is i+1 so delimeter is required by section b
-                                    result += static_cast<char>(sub_delimeter); // 03/10 ':'
-                                    result += std::to_string(currentNumber);
+                                if (std::holds_alternative<char>(subNumbers[i])) {
+                                    // Special parameter character - output directly as char
+                                    result += std::get<char>(subNumbers[i]);
                                 } else {
-                                    result += std::to_string(currentNumber);
+                                    // Numeric value
+                                    uint32_t currentNumber = static_cast<uint32_t>(std::get<containerType>(subNumbers[i])); 
+                                    if (currentNumber == 0 || i > 0) { 
+                                        // This means section f was triggered and we need to insert a pre-fix of 03/10
+                                        // Or this is i+1 so delimeter is required by section b
+                                        result += static_cast<char>(sub_delimeter); // 03/10 ':'
+                                        result += std::to_string(currentNumber);
+                                    } else {
+                                        result += std::to_string(currentNumber);
+                                    }
                                 }
                             }
 
@@ -298,7 +308,6 @@ namespace GGUI {
                         // Check that selectable instances are only used with enums
                         static_assert(std::is_enum_v<enumType> == true, "Selectable parameters must be instantiated with an enum type.");
                     };
-
                 }
 
                 class base {
@@ -326,30 +335,31 @@ namespace GGUI {
                     std::string toString() override;
                 };
 
-                // Helpers
-                inline const auto C0Present =                    [](char value){ return table::contains<table::C0>(value); };
-                inline const auto C1_8bitPresent =               [](char value){ return table::checkBit(value, 7) && table::contains<table::C1>(table::shiftColumns(value, table::columns::FOUR, true)); };
-                inline const auto CSIPresent =                   [](char value){ return table::is(value, table::C1::CSI) || table::is(value, table::to8bit(table::C1::CSI)); };
-                inline const auto ESCPresent =                   [](char value){ return table::is(value, table::C0::ESC); };
-                inline const auto independentFunctionPresent =   [](char value){ return table::contains<table::independentFunctions>(value); };
-                inline const auto intermediateSpacePresent =     [](char value){ return static_cast<uint8_t>(value) == table::toInt(2, 3); };
-                inline const auto controlStringPresent =         [](char value){ return (
-                    table::is(value, table::C1::OSC) ||
-                    table::is(value, table::C1::DCS) ||
-                    table::is(value, table::C1::APC) ||
-                    table::is(value, table::C1::PM) ||
-                    table::is(value, table::C1::SOS));
-                };
-                inline const auto finalControlSequenceBytePresent = [](char value) { return table::contains<table::finalWithIntermediate>(value) || table::contains<table::finalWithoutIntermediate>(value); };
-                inline const auto findIndexOffFinalByteForControlSequence = [](std::string_view input) {
-                    for (size_t i = 0; i < input.size(); i++) {
-                        if (finalControlSequenceBytePresent(input[i])) {
-                            return i;
+                namespace INTERNAL {
+                    inline const auto C0Present =                    [](char value){ return table::contains<table::C0>(value); };
+                    inline const auto C1_8bitPresent =               [](char value){ return table::checkBit(value, 7) && table::contains<table::C1>(table::shiftColumns(value, table::columns::FOUR, true)); };
+                    inline const auto CSIPresent =                   [](char value){ return table::is(value, table::C1::CSI) || table::is(value, table::to8bit(table::C1::CSI)); };
+                    inline const auto ESCPresent =                   [](char value){ return table::is(value, table::C0::ESC); };
+                    inline const auto independentFunctionPresent =   [](char value){ return table::contains<table::independentFunctions>(value); };
+                    inline const auto intermediateSpacePresent =     [](char value){ return static_cast<uint8_t>(value) == table::toInt(2, 3); };
+                    inline const auto controlStringPresent =         [](char value){ return (
+                        table::is(value, table::C1::OSC) ||
+                        table::is(value, table::C1::DCS) ||
+                        table::is(value, table::C1::APC) ||
+                        table::is(value, table::C1::PM) ||
+                        table::is(value, table::C1::SOS));
+                    };
+                    inline const auto finalControlSequenceBytePresent = [](char value) { return table::contains<table::finalWithIntermediate>(value) || table::contains<table::finalWithoutIntermediate>(value); };
+                    inline const auto findIndexOffFinalByteForControlSequence = [](std::string_view input) {
+                        for (size_t i = 0; i < input.size(); i++) {
+                            if (finalControlSequenceBytePresent(input[i])) {
+                                return i;
+                            }
                         }
-                    }
 
-                    return std::string_view::npos;
-                };
+                        return std::string_view::npos;
+                    };
+                }
 
                 template<typename containerType>
                 class controlSequence : public base {
@@ -362,6 +372,8 @@ namespace GGUI {
                     > finalByte;
                 public:
                     static void parse(std::string_view input, size_t& length, std::vector<base*>& output) {
+                        using namespace sequence::INTERNAL;
+
                         // Check for 7-bit variant
                         size_t headerPosition = 0;
                         bool _7bitHeaders = ESCPresent(input[headerPosition]) && input.size() > 1 && CSIPresent(input[headerPosition + 1]) && !C1_8bitPresent(input[headerPosition + 1]);

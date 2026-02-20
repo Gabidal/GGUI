@@ -15,7 +15,7 @@
 namespace GGUI {
     namespace terminal {
         enum class types : uint32_t {
-            DUMB        = 0 << 0,               // No sequence codes stylings or colors
+            PLAIN       = 0 << 0,               // No sequence codes stylings or colors, just simple plain text
             VT05        = 0 << 0,               // Too limited, no support
             VT52        = 0 << 0,               // Too limited, no support
             VT55        = 0 << 0,               // Too limited, no support

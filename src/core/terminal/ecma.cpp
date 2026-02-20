@@ -4,6 +4,8 @@ namespace GGUI {
     namespace terminal {
         namespace ecma {
             namespace sequence {
+                using namespace sequence::INTERNAL;
+
                 void basic::parse(std::string_view input, size_t& length, std::vector<base*>& output) {
                     if (input.empty()) return;
 
