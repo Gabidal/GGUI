@@ -196,15 +196,255 @@ namespace GGUI {
 
                     __max = toInt(7, 15)   // For internal automation
                 };
+
+                enum class modes : uint8_t {
+                    __min = 1,      // For internal automation
+
+                    GUARDED_AREA_TRANSFER_MODE          = 1,                // (GATM)
+                    KEYBOARD_ACTION_MODE,                                   // (KAM)
+                    CONTROL_REPRESENTATION_MODE,                            // (CRM)
+                    INSERTION_REPLACEMENT_MODE,                             // (IRM)
+                    STATUS_REPORT_TRANSFER_MODE,                            // (SRTM)
+                    ERASURE_MODE,                                           // (ERM)
+                    LINE_EDITING_MODE,                                      // (VEM)
+                    BI_DIRECTIONAL_SUPPORT_MODE,                            // (BDSM)
+                    DEVICE_COMPONENT_SELECT_MODE,                           // (DCSM)
+                    CHARACTER_EDITING_MODE,                                 // (HEM)
+                    POSITIONING_UNIT_MODE,                                  // (PUM)
+                    SEND_RECEIVE_MODE,                                      // (SRM)
+                    FORMAT_EFFECTOR_ACTION_MODE,                            // (FEAM)
+                    FORMAT_EFFECTOR_TRANSFER_MODE,                          // (FETM)
+                    MULTIPLE_AREA_TRANSFER_MODE,                            // (MATM)
+                    TRANSFER_TERMINATION_MODE,                              // (TTM)
+                    SELECTED_AREA_TRANSFER_MODE,                            // (SATM)
+                    TABULATION_STOP_MODE                = 18,               // (TSM)
+                    GRAPHIC_RENDITION_COMBINATION_MODE  = 21,               // (GRCM)
+                    ZERO_DEFAULT_MODE,                                      // (ZDM)
+
+                    __max = ZERO_DEFAULT_MODE     // For internal automation
+                };
+
+                class modeFlags {
+                protected:
+                    uint32_t data = 0;
+
+                    /**
+                     * @brief Converts a mode enum value to its relative index.
+                     * @param mode The mode enum value to convert.
+                     * @return The relative index of the mode, adjusted by subtracting the minimum mode value.
+                     */
+                    constexpr uint8_t modeToRelative(modes mode) const { return static_cast<uint8_t>(mode) - static_cast<uint8_t>(modes::__min); }
+                    constexpr modes relativeToMode(uint8_t relative) const { return static_cast<modes>(relative + static_cast<uint8_t>(modes::__min)); }
+                public:
+
+                    /**
+                     * @brief Enables the specified mode by setting its corresponding bit in the data field.
+                     *
+                     * This function takes a mode, converts it to its relative bit position using modeToRelative,
+                     * and sets the corresponding bit in the data member to indicate that the mode is active.
+                     *
+                     * @param mode The mode to enable.
+                     */
+                    void add(modes mode) {
+                        data |= (1u << modeToRelative(mode));
+                    }
+
+                    /**
+                     * @brief Removes the specified mode from the current set of modes.
+                     *
+                     * This function clears the bit corresponding to the given mode in the internal data,
+                     * effectively removing that mode from the set.
+                     *
+                     * @param mode The mode to be removed.
+                     */
+                    void remove(modes mode) {
+                        data &= ~(1u << modeToRelative(mode));
+                    }
+
+                    modeFlags() = default;
+                    modeFlags(modes mode) { add(mode); }
+                    modeFlags(std::initializer_list<modes> modesList) {
+                        for (modes mode : modesList) {
+                            add(mode);
+                        }
+                    }
+
+                    /**
+                     * @brief Checks if the specified mode is present in the current set.
+                     *
+                     * This function determines whether the given mode is enabled by testing
+                     * if the corresponding bit is set in the internal data representation.
+                     *
+                     * @param mode The mode to check for presence.
+                     * @return true if the mode is present; false otherwise.
+                     */
+                    bool has(modes mode) const {
+                        return (data & (1u << modeToRelative(mode))) != 0;
+                    }
+
+                    /**
+                     * @brief Returns a new modeFlags object that is the result of adding the specified mode to the current modeFlags.
+                     *
+                     * This operator overload allows combining the current modeFlags with an additional mode using the bitwise OR operator.
+                     * The original modeFlags object remains unchanged; a new modeFlags object with the added mode is returned.
+                     *
+                     * @param mode The mode to add to the current modeFlags.
+                     * @return modeFlags A new modeFlags object with the specified mode included.
+                     */
+                    modeFlags operator|(modes mode) const {
+                        modeFlags result = *this;
+                        result.add(mode);
+                        return result;
+                    }
+
+                    /**
+                     * @brief Returns a new modeFlags object with the specified mode masked.
+                     *
+                     * Performs a bitwise AND operation between the current modeFlags object and the given mode.
+                     * If the current object does not have the specified mode, the resulting modeFlags will have
+                     * that mode removed. Otherwise, the modeFlags remains unchanged.
+                     *
+                     * @param mode The mode to mask with the current modeFlags.
+                     * @return modeFlags A new modeFlags object with the specified mode masked.
+                     */
+                    modeFlags operator&(modes mode) const {
+                        modeFlags result = *this;
+                        if (!has(mode)) {
+                            result.remove(mode);
+                        }
+                        return result;
+                    }
+
+                    /**
+                     * @brief Bitwise OR assignment operator for modeFlags.
+                     *
+                     * Adds the specified mode to the current modeFlags using the add() method,
+                     * and returns a reference to the updated modeFlags object.
+                     *
+                     * @param mode The mode to add to the modeFlags.
+                     * @return Reference to the updated modeFlags object.
+                     */
+                    modeFlags& operator|=(modes mode) {
+                        add(mode);
+                        return *this;
+                    }
+
+                    /**
+                     * @brief Performs a bitwise AND assignment between the current modeFlags and the specified mode.
+                     *
+                     * If the specified mode is not present in the current modeFlags, it removes the mode.
+                     * Returns a reference to the modified modeFlags object.
+                     *
+                     * @param mode The mode to perform the bitwise AND assignment with.
+                     * @return Reference to the updated modeFlags object.
+                     */
+                    modeFlags& operator&=(modes mode) {
+                        if (!has(mode)) {
+                            remove(mode);
+                        }
+                        return *this;
+                    }
+
+                    /**
+                     * @brief Equality operator to compare the current object with a specified mode.
+                     *
+                     * This operator checks if the current object contains the specified mode by calling the has(mode) function.
+                     *
+                     * @param mode The mode to compare against.
+                     * @return true if the current object contains the specified mode, false otherwise.
+                     */
+                    bool operator==(modes mode) const {
+                        return has(mode);
+                    }
+
+                    /**
+                     * @brief Checks if the current object does not have the specified mode.
+                     *
+                     * This operator returns true if the given mode is not present in the current object,
+                     * by negating the result of the has(mode) function.
+                     *
+                     * @param mode The mode to check for inequality.
+                     * @return true if the current object does not have the specified mode, false otherwise.
+                     */
+                    bool operator!=(modes mode) const {
+                        return !has(mode);
+                    }
+
+                    /**
+                     * @brief Bitwise OR operator for modeFlags.
+                     *
+                     * Combines the current modeFlags with another modeFlags using the bitwise OR operation.
+                     * Returns a new modeFlags instance with the combined flags.
+                     *
+                     * @param other The modeFlags to combine with.
+                     * @return modeFlags The result of the bitwise OR operation.
+                     */
+                    modeFlags operator|(modeFlags other) const {
+                        modeFlags r;
+                        r.data = data | other.data;
+                        return r;
+                    }
+
+                    /**
+                     * @brief Bitwise AND operator for modeFlags.
+                     *
+                     * Performs a bitwise AND operation between this modeFlags instance and another,
+                     * returning a new modeFlags instance with the result.
+                     *
+                     * @param other The modeFlags instance to AND with.
+                     * @return A new modeFlags instance containing the result of the bitwise AND.
+                     */
+                    modeFlags operator&(modeFlags other) const {
+                        modeFlags r;
+                        r.data = data & other.data;
+                        return r;
+                    }
+
+                    /**
+                     * @brief Bitwise XOR operator for modeFlags.
+                     *
+                     * Performs a bitwise exclusive OR (XOR) operation between the current modeFlags object and another.
+                     * Returns a new modeFlags object containing the result.
+                     *
+                     * @param other The modeFlags object to XOR with.
+                     * @return modeFlags The result of the XOR operation.
+                     */
+                    modeFlags operator^(modeFlags other) const {
+                        modeFlags r;
+                        r.data = data ^ other.data;
+                        return r;
+                    }
+
+                    /**
+                     * @brief Returns a list of modes currently available.
+                     *
+                     * Iterates through all possible modes, checks if each mode is present using the `has()` method,
+                     * and collects the available modes into a vector.
+                     *
+                     * @return std::vector<modes> Vector containing all available modes.
+                     */
+                    std::vector<modes> list() const {
+                        std::vector<modes> result;
+
+                        for (uint8_t i = 0; i <= modeToRelative(modes::__max); i++) {
+                            modes currentMode = relativeToMode(i);
+                            if (has(currentMode)) {
+                                result.push_back(currentMode);
+                            }
+                        }
+
+                        return result;
+                    }
+                };
             }
 
             namespace sequence {
-                enum class bitType {
+                enum class bitType : uint8_t {
                     _7bit,          // For the 1/11 introducers
                     _8bit           // For the 09/11 introducers
                 };
 
-                enum class specialType {
+                enum class specialType : uint8_t {
                     BASIC,                          // Contains the single-byte C0 and C1 functions
                     CONTROL_SEQUENCE,               // CSI based functions
                     INDEPENDENT,                    // Contains ESC Fs or ESC 02/03 F functions
@@ -313,6 +553,7 @@ namespace GGUI {
                 public:
                     specialType type;                       // Tells what kind of function this is
                     bitType escapeType = bitType::_7bit;    // Since most terminal emulators use the 7bit introducer.
+                    table::modeFlags requires;              // Describes if the current sequence is dependant of some mode set.
 
                     virtual std::string toString() { return ""; }
 
@@ -2347,32 +2588,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    namespace RESET_MODE {
-                        enum class types {
-                            GUARDED_AREA_TRANSFER_MODE          = 1,
-                            KEYBOARD_ACTION_MODE,
-                            CONTROL_REPRESENTATION_MODE,
-                            INSERTION_REPLACEMENT_MODE,
-                            STATUS_REPORT_TRANSFER_MODE,
-                            ERASURE_MODE,
-                            LINE_EDITING_MODE,
-                            BI_DIRECTIONAL_SUPPORT_MODE,
-                            DEVICE_COMPONENT_SELECT_MODE,
-                            CHARACTER_EDITING_MODE,
-                            POSITIONING_UNIT_MODE,
-                            SEND_RECEIVE_MODE,
-                            FORMAT_EFFECTOR_ACTION_MODE,
-                            FORMAT_EFFECTOR_TRANSFER_MODE,
-                            MULTIPLE_AREA_TRANSFER_MODE,
-                            TRANSFER_TERMINATION_MODE,
-                            SELECTED_AREA_TRANSFER_MODE,
-                            TABULATION_STOP_MODE                = 18,
-                            GRAPHIC_RENDITION_COMBINATION_MODE  = 21,
-                            ZERO_DEFAULT_MODE,
-                        };
-
-                        inline base<sequence::controlSequence<sequence::parameter::selectable<types>>, types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::RM), {});
-                    }
+                    inline base<sequence::controlSequence<sequence::parameter::selectable<table::modes>>, table::modes, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::controlSequence<sequence::parameter::selectable<table::modes>>(table::finalWithoutIntermediate::RM), {});
 
                     /**
                      * @brief SM causes the modes of the receiving device to be set as specified by the parameter values.
@@ -2381,11 +2597,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    namespace SET_MODE {
-                        using types = RESET_MODE::types;
-
-                        inline base<sequence::controlSequence<sequence::parameter::selectable<types>>, types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::controlSequence<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SM), {});
-                    }
+                    inline base<sequence::controlSequence<sequence::parameter::selectable<table::modes>>, table::modes, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::controlSequence<sequence::parameter::selectable<table::modes>>(table::finalWithoutIntermediate::SM), {});
                 }
 
                 namespace transmissionControlFunctions {
