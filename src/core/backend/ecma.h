@@ -4,6 +4,8 @@
 #include "../utils/types.h"
 #include "terminal.h"
 
+#include <bitset>
+
 namespace GGUI {
     namespace terminal {
         /**
@@ -197,245 +199,441 @@ namespace GGUI {
                     __max = toInt(7, 15)   // For internal automation
                 };
 
-                enum class modes : uint8_t {
-                    __min = 1,      // For internal automation
+                namespace mode {
+                    enum class types : uint8_t {
+                        NONE,       // Only for internal use
 
-                    GUARDED_AREA_TRANSFER_MODE          = 1,                // (GATM)
-                    KEYBOARD_ACTION_MODE,                                   // (KAM)
-                    CONTROL_REPRESENTATION_MODE,                            // (CRM)
-                    INSERTION_REPLACEMENT_MODE,                             // (IRM)
-                    STATUS_REPORT_TRANSFER_MODE,                            // (SRTM)
-                    ERASURE_MODE,                                           // (ERM)
-                    LINE_EDITING_MODE,                                      // (VEM)
-                    BI_DIRECTIONAL_SUPPORT_MODE,                            // (BDSM)
-                    DEVICE_COMPONENT_SELECT_MODE,                           // (DCSM)
-                    CHARACTER_EDITING_MODE,                                 // (HEM)
-                    POSITIONING_UNIT_MODE,                                  // (PUM)
-                    SEND_RECEIVE_MODE,                                      // (SRM)
-                    FORMAT_EFFECTOR_ACTION_MODE,                            // (FEAM)
-                    FORMAT_EFFECTOR_TRANSFER_MODE,                          // (FETM)
-                    MULTIPLE_AREA_TRANSFER_MODE,                            // (MATM)
-                    TRANSFER_TERMINATION_MODE,                              // (TTM)
-                    SELECTED_AREA_TRANSFER_MODE,                            // (SATM)
-                    TABULATION_STOP_MODE                = 18,               // (TSM)
-                    GRAPHIC_RENDITION_COMBINATION_MODE  = 21,               // (GRCM)
-                    ZERO_DEFAULT_MODE,                                      // (ZDM)
+                        __min = 1,      // For internal automation
 
-                    __max = ZERO_DEFAULT_MODE     // For internal automation
-                };
+                        GUARDED_AREA_TRANSFER_MODE          = 1,                // (GATM)
+                        KEYBOARD_ACTION_MODE,                                   // (KAM)
+                        CONTROL_REPRESENTATION_MODE,                            // (CRM)
+                        INSERTION_REPLACEMENT_MODE,                             // (IRM)
+                        STATUS_REPORT_TRANSFER_MODE,                            // (SRTM)
+                        ERASURE_MODE,                                           // (ERM)
+                        LINE_EDITING_MODE,                                      // (VEM)
+                        BI_DIRECTIONAL_SUPPORT_MODE,                            // (BDSM)
+                        DEVICE_COMPONENT_SELECT_MODE,                           // (DCSM)
+                        CHARACTER_EDITING_MODE,                                 // (HEM)
+                        POSITIONING_UNIT_MODE,                                  // (PUM)
+                        SEND_RECEIVE_MODE,                                      // (SRM)
+                        FORMAT_EFFECTOR_ACTION_MODE,                            // (FEAM)
+                        FORMAT_EFFECTOR_TRANSFER_MODE,                          // (FETM)
+                        MULTIPLE_AREA_TRANSFER_MODE,                            // (MATM)
+                        TRANSFER_TERMINATION_MODE,                              // (TTM)
+                        SELECTED_AREA_TRANSFER_MODE,                            // (SATM)
+                        TABULATION_STOP_MODE                = 18,               // (TSM)
+                        GRAPHIC_RENDITION_COMBINATION_MODE  = 21,               // (GRCM)
+                        ZERO_DEFAULT_MODE,                                      // (ZDM)
 
-                class modeFlags {
-                protected:
-                    uint32_t data = 0;
+                        __max = ZERO_DEFAULT_MODE     // For internal automation
+                    };
 
-                    /**
-                     * @brief Converts a mode enum value to its relative index.
-                     * @param mode The mode enum value to convert.
-                     * @return The relative index of the mode, adjusted by subtracting the minimum mode value.
-                     */
-                    constexpr uint8_t modeToRelative(modes mode) const { return static_cast<uint8_t>(mode) - static_cast<uint8_t>(modes::__min); }
-                    constexpr modes relativeToMode(uint8_t relative) const { return static_cast<modes>(relative + static_cast<uint8_t>(modes::__min)); }
-                public:
+                    enum class definition : bool {
+                        RESET       = false,    // (RM)
+                        SET         = true      // (SM)
+                    };
 
-                    /**
-                     * @brief Enables the specified mode by setting its corresponding bit in the data field.
-                     *
-                     * This function takes a mode, converts it to its relative bit position using modeToRelative,
-                     * and sets the corresponding bit in the data member to indicate that the mode is active.
-                     *
-                     * @param mode The mode to enable.
-                     */
-                    void add(modes mode) {
-                        data |= (1u << modeToRelative(mode));
+                    class flags;
+
+                    struct base {
+                        types       index = types::NONE;    // Tells the bitmask where to set the value
+                        definition  value;                  // Is the data being set/reset on that index
+
+                        base(types idx, definition val) : index(idx), value(val) {}
+
+                        flags operator|(base other) const;
+                    };
+
+                    class flags {
+                    protected:
+                        std::bitset<(size_t)types::__max> data = 0;
+                    public:
+                        constexpr static flags empty() { return flags(); }
+
+                        // Simple setter
+                        void set(base val) { data.set(static_cast<size_t>(val.index), (bool)val.value); }
+
+                        // Simple getter
+                        definition get(types index) const { return static_cast<definition>(data.test(static_cast<size_t>(index))); }
+
+                        // used for group detection
+                        bool has(flags others) const { return (data & others.data) == others.data; }
+
+                        flags(base startingValue) { set(startingValue); }
+                        flags() = default;
+
+                        flags operator|(flags other) const {
+                            flags result(*this);
+                            result.data |= other.data;
+                            return result;
+                        }
+                    };
+
+                    namespace presets {
+                        /**
+                         * @brief Control functions are performed in the data component or in the presentation component, 
+                         * depending on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).
+                         */
+                        inline const base BDSM_EXPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::RESET   };
+
+                        /**
+                         * @brief Control functions are performed in the data component. All bi-directional aspects of data are handled by the device itself. 
+                         */
+                        inline const base BDSM_IMPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::SET     };
+
+                        /**
+                         * @brief All control functions are performed as defined; 
+                         * the way formator functions are processed depends on the setting of the FORMAT EFFECTOR ACTION MODE (FEAM). 
+                         * A device may choose to image the graphical representations of control functions in addition to performing them. 
+                         * NOTE: All control functions, except RM, are affected. 
+                         */
+                        inline const base CRM_CONTROL               = {     types::CONTROL_REPRESENTATION_MODE,         definition::RESET   };
+
+                        /**
+                         * @brief All control functions, except RESET MODE (RM), are treated as graphic characters. 
+                         * A device may choose to perform some control functions in addition to storing them and imaging their graphical representations. 
+                         * NOTE: All control functions, except RM, are affected. 
+                         */
+                        inline const base CRM_GRAPHIC               = {     types::CONTROL_REPRESENTATION_MODE,         definition::SET     };
+
+                        /**
+                         * @brief Certain control functions are performed in the presentation component. 
+                         The active presentation position (or the active line, where applicable) in the presentation component is the reference position against which the relevant control functions are performed. 
+                         * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
+                         */
+                        inline const base DCSM_PRESENTATION         = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::RESET   };
+
+                        /**
+                         * @brief Certain control functions are performed in the data component. 
+                         * The active data position (or the active line, where applicable) in the data component is the reference position against which the relevant control functions are performed. 
+                         * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
+                         */
+                        inline const base DCSM_DATA                 = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::SET     };
+
+                        /**
+                         * @brief Only the contents of unprotected areas are affected by an erasure control function. 
+                         * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
+                         */
+                        inline const base ERM_PROTECT               = {     types::ERASURE_MODE,                         definition::RESET   };
+                        
+                        /**
+                         * @brief The contents of protected as well as of unprotected areas are affected by an erasure control function. 
+                         * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
+                         */
+                        inline const base ERM_ALL                   = {     types::ERASURE_MODE,                         definition::SET     };
+
+                        /**
+                         * @brief Formator functions are performed immediately and may be stored in addition to being performed.
+                         * NOTE: Control functions affected are: BPH, BS, CR, DTA, FF, FNT, GCC, GSM, GSS, HPA, HPB, HPR, HT, 
+                         * HTJ, HTS, HVP, JFY, NEL, PEC, PFS, PLD, PLU, PPA, PPB, PPR, PTX, QUAD, RI, SACS, SAPV, 
+                         * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
+                         * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
+                         */
+                        inline const base FEAM_EXECUTE              = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::RESET   };
+
+                        /**
+                         * @brief Formator functions are stored but not performed. 
+                         * In this case, the specified action is intended to be performed by another device when the associated data are transmitted or transferred.
+                         * NOTE: Control functions affected are: BPH, BS, CR, DTA, FF, FNT, GCC, GSM, GSS, HPA, HPB, HPR, HT, 
+                         * HTJ, HTS, HVP, JFY, NEL, PEC, PFS, PLD, PLU, PPA, PPB, PPR, PTX, QUAD, RI, SACS, SAPV, 
+                         * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
+                         * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
+                         */
+                        inline const base FEAM_STORE                = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::SET     };
+
+                        /**
+                         * @brief Formator functions may be inserted in a data stream to be transmitted or in data to be transferred to an auxiliary input/output device.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base FETM_INSERT               = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::RESET   };
+
+                        /**
+                         * @brief No formator functions other than those received while the FORMAT EFFECTOR ACTION MODE (FEAM) is set to STORE are included in a transmitted data stream or in data transferred to an auxiliary input/output device.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base FETM_EXCLUDE              = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::SET     };
+
+                        /**
+                         * @brief Only the contents of unguarded areas in an eligible area are transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base GATM_GUARD                = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::RESET   };
+
+                        /**
+                         * @brief The contents of guarded as well as of unguarded areas in an eligible area are transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base GATM_ALL                  = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::SET     };
+
+                        /**
+                         * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) cancels the effect of any preceding occurrence. 
+                         * Any graphic rendition aspects that are to remain unchanged after an occurrence of SGR have to be re-specified by that SGR.
+                         * NOTE: Control function affected is SGR.
+                         */
+                        inline const base GRCM_REPLACING            = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::RESET   };
+
+                        /**
+                         * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) causes only those graphic rendition aspects to be changed that are specified by that SGR. 
+                         * All other graphic rendition aspects remain unchanged.
+                         * NOTE: Control function affected is SGR.
+                         */
+                        inline const base GRCM_CUMULATIVE           = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::SET     };
+
+                        /**
+                         * @brief This mode is dependant of the following conditions:
+                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a character insertion causes the contents of the active presentation position and of the following character positions in the presentation component to be shifted in the direction of the character path; a character deletion causes the contents of the character positions following the active presentation position to be shifted in the direction opposite to that of the character path.
+                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of the following character positions in the data component to be shifted in the direction of the character progression; a character deletion causes the contents of the character positions following the active data position to be shifted in the direction opposite to that of the character progression.
+                         * NOTE: Control functions affected are: DCH, ICH.
+                         */
+                        inline const base HEM_FOLLOWING             = {     types::CHARACTER_EDITING_MODE,               definition::RESET   };
+
+                        /**
+                         * @brief This mode is dependant of the following conditions:
+                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a character insertion causes the contents of the active presentation position and of the following character positions in the presentation component to be shifted in the direction opposite to that of the character path; a character deletion causes the contents of the character positions following the active presentation position to be shifted in the direction of the character path.
+                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of preceding character positions in the data component to be shifted in the direction opposite to that of the character progression; a character deletion causes the contents of the character positions preceding the active data position to be shifted in the direction of the character progression.
+                         * NOTE: Control functions affected are: DCH, ICH.
+                         */
+                        inline const base HEM_PRECEDING             = {     types::CHARACTER_EDITING_MODE,               definition::SET     };
+
+                        /**
+                         * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, replaces (or, depending upon the implementation, is combined with) the graphic symbol imaged at the active presentation position.
+                         * NOTE: Only control functions for which a graphical representation is required are affected.
+                         */
+                        inline const base IRM_REPLACE               = {     types::INSERTION_REPLACEMENT_MODE,           definition::RESET   };
+
+                        /**
+                         * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, is inserted at the active presentation position.
+                         * NOTE: Only control functions for which a graphical representation is required are affected.
+                         */
+                        inline const base IRM_INSERT                = {     types::INSERTION_REPLACEMENT_MODE,           definition::SET     };
+
+                        /**
+                         * @brief All or part of the manual input facilities are enabled to be used.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base KAM_ENABLED               = {     types::KEYBOARD_ACTION_MODE,                 definition::RESET   };
+
+                        /**
+                         * @brief All or part of the manual input facilities are disabled.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base KAM_DISABLED              = {     types::KEYBOARD_ACTION_MODE,                 definition::SET     };
+
+                        /**
+                         * @brief Only the contents of the selected area which contains the active presentation position are eligible to be transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base MATM_SINGLE               = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::RESET   };
+
+                        /**
+                         * @brief The contents of all selected areas are eligible to be transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base MATM_MULTIPLE             = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::SET     };
+
+                        // skip PUM - POSITIONING UNIT MODE
+                        
+                        /**
+                         * @brief Only the contents of selected areas are eligible to be transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base SATM_SELECT               = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::RESET   };
+
+                        /**
+                         * @brief The contents of all character positions, irrespective of any explicitly defined selected areas, are eligible to be transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base SATM_ALL                  = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::SET     };
+
+                        /**
+                         * @brief Data which are locally entered are immediately imaged.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base SRM_MONITOR               = {     types::SEND_RECEIVE_MODE,                    definition::RESET   };
+
+                        /**
+                         * @brief Local input facilities are logically disconnected from the output mechanism; only data which are sent to the device are imaged.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base SRM_SIMULTANEOUS          = {     types::SEND_RECEIVE_MODE,                    definition::SET     };
+
+                        /**
+                         * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are not generated automatically.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base SRTM_NORMAL               = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::RESET   };
+
+                        /**
+                         * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are included in every data stream transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base SRTM_DIAGNOSTIC           = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::SET     };
+
+                        /**
+                         * @brief Character tabulation stops in the presentation component are set or cleared in the active line (the line that contains the active presentation position) and in the corresponding character positions of the preceding lines and of the following lines.
+                         * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
+                         */
+                        inline const base TSM_MULTIPLE              = {     types::TABULATION_STOP_MODE,                 definition::RESET   };
+
+                        /**
+                         * @brief Character tabulation stops in the presentation component are set or cleared in the active line only.
+                         * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
+                         */
+                        inline const base TSM_SINGLE                = {     types::TABULATION_STOP_MODE,                 definition::SET     };
+
+                        /**
+                         * @brief Only the contents of the character positions preceding the active presentation position in the presentation component are eligible to be transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base TTM_CURSOR                = {     types::TRANSFER_TERMINATION_MODE,            definition::RESET   };
+
+                        /**
+                         * @brief The contents of character positions preceding, following, and at the active presentation position are eligible to be transmitted or transferred.
+                         * NOTE: No control functions are affected.
+                         */
+                        inline const base TTM_ALL                   = {     types::TRANSFER_TERMINATION_MODE,            definition::SET     };
+
+                        /**
+                         * @brief This mode is dependant of the following conditions:
+                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a line insertion causes the contents of the active line (the line that contains the active presentation position) and of the following lines in the presentation component to be shifted in the direction of the line progression; a line deletion causes the contents of the lines following the active line to be shifted in the direction opposite to that of the line progression.
+                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the following lines in the data component to be shifted in the direction of the line progression; a line deletion causes the contents of the lines following the active line to be shifted in the direction opposite to that of the line progression.
+                         * NOTE: Control functions affected are: DL, IL.
+                         */
+                        inline const base VEM_FOLLOWING             = {     types::LINE_EDITING_MODE,                    definition::RESET   };
+
+                        /**
+                         * @brief This mode is dependant of the following conditions: 
+                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a line insertion causes the contents of the active line (the line that contains the active presentation position) and of the preceding lines to be shifted in the direction opposite to that of the line progression; a line deletion causes the contents of the lines preceding the active line to be shifted in the direction of the line progression.
+                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the preceding lines to be shifted in the direction opposite to that of the line progression; a line deletion causes the contents of the lines preceding the active line to be shifted in the direction of the line progression.
+                         * NOTE: Control functions affected are: DL, IL.
+                         */
+                        inline const base VEM_PRECEDING             = {     types::LINE_EDITING_MODE,                    definition::SET     };
+
+                        // skip ZDM - ZERO DEFAULT MODE 
                     }
+                        
 
-                    /**
-                     * @brief Removes the specified mode from the current set of modes.
-                     *
-                     * This function clears the bit corresponding to the given mode in the internal data,
-                     * effectively removing that mode from the set.
-                     *
-                     * @param mode The mode to be removed.
-                     */
-                    void remove(modes mode) {
-                        data &= ~(1u << modeToRelative(mode));
-                    }
+                    namespace group {
+                        /**
+                         * @brief GUARDED AREA TRANSFER MODE (GATM), MULTIPLE AREA TRANSFER MODE (MATM), 
+                         * SELECTED AREA TRANSFER MODE (SATM), and TRANSFER TERMINATION MODE (TTM)
+                         * These modes have a combined effect on the format of a transmitted data stream or of a data stream transferred to an auxiliary input/output device, as described hereafter.
+                         * The term "active selected area" is used to denote the selected area in the presentation component containing the active presentation position.
+                         * The term "eligible" is used for denoting any area which may be considered for transmitting or transferring. 
+                         * If the active presentation position is not within a selected area, the format of the data stream in the first and fourth case above is not defined by this Standard. 
+                         */
+                        namespace guardedTransfer {
+                            /**
+                             * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to SINGLE, then the contents of the active selected area, up to but excluding the active presentation position, are eligible.  
+                             */
+                            inline const flags TTM_CURSOR_SATM_SELECT_MATM_SINGLE                   = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_SINGLE;
+                        
+                            /**
+                             * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to MULTIPLE, then the contents of any selected area, up to but excluding the active presentation position, are eligible.  
+                             */
+                            inline const flags TTM_CURSOR_SATM_SELECT_MATM_MULTIPLE                 = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_MULTIPLE;
 
-                    modeFlags() = default;
-                    modeFlags(modes mode) { add(mode); }
-                    modeFlags(std::initializer_list<modes> modesList) {
-                        for (modes mode : modesList) {
-                            add(mode);
+                            /**
+                             * @brief If the TTM is set to CURSOR and the SATM to ALL, then the contents of the buffer up to but excluding the active presentation position, are eligible. 
+                             */
+                            inline const flags TTM_CURSOR_SATM_ALL                                  = presets::TTM_CURSOR | presets::SATM_ALL;
+
+                            /**
+                             * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to SINGLE, then the complete contents of the active selected area are eligible. 
+                             */
+                            inline const flags TTM_ALL_SATM_SELECT_MATM_SINGLE                      = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_SINGLE;
+
+                            /**
+                             * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to MULTIPLE, then the complete contents of all selected areas are eligible. 
+                             */
+                            inline const flags TTM_ALL_SATM_SELECT_MATM_MULTIPLE                    = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_MULTIPLE;
+
+                            /**
+                             * @brief If the TTM and the SATM are both set to ALL, then the complete contents of the buffer are eligible. 
+                             */
+                            inline const flags TTM_ALL_SATM_ALL                                     = presets::TTM_ALL | presets::SATM_ALL;
+
+                            /**
+                             * @brief If the GATM is set to GUARD, the contents of the eligible area or areas are transmitted or transferred, 
+                             * except for the contents of guarded areas which are completely contained within an eligible area. 
+                             * In the case where a guarded area is only partly contained within an eligible area, 
+                             * the contents of the part contained in the eligible area may be transmitted or not, depending on the implementation. 
+                             */
+                            inline const base GATM_GUARD                                            = presets::GATM_GUARD;
+
+                            /**
+                             * @brief If the GATM is set to ALL, guarded as well as unguarded data in an eligible area are transmitted or transferred. 
+                             */
+                            inline const base GATM_ALL                                              = presets::GATM_ALL;
+                        }
+
+                        /**
+                         * @brief CONTROL REPRESENTATION MODE (CRM) and FORMAT EFFECTOR ACTION MODE (FEAM)
+                         */
+                        namespace representationFormat {
+                            /**
+                             * @brief If the CRM is set to CONTROL, and the FEAM is set to EXECUTE, all control functions are performed as defined. 
+                             */
+                            inline const flags CRM_CONTROL_FEAM_EXECUTE                             = presets::CRM_CONTROL | presets::FEAM_EXECUTE;
+
+                            /**
+                             * @brief If the CRM is set to CONTROL, and the FEAM is set to STORE, formator functions are treated as graphic characters. 
+                             */
+                            inline const flags CRM_CONTROL_FEAM_STORE                               = presets::CRM_CONTROL | presets::FEAM_STORE;
+
+                            /**
+                             * @brief If the CRM is set to GRAPHIC, all control functions except RM are treated as graphic characters. 
+                             */
+                            inline const base CRM_GRAPHIC                                           = presets::CRM_GRAPHIC;
+                        }
+
+                        /**
+                         * @brief CHARACTER EDITING MODE (HEM) and INSERTION REPLACEMENT MODE (IRM) 
+                         * Whether the active position referred to above is the active data position in the data component or the
+                         * active presentation position in the presentation component, depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).  
+                         */
+                        namespace characterReplacement {
+                            /**
+                             * @brief If the IRM is set to REPLACE, the HEM influences the control functions DELETE CHARACTER (DCH) and INSERT CHARACTER (ICH) only. 
+                             */
+                            inline const base IRM_REPLACE                                           = presets::IRM_REPLACE;
+
+                            /**
+                             * @brief If the IRM is set to INSERT, then, in addition, the effect of the receipt of a graphic character or a
+                             * control function for which a graphical representation is required, depends on the setting of the HEM.
+                             * If the HEM is set to FOLLOWING, the implicit movement of the active position is performed normally;
+                             * if it is set to PRECEDING, the active position does not move. 
+                             */
+                            inline const flags IRM_INSERT_HEM_FOLLOWING                             = presets::IRM_INSERT | presets::HEM_FOLLOWING;
+                            inline const flags IRM_INSERT_HEM_PRECEDING                             = presets::IRM_INSERT | presets::HEM_PRECEDING;
+                        }
+
+                        /**
+                         * @brief BI-DIRECTIONAL SUPPORT MODE (BDSM) and DEVICE COMPONENT SELECT MODE (DCSM)
+                         * NOTE: Control functions affected are: 
+                         * CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL , LF, NEL, RI, SLH, SLL, SPH, SPL.
+                         */
+                        namespace biDirectionalDevice {
+                            /**
+                             * @brief If the BDSM is set to EXPLICIT and the DCSM is set to DATA, certain control functions are performed in the data component. 
+                             */
+                            inline const flags BDSM_EXPLICIT_DCSM_DATA                              = presets::BDSM_EXPLICIT | presets::DCSM_DATA;
+
+                            /**
+                             * @brief If the BDSM is set to EXPLICIT and the DCSM is set to PRESENTATION, certain control functions are performed in the presentation component.
+                             */
+                            inline const flags BDSM_EXPLICIT_DCSM_PRESENTATION                      = presets::BDSM_EXPLICIT | presets::DCSM_PRESENTATION;
+
+                            /**
+                             * @brief If the BDSM is set to IMPLICIT, all relevant control functions are performed in the data component; 
+                             * all bi-directional aspects of the data are handled by the device itself. 
+                             * The setting of the DCSM has no effect; it is considered to be set to DATA (the reset state). 
+                             */
+                            inline const base BDSM_IMPLICIT                                         = presets::BDSM_IMPLICIT;
                         }
                     }
-
-                    /**
-                     * @brief Checks if the specified mode is present in the current set.
-                     *
-                     * This function determines whether the given mode is enabled by testing
-                     * if the corresponding bit is set in the internal data representation.
-                     *
-                     * @param mode The mode to check for presence.
-                     * @return true if the mode is present; false otherwise.
-                     */
-                    bool has(modes mode) const {
-                        return (data & (1u << modeToRelative(mode))) != 0;
-                    }
-
-                    /**
-                     * @brief Returns a new modeFlags object that is the result of adding the specified mode to the current modeFlags.
-                     *
-                     * This operator overload allows combining the current modeFlags with an additional mode using the bitwise OR operator.
-                     * The original modeFlags object remains unchanged; a new modeFlags object with the added mode is returned.
-                     *
-                     * @param mode The mode to add to the current modeFlags.
-                     * @return modeFlags A new modeFlags object with the specified mode included.
-                     */
-                    modeFlags operator|(modes mode) const {
-                        modeFlags result = *this;
-                        result.add(mode);
-                        return result;
-                    }
-
-                    /**
-                     * @brief Returns a new modeFlags object with the specified mode masked.
-                     *
-                     * Performs a bitwise AND operation between the current modeFlags object and the given mode.
-                     * If the current object does not have the specified mode, the resulting modeFlags will have
-                     * that mode removed. Otherwise, the modeFlags remains unchanged.
-                     *
-                     * @param mode The mode to mask with the current modeFlags.
-                     * @return modeFlags A new modeFlags object with the specified mode masked.
-                     */
-                    modeFlags operator&(modes mode) const {
-                        modeFlags result = *this;
-                        if (!has(mode)) {
-                            result.remove(mode);
-                        }
-                        return result;
-                    }
-
-                    /**
-                     * @brief Bitwise OR assignment operator for modeFlags.
-                     *
-                     * Adds the specified mode to the current modeFlags using the add() method,
-                     * and returns a reference to the updated modeFlags object.
-                     *
-                     * @param mode The mode to add to the modeFlags.
-                     * @return Reference to the updated modeFlags object.
-                     */
-                    modeFlags& operator|=(modes mode) {
-                        add(mode);
-                        return *this;
-                    }
-
-                    /**
-                     * @brief Performs a bitwise AND assignment between the current modeFlags and the specified mode.
-                     *
-                     * If the specified mode is not present in the current modeFlags, it removes the mode.
-                     * Returns a reference to the modified modeFlags object.
-                     *
-                     * @param mode The mode to perform the bitwise AND assignment with.
-                     * @return Reference to the updated modeFlags object.
-                     */
-                    modeFlags& operator&=(modes mode) {
-                        if (!has(mode)) {
-                            remove(mode);
-                        }
-                        return *this;
-                    }
-
-                    /**
-                     * @brief Equality operator to compare the current object with a specified mode.
-                     *
-                     * This operator checks if the current object contains the specified mode by calling the has(mode) function.
-                     *
-                     * @param mode The mode to compare against.
-                     * @return true if the current object contains the specified mode, false otherwise.
-                     */
-                    bool operator==(modes mode) const {
-                        return has(mode);
-                    }
-
-                    /**
-                     * @brief Checks if the current object does not have the specified mode.
-                     *
-                     * This operator returns true if the given mode is not present in the current object,
-                     * by negating the result of the has(mode) function.
-                     *
-                     * @param mode The mode to check for inequality.
-                     * @return true if the current object does not have the specified mode, false otherwise.
-                     */
-                    bool operator!=(modes mode) const {
-                        return !has(mode);
-                    }
-
-                    /**
-                     * @brief Bitwise OR operator for modeFlags.
-                     *
-                     * Combines the current modeFlags with another modeFlags using the bitwise OR operation.
-                     * Returns a new modeFlags instance with the combined flags.
-                     *
-                     * @param other The modeFlags to combine with.
-                     * @return modeFlags The result of the bitwise OR operation.
-                     */
-                    modeFlags operator|(modeFlags other) const {
-                        modeFlags r;
-                        r.data = data | other.data;
-                        return r;
-                    }
-
-                    /**
-                     * @brief Bitwise AND operator for modeFlags.
-                     *
-                     * Performs a bitwise AND operation between this modeFlags instance and another,
-                     * returning a new modeFlags instance with the result.
-                     *
-                     * @param other The modeFlags instance to AND with.
-                     * @return A new modeFlags instance containing the result of the bitwise AND.
-                     */
-                    modeFlags operator&(modeFlags other) const {
-                        modeFlags r;
-                        r.data = data & other.data;
-                        return r;
-                    }
-
-                    /**
-                     * @brief Bitwise XOR operator for modeFlags.
-                     *
-                     * Performs a bitwise exclusive OR (XOR) operation between the current modeFlags object and another.
-                     * Returns a new modeFlags object containing the result.
-                     *
-                     * @param other The modeFlags object to XOR with.
-                     * @return modeFlags The result of the XOR operation.
-                     */
-                    modeFlags operator^(modeFlags other) const {
-                        modeFlags r;
-                        r.data = data ^ other.data;
-                        return r;
-                    }
-
-                    /**
-                     * @brief Returns a list of modes currently available.
-                     *
-                     * Iterates through all possible modes, checks if each mode is present using the `has()` method,
-                     * and collects the available modes into a vector.
-                     *
-                     * @return std::vector<modes> Vector containing all available modes.
-                     */
-                    std::vector<modes> list() const {
-                        std::vector<modes> result;
-
-                        for (uint8_t i = 0; i <= modeToRelative(modes::__max); i++) {
-                            modes currentMode = relativeToMode(i);
-                            if (has(currentMode)) {
-                                result.push_back(currentMode);
-                            }
-                        }
-
-                        return result;
-                    }
-                };
+                }
             }
 
             namespace sequence {
@@ -551,16 +749,16 @@ namespace GGUI {
 
                 class base {
                 public:
-                    specialType type;                       // Tells what kind of function this is
-                    bitType escapeType = bitType::_7bit;    // Since most terminal emulators use the 7bit introducer.
-                    table::modeFlags requires;              // Describes if the current sequence is dependant of some mode set.
+                    specialType type;                               // Tells what kind of function this is
+                    bitType escapeType = bitType::_7bit;            // Since most terminal emulators use the 7bit introducer.
+                    table::mode::flags requires;                    // Describes if the current sequence is dependant of some mode set.
 
                     virtual std::string toString() { return ""; }
 
                     base() {}             // Default constructor
                     virtual ~base() {}    // 
 
-                    base(specialType t, bitType b) : type(t), escapeType(b) {}
+                    base(specialType t, bitType b, table::mode::flags requirements) : type(t), escapeType(b), requires(requirements) {}
                 };
 
                 class basic : public base {
@@ -569,8 +767,8 @@ namespace GGUI {
                 public:
                     static void parse(std::string_view input, size_t& length, std::vector<base*>& output);
 
-                    basic(table::C0 func) : base(specialType::BASIC, bitType::_7bit), function(func) {}
-                    basic(table::C1 func, bitType variant = bitType::_7bit) : base(specialType::BASIC, variant), function(func) {}
+                    basic(table::C0 func, table::mode::flags requirements = table::mode::flags::empty()) : base(specialType::BASIC, bitType::_7bit, requirements), function(func) {}
+                    basic(table::C1 func, bitType variant = bitType::_7bit, table::mode::flags requirements = table::mode::flags::empty()) : base(specialType::BASIC, variant, requirements), function(func) {}
 
                     std::string toString() override;
                 };
@@ -704,22 +902,26 @@ namespace GGUI {
 
                     controlSequence(
                         std::vector<parameter::base<containerType>> params,
-                        table::finalWithoutIntermediate finalByte
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameters(params), finalByte(finalByte) {}
+                        table::finalWithoutIntermediate finalByte,
+                        table::mode::flags requirements = table::mode::flags::empty()
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), parameters(params), finalByte(finalByte) {}
 
                     controlSequence(
                         std::vector<parameter::base<containerType>> params,
                         std::vector<uint8_t> inters,
-                        table::finalWithIntermediate finalByte
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameters(params), intermediates(inters), finalByte(finalByte) {}
+                        table::finalWithIntermediate finalByte,
+                        table::mode::flags requirements = table::mode::flags::empty()
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), parameters(params), intermediates(inters), finalByte(finalByte) {}
 
                     controlSequence(
-                        table::finalWithoutIntermediate finalByte
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), finalByte(finalByte) {}
+                        table::finalWithoutIntermediate finalByte,
+                        table::mode::flags requirements = table::mode::flags::empty()
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), finalByte(finalByte) {}
 
                     controlSequence(
-                        table::finalWithIntermediate finalByte
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), intermediates({table::toInt(2, 0)}), finalByte(finalByte) {}
+                        table::finalWithIntermediate finalByte,
+                        table::mode::flags requirements = table::mode::flags::empty()
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), intermediates({table::toInt(2, 0)}), finalByte(finalByte) {}
 
                     /**
                     * Converts the control sequence to its string representation.
@@ -777,8 +979,9 @@ namespace GGUI {
 
                     independent(
                         table::independentFunctions func,
-                        bool space = false
-                    ) : base(specialType::INDEPENDENT, bitType::_7bit), hasSpace(space), function(func) {}
+                        bool space = false,
+                        table::mode::flags requirements = table::mode::flags::empty()
+                    ) : base(specialType::INDEPENDENT, bitType::_7bit, requirements), hasSpace(space), function(func) {}
 
                     std::string toString() override;
                 };
@@ -792,12 +995,14 @@ namespace GGUI {
                     
                     controlString(
                         table::C1 delimeter,
-                        std::vector<uint8_t> chars
-                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(delimeter), characters(chars) {}
+                        std::vector<uint8_t> chars,
+                        table::mode::flags requirements = table::mode::flags::empty()
+                    ) : base(specialType::CONTROL_STRING, bitType::_7bit, requirements), openingDelimiter(delimeter), characters(chars) {}
 
                     controlString(
-                        table::C1 delimeter
-                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(delimeter) {}
+                        table::C1 delimeter,
+                        table::mode::flags requirements = table::mode::flags::empty()
+                    ) : base(specialType::CONTROL_STRING, bitType::_7bit, requirements), openingDelimiter(delimeter) {}
 
                     std::string toString() override;
                 };
@@ -2588,7 +2793,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::controlSequence<sequence::parameter::selectable<table::modes>>, table::modes, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::controlSequence<sequence::parameter::selectable<table::modes>>(table::finalWithoutIntermediate::RM), {});
+                    inline base<sequence::controlSequence<sequence::parameter::selectable<table::mode::types>>, table::mode::types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::controlSequence<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::RM), {});
 
                     /**
                      * @brief SM causes the modes of the receiving device to be set as specified by the parameter values.
@@ -2597,7 +2802,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::controlSequence<sequence::parameter::selectable<table::modes>>, table::modes, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::controlSequence<sequence::parameter::selectable<table::modes>>(table::finalWithoutIntermediate::SM), {});
+                    inline base<sequence::controlSequence<sequence::parameter::selectable<table::mode::types>>, table::mode::types, 1, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::controlSequence<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::SM), {});
                 }
 
                 namespace transmissionControlFunctions {

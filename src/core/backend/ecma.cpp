@@ -3,6 +3,14 @@
 namespace GGUI {
     namespace terminal {
         namespace ecma {
+            namespace table {
+                namespace mode {
+                    flags base::operator|(base other) const {
+                        return flags(*this) | flags(other);
+                    }
+                }
+            }
+
             namespace sequence {
                 using namespace sequence::INTERNAL;
 
