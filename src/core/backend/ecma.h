@@ -432,7 +432,7 @@ namespace GGUI {
                          */
                         inline const base MATM_MULTIPLE             = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::SET     };
 
-                        // skip PUM - POSITIONING UNIT MODE
+                        // skip PUM - POSITIONING UNIT MODE, since Annex F.4.1
                         
                         /**
                          * @brief Only the contents of selected areas are eligible to be transmitted or transferred.
@@ -510,9 +510,8 @@ namespace GGUI {
                          */
                         inline const base VEM_PRECEDING             = {     types::LINE_EDITING_MODE,                    definition::SET     };
 
-                        // skip ZDM - ZERO DEFAULT MODE 
+                        // skip ZDM - ZERO DEFAULT MODE, since Annex F.4.2
                     }
-                        
 
                     namespace group {
                         /**
@@ -758,7 +757,7 @@ namespace GGUI {
                     base() {}             // Default constructor
                     virtual ~base() {}    // 
 
-                    base(specialType t, bitType b, table::mode::flags requirements) : type(t), escapeType(b), requires(requirements) {}
+                    base(specialType t, bitType b) : type(t), escapeType(b) {}
                 };
 
                 class basic : public base {
@@ -767,8 +766,8 @@ namespace GGUI {
                 public:
                     static void parse(std::string_view input, size_t& length, std::vector<base*>& output);
 
-                    basic(table::C0 func, table::mode::flags requirements = table::mode::flags::empty()) : base(specialType::BASIC, bitType::_7bit, requirements), function(func) {}
-                    basic(table::C1 func, bitType variant = bitType::_7bit, table::mode::flags requirements = table::mode::flags::empty()) : base(specialType::BASIC, variant, requirements), function(func) {}
+                    basic(table::C0 func) : base(specialType::BASIC, bitType::_7bit), function(func) {}
+                    basic(table::C1 func, bitType variant = bitType::_7bit) : base(specialType::BASIC, variant), function(func) {}
 
                     std::string toString() override;
                 };
@@ -902,26 +901,22 @@ namespace GGUI {
 
                     controlSequence(
                         std::vector<parameter::base<containerType>> params,
-                        table::finalWithoutIntermediate finalByte,
-                        table::mode::flags requirements = table::mode::flags::empty()
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), parameters(params), finalByte(finalByte) {}
+                        table::finalWithoutIntermediate finalByte
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameters(params), finalByte(finalByte) {}
 
                     controlSequence(
                         std::vector<parameter::base<containerType>> params,
                         std::vector<uint8_t> inters,
-                        table::finalWithIntermediate finalByte,
-                        table::mode::flags requirements = table::mode::flags::empty()
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), parameters(params), intermediates(inters), finalByte(finalByte) {}
+                        table::finalWithIntermediate finalByte
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameters(params), intermediates(inters), finalByte(finalByte) {}
 
                     controlSequence(
-                        table::finalWithoutIntermediate finalByte,
-                        table::mode::flags requirements = table::mode::flags::empty()
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), finalByte(finalByte) {}
+                        table::finalWithoutIntermediate finalByte
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), finalByte(finalByte) {}
 
                     controlSequence(
-                        table::finalWithIntermediate finalByte,
-                        table::mode::flags requirements = table::mode::flags::empty()
-                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit, requirements), intermediates({table::toInt(2, 0)}), finalByte(finalByte) {}
+                        table::finalWithIntermediate finalByte
+                    ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), intermediates({table::toInt(2, 0)}), finalByte(finalByte) {}
 
                     /**
                     * Converts the control sequence to its string representation.
@@ -979,9 +974,8 @@ namespace GGUI {
 
                     independent(
                         table::independentFunctions func,
-                        bool space = false,
-                        table::mode::flags requirements = table::mode::flags::empty()
-                    ) : base(specialType::INDEPENDENT, bitType::_7bit, requirements), hasSpace(space), function(func) {}
+                        bool space = false
+                    ) : base(specialType::INDEPENDENT, bitType::_7bit), hasSpace(space), function(func) {}
 
                     std::string toString() override;
                 };
@@ -995,14 +989,12 @@ namespace GGUI {
                     
                     controlString(
                         table::C1 delimeter,
-                        std::vector<uint8_t> chars,
-                        table::mode::flags requirements = table::mode::flags::empty()
-                    ) : base(specialType::CONTROL_STRING, bitType::_7bit, requirements), openingDelimiter(delimeter), characters(chars) {}
+                        std::vector<uint8_t> chars
+                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(delimeter), characters(chars) {}
 
                     controlString(
-                        table::C1 delimeter,
-                        table::mode::flags requirements = table::mode::flags::empty()
-                    ) : base(specialType::CONTROL_STRING, bitType::_7bit, requirements), openingDelimiter(delimeter) {}
+                        table::C1 delimeter
+                    ) : base(specialType::CONTROL_STRING, bitType::_7bit), openingDelimiter(delimeter) {}
 
                     std::string toString() override;
                 };
