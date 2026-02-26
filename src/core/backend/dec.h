@@ -31,7 +31,21 @@ namespace GGUI {
                         };
 
                         inline const auto privateModeSetter = ecma::table::toInt(3, 15);        // '?'
+                        
+                        inline auto editMode(types t, ecma::table::mode::definition status) {
+                            const auto pre_made = {
+                                static_cast<ecma::table::mode::types>(privateModeSetter),
+                                static_cast<ecma::table::mode::types>(t)
+                            };
+
+                            if (status == ecma::table::mode::definition::SET) {
+                                return ecma::sequences::modeSettings::SET_MODE.compile(pre_made);
+                            } else {
+                                return ecma::sequences::modeSettings::RESET_MODE.compile(pre_made);
+                            }
+                        }
                     }
+
                 }
 
                 enum class arrowKeysReset {

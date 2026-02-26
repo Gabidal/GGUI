@@ -635,6 +635,13 @@ namespace GGUI {
                 }
             }
 
+            namespace sequences {
+                enum class specialTypes {
+                    NORMAL,
+                    HAS_INFINITE_PARAMETERS
+                };
+            }
+
             namespace sequence {
                 enum class bitType : uint8_t {
                     _7bit,          // For the 1/11 introducers
@@ -804,7 +811,7 @@ namespace GGUI {
                 template<typename containerType>
                 class control : public base {
                 protected:
-                    std::vector<containerType> parameters;                          // Each range between: 03/00 - 03/15, delimeetered by 03/11 (';')
+                    std::vector<containerType> parameters;                          // Each range between: 03/00 - 03/15, delimited by 03/11 (';')
                     std::vector<uint8_t> intermediates;                             // Each range between: 02/00 - 02/15
                     std::variant<
                         table::finalWithoutIntermediate,                            // Each range between: 04/00 - 07/14
@@ -824,7 +831,7 @@ namespace GGUI {
                         // This is where the parameters will start if any
                         size_t contentOffset = _7bitHeaders ? 2 : 1;
                         
-                        // Now we need to find for the end of this control sequence, either by a an intermediated final byte or a non-intermediated final byte.
+                        // Now we need to find for the end of this control sequence, either by a an intermediate final byte or a non-intermediate final byte.
                         size_t finalByteOffset = findIndexOffFinalByteForControlSequence(input.substr(contentOffset));
 
                         if (finalByteOffset == std::string_view::npos) return; // unbound sequence.
@@ -903,12 +910,12 @@ namespace GGUI {
                     }
 
                     control(
-                        std::vector<parameter::base<containerType>> params,
+                        std::vector<containerType> params,
                         table::finalWithoutIntermediate finalByte
                     ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameters(params), finalByte(finalByte) {}
 
                     control(
-                        std::vector<parameter::base<containerType>> params,
+                        std::vector<containerType> params,
                         std::vector<uint8_t> inters,
                         table::finalWithIntermediate finalByte
                     ) : base(specialType::CONTROL_SEQUENCE, bitType::_7bit), parameters(params), intermediates(inters), finalByte(finalByte) {}
@@ -967,9 +974,13 @@ namespace GGUI {
                         return result;
                     }
 
+                    // Produces a new control sequence based on this template preset
+                    control<containerType> compile(std::vector<containerType> params, std::vector<uint8_t> interms) const {
+                        control<containerType> result = *this;
+                        result.parameters = params;
+                        result.intermediates = interms;
 
-                    control<containerType> compile() const {
-
+                        return result;
                     }
                 };
 
@@ -1012,11 +1023,6 @@ namespace GGUI {
 
             namespace sequences {
 
-                enum class specialTypes {
-                    NORMAL,
-                    HAS_INFINITE_PARAMETERS
-                };
-
                 template<
                     typename codeType,
                     typename parameterType              = sequence::parameter::numeric,
@@ -1036,6 +1042,72 @@ namespace GGUI {
                         std::array<parameterType, paramCount> defaultParamValues = {},
                         std::array<uint8_t, intermediateCount> defaultIntermediates = {}
                     ) : function(code), parameterDefaultValue(defaultParamValues), intermediateDefaultValues(defaultIntermediates) {}
+
+                    template<
+                        specialTypes T = parameterExtension,
+                        typename std::enable_if_t<T == specialTypes::NORMAL, int> = 0
+                    >
+                    codeType compile(
+                        const std::array<parameterType, paramCount>& params,
+                        const std::array<uint8_t, intermediateCount>& interms
+                    ) const {
+                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
+                            return function.compile(
+                                params,
+                                interms
+                            );
+                        } else {
+                            return function.compile();
+                        }
+                    }
+
+                    template<
+                        specialTypes T = parameterExtension,
+                        typename std::enable_if_t<T == specialTypes::NORMAL, int> = 0
+                    >
+                    codeType compile(const std::array<parameterType, paramCount>& params) const {
+                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
+                            return function.compile(
+                                params,
+                                std::vector<uint8_t>(intermediateDefaultValues.begin(), intermediateDefaultValues.end())
+                            );
+                        } else {
+                            return function.compile();
+                        }
+                    }
+
+                    template<
+                        specialTypes T = parameterExtension,
+                        typename std::enable_if_t<T == specialTypes::NORMAL, int> = 0
+                    >
+                    codeType compile() const {
+                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
+                            return function.compile(
+                                std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end()),
+                                std::vector<uint8_t>(intermediateDefaultValues.begin(), intermediateDefaultValues.end())
+                            );
+                        } else {
+                            return function.compile();
+                        }
+                    }
+
+                    template<
+                        specialTypes T = parameterExtension,
+                        typename std::enable_if_t<T == specialTypes::HAS_INFINITE_PARAMETERS, int> = 0
+                    >
+                    codeType compile(
+                        const std::vector<parameterType>& params = {},
+                        const std::vector<uint8_t>& interms = {}
+                    ) const {
+                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
+                            return function.compile(
+                                params.size() ? params : std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end()),
+                                interms.size() ? interms : std::vector<uint8_t>(intermediateDefaultValues.begin(), intermediateDefaultValues.end())
+                            );
+                        } else {
+                            return function.compile();
+                        }
+                    }
                 };
 
                 namespace delimiters {
