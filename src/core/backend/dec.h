@@ -14,22 +14,24 @@ namespace GGUI {
             using namespace ansi;       // Since the ASCII table is same as the one stated in ANSI, we will route it here, with alias and get functions for reusability.
         
             namespace VT100 {
-                // Since so many VTxxx sequences depend on their private modes, we need to introduce bindings to enforce correct sequence for each mode.
-                namespace binds {
-                    enum class types {
-                        NONE,                               // Error (ignored)
-                        DEC_CURSOR_KEY_MODE,                // Cursor key       (DECCKM)
-                        DEC_ANSI_MODE,                      // ANSI/VT52        (DECANM)
-                        DEC_COLUMN_MODE,                    // Column           (DECCOLM)
-                        DEC_SCROLLING_MODE,                 // Scrolling        (DECSCLM)
-                        DEC_SCREEN_MODE,                    // Screen           (DECSCNM)
-                        DEC_ORIGIN_MODE,                    // Origin           (DECOM)
-                        DEC_AUTO_WRAP_MODE,                 // Auto wrap        (DECAWM)
-                        DEC_AUTO_REPEATING_MODE,            // Auto repeating   (DECARM)
-                        DEC_INTERLACE_MODE                  // Interface        (DECINLM)
-                    };
+                namespace mode {
+                    // Since so many VTxxx sequences depend on their private modes, we need to introduce bindings to enforce correct sequence for each mode.
+                    namespace privates {
+                        enum class types {
+                            NONE,                               // Error (ignored)
+                            CURSOR_KEY_MODE,                    // Cursor key       (DECCKM)
+                            ANSI_MODE,                          // ANSI/VT52        (DECANM)
+                            COLUMN_MODE,                        // Column           (DECCOLM)
+                            SCROLLING_MODE,                     // Scrolling        (DECSCLM)
+                            SCREEN_MODE,                        // Screen           (DECSCNM)
+                            ORIGIN_MODE,                        // Origin           (DECOM)
+                            AUTO_WRAP_MODE,                     // Auto wrap        (DECAWM)
+                            AUTO_REPEATING_MODE,                // Auto repeating   (DECARM)
+                            INTERLACE_MODE                      // Interface        (DECINLM)
+                        };
 
-                    inline const auto privateModeSetter = ecma::table::toInt(3, 15);        // '?'
+                        inline const auto privateModeSetter = ecma::table::toInt(3, 15);        // '?'
+                    }
                 }
 
                 enum class arrowKeysReset {

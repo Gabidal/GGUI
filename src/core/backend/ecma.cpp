@@ -125,7 +125,7 @@ namespace GGUI {
                     return result;
                 }
 
-                void controlString::parse(std::string_view input, size_t& length, std::vector<base*>& output) {
+                void string::parse(std::string_view input, size_t& length, std::vector<base*>& output) {
                     if (input.size() < 2) return;
 
                     size_t headerPosition = 0;
@@ -144,7 +144,7 @@ namespace GGUI {
 
                     if (stringTerminatorOffset == std::string_view::npos) return; // unbound sequence
 
-                    output.push_back(new controlString(
+                    output.push_back(new string(
                         static_cast<table::C1>(input[contentOffset-1]), // -1 to go one backwards which should always be the opening delimeter.
                         std::vector<uint8_t>(
                             input.substr(contentOffset, stringTerminatorOffset - contentOffset).begin(),
@@ -164,7 +164,7 @@ namespace GGUI {
                  * 
                  * The opening delimiter can be one of: APC, DCS, OSC, PM, or SOS from the C1 table.
                  */
-                std::string controlString::toString() {
+                std::string string::toString() {
                     std::string result = "";
 
                     // Output the opening delimiter based on escape type
@@ -210,8 +210,8 @@ namespace GGUI {
 
                         basic::parse(input.substr(i), skipFor, result);
                         independent::parse(input.substr(i), skipFor, result);
-                        controlSequence<sequence::parameter::numeric>::parse(input.substr(i), skipFor, result);
-                        controlString::parse(input.substr(i), skipFor, result);
+                        control<sequence::parameter::numeric>::parse(input.substr(i), skipFor, result);
+                        string::parse(input.substr(i), skipFor, result);
 
                         // Check if current character is non-parsable
                         if (skipFor == 0) {
