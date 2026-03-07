@@ -215,61 +215,6 @@ test_docker_availability() {
         echo "Docker: NOT INSTALLED"
         echo "  Install: sudo apt install docker.io"
     fi
-    
-    echo
-    
-    # Report cross-compilation capabilities
-    echo "Cross-compilation capabilities:"
-    
-    if [[ "$docker_available" == "true" && "$docker_running" == "true" ]]; then
-        echo "  ✓ All platforms supported via Docker (x86, ARM64, Windows)"
-        echo "  → Run: ./bin/export.sh to build all platforms"
-        echo "  → Or: GGUI_NO_DOCKER=1 ./bin/export.sh to use native toolchains"
-    else
-        echo "  ⚠ Docker not available - checking native toolchains..."
-        
-        # Check native toolchains
-        local has_multilib=false
-        local has_arm64=false
-        local has_mingw=false
-        
-        if echo 'int main(){}' | gcc -m32 -x c - -o /dev/null 2>/dev/null; then
-            has_multilib=true
-            echo "  ✓ x86 32-bit: gcc-multilib available"
-        else
-            echo "  ✗ x86 32-bit: gcc-multilib not available"
-            echo "    Install: sudo apt install gcc-multilib g++-multilib"
-        fi
-        
-        if command -v aarch64-linux-gnu-g++ >/dev/null 2>&1; then
-            has_arm64=true
-            echo "  ✓ ARM64: aarch64 toolchain available"
-        else
-            echo "  ✗ ARM64: aarch64 toolchain not available"
-            echo "    Install: sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu"
-        fi
-        
-        if command -v x86_64-w64-mingw32-g++ >/dev/null 2>&1; then
-            has_mingw=true
-            echo "  ✓ Windows: MinGW-w64 available"
-        else
-            echo "  ✗ Windows: MinGW-w64 not available"
-            echo "    Install: sudo apt install mingw-w64 g++-mingw-w64-x86-64-posix"
-        fi
-        
-        # Warn about conflicts
-        if [[ "$has_multilib" == "true" && "$has_arm64" == "true" ]]; then
-            echo ""
-            echo "  ⚠ WARNING: gcc-multilib and gcc-aarch64-linux-gnu conflict on Debian/Ubuntu!"
-            echo "    You cannot use both simultaneously. Only one will work."
-            echo "    Recommended: Install Docker for conflict-free multi-platform builds"
-        elif [[ "$has_multilib" == "false" && "$has_arm64" == "false" ]]; then
-            echo ""
-            echo "  ℹ Note: Install Docker to enable all cross-compilation platforms"
-        fi
-    fi
-    
-    echo
 }
 
 # =============================================================================

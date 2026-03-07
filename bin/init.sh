@@ -80,7 +80,8 @@ meson_setup_or_reconfigure debug
 
 # Step 3: Compile the project using meson
 echo "Compiling the project..."
-meson_compile_target debug ggui_core
+meson_compile_target debug ggui_core 
+meson_compile_target debug generate_header
 
 echo
 echo "=== Initialization Complete ==="

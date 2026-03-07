@@ -8,10 +8,8 @@
 
 using namespace GGUI;
 
-int main() 
-{
-    GGUI::GGUI( // Initialize GGUI
-        title("Welcome to GGUI!") | 
+int main() {
+    GGUI::GGUI(
         node(new textField( 
             position(STYLES::center) | 
             text("Hello World!")
@@ -36,48 +34,38 @@ int main()
  - ### **Mouse support** with hover and focus effects
  - ### **Buttons** and **switches**
  - ### **Transparency** control
- - ### Custom **event handling** with ease of use.
+ - ### Custom **event handling** for ease of use.
  - ### *Should* contain everything you need to **interact with a terminal**
  - ### **Simple integration** to your projects with single `.h` and `.lib` file
     ```
     c++ -I./ggui.h -L./ggui.lib ...
     ```
- - ### **Optimized** for **Blazing fast** runtime with c++17 constexpr!
+ - ### **Optimized** for *Blazing fast* runtime with c++17 constexpr!
  - ### **Graceful exit** be it ctrl+c or normal exit, GGUI cleans up after itself 
 
 # Building Manually
-### ./bin/init.sh triggers meson to build the core library.
-### Manual build you could do something like this:
-```Bash
-c++ -std=c++17 -O3 -I./src ./src/**/*.cpp -o ggui     # This will yank main.cpp into it as well, you can remove it if CLI is not needed.
-```
-### Manual library build
+### Library:
 ```Bash
 c++ -std=c++17 -O3 -I./src -c ./src/**/*.cpp -o ggui.lib   # This will compile all source files into a single library file.
 ```
-### Then for the header export:
+### Header generation:
 ```Bash
 c++ -std=c++17 -O3 -I./bin/export ./bin/export/buildGGUILib.cpp -o headerGenerator   # This will build the automated builder.
 ./headerGenerator --headers-only --source-root ./           # This will generate automatically ggui.h, you can also add '--include-internal' for building ggui_dev.h 
 ```
 
 # Building Via Scripts
-- ### Initialize project locally with the `init.sh` script.
-  - Will remove any existing build directory, exported binaries and generated headers.
-  - builds ggui_core archive for intellisense to work properly. 
-- ### Build specific targets with: `build.sh` script.
+- ### Initialize project locally with the `init.sh` script
+  - Will clean all existing build directories, exported binaries and generated headers
+  - builds ggui_core archive and ggui.h for intellisense to work properly
+- ### Build specific targets with `build.sh` script
   - give the build type first and then the target(s)
     ```bash
     ./bin/build.sh profile ggui     # Links ggui_core with main.cpp
     ./bin/build.sh release build_native_archive # builds a usable archive and auto generates headers under ./bin/export/
     ```
-- ### Cross-platform export static libraries and headers with: `export.sh` script.
-  - Basically a helper script for `./bin/build.sh release build_native_archive` with cross-compilation via Docker.
-  - Cross-platform configs are located in `./bin/export/`, you can add your own platforms if needed (needs some hassling)
-  - Old system without meson:
-    ```bash
-    c++ buildGGUILib.cpp && ./a.exe
-    ```
+- ### Cross-platform libraries and headers from `export.sh` script
+  - Cross-platform configs are located in `./bin/export/`
   - Build for specific architecture like this:
     ```
     ./bin/export.sh linux x86_64
@@ -90,7 +78,7 @@ c++ -std=c++17 -O3 -I./bin/export ./bin/export/buildGGUILib.cpp -o headerGenerat
   - Running `./bin/export.sh` with no arguments will build for all supported platforms.
 - ### Run test suite with: `test.sh` script.
   - Takes build type as first argument
-  - Cannot recognize faulty rendering `:(`
+  - **Note**: The test suite does not recognize faulty rendering
   - Can run test for cross-platforms via Docker-QEMU, basically the same syntax as export.sh, but add the build type as first argument, like this:
     ```
     ./bin/test.sh release linux x86_64
@@ -103,6 +91,6 @@ c++ -std=c++17 -O3 -I./bin/export ./bin/export/buildGGUILib.cpp -o headerGenerat
 ./bin/analytics/time.sh 5 120 release           # short duration 5s, long duration 120s; This is to check if opcodes explode with time growth or stay stabile.
 ./bin/analytics/assembly.sh profile             # Helper script to make a large asm file of the whole thing.
 ```
-Note: scripts under analytics, do not support Docker cross-platform binary analysis!
+Note: scripts under analytics, do not support Docker cross-platform binary analysis yet!
 
 ### More about optimization and analytic scripts at [bin/analytics/README.md](./bin/analytics/README.md)

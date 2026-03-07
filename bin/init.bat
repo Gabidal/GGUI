@@ -74,6 +74,10 @@ echo Compiling the project...
 call "%COMMON_BAT%" meson_compile_target "debug" "ggui_core"
 if errorlevel 1 exit /b 1
 
+echo Compiling the headers...
+call "%COMMON_BAT%" meson_compile_target "debug" "generate_header"
+if errorlevel 1 exit /b 1
+
 echo.
 echo === Initialization Complete ===
 echo Run .\bin\test.bat to test GGUI integrity
