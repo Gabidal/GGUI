@@ -18,6 +18,8 @@ namespace GGUI {
                     // Since so many VTxxx sequences depend on their private modes, we need to introduce bindings to enforce correct sequence for each mode.
                     namespace privates {
                         enum class types {
+                            __min = 0,
+
                             NONE,                               // Error (ignored)
                             CURSOR_KEY_MODE,                    // Cursor key       (DECCKM)
                             ANSI_MODE,                          // ANSI/VT52        (DECANM)
@@ -27,7 +29,9 @@ namespace GGUI {
                             ORIGIN_MODE,                        // Origin           (DECOM)
                             AUTO_WRAP_MODE,                     // Auto wrap        (DECAWM)
                             AUTO_REPEATING_MODE,                // Auto repeating   (DECARM)
-                            INTERLACE_MODE                      // Interface        (DECINLM)
+                            INTERLACE_MODE,                      // Interface        (DECINLM)
+
+                            __max = INTERLACE_MODE
                         };
 
                         inline const auto privateModeSetter = ecma::table::toInt(3, 15);        // '?'
@@ -45,8 +49,11 @@ namespace GGUI {
                             }
                         }
                     }
-
                 }
+
+                struct machine {
+                    ecma::table::mode::flags<mode::privates::types> modes;
+                };
 
                 enum class arrowKeysReset {
                     // UP = ecma::sequences::cursorControlFunctions::CURSOR_UP
