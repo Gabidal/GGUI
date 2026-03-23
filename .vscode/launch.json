@@ -29,18 +29,18 @@
     },
     {
       "name": "unix",
-      "type": "cppdbg",
+      "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/bin/build/ggui",
       "args": [],
-      "stopAtEntry": false,
+      //"stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "environment": [],
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
+      //"environment": [],
+      //"externalConsole": false,
+      // "MIMode": "gdb",
+      // "miDebuggerPath": "gdb",
       "preLaunchTask": "Buildarna",
-      "setupCommands": [
+      /* "setupCommands": [
           {
               "description": "Enable pretty-printing for gdb",
               "text": "-enable-pretty-printing",
@@ -51,22 +51,22 @@
               "text": "-gdb-set disassembly-flavor intel",
               "ignoreFailures": true
           }
-      ]
+      ]*/
     },
     {
       "name": "unix-DRM",
-      "type": "cppdbg",
+      "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/bin/build/ggui",
       "args": ["--enableDRM"],
-      "stopAtEntry": false,
+      // "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "environment": [],
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
+      // "environment": [],
+      // "externalConsole": false,
+      // "MIMode": "gdb",
+      // "miDebuggerPath": "gdb",
       "preLaunchTask": "Buildarna",
-      "setupCommands": [
+      /* "setupCommands": [
           {
               "description": "Enable pretty-printing for gdb",
               "text": "-enable-pretty-printing",
@@ -77,22 +77,22 @@
               "text": "-gdb-set disassembly-flavor intel",
               "ignoreFailures": true
           }
-      ]
+      ] */
     },
     {
       "name": "unix-tester",
-      "type": "cppdbg",
+      //"type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/bin/build/tester",
       "args": [],
-      "stopAtEntry": false,
+      //"stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "environment": [],
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
+      //"environment": [],
+      //"externalConsole": false,
+      //"MIMode": "gdb",
+      //"miDebuggerPath": "gdb",
       "preLaunchTask": "test",
-      "setupCommands": [
+      /* "setupCommands": [
           {
               "description": "Enable pretty-printing for gdb",
               "text": "-enable-pretty-printing",
@@ -103,7 +103,7 @@
               "text": "-gdb-set disassembly-flavor intel",
               "ignoreFailures": true
           }
-      ]
+      ] */
     }
   ]
 }
