@@ -244,29 +244,142 @@ namespace GGUI {
                     };
                 }
 
+                // This is from ECMA-35
                 namespace graphic {
-                    // Based on ecma-35 page 21.
-                    // In range of 02/01 -> 07/14
-                    enum class pageLocation94 : uint8_t {
-                        MIN = (uint8_t)intermediate::identifiers::DESIGNATE_C0,
-                        MAX = (uint8_t)independentFunctions::LS1R
+                    namespace range {
+                        enum class types : uint8_t {
+                            _94,        // In range of 02/01 -> 07/14
+                            _96,        // In range of 02/00 -> 07/15
+                        };
+
+                        constexpr std::pair<uint8_t, uint8_t> getValues(types t) {
+                            std::array<std::pair<uint8_t, uint8_t>, 2> cache = {
+                                std::pair<uint8_t, uint8_t>( toInt(intermediate::column, 1), toInt(intermediate::column, 14) ),
+                                std::pair<uint8_t, uint8_t>( toInt(intermediate::column, 0), toInt(intermediate::column, 15) )
+                            };
+                            
+                            return cache[static_cast<size_t>(t)];
+                        }
+                    }
+
+                    namespace layout {
+                        
+                        // These are the destination areas of the usable element table ranging from column 0-7 (7-bit) and 8-15 (8-bit)
+                        // Each coded graphical element set, can be that of 94^n or 96^n as stated in the enums above.
+                        enum class types : uint8_t {
+                            // The 7-bit areas
+                            LEFT,
+
+                            // The extended 8-bit areas
+                            RIGHT
+                        };
+
+                        constexpr std::pair<uint8_t, uint8_t> getValues(types t) {
+                            std::array<std::pair<uint8_t, uint8_t>, 2> cache = {
+                                // The 7-bit areas
+                                std::pair<uint8_t, uint8_t>(2, 7),  // Columns: [2, 7]
+
+                                // The extended 8-bit areas
+                                std::pair<uint8_t, uint8_t>(10, 15) // Columns: [10, 15]
+                            };
+                            
+                            return cache[static_cast<size_t>(t)];
+                        }
+                    }
+
+                    /**
+                     * Describes the shift function type:
+                     * - Temporary for single byte character loan from another element of character sets.
+                     * - Locking into the described set of elements until another reverse locking function is given.
+                     */
+                    enum class shiftType {
+                        TEMPORARY,
+                        LOCKING
                     };
 
-                    enum class pageLocation96 : uint8_t {
-                        MIN = (uint8_t)intermediate::identifiers::ANNOUNCER,
-                        MAX = (uint8_t)independentFunctions::__max
-                    };
+                    // NOTE: This is made for cleanness of the code, and is not from the standard.
+                    struct page {
+                        range::types size;
+                        layout::types location;
+                        shiftType status;
 
-                    enum class types {
+                        /**
+                         * @brief This represents the usable data area for interpretation purposes.
+                         * 
+                         * Zeroes indicate normal function routing of ECMA-48 specified functions.
+                         * Anything other than Zeroes, will be interpretred as foreign functions, which will invoke the private memory functions from that ID value in that specific non-zero value.
+                         * Each private table is populated by that specific driver.
+                         *      For an example, DEC private codes are loaded by the DEC.h, and the DEC tables are loaded into memory when connected stdoutput is determined to be DEC-capable, in initialization phase.
+                         */
+                        std::array<
+                            uint8_t, 
+                            toInt(layout::getValues(layout::types::LEFT).second, range::getValues(range::types::_96).second) - 
+                            toInt(layout::getValues(layout::types::LEFT).first, range::getValues(range::types::_96).first) + 1  // +1 for zero'th index.
+                        > data = {/*zeroes*/};
+
+                        constexpr page(range::types range, layout::types loc, shiftType state = shiftType::LOCKING) : size(range), location(loc), status(state) {}
+                        
+                        constexpr void add(uint8_t column, uint8_t row, uint8_t value) {
+                            data[toInt(column, row) - toInt(layout::getValues(location).first, range::getValues(size).first)] = value;
+                        }
+
+                        constexpr std::pair<uint8_t, uint8_t> sizeRange()       const { return range::getValues(size); }
+                        constexpr std::pair<uint8_t, uint8_t> locationRange()   const { return layout::getValues(location); }
+                    };
+                    
+                    // The different element sets, you can think of these like memory cards, each can be swapped into one of the active layout, via specified (locking) shift functions
+                    enum class repertoires : uint8_t {
+                        // Graphic pages
                         G0,
                         G1,
                         G2,
-                        G3
+                        G3,
+
+                        __max
                     };
 
-                    enum class state {
-                        TEMPORARY,
-                        LOCKING
+                    class state {
+                    protected:
+                        // This holds all the unloaded pages
+                        std::array<page, static_cast<size_t>(repertoires::__max)> memory;
+
+                        // This is the current invocable page
+                        //      <7-bit, 8-bit>
+                        std::array<page, 2> loaded = {
+                            page(range::types::_96, layout::types::LEFT), 
+                            page(range::types::_96, layout::types::RIGHT)
+                        };
+                    public:
+
+                        // Mainly for private codes, which usually reside in custom memory
+                        constexpr void init(page loadable, repertoires into) { memory[static_cast<size_t>(into)] = loadable; }
+
+                        constexpr void load(repertoires from, layout::types into, shiftType lifetime) {
+                            page fetch = memory[static_cast<size_t>(from)];
+                            fetch.status = lifetime;
+
+                            loaded[static_cast<size_t>(into)] = fetch;
+                        }
+
+                        // Checks wether there is some value at location
+                        constexpr bool hasCustomFunction(uint8_t location) {
+                            // Check if highest bit is set
+                            uint8_t pageOffset = static_cast<uint8_t>(checkBit(location, 7));
+
+                            return loaded[pageOffset].data[location] != 0;
+                        }
+
+                        /**
+                         * @brief Checks, if either of the loaded graphical pages are temporary, if so then it will flush them with zeroes.
+                         */
+                        constexpr void update() {
+                            for (size_t i = 0; i < loaded.size(); i++) {
+                                if (loaded[i].status == shiftType::TEMPORARY) {
+                                    loaded[i].data.fill(0);
+                                    loaded[i].status = shiftType::LOCKING;
+                                }
+                            }
+                        }
                     };
                 }
 

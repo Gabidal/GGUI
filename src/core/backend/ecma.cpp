@@ -53,7 +53,7 @@ namespace GGUI {
                     for (size_t i = 0; i < input.size();) {
                         size_t skipFor = 0;
 
-                        
+                        // TODO: sequence parsing here...
 
                         // Check if current character is non-parsable
                         if (skipFor == 0) {
