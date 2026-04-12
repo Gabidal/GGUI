@@ -248,6 +248,12 @@ namespace GGUI {
                 // This is from ECMA-35
                 namespace configuration {
 
+                    // Use this to tell the page manager to flash with 8/7-bit C1
+                    enum class bitType {
+                        _7BIT,
+                        _8BIT
+                    };
+
                     // A simple helper class for cell location
                     struct location {
                         uint8_t column, row;
@@ -343,21 +349,35 @@ namespace GGUI {
                         constexpr uint16_t MAXIMUM_SIZE = UINT8_MAX + 1;
                     }
 
+                    /**
+                     * @brief Character repertoire categories for ECMA-35 character set management.
+                     * 
+                     * These repertoires define the different character sets that can be loaded
+                     * and managed by the ECMA-35 terminal emulator. Each repertoire represents
+                     * a distinct character coding namespace.
+                     */
                     enum class repertoire : uint8_t {
                         NONE,       // Contains non-routable empty cells 
 
                         C0,        // Contains C0 repertoires
                         C1,        // Contains C1 repertoires
 
-                        G0,         // LS0,
-                        G1,         // LS1, LS1R
-                        G2,         // LS2, SS2, LS2R
-                        G3,         // LS3, SS3, LS3R
+                        G0,         // LS0, Primary character set (typically ASCII)
+                        G1,         // LS1, LS1R, Graphic set 1 (left-side)
+                        G2,         // LS2, SS2, LS2R, Graphic set 2 (left-side)
+                        G3,         // LS3, SS3, LS3R, Graphic set 3 (left-side)
 
-                        __max
+                        __max       // Sentinel value for array sizing
                     };
 
                     
+                    /**
+                     * @brief Lifetime management for character pages.
+                     * 
+                     * Controls how long pages remain loaded in memory. Pages can be
+                     * permanently loaded (LOCKING), temporarily loaded (TEMPORARY),
+                     * or unloaded (UNLOADED).
+                     */
                     namespace lifetime {
                         enum class types {
                             UNLOADED,
@@ -371,8 +391,15 @@ namespace GGUI {
                         };
                     }
 
-                    using functionPtr = void(*)();   // Placeholder for summonable cell handlers
+                    /** 
+                     * @brief Function pointer type for summonable cell handlers.
+                     * Each cell in a page can reference a handler function that gets called when that cell is invoked.
+                     */
+                    using functionPtr = void(*)();          
 
+                    /**
+                     * @brief A page represents a collection of callable cells (handlers).
+                     */
                     class page {
                     protected:
                         std::array<
@@ -382,10 +409,31 @@ namespace GGUI {
 
                         lifetime::base status;
                     public:
+                        /**
+                         * @brief Default constructor initializing an empty page.
+                         * 
+                         * Initializes all cells to null and sets status to UNLOADED.
+                         */
                         constexpr page() : cells{}, status{} {}
 
+                        /**
+                         * @brief Adds a cell handler at the specified absolute position.
+                         * 
+                         * @param cell The function pointer to add as a cell handler
+                         * @param absolutePos The absolute position in the character map where the cell should be placed
+                         * 
+                         * The position is converted to relative coordinates based on the page's current range.
+                         */
                         constexpr void add(functionPtr cell, location absolutePos) { cells[absolutePos.getRelative(status.range.get().first).compute()] = cell; }
 
+                        /**
+                         * @brief Calls the cell handler at the specified position.
+                         * 
+                         * @param pos The position to invoke (will be converted to relative coordinates)
+                         * 
+                         * Sanitizes the position to work in the page's relative coordinate space
+                         * before invoking the cell handler.
+                         */
                         constexpr void call(location pos) {
                             // Sanitize position to work in relative space
                             pos = pos.getRelative(status.range.get().first);
@@ -394,14 +442,33 @@ namespace GGUI {
                             currentCell();
                         }
 
+                        /**
+                         * @brief Gets the size of the page's active range.
+                         * 
+                         * @return uint16_t The number of positions in the current page range
+                         */
                         constexpr uint16_t getSize() const {
                             return status.range.getSize();
                         }
 
+                        /**
+                         * @brief Loads the page with the specified lifetime configuration.
+                         * 
+                         * @param into The lifetime configuration specifying the range and type
+                         * 
+                         * Sets the page's active range and lifetime type. The page becomes
+                         * active and can be used for character lookups and invocations.
+                         */
                         constexpr void load(lifetime::base into) {
                             status = into;
                         }
 
+                        /**
+                         * @brief Unloads the page, setting it to an empty state.
+                         * 
+                         * Resets the page's range to {0,0} and sets lifetime type to UNLOADED.
+                         * The page will no longer be active for character operations.
+                         */
                         constexpr void unload() {
                             load({
                                 {0, 0},
@@ -409,9 +476,17 @@ namespace GGUI {
                             });
                         }
 
+                        /**
+                         * @brief Gets the current lifetime configuration of this page.
+                         * 
+                         * @return lifetime::base The current lifetime status including range and type
+                         */
                         constexpr lifetime::base getLifetime() const { return status; }
                     };
 
+                    /**
+                     * @brief Maintains a map of repertoire IDs that tracks which character set is active at each position in memory.
+                     */
                     class manager {
                     protected:
                         // Contains all of the initialized pages with their usable jump blocks.
@@ -423,6 +498,11 @@ namespace GGUI {
                         > map;   // The loaded memory, containing the cell::repertoire jump block ID's
                     public: 
 
+                        /**
+                         * @brief Adds a page to the repertoire at the specified position.
+                         * @param p The page to add
+                         * @param position The repertoire position where the page should be loaded
+                         */
                         constexpr void add(page& p, repertoire position) {
                             pages[static_cast<size_t>(position)] = p;
                         }
@@ -430,7 +510,7 @@ namespace GGUI {
                         /**
                          * @brief flashes the repertoire jump block map into the initial state.
                          */
-                        constexpr void flash() {
+                        constexpr void flash(bitType mode) {
                             // First unload all pages.
                             for (auto& p : pages) {
                                 p.unload();
@@ -445,46 +525,53 @@ namespace GGUI {
                                 lifetime::types::LOCKING
                             });
 
-                            enable7bitC1(); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
+                            enableC1(mode); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
 
                             // Write the initialized flash state.
                             flush();
                         }
 
-                        constexpr void enable8bitC1() {
+                        /**
+                         * @brief Enables 7/8-bit C1 character set.
+                         * Loads and overrides the columns where 7/8-bit C1 overlaps with the 8-bit graphical set.
+                         * According to ecma-35, only one C1 layout can be loaded at a time.
+                         */
+                        constexpr void enableC1(bitType mode) {
+
+                            layout::bounds location = layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
+
+                            if (mode == bitType::_8BIT) location.to8bit();
+
                             // Load and override the columns where 8-bit C1 overlaps with the 8-bit graphical set
                             pages[static_cast<size_t>(repertoire::C1)].load({
-                                layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1).to8bit(),
+                                location,
                                 lifetime::types::LOCKING
                             });
                             
                             flush();
                         }
 
-                        constexpr void enable7bitC1() {
-                            // Load and override the columns where 7-bit C1 overlaps with the normal graphical set
-                            pages[static_cast<size_t>(repertoire::C1)].load({
-                                layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1),
-                                lifetime::types::LOCKING
-                            });
-
-                            flush();
-                        }
-
-                        // Called for each read-byte.
+                        /**
+                         * @brief Updates the page states on each read-byte operation.
+                         * Unloads any pages that were loaded for temporary use (TEMPORARY lifetime type).
+                         * Should be called for each read-byte to maintain proper page state management.
+                         */
                         constexpr void update() {
                             for (auto& p : pages) {
 
                                 // Unload any page that was loaded for temporary use.
                                 if (p.getLifetime().type == lifetime::types::TEMPORARY) {
-                                    p.unload();
+                                    p.unload(); // When this is UNLOADED, the flush() will override this slot with the new value automatically.
                                 }
                             }
 
                             flush();
                         }
 
-                        // Writes the pages into the mapping
+                        /**
+                         * @brief Flushes the loaded page states into the repertoire map.
+                         *
+                         */
                         constexpr void flush() {
                             size_t skip_empty_page = static_cast<size_t>(repertoire::NONE) + 1;
 
@@ -965,11 +1052,6 @@ namespace GGUI {
             }
 
             namespace sequence {
-                enum class bitType : uint8_t {
-                    _7bit,          // For the 1/11 introducers
-                    _8bit           // For the 09/11 introducers
-                };
-
                 namespace parameter {
                     constexpr uint8_t column         = 3;
                     constexpr uint8_t sub_delimeter  = table::toInt(column, 10); // Translates into ':'
