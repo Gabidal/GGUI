@@ -5,6 +5,7 @@
 #include "terminal.h"
 
 #include <bitset>
+#include <functional>
 
 namespace GGUI {
     namespace terminal {
@@ -208,7 +209,7 @@ namespace GGUI {
                     LS2 = toInt(6, 14),     LS1R = toInt(7, 14),
                     LS3 = toInt(6, 15),     /*   --   */
 
-                    __max = toInt(7, 15)   // For internal automation
+                    __max = toInt(7, 14)   // For internal automation
                 };
 
                 namespace intermediate {
@@ -245,142 +246,266 @@ namespace GGUI {
                 }
 
                 // This is from ECMA-35
-                namespace graphic {
-                    namespace range {
-                        enum class types : uint8_t {
-                            _94,        // In range of 02/01 -> 07/14
-                            _96,        // In range of 02/00 -> 07/15
-                        };
+                namespace configuration {
 
-                        constexpr std::pair<uint8_t, uint8_t> getValues(types t) {
-                            std::array<std::pair<uint8_t, uint8_t>, 2> cache = {
-                                std::pair<uint8_t, uint8_t>( toInt(intermediate::column, 1), toInt(intermediate::column, 14) ),
-                                std::pair<uint8_t, uint8_t>( toInt(intermediate::column, 0), toInt(intermediate::column, 15) )
-                            };
-                            
-                            return cache[static_cast<size_t>(t)];
+                    // A simple helper class for cell location
+                    struct location {
+                        uint8_t column, row;
+
+                        constexpr location(uint8_t c, uint8_t r) : column(c), row(r) {}
+                        constexpr location(C0 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(C1 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(finalWithoutIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(finalWithIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(independentFunctions preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(uint8_t raw) : column(raw / tableRows), row(raw % tableRows) {}
+
+                        constexpr uint8_t compute() const {
+                            return table::toInt(column, row);
                         }
-                    }
+
+                        constexpr location getRelative(location parent) const {
+                            return compute() - parent.column;
+                        }
+
+                        constexpr location shiftToRight(columns amount) const {
+                            return location(column + static_cast<uint8_t>(amount), row);
+                        }
+                    };
 
                     namespace layout {
-                        
-                        // These are the destination areas of the usable element table ranging from column 0-7 (7-bit) and 8-15 (8-bit)
-                        // Each coded graphical element set, can be that of 94^n or 96^n as stated in the enums above.
-                        enum class types : uint8_t {
-                            // The 7-bit areas
-                            LEFT,
+                        class bounds {
+                        protected:
+                            //       <lower,   upper>
+                            location lower, upper;
+                        public:
+                            constexpr bounds(location lower, location upper) : lower(lower), upper(upper) {}
 
-                            // The extended 8-bit areas
-                            RIGHT
+                            // Get precomputed layout lower and upped bounds.
+                            constexpr std::pair<uint8_t, uint8_t> get() const {
+                                return {
+                                    lower.compute(),
+                                    upper.compute()
+                                };
+                            }
+
+                            constexpr uint16_t getSize() const {
+                                auto [lowerVal, upperVal] = get();
+                                return (upperVal - lowerVal) + 1;
+                            }
+
+                            constexpr bool in(uint8_t val) const {
+                                return val >= lower.compute() && val <= upper.compute();
+                            }
+
+                            // Promotes the location into a 8-bit field
+                            constexpr bounds to8bit() const {
+                                return bounds(lower.shiftToRight(columns::FOUR), upper.shiftToRight(columns::FOUR));
+                            }
                         };
 
-                        constexpr std::pair<uint8_t, uint8_t> getValues(types t) {
-                            std::array<std::pair<uint8_t, uint8_t>, 2> cache = {
-                                // The 7-bit areas
-                                std::pair<uint8_t, uint8_t>(2, 7),  // Columns: [2, 7]
-
-                                // The extended 8-bit areas
-                                std::pair<uint8_t, uint8_t>(10, 15) // Columns: [10, 15]
+                        // Contains layout preset information for graphical pages like [G0, ..., G3]
+                        namespace graphical {
+                            enum class type : uint8_t {
+                                A,      // 94 character layout, example: [02/01, 07/14]
+                                B       // 96 character layout, example: [02/00, 07/15]
                             };
-                            
-                            return cache[static_cast<size_t>(t)];
+
+                            // Returns a 7-bit layout, for 8-bit set most significant bit on.
+                            constexpr bounds getRelativeGraphicalPageLayout(type t) {
+                                std::array<bounds, 2> presets = {
+                                    bounds({intermediate::identifiers::DESIGNATE_C0}, {independentFunctions::LS1R}),    // A
+                                    bounds({intermediate::identifiers::ANNOUNCER}, {7, 15})                             // B
+                                };
+
+                                return presets[static_cast<size_t>(t)];
+                            }
                         }
+
+                        namespace functional {
+                            enum class type : uint8_t {
+                                C0,     // only in 7-bit, example: [C0::__min, C0::__max]
+                                C1      // 8/7-bit,       example: [C1::__min, C1::__max]
+                            };
+
+                            // Returns a 7-bit layout, for 8-bit set most significant bit on.
+                            constexpr bounds getRelativeFunctionalPageLayout(type t) {
+                                std::array<bounds, 2> presets = {
+                                    bounds({C0::__min}, {C0::__max}),
+                                    bounds({C1::__min}, {C1::__max})
+                                };
+
+                                return presets[static_cast<size_t>(t)];
+                            }
+                        }
+
+                        constexpr uint16_t MAXIMUM_SIZE = UINT8_MAX + 1;
                     }
 
-                    /**
-                     * Describes the shift function type:
-                     * - Temporary for single byte character loan from another element of character sets.
-                     * - Locking into the described set of elements until another reverse locking function is given.
-                     */
-                    enum class shiftType {
-                        TEMPORARY,
-                        LOCKING
-                    };
+                    enum class repertoire : uint8_t {
+                        NONE,       // Contains non-routable empty cells 
 
-                    // NOTE: This is made for cleanness of the code, and is not from the standard.
-                    struct page {
-                        range::types size;
-                        layout::types location;
-                        shiftType status;
+                        C0,        // Contains C0 repertoires
+                        C1,        // Contains C1 repertoires
 
-                        /**
-                         * @brief This represents the usable data area for interpretation purposes.
-                         * 
-                         * Zeroes indicate normal function routing of ECMA-48 specified functions.
-                         * Anything other than Zeroes, will be interpretred as foreign functions, which will invoke the private memory functions from that ID value in that specific non-zero value.
-                         * Each private table is populated by that specific driver.
-                         *      For an example, DEC private codes are loaded by the DEC.h, and the DEC tables are loaded into memory when connected stdoutput is determined to be DEC-capable, in initialization phase.
-                         */
-                        std::array<
-                            uint8_t, 
-                            toInt(layout::getValues(layout::types::LEFT).second, range::getValues(range::types::_96).second) - 
-                            toInt(layout::getValues(layout::types::LEFT).first, range::getValues(range::types::_96).first) + 1  // +1 for zero'th index.
-                        > data = {/*zeroes*/};
-
-                        constexpr page(range::types range, layout::types loc, shiftType state = shiftType::LOCKING) : size(range), location(loc), status(state) {}
-                        
-                        constexpr void add(uint8_t column, uint8_t row, uint8_t value) {
-                            data[toInt(column, row) - toInt(layout::getValues(location).first, range::getValues(size).first)] = value;
-                        }
-
-                        constexpr std::pair<uint8_t, uint8_t> sizeRange()       const { return range::getValues(size); }
-                        constexpr std::pair<uint8_t, uint8_t> locationRange()   const { return layout::getValues(location); }
-                    };
-                    
-                    // The different element sets, you can think of these like memory cards, each can be swapped into one of the active layout, via specified (locking) shift functions
-                    enum class repertoires : uint8_t {
-                        // Graphic pages
-                        G0,
-                        G1,
-                        G2,
-                        G3,
+                        G0,         // LS0,
+                        G1,         // LS1, LS1R
+                        G2,         // LS2, SS2, LS2R
+                        G3,         // LS3, SS3, LS3R
 
                         __max
                     };
 
-                    class state {
-                    protected:
-                        // This holds all the unloaded pages
-                        std::array<page, static_cast<size_t>(repertoires::__max)> memory;
-
-                        // This is the current invocable page
-                        //      <7-bit, 8-bit>
-                        std::array<page, 2> loaded = {
-                            page(range::types::_96, layout::types::LEFT), 
-                            page(range::types::_96, layout::types::RIGHT)
+                    
+                    namespace lifetime {
+                        enum class types {
+                            UNLOADED,
+                            LOCKING,
+                            TEMPORARY
                         };
+                        
+                        struct base {
+                            layout::bounds range = {0, 0};
+                            types type = types::UNLOADED;
+                        };
+                    }
+
+                    using functionPtr = void(*)();   // Placeholder for summonable cell handlers
+
+                    class page {
+                    protected:
+                        std::array<
+                            functionPtr, 
+                            layout::bounds({C0::NUL}, {7, 15}).getSize()    // full 96^n'th support
+                        > cells;
+
+                        lifetime::base status;
                     public:
+                        constexpr page() : cells{}, status{} {}
 
-                        // Mainly for private codes, which usually reside in custom memory
-                        constexpr void init(page loadable, repertoires into) { memory[static_cast<size_t>(into)] = loadable; }
+                        constexpr void add(functionPtr cell, location absolutePos) { cells[absolutePos.getRelative(status.range.get().first).compute()] = cell; }
 
-                        constexpr void load(repertoires from, layout::types into, shiftType lifetime) {
-                            page fetch = memory[static_cast<size_t>(from)];
-                            fetch.status = lifetime;
+                        constexpr void call(location pos) {
+                            // Sanitize position to work in relative space
+                            pos = pos.getRelative(status.range.get().first);
+                            auto currentCell = cells[pos.compute()];
 
-                            loaded[static_cast<size_t>(into)] = fetch;
+                            currentCell();
                         }
 
-                        // Checks wether there is some value at location
-                        constexpr bool hasCustomFunction(uint8_t location) {
-                            // Check if highest bit is set
-                            uint8_t pageOffset = static_cast<uint8_t>(checkBit(location, 7));
+                        constexpr uint16_t getSize() const {
+                            return status.range.getSize();
+                        }
 
-                            return loaded[pageOffset].data[location] != 0;
+                        constexpr void load(lifetime::base into) {
+                            status = into;
+                        }
+
+                        constexpr void unload() {
+                            load({
+                                {0, 0},
+                                lifetime::types::UNLOADED
+                            });
+                        }
+
+                        constexpr lifetime::base getLifetime() const { return status; }
+                    };
+
+                    class manager {
+                    protected:
+                        // Contains all of the initialized pages with their usable jump blocks.
+                        std::array<page, static_cast<size_t>(repertoire::__max)> pages;
+
+                        std::array<
+                            repertoire,
+                            layout::MAXIMUM_SIZE
+                        > map;   // The loaded memory, containing the cell::repertoire jump block ID's
+                    public: 
+
+                        constexpr void add(page& p, repertoire position) {
+                            pages[static_cast<size_t>(position)] = p;
                         }
 
                         /**
-                         * @brief Checks, if either of the loaded graphical pages are temporary, if so then it will flush them with zeroes.
+                         * @brief flashes the repertoire jump block map into the initial state.
                          */
+                        constexpr void flash() {
+                            // First unload all pages.
+                            for (auto& p : pages) {
+                                p.unload();
+                            }
+
+                            // Reset mapping
+                            map.fill(repertoire::NONE);
+
+                            // Load C0
+                            pages[static_cast<size_t>(repertoire::C0)].load({
+                                layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C0),
+                                lifetime::types::LOCKING
+                            });
+
+                            enable7bitC1(); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
+
+                            // Write the initialized flash state.
+                            flush();
+                        }
+
+                        constexpr void enable8bitC1() {
+                            // Load and override the columns where 8-bit C1 overlaps with the 8-bit graphical set
+                            pages[static_cast<size_t>(repertoire::C1)].load({
+                                layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1).to8bit(),
+                                lifetime::types::LOCKING
+                            });
+                            
+                            flush();
+                        }
+
+                        constexpr void enable7bitC1() {
+                            // Load and override the columns where 7-bit C1 overlaps with the normal graphical set
+                            pages[static_cast<size_t>(repertoire::C1)].load({
+                                layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1),
+                                lifetime::types::LOCKING
+                            });
+
+                            flush();
+                        }
+
+                        // Called for each read-byte.
                         constexpr void update() {
-                            for (size_t i = 0; i < loaded.size(); i++) {
-                                if (loaded[i].status == shiftType::TEMPORARY) {
-                                    loaded[i].data.fill(0);
-                                    loaded[i].status = shiftType::LOCKING;
+                            for (auto& p : pages) {
+
+                                // Unload any page that was loaded for temporary use.
+                                if (p.getLifetime().type == lifetime::types::TEMPORARY) {
+                                    p.unload();
+                                }
+                            }
+
+                            flush();
+                        }
+
+                        // Writes the pages into the mapping
+                        constexpr void flush() {
+                            size_t skip_empty_page = static_cast<size_t>(repertoire::NONE) + 1;
+
+                            // Go through the pages
+                            for (size_t i = skip_empty_page; i < static_cast<size_t>(repertoire::__max); i++) {
+                                auto& page = pages[i];
+                                
+                                // Skip unloaded
+                                if (page.getLifetime().type == lifetime::types::UNLOADED) continue;
+
+                                // Fetch loaded section
+                                auto [lower, upper] = page.getLifetime().range.get();
+
+                                // Write the loaded section to the map
+                                for (size_t j = lower; j <= upper; j++) {
+                                    map[j] = static_cast<repertoire>(i);
                                 }
                             }
                         }
                     };
+
                 }
 
                 namespace mode {
