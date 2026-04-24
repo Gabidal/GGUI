@@ -245,6 +245,277 @@ namespace GGUI {
                     };
                 }
 
+            }
+
+            namespace sequences {
+                enum class specialTypes {
+                    NORMAL,
+                    HAS_INFINITE_PARAMETERS
+                };
+            }
+
+            namespace sequence {
+                namespace parameter {
+                    constexpr uint8_t column         = 3;
+                    constexpr uint8_t sub_delimeter  = table::toInt(column, 10); // Translates into ':'
+                    constexpr uint8_t delimeter      = table::toInt(column, 11); // Translates into ';'
+
+                    template<typename containerType>
+                    class base {
+                    protected:
+                        std::vector<std::variant<containerType, char>> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
+                    
+                    public:
+                        base() = default;
+                        base(std::vector<std::variant<containerType, char>> values) : subNumbers(values) {}
+                        base(containerType values) : subNumbers({values}) {}
+
+                        /**
+                        * As stated by 5.4.2.b, f, g and h
+                        * 
+                        * We expect the input to already cut by the 03/11 (';') delimeter by the calling function.
+                        * Per char, only be in range of 03/00 - 03/09 or special sub-string delimeter of 03/10 (':')
+                        */
+                        base(std::string_view input, size_t& length) {
+                            uint32_t currentNumber = 0;
+                            bool has_digit = true;          // Default true, so that ;;;; are possible.
+
+                            for (char i : input) {
+                                uint8_t currentChar = static_cast<uint8_t>(i);
+
+                                // Special values where currentChar >= 03/09 - 03/15
+                                if (currentChar >= table::toInt(3, 10) && currentChar <= table::toInt(3, 15)) {
+
+                                    if (currentChar == sub_delimeter) { // 03/10 ':'
+                                        if (has_digit) {
+                                            subNumbers.push_back(static_cast<containerType>(currentNumber));
+                                        } else {
+                                            subNumbers.push_back(static_cast<containerType>(0)); // empty sub-string -> default / zero
+                                        }
+                                    } else {    // Special parameter values like '?'
+                                        subNumbers.push_back(static_cast<char>(currentChar));
+                                    }
+
+                                    // Reset
+                                    currentNumber = 0;
+                                    has_digit = false;
+                                    length++;
+                                } else if (currentChar >= table::toInt(3, 0) && currentChar <= table::toInt(3, 9)) {    // 03/00 - 03/09
+                                    // Transform the char number into usable form.
+                                    currentNumber = currentNumber * 10 + (currentChar - table::toInt(3, 0));
+                                    has_digit = true;
+                                    length++;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            if (has_digit) {
+                                subNumbers.push_back(static_cast<containerType>(currentNumber));
+                                // length++;    <-- no need to increase it since the loop which gathered these numbers already accounts the length.
+                                return;
+                            } else {    // Trailing 03/10 (':'), stated by section f, needs to have a trailing zero.
+                                subNumbers.push_back(static_cast<containerType>(0));
+                                length++;
+                            }
+                        }
+
+                        std::string toString() const {
+                            std::string result = "";
+
+                            for (size_t i = 0; i < subNumbers.size(); i++) {
+                                if (std::holds_alternative<char>(subNumbers[i])) {
+                                    // Special parameter character - output directly as char
+                                    result += std::get<char>(subNumbers[i]);
+                                } else {
+                                    // Numeric value
+                                    uint32_t currentNumber = static_cast<uint32_t>(std::get<containerType>(subNumbers[i])); 
+                                    if (currentNumber == 0 || i > 0) { 
+                                        // This means section f was triggered and we need to insert a pre-fix of 03/10
+                                        // Or this is i+1 so delimeter is required by section b
+                                        result += static_cast<char>(sub_delimeter); // 03/10 ':'
+                                        result += std::to_string(currentNumber);
+                                    } else {
+                                        result += std::to_string(currentNumber);
+                                    }
+                                }
+                            }
+
+                            return result;
+                        }
+                    };
+
+                    using numeric = base<uint32_t>;
+
+                    template<typename enumType>
+                    class selectable : public base<enumType> {
+                        // Check that selectable instances are only used with enums
+                        static_assert(std::is_enum_v<enumType> == true, "Selectable parameters must be instantiated with an enum type.");
+                    };
+                }
+
+                // Represents the start of all possible sequences, be it primary or secondary set fuctions. C0/C1 ***
+                // NOTE: This class does not care for 7-bit or 8-bit, will convert all 8-bit functions into 7-bit ones!
+                class prefix {
+                protected:
+                    std::variant<table::C0, table::C1> function;
+                public:
+                    prefix(std::variant<table::C0, table::C1> func) : function(func) {}
+
+                    virtual ~prefix() = default;
+                    virtual std::string toString() const;
+
+                    std::variant<table::C0, table::C1> getFunction() const { return function; }
+
+                    template<typename T>
+                    constexpr T get() const {
+                        return std::get<T>(function);
+                    }
+                };
+
+                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
+
+                // Represents the end of all possible sequences, *** I..I F
+                // NOTE: Only use indirectly via an inheritant class of prefix
+                template<typename finalByteType>
+                class postfix {
+                protected:
+                    std::vector<table::intermediate::identifiers> intermediates;
+                    finalByteType finalByte;
+                public:
+                    postfix(
+                        std::vector<table::intermediate::identifiers> interms,
+                        finalByteType Func
+                    ) : intermediates(interms), finalByte(Func) {}
+
+                    void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
+                        intermediates = newInterms;
+                    }
+
+                    std::string toString() const {
+                        std::string result = "";
+
+                        for (const auto& interm : intermediates) {
+                            result += static_cast<char>(interm);
+                        }
+
+                        result += GGUI::terminal::ecma::sequence::toString(finalByte);
+
+                        return result;
+                    }
+                };
+
+                /**
+                 * Represents:
+                 * - Independent functions
+                 * - Fs, Fp, nF, Ft, Fe
+                 */
+                template<typename postfixType>
+                class function : public prefix {
+                public:
+                    postfix<postfixType> tail;
+
+                    function(postfix<postfixType> Tail) : prefix(table::C0::ESC), tail(Tail) {}
+                    function(postfixType Tail) : prefix(table::C0::ESC), tail({}, Tail) {}
+                };
+
+                template<typename containerType>
+                class control : public prefix {
+                protected:
+                    std::vector<containerType> parameters;                          // Each range between: 03/00 - 03/15, delimited by 03/11 (';')
+                    postfix<
+                        std::variant<
+                            table::finalWithoutIntermediate,
+                            table::finalWithIntermediate
+                        >
+                    > finalByte;
+                public:
+                    control(
+                        std::vector<containerType> params,
+                        table::finalWithoutIntermediate finalByte
+                    ) : prefix(table::C1::CSI), parameters(params), finalByte({}, finalByte) {}
+
+                    control(
+                        std::vector<containerType> params,
+                        std::vector<table::intermediate::identifiers> inters,
+                        table::finalWithIntermediate finalByte
+                    ) : prefix(table::C1::CSI), parameters(params), finalByte(inters, finalByte) {}
+
+                    control(
+                        table::finalWithoutIntermediate finalByte
+                    ) : prefix(table::C1::CSI), finalByte({}, finalByte) {}
+
+                    control(
+                        table::finalWithIntermediate finalByte
+                    ) : prefix(table::C1::CSI), finalByte({table::intermediate::identifiers::ANNOUNCER}, finalByte) {}
+
+                    control(
+                        std::vector<containerType> params,
+                        postfix<
+                            std::variant<
+                                table::finalWithoutIntermediate,
+                                table::finalWithIntermediate
+                            >
+                        > tail
+                    ) : prefix(table::C1::CSI), parameters(params), finalByte(tail) {}
+
+                    /**
+                    * Converts the control sequence to its string representation.
+                    * 
+                    * Control sequences follow the format:
+                    *   - 7-bit: ESC (01/11) + CSI byte (05/11) + parameters + intermediates + final byte
+                    *   - 8-bit: 8-bit CSI (09/11) + parameters + intermediates + final byte
+                    * 
+                    * Parameters are separated by ';' (03/11) delimiter.
+                    * The final byte determines if intermediates are required based on the variant held.
+                    */
+                    std::string toString() const override {
+                        std::string result = prefix::toString();
+
+                        // Output all parameters, separated by the parameter delimiter (03/11 ';')
+                        for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
+                            if (parameterIndex > 0) {
+                                result += static_cast<char>(parameter::delimeter);
+                            }
+                            result += parameters[parameterIndex].toString();
+                        }
+
+                        result += finalByte.toString();
+
+                        return result;
+                    }
+
+                    // Produces a new control sequence based on this template preset
+                    control<containerType> compile(std::vector<containerType> params) const {
+                        control<containerType> result = *this;
+                        result.parameters = params;
+                        return result;
+                    }
+                };
+
+                // APC, DCS, OSC, PM or SOS
+                class string : public prefix {
+                protected:           
+                    std::vector<uint8_t> characters;            // For when SOS is used in the opening delimeter, can contain in range of 00/00 to 07/15 or the command strings In the range 00/08 to 00/13 and 02/00 to 07/14
+                    prefix terminator;
+                public:
+                    string(
+                        table::C1 delimeter,
+                        std::vector<uint8_t> chars
+                    ) : prefix(delimeter), characters(chars), terminator(table::C1::ST) {}
+
+                    string(
+                        table::C1 delimeter
+                    ) : prefix(delimeter), terminator(table::C1::ST) {}
+
+                    std::string toString() const override;
+                };
+
+                std::vector<prefix*> parse(std::string_view input);
+            }
+
+            namespace table {
+
                 // This is from ECMA-35
                 namespace configuration {
 
@@ -357,8 +628,6 @@ namespace GGUI {
                      * a distinct character coding namespace.
                      */
                     enum class repertoire : uint8_t {
-                        NONE,       // Contains non-routable empty cells 
-
                         C0,        // Contains C0 repertoires
                         C1,        // Contains C1 repertoires
 
@@ -367,7 +636,9 @@ namespace GGUI {
                         G2,         // LS2, SS2, LS2R, Graphic set 2 (left-side)
                         G3,         // LS3, SS3, LS3R, Graphic set 3 (left-side)
 
-                        __max       // Sentinel value for array sizing
+                        __max,       // Sentinel value for array sizing
+
+                        NONE = -1,       // Contains non-routable empty cells 
                     };
 
                     
@@ -395,7 +666,7 @@ namespace GGUI {
                      * @brief Function pointer type for summonable cell handlers.
                      * Each cell in a page can reference a handler function that gets called when that cell is invoked.
                      */
-                    using functionPtr = void(*)();          
+                    using functionPtr = std::pair<size_t, sequence::prefix*>(*)(std::string_view);          
 
                     /**
                      * @brief A page represents a collection of callable cells (handlers).
@@ -429,17 +700,19 @@ namespace GGUI {
                         /**
                          * @brief Calls the cell handler at the specified position.
                          * 
-                         * @param pos The position to invoke (will be converted to relative coordinates)
+                         * @param whole_buffer The position to invoke from first character (will be converted to relative coordinates)
                          * 
                          * Sanitizes the position to work in the page's relative coordinate space
                          * before invoking the cell handler.
+                         * 
+                         * NOTE: whole buffer is given instead of single character, for potential buffer stream reader, function handlers.
                          */
-                        constexpr void call(location pos) {
+                        constexpr std::pair<size_t, sequence::prefix*> call(std::string_view whole_buffer) {
                             // Sanitize position to work in relative space
-                            pos = pos.getRelative(status.range.get().first);
+                            auto pos = location(whole_buffer.front()).getRelative(status.range.get().first);
                             auto currentCell = cells[pos.compute()];
 
-                            currentCell();
+                            return currentCell(whole_buffer);
                         }
 
                         /**
@@ -591,6 +864,8 @@ namespace GGUI {
                                 }
                             }
                         }
+
+                        std::pair<size_t, sequence::prefix*> interpret(std::string_view input);
                     };
 
                 }
@@ -1042,262 +1317,6 @@ namespace GGUI {
 
                     return std::string(static_cast<char>(val));
                 }
-            }
-
-            namespace sequences {
-                enum class specialTypes {
-                    NORMAL,
-                    HAS_INFINITE_PARAMETERS
-                };
-            }
-
-            namespace sequence {
-                namespace parameter {
-                    constexpr uint8_t column         = 3;
-                    constexpr uint8_t sub_delimeter  = table::toInt(column, 10); // Translates into ':'
-                    constexpr uint8_t delimeter      = table::toInt(column, 11); // Translates into ';'
-
-                    template<typename containerType>
-                    class base {
-                    protected:
-                        std::vector<std::variant<containerType, char>> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
-                    
-                    public:
-                        base() = default;
-                        base(std::vector<std::variant<containerType, char>> values) : subNumbers(values) {}
-                        base(containerType values) : subNumbers({values}) {}
-
-                        /**
-                        * As stated by 5.4.2.b, f, g and h
-                        * 
-                        * We expect the input to already cut by the 03/11 (';') delimeter by the calling function.
-                        * Per char, only be in range of 03/00 - 03/09 or special sub-string delimeter of 03/10 (':')
-                        */
-                        base(std::string_view input, size_t& length) {
-                            uint32_t currentNumber = 0;
-                            bool has_digit = true;          // Default true, so that ;;;; are possible.
-
-                            for (char i : input) {
-                                uint8_t currentChar = static_cast<uint8_t>(i);
-
-                                // Special values where currentChar >= 03/09 - 03/15
-                                if (currentChar >= table::toInt(3, 10) && currentChar <= table::toInt(3, 15)) {
-
-                                    if (currentChar == sub_delimeter) { // 03/10 ':'
-                                        if (has_digit) {
-                                            subNumbers.push_back(static_cast<containerType>(currentNumber));
-                                        } else {
-                                            subNumbers.push_back(static_cast<containerType>(0)); // empty sub-string -> default / zero
-                                        }
-                                    } else {    // Special parameter values like '?'
-                                        subNumbers.push_back(static_cast<char>(currentChar));
-                                    }
-
-                                    // Reset
-                                    currentNumber = 0;
-                                    has_digit = false;
-                                    length++;
-                                } else if (currentChar >= table::toInt(3, 0) && currentChar <= table::toInt(3, 9)) {    // 03/00 - 03/09
-                                    // Transform the char number into usable form.
-                                    currentNumber = currentNumber * 10 + (currentChar - table::toInt(3, 0));
-                                    has_digit = true;
-                                    length++;
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            if (has_digit) {
-                                subNumbers.push_back(static_cast<containerType>(currentNumber));
-                                // length++;    <-- no need to increase it since the loop which gathered these numbers already accounts the length.
-                                return;
-                            } else {    // Trailing 03/10 (':'), stated by section f, needs to have a trailing zero.
-                                subNumbers.push_back(static_cast<containerType>(0));
-                                length++;
-                            }
-                        }
-
-                        std::string toString() const {
-                            std::string result = "";
-
-                            for (size_t i = 0; i < subNumbers.size(); i++) {
-                                if (std::holds_alternative<char>(subNumbers[i])) {
-                                    // Special parameter character - output directly as char
-                                    result += std::get<char>(subNumbers[i]);
-                                } else {
-                                    // Numeric value
-                                    uint32_t currentNumber = static_cast<uint32_t>(std::get<containerType>(subNumbers[i])); 
-                                    if (currentNumber == 0 || i > 0) { 
-                                        // This means section f was triggered and we need to insert a pre-fix of 03/10
-                                        // Or this is i+1 so delimeter is required by section b
-                                        result += static_cast<char>(sub_delimeter); // 03/10 ':'
-                                        result += std::to_string(currentNumber);
-                                    } else {
-                                        result += std::to_string(currentNumber);
-                                    }
-                                }
-                            }
-
-                            return result;
-                        }
-                    };
-
-                    using numeric = base<uint32_t>;
-
-                    template<typename enumType>
-                    class selectable : public base<enumType> {
-                        // Check that selectable instances are only used with enums
-                        static_assert(std::is_enum_v<enumType> == true, "Selectable parameters must be instantiated with an enum type.");
-                    };
-                }
-
-                // Represents the start of all possible sequences, be it primary or secondary set fuctions. C0/C1 ***
-                // NOTE: This class does not care for 7-bit or 8-bit, will convert all 8-bit functions into 7-bit ones!
-                class prefix {
-                protected:
-                    std::variant<table::C0, table::C1> function;
-                public:
-                    prefix(std::variant<table::C0, table::C1> func) : function(func) {}
-                    virtual ~prefix() = default;
-                    virtual std::string toString() const;
-                };
-
-                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
-
-                // Represents the end of all possible sequences, *** I..I F
-                template<typename finalByteType>
-                class postfix {
-                protected:
-                    std::vector<table::intermediate::identifiers> intermediates;
-                    finalByteType finalByte;
-                public:
-                    postfix(
-                        std::vector<table::intermediate::identifiers> interms,
-                        finalByteType Func
-                    ) : intermediates(interms), finalByte(Func) {}
-
-                    void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
-                        intermediates = newInterms;
-                    }
-
-                    std::string toString() const {
-                        std::string result = "";
-
-                        for (const auto& interm : intermediates) {
-                            result += static_cast<char>(interm);
-                        }
-
-                        result += GGUI::terminal::ecma::sequence::toString(finalByte);
-
-                        return result;
-                    }
-                };
-
-                /**
-                 * Represents:
-                 * - Independent functions
-                 * - Fs, Fp, nF, Ft, Fe
-                 */
-                template<typename postfixType>
-                class function : public prefix {
-                public:
-                    postfix<postfixType> tail;
-
-                    function(postfix<postfixType> Tail) : prefix(table::C0::ESC), tail(Tail) {}
-                    function(postfixType Tail) : prefix(table::C0::ESC), tail({}, Tail) {}
-                };
-
-                template<typename containerType>
-                class control : public prefix {
-                protected:
-                    std::vector<containerType> parameters;                          // Each range between: 03/00 - 03/15, delimited by 03/11 (';')
-                    postfix<
-                        std::variant<
-                            table::finalWithoutIntermediate,
-                            table::finalWithIntermediate
-                        >
-                    > finalByte;
-                public:
-                    control(
-                        std::vector<containerType> params,
-                        table::finalWithoutIntermediate finalByte
-                    ) : prefix(table::C1::CSI), parameters(params), finalByte({}, finalByte) {}
-
-                    control(
-                        std::vector<containerType> params,
-                        std::vector<table::intermediate::identifiers> inters,
-                        table::finalWithIntermediate finalByte
-                    ) : prefix(table::C1::CSI), parameters(params), finalByte(inters, finalByte) {}
-
-                    control(
-                        table::finalWithoutIntermediate finalByte
-                    ) : prefix(table::C1::CSI), finalByte({}, finalByte) {}
-
-                    control(
-                        table::finalWithIntermediate finalByte
-                    ) : prefix(table::C1::CSI), finalByte({table::intermediate::identifiers::ANNOUNCER}, finalByte) {}
-
-                    /**
-                    * Converts the control sequence to its string representation.
-                    * 
-                    * Control sequences follow the format:
-                    *   - 7-bit: ESC (01/11) + CSI byte (05/11) + parameters + intermediates + final byte
-                    *   - 8-bit: 8-bit CSI (09/11) + parameters + intermediates + final byte
-                    * 
-                    * Parameters are separated by ';' (03/11) delimiter.
-                    * The final byte determines if intermediates are required based on the variant held.
-                    */
-                    std::string toString() const override {
-                        std::string result = prefix::toString();
-
-                        // Output all parameters, separated by the parameter delimiter (03/11 ';')
-                        for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
-                            if (parameterIndex > 0) {
-                                result += static_cast<char>(parameter::delimeter);
-                            }
-                            result += parameters[parameterIndex].toString();
-                        }
-
-                        result += finalByte.toString();
-
-                        return result;
-                    }
-
-                    // Produces a new control sequence based on this template preset
-                    control<containerType> compile(std::vector<containerType> params) const {
-                        control<containerType> result = *this;
-                        result.parameters = params;
-                        return result;
-                    }
-                };
-
-                // APC, DCS, OSC, PM or SOS
-                class string : public prefix {
-                protected:           
-                    std::vector<uint8_t> characters;            // For when SOS is used in the opening delimeter, can contain in range of 00/00 to 07/15 or the command strings In the range 00/08 to 00/13 and 02/00 to 07/14
-                    prefix terminator;
-                public:
-                    string(
-                        table::C1 delimeter,
-                        std::vector<uint8_t> chars
-                    ) : prefix(delimeter), characters(chars), terminator(table::C1::ST) {}
-
-                    string(
-                        table::C1 delimeter
-                    ) : prefix(delimeter), terminator(table::C1::ST) {}
-
-                    std::string toString() const override;
-                };
-
-                class shift : public function<table::independentFunctions> {
-                protected:
-
-                public:
-
-
-                };
-            
-                std::vector<prefix*> parse(std::string_view input);
             }
 
             namespace sequences {
@@ -2195,16 +2214,6 @@ namespace GGUI {
                         inline base<sequence::control<sequence::parameter::selectable<types>>, type, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SDS), {type::END_OF_DIRECTED_STRING});
                     }
 
-                    /**
-                     * @brief SGR is used to establish one or more graphic rendition aspects for subsequent text. 
-                     * The established aspects remain in effect until the next occurrence of SGR in the data stream, 
-                     * depending on the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM). 
-                     * Each graphic rendition aspect is specified by a parameter value.
-                     * NOTE: The usable combinations of parameter values are determined by the implementation. 
-                     * @example `01/11 05/11 Ps... 06/13` or `9/11 Ps... 06/13`
-                     * @param Ps default(0)
-                     * @param ...
-                     */
                     namespace SELECT_GRAPHIC_RENDITION {
                         enum class types {
                             DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
