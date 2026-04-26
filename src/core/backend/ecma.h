@@ -354,18 +354,32 @@ namespace GGUI {
                     };
                 }
 
+                enum class types : uint8_t {
+                    SINGLE_BYTE,
+                    INDEPENDENT_FUNCTION,
+                    CSI,
+                    STRING
+                };
+
                 // Represents the start of all possible sequences, be it primary or secondary set fuctions. C0/C1 ***
                 // NOTE: This class does not care for 7-bit or 8-bit, will convert all 8-bit functions into 7-bit ones!
                 class prefix {
                 protected:
+                    types type;
                     std::variant<table::C0, table::C1> function;
                 public:
-                    prefix(std::variant<table::C0, table::C1> func) : function(func) {}
+                    prefix(std::variant<table::C0, table::C1> func, types t = types::SINGLE_BYTE) : type(t), function(func) {}
 
                     virtual ~prefix() = default;
                     virtual std::string toString() const;
 
-                    std::variant<table::C0, table::C1> getFunction() const { return function; }
+                    std::variant<table::C0, table::C1> getFunction() const { return function; }     // Try later removing this, cause this moves too much information back and fourth.
+                    types getType() const { return type; }
+                    
+                    template<typename T>
+                    bool contains(T enumValue) {
+                        return std::get<T>(function) == enumValue;
+                    }
 
                     template<typename T>
                     constexpr T get() const {
@@ -392,6 +406,8 @@ namespace GGUI {
                         intermediates = newInterms;
                     }
 
+                    finalByteType getFinalByte() const { return finalByte; }
+
                     std::string toString() const {
                         std::string result = "";
 
@@ -415,8 +431,10 @@ namespace GGUI {
                 public:
                     postfix<postfixType> tail;
 
-                    function(postfix<postfixType> Tail) : prefix(table::C0::ESC), tail(Tail) {}
-                    function(postfixType Tail) : prefix(table::C0::ESC), tail({}, Tail) {}
+                    function(postfix<postfixType> Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail(Tail) {}
+                    function(postfixType Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail({}, Tail) {}
+
+                    postfixType getFinalByte() const { return tail.getFinalByte(); }
                 };
 
                 template<typename containerType>
@@ -433,21 +451,21 @@ namespace GGUI {
                     control(
                         std::vector<containerType> params,
                         table::finalWithoutIntermediate finalByte
-                    ) : prefix(table::C1::CSI), parameters(params), finalByte({}, finalByte) {}
+                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte({}, finalByte) {}
 
                     control(
                         std::vector<containerType> params,
                         std::vector<table::intermediate::identifiers> inters,
                         table::finalWithIntermediate finalByte
-                    ) : prefix(table::C1::CSI), parameters(params), finalByte(inters, finalByte) {}
+                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(inters, finalByte) {}
 
                     control(
                         table::finalWithoutIntermediate finalByte
-                    ) : prefix(table::C1::CSI), finalByte({}, finalByte) {}
+                    ) : prefix(table::C1::CSI, types::CSI), finalByte({}, finalByte) {}
 
                     control(
                         table::finalWithIntermediate finalByte
-                    ) : prefix(table::C1::CSI), finalByte({table::intermediate::identifiers::ANNOUNCER}, finalByte) {}
+                    ) : prefix(table::C1::CSI, types::CSI), finalByte({table::intermediate::identifiers::ANNOUNCER}, finalByte) {}
 
                     control(
                         std::vector<containerType> params,
@@ -457,7 +475,7 @@ namespace GGUI {
                                 table::finalWithIntermediate
                             >
                         > tail
-                    ) : prefix(table::C1::CSI), parameters(params), finalByte(tail) {}
+                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(tail) {}
 
                     /**
                     * Converts the control sequence to its string representation.
@@ -502,11 +520,11 @@ namespace GGUI {
                     string(
                         table::C1 delimeter,
                         std::vector<uint8_t> chars
-                    ) : prefix(delimeter), characters(chars), terminator(table::C1::ST) {}
+                    ) : prefix(delimeter, types::STRING), characters(chars), terminator(table::C1::ST) {}
 
                     string(
                         table::C1 delimeter
-                    ) : prefix(delimeter), terminator(table::C1::ST) {}
+                    ) : prefix(delimeter, types::STRING), terminator(table::C1::ST) {}
 
                     std::string toString() const override;
                 };
@@ -863,6 +881,13 @@ namespace GGUI {
                                     map[j] = static_cast<repertoire>(i);
                                 }
                             }
+                        }
+
+                        constexpr void load(repertoire pageName, layout::bounds loadedArea, lifetime::types lifetimeType) {
+                            pages[static_cast<size_t>(pageName)].load({
+                                loadedArea,
+                                lifetimeType
+                            });
                         }
 
                         std::pair<size_t, sequence::prefix*> interpret(std::string_view input);

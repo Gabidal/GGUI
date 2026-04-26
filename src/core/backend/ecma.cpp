@@ -125,10 +125,85 @@ namespace GGUI {
 
                     } else if (header == table::C1::APC || header == table::C1::DCS || header == table::C1::OSC || header == table::C1::PM || header == table::C1::SOS) {
 
-                        
+                        // TODO: ...
+                        return {nullptr, 0};
 
                     } else {
                         return {nullptr, 0};    // FAIL
+                    }
+                }
+
+                std::pair<prefix*, size_t> parsePostfixForC0(std::string_view input) {
+
+                }
+
+                // Scans for ecma::sequences::shiftFunctions::* members
+                void operateShift(prefix* opcode) {
+                    auto layoutType = table::configuration::layout::graphical::type::A;     // TODO: Dynamically adjust this.
+
+                    // First we need to determine the opcode type, via it's header value, C0 or C1 shift function:
+                    if (opcode->getType() == sequence::types::SINGLE_BYTE) {
+                        // C1{SS2, SS3}, C0{LS0, LS1, SI, SO}, 
+                        if (opcode->contains(table::C1::SS2)) {
+                            pageState.load(
+                                table::configuration::repertoire::G2, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                                table::configuration::lifetime::types::TEMPORARY
+                            );
+                        } else if (opcode->contains(table::C1::SS3)) {
+                            pageState.load(
+                                table::configuration::repertoire::G3, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                                table::configuration::lifetime::types::TEMPORARY
+                            );
+                        } else if (opcode->contains(table::C0::LS0)) {
+                            pageState.load(
+                                table::configuration::repertoire::G0, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                                table::configuration::lifetime::types::LOCKING
+                            );
+                        } else if (opcode->contains(table::C0::LS1)) {
+                            pageState.load(
+                                table::configuration::repertoire::G1, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                                table::configuration::lifetime::types::LOCKING
+                            );
+                        }
+                    } else if (opcode->getType() == sequence::types::INDEPENDENT_FUNCTION) {
+                        // C0{ESC{LS1R, LS2, LS2R, LS3, LS3R}}
+                        auto independentFunction = static_cast<sequence::function<table::independentFunctions>*>(opcode);
+
+                        if (independentFunction->getFinalByte() == table::independentFunctions::LS1R) {
+                            pageState.load(
+                                table::configuration::repertoire::G1, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                                table::configuration::lifetime::types::LOCKING
+                            );
+                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS2) {
+                            pageState.load(
+                                table::configuration::repertoire::G2, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                                table::configuration::lifetime::types::LOCKING
+                            );
+                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS2R) {
+                            pageState.load(
+                                table::configuration::repertoire::G2, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                                table::configuration::lifetime::types::LOCKING
+                            );
+                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS3) {
+                            pageState.load(
+                                table::configuration::repertoire::G3, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                                table::configuration::lifetime::types::LOCKING
+                            );
+                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS3R) {
+                            pageState.load(
+                                table::configuration::repertoire::G3, 
+                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                                table::configuration::lifetime::types::LOCKING
+                            );
+                        }
                     }
                 }
 
@@ -148,11 +223,12 @@ namespace GGUI {
                         } else {    // If not, then check for normal bytecode interpret path:
                             prefix* header = nullptr;
 
+                            // Header prefetch ------------------------------------------------
                             if (table::contains<table::C0>(input[i])) {
                                 header = new prefix(static_cast<table::C0>(input[i]));
 
                                 // We can skip ESC and set header to point into C1 if possible
-                                if (std::get<table::C0>(header->getFunction()) == table::C0::ESC) {     // Now we can check if i+1 contains a C1 bytecode
+                                if (header->contains(table::C0::ESC)) {     // Now we can check if i+1 contains a C1 bytecode
                                     i++;
 
                                     // We can promote the ECS + C1 code into a single 8-bit C1 bytecode
@@ -160,25 +236,34 @@ namespace GGUI {
                                         header = new prefix(static_cast<table::C1>(input[i]));
                                     }
                                 }
-
                             } else if (table::contains<table::C1>(input[i]))  header = new prefix(static_cast<table::C1>(input[i]));
                             else {  // header == nullptr
                                 continue;   // Probably just a graphical character
                             }
+                            // ----------------------------------------------------------------
+
+
+                            // Header Extension -----------------------------------------------
+                            std::pair<prefix*, size_t> extension;
 
                             // Now we can check for extensions of prefix type class:
                             if (std::holds_alternative<table::C1>(header->getFunction())){
-                                auto parsedC1 = parsePostfixForC1(input.substr(i));
-
-                                if (parsedC1.first != nullptr) {
-                                    result.push_back(parsedC1.first);
-                                    i += parsedC1.second;
-                                }
-                            } else {
-
+                                extension = parsePostfixForC1(input.substr(i));
+                            } else {    // table::C0
+                                extension = parsePostfixForC0(input.substr(i));
                             }
-                            
-                            // Check if the 
+
+                            // Even shifts are reported for status checks, put this after shift check to disable shift reporting.
+                            if (extension.first != nullptr) {
+                                result.push_back(extension.first);
+                                i += extension.second;
+                            }
+                            // ----------------------------------------------------------------
+
+
+                            // Shift recording ------------------------------------------------
+                            operateShift(extension.first);
+                            // ----------------------------------------------------------------
                         }
                     }
                     return result;
