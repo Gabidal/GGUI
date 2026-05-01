@@ -72,6 +72,17 @@ namespace GGUI {
                     return result;
                 }
 
+                std::vector<table::intermediate::identifiers> parseintermediates(std::string_view input) {
+                    std::vector<table::intermediate::identifiers> result;
+
+                    // Find all intermediates:
+                    for (size_t i = 0; i < input.size() && table::contains<table::intermediate::identifiers>(input[i]); i++) {
+                        result.push_back(static_cast<table::intermediate::identifiers>(input[i]));
+                    }
+
+                    return result;
+                }
+
                 std::pair<prefix*, size_t> parsePostfixForC1(std::string_view input) {
                     table::C1 header = static_cast<table::C1>(input.front());
 
@@ -106,7 +117,7 @@ namespace GGUI {
                         postfix<std::variant<
                             table::finalWithoutIntermediate,
                             table::finalWithIntermediate
-                        >> tail(std::vector<table::intermediate::identifiers>(input.begin() + intermediateAt, input.begin() + finalFunctionAt), finalFunction);
+                        >> tail(parseintermediates(input.substr(intermediateAt)), finalFunction);
 
                         // need clarification?
                         size_t earliestNonParametricIndex = std::min(finalFunctionAt, intermediateAt);
@@ -128,13 +139,31 @@ namespace GGUI {
                         // TODO: ...
                         return {nullptr, 0};
 
-                    } else {
-                        return {nullptr, 0};    // FAIL
+                    } else {    // TODO: ...
+                        return {nullptr, 0};
                     }
                 }
 
                 std::pair<prefix*, size_t> parsePostfixForC0(std::string_view input) {
+                    table::C0 header = static_cast<table::C0>(input.front());
 
+                    if (header == table::C0::ESC) { // Proceeding bytes cannot be that of CSI, since it would have been captured at the previous parsing stage.
+
+                        size_t startOfIntermediates = 1;
+
+                        // Parse intermediates
+                        std::vector<table::intermediate::identifiers> intermediates = parseintermediates(input.substr(startOfIntermediates));
+
+                        sequence::function<table::independentFunctions>* result = new sequence::function<table::independentFunctions>({
+                            intermediates,
+                            static_cast<table::independentFunctions>(input.at(startOfIntermediates + intermediates.size()))
+                        });
+
+                        return {result, startOfIntermediates + intermediates.size()};
+
+                    } else {
+                        return {nullptr, 0};
+                    }
                 }
 
                 // Scans for ecma::sequences::shiftFunctions::* members
