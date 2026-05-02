@@ -1,4 +1,5 @@
 #include "ecma.h"
+#include "terminal.h"
 
 namespace GGUI {
     namespace terminal {
@@ -307,6 +308,10 @@ namespace GGUI {
 
                 // Jump through the page cell
                 return pages[static_cast<size_t>(currentRepertoire)].call(input);
+            }
+
+            bitMask<features> probe() {
+                return {};
             }
         }
     }

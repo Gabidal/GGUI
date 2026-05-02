@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/uio.h> // Needed for writev
 #include <sys/fcntl.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <cstring>
 #include <poll.h>
@@ -17,50 +18,143 @@ namespace GGUI {
         termios extendedFeatures;
         termios previousTerminalState;
 
-        // POSIX implementation of the terminal::init
-        void init() {
-            // First safety zero all features:
-            features.clear();
+        bitMask<features> fetchIOPermissions() {
+            struct stat stdinStat, stdoutStat;
 
-            // Check if this is an interactive terminal
-            if (isatty(STDIN_FILENO) != 0) {
-                features.set(feature::TTY);
+            bitMask<features> result;
 
-                // Ensure we don't leave the descriptor in an unexpected mode; do not force non-blocking here.
-                // Configure terminal to raw mode
-                if (tcgetattr(STDIN_FILENO, &extendedFeatures) == 0) {
-                    previousTerminalState = extendedFeatures;
-                    // Keep ISIG enabled so Ctrl+C still works.
-                    extendedFeatures.c_lflag &= ~(ECHO | ICANON);           // Disable echo + canonical mode so mouse packets are not echoed back into the terminal.
-                    extendedFeatures.c_cc[VMIN] = 1;   // return after 1 byte
-                    extendedFeatures.c_cc[VTIME] = 0;  // no timeout
-
-                    // Check if the previous state corresponds to the current state
-                    if (
-                        extendedFeatures.c_lflag != previousTerminalState.c_lflag || 
-                        extendedFeatures.c_cc[VMIN] != previousTerminalState.c_cc[VMIN] || 
-                        extendedFeatures.c_cc[VTIME] != previousTerminalState.c_cc[VTIME]
-                    ) {
-                        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &extendedFeatures) != 0) {   // Check if it succeeded
-                            INTERNAL::LOGGER::log("Failed to enable raw mode (tcsetattr). Mouse reporting will remain disabled to avoid corrupting output.");
-                        }
-                    } 
-                }
-                else {
-                    INTERNAL::LOGGER::log("Failed to snapshot terminal mode (tcgetattr). Mouse reporting will remain disabled to avoid corrupting output.");
+            // --- STDIN ---
+            if (fstat(STDIN_FILENO, &stdinStat) == 0) {
+                if (isatty(STDIN_FILENO)) {
+                    result.set(features::TTY);
+                    result.set(features::READ);   // TTY is always readable
+                } else if (S_ISFIFO(stdinStat.st_mode)) {
+                    result.set(features::PIPED_IN);  // stdin is a pipe
+                    result.set(features::READ);
+                } else if (S_ISREG(stdinStat.st_mode)) {
+                    result.set(features::REDIRECTED_IN); // stdin is a plain file
+                    result.set(features::READ);
+                } else if (S_ISCHR(stdinStat.st_mode)) {  // S_ISCHR = character device that isn't a TTY (/dev/null etc.)
+                    if (!isatty(STDIN_FILENO)) {    // Could be a character device; check if it's not a TTY
+                        result.set(features::READ);     // Character devices that aren't TTYs are still readable
+                    }
                 }
             }
 
-            // Start probing regardless of (ECHO | ICANON) absence or not. 
-            startProbing();
+            // --- STDOUT ---
+            if (fstat(STDOUT_FILENO, &stdoutStat) == 0) {
+                if (S_ISFIFO(stdoutStat.st_mode)) {
+                    result.set(features::PIPED_OUT);
+                } 
+                else if (S_ISREG(stdoutStat.st_mode)) {
+                    result.set(features::REDIRECTED_OUT);
+                }
+
+                // Check actual access mode the fd was opened with
+                int flags = fcntl(STDOUT_FILENO, F_GETFL);
+                if (flags != -1) {
+                    int mode = flags & O_ACCMODE;  // mask out everything except access bits
+                    if (mode == O_WRONLY || mode == O_RDWR) {
+                        result.set(features::WRITE);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        termios toTermios(const INTERNAL::configuration& cfg) {
+            termios t = {};
+
+            t.c_iflag = (tcflag_t)cfg.iflag.get();
+            t.c_oflag = (tcflag_t)cfg.oflag.get();
+            t.c_cflag = (tcflag_t)cfg.cflag.get();
+
+            // Reconstruct c_lflag from ECMA-48 mode flags
+            t.c_lflag = 0;
+
+            // SRM: MONITOR (RESET) -> echo on
+            if (cfg.modes.get(ecma::table::mode::types::SEND_RECEIVE_MODE) == ecma::table::mode::definition::RESET)
+                t.c_lflag |= ECHO | ECHOE | ECHOK;
+
+            // KAM: ENABLED (RESET) -> ISIG (Ctrl+C/Z/\ generate signals)
+            if (cfg.modes.get(ecma::table::mode::types::KEYBOARD_ACTION_MODE) == ecma::table::mode::definition::RESET)
+                t.c_lflag |= ISIG;
+
+            // CRM: CONTROL (RESET) -> canonical mode + extended processing
+            if (cfg.modes.get(ecma::table::mode::types::CONTROL_REPRESENTATION_MODE) == ecma::table::mode::definition::RESET)
+                t.c_lflag |= ICANON | IEXTEN;
+
+            t.c_line = cfg.line;
+
+            static_assert(INTERNAL::CC_COUNT <= NCCS, "cc_chars larger than NCCS");
+            for (size_t i = 0; i < INTERNAL::CC_COUNT; ++i)
+                t.c_cc[i] = cfg.cc_chars[i];
+
+            cfsetispeed(&t, (speed_t)cfg.ispeed.get());
+            cfsetospeed(&t, (speed_t)cfg.ospeed.get());
+
+            return t;
+        }
+
+        INTERNAL::configuration fromTermios(const ::termios& t) {
+            INTERNAL::configuration cfg = {};
+
+            cfg.iflag = t.c_iflag;
+            cfg.oflag = t.c_oflag;
+            cfg.cflag = t.c_cflag;
+
+            // Reconstruct ECMA-48 modes from c_lflag
+
+            // ECHO → SRM MONITOR (RESET = echo on) / SIMULTANEOUS (SET = echo off)
+            cfg.modes.set(INTERNAL::modeBase{
+                ecma::table::mode::types::SEND_RECEIVE_MODE,
+                (t.c_lflag & ECHO) ? ecma::table::mode::definition::RESET : ecma::table::mode::definition::SET
+            });
+
+            // ISIG → KAM ENABLED (RESET) / DISABLED (SET)
+            cfg.modes.set(INTERNAL::modeBase{
+                ecma::table::mode::types::KEYBOARD_ACTION_MODE,
+                (t.c_lflag & ISIG) ? ecma::table::mode::definition::RESET : ecma::table::mode::definition::SET
+            });
+
+            // ICANON → CRM CONTROL (RESET = processed) / GRAPHIC (SET = raw)
+            cfg.modes.set(INTERNAL::modeBase{
+                ecma::table::mode::types::CONTROL_REPRESENTATION_MODE,
+                (t.c_lflag & ICANON) ? ecma::table::mode::definition::RESET : ecma::table::mode::definition::SET
+            });
+
+            cfg.line = t.c_line;
+
+            for (size_t i = 0; i < INTERNAL::CC_COUNT; ++i)
+                cfg.cc_chars[i] = t.c_cc[i];
+
+            cfg.ispeed = cfgetispeed(&t);
+            cfg.ospeed = cfgetospeed(&t);
+
+            return cfg;
+        }
+
+        bool snapshot(INTERNAL::configuration& cfg) {
+            termios t;
+            if (tcgetattr(STDIN_FILENO, &t) != 0) return false;
+            cfg = fromTermios(t);
+            return true;
+        }
+
+        bool apply(const INTERNAL::configuration& cfg) {
+            termios t = toTermios(cfg);
+            return tcsetattr(STDIN_FILENO, TCSAFLUSH, &t) == 0;
         }
 
         // Default deinit (NOP)
-        std::function<void()> deinit = [](){};
+        void platformDeinit() {
+            
+        }
 
         void waitForInput() {
             // If stdin isn't a TTY (e.g., piped/timeout), read() may return 0 (EOF) repeatedly; avoid spinning.
-            if (!features.has(feature::TTY)) {
+            if (!enabledFeatures.has(features::TTY)) {
                 // Use poll to wait briefly for readability; if not readable, sleep a bit to avoid busy-loop.
                 struct pollfd pollFileDescriptor;
                 pollFileDescriptor.fd = STDIN_FILENO;

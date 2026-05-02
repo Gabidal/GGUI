@@ -21,6 +21,63 @@ namespace GGUI {
 
         CONSOLE_SCREEN_BUFFER_INFO Get_Console_Info();
 
+        DWORD toInputMode(const INTERNAL::configuration& cfg) {
+            DWORD mode = ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT;
+
+            // KAM ENABLED (RESET) -> ENABLE_PROCESSED_INPUT (Ctrl+C handled)
+            if (cfg.modes.get(mode::types::KEYBOARD_ACTION_MODE) == mode::definition::RESET)
+                mode |= ENABLE_PROCESSED_INPUT;
+
+            // CRM CONTROL (RESET) -> ENABLE_LINE_INPUT (canonical / cooked)
+            if (cfg.modes.get(mode::types::CONTROL_REPRESENTATION_MODE) == mode::definition::RESET)
+                mode |= ENABLE_LINE_INPUT;
+
+            // SRM MONITOR (RESET) -> ENABLE_ECHO_INPUT
+            if (cfg.modes.get(mode::types::SEND_RECEIVE_MODE) == mode::definition::RESET)
+                mode |= ENABLE_ECHO_INPUT;
+
+            return mode;
+        }
+
+        DWORD toOutputMode(const INTERNAL::configuration& cfg) {
+            DWORD mode = ENABLE_PROCESSED_OUTPUT
+                    | ENABLE_VIRTUAL_TERMINAL_PROCESSING;  // ANSI/VT sequences, Win10 1511+
+
+            // ONLCR -> ENABLE_WRAP_AT_EOL_OUTPUT
+            if (cfg.oflag & terminal::oflag::ONLCR)
+                mode |= ENABLE_WRAP_AT_EOL_OUTPUT;
+
+            return mode;
+        }
+
+        bool snapshot(INTERNAL::configuration& cfg) {
+            DWORD inputMode = 0;
+            if (!GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &inputMode))
+                return false;
+
+            cfg.modes.set(ModeBase{
+                mode::types::KEYBOARD_ACTION_MODE,
+                (inputMode & ENABLE_PROCESSED_INPUT) ? mode::definition::RESET : mode::definition::SET
+            });
+            cfg.modes.set(ModeBase{
+                mode::types::CONTROL_REPRESENTATION_MODE,
+                (inputMode & ENABLE_LINE_INPUT) ? mode::definition::RESET : mode::definition::SET
+            });
+            cfg.modes.set(ModeBase{
+                mode::types::SEND_RECEIVE_MODE,
+                (inputMode & ENABLE_ECHO_INPUT) ? mode::definition::RESET : mode::definition::SET
+            });
+
+            return true;
+        }
+
+        bool apply(const INTERNAL::configuration& cfg) {
+            return SetConsoleMode(GLOBAL_STD_INPUT_HANDLE,  toInputMode(cfg))
+                && SetConsoleMode(GLOBAL_STD_OUTPUT_HANDLE, toOutputMode(cfg));
+        }
+
+        bitMask<features> fetchIOPermissions() {// TODO: ...}
+
         /**
          * @brief Checks whether STDIN is connected to an interactive Windows Console.
          * @details When input is redirected (piped / file), GetConsoleMode will fail.
@@ -37,8 +94,8 @@ namespace GGUI {
             return GetConsoleMode(GLOBAL_STD_INPUT_HANDLE, &Mode) != 0;
         }
 
-        // Windows implementation of the terminal::init
-        void init() {
+        // Windows implementation of the terminal::platformInit
+        void platformInit() {   // TODO: move this into the windows side terminal::INTERNAL::configuration constructor
             constexpr int ENABLE_UTF8_MODE_FOR_WINDOWS = 65001;
 
             // Save the STD handles to prevent excess calls.
@@ -73,8 +130,7 @@ namespace GGUI {
             std::cout << std::flush;
         }
         
-        // Default deinit (NOP)
-        std::function<void()> deinit = [](){
+        void platformDeinit() {
             // Restore previous console modes
             {
                 DWORD Mode = 0;

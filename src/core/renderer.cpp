@@ -7,7 +7,7 @@
 #include "./utils/settings.h"
 #include "./utils/drm.h"
 #include "./utils/conveyorAllocator.h"
-#include "./terminal/terminal.h"
+#include "./backend/terminal.h"
 
 #include <string>
 #include <cassert>

@@ -760,6 +760,12 @@ namespace GGUI{
                 data = static_cast<T>(static_cast<containerType>(data) | static_cast<containerType>(other.data));
                 return *this;
             }
+
+            template<typename P, typename = std::enable_if_t<std::is_same_v<P, T> || std::is_same_v<P, containerType>>>
+            bitMask<T, containerType>& operator=(P value) {
+                data = static_cast<T>(value);
+                return *this;
+            }
         };
 
         class STAIN{

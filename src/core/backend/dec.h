@@ -11,8 +11,6 @@ namespace GGUI {
          * URL: https://vt100.net/docs/
         */
         namespace dec {
-            using namespace ansi;       // Since the ASCII table is same as the one stated in ANSI, we will route it here, with alias and get functions for reusability.
-        
             namespace VT100 {
                 namespace mode {
                     // Since so many VTxxx sequences depend on their private modes, we need to introduce bindings to enforce correct sequence for each mode.
@@ -37,15 +35,15 @@ namespace GGUI {
                         inline const auto privateModeSetter = ecma::table::toInt(3, 15);        // '?'
                         
                         inline auto editMode(types t, ecma::table::mode::definition status) {
-                            const auto pre_made = {
-                                static_cast<ecma::table::mode::types>(privateModeSetter),
-                                static_cast<ecma::table::mode::types>(t)
+                            const std::vector<ecma::sequence::parameter::selectable<ecma::table::mode::types>> params = {
+                                ecma::sequence::parameter::selectable<ecma::table::mode::types>(static_cast<ecma::table::mode::types>(privateModeSetter)),
+                                ecma::sequence::parameter::selectable<ecma::table::mode::types>(static_cast<ecma::table::mode::types>(t))
                             };
 
                             if (status == ecma::table::mode::definition::SET) {
-                                return ecma::sequences::modeSettings::SET_MODE.compile(pre_made);
+                                return ecma::sequences::modeSettings::SET_MODE.compile(params);
                             } else {
-                                return ecma::sequences::modeSettings::RESET_MODE.compile(pre_made);
+                                return ecma::sequences::modeSettings::RESET_MODE.compile(params);
                             }
                         }
                     }
@@ -60,7 +58,6 @@ namespace GGUI {
                 };
 
             }
-
         }
     }
 }

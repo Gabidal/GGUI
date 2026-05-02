@@ -256,6 +256,13 @@ namespace GGUI{
          */
         extern ALLOCATION_TYPE getAllocationType(const void* ptr);
 
+        template <typename T, std::size_t N>
+        constexpr void constexprFill(std::array<T, N>& arr, const T& value) {
+            for (std::size_t i = 0; i < N; ++i) {
+                arr[i] = value;
+            }
+        }
+
         /**
          * Linear interpolation function
          * @param a The start value
