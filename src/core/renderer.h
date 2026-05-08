@@ -156,21 +156,6 @@ namespace GGUI{
          * and height.
          */
         extern void updateMaxWidthAndHeight();
-            
-        /**
-         * @brief Queries and appends new input records to the existing buffered input.
-         *
-         * This function reads input records from the console and appends them to the 
-         * existing buffered input which has not yet been processed. It uses the previous 
-         * size of the raw input buffer to determine the starting point for new input records.
-         *
-         * @note The function ensures that negative numbers do not create overflows by 
-         *       using the maximum of the remaining capacity and the total capacity.
-         *
-         * @param None
-         * @return None
-         */
-        extern void queryInputs();
 
         extern void SignalThreadTermination();
 

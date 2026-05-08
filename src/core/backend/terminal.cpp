@@ -16,38 +16,13 @@ namespace GGUI {
             extern bitMask<features> probe();
         }
 
-        namespace INTERNAL {
-
-            configuration::configuration() {
-                // Hardware input: translate CR->NL, enable UTF-8
-                iflag = bitMask<inputFlags>(inputFlags::TRANSLATE_CR_TO_NL_ON_INPUT) | inputFlags::INPUT_IS_UTF8;
-
-                // Hardware output: translate NL->CR+NL (standard cooked output)
-                oflag = bitMask<outputFlags>(outputFlags::ENABLE_ALL_POSTPROCESSING) | outputFlags::TRANSLATE_NEWLINE_TO_CARRIAGE_RETURN_NEWLINE;
-
-                // Hardware line: 8-bit chars, enable receiver, ignore modem lines
-                cflag = bitMask<hardwareControlFlags>(hardwareControlFlags::CHARACTER_SIZE_8_DATA_BITS) | hardwareControlFlags::CHARACTER_READ_ENABLE | hardwareControlFlags::CONTROL_LOCAL_IGNORE_MODEM_STATUS_LINES;
-
-                modes.set(ecma::table::mode::presets::CRM_CONTROL);      // control chars processed (not treated as graphic)
-                modes.set(ecma::table::mode::presets::SRM_MONITOR);      // echo on (locally entered data is imaged)
-                modes.set(ecma::table::mode::presets::KAM_ENABLED);      // keyboard active (Ctrl+C still generates SIGINT)
-
-                cc_chars[(size_t)specialCharacterIndicies::NON_CANONICAL_MINIMUM_BYTES_BEFORE_READ]  = 1;      // return after 1 byte
-                cc_chars[(size_t)specialCharacterIndicies::NON_CANONICAL_READ_TIMEOUT] = 0;      // no timeout
-
-                ispeed = hardwareControlFlags::BAUD_9600;
-                ospeed = hardwareControlFlags::BAUD_9600;
-            }
-        }
-        
         device currentStates;
         device previousStates;  // Used for to time how long buttons are held down for.
         query inputQuery;
         bitMask<features> enabledFeatures;
-        INTERNAL::configuration currentConfiguration;
-        INTERNAL::configuration previousConfiguration;
 
         void init() {
+            // The following code is for nominal use of GGUI via Unix/Windows terminal emulators. TODO: enable direct /dev/ ral Terminal device contact.
             enabledFeatures = fetchIOPermissions();
 
             // Check what permissions we have
@@ -66,26 +41,13 @@ namespace GGUI {
                 GGUI::INTERNAL::LOGGER::log("INFO: Non-interactive mode detected.");
             }
 
-            // Clear configurations for safety:
-            previousConfiguration = INTERNAL::configuration();
-            currentConfiguration = INTERNAL::configuration();
-
-            if (!snapshot(previousConfiguration)) {     // Load checkpoint
+            if (!snapshot()) {     // Load checkpoint
                 GGUI::INTERNAL::LOGGER::log("ERROR: Failed to snapshot terminal configuration!");
                 return;
-            } else if (!apply(currentConfiguration)) {  // Apply preferences
+            } else if (!apply()) {  // Apply preferences
                 GGUI::INTERNAL::LOGGER::log("ERROR: Failed to apply terminal configuration!");
                 return;
             }
-
-            startProbing();
-        }
-
-        // Probes what ECMA and private DEC features are available
-        void startProbing() {
-            enabledFeatures |= ecma::probe();
-            enabledFeatures |= dec::probe();
-            // ...
         }
 
         extern void platformDeinit();
@@ -100,8 +62,46 @@ namespace GGUI {
             platformDeinit();
         }
 
+        // Helper function to automatically check whether the enum does not belong to the activates set.
+        template<typename T, typename... Vs> bool contains(const std::variant<Vs...>& v, T value) {
+            // static_assert that T is actually one of the variant's types
+            static_assert((std::is_same_v<T, Vs> || ...),  "T is not a member of this variant");
+            const auto* p = std::get_if<T>(&v);
+            return p && *p == value;
+        }
+
         void parseInput() {
             // Parses input based on modular features, each brought by their own respective flag.
+
+            // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
+            for (auto sequence : ecma::sequence::parse(std::string_view(inputQuery.buffer.data(), inputQuery.size))) {
+
+                switch (sequence->getType()) {
+
+                    case ecma::sequence::types::GRAPHICAL_CHARACTER: {
+                        currentStates.keyboard[static_cast<ecma::sequence::graphicalCharacter*>(sequence)->getValue()] = device::button(true);   // Pressed
+                        break;
+                    } case ecma::sequence::types::CSI: {
+                        auto csi = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(sequence);
+                        auto tail = csi->getTail().getFinalByte();
+
+                        if (contains(tail, ecma::table::finalWithoutIntermediate::CUU)) {
+                            currentStates.mouse.position += IVector2(0, -1);   // Cursor Up
+                        } else if (contains(tail, ecma::table::finalWithoutIntermediate::CUD)) {
+                            currentStates.mouse.position += IVector2(0, 1);    // Cursor Down
+                        } else if (contains(tail, ecma::table::finalWithoutIntermediate::CUF)) {
+                            currentStates.mouse.position += IVector2(1, 0);    // Cursor Forward
+                        } else if (contains(tail, ecma::table::finalWithoutIntermediate::CUB)) {
+                            currentStates.mouse.position += IVector2(-1, 0);   // Cursor Backward
+                        }
+
+                        break;
+                    }
+                    default:
+                        break;
+                }
+
+            }
         }
 
         void postInputs() {

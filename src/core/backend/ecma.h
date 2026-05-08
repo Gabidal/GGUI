@@ -360,7 +360,8 @@ namespace GGUI {
                     SINGLE_BYTE,
                     INDEPENDENT_FUNCTION,
                     CSI,
-                    STRING
+                    STRING,
+                    GRAPHICAL_CHARACTER
                 };
 
                 // Represents the start of all possible sequences, be it primary or secondary set fuctions. C0/C1 ***
@@ -439,16 +440,19 @@ namespace GGUI {
                     postfixType getFinalByte() const { return tail.getFinalByte(); }
                 };
 
+                // Simple helper to clean some code
+                using CSI_postfixType = postfix<
+                    std::variant<
+                        table::finalWithoutIntermediate,
+                        table::finalWithIntermediate
+                    >
+                >;
+
                 template<typename containerType>
                 class control : public prefix {
                 protected:
                     std::vector<containerType> parameters;                          // Each range between: 03/00 - 03/15, delimited by 03/11 (';')
-                    postfix<
-                        std::variant<
-                            table::finalWithoutIntermediate,
-                            table::finalWithIntermediate
-                        >
-                    > finalByte;
+                    CSI_postfixType finalByte;
                 public:
                     control(
                         std::vector<containerType> params,
@@ -471,12 +475,7 @@ namespace GGUI {
 
                     control(
                         std::vector<containerType> params,
-                        postfix<
-                            std::variant<
-                                table::finalWithoutIntermediate,
-                                table::finalWithIntermediate
-                            >
-                        > tail
+                        CSI_postfixType tail
                     ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(tail) {}
 
                     /**
@@ -511,6 +510,8 @@ namespace GGUI {
                         result.parameters = params;
                         return result;
                     }
+
+                    CSI_postfixType getTail() const { return finalByte; }
                 };
 
                 // APC, DCS, OSC, PM or SOS
@@ -529,6 +530,19 @@ namespace GGUI {
                     ) : prefix(delimeter, types::STRING), terminator(table::C1::ST) {}
 
                     std::string toString() const override;
+                };
+
+                class graphicalCharacter : public prefix {
+                protected:
+                    uint8_t character;     // In range of 00/00 to 07/15
+                public:
+                    graphicalCharacter(uint8_t charCode) : prefix(table::C0::NUL, types::GRAPHICAL_CHARACTER), character(charCode) {}
+
+                    std::string toString() const override {
+                        return std::string(1, static_cast<char>(character));
+                    }
+
+                    uint8_t getValue() const { return character; } 
                 };
 
                 std::vector<prefix*> parse(std::string_view input);

@@ -267,8 +267,9 @@ namespace GGUI {
                                     }
                                 }
                             } else if (table::contains<table::C1>(input[i]))  header = new prefix(static_cast<table::C1>(input[i]));
-                            else {  // header == nullptr
-                                continue;   // Probably just a graphical character
+                            else {  // header == nullptr => means this is a graphical character
+                                result.push_back(new graphicalCharacter(input[i]));
+                                continue;   // skip the rest of the loop and move to the next byte
                             }
                             // ----------------------------------------------------------------
 

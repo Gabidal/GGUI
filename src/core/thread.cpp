@@ -3,6 +3,8 @@
 #include "./utils/fileStreamer.h"
 #include "./utils/settings.h"
 
+#include "./backend/terminal.h"
+
 #include "./utils/drm.h"
 
 #include <thread>
@@ -258,7 +260,7 @@ namespace GGUI{
                 }
                 else {
                     // Wait for user input.
-                    queryInputs();
+                    terminal::queryInputs();
                 }
 
                 pauseGGUI([&](){
@@ -269,7 +271,7 @@ namespace GGUI{
                     }
                     else {
                         // Translate the Queried inputs.
-                        Translate_Inputs();
+                        terminal::parseInput();
                     }
 
                     // Translate the movements thingies to better usable for user.

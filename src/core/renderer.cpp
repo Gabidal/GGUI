@@ -862,40 +862,6 @@ namespace GGUI{
             return Result;
         }
 
-        /**
-         * @brief Waits for user input and stores it in the Raw_Input array.
-         * @details This function waits for user input and stores it in the Raw_Input array. It is called from the event loop.
-         *          It is also the function that is called as soon as possible and gets stuck awaiting for the user input.
-         */
-        void queryInputs(){
-            // If stdin isn't a TTY (e.g., piped/timeout), read() may return 0 (EOF) repeatedly; avoid spinning.
-            if (!STDIN_IS_TTY) {
-                // Use poll to wait briefly for readability; if not readable, sleep a bit to avoid busy-loop.
-                struct pollfd pollFileDescriptor;
-                pollFileDescriptor.fd = STDIN_FILENO;
-                pollFileDescriptor.events = POLLIN;
-                pollFileDescriptor.revents = 0;
-
-                constexpr nfds_t  fileDescriptorCount = 1;
-
-                if (poll(
-                    &pollFileDescriptor,
-                    fileDescriptorCount,
-                    TIME::SECOND    // Max allowed wait time, could be replaced with -1, to wait as long as needed.
-                ) <= 0) {
-                    // No data; avoid spinning
-                    Raw_Input_Size = 0;
-                    return;
-                }
-            }
-
-            Raw_Input_Size = read(STDIN_FILENO, Raw_Input, Raw_Input_Capacity);
-            if (Raw_Input_Size <= 0) {
-                // EOF or error; normalize to 0 to signal no input
-                Raw_Input_Size = 0;
-            }
-        }
-
         enum class VTTermModifiers{
             SHIFT       = 1 << 0,
             ALT         = 1 << 1,

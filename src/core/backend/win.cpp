@@ -149,7 +149,7 @@ namespace GGUI {
             }
         };
 
-        void waitForInput() {
+        void queryInputs() {
             // Read the console input and store it in inputQuery.
             ReadConsoleInput(
                 GLOBAL_STD_INPUT_HANDLE,
