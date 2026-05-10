@@ -76,27 +76,8 @@ namespace GGUI {
             // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
             for (auto sequence : ecma::sequence::parse(std::string_view(inputQuery.buffer.data(), inputQuery.size))) {
 
+                // This is likely redundant, since all operations have their own handler to process the functionality of the specific operation
                 switch (sequence->getType()) {
-
-                    case ecma::sequence::types::GRAPHICAL_CHARACTER: {
-                        currentStates.keyboard[static_cast<ecma::sequence::graphicalCharacter*>(sequence)->getValue()] = device::button(true);   // Pressed
-                        break;
-                    } case ecma::sequence::types::CSI: {
-                        auto csi = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(sequence);
-                        auto tail = csi->getTail().getFinalByte();
-
-                        if (contains(tail, ecma::table::finalWithoutIntermediate::CUU)) {
-                            currentStates.mouse.position += IVector2(0, -1);   // Cursor Up
-                        } else if (contains(tail, ecma::table::finalWithoutIntermediate::CUD)) {
-                            currentStates.mouse.position += IVector2(0, 1);    // Cursor Down
-                        } else if (contains(tail, ecma::table::finalWithoutIntermediate::CUF)) {
-                            currentStates.mouse.position += IVector2(1, 0);    // Cursor Forward
-                        } else if (contains(tail, ecma::table::finalWithoutIntermediate::CUB)) {
-                            currentStates.mouse.position += IVector2(-1, 0);   // Cursor Backward
-                        }
-
-                        break;
-                    }
                     default:
                         break;
                 }

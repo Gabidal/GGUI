@@ -92,7 +92,7 @@ namespace GGUI{
 
                     // Skip rendering until DRM sends us the window size.
                     if (!FirstDRMRender) {
-                        abstractFrameBuffer = &main->render();
+                        terminal::currentStates.screen.cellBuffer = &main->render();
 
                         if (!identicalFrame){
                             if (SETTINGS::enableDRM) {

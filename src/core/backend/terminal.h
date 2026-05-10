@@ -8,6 +8,7 @@
 #include "ascii.h"
 #include "ecma.h"
 #include "../utils/types.h"
+#include "../utils/utf.h"
 
 namespace GGUI {
     /**
@@ -62,6 +63,12 @@ namespace GGUI {
             } mouse;
 
             std::array<button, (size_t)ASCII::table::MAX_VALUE> keyboard;
+
+            struct {
+                IVector2 cursor;
+                IVector2 dimensions;
+                std::vector<UTF>* cellBuffer = nullptr;
+            } screen;
         };
 
         // Read from this to get current device states of the terminal peripherals.

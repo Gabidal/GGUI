@@ -124,8 +124,8 @@ namespace GGUI {
                             table::finalWithIntermediate
                         >> tail(parseintermediates(input.substr(intermediateAt)), finalFunction);
 
-                        // need clarification?
-                        size_t earliestNonParametricIndex = std::min(finalFunctionAt, intermediateAt);
+                        // std::max(intermediateAt, 1) is done, because the actual code CSI is at index 0, and intermediateAt == 0, means no intermediate present, thus minimum offset +1
+                        size_t earliestNonParametricIndex = std::min(finalFunctionAt, std::max(intermediateAt, (size_t)1));
 
                         std::vector<sequence::parameter::numeric> params;
 
@@ -168,76 +168,6 @@ namespace GGUI {
 
                     } else {
                         return {nullptr, 0};
-                    }
-                }
-
-                // Scans for ecma::sequences::shiftFunctions::* members
-                void operateShift(prefix* opcode) {
-                    auto layoutType = table::configuration::layout::graphical::type::A;     // TODO: Dynamically adjust this.
-
-                    // First we need to determine the opcode type, via it's header value, C0 or C1 shift function:
-                    if (opcode->getType() == sequence::types::SINGLE_BYTE) {
-                        // C1{SS2, SS3}, C0{LS0, LS1, SI, SO}, 
-                        if (opcode->contains(table::C1::SS2)) {
-                            pageState.load(
-                                table::configuration::repertoire::G2, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                                table::configuration::lifetime::types::TEMPORARY
-                            );
-                        } else if (opcode->contains(table::C1::SS3)) {
-                            pageState.load(
-                                table::configuration::repertoire::G3, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                                table::configuration::lifetime::types::TEMPORARY
-                            );
-                        } else if (opcode->contains(table::C0::LS0)) {
-                            pageState.load(
-                                table::configuration::repertoire::G0, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                                table::configuration::lifetime::types::LOCKING
-                            );
-                        } else if (opcode->contains(table::C0::LS1)) {
-                            pageState.load(
-                                table::configuration::repertoire::G1, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                                table::configuration::lifetime::types::LOCKING
-                            );
-                        }
-                    } else if (opcode->getType() == sequence::types::INDEPENDENT_FUNCTION) {
-                        // C0{ESC{LS1R, LS2, LS2R, LS3, LS3R}}
-                        auto independentFunction = static_cast<sequence::function<table::independentFunctions>*>(opcode);
-
-                        if (independentFunction->getFinalByte() == table::independentFunctions::LS1R) {
-                            pageState.load(
-                                table::configuration::repertoire::G1, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
-                                table::configuration::lifetime::types::LOCKING
-                            );
-                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS2) {
-                            pageState.load(
-                                table::configuration::repertoire::G2, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                                table::configuration::lifetime::types::LOCKING
-                            );
-                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS2R) {
-                            pageState.load(
-                                table::configuration::repertoire::G2, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
-                                table::configuration::lifetime::types::LOCKING
-                            );
-                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS3) {
-                            pageState.load(
-                                table::configuration::repertoire::G3, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                                table::configuration::lifetime::types::LOCKING
-                            );
-                        } else if (independentFunction->getFinalByte() == table::independentFunctions::LS3R) {
-                            pageState.load(
-                                table::configuration::repertoire::G3, 
-                                table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
-                                table::configuration::lifetime::types::LOCKING
-                            );
-                        }
                     }
                 }
 
