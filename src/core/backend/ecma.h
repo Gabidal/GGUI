@@ -41,6 +41,7 @@ namespace GGUI {
 
             // Extern pointing primary pages:
             // These are primarily made so that the sequences::base's are able to flash their contents into these primary pages.
+            // TODO: maybe make these ptr, so that initialization is on demand.
             extern table::configuration::page C0;
             extern table::configuration::page C1;
             extern table::configuration::page G0;
@@ -580,6 +581,8 @@ namespace GGUI {
              */
             using customSequenceHandler = void(*)(sequence::prefix*);                                   // Odd positioning, but will do for now.
 
+            constexpr customSequenceHandler unSupported = [](sequence::prefix*){ return; };
+
             namespace table {
 
                 // This is from ECMA-35
@@ -728,6 +731,8 @@ namespace GGUI {
                     struct cell {
                         customSequenceParser parser;
                         customSequenceHandler handler;
+
+                        constexpr cell(customSequenceHandler h = unSupported, customSequenceParser p = sequence::defaultSequenceParser) : parser(p), handler(h) {}
                     };
 
                     /**
@@ -1391,8 +1396,6 @@ namespace GGUI {
 
             namespace sequences {
 
-                customSequenceHandler unSupported = [](sequence::prefix*){ return; };
-
                 template<
                     typename codeType                   = sequence::prefix,
                     typename parameterType              = sequence::parameter::numeric,
@@ -1408,8 +1411,8 @@ namespace GGUI {
                     base(
                         codeType code,
                         std::array<parameterType, paramCount> defaultParamValues = {},
-                        table::configuration::page* page = nullptr,     // Give empty for automatic page detection
-                        table::configuration::cell functionality = {sequence::defaultSequenceParser, unSupported }
+                        table::configuration::cell functionality = {},
+                        table::configuration::page* page = nullptr     // Give empty for automatic page detection
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
                         if (page == nullptr) {  // Automatic page deduction
                             // All codes must be that of prefix
@@ -1562,54 +1565,64 @@ namespace GGUI {
                 }
 
                 namespace shiftFunctions {
+                    extern void operateShift_LS0(sequence::prefix*);
+                    extern void operateShift_LS1(sequence::prefix*);
+                    extern void operateShift_LS1R(sequence::prefix*);
+                    extern void operateShift_LS2(sequence::prefix*);
+                    extern void operateShift_LS2R(sequence::prefix*);
+                    extern void operateShift_LS3(sequence::prefix*);
+                    extern void operateShift_LS3R(sequence::prefix*);
+                    extern void operateShift_SS2(sequence::prefix*);
+                    extern void operateShift_SS3(sequence::prefix*);
+
                     /**
                      * @brief LS0 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed.
                      * @example `00/15`
                      */
-                    inline auto LOCKING_SHIFT_ZERO = base(table::C0::LS0);
+                    inline auto LOCKING_SHIFT_ZERO = base(table::C0::LS0, {}, {sequences::shiftFunctions::operateShift_LS0});
 
                     /**
                      * @brief LS1 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed.
                      * @example `00/14`
                      */
-                    inline auto LOCKING_SHIFT_ONE = base(table::C0::LS1);
+                    inline auto LOCKING_SHIFT_ONE = base(table::C0::LS1, {}, {sequences::shiftFunctions::operateShift_LS1});
 
                     /**
                      * @brief LS1R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `07/14`
                      */
-                    inline auto LOCKING_SHIFT_ONE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS1R);
+                    inline auto LOCKING_SHIFT_ONE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS1R, {}, {sequences::shiftFunctions::operateShift_LS1R});
 
                     /**
                      * @brief LS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `01/11 06/14`
                      */
-                    inline auto LOCKING_SHIFT_TWO = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2);
+                    inline auto LOCKING_SHIFT_TWO = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2, {}, {sequences::shiftFunctions::operateShift_LS2});
 
                     /**
                      * @brief LS2R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed.
                     * @example `01/11 07/13`
                      */
-                    inline auto LOCKING_SHIFT_TWO_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2R);
+                    inline auto LOCKING_SHIFT_TWO_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2R, {}, {sequences::shiftFunctions::operateShift_LS2R});
 
                     /**
                      * @brief LS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `01/11 06/15`
                      */
-                    inline auto LOCKING_SHIFT_THREE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3);
+                    inline auto LOCKING_SHIFT_THREE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3, {}, {sequences::shiftFunctions::operateShift_LS3});
 
                     /**
                      * @brief LS3R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `01/11 07/12`
                      */
-                    inline auto LOCKING_SHIFT_THREE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3R);
+                    inline auto LOCKING_SHIFT_THREE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3R, {}, {sequences::shiftFunctions::operateShift_LS3R});
 
                     /**
                      * @brief SI is used for code extension purposes. It causes the meanings of the bit combinations following it in the
@@ -1630,14 +1643,14 @@ namespace GGUI {
                      * the data stream to be changed. 
                      * @example `08/14` or `01/11 04/14`
                      */
-                    inline auto SS2 = base(table::C1::SS2);
+                    inline auto SS2 = base(table::C1::SS2, {}, {sequences::shiftFunctions::operateShift_SS2});
 
                     /**
                      * @brief SS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `08/15` or `01/11 04/15` 
                      */
-                    inline auto SS3 = base(table::C1::SS3);
+                    inline auto SS3 = base(table::C1::SS3, {}, {sequences::shiftFunctions::operateShift_SS3});
 
                 }
 

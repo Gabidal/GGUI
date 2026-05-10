@@ -69,7 +69,7 @@ namespace GGUI {
 
                         size_t tmp = 0;     // Useless in this case, since we already know the sizes.
                         result.push_back({
-                            input.substr(start, end), 
+                            input.substr(start + 1, end),   // +1 to skip the delimeter itself. 
                             tmp
                         });
                     }
@@ -316,6 +316,89 @@ namespace GGUI {
 
                 // return the parsed area
                 return parsedArea;
+            }
+
+            namespace sequences {
+                namespace delimiters {}
+
+                namespace introducers {}
+
+                namespace shiftFunctions {
+                    auto layoutType = table::configuration::layout::graphical::type::A;     // TODO: Dynamically adjust this.
+
+                    void operateShift_LS0(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G0, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            table::configuration::lifetime::types::LOCKING
+                        );
+                    }
+
+                    void operateShift_LS1(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G1, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            table::configuration::lifetime::types::LOCKING
+                        );
+                    }
+
+                    void operateShift_SS2(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G2, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            table::configuration::lifetime::types::TEMPORARY
+                        );
+                    }
+
+                    void operateShift_SS3(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G3, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            table::configuration::lifetime::types::TEMPORARY
+                        );
+                    }
+
+                    void operateShift_LS1R(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G1, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                            table::configuration::lifetime::types::LOCKING
+                        );
+                    }
+
+                    void operateShift_LS2(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G2, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            table::configuration::lifetime::types::LOCKING
+                        );
+                    }
+
+                    void operateShift_LS2R(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G2, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                            table::configuration::lifetime::types::LOCKING
+                        );
+                    }
+
+                    void operateShift_LS3(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G3, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            table::configuration::lifetime::types::LOCKING
+                        );
+                    }
+
+                    void operateShift_LS3R(sequence::prefix*) {
+                        pageState.load(
+                            table::configuration::repertoire::G3, 
+                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                            table::configuration::lifetime::types::LOCKING
+                        );
+                    }
+                    
+                }
             }
         }
     }
