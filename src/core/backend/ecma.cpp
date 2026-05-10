@@ -4,6 +4,10 @@
 namespace GGUI {
     namespace terminal {
         namespace ecma {
+            table::configuration::page C0;
+            table::configuration::page C1;
+            table::configuration::page G0;
+
             static table::configuration::manager pageState;
 
             namespace sequence {
@@ -237,6 +241,51 @@ namespace GGUI {
                     }
                 }
 
+                std::pair<size_t, prefix*> defaultSequenceParser(std::string_view input) {
+                    prefix* result = nullptr;
+
+                    prefix* header = nullptr;
+                    size_t i = 0;
+
+                    // Header prefetch ------------------------------------------------
+                    if (table::contains<table::C0>(input[i])) {
+                        header = new prefix(static_cast<table::C0>(input[i]));
+
+                        // We can skip ESC and set header to point into C1 if possible
+                        if (header->contains(table::C0::ESC)) {     // Now we can check if i+1 contains a C1 bytecode
+                            i++;
+
+                            // We can promote the ECS + C1 code into a single 8-bit C1 bytecode
+                            if (i < input.size() && table::contains<table::C1>(input[i])) {
+                                header = new prefix(static_cast<table::C1>(input[i]));
+                            }
+                        }
+                    } else if (table::contains<table::C1>(input[i]))  header = new prefix(static_cast<table::C1>(input[i]));
+                    else {  // header == nullptr => means this is a graphical character
+                        result = new graphicalCharacter(input[i]);
+                    }
+                    // ----------------------------------------------------------------
+
+                    // Header Extension -----------------------------------------------
+                    std::pair<prefix*, size_t> extension;
+
+                    // Now we can check for extensions of prefix type class:
+                    if (std::holds_alternative<table::C1>(header->getFunction())){
+                        extension = parsePostfixForC1(input.substr(i));
+                    } else {    // table::C0
+                        extension = parsePostfixForC0(input.substr(i));
+                    }
+
+                    // Even shifts are reported for status checks, put this after shift check to disable shift reporting.
+                    if (extension.first != nullptr) {
+                        result = extension.first;
+                        i += extension.second;
+                    }
+                    // ----------------------------------------------------------------
+
+                    return {i, result};
+                }
+
                 std::vector<prefix*> parse(std::string_view input) {
                     std::vector<prefix*> result;
 
@@ -246,56 +295,8 @@ namespace GGUI {
 
                         pageState.update();     // refresh temporary pages
 
-                        // Check if the current bytecode triggered some loaded page
-                        if (pageCallReturn.first > 0) {
-                            result.push_back(pageCallReturn.second);
-                            i += pageCallReturn.first;      // TODO: check for maybe adding -1, since the loop increases 'i' either way.
-                        } else {    // If not, then check for normal bytecode interpret path:
-                            prefix* header = nullptr;
-
-                            // Header prefetch ------------------------------------------------
-                            if (table::contains<table::C0>(input[i])) {
-                                header = new prefix(static_cast<table::C0>(input[i]));
-
-                                // We can skip ESC and set header to point into C1 if possible
-                                if (header->contains(table::C0::ESC)) {     // Now we can check if i+1 contains a C1 bytecode
-                                    i++;
-
-                                    // We can promote the ECS + C1 code into a single 8-bit C1 bytecode
-                                    if (i < input.size() && table::contains<table::C1>(input[i])) {
-                                        header = new prefix(static_cast<table::C1>(input[i]));
-                                    }
-                                }
-                            } else if (table::contains<table::C1>(input[i]))  header = new prefix(static_cast<table::C1>(input[i]));
-                            else {  // header == nullptr => means this is a graphical character
-                                result.push_back(new graphicalCharacter(input[i]));
-                                continue;   // skip the rest of the loop and move to the next byte
-                            }
-                            // ----------------------------------------------------------------
-
-
-                            // Header Extension -----------------------------------------------
-                            std::pair<prefix*, size_t> extension;
-
-                            // Now we can check for extensions of prefix type class:
-                            if (std::holds_alternative<table::C1>(header->getFunction())){
-                                extension = parsePostfixForC1(input.substr(i));
-                            } else {    // table::C0
-                                extension = parsePostfixForC0(input.substr(i));
-                            }
-
-                            // Even shifts are reported for status checks, put this after shift check to disable shift reporting.
-                            if (extension.first != nullptr) {
-                                result.push_back(extension.first);
-                                i += extension.second;
-                            }
-                            // ----------------------------------------------------------------
-
-
-                            // Shift recording ------------------------------------------------
-                            operateShift(extension.first);
-                            // ----------------------------------------------------------------
-                        }
+                        result.push_back(pageCallReturn.second);
+                        i += pageCallReturn.first;      // TODO: check for maybe adding -1, since the loop increases 'i' either way.
                     }
                     return result;
                 }
@@ -304,15 +305,17 @@ namespace GGUI {
             std::pair<size_t, sequence::prefix*> table::configuration::manager::interpret(std::string_view input) {
                 auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
 
-                // Skip empty jump cells
-                if (currentRepertoire == repertoire::NONE) return {0, nullptr};
+                // Jump through and fetch the page cell
+                table::configuration::cell currentCell = pages[static_cast<size_t>(currentRepertoire)].get(input);
 
-                // Jump through the page cell
-                return pages[static_cast<size_t>(currentRepertoire)].call(input);
-            }
+                // Call the sequence parser
+                auto parsedArea = currentCell.parser(input);
 
-            bitMask<features> probe() {
-                return {};
+                // Call the functionality given by the parser
+                currentCell.handler(parsedArea.second);
+
+                // return the parsed area
+                return parsedArea;
             }
         }
     }

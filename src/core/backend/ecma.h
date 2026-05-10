@@ -34,6 +34,18 @@ namespace GGUI {
         namespace ecma {
 
             namespace table {
+                namespace configuration {
+                    class page;
+                }
+            }
+
+            // Extern pointing primary pages:
+            // These are primarily made so that the sequences::base's are able to flash their contents into these primary pages.
+            extern table::configuration::page C0;
+            extern table::configuration::page C1;
+            extern table::configuration::page G0;
+
+            namespace table {
                 constexpr uint8_t tableRows = 16;
 
                 constexpr uint8_t toInt(uint8_t column, uint8_t row) {
@@ -388,6 +400,14 @@ namespace GGUI {
                     constexpr T get() const {
                         return std::get<T>(function);
                     }
+
+                    constexpr uint8_t getAsInt() const {
+                        if (std::holds_alternative<table::C0>(function)) {
+                            return static_cast<uint8_t>(std::get<table::C0>(function));
+                        } else {
+                            return static_cast<uint8_t>(std::get<table::C1>(function));
+                        }
+                    }
                 };
 
                 std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
@@ -545,8 +565,20 @@ namespace GGUI {
                     uint8_t getValue() const { return character; } 
                 };
 
+                std::pair<size_t, prefix*> defaultSequenceParser(std::string_view input);
+                
                 std::vector<prefix*> parse(std::string_view input);
             }
+
+            /** 
+             * @brief Since this can be a 3'rd party function, we do not know the incoming sequence length, so we need to know it afterwards to skip index.
+             */
+             using customSequenceParser = std::pair<size_t, sequence::prefix*>(*)(std::string_view);     // Odd positioning, but will do for now.
+             
+             /** 
+             * @brief This function will assume that the global `table::configuration::manager pageState` is the correct state machine to modify.
+             */
+            using customSequenceHandler = void(*)(sequence::prefix*);                                   // Odd positioning, but will do for now.
 
             namespace table {
 
@@ -671,10 +703,7 @@ namespace GGUI {
                         G3,         // LS3, SS3, LS3R, Graphic set 3 (left-side)
 
                         __max,       // Sentinel value for array sizing
-
-                        NONE = UINT8_MAX,       // Contains non-routable empty cells 
                     };
-
                     
                     /**
                      * @brief Lifetime management for character pages.
@@ -696,11 +725,10 @@ namespace GGUI {
                         };
                     }
 
-                    /** 
-                     * @brief Function pointer type for summonable cell handlers.
-                     * Each cell in a page can reference a handler function that gets called when that cell is invoked.
-                     */
-                    using functionPtr = std::pair<size_t, sequence::prefix*>(*)(std::string_view);          
+                    struct cell {
+                        customSequenceParser parser;
+                        customSequenceHandler handler;
+                    };
 
                     /**
                      * @brief A page represents a collection of callable cells (handlers).
@@ -708,7 +736,7 @@ namespace GGUI {
                     class page {
                     protected:
                         std::array<
-                            functionPtr, 
+                            cell, 
                             layout::bounds({C0::NUL}, {7, 15}).getSize()    // full 96^n'th support
                         > cells;
 
@@ -729,10 +757,10 @@ namespace GGUI {
                          * 
                          * The position is converted to relative coordinates based on the page's current range.
                          */
-                        constexpr void add(functionPtr cell, location absolutePos) { cells[absolutePos.getRelative(status.range.get().first).compute()] = cell; }
+                        constexpr void add(cell customFunctions, location absolutePos) { cells[absolutePos.getRelative(status.range.get().first).compute()] = customFunctions; }
 
                         /**
-                         * @brief Calls the cell handler at the specified position.
+                         * @brief Gets the cell handler at the specified position.
                          * 
                          * @param whole_buffer The position to invoke from first character (will be converted to relative coordinates)
                          * 
@@ -741,12 +769,12 @@ namespace GGUI {
                          * 
                          * NOTE: whole buffer is given instead of single character, for potential buffer stream reader, function handlers.
                          */
-                        constexpr std::pair<size_t, sequence::prefix*> call(std::string_view whole_buffer) {
+                        constexpr cell get(std::string_view whole_buffer) {
                             // Sanitize position to work in relative space
                             auto pos = location(whole_buffer.front()).getRelative(status.range.get().first);
                             auto currentCell = cells[pos.compute()];
 
-                            return currentCell(whole_buffer);
+                            return currentCell;
                         }
 
                         /**
@@ -823,12 +851,15 @@ namespace GGUI {
                                 p.unload();
                             }
 
-                            // Reset mapping
-                            GGUI::INTERNAL::constexprFill(map, repertoire::NONE);
-
                             // Load C0
                             pages[static_cast<size_t>(repertoire::C0)].load({
                                 layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C0),
+                                lifetime::types::LOCKING
+                            });
+
+                            // Load G0
+                            pages[static_cast<size_t>(repertoire::G0)].load({
+                                layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A),
                                 lifetime::types::LOCKING
                             });
 
@@ -880,10 +911,8 @@ namespace GGUI {
                          *
                          */
                         constexpr void flush() {
-                            size_t skip_empty_page = static_cast<size_t>(repertoire::NONE) + 1;
-
                             // Go through the pages
-                            for (size_t i = skip_empty_page; i < static_cast<size_t>(repertoire::__max); i++) {
+                            for (size_t i = 0; i < static_cast<size_t>(repertoire::__max); i++) {
                                 auto& page = pages[i];
                                 
                                 // Skip unloaded
@@ -1362,6 +1391,8 @@ namespace GGUI {
 
             namespace sequences {
 
+                customSequenceHandler unSupported = [](sequence::prefix*){ return; };
+
                 template<
                     typename codeType                   = sequence::prefix,
                     typename parameterType              = sequence::parameter::numeric,
@@ -1376,8 +1407,27 @@ namespace GGUI {
 
                     base(
                         codeType code,
-                        std::array<parameterType, paramCount> defaultParamValues = {}
-                    ) : function(code), parameterDefaultValue(defaultParamValues) {}
+                        std::array<parameterType, paramCount> defaultParamValues = {},
+                        table::configuration::page* page = nullptr,     // Give empty for automatic page detection
+                        table::configuration::cell functionality = {sequence::defaultSequenceParser, unSupported }
+                    ) : function(code), parameterDefaultValue(defaultParamValues) {
+                        if (page == nullptr) {  // Automatic page deduction
+                            // All codes must be that of prefix
+                            auto prefixBase = static_cast<sequence::prefix>(code);
+
+                            auto func = prefixBase.getFunction();
+
+                            if (std::holds_alternative<table::C0>(func)) {
+                                page = &C0;
+                            } else if (std::holds_alternative<table::C1>(func)) {
+                                page = &C1;
+                            } else {
+                                page = &G0;
+                            }
+                        }
+
+                        page->add(functionality, static_cast<sequence::prefix>(code).getAsInt());
+                    }
 
                     template<
                         specialTypes T = parameterExtension,
