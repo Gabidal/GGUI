@@ -900,15 +900,13 @@ namespace GGUI {
                          * Should be called for each read-byte to maintain proper page state management.
                          */
                         constexpr void update() {
-                            for (auto& p : pages) {
+                            flush();    // Flush current iteration of temporaries and other goodies, next iteration after interpretation temporary is unloaded fully.
 
-                                // Unload any page that was loaded for temporary use.
+                            for (auto& p : pages) {
                                 if (p.getLifetime().type == lifetime::types::TEMPORARY) {
                                     p.unload(); // When this is UNLOADED, the flush() will override this slot with the new value automatically.
                                 }
                             }
-
-                            flush();
                         }
 
                         /**
