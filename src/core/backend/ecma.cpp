@@ -4,9 +4,9 @@
 namespace GGUI {
     namespace terminal {
         namespace ecma {
-            table::configuration::page C0;
-            table::configuration::page C1;
-            table::configuration::page G0;
+            table::configuration::page C0(table::configuration::layout::functional::getRelativeFunctionalPageLayout(table::configuration::layout::functional::type::C0));
+            table::configuration::page C1(table::configuration::layout::functional::getRelativeFunctionalPageLayout(table::configuration::layout::functional::type::C1));
+            table::configuration::page G0(table::configuration::layout::graphical::getRelativeGraphicalPageLayout(table::configuration::layout::graphical::type::B));
 
             static table::configuration::manager pageState;
 
@@ -234,12 +234,18 @@ namespace GGUI {
 
             std::pair<size_t, sequence::prefix*> table::configuration::manager::interpret(std::string_view input) {
                 auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
+                auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
 
                 // Jump through and fetch the page cell
-                table::configuration::cell currentCell = pages[static_cast<size_t>(currentRepertoire)].get(input);
+                table::configuration::cell currentCell = currentPage.get(input);
 
                 // Call the sequence parser
                 auto parsedArea = currentCell.parser(input);
+
+                if (parsedArea.first > 1) { // Probably hit into openingDelimiters::CSI default parser, which will return a control sequence as a prefix ptr.
+                    // For multi-byte handlers we need to use the header function * pageWidth + tail function byte offset to call the correct cell handler
+                    currentCell = currentPage.get(input, parsedArea.second->getTailAsInt());
+                }
 
                 // Call the functionality given by the parser
                 currentCell.handler(parsedArea.second);
@@ -329,6 +335,11 @@ namespace GGUI {
                     }
                     
                 }
+
+                namespace formatEffectors {
+                    
+                }
+
             }
         }
     }

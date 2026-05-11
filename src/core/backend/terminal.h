@@ -56,6 +56,11 @@ namespace GGUI {
                 signed char Scalar = 0;     // going up > 0 | going down < 0
             };
 
+            /**
+             * NOTE: This component is not part of the normal ECMA-48 nor DEC-VTxxx.
+             * Mouse position reporting comes from XTerm, the xterm.cpp module will be responsible to maintain these values of this struct.
+             * The reason why this struct is here in terminal.h instead of xterm.cpp, is because of GGDirect to be able to also send and maintain mouse position regardless of xterm support.
+             */
             struct {
                 button left, right, middle;
                 wheel scroll;               // Only for vertical
