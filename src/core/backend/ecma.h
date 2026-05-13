@@ -156,6 +156,10 @@ namespace GGUI {
                     return shiftColumns(static_cast<uint8_t>(value), columns::FOUR, false);
                 }
 
+                constexpr uint8_t removeHighestBit(uint8_t val) {
+                    return val & 0x7F;
+                }
+
                 enum class finalWithoutIntermediate : uint8_t {   // Table 3 Final Bytes of control sequences without Intermediate Bytes 
                     __min = toInt(4, 0),  // For internal automation
 
@@ -378,6 +382,41 @@ namespace GGUI {
                     GRAPHICAL_CHARACTER
                 };
 
+                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
+
+                // Represents the end of all possible sequences, *** I..I F
+                // NOTE: Only use indirectly via an inheritant class of prefix
+                template<typename finalByteType>
+                class postfix {
+                protected:
+                    std::vector<table::intermediate::identifiers> intermediates;
+                    finalByteType finalByte;
+                public:
+                    postfix(
+                        std::vector<table::intermediate::identifiers> interms = {},
+                        finalByteType Func = {}
+                    ) : intermediates(interms), finalByte(Func) {}
+
+                    std::vector<table::intermediate::identifiers> getIntermediates() const { return intermediates; }
+                    finalByteType getFinalByte() const { return finalByte; }
+
+                    void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
+                        intermediates = newInterms;
+                    }
+
+                    std::string toString() const {
+                        std::string result = "";
+
+                        for (const auto& interm : intermediates) {
+                            result += static_cast<char>(interm);
+                        }
+
+                        result += GGUI::terminal::ecma::sequence::toString(finalByte);
+
+                        return result;
+                    }
+                };
+
                 // Represents the start of all possible sequences, be it primary or secondary set fuctions. C0/C1 ***
                 // NOTE: This class does not care for 7-bit or 8-bit, will convert all 8-bit functions into 7-bit ones!
                 class prefix {
@@ -413,41 +452,7 @@ namespace GGUI {
                         }
                     }
 
-                    virtual uint8_t getTailAsInt() const { return 0; } 
-                };
-
-                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
-
-                // Represents the end of all possible sequences, *** I..I F
-                // NOTE: Only use indirectly via an inheritant class of prefix
-                template<typename finalByteType>
-                class postfix {
-                protected:
-                    std::vector<table::intermediate::identifiers> intermediates;
-                    finalByteType finalByte;
-                public:
-                    postfix(
-                        std::vector<table::intermediate::identifiers> interms,
-                        finalByteType Func
-                    ) : intermediates(interms), finalByte(Func) {}
-
-                    void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
-                        intermediates = newInterms;
-                    }
-
-                    finalByteType getFinalByte() const { return finalByte; }
-
-                    std::string toString() const {
-                        std::string result = "";
-
-                        for (const auto& interm : intermediates) {
-                            result += static_cast<char>(interm);
-                        }
-
-                        result += GGUI::terminal::ecma::sequence::toString(finalByte);
-
-                        return result;
-                    }
+                    virtual postfix<uint8_t> getPostfix() const { return {{}, 0}; }
                 };
 
                 /**
@@ -463,10 +468,8 @@ namespace GGUI {
                     function(postfix<postfixType> Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail(Tail) {}
                     function(postfixType Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail({}, Tail) {}
 
-                    postfixType getFinalByte() const { return tail.getFinalByte(); }
-
-                    uint8_t getTailAsInt() const override {
-                        return static_cast<uint8_t>(tail.getFinalByte());
+                    postfix<uint8_t> getPostfix() const override {
+                        return postfix<uint8_t>(tail.getIntermediates(), static_cast<uint8_t>(tail.getFinalByte()));
                     }
                 };
 
@@ -536,19 +539,15 @@ namespace GGUI {
 
                     // Produces a new control sequence based on this template preset
                     control<containerType> compile(std::vector<containerType> params) const {
-                        control<containerType> result = *this;
-                        result.parameters = params;
+                        control<containerType> result = *this;              // Copy contents
+                        if (!params.empty()) result.parameters = params;    // Set default params is none given
                         return result;
                     }
 
-                    CSI_postfixType getTail() const { return finalByte; }
-
-                    uint8_t getTailAsInt() const override {
-                        if (std::holds_alternative<table::finalWithoutIntermediate>(finalByte.getFinalByte())) {
-                            return static_cast<uint8_t>(std::get<table::finalWithoutIntermediate>(finalByte.getFinalByte()));
-                        } else {
-                            return static_cast<uint8_t>(std::get<table::finalWithIntermediate>(finalByte.getFinalByte()));
-                        }
+                    postfix<uint8_t> getPostfix() const override {
+                        return postfix<uint8_t>(finalByte.getIntermediates(), static_cast<uint8_t>(std::visit([](auto&& arg) -> uint8_t {
+                            return static_cast<uint8_t>(arg);
+                        }, finalByte.getFinalByte())));
                     }
                 };
 
@@ -598,6 +597,7 @@ namespace GGUI {
              */
             using customSequenceHandler = void(*)(sequence::prefix*);                                   // Odd positioning, but will do for now.
 
+            // Default do-nothing implementations, can be used when the sequence is only for parsing or handling.
             constexpr customSequenceHandler unSupported = [](sequence::prefix*){ return; };
 
             namespace table {
@@ -624,16 +624,25 @@ namespace GGUI {
                         constexpr location(intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
                         constexpr location(uint8_t raw) : column(raw / tableRows), row(raw % tableRows) {}
 
+                        // Transforms the xx/yy coordinates into usable index
                         constexpr uint8_t compute() const {
                             return table::toInt(column, row);
                         }
 
+                        // Pages are only loaded by column offset, so rows are not necessary for relative offset calculation.
+                        // And 96 vs 94 row differences are already baked into the incoming cell index, so these are not accounted for either
                         constexpr location getRelative(location parent) const {
                             return compute() - parent.column;
                         }
 
+                        // Used when the column shift is known like 7bit -> 8bit
                         constexpr location shiftToRight(columns amount) const {
                             return location(column + static_cast<uint8_t>(amount), row);
+                        }
+
+                        // Used when the highest bit is not needed for evaluation and checking it would be unnecessary
+                        constexpr location to7bit() const {
+                            return location(table::removeHighestBit(column), row);
                         }
                     };
 
@@ -653,6 +662,7 @@ namespace GGUI {
                                 };
                             }
 
+                            // Returns the actual range of the enum. Accounts zero index via +1.
                             constexpr uint16_t getSize() const {
                                 auto [lowerVal, upperVal] = get();
                                 return (upperVal - lowerVal) + 1;
@@ -745,6 +755,7 @@ namespace GGUI {
                         };
                     }
 
+                    // A simple data structure representing a cell in the character page, containing a handler and a parser for the incoming data stream
                     struct cell {
                         customSequenceParser parser;
                         customSequenceHandler handler;
@@ -758,13 +769,41 @@ namespace GGUI {
                     class page {
                     public:
                         static constexpr size_t pageWidth = layout::bounds({C0::NUL}, {7, 15}).getSize();    // full 96^n'th support
+                        static constexpr size_t pageDepth = layout::bounds({intermediate::identifiers::__min}, {intermediate::identifiers::__max}).getSize();    // full intermediate support
                     protected:
                         std::array<
                             cell, 
-                            pageWidth * pageWidth       // Access by header->func * pageWidth + finalFunction
+                            pageWidth * pageWidth * pageDepth       // Access by postfix->intermediate * pageWidth * pageWidth + header->func * pageWidth + finalFunction
                         > cells;
 
                         lifetime::base status;
+
+                        size_t getActualLocation(sequence::prefix header, sequence::postfix<uint8_t> body) {
+                            location intermediateOffset = 0;
+
+                            for (auto inter : body.getIntermediates()) {
+                                intermediateOffset = inter;
+
+                                // As the announcer is at row = zero, for distinguishing these states we add +1 to count zero index.
+                                intermediateOffset.row += 1;
+
+                                break;  // only the introducer e.g first intermediate is needed
+                            }
+
+                            assert(intermediateOffset.row < pageDepth);    // Check that the intermediate value is within the page depth
+
+                            const size_t headerByteRelativeLocationInPage = location(header.getAsInt()).getRelative(status.range.get().first).compute();
+                            assert(status.range.in(headerByteRelativeLocationInPage));    // Check that the header byte is within the loaded area 
+
+                            const size_t finalFunctionOffset = body.getFinalByte();
+                            assert(finalFunctionOffset < pageWidth);       // Check that the final function is within the page width
+
+                            const size_t actualLocation =   intermediateOffset.row * pageWidth * pageWidth +    // Intermediate variants for page variants
+                                                            headerByteRelativeLocationInPage * pageWidth +      // Final final function cell column
+                                                            finalFunctionOffset;                                // The same header function in the column
+
+                            return actualLocation;
+                        }
                     public:
                         /**
                          * @brief Default constructor initializing an empty page.
@@ -775,44 +814,34 @@ namespace GGUI {
 
                         /**
                          * @brief Adds a cell handler at the specified absolute position.
-                         * 
-                         * @param cell The function pointer to add as a cell handler
-                         * @param absolutePos The absolute position in the character map where the cell should be placed
-                         * 
-                         * The position is converted to relative coordinates based on the page's current range.
                          */
-                        constexpr void add(cell customFunctions, location absolutePos, location secondaryOffset) {
-                            const size_t relLocationAsHeight = absolutePos.getRelative(status.range.get().first).compute();
-                            const size_t relLocationAsWidth = secondaryOffset.getRelative(status.range.get().first).compute();
-
-                            const size_t actualLocation = relLocationAsWidth * pageWidth + relLocationAsHeight;
-
-                            // Check that added cell is within the lifetime area
-                            assert(status.range.in(actualLocation));
-
-                            cells[actualLocation] = customFunctions; 
+                        void add(cell customFunctions, sequence::prefix header, sequence::postfix<uint8_t> body = {}) {
+                            cells[getActualLocation(header, body)] = customFunctions; 
                         }
 
                         /**
                          * @brief Gets the cell handler at the specified position.
-                         * 
-                         * @param whole_buffer The position to invoke from first character (will be converted to relative coordinates)
-                         * 
-                         * Sanitizes the position to work in the page's relative coordinate space
-                         * before invoking the cell handler.
-                         * 
-                         * NOTE: whole buffer is given instead of single character, for potential buffer stream reader, function handlers.
                          */
-                        constexpr cell get(std::string_view whole_buffer, location secondaryOffset = 0) {
-                            // Sanitize position to work in relative space
-                            const auto relLocationAsHeight = location(whole_buffer.front()).getRelative(status.range.get().first).compute();
-                            const auto relLocationAsWidth = secondaryOffset.getRelative(status.range.get().first).compute();
+                        cell get(sequence::prefix header, sequence::postfix<uint8_t> body = {}) {
+                            return cells[getActualLocation(header, body)];
+                        }
 
-                            const size_t realLocation = relLocationAsWidth * pageWidth + relLocationAsHeight;
+                        // This is primarily used with raw datastreams before the full sequence is parsed.
+                        cell get(location primitive) {
+                            std::variant<table::C0, table::C1> funcVariant;
 
-                            auto currentCell = cells[realLocation];
+                            if (table::contains<table::C0>(primitive.to7bit().compute())) {
+                                funcVariant = static_cast<table::C0>(primitive.to7bit().compute());
+                            } else if (table::contains<table::C1>(primitive.to7bit().compute())) {
+                                funcVariant = static_cast<table::C1>(primitive.to7bit().compute());
+                            } else {
+                                return cell{};    // Return default cell if the primitive does not correspond to a valid C0 or C1 function
+                            }
 
-                            return currentCell;
+                            return cells[getActualLocation(
+                                sequence::prefix(funcVariant),
+                                sequence::postfix<uint8_t>({}, 0)
+                            )];
                         }
 
                         /**
@@ -1425,6 +1454,29 @@ namespace GGUI {
                 }
             }
 
+            struct components {
+                /**
+                 * @brief The area in the data component which contains the active data position.
+                 * The area in the presentation component which contains the active presentation position
+                 */
+                table::configuration::layout::bounds activeArea;
+
+                /**
+                 * @brief The field in the data component which contains the active data position.
+                 * The field in the presentation component which contains the active presentation position. 
+                 */
+                table::configuration::layout::bounds activeField;
+
+                /**
+                 * @brief The line in the data component which contains the active data position.
+                 * The line in the presentation component which contains the active presentation position. 
+                 */
+                table::configuration::location activeLine;
+
+                
+
+            };
+
             namespace sequences {
 
                 template<
@@ -1447,9 +1499,7 @@ namespace GGUI {
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
                         if (page == nullptr) {  // Automatic page deduction
                             // All codes must be that of prefix
-                            auto prefixBase = static_cast<sequence::prefix>(code);
-
-                            auto func = prefixBase.getFunction();
+                            auto func = code.getFunction();
 
                             if (std::holds_alternative<table::C0>(func)) {
                                 page = &C0;
@@ -1460,7 +1510,9 @@ namespace GGUI {
                             }
                         }
 
-                        page->add(functionality, code.getAsInt(), code.getTailAsInt());
+                        sequence::postfix<uint8_t> tail = code.getPostfix();
+
+                        page->add(functionality, static_cast<sequence::prefix>(code), tail);
                     }
 
                     template<
@@ -1637,7 +1689,7 @@ namespace GGUI {
                     /**
                      * @brief LS2R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed.
-                    * @example `01/11 07/13`
+                     * @example `01/11 07/13`
                      */
                     inline auto LOCKING_SHIFT_TWO_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2R, {}, {sequences::shiftFunctions::operateShift_LS2R});
 

@@ -237,15 +237,15 @@ namespace GGUI {
                 auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
 
                 // Jump through and fetch the page cell
-                table::configuration::cell currentCell = currentPage.get(input);
+                table::configuration::cell currentCell = currentPage.get(input.front());
 
                 // Call the sequence parser
                 auto parsedArea = currentCell.parser(input);
 
-                if (parsedArea.first > 1) { // Probably hit into openingDelimiters::CSI default parser, which will return a control sequence as a prefix ptr.
-                    // For multi-byte handlers we need to use the header function * pageWidth + tail function byte offset to call the correct cell handler
-                    currentCell = currentPage.get(input, parsedArea.second->getTailAsInt());
-                }
+                if (parsedArea.first == 0) return {0, nullptr};    // No progress, means no match, return null.
+                
+                // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
+                currentCell = currentPage.get(*parsedArea.second, parsedArea.second->getPostfix());
 
                 // Call the functionality given by the parser
                 currentCell.handler(parsedArea.second);
