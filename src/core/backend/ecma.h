@@ -1040,7 +1040,7 @@ namespace GGUI {
                         SET         = true      // (SM)
                     };
 
-                    template<typename enumType>
+                    template<typename enumType = mode::types>
                     class flags;
                     
                     template<typename enumType>
@@ -1471,9 +1471,34 @@ namespace GGUI {
                  * @brief The line in the data component which contains the active data position.
                  * The line in the presentation component which contains the active presentation position. 
                  */
-                table::configuration::location activeLine;
+                uint16_t activeLine;
 
-                
+                /**
+                 * @brief The character position in the data component which is to receive the next graphic character or the next
+                 * control function from the data stream and relative to which certain control functions are to be executed.
+                 */
+                uint16_t activeDataPosition;
+
+                enum class characterMovementDirection : uint8_t {
+                    DIRECTION_OF_CHARACTER_PROGRESSION,             // The direction of implicit movement is the same as that of the character progression, used as *1 coefficient of direction vector
+                    OPPOSITE_DIRECTION_OF_CHARACTER_PROGRESSION     // The direction of implicit movement is opposite to that of the character progression, used as *-1 coefficient of direction vector
+                };
+
+                IVector2 activeCharacterMovementDirection;  // Base vector, where: ||v|| = 1
+
+                // Helper function for converting the selection made by SIMD into a usable IVector2.
+                constexpr IVector2 toVector(characterMovementDirection direction) {
+                    int negativeModifier = static_cast<int>(direction == characterMovementDirection::OPPOSITE_DIRECTION_OF_CHARACTER_PROGRESSION);
+
+                    return {-1 * negativeModifier, 0};
+                }
+
+                constexpr void moveActivePosition(IVector2 directionChange) {
+                    activeLine += directionChange.y;
+                    activeDataPosition += directionChange.x;
+                }
+
+                table::mode::flags<> activeModes;
 
             };
 
@@ -1624,6 +1649,7 @@ namespace GGUI {
                     inline auto STRING_TERMINATOR = base<sequence::prefix>(table::C1::ST);
                 };
 
+                // TODO: In future we can splice the current primary default sequence parser to actually just one of these three introducers and their own introduced sequence parsers.
                 namespace introducers {
                     /**
                      * @brief CSI is used as the first character of a control sequence.
@@ -1738,6 +1764,8 @@ namespace GGUI {
                 }
 
                 namespace formatEffectors {
+                    extern void operate_BACKSPACE(sequence::prefix*);
+
                     /**
                      * @brief BS causes the active data position to be moved one character position in the data component in the
                      * direction opposite to that of the implicit movement.
@@ -1745,7 +1773,7 @@ namespace GGUI {
                      * MOVEMENT DIRECTION (SIMD). 
                      * @example `00/08`
                      */
-                    inline auto BACKSPACE = base<sequence::prefix>(table::C0::BS);
+                    inline auto BACKSPACE = base<sequence::prefix>(table::C0::BS, {}, {operate_BACKSPACE});
 
                     /**
                      * @brief The effect of CR depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
@@ -2473,14 +2501,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 05/14` or `9/11 Ps 05/14`
                      * @param Ps default(0)
                      */
-                    namespace SELECT_IMPLICIT_MOVEMENT_DIRECTION {
-                        enum class types {
-                            DIRECTION_OF_CHARACTER_PROGRESSION,             // The direction of implicit movement is the same as that of the character progression
-                            OPPOSITE_DIRECTION_OF_CHARACTER_PROGRESSION     // The direction of implicit movement is opposite to that of the character progression. 
-                        };
-
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SIMD), {types::DIRECTION_OF_CHARACTER_PROGRESSION});
-                    }
+                    inline base<sequence::control<sequence::parameter::selectable<components::characterMovementDirection>>, components::characterMovementDirection, 1> SELECT_IMPLICIT_MOVEMENT_DIRECTION(sequence::control<sequence::parameter::selectable<components::characterMovementDirection>>(table::finalWithoutIntermediate::SIMD), {components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION});
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE is set to PRESENTATION, 

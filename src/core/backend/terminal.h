@@ -75,7 +75,7 @@ namespace GGUI {
                 std::vector<UTF>* cellBuffer = nullptr;
             } screen;
 
-            ecma::components ecmaComponents;
+            ecma::components components;
         };
 
         // Read from this to get current device states of the terminal peripherals.

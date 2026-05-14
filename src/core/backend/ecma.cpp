@@ -1,6 +1,8 @@
 #include "ecma.h"
 #include "terminal.h"
 
+#include "../utils/types.h"
+
 namespace GGUI {
     namespace terminal {
         namespace ecma {
@@ -337,7 +339,12 @@ namespace GGUI {
                 }
 
                 namespace formatEffectors {
+                    void operate_BACKSPACE(sequence::prefix*) {
+                        // First we get the direction and a base vector for the opposite direction
+                        IVector2 oppositeDirection = currentStates.components.activeCharacterMovementDirection * -1;
                     
+                        currentStates.components.moveActivePosition(oppositeDirection);
+                    }
                 }
 
             }
