@@ -339,11 +339,27 @@ namespace GGUI {
                 }
 
                 namespace formatEffectors {
-                    void operate_BACKSPACE(sequence::prefix*) {
+                    void operate_BACKSPACE(sequence::prefix* /*ignored*/) {
                         // First we get the direction and a base vector for the opposite direction
                         IVector2 oppositeDirection = currentStates.components.activeCharacterMovementDirection * -1;
                     
                         currentStates.components.moveActivePosition(oppositeDirection);
+                    }
+
+                    void operate_CARRIAGE_RETURN(sequence::prefix* /*ignored*/) {
+                        if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                            if (currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
+                                currentStates.components.activePresentationPosition = currentStates.components.homeLinePosition;
+                            } else {
+                                currentStates.components.activePresentationPosition = currentStates.components.lineLimitPosition;
+                            }
+                        } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
+                            if (currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
+                                currentStates.components.activeDataPosition = currentStates.components.homeLinePosition;
+                            } else {
+                                currentStates.components.activeDataPosition = currentStates.components.lineLimitPosition;
+                            }
+                        }
                     }
                 }
 

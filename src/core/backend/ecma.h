@@ -1479,6 +1479,12 @@ namespace GGUI {
                  */
                 uint16_t activeDataPosition;
 
+                /**
+                 * @brief The same as active data position but only relates the graphical related received characters.
+                 * NOTE: For current implementation under 0.1.8.5, this will be same as activeDataPosition.
+                 */
+                uint16_t& activePresentationPosition = activeDataPosition;
+
                 enum class characterMovementDirection : uint8_t {
                     DIRECTION_OF_CHARACTER_PROGRESSION,             // The direction of implicit movement is the same as that of the character progression, used as *1 coefficient of direction vector
                     OPPOSITE_DIRECTION_OF_CHARACTER_PROGRESSION     // The direction of implicit movement is opposite to that of the character progression, used as *-1 coefficient of direction vector
@@ -1493,12 +1499,31 @@ namespace GGUI {
                     return {-1 * negativeModifier, 0};
                 }
 
+                constexpr characterMovementDirection toCharacterMovementDirection(IVector2 vector) {
+                    if (vector == IVector2{-1, 0}) {
+                        return characterMovementDirection::OPPOSITE_DIRECTION_OF_CHARACTER_PROGRESSION;
+                    } else {
+                        return characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION;
+                    }
+                }
+
                 constexpr void moveActivePosition(IVector2 directionChange) {
                     activeLine += directionChange.y;
                     activeDataPosition += directionChange.x;
                 }
 
                 table::mode::flags<> activeModes;
+
+                /**
+                 * @brief A reference position on a line in the data component ahead of which the active data position can normally not be moved. 
+                 * NOTE: Same applies to presentation component.
+                 */
+                uint16_t homeLinePosition;
+
+                /**
+                 * @brief A reference position on a line in the data component beyond which the active data position can normally not be moved.
+                 */
+                uint16_t lineLimitPosition;
 
             };
 
@@ -1765,6 +1790,7 @@ namespace GGUI {
 
                 namespace formatEffectors {
                     extern void operate_BACKSPACE(sequence::prefix*);
+                    extern void operate_CARRIAGE_RETURN(sequence::prefix*);
 
                     /**
                      * @brief BS causes the active data position to be moved one character position in the data component in the
@@ -1787,14 +1813,13 @@ namespace GGUI {
                      * established by the parameter value of SET LINE LIMIT (SLL).
                      * If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA and with a parameter value of
                      * SIMD equal to 0, CR causes the active data position to be moved to the line home position of the same
-                     * line in the data component. The line home position is established by the parameter value of SET LINE
-                     * HOME (SLH).
+                     * line in the data component. The line home position is established by the parameter value of SET LINE HOME (SLH).
                      * With a parameter value of SIMD equal to 1, CR causes the active data position to be moved to the line
                      * limit position of the same line in the data component. The line limit position is established by the
                      * parameter value of SET LINE LIMIT (SLL).
                      * @example `00/13`
                      */
-                    inline auto CARRIAGE_RETURN = base<sequence::prefix>(table::C0::CR);
+                    inline auto CARRIAGE_RETURN = base<sequence::prefix>(table::C0::CR, {}, {operate_CARRIAGE_RETURN});
 
                     /**
                      * @brief FF causes the active presentation position to be moved to the corresponding character position of the
