@@ -355,11 +355,84 @@ namespace GGUI {
                             }
                         } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
                             if (currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates.components.activeDataPosition = currentStates.components.homeLinePosition;
+                                currentStates.components.activeCharacterPosition = currentStates.components.homeLinePosition;
                             } else {
-                                currentStates.components.activeDataPosition = currentStates.components.lineLimitPosition;
+                                currentStates.components.activeCharacterPosition = currentStates.components.lineLimitPosition;
                             }
                         }
+                    }
+
+                    void operate_FORM_FEED(sequence::prefix* /*ignored*/) {
+                        // FF causes the active presentation position to be moved to the corresponding 
+                        // character position of the line at the page home position of the next form or page.
+                        // Move to the next page by advancing past the current active area
+                        if (currentStates.components.activeArea.getUpper().row != 0) {
+                            currentStates.components.activeLinePosition = currentStates.components.activeArea.getUpper().row + 1;
+                        }
+                        
+                        // Set the presentation position to the home line position of the new page
+                        currentStates.components.activePresentationPosition = currentStates.components.homeLinePosition;
+                    }
+
+                    void operate_CHARACTER_POSITION_ABSOLUTE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        currentStates.components.activeCharacterPosition = params.front().getValueAsInteger();
+                    }
+
+                    void operate_CHARACTER_POSITION_BACKWARD(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        // Get the current direction vector and multiply it by the scalar of n via input and -1 to get the opposite vector.
+                        auto directionVector = currentStates.components.activeCharacterMovementDirection * -params.front().getValueAsInteger();
+
+                        currentStates.components.moveActivePosition(directionVector);
+                    }
+
+                    void operate_CHARACTER_POSITION_FORWARD(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        // Get the current direction vector and multiply it by the scalar of n via input to get the movement vector.
+                        auto directionVector = currentStates.components.activeCharacterMovementDirection * params.front().getValueAsInteger();
+
+                        currentStates.components.moveActivePosition(directionVector);
+                    }
+                    
+                    void operate_CHARACTER_TABULATION(sequence::prefix* /*ignored*/) {
+                        tabulationStop nextTabulation;
+
+                        // Find next tabulation 
+                        for (auto currentTabulation : currentStates.components.tabulationStops) {
+                            if (
+                                currentTabulation.position.row == currentStates.components.activeLinePosition && 
+                                currentTabulation.position.column >= currentStates.components.activePresentationPosition &&
+                                currentTabulation.position.column < nextTabulation.position.column  // This is meant to find the closest next tabulation stop
+                            ) {
+                                nextTabulation = currentTabulation;
+                            }
+                        }
+
+                        // Now we move our active presentation position into it
+                        currentStates.components.activePresentationPosition = nextTabulation.position.column;
+
+                        // Now we need to also enable the current tabulation mode so that the following string literals are aligned properly.
+                        currentStates.components.activeTabulationAlignment = nextTabulation.mode;
+
+                        // TODO: add here the code for detecting multi-line tabulation support and if so, also move the activeLinePosition.
+                    }
+
+                    void operate_CHARACTER_TABULATION_SET(sequence::prefix* /*ignored*/) {
+                        // This function sets a tabulation stop at the current active line position and presentation position, with the current tabulation alignment mode.
+                        currentStates.components.tabulationStops.push_back(tabulationStop{
+                            currentStates.components.activeTabulationAlignment,
+                            table::configuration::location{currentStates.components.activeLinePosition, currentStates.components.activePresentationPosition}
+                        });
                     }
                 }
 

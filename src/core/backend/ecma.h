@@ -263,6 +263,78 @@ namespace GGUI {
                     };
                 }
 
+                namespace configuration {
+                    // A simple helper class for cell location
+                    struct location {
+                        uint8_t column, row;
+
+                        constexpr location(uint8_t c, uint8_t r) : column(c), row(r) {}
+                        constexpr location(C0 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(C1 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(finalWithoutIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(finalWithIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(independentFunctions preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(uint8_t raw) : column(raw / tableRows), row(raw % tableRows) {}
+
+                        // Transforms the xx/yy coordinates into usable index
+                        constexpr uint8_t compute() const {
+                            return table::toInt(column, row);
+                        }
+
+                        // Pages are only loaded by column offset, so rows are not necessary for relative offset calculation.
+                        // And 96 vs 94 row differences are already baked into the incoming cell index, so these are not accounted for either
+                        constexpr location getRelative(location parent) const {
+                            return compute() - parent.column;
+                        }
+
+                        // Used when the column shift is known like 7bit -> 8bit
+                        constexpr location shiftToRight(columns amount) const {
+                            return location(column + static_cast<uint8_t>(amount), row);
+                        }
+
+                        // Used when the highest bit is not needed for evaluation and checking it would be unnecessary
+                        constexpr location to7bit() const {
+                            return location(table::removeHighestBit(column), row);
+                        }
+                    };
+
+                    namespace layout {
+                        class bounds {
+                        protected:
+                            //       <lower,   upper>
+                            location lower, upper;
+                        public:
+                            constexpr bounds(location Lower = 0, location Upper = 0) : lower(Lower), upper(Upper) {}
+
+                            // Get precomputed layout lower and upped bounds.
+                            constexpr std::pair<uint8_t, uint8_t> get() const {
+                                return {
+                                    lower.compute(),
+                                    upper.compute()
+                                };
+                            }
+
+                            // Returns the actual range of the enum. Accounts zero index via +1.
+                            constexpr uint16_t getSize() const {
+                                auto [lowerVal, upperVal] = get();
+                                return (upperVal - lowerVal) + 1;
+                            }
+
+                            constexpr bool in(uint8_t val) const {
+                                return val >= lower.compute() && val <= upper.compute();
+                            }
+
+                            // Promotes the location into a 8-bit field
+                            constexpr bounds to8bit() const {
+                                return bounds(lower.shiftToRight(columns::FOUR), upper.shiftToRight(columns::FOUR));
+                            }
+
+                            constexpr location getUpper() const { return upper; }
+                            constexpr location getLower() const { return lower; } 
+                        };
+                    }
+                }
             }
 
             namespace sequences {
@@ -277,16 +349,17 @@ namespace GGUI {
                     constexpr uint8_t column         = 3;
                     constexpr uint8_t sub_delimeter  = table::toInt(column, 10); // Translates into ':'
                     constexpr uint8_t delimeter      = table::toInt(column, 11); // Translates into ';'
+                    constexpr int8_t numberCharacterPositionOffset = table::toInt(column, 0);   // The position of the first number character in the table, used to convert char to number.
 
                     template<typename containerType>
                     class base {
                     protected:
-                        std::vector<std::variant<containerType, char>> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
-                    
+                        std::vector<containerType> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
+                        // TODO: maybe for better compatibility try giving a custom default param value, so that it can be used instead of the hardcoded zero.
                     public:
                         base() = default;
-                        base(std::vector<std::variant<containerType, char>> values) : subNumbers(values) {}
-                        base(containerType values) : subNumbers({values}) {}
+                        base(std::vector<containerType> values) : subNumbers(values) {}
+                        base(containerType value) : subNumbers({value}) {}
 
                         /**
                         * As stated by 5.4.2.b, f, g and h
@@ -295,32 +368,36 @@ namespace GGUI {
                         * Per char, only be in range of 03/00 - 03/09 or special sub-string delimeter of 03/10 (':')
                         */
                         base(std::string_view input, size_t& length) {
-                            uint32_t currentNumber = 0;
+                            int32_t currentNumber = 0;
                             bool has_digit = true;          // Default true, so that ;;;; are possible.
 
-                            for (char i : input) {
-                                uint8_t currentChar = static_cast<uint8_t>(i);
+                            table::configuration::layout::bounds normalParameterCharacters = {{column, 0}, {column, 9}};
+                            table::configuration::layout::bounds specialParameterCharacters = {{column, 9}, {column, 15}};
 
-                                // Special values where currentChar >= 03/09 - 03/15
-                                if (currentChar >= table::toInt(3, 10) && currentChar <= table::toInt(3, 15)) {
+
+                            for (char i : input) {
+                                int8_t currentChar = i;
+
+                                // Special values where currentChar => 03/09 - 03/15
+                                if (specialParameterCharacters.in(currentChar)) {
 
                                     if (currentChar == sub_delimeter) { // 03/10 ':'
                                         if (has_digit) {
-                                            subNumbers.push_back(static_cast<containerType>(currentNumber));
+                                            subNumbers.push_back(static_cast<containerType>(currentNumber - numberCharacterPositionOffset));
                                         } else {
                                             subNumbers.push_back(static_cast<containerType>(0)); // empty sub-string -> default / zero
                                         }
                                     } else {    // Special parameter values like '?'
-                                        subNumbers.push_back(static_cast<char>(currentChar));
+                                        subNumbers.push_back(currentChar - numberCharacterPositionOffset);
                                     }
 
                                     // Reset
                                     currentNumber = 0;
                                     has_digit = false;
                                     length++;
-                                } else if (currentChar >= table::toInt(3, 0) && currentChar <= table::toInt(3, 9)) {    // 03/00 - 03/09
+                                } else if (normalParameterCharacters.in(currentChar)) {    // 03/00 - 03/09
                                     // Transform the char number into usable form.
-                                    currentNumber = currentNumber * 10 + (currentChar - table::toInt(3, 0));
+                                    currentNumber = currentNumber * 10 + (currentChar - numberCharacterPositionOffset);
                                     has_digit = true;
                                     length++;
                                 } else {
@@ -340,27 +417,20 @@ namespace GGUI {
 
                         std::string toString() const {
                             std::string result = "";
+                            result.reserve(subNumbers.size());
 
                             for (size_t i = 0; i < subNumbers.size(); i++) {
-                                if (std::holds_alternative<char>(subNumbers[i])) {
-                                    // Special parameter character - output directly as char
-                                    result += std::get<char>(subNumbers[i]);
-                                } else {
-                                    // Numeric value
-                                    uint32_t currentNumber = static_cast<uint32_t>(std::get<containerType>(subNumbers[i])); 
-                                    if (currentNumber == 0 || i > 0) { 
-                                        // This means section f was triggered and we need to insert a pre-fix of 03/10
-                                        // Or this is i+1 so delimeter is required by section b
-                                        result += static_cast<char>(sub_delimeter); // 03/10 ':'
-                                        result += std::to_string(currentNumber);
-                                    } else {
-                                        result += std::to_string(currentNumber);
-                                    }
-                                }
+                                char convertedValue = static_cast<char>(subNumbers[i]) + numberCharacterPositionOffset;
+
+                                result += convertedValue;
                             }
 
                             return result;
                         }
+
+                        containerType getValueAsInteger() const { return subNumbers.front(); }
+                        std::vector<containerType> getValueAsRational() const { return subNumbers; }
+
                     };
 
                     using numeric = base<uint32_t>;
@@ -549,6 +619,10 @@ namespace GGUI {
                             return static_cast<uint8_t>(arg);
                         }, finalByte.getFinalByte())));
                     }
+
+                    std::vector<containerType> getParameters() const {
+                        return parameters;
+                    }
                 };
 
                 // APC, DCS, OSC, PM or SOS
@@ -611,73 +685,7 @@ namespace GGUI {
                         _8BIT
                     };
 
-                    // A simple helper class for cell location
-                    struct location {
-                        uint8_t column, row;
-
-                        constexpr location(uint8_t c, uint8_t r) : column(c), row(r) {}
-                        constexpr location(C0 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(C1 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(finalWithoutIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(finalWithIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(independentFunctions preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(uint8_t raw) : column(raw / tableRows), row(raw % tableRows) {}
-
-                        // Transforms the xx/yy coordinates into usable index
-                        constexpr uint8_t compute() const {
-                            return table::toInt(column, row);
-                        }
-
-                        // Pages are only loaded by column offset, so rows are not necessary for relative offset calculation.
-                        // And 96 vs 94 row differences are already baked into the incoming cell index, so these are not accounted for either
-                        constexpr location getRelative(location parent) const {
-                            return compute() - parent.column;
-                        }
-
-                        // Used when the column shift is known like 7bit -> 8bit
-                        constexpr location shiftToRight(columns amount) const {
-                            return location(column + static_cast<uint8_t>(amount), row);
-                        }
-
-                        // Used when the highest bit is not needed for evaluation and checking it would be unnecessary
-                        constexpr location to7bit() const {
-                            return location(table::removeHighestBit(column), row);
-                        }
-                    };
-
                     namespace layout {
-                        class bounds {
-                        protected:
-                            //       <lower,   upper>
-                            location lower, upper;
-                        public:
-                            constexpr bounds(location Lower = 0, location Upper = 0) : lower(Lower), upper(Upper) {}
-
-                            // Get precomputed layout lower and upped bounds.
-                            constexpr std::pair<uint8_t, uint8_t> get() const {
-                                return {
-                                    lower.compute(),
-                                    upper.compute()
-                                };
-                            }
-
-                            // Returns the actual range of the enum. Accounts zero index via +1.
-                            constexpr uint16_t getSize() const {
-                                auto [lowerVal, upperVal] = get();
-                                return (upperVal - lowerVal) + 1;
-                            }
-
-                            constexpr bool in(uint8_t val) const {
-                                return val >= lower.compute() && val <= upper.compute();
-                            }
-
-                            // Promotes the location into a 8-bit field
-                            constexpr bounds to8bit() const {
-                                return bounds(lower.shiftToRight(columns::FOUR), upper.shiftToRight(columns::FOUR));
-                            }
-                        };
-
                         // Contains layout preset information for graphical pages like [G0, ..., G3]
                         namespace graphical {
                             enum class type : uint8_t {
@@ -1454,6 +1462,18 @@ namespace GGUI {
                 }
             }
 
+            // A simple helper structure of what a assigned tabulation stop looks like.
+            struct tabulationStop {
+                enum class modes {
+                    CENTRE,
+                    LEADING_EDGE,
+                    TRAILING_EDGE,
+                    CENTERED_ON_CHARACTER,
+                } mode = modes::LEADING_EDGE;
+
+                table::configuration::location position = {0, 0};
+            };
+
             struct components {
                 /**
                  * @brief The area in the data component which contains the active data position.
@@ -1471,19 +1491,28 @@ namespace GGUI {
                  * @brief The line in the data component which contains the active data position.
                  * The line in the presentation component which contains the active presentation position. 
                  */
-                uint16_t activeLine;
+                uint16_t activeLinePosition;
 
                 /**
                  * @brief The character position in the data component which is to receive the next graphic character or the next
                  * control function from the data stream and relative to which certain control functions are to be executed.
                  */
-                uint16_t activeDataPosition;
+                uint16_t activeCharacterPosition;
+
+                constexpr IVector2 getActiveDataPosition() const { 
+                    return {activeCharacterPosition, activeLinePosition};
+                }
+
+                constexpr void moveActivePosition(IVector2 directionChange) {
+                    activeLinePosition += directionChange.y;
+                    activeCharacterPosition += directionChange.x;
+                }
 
                 /**
                  * @brief The same as active data position but only relates the graphical related received characters.
-                 * NOTE: For current implementation under 0.1.8.5, this will be same as activeDataPosition.
+                 * NOTE: For current implementation under 0.1.8.5, this will be same as activeCharacterPosition.
                  */
-                uint16_t& activePresentationPosition = activeDataPosition;
+                uint16_t& activePresentationPosition = activeCharacterPosition;
 
                 enum class characterMovementDirection : uint8_t {
                     DIRECTION_OF_CHARACTER_PROGRESSION,             // The direction of implicit movement is the same as that of the character progression, used as *1 coefficient of direction vector
@@ -1507,11 +1536,6 @@ namespace GGUI {
                     }
                 }
 
-                constexpr void moveActivePosition(IVector2 directionChange) {
-                    activeLine += directionChange.y;
-                    activeDataPosition += directionChange.x;
-                }
-
                 table::mode::flags<> activeModes;
 
                 /**
@@ -1525,6 +1549,11 @@ namespace GGUI {
                  */
                 uint16_t lineLimitPosition;
 
+                // Set via the character tabulation operator
+                tabulationStop::modes activeTabulationAlignment;
+
+                // Contains all tabulation stops set by the character tabulation set operator.
+                std::vector<tabulationStop> tabulationStops;
             };
 
             namespace sequences {
@@ -1791,6 +1820,12 @@ namespace GGUI {
                 namespace formatEffectors {
                     extern void operate_BACKSPACE(sequence::prefix*);
                     extern void operate_CARRIAGE_RETURN(sequence::prefix*);
+                    extern void operate_FORM_FEED(sequence::prefix*);
+                    extern void operate_CHARACTER_POSITION_ABSOLUTE(sequence::prefix*);
+                    extern void operate_CHARACTER_POSITION_BACKWARD(sequence::prefix*);
+                    extern void operate_CHARACTER_POSITION_FORWARD(sequence::prefix*);
+                    extern void operate_CHARACTER_TABULATION(sequence::prefix*);
+                    extern void operate_CHARACTER_TABULATION_SET(sequence::prefix*);
 
                     /**
                      * @brief BS causes the active data position to be moved one character position in the data component in the
@@ -1827,7 +1862,7 @@ namespace GGUI {
                      * position is established by the parameter value of SET PAGE HOME (SPH). 
                      * @example `00/12`
                      */
-                    inline auto FORM_FEED = base<sequence::prefix>(table::C0::FF);
+                    inline auto FORM_FEED = base<sequence::prefix>(table::C0::FF, {}, {operate_FORM_FEED});
 
                     /**
                      * @brief HPA causes the active data position to be moved to character position n in the active line (the line in the
@@ -1835,7 +1870,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/00` or `9/11 Pn 06/00`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPA), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPA), {1}, {operate_CHARACTER_POSITION_ABSOLUTE});
 
                     /**
                      * @brief HPB causes the active data position to be moved by n character positions in the data component in the
@@ -1843,7 +1878,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/10` or `9/11 Pn 06/10`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPB), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPB), {1}, {operate_CHARACTER_POSITION_BACKWARD});
 
                     /**
                      * @brief HPR causes the active data position to be moved by n character positions in the data component in the
@@ -1851,7 +1886,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/01` or `9/11 Pn 06/01`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPR), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPR), {1}, {operate_CHARACTER_POSITION_FORWARD});
 
                     /**
                      * @brief HT causes the active presentation position to be moved to the following character tabulation stop in the presentation component.
@@ -1863,7 +1898,7 @@ namespace GGUI {
                      * (NEL) in the data stream
                      * @example `00/09`
                      */
-                    inline auto CHARACTER_TABULATION = base<sequence::prefix>(table::C0::HT);
+                    inline auto CHARACTER_TABULATION = base<sequence::prefix>(table::C0::HT, {}, {operate_CHARACTER_TABULATION});
 
                     /**
                      * @brief HTJ causes the contents of the active field (the field in the presentation component that contains the
@@ -1881,7 +1916,7 @@ namespace GGUI {
                      * The number of lines affected depends on the setting of the TABULATION STOP MODE (TSM). 
                      * @example `08/08` or `01/11 04/08`
                      */
-                    inline auto CHARACTER_TABULATION_SET = base<sequence::prefix>(table::C1::HTS);
+                    inline auto CHARACTER_TABULATION_SET = base<sequence::prefix>(table::C1::HTS, {}, {operate_CHARACTER_TABULATION_SET});
 
                     /**
                      * @brief HVP causes the active data position to be moved in the data component to the n-th line position
