@@ -343,21 +343,21 @@ namespace GGUI {
                         // First we get the direction and a base vector for the opposite direction
                         IVector2 oppositeDirection = currentStates.components.activeCharacterMovementDirection * -1;
                     
-                        currentStates.components.moveActivePosition(oppositeDirection);
+                        currentStates.components.activeDataPosition += oppositeDirection;
                     }
 
                     void operate_CARRIAGE_RETURN(sequence::prefix* /*ignored*/) {
                         if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
                             if (currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates.components.activePresentationPosition = currentStates.components.homeLinePosition;
+                                currentStates.components.activePresentationPosition.x = currentStates.components.homeLinePosition.x;
                             } else {
-                                currentStates.components.activePresentationPosition = currentStates.components.lineLimitPosition;
+                                currentStates.components.activePresentationPosition.x = currentStates.components.lineLimitPosition.x;
                             }
                         } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
                             if (currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates.components.activeCharacterPosition = currentStates.components.homeLinePosition;
+                                currentStates.components.activeDataPosition.x = currentStates.components.homeLinePosition.x;
                             } else {
-                                currentStates.components.activeCharacterPosition = currentStates.components.lineLimitPosition;
+                                currentStates.components.activeDataPosition.x = currentStates.components.lineLimitPosition.x;
                             }
                         }
                     }
@@ -367,7 +367,7 @@ namespace GGUI {
                         // character position of the line at the page home position of the next form or page.
                         // Move to the next page by advancing past the current active area
                         if (currentStates.components.activeArea.getUpper().row != 0) {
-                            currentStates.components.activeLinePosition = currentStates.components.activeArea.getUpper().row + 1;
+                            currentStates.components.activeDataPosition.y = currentStates.components.activeArea.getUpper().row + 1;
                         }
                         
                         // Set the presentation position to the home line position of the new page
@@ -379,7 +379,7 @@ namespace GGUI {
 
                         auto params = controlSequence->getParameters();
 
-                        currentStates.components.activeCharacterPosition = params.front().getValueAsInteger();
+                        currentStates.components.activeDataPosition.x = params.front().getValueAsInteger();
                     }
 
                     void operate_CHARACTER_POSITION_BACKWARD(sequence::prefix* input) {
@@ -390,7 +390,7 @@ namespace GGUI {
                         // Get the current direction vector and multiply it by the scalar of n via input and -1 to get the opposite vector.
                         auto directionVector = currentStates.components.activeCharacterMovementDirection * -params.front().getValueAsInteger();
 
-                        currentStates.components.moveActivePosition(directionVector);
+                        currentStates.components.activeDataPosition += directionVector;
                     }
 
                     void operate_CHARACTER_POSITION_FORWARD(sequence::prefix* input) {
@@ -401,7 +401,7 @@ namespace GGUI {
                         // Get the current direction vector and multiply it by the scalar of n via input to get the movement vector.
                         auto directionVector = currentStates.components.activeCharacterMovementDirection * params.front().getValueAsInteger();
 
-                        currentStates.components.moveActivePosition(directionVector);
+                        currentStates.components.activeDataPosition += directionVector;
                     }
                     
                     void operate_CHARACTER_TABULATION(sequence::prefix* /*ignored*/) {
@@ -410,16 +410,16 @@ namespace GGUI {
                         // Find next tabulation 
                         for (auto currentTabulation : currentStates.components.tabulationStops) {
                             if (
-                                currentTabulation.position.row == currentStates.components.activeLinePosition && 
-                                currentTabulation.position.column >= currentStates.components.activePresentationPosition &&
-                                currentTabulation.position.column < nextTabulation.position.column  // This is meant to find the closest next tabulation stop
+                                currentTabulation.position.y == currentStates.components.activePresentationPosition.y && 
+                                currentTabulation.position.x >= currentStates.components.activePresentationPosition.x &&
+                                currentTabulation.position.x < nextTabulation.position.x  // This is meant to find the closest next tabulation stop
                             ) {
                                 nextTabulation = currentTabulation;
                             }
                         }
 
                         // Now we move our active presentation position into it
-                        currentStates.components.activePresentationPosition = nextTabulation.position.column;
+                        currentStates.components.activePresentationPosition = nextTabulation.position;
 
                         // Now we need to also enable the current tabulation mode so that the following string literals are aligned properly.
                         currentStates.components.activeTabulationAlignment = nextTabulation.mode;
@@ -431,8 +431,246 @@ namespace GGUI {
                         // This function sets a tabulation stop at the current active line position and presentation position, with the current tabulation alignment mode.
                         currentStates.components.tabulationStops.push_back(tabulationStop{
                             currentStates.components.activeTabulationAlignment,
-                            table::configuration::location{currentStates.components.activeLinePosition, currentStates.components.activePresentationPosition}
+                            currentStates.components.activePresentationPosition
                         });
+                    }
+
+                    void operate_CHARACTER_AND_LINE_POSITION(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 2);
+
+                        auto y = params[0].getValueAsInteger();
+                        auto x = params[1].getValueAsInteger();
+
+                        currentStates.components.activeDataPosition = {x, y};
+                    }
+
+                    void operate_LINE_FEED(sequence::prefix* /*ignored*/) {
+                        if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                            currentStates.components.activePresentationPosition = currentStates.components.activeDataPosition;
+                        } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
+                            currentStates.components.activeDataPosition = currentStates.components.activePresentationPosition;
+                        }
+                    }
+
+                    void operate_NEXT_LINE(sequence::prefix* /*ignored*/) {
+                        bool has_presentation = currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION);
+                        bool has_data = currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA);
+                        auto movement_direction = currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection);
+                        
+                        if (has_presentation) {
+                            if (movement_direction == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
+                                currentStates.components.activePresentationPosition.y = currentStates.components.homeLinePosition.y;
+                            } else {
+                                currentStates.components.activePresentationPosition.y = currentStates.components.lineLimitPosition.y;
+                            }
+                        } else if (has_data) {
+                            if (movement_direction == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
+                                currentStates.components.activeDataPosition.y = currentStates.components.homeLinePosition.y;
+                            } else {
+                                currentStates.components.activeDataPosition.y = currentStates.components.lineLimitPosition.y;
+                            }
+                        }
+                    }
+
+                    void operate_PARTIAL_LINE_FORWARD(sequence::prefix* /*ignored*/) {
+                        auto direction = imaginaryLine::types::SUBSCRIPT;
+
+                        // This part is going to be ugly, TODO: clean this up:
+                        switch (currentStates.components.currentPresentationDirection) {
+                            case presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT:
+                                direction = imaginaryLine::types::SUBSCRIPT;
+                                break;
+                            case presentationDirections::VERTICAL_TOP_RIGHT_TO_BOTTOM_LEFT:
+                                direction = imaginaryLine::types::SUBSCRIPT;
+                                break;
+                            case presentationDirections::VERTICAL_TOP_LEFT_TO_BOTTOM_RIGHT:
+                                direction = imaginaryLine::types::SUBSCRIPT;
+                                break;
+                            case presentationDirections::HORIZONTAL_TOP_RIGHT_TO_BOTTOM_LEFT:
+                                direction = imaginaryLine::types::SUBSCRIPT;
+                                break;
+                            case presentationDirections::VERTICAL_BOTTOM_LEFT_TO_TOP_RIGHT:
+                                direction = imaginaryLine::types::SUPERSCRIPT;
+                                break;
+                            case presentationDirections::HORIZONTAL_BOTTOM_RIGHT_TO_TOP_LEFT:
+                                direction = imaginaryLine::types::SUPERSCRIPT;
+                                break;
+                            case presentationDirections::VERTICAL_BOTTOM_RIGHT_TO_TOP_LEFT:
+                                direction = imaginaryLine::types::SUPERSCRIPT;
+                                break;
+                            case presentationDirections::HORIZONTAL_BOTTOM_LEFT_TO_TOP_RIGHT:
+                                direction = imaginaryLine::types::SUPERSCRIPT;
+                                break;
+                            
+                            default:
+                                assert(false && "Invalid presentation direction");
+                        }
+
+                        currentStates.components.imaginaryLines.push_back(imaginaryLine{
+                            direction,
+                            currentStates.components.activePresentationPosition,
+                            {}  // This is set by PLU
+                        });
+                    }
+
+                    void operate_PARTIAL_LINE_BACKWARD(sequence::prefix* /*ignored*/) {
+                        currentStates.components.imaginaryLines.back().end = currentStates.components.activePresentationPosition;
+                    }
+
+                    void operate_PAGE_POSITION_ABSOLUTE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto PageIndex = params.front().getValueAsInteger();
+
+                        currentStates.components.activePageIndex = PageIndex;
+                    }
+
+                    void operate_PAGE_POSITION_BACKWARD(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto PageIndex = params.front().getValueAsInteger();
+
+                        currentStates.components.activeDataPosition.y = currentStates.components.dataPages[currentStates.components.activePageIndex - PageIndex].start.y;
+                    }
+
+                    void operate_PAGE_POSITION_FORWARD(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto PageIndex = params.front().getValueAsInteger();
+
+                        currentStates.components.activeDataPosition.y = currentStates.components.dataPages[currentStates.components.activePageIndex + PageIndex].start.y;
+                    }
+
+                    void operate_REVERSE_LINE_FEED(sequence::prefix* /*ignored*/) {
+                        if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                            currentStates.components.activePresentationPosition.y--;
+                        } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
+                            currentStates.components.activeDataPosition.y--;
+                        }
+                    }
+
+                    void operate_TABULATION_CLEAR(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<sequences::formatEffectors::TABULATION_CLEAR::types>>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        // If, false, then multiline tabulation is enabled.
+                        bool singleTabulationMode = currentStates.components.activeModes.has(table::mode::presets::TSM_SINGLE);
+                    
+                        switch (params.front().getValueAsInteger()) {
+                            using namespace sequences::formatEffectors::TABULATION_CLEAR;
+
+                            case types::ALL_LINE_AND_CHARACTER_TABULATORS: {
+                                currentStates.components.tabulationStops.clear();
+                                break;
+                            }
+                            case types::ALL_LINE_TABULATORS: {
+                                currentStates.components.tabulationStops.erase(
+                                    std::remove_if(
+                                        currentStates.components.tabulationStops.begin(), 
+                                        currentStates.components.tabulationStops.end(), 
+                                        [](tabulationStop stop) { return stop.type == tabulationStop::types::LINE; }
+                                    ),
+                                    currentStates.components.tabulationStops.end()
+                                );
+                                break;
+                            }
+                            case types::ALL_CHARACTER_TABULATORS: {
+                                currentStates.components.tabulationStops.erase(
+                                    std::remove_if(
+                                        currentStates.components.tabulationStops.begin(), 
+                                        currentStates.components.tabulationStops.end(), 
+                                        [](tabulationStop stop) { return stop.type == tabulationStop::types::CHARACTER; }
+                                    ),
+                                    currentStates.components.tabulationStops.end()
+                                );
+                                break;
+                            }
+                            case types::ALL_CHARACTER_TABULATORS_IN_ACTIVE_LINE: {
+                                currentStates.components.tabulationStops.erase(
+                                    std::remove_if(
+                                        currentStates.components.tabulationStops.begin(), 
+                                        currentStates.components.tabulationStops.end(), 
+                                        [](tabulationStop stop) { 
+                                            return stop.type == tabulationStop::types::CHARACTER && stop.position.y == currentStates.components.activePresentationPosition.y; 
+                                        }
+                                    ),
+                                    currentStates.components.tabulationStops.end()
+                                );
+                                break;
+                            }
+                            case types::LINE_TABULATOR_IN_ACTIVE_LINE: {
+                                currentStates.components.tabulationStops.erase(
+                                    std::remove_if(
+                                        currentStates.components.tabulationStops.begin(), 
+                                        currentStates.components.tabulationStops.end(), 
+                                        [](tabulationStop stop) { 
+                                            return stop.type == tabulationStop::types::LINE && stop.position.y == currentStates.components.activePresentationPosition.y; 
+                                        }
+                                    ),
+                                    currentStates.components.tabulationStops.end()
+                                );
+                                break;
+                            }
+                            case types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION: {
+                                currentStates.components.tabulationStops.erase(
+                                    std::remove_if(
+                                        currentStates.components.tabulationStops.begin(), 
+                                        currentStates.components.tabulationStops.end(), 
+                                        [](tabulationStop stop) { 
+                                            return stop.type == tabulationStop::types::CHARACTER && stop.position == currentStates.components.activePresentationPosition; 
+                                        }
+                                    ),
+                                    currentStates.components.tabulationStops.end()
+                                );
+                                break;
+                            }
+                        }
+                    }
+
+                    void operate_TABULATION_STOP_REMOVE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto index = params.front().getValueAsInteger();
+
+                        assert(index != UINT32_MAX);    // -1 means default, but this operation does not accept default values!
+
+                        currentStates.components.tabulationStops.erase(
+                            std::remove_if(
+                                currentStates.components.tabulationStops.begin(), 
+                                currentStates.components.tabulationStops.end(), 
+                                [](tabulationStop stop) { 
+                                    return stop.type == tabulationStop::types::CHARACTER && stop.position == currentStates.components.activePresentationPosition;
+                                }
+                            ),
+                            currentStates.components.tabulationStops.end()
+                        );
+                    }
+
+                    void operate_LINE_POSITION_ABSOLUTE(sequence::prefix* input) {
+
                     }
                 }
 

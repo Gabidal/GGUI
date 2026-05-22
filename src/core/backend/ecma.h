@@ -342,6 +342,61 @@ namespace GGUI {
                     NORMAL,
                     HAS_INFINITE_PARAMETERS
                 };
+
+                enum class presentationDirections {
+                    HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT = 0,            /*  Ps1:
+                                                                        line orientation:   horizontal
+                                                                        line progression:   top-to-bottom
+                                                                        character path:     left-to-right */ 
+
+                    VERTICAL_TOP_RIGHT_TO_BOTTOM_LEFT = 1,              /*  Ps1:
+                                                                        line orientation:   vertical
+                                                                        line progression:   right-to-left
+                                                                        character path:     top-to-bottom */
+
+                    VERTICAL_TOP_LEFT_TO_BOTTOM_RIGHT = 2,              /*  Ps1:
+                                                                        line orientation:   vertical
+                                                                        line progression:   left-to-right
+                                                                        character path:     top-to-bottom */
+
+                    HORIZONTAL_TOP_RIGHT_TO_BOTTOM_LEFT = 3,            /*  Ps1:
+                                                                        line orientation:   horizontal
+                                                                        line progression:   top-to-bottom
+                                                                        character path:     right-to-left */
+
+                    VERTICAL_BOTTOM_LEFT_TO_TOP_RIGHT = 4,              /*  Ps1:
+                                                                        line orientation:   vertical
+                                                                        line progression:   left-to-right
+                                                                        character path:     bottom-to-top */
+
+                    HORIZONTAL_BOTTOM_RIGHT_TO_TOP_LEFT = 5,            /*  Ps1:
+                                                                        line orientation:   horizontal
+                                                                        line progression:   bottom-to-top
+                                                                        character path:     right-to-left */
+
+                    HORIZONTAL_BOTTOM_LEFT_TO_TOP_RIGHT = 6,            /*  Ps1:
+                                                                        line orientation:   horizontal
+                                                                        line progression:   bottom-to-top
+                                                                        character path:     left-to-right */
+
+                    VERTICAL_BOTTOM_RIGHT_TO_TOP_LEFT = 7,              /*  Ps1:
+                                                                        line orientation:   vertical
+                                                                        line progression:   right-to-left
+                                                                        character path:     bottom-to-top */
+
+
+                    STALL                           = 0,                // Ps2: Undefined (implementation-dependent) 
+
+                    BUFFER_TO_DISPLAY               = 1,                /* Ps2: The content of the presentation component is updated to correspond to the content of the data
+                                                                                component according to the newly established characteristics of the presentation component; 
+                                                                                the active data position is moved to the first character position in the first line in the data component, 
+                                                                                the active presentation position in the presentation component is updated accordingly */
+
+                    DISPLAY_TO_BUFFER               = 2,                /* Ps2: The content of the data component is updated to correspond to the content of the presentation
+                                                                                component according to the newly established characteristics of the presentation component; 
+                                                                                the active presentation position is moved to the first character position in the first line in the presentation component,
+                                                                                the active data position in the data component is updated accordingly. */
+                };
             }
 
             namespace sequence {
@@ -1471,10 +1526,37 @@ namespace GGUI {
                     CENTERED_ON_CHARACTER,
                 } mode = modes::LEADING_EDGE;
 
-                table::configuration::location position = {0, 0};
+                enum class types {
+                    CHARACTER,
+                    LINE
+                } type = types::CHARACTER;
+
+                IVector2 position = {0, 0};
+            };
+
+            struct imaginaryLine {
+                enum class types {
+                    SUBSCRIPT,
+                    SUPERSCRIPT
+                } type = types::SUBSCRIPT;
+
+                IVector2 start, end;
             };
 
             struct components {
+                // Small helper class
+                struct dataPage {
+                    IVector2 start, end;
+                };
+
+                /**
+                 * Data component moves in the page space, presentation component is the window to this page space
+                 * 
+                 */
+                uint16_t activePageIndex = 0;
+
+                std::vector<dataPage> dataPages;
+
                 /**
                  * @brief The area in the data component which contains the active data position.
                  * The area in the presentation component which contains the active presentation position
@@ -1487,32 +1569,8 @@ namespace GGUI {
                  */
                 table::configuration::layout::bounds activeField;
 
-                /**
-                 * @brief The line in the data component which contains the active data position.
-                 * The line in the presentation component which contains the active presentation position. 
-                 */
-                uint16_t activeLinePosition;
-
-                /**
-                 * @brief The character position in the data component which is to receive the next graphic character or the next
-                 * control function from the data stream and relative to which certain control functions are to be executed.
-                 */
-                uint16_t activeCharacterPosition;
-
-                constexpr IVector2 getActiveDataPosition() const { 
-                    return {activeCharacterPosition, activeLinePosition};
-                }
-
-                constexpr void moveActivePosition(IVector2 directionChange) {
-                    activeLinePosition += directionChange.y;
-                    activeCharacterPosition += directionChange.x;
-                }
-
-                /**
-                 * @brief The same as active data position but only relates the graphical related received characters.
-                 * NOTE: For current implementation under 0.1.8.5, this will be same as activeCharacterPosition.
-                 */
-                uint16_t& activePresentationPosition = activeCharacterPosition;
+                IVector2 activeDataPosition;
+                IVector2 activePresentationPosition;
 
                 enum class characterMovementDirection : uint8_t {
                     DIRECTION_OF_CHARACTER_PROGRESSION,             // The direction of implicit movement is the same as that of the character progression, used as *1 coefficient of direction vector
@@ -1542,18 +1600,25 @@ namespace GGUI {
                  * @brief A reference position on a line in the data component ahead of which the active data position can normally not be moved. 
                  * NOTE: Same applies to presentation component.
                  */
-                uint16_t homeLinePosition;
+                IVector2 homeLinePosition;
 
                 /**
                  * @brief A reference position on a line in the data component beyond which the active data position can normally not be moved.
                  */
-                uint16_t lineLimitPosition;
+                IVector2 lineLimitPosition;
 
                 // Set via the character tabulation operator
                 tabulationStop::modes activeTabulationAlignment;
 
                 // Contains all tabulation stops set by the character tabulation set operator.
                 std::vector<tabulationStop> tabulationStops;
+
+                // Used for operators to determine the current direction, like sub/super scripts.
+                sequences::presentationDirections currentPresentationDirection;
+
+                // Contains start|stop points of sub- and super-scripts
+                // NOTE: this is partially ignored, oly usable in GGDirect mode, when full pixel level positions are available!
+                std::vector<imaginaryLine> imaginaryLines;
             };
 
             namespace sequences {
@@ -1826,6 +1891,18 @@ namespace GGUI {
                     extern void operate_CHARACTER_POSITION_FORWARD(sequence::prefix*);
                     extern void operate_CHARACTER_TABULATION(sequence::prefix*);
                     extern void operate_CHARACTER_TABULATION_SET(sequence::prefix*);
+                    extern void operate_CHARACTER_AND_LINE_POSITION(sequence::prefix*);
+                    extern void operate_LINE_FEED(sequence::prefix*);
+                    extern void operate_NEXT_LINE(sequence::prefix*);
+                    extern void operate_PARTIAL_LINE_FORWARD(sequence::prefix*);
+                    extern void operate_PARTIAL_LINE_BACKWARD(sequence::prefix*);
+                    extern void operate_PAGE_POSITION_ABSOLUTE(sequence::prefix*);
+                    extern void operate_PAGE_POSITION_BACKWARD(sequence::prefix*);
+                    extern void operate_PAGE_POSITION_FORWARD(sequence::prefix*);
+                    extern void operate_REVERSE_LINE_FEED(sequence::prefix*);
+                    extern void operate_TABULATION_CLEAR(sequence::prefix*);
+                    extern void operate_TABULATION_STOP_REMOVE(sequence::prefix*);
+                    extern void operate_LINE_POSITION_ABSOLUTE(sequence::prefix*);
 
                     /**
                      * @brief BS causes the active data position to be moved one character position in the data component in the
@@ -1924,7 +2001,7 @@ namespace GGUI {
                      * progression, where n equals the value of Pn1 and m equals the value of Pn2. 
                      * @example `01/11 05/11 Pn1;Pn2 06/06` or `9/11 Pn1;Pn2 06/06`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CHARACTER_AND_LINE_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HVP), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CHARACTER_AND_LINE_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HVP), {1}, {operate_CHARACTER_AND_LINE_POSITION});
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, LF causes the
@@ -1935,7 +2012,7 @@ namespace GGUI {
                      * component. 
                      * @example `00/10`
                      */
-                    inline auto LINE_FEED = base<sequence::prefix>(table::C0::LF);
+                    inline auto LINE_FEED = base<sequence::prefix>(table::C0::LF, {}, {operate_LINE_FEED});
 
                     /**
                      * @brief The effect of NEL depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
@@ -1956,7 +2033,7 @@ namespace GGUI {
                      * parameter value of SET LINE LIMIT (SLL). 
                      * @example `08/05` or `01/11 04/05`
                      */
-                    inline auto NEXT_LINE = base<sequence::prefix>(table::C1::NEL);
+                    inline auto NEXT_LINE = base<sequence::prefix>(table::C1::NEL, {}, {operate_NEXT_LINE});
 
                     /**
                      * @brief PLD causes the active presentation position to be moved in the presentation component to the
@@ -1967,7 +2044,7 @@ namespace GGUI {
                      * line that contains the active presentation position).
                      * @example `08/11` or `01/11 04/11`
                      */
-                    inline auto PARTIAL_LINE_FORWARD = base<sequence::prefix>(table::C1::PLD);
+                    inline auto PARTIAL_LINE_FORWARD = base<sequence::prefix>(table::C1::PLD, {}, {operate_PARTIAL_LINE_FORWARD});
 
                     /**
                      * @brief PLU causes the active presentation position to be moved in the presentation component to the
@@ -1978,28 +2055,28 @@ namespace GGUI {
                      * line (the line that contains the active presentation position). 
                      * @example `08/12` or `01/11 04/12` 
                      */
-                    inline auto PARTIAL_LINE_BACKWARD = base<sequence::prefix>(table::C1::PLU);
+                    inline auto PARTIAL_LINE_BACKWARD = base<sequence::prefix>(table::C1::PLU, {}, {operate_PARTIAL_LINE_BACKWARD});
 
                     /**
                      * @brief PPA causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/00` or `9/11 Pn 02/00 05/00`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPA), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPA), {1}, {operate_PAGE_POSITION_ABSOLUTE});
 
                     /**
                      * @brief PPB causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th preceding page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/02` or `9/11 Pn 02/00 05/02`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPB), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPB), {1}, {operate_PAGE_POSITION_BACKWARD});
                     
                     /**
                      * @brief PPR causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th following page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/01` or `9/11 Pn 02/00 05/01`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPR), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPR), {1}, {operate_PAGE_POSITION_FORWARD});
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, RI causes the
@@ -2009,7 +2086,7 @@ namespace GGUI {
                      * position to be moved in the data component to the corresponding character position of the preceding line.
                      @example `08/13` or `ESC 04/13`
                      */
-                    inline auto REVERSE_LINE_FEED = base<sequence::prefix>(table::C1::RI);
+                    inline auto REVERSE_LINE_FEED = base<sequence::prefix>(table::C1::RI, {}, {operate_REVERSE_LINE_FEED});
 
                     /**
                      * @brief TBC causes one or more tabulation stops in the presentation component to be cleared, depending on the
@@ -2027,7 +2104,7 @@ namespace GGUI {
                             ALL_LINE_AND_CHARACTER_TABULATORS
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::TBC), {types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION});
+                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::TBC), {types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION}, {operate_TABULATION_CLEAR});
                     }
 
                     /**
@@ -2037,7 +2114,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/04` or `9/11 Pn 02/00 06/04`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> TABULATION_STOP_REMOVE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TSR), {-1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> TABULATION_STOP_REMOVE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TSR), {-1}, {operate_TABULATION_STOP_REMOVE});
                     
                     /**
                      * @brief VPA causes the active data position to be moved to line position n in the data component in a direction
@@ -2045,7 +2122,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/04` or `9/11 Pn 06/04`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPA), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPA), {1}, {operate_LINE_POSITION_ABSOLUTE});
 
                     /**
                      * @brief VPB causes the active data position to be moved by n line positions in the data component in a direction
@@ -2616,64 +2693,7 @@ namespace GGUI {
                      * @param Ps1 default(0)
                      * @param Ps2 default(0)
                      */
-                    namespace SELECT_PRESENTATION_DIRECTIONS {
-                        enum class types {
-                            HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT = 0,            /*  Ps1:
-                                                                                line orientation:   horizontal
-                                                                                line progression:   top-to-bottom
-                                                                                character path:     left-to-right */ 
-
-                            VERTICAL_TOP_RIGHT_TO_BOTTOM_LEFT = 1,              /*  Ps1:
-                                                                                line orientation:   vertical
-                                                                                line progression:   right-to-left
-                                                                                character path:     top-to-bottom */
-
-                            VERTICAL_TOP_LEFT_TO_BOTTOM_RIGHT = 2,              /*  Ps1:
-                                                                                line orientation:   vertical
-                                                                                line progression:   left-to-right
-                                                                                character path:     top-to-bottom */
-
-                            HORIZONTAL_TOP_RIGHT_TO_BOTTOM_LEFT = 3,            /*  Ps1:
-                                                                                line orientation:   horizontal
-                                                                                line progression:   top-to-bottom
-                                                                                character path:     right-to-left */
-
-                            VERTICAL_BOTTOM_LEFT_TO_TOP_RIGHT = 4,              /*  Ps1:
-                                                                                line orientation:   vertical
-                                                                                line progression:   left-to-right
-                                                                                character path:     bottom-to-top */
-
-                            HORIZONTAL_BOTTOM_RIGHT_TO_TOP_LEFT = 5,            /*  Ps1:
-                                                                                line orientation:   horizontal
-                                                                                line progression:   bottom-to-top
-                                                                                character path:     right-to-left */
-
-                            HORIZONTAL_BOTTOM_LEFT_TO_TOP_RIGHT = 6,            /*  Ps1:
-                                                                                line orientation:   horizontal
-                                                                                line progression:   bottom-to-top
-                                                                                character path:     left-to-right */
-
-                            VERTICAL_BOTTOM_RIGHT_TO_TOP_LEFT = 7,              /*  Ps1:
-                                                                                line orientation:   vertical
-                                                                                line progression:   right-to-left
-                                                                                character path:     bottom-to-top */
-
-
-                            STALL                           = 0,                // Ps2: Undefined (implementation-dependent) 
-
-                            BUFFER_TO_DISPLAY               = 1,                /* Ps2: The content of the presentation component is updated to correspond to the content of the data
-                                                                                        component according to the newly established characteristics of the presentation component; 
-                                                                                        the active data position is moved to the first character position in the first line in the data component, 
-                                                                                        the active presentation position in the presentation component is updated accordingly */
-
-                            DISPLAY_TO_BUFFER               = 2,                /* Ps2: The content of the data component is updated to correspond to the content of the presentation
-                                                                                        component according to the newly established characteristics of the presentation component; 
-                                                                                        the active presentation position is moved to the first character position in the first line in the presentation component,
-                                                                                        the active data position in the data component is updated accordingly. */
-                        };
-
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 2> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SPD), {types::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT, types::STALL});
-                    }
+                    inline base<sequence::control<sequence::parameter::selectable<presentationDirections>>, presentationDirections, 2> SELECT_PRESENTATION_DIRECTIONS(sequence::control<sequence::parameter::selectable<presentationDirections>>(table::finalWithIntermediate::SPD), {presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT, presentationDirections::STALL});
 
                     // inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_PAGE_HOME                                 =       sequence::controlSequence<sequence::parameter::numeric>(1, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
                     
