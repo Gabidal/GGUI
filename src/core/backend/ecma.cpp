@@ -12,6 +12,47 @@ namespace GGUI {
 
             static table::configuration::manager pageState;
 
+            std::pair<IVector2, IVector2> components::getPresentationDirectionAsVector() {
+                IVector2 linePath, characterPath;
+
+                switch (currentStates.components.currentPresentationDirection) {
+                    case sequences::presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT:
+                        linePath = {0, 1};  // top to bottom
+                        characterPath = {1, 0}; // left to right
+                        break;
+                    case sequences::presentationDirections::HORIZONTAL_TOP_RIGHT_TO_BOTTOM_LEFT:
+                        linePath = {0, 1};  // top to bottom
+                        characterPath = {-1, 0}; // right to left
+                        break;
+                    case sequences::presentationDirections::HORIZONTAL_BOTTOM_RIGHT_TO_TOP_LEFT:
+                        linePath = {0, -1};  // bottom to top
+                        characterPath = {-1, 0}; // right to left
+                        break;
+                    case sequences::presentationDirections::HORIZONTAL_BOTTOM_LEFT_TO_TOP_RIGHT:
+                        linePath = {0, -1};  // bottom to top
+                        characterPath = {1, 0}; // left to right
+                        break;
+                    case sequences::presentationDirections::VERTICAL_TOP_LEFT_TO_BOTTOM_RIGHT:
+                        linePath = {1, 0};  // left to right
+                        characterPath = {0, 1}; // top to bottom
+                        break;
+                    case sequences::presentationDirections::VERTICAL_BOTTOM_LEFT_TO_TOP_RIGHT:
+                        linePath = {1, 0};  // left to right
+                        characterPath = {0, -1}; // bottom to top
+                        break;
+                    case sequences::presentationDirections::VERTICAL_BOTTOM_RIGHT_TO_TOP_LEFT:
+                        linePath = {-1, 0};  // right to left
+                        characterPath = {0, -1}; // bottom to top
+                        break;
+                    case sequences::presentationDirections::VERTICAL_TOP_RIGHT_TO_BOTTOM_LEFT:
+                        linePath = {-1, 0};  // right to left
+                        characterPath = {0, 1}; // top to bottom
+                        break;
+                }
+
+                return {linePath, characterPath};
+            }
+
             namespace sequence {
                 std::string prefix::toString() const {
                     // only primary set
@@ -388,7 +429,7 @@ namespace GGUI {
                         auto params = controlSequence->getParameters();
 
                         // Get the current direction vector and multiply it by the scalar of n via input and -1 to get the opposite vector.
-                        auto directionVector = currentStates.components.activeCharacterMovementDirection * -params.front().getValueAsInteger();
+                        auto directionVector = currentStates.components.activeCharacterMovementDirection * -static_cast<signed int>(params.front().getValueAsInteger());
 
                         currentStates.components.activeDataPosition += directionVector;
                     }
@@ -399,7 +440,7 @@ namespace GGUI {
                         auto params = controlSequence->getParameters();
 
                         // Get the current direction vector and multiply it by the scalar of n via input to get the movement vector.
-                        auto directionVector = currentStates.components.activeCharacterMovementDirection * params.front().getValueAsInteger();
+                        auto directionVector = currentStates.components.activeCharacterMovementDirection * static_cast<signed int>(params.front().getValueAsInteger());
 
                         currentStates.components.activeDataPosition += directionVector;
                     }
@@ -431,6 +472,7 @@ namespace GGUI {
                         // This function sets a tabulation stop at the current active line position and presentation position, with the current tabulation alignment mode.
                         currentStates.components.tabulationStops.push_back(tabulationStop{
                             currentStates.components.activeTabulationAlignment,
+                            tabulationStop::types::CHARACTER,
                             currentStates.components.activePresentationPosition
                         });
                     }
@@ -657,6 +699,7 @@ namespace GGUI {
 
                         assert(index != UINT32_MAX);    // -1 means default, but this operation does not accept default values!
 
+                        // TODO: This one wont break after hit, so maybe change into a normal loop.
                         currentStates.components.tabulationStops.erase(
                             std::remove_if(
                                 currentStates.components.tabulationStops.begin(), 
@@ -670,7 +713,31 @@ namespace GGUI {
                     }
 
                     void operate_LINE_POSITION_ABSOLUTE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = static_cast<signed int>(params.front().getValueAsInteger());
+
+                        auto lineProgression = currentStates.components.getPresentationDirectionAsVector().first;
+
+                        currentStates.components.activeDataPosition.y = lineProgression.y * line;
+                    }
+
+                    void operate_LINE_POSITION_BACKWARD(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = static_cast<signed int>(params.front().getValueAsInteger());
+
+                        auto lineProgression = currentStates.components.getPresentationDirectionAsVector().first;
+
+                        currentStates.components.activeDataPosition.y = -lineProgression.y * line;
                     }
                 }
 

@@ -355,6 +355,10 @@ namespace GGUI{
             return IVector2(static_cast<int>(x * num), static_cast<int>(y * num)); // Multiply each coordinate by num
         }
 
+        constexpr IVector2 operator*(int num) const noexcept {
+            return IVector2(x * num, y * num); // Multiply each coordinate by num
+        }
+
         /**
          * @brief == operator with another IVector2
          * 

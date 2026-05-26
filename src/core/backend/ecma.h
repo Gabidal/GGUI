@@ -1616,6 +1616,8 @@ namespace GGUI {
                 // Used for operators to determine the current direction, like sub/super scripts.
                 sequences::presentationDirections currentPresentationDirection;
 
+                std::pair<IVector2, IVector2> getPresentationDirectionAsVector();
+
                 // Contains start|stop points of sub- and super-scripts
                 // NOTE: this is partially ignored, oly usable in GGDirect mode, when full pixel level positions are available!
                 std::vector<imaginaryLine> imaginaryLines;
@@ -1903,6 +1905,7 @@ namespace GGUI {
                     extern void operate_TABULATION_CLEAR(sequence::prefix*);
                     extern void operate_TABULATION_STOP_REMOVE(sequence::prefix*);
                     extern void operate_LINE_POSITION_ABSOLUTE(sequence::prefix*);
+                    extern void operate_LINE_POSITION_BACKWARD(sequence::prefix*);
 
                     /**
                      * @brief BS causes the active data position to be moved one character position in the data component in the
@@ -2130,7 +2133,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/11` or `9/11 Pn 06/11`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPB), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPB), {1}, {operate_LINE_POSITION_BACKWARD});
 
                     /**
                      * @brief VPR causes the active data position to be moved by n line positions in the data component in a direction
