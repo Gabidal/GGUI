@@ -1906,6 +1906,9 @@ namespace GGUI {
                     extern void operate_TABULATION_STOP_REMOVE(sequence::prefix*);
                     extern void operate_LINE_POSITION_ABSOLUTE(sequence::prefix*);
                     extern void operate_LINE_POSITION_BACKWARD(sequence::prefix*);
+                    extern void operate_LINE_POSITION_FORWARD(sequence::prefix*);
+                    extern void operate_LINE_TABULATION(sequence::prefix*);
+                    extern void operate_LINE_TABULATION_SET(sequence::prefix*);
 
                     /**
                      * @brief BS causes the active data position to be moved one character position in the data component in the
@@ -2140,29 +2143,31 @@ namespace GGUI {
                      * parallel to the line progression, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 06/05` or `9/11 Pn 06/05`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPR), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPR), {1}, {operate_LINE_POSITION_FORWARD});
 
                     /**
                      * @brief VT causes the active presentation position to be moved in the presentation component to the
                      * corresponding character position on the line at which the following line tabulation stop is set. 
                      * @example `00/11`
                      */
-                    inline auto LINE_TABULATION = base<sequence::prefix>(table::C0::VT);
+                    inline auto LINE_TABULATION = base<sequence::prefix>(table::C0::VT, {}, {operate_LINE_TABULATION});
 
                     /**
                      * @brief VTS causes a line tabulation stop to be set at the active line (the line that contains the active presentation position). 
                      * @example `08/10` or `01/11 04/10`
                      */
-                    inline auto LINE_TABULATION_SET = base<sequence::prefix>(table::C1::VTS);
+                    inline auto LINE_TABULATION_SET = base<sequence::prefix>(table::C1::VTS, {}, {operate_LINE_TABULATION_SET});
                 }
 
                 namespace presentationControlFunctions {
+                    extern void operate_BREAK_PERMITTED_HERE(sequence::prefix*);
+
                     /**
                      * @brief BPH is used to indicate a point where a line break may occur when text is formatted. BPH may occur
                      * between two graphic characters, either or both of which may be SPACE. 
                      * @example `08/02` or `01/11 04/02`
                      */
-                    inline auto BREAK_PERMITTED_HERE = base<sequence::prefix>(table::C1::BPH);
+                    inline auto BREAK_PERMITTED_HERE = base<sequence::prefix>(table::C1::BPH, {}, {operate_BREAK_PERMITTED_HERE});
 
                     /**
                      * @brief DTA is used to establish the dimensions of the text area for subsequent pages.

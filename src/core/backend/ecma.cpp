@@ -737,8 +737,52 @@ namespace GGUI {
 
                         auto lineProgression = currentStates.components.getPresentationDirectionAsVector().first;
 
-                        currentStates.components.activeDataPosition.y = -lineProgression.y * line;
+                        currentStates.components.activeDataPosition.y += -lineProgression.y * line;
                     }
+
+                    void operate_LINE_POSITION_FORWARD(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = static_cast<signed int>(params.front().getValueAsInteger());
+
+                        auto lineProgression = currentStates.components.getPresentationDirectionAsVector().first;
+
+                        currentStates.components.activeDataPosition.y += lineProgression.y * line;
+                    }
+
+                    void operate_LINE_TABULATION(sequence::prefix* /*ignore*/) {
+                        // First find the tabulation top at the current presentation position line
+                        for (auto currentTabStop : currentStates.components.tabulationStops) {
+                            if (
+                                currentTabStop.position.y == currentStates.components.activePresentationPosition.y &&
+                                currentTabStop.position.x > currentStates.components.activePresentationPosition.x &&
+                                currentTabStop.type == tabulationStop::types::LINE
+                            ) {
+                                currentStates.components.activePresentationPosition = currentTabStop.position;
+                                break;
+                            }
+                        }
+                    }
+
+                    void operate_LINE_TABULATION_SET(sequence::prefix* /*ignore*/) {
+                        currentStates.components.tabulationStops.push_back(tabulationStop{
+                            currentStates.components.activeTabulationAlignment,
+                            tabulationStop::types::LINE,
+                            currentStates.components.activePresentationPosition
+                        });
+                    }
+                }
+
+                namespace presentationControlFunctions {
+                    void operate_BREAK_PERMITTED_HERE(sequence::prefix* /*ignore*/) {
+
+                    }
+
+
                 }
 
             }
