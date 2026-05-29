@@ -1543,17 +1543,49 @@ namespace GGUI {
                 IVector2 start, end;
             };
 
-            struct components {
-                // Small helper class
-                struct dataPage {
-                    IVector2 start, end;
-                };
+            enum class fontSlots : uint8_t {
+                PRIMARY,
+                FIRST,
+                SECOND,
+                THIRD,
+                FOURTH,
+                FIFTH,
+                SIXTH,
+                SEVENTH,
+                EIGHT,
+                NINTH,
 
+                __max = NINTH
+            };
+
+            // This is used for secondary multi-sequence post-processing, like GCC for multi character combinations and such
+            struct callBack {
+                size_t start, end;  // These represent the area of sequences to be processed together
+                void(*handler)(callBack) = nullptr;
+            };
+
+            // Small helper class
+            struct dataPage {
+                IVector2 start, end;
+            };
+
+            struct fontAttributes {
+                IVector2 start, end = 0;    // presentation positions
+
+                size_t fontSize;    // Set by GSS. Non-specified metric of size scale
+
+                IVector2 fontScalar = {100, 100};    // Set by GSM, value range: [0, 100] as percentages.
+            };
+
+            struct components {
                 /**
                  * Data component moves in the page space, presentation component is the window to this page space
                  * 
                  */
                 uint16_t activePageIndex = 0;
+
+                // managed via DTA
+                dataPage establishedCurrentDefaultPage;
 
                 std::vector<dataPage> dataPages;
 
@@ -1621,6 +1653,18 @@ namespace GGUI {
                 // Contains start|stop points of sub- and super-scripts
                 // NOTE: this is partially ignored, oly usable in GGDirect mode, when full pixel level positions are available!
                 std::vector<imaginaryLine> imaginaryLines;
+
+                // When the activePresentationPosition hits any of these, its position will be moved by one line towards the parallel direction of the presentation direction.
+                std::vector<IVector2> lineBreaks;
+
+                std::array<uint8_t, (size_t)fontSlots::__max> activeFonts;
+
+                // ------------ META ------------
+                size_t currentParsingSequenceIndex = 0;
+                std::vector<callBack> callBacks;
+                // ------------ META ------------
+
+                std::vector<fontAttributes> registeredFontAttributes;
             };
 
             namespace sequences {
@@ -2161,6 +2205,10 @@ namespace GGUI {
 
                 namespace presentationControlFunctions {
                     extern void operate_BREAK_PERMITTED_HERE(sequence::prefix*);
+                    extern void operate_DIMENSION_TEXT_AREA(sequence::prefix*);
+                    extern void operate_FONT_SELECTION(sequence::prefix*);
+                    extern void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::prefix*);
+                    extern void operate_GRAPHIC_SIZE_SELECTION(sequence::prefix*);
 
                     /**
                      * @brief BPH is used to indicate a point where a line break may occur when text is formatted. BPH may occur
@@ -2176,31 +2224,16 @@ namespace GGUI {
                      * @param Pn1 default(none)
                      * @param Pn2 default(none)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> DIMENSION_TEXT_AREA(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::DTA), {-1, -1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> DIMENSION_TEXT_AREA(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::DTA), {-1, -1}, {operate_DIMENSION_TEXT_AREA});
 
                     /**
                      * @brief FNT is used to identify the character font to be selected as primary or alternative font by subsequent
                      * occurrences of SELECT GRAPHIC RENDITION (SGR) in the data stream. Ps1 specifies the primary or alternative font concerned.
                      * @example `01/11 05/11 Ps1;Ps2 02/00 04/04` or `9/11 Ps1;Ps2 02/00 04/04`
-                     * @param Ps1 default(0)
-                     * @param Ps2 default(0)
+                     * @param Ps1 default(0)    <-- font slot to load
+                     * @param Ps2 default(0)    <-- font ID
                      */
-                    namespace FONT_SELECTION {
-                        enum class types {
-                            PRIMARY,
-                            FIRST,
-                            SECOND,
-                            THIRD,
-                            FOURTH,
-                            FIFTH,
-                            SIXTH,
-                            SEVENTH,
-                            EIGHT,
-                            NINTH
-                        };
-
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 2> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::FNT), {types::PRIMARY, types::PRIMARY});
-                    }
+                    inline base<sequence::control<sequence::parameter::selectable<fontSlots>>, fontSlots, 2> FONT_SELECTION(sequence::control<sequence::parameter::selectable<fontSlots>>(table::finalWithIntermediate::FNT), {fontSlots::PRIMARY, (fontSlots)0 /* Due to limitations, this secondary is also used as an selectable, stated in ecma-48 8.3.53 */}, {operate_FONT_SELECTION});
 
                     /**
                      * @brief GCC is used to indicate that two or more graphic characters are to be imaged as one single graphic
@@ -2221,7 +2254,7 @@ namespace GGUI {
                             END             //                     end of string characters to be images as a single graphic symbol.
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::GCC), {types::DOUBLE_WIDE});
+                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::GCC), {types::DOUBLE_WIDE}, {operate_GRAPHIC_CHARACTER_COMBINATION});
                     }
 
                     /**
@@ -2244,7 +2277,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/03` or `9/11 Pn 02/00 04/03`
                      * @param Pn default(none) specifies the height, the width is implicitly defined by the height.
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> GRAPHIC_SIZE_SELECTION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::GSS), {-1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> GRAPHIC_SIZE_SELECTION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::GSS), {-1}, {operate_GRAPHIC_SIZE_SELECTION});
                     
                     /**
                      * @brief JFY is used to indicate the beginning of a string of graphic characters in the presentation component that

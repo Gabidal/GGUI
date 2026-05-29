@@ -269,6 +269,9 @@ namespace GGUI {
                         pageState.update();     // refresh temporary pages
 
                         result.push_back(pageCallReturn.second);
+
+                        currentStates.components.currentParsingSequenceIndex++;     // Only for META operators
+
                         i += pageCallReturn.first;      // TODO: check for maybe adding -1, since the loop increases 'i' either way.
                     }
                     return result;
@@ -779,10 +782,84 @@ namespace GGUI {
 
                 namespace presentationControlFunctions {
                     void operate_BREAK_PERMITTED_HERE(sequence::prefix* /*ignore*/) {
-
+                        currentStates.components.lineBreaks.push_back(currentStates.components.activePresentationPosition);
+                        currentStates.components.activePresentationPosition.y++;
+                        currentStates.components.activePresentationPosition.x = 0;
                     }
 
+                    void operate_DIMENSION_TEXT_AREA(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 2);
+
+                        auto start = params.front().getValueAsInteger();
+                        auto end = params.back().getValueAsInteger();
+
+                        currentStates.components.establishedCurrentDefaultPage = {start, end};
+                    }
+
+                    void operate_FONT_SELECTION(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<fontSlots>>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 2);
+
+                        auto fontSlot = params.front().getValueAsInteger();
+                        auto fontID = static_cast<uint8_t>(params.back().getValueAsInteger());
+
+                        currentStates.components.activeFonts[(size_t)fontSlot] = fontID;
+                    }
+
+                    void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<GRAPHIC_CHARACTER_COMBINATION::types>>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto combinationType = params.front().getValueAsInteger();
+
+                        auto currentParsingIndex = currentStates.components.currentParsingSequenceIndex;
+                        auto& callBacks = currentStates.components.callBacks;
+
+                        auto callBackHandler = [](callBack self){
+                            return; // TODO: ...
+                        };
+
+                        switch (combinationType) {
+                            case GRAPHIC_CHARACTER_COMBINATION::types::DOUBLE_WIDE: {
+                                callBacks.push_back({
+                                    currentParsingIndex+1,  // Ignore current sequence
+                                    currentParsingIndex+2,
+                                    callBackHandler
+                                });
+                                break;
+                            }
+                            case GRAPHIC_CHARACTER_COMBINATION::types::START: {
+                                callBacks.push_back({
+                                    currentParsingIndex+1,  // Ignore current sequence
+                                    0,
+                                    callBackHandler
+                                });
+                                break;
+                            }
+                            case GRAPHIC_CHARACTER_COMBINATION::types::END: {
+                                if (callBacks.back().end != 0) {
+                                    assert(false && "Invalid sequence combination: END found without a corresponding START");
+                                }
+
+                                callBacks.back().end = currentParsingIndex;  // Base trust. previous GCC had to be a START one.
+                                break;
+                            }
+                        }
+                    }
+
+                    void operate_GRAPHIC_SIZE_SELECTION(sequence::prefix* input) {
+                        
+                    }
                 }
 
             }
