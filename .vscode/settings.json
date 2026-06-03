@@ -133,6 +133,8 @@
     "clangd.arguments": [
         "--compile-commands-dir=${workspaceFolder}/bin/build",
         "--completion-style=detailed",
-        "--header-insertion=never"
+        "--header-insertion=never",
+        "--background-index",
+        "--pch-storage=memory"
     ],
 }

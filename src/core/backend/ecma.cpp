@@ -618,7 +618,7 @@ namespace GGUI {
                         assert(params.size() == 1);
 
                         // If, false, then multiline tabulation is enabled.
-                        bool singleTabulationMode = currentStates.components.activeModes.has(table::mode::presets::TSM_SINGLE);
+                        // bool singleTabulationMode = currentStates.components.activeModes.has(table::mode::presets::TSM_SINGLE);
                     
                         switch (params.front().getValueAsInteger()) {
                             using namespace sequences::formatEffectors::TABULATION_CLEAR;
@@ -825,7 +825,7 @@ namespace GGUI {
                         auto currentParsingIndex = currentStates.components.currentParsingSequenceIndex;
                         auto& callBacks = currentStates.components.callBacks;
 
-                        auto callBackHandler = [](callBack self){
+                        auto callBackHandler = [](callBack /*self*/){
                             return; // TODO: ...
                         };
 
@@ -857,8 +857,65 @@ namespace GGUI {
                         }
                     }
 
+                    void operate_GRAPHIC_SIZE_MODIFICATION(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 2);
+
+                        IVector2 scalar = { 
+                            (int)params.front().getValueAsInteger(), 
+                            (int)params.back().getValueAsInteger()
+                        };
+
+                        size_t previousFontSize = 0;
+
+                        // We need to check if our scalar is different from the latest scalar
+                        if (!currentStates.components.registeredFontAttributes.empty()) {
+                            auto &latestFontAttribute = currentStates.components.registeredFontAttributes.back();
+
+                            previousFontSize = latestFontAttribute.fontSize;
+
+                            if (latestFontAttribute.fontScalar == scalar) {
+                                return;     
+                            } else {
+                                // End the last font attribute at the current presentation position
+                                latestFontAttribute.end = currentStates.components.activePresentationPosition;
+                            }
+                        }
+
+                        // Now we can safely add the new font attribute with the new scalar from this point onward
+                        currentStates.components.registeredFontAttributes.emplace_back(
+                            currentStates.components.activePresentationPosition,    // start
+                            previousFontSize,    // font size is inherited from the previous font attribute, as per ECMA-48 specification
+                            scalar
+                        );
+
+                    }
+
                     void operate_GRAPHIC_SIZE_SELECTION(sequence::prefix* input) {
-                        
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto scalar = params.front().getValueAsInteger();
+
+                        // if this triggers, it means this is the closing GSS
+                        if (!currentStates.components.registeredFontAttributes.empty()) {
+                            fontAttributes& previous = currentStates.components.registeredFontAttributes.back();
+
+                            previous.end = currentStates.components.activePresentationPosition;
+                        } 
+
+                        // Regardless of previous GSS encounters, we will always create a new succeeding GSS from thi point onward
+                        currentStates.components.registeredFontAttributes.emplace_back(
+                            currentStates.components.activePresentationPosition,    // start
+                            scalar
+                        );
+
                     }
                 }
 

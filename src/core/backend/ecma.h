@@ -1575,6 +1575,8 @@ namespace GGUI {
                 size_t fontSize;    // Set by GSS. Non-specified metric of size scale
 
                 IVector2 fontScalar = {100, 100};    // Set by GSM, value range: [0, 100] as percentages.
+
+                fontAttributes(IVector2 Start, size_t FontSize, IVector2 scalar = {100, 100}) : start(Start), end(0), fontSize(FontSize), fontScalar(scalar) {}
             };
 
             struct components {
@@ -2208,6 +2210,7 @@ namespace GGUI {
                     extern void operate_DIMENSION_TEXT_AREA(sequence::prefix*);
                     extern void operate_FONT_SELECTION(sequence::prefix*);
                     extern void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::prefix*);
+                    extern void operate_GRAPHIC_SIZE_MODIFICATION(sequence::prefix*);
                     extern void operate_GRAPHIC_SIZE_SELECTION(sequence::prefix*);
 
                     /**
@@ -2265,7 +2268,7 @@ namespace GGUI {
                      * @param Pn1 default(100) specifies the height as a percentage of the height established by GSS
                      * @param Pn2 default(100) specifies the width as a percentage of the width established by GSS 
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> GRAPHIC_SIZE_MODIFICATION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::GSM), {100,100});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> GRAPHIC_SIZE_MODIFICATION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::GSM), {100,100}, {operate_GRAPHIC_SIZE_MODIFICATION});
 
                     /**
                      * @brief GSS is used to establish for subsequent text the height and the width of all primary and alternative fonts
@@ -3340,7 +3343,7 @@ namespace GGUI {
                      * NOTE: When used for data flow control, DC1 is sometimes called "X-ON". 
                      * @example `01/01`
                      */
-                     inline auto DEVICE_CONTROL_ONE             = base<sequence::prefix>(table::C0::DC1);
+                    inline auto DEVICE_CONTROL_ONE             = base<sequence::prefix>(table::C0::DC1);
                     
                     /**
                      * @brief DC2 is primarily intended for turning on or starting an ancillary device. 
