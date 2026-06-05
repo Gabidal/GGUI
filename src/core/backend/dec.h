@@ -1,7 +1,6 @@
 #ifndef _DEC_H_
 #define _DEC_H_
 
-#include "terminal.h"
 #include "ansi.h"
 
 namespace GGUI {
@@ -49,7 +48,7 @@ namespace GGUI {
                     }
                 }
 
-                struct machine {
+                struct components {
                     ecma::table::mode::flags<mode::privates::types> modes;
                 };
 

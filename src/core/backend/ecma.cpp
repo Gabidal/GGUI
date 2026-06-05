@@ -915,10 +915,189 @@ namespace GGUI {
                             currentStates.components.activePresentationPosition,    // start
                             scalar
                         );
+                    }
 
+                    void operate_JUSTIFY(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<justify::types>>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() > 0);
+
+                        // Check if previous justify exists and is trailing.
+                        if (!currentStates.components.registeredJustifications.empty()) {
+                            auto& trailingJustification = currentStates.components.registeredJustifications.back();
+                            
+                            if (trailingJustification.end != 0) {   // End trailing justification
+                                trailingJustification.end = currentStates.components.activePresentationPosition;
+                            }
+                        }
+
+                        justify newJustification(currentStates.components.activePresentationPosition);
+
+                        for (auto& p : params) {
+                            auto typed = p.getValueAsInteger();
+
+                            newJustification.add(typed);
+                        }
+
+                        currentStates.components.registeredJustifications.push_back(newJustification);
+                    }
+
+                    void operate_NO_BREAK_HERE(sequence::prefix* /*ignored*/) {
+                        currentStates.components.lineContinuations.push_back(currentStates.components.activePresentationPosition);
+                    }
+
+                    void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<spacingFactor::types>>*>(input);
+                    
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto spacingFactorType = params.front().getValueAsInteger();
+
+                        currentStates.components.activeSpacingFactor.type = spacingFactorType;
+                    }
+
+                    void operate_SELECT_GRAPHIC_RENDITION(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<graphicAttributes::types>>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() > 0);
+
+                        graphicAttributes newAttributes(currentStates.components.activePresentationPosition);
+
+                        for (auto& p : params) {
+                            newAttributes.add(p.getValueAsInteger());
+                        }
+
+                        bool cumulateFromPrevious = currentStates.components.activeModes.has(table::mode::presets::GRCM_CUMULATIVE);
+
+                        // Check if the current GRCM is replacing or cumulative
+                        if (!currentStates.components.registeredGraphicAttributes.empty()) {
+                            auto& previousAttributes = currentStates.components.registeredGraphicAttributes.back();
+
+                            if (previousAttributes.end == 0) {
+                                previousAttributes.end = currentStates.components.activePresentationPosition;
+
+                                if (cumulateFromPrevious) newAttributes.add(previousAttributes);
+                            }
+                        }
+
+                        currentStates.components.registeredGraphicAttributes.push_back(newAttributes);
+                    }
+
+                    void operate_SET_LINE_HOME(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto characterPosition = params.front().getValueAsInteger();
+
+                        if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                            currentStates.components.homeLinePosition = {
+                                characterPosition,
+                                currentStates.components.activePresentationPosition.y
+                            };
+                        } else {    // data mode
+                            currentStates.components.homeLinePosition = {
+                                characterPosition,
+                                currentStates.components.activeDataPosition.y
+                            };
+                        }
+                    }
+
+                    void operate_SET_LINE_LIMIT(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto characterPosition = params.front().getValueAsInteger();
+
+                        if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                            currentStates.components.lineLimitPosition = {
+                                characterPosition,
+                                currentStates.components.activePresentationPosition.y
+                            };
+                        } else {    // data mode
+                            currentStates.components.lineLimitPosition = {
+                                characterPosition,
+                                currentStates.components.activeDataPosition.y
+                            };
+                        }
                     }
                 }
 
+                namespace editorFunctions {
+                    void operate_DELETE_CHARACTER(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto amountToRemove = params.front().getValueAsInteger();
+
+                        const auto& activeModes = currentStates.components.activeModes;
+
+                        if (activeModes.has(table::mode::presets::DCSM_DATA)) {
+                            GGUI::INTERNAL::LOGGER::log("GGUI Does not support input data stream manipulation!");
+                            return;
+                        }
+
+                        auto cursorPositionAtBuffer = currentStates.screen.cellBuffer->begin() + currentStates.screen.getActiveIndex();
+                        if (activeModes.has(table::mode::group::characterReplacement::IRM_INSERT_HEM_FOLLOWING)) {
+                            std::fill(
+                                cursorPositionAtBuffer,
+                                cursorPositionAtBuffer + amountToRemove,
+                                UTF()
+                            );
+                        } else if (activeModes.has(table::mode::group::characterReplacement::IRM_INSERT_HEM_PRECEDING)) {
+                            std::fill(
+                                cursorPositionAtBuffer - amountToRemove,
+                                cursorPositionAtBuffer,
+                                UTF()
+                            );
+                        } else {
+                            GGUI::INTERNAL::LOGGER::log("Unknown delete mode at: " + currentStates.screen.toString());
+                        }
+                    }
+
+                    void operate_DELETE_LINE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto amountToRemove = params.front().getValueAsInteger();
+
+                        const auto& activeModes = currentStates.components.activeModes;
+
+                        auto cursorPositionAtBuffer = currentStates.screen.cellBuffer->begin() + currentStates.screen.getActiveIndex();
+                        auto screenWidth = currentStates.screen.dimensions.x;
+
+                        if (activeModes.has(table::mode::presets::VEM_FOLLOWING)) {
+                            std::fill(
+                                cursorPositionAtBuffer,
+                                cursorPositionAtBuffer + (amountToRemove * screenWidth),
+                                UTF()
+                            );
+                        } else {
+                            std::fill(
+                                cursorPositionAtBuffer - (amountToRemove * screenWidth),
+                                cursorPositionAtBuffer,
+                                UTF()
+                            );
+                        }
+                    }
+                }
             }
         }
     }

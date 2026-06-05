@@ -1558,6 +1558,49 @@ namespace GGUI {
                 __max = NINTH
             };
 
+            class justify {
+            public:
+                // This will work as bit index for bitmask of current enabled justifications.
+                enum class types : uint8_t {
+                    NO_JUSTIFICATION,
+                    WORD_FILL,
+                    WORD_SPACE,
+                    LETTER_SPACE,
+                    HYPHENATION,
+                    FLUSH_TO_LINE_HOME_POSITION_MARGIN,
+                    CENTER_BETWEEN_LINE_HOME_POSITION_AND_LINE_LIMIT_POSITION_MARGINS,
+                    FLUSH_TO_LINE_LIMIT_POSITION_MARGIN,
+                    ITALIAN_HYPHENATION
+                };
+
+            private:
+                uint8_t activeJustifications = 0;
+
+                uint8_t toBitMask(types t) const {
+                    if (t == types::NO_JUSTIFICATION) return 0;
+    
+                    return 1 << (static_cast<uint8_t>(t) - 1);  // This way no_justification will stay at zero, and max is 7'th bit
+                }
+            public:
+                IVector2 start, end = 0;
+
+                justify(IVector2 Start) : activeJustifications(0), start(Start), end(0) {}
+
+                void add(types t) {
+                    uint8_t tAsBitMask = toBitMask(t);
+
+                    if (tAsBitMask == 0) activeJustifications = 0;   // If no justification, then reset all
+                    else activeJustifications |= tAsBitMask;
+                }
+
+                bool has(types t) const {
+                    uint8_t tAsBitMask = toBitMask(t);
+
+                    return  (tAsBitMask == activeJustifications) ||     // Either they are identical, 0 == 0
+                            (activeJustifications & tAsBitMask) != 0;   // Or atleast bits from t are present
+                }
+            };
+
             // This is used for secondary multi-sequence post-processing, like GCC for multi character combinations and such
             struct callBack {
                 size_t start, end;  // These represent the area of sequences to be processed together
@@ -1577,6 +1620,141 @@ namespace GGUI {
                 IVector2 fontScalar = {100, 100};    // Set by GSM, value range: [0, 100] as percentages.
 
                 fontAttributes(IVector2 Start, size_t FontSize, IVector2 scalar = {100, 100}) : start(Start), end(0), fontSize(FontSize), fontScalar(scalar) {}
+            };
+
+            struct spacingFactor {
+                enum class types : uint8_t {
+                    NORMAL,             // as specified by SCS, SHS or SP
+                    EXPANDED,           // multiplied by a factor not greater than 2
+                    CONDENSED           // multiplied by a factor not less than 0,5
+                } type;
+
+                float getAsScalar() const {
+                    float x = static_cast<float>(type);
+
+                    // Funny polynomial that goes through the points.
+                    return -1.25f * (x * x) + 2.25f * x + 1;
+                }
+
+                spacingFactor(types t = types::NORMAL) : type(t) {}
+            };
+
+            class graphicAttributes {
+            public:
+                enum class types : uint8_t {
+                    DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
+                    BOLD,                                           // bold or increased intensity
+                    FAINT,                                          // faint, decreased intensity or second colour
+                    ITALIC,                                         // italicized
+                    UNDERLINE,                                      // singly underlined
+                    SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
+                    RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
+                    REVERSE_VIDEO,                                  // negative image
+                    CONCEAL,                                        // concealed characters
+                    CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
+                    PRIMARY_FONT,                                   // primary (default) font
+                    ALT_FONT_1,                                     // first alternative font
+                    ALT_FONT_2,                                     // second alternative font
+                    ALT_FONT_3,                                     // third alternative font
+                    ALT_FONT_4,                                     // fourth alternative font
+                    ALT_FONT_5,                                     // fifth alternative font
+                    ALT_FONT_6,                                     // sixth alternative font
+                    ALT_FONT_7,                                     // seventh alternative font
+                    ALT_FONT_8,                                     // eighth alternative font
+                    ALT_FONT_9,                                     // ninth alternative font
+                    FRAKTUR,                                        // Fraktur (Gothic)
+                    DOUBLY_UNDERLINED,                              // doubly underlined
+                    NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
+                    NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
+                    NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
+                    NOT_BLINKING,                                   // steady (not blinking)
+                    RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
+                    POSITIVE_IMAGE,                                 // positive image
+                    REVEAL,                                         // revealed characters
+                    NOT_CROSSED_OUT,                                // not crossed out
+                    FG_BLACK,                                       // black display
+                    FG_RED,                                         // red display
+                    FG_GREEN,                                       // green display
+                    FG_YELLOW,                                      // yellow display
+                    FG_BLUE,                                        // blue display
+                    FG_MAGENTA,                                     // magenta display
+                    FG_CYAN,                                        // cyan display
+                    FG_WHITE,                                       // white display
+                    RESERVED_FG_COLOR,                              // (reserved for future standardization; intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                    FG_DEFAULT,                                     // default display colour (implementation-defined)
+                    BG_BLACK,                                       // black background
+                    BG_RED,                                         // red background
+                    BG_GREEN,                                       // green background
+                    BG_YELLOW,                                      // yellow background
+                    BG_BLUE,                                        // blue background
+                    BG_MAGENTA,                                     // magenta background
+                    BG_CYAN,                                        // cyan background
+                    BG_WHITE,                                       // white background
+                    RESERVED_BG_COLOR,                              // (reserved for future standardization; intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                    BG_DEFAULT,                                     // default background colour (implementation-defined)
+                    RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
+                    FRAMED,                                         // framed
+                    ENCIRCLED,                                      // encircled
+                    OVERLINED,                                      // overlined
+                    NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
+                    NOT_OVERLINED,                                  // not overlined
+                    RESERVED_56,                                    // (reserved for future standardization)
+                    RESERVED_57,                                    // (reserved for future standardization)
+                    RESERVED_58,                                    // (reserved for future standardization)
+                    RESERVED_59,                                    // (reserved for future standardization)
+                    IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
+                    IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
+                    IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
+                    IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
+                    IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
+                    IDEOGRAM_ATTRIBUTES_OFF                         // cancels the effect of the rendition aspects established by parameter values 60 to 64
+                };
+            private:
+                uint64_t bitMask = toBitMask(types::DEFAULT);
+
+                constexpr uint64_t toBitMask(types t) const {
+                    if (t == types::DEFAULT) return 0;
+
+                    return 1ULL << (static_cast<uint64_t>(t) - 1);  // This way default will stay at zero, and max is 63'th bit
+                }
+            public:
+                void add(types t) {
+                    // Special case:
+                    if (t == types::IDEOGRAM_ATTRIBUTES_OFF) {
+                        remove(types::IDEOGRAM_UNDERLINE);
+                        remove(types::IDEOGRAM_DOUBLE_UNDERLINE);
+                        remove(types::IDEOGRAM_DOUBLE_OVERLINE);
+                        remove(types::IDEOGRAM_STRESS_MARKING);
+                        return;
+                    }
+
+                    uint64_t tAsBitMask = toBitMask(t);
+
+                    if (tAsBitMask == 0) bitMask = 0;   // If default, then reset all
+                    else bitMask |= tAsBitMask;
+                }
+
+                void add(graphicAttributes& other) {
+                    bitMask |= other.bitMask;
+                }
+                
+                void remove(types t) {
+                    uint64_t tAsBitMask = toBitMask(t);
+
+                    if (tAsBitMask != 0) bitMask &= ~tAsBitMask;   // If not default, then remove the bit
+                }
+
+                // NOTE: This wont be able to return true for IDEOGRAM_ATTRIBUTES_OFF
+                bool has(types t) {
+                    uint64_t tAsBitMask = toBitMask(t);
+
+                    return  (tAsBitMask == bitMask) ||     // Either they are identical, 0 == 0
+                            (bitMask & tAsBitMask) != 0;   // Or atleast bits from t are present
+                }
+
+                IVector2 start, end = 0;
+
+                graphicAttributes(IVector2 Start) : bitMask(0), start(Start), end(0) {}
             };
 
             struct components {
@@ -1667,6 +1845,16 @@ namespace GGUI {
                 // ------------ META ------------
 
                 std::vector<fontAttributes> registeredFontAttributes;
+                std::vector<justify> registeredJustifications;
+
+                std::vector<IVector2> lineContinuations;    // For no-line breaks
+
+                // Spacing factors, PEC, SCS, SHS, SPI.
+                spacingFactor activeSpacingFactor;
+
+                // std::vector<
+
+                std::vector<graphicAttributes> registeredGraphicAttributes;
             };
 
             namespace sequences {
@@ -2212,6 +2400,14 @@ namespace GGUI {
                     extern void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::prefix*);
                     extern void operate_GRAPHIC_SIZE_MODIFICATION(sequence::prefix*);
                     extern void operate_GRAPHIC_SIZE_SELECTION(sequence::prefix*);
+                    extern void operate_JUSTIFY(sequence::prefix*);
+                    extern void operate_NO_BREAK_HERE(sequence::prefix*);
+                    extern void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::prefix*);
+                    /*...*/
+                    extern void operate_SELECT_GRAPHIC_RENDITION(sequence::prefix*);
+                    extern void operate_SET_LINE_HOME(sequence::prefix*);
+                    extern void operate_SET_LINE_LIMIT(sequence::prefix*);
+                    /*...*/
 
                     /**
                      * @brief BPH is used to indicate a point where a line break may occur when text is formatted. BPH may occur
@@ -2289,30 +2485,16 @@ namespace GGUI {
                      * The line limit position is established by the parameter value of SET LINE LIMIT (SLL).
                      * @example `01/11 05/11 Ps ... 02/00 04/06` or `9/11 Ps ... 02/00 04/06`
                      * @param Ps default(0)
-                     * @param ...  adjusted characters
+                     * @param ... 
                      */
-                    namespace JUSTIFY {
-                        enum class types {
-                            NO_JUSTIFICATION,
-                            WORD_FILL,
-                            WORD_SPACE,
-                            LETTER_SPACE,
-                            HYPHENATION,
-                            FLUSH_TO_LINE_HOME_POSITION_MARGIN,
-                            CENTER_BETWEEN_LINE_HOME_POSITION_AND_LINE_LIMIT_POSITION_MARGINS,
-                            FLUSH_TO_LINE_LIMIT_POSITION_MARGIN,
-                            ITALIAN_HYPHENATION
-                        };
-
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::JFY), {types::NO_JUSTIFICATION});
-                    }
+                    inline base<sequence::control<sequence::parameter::selectable<justify::types>>, justify::types, 1, specialTypes::HAS_INFINITE_PARAMETERS> JUSTIFY(sequence::control<sequence::parameter::selectable<justify::types>>(table::finalWithIntermediate::JFY), {justify::types::NO_JUSTIFICATION}, {operate_JUSTIFY});
 
                     /**
                      * @brief NBH is used to indicate a point where a line break shall not occur when text is formatted. 
                      * NBH may occur between two graphic characters either or both of which may be SPACE. 
                      * @example `08/03` or `01/11 04/03`
                      */
-                    inline auto NO_BREAK_HERE = base<sequence::prefix>(table::C1::NBH);
+                    inline auto NO_BREAK_HERE = base<sequence::prefix>(table::C1::NBH, {}, {operate_NO_BREAK_HERE});
 
                     /**
                      * @brief PEC is used to establish the spacing and the extent of the graphic characters for subsequent text. 
@@ -2324,15 +2506,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 02/00 05/10` or `9/11 Ps 02/00 05/10`
                      * @param Ps default(0)
                      */
-                    namespace PRESENTATION_EXPAND_OR_CONTRACT {
-                        enum class types {
-                            NORMAL,             // as specified by SCS, SHS or SP
-                            EXPANDED,           // multiplied by a factor not greater than 2
-                            CONDENSED           // multiplied by a factor not less than 0,5
-                        };
-
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::PEC), {types::NORMAL});
-                    }
+                    inline base<sequence::control<sequence::parameter::selectable<spacingFactor::types>>, spacingFactor::types, 1> PRESENTATION_EXPAND_OR_CONTRACT(sequence::control<sequence::parameter::selectable<spacingFactor::types>>(table::finalWithIntermediate::PEC), {spacingFactor::types::NORMAL}, {operate_PRESENTATION_EXPAND_OR_CONTRACT});
 
                     /**
                      * @brief PFS is used to establish the available area for the imaging of pages of text based on paper size. 
@@ -2583,78 +2757,13 @@ namespace GGUI {
                         inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SDS), {types::END_OF_DIRECTED_STRING});
                     }
 
-                    namespace SELECT_GRAPHIC_RENDITION {
-                        enum class types {
-                            DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
-                            BOLD,                                           // bold or increased intensity
-                            FAINT,                                          // faint, decreased intensity or second colour
-                            ITALIC,                                         // italicized
-                            UNDERLINE,                                      // singly underlined
-                            SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
-                            RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
-                            REVERSE_VIDEO,                                  // negative image
-                            CONCEAL,                                        // concealed characters
-                            CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
-                            PRIMARY_FONT,                                   // primary (default) font
-                            ALT_FONT_1,                                     // first alternative font
-                            ALT_FONT_2,                                     // second alternative font
-                            ALT_FONT_3,                                     // third alternative font
-                            ALT_FONT_4,                                     // fourth alternative font
-                            ALT_FONT_5,                                     // fifth alternative font
-                            ALT_FONT_6,                                     // sixth alternative font
-                            ALT_FONT_7,                                     // seventh alternative font
-                            ALT_FONT_8,                                     // eighth alternative font
-                            ALT_FONT_9,                                     // ninth alternative font
-                            FRAKTUR,                                        // Fraktur (Gothic)
-                            DOUBLY_UNDERLINED,                              // doubly underlined
-                            NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
-                            NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
-                            NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
-                            NOT_BLINKING,                                   // steady (not blinking)
-                            RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
-                            POSITIVE_IMAGE,                                 // positive image
-                            REVEAL,                                         // revealed characters
-                            NOT_CROSSED_OUT,                                // not crossed out
-                            FG_BLACK,                                       // black display
-                            FG_RED,                                         // red display
-                            FG_GREEN,                                       // green display
-                            FG_YELLOW,                                      // yellow display
-                            FG_BLUE,                                        // blue display
-                            FG_MAGENTA,                                     // magenta display
-                            FG_CYAN,                                        // cyan display
-                            FG_WHITE,                                       // white display
-                            RESERVED_FG_COLOR,                              // (reserved for future standardization; intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-                            FG_DEFAULT,                                     // default display colour (implementation-defined)
-                            BG_BLACK,                                       // black background
-                            BG_RED,                                         // red background
-                            BG_GREEN,                                       // green background
-                            BG_YELLOW,                                      // yellow background
-                            BG_BLUE,                                        // blue background
-                            BG_MAGENTA,                                     // magenta background
-                            BG_CYAN,                                        // cyan background
-                            BG_WHITE,                                       // white background
-                            RESERVED_BG_COLOR,                              // (reserved for future standardization; intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-                            BG_DEFAULT,                                     // default background colour (implementation-defined)
-                            RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
-                            FRAMED,                                         // framed
-                            ENCIRCLED,                                      // encircled
-                            OVERLINED,                                      // overlined
-                            NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
-                            NOT_OVERLINED,                                  // not overlined
-                            RESERVED_56,                                    // (reserved for future standardization)
-                            RESERVED_57,                                    // (reserved for future standardization)
-                            RESERVED_58,                                    // (reserved for future standardization)
-                            RESERVED_59,                                    // (reserved for future standardization)
-                            IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
-                            IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
-                            IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
-                            IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
-                            IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
-                            IDEOGRAM_ATTRIBUTES_OFF                         // cancels the effect of the rendition aspects established by parameter values 60 to 64
-                        };
-
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, types, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SGR), {types::DEFAULT});
-                    }
+                    /**
+                     * @brief SGR is used to establish one or more graphic rendition aspects for subsequent text. The established
+                     * aspects remain in effect until the next occurrence of SGR in the data stream, depending on the setting of
+                     * the GRAPHIC RENDITION COMBINATION MODE (GRCM).
+                     * @example `01/11 05/11 Ps... 06/13` or `9/11 Ps... 06/13`
+                     */
+                    inline base<sequence::control<sequence::parameter::selectable<graphicAttributes::types>>, graphicAttributes::types, 1, specialTypes::HAS_INFINITE_PARAMETERS> SELECT_GRAPHIC_RENDITION(sequence::control<sequence::parameter::selectable<graphicAttributes::types>>(table::finalWithoutIntermediate::SGR), {graphicAttributes::types::DEFAULT}, {operate_SELECT_GRAPHIC_RENDITION});
 
                     /**
                      * @brief SHS is used to establish the character spacing for subsequent text. 
@@ -2699,7 +2808,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 05/05` or `9/11 Pn 02/00 05/05`
                      * @param Pn default(None)
                     */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_LINE_HOME(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SHL), {});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_LINE_HOME(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SHL), {}, {operate_SET_LINE_HOME});
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE is set to PRESENTATION, SLL is used to establish at character position n in the active line (the line that contains the active presentation position) 
@@ -2714,7 +2823,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 05/06` or `9/11 Pn 02/00 05/06`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_LINE_LIMIT(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SLL), {});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_LINE_LIMIT(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SLL), {}, {operate_SET_LINE_LIMIT});
                     
                     /**
                      * @brief SLS is used to establish the line spacing for subsequent text. 
@@ -2938,6 +3047,9 @@ namespace GGUI {
                 }
 
                 namespace editorFunctions {
+                    extern void operate_DELETE_CHARACTER(sequence::prefix*);
+                    extern void operate_DELETE_LINE(sequence::prefix*);
+
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, DCH causes the
                      * contents of the active presentation position and, depending on the setting of the CHARACTER
@@ -2957,7 +3069,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/00` or `9/11 Pn 05/00`
                      * @param Pn default(1) 
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DELETE_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DCH), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DELETE_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DCH), {1}, {operate_DELETE_CHARACTER});
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, DL causes the
@@ -2982,7 +3094,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/13` or `9/11 Pn 04/13`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DELETE_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DL), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DELETE_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DL), {1}, {operate_DELETE_LINE});
 
                     /**
                      * @brief This sequence means two different things based on previous sequence.

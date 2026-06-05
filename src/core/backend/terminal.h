@@ -1,7 +1,6 @@
 #ifndef _TERMINAL_H_
 #define _TERMINAL_H_
 
-#include <functional>
 #include <cstdint>
 #include <chrono>
 
@@ -69,13 +68,21 @@ namespace GGUI {
 
             std::array<button, (size_t)ASCII::table::MAX_VALUE> keyboard;
 
-            struct {
-                IVector2 cursor;
+            ecma::components components;
+
+            struct outputCapture{
+                IVector2& cursor;
                 IVector2 dimensions;
                 std::vector<UTF>* cellBuffer = nullptr;
-            } screen;
 
-            ecma::components components;
+                outputCapture(IVector2& presentationPosition) : cursor(presentationPosition) {}
+
+                size_t getActiveIndex() const;
+
+                // Displays cursor position
+                std::string toString() const;
+            } screen = outputCapture(components.activePresentationPosition);
+
         };
 
         // Read from this to get current device states of the terminal peripherals.

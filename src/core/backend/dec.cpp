@@ -1,4 +1,5 @@
 #include "dec.h"
+#include "terminal.h"
 
 namespace GGUI {
     namespace terminal {

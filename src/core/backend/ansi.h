@@ -1,7 +1,6 @@
 #ifndef _ANSI_H_
 #define _ANSI_H_
 
-#include "terminal.h"
 #include "ecma.h"
 
 namespace GGUI {
@@ -39,25 +38,6 @@ namespace GGUI {
                 SI  = alias(ecma::table::C0::SI),       US  = alias(ecma::table::C0::IS1),      /*                           */     DEL = ecma::table::toInt(7, 15),
 
                 __max = ecma::table::toInt(7, 15)    // For internal automation
-            };
-
-            // Helpers:
-            inline std::variant<table, uint8_t> get(uint8_t index) {
-                if (ecma::table::contains<table>(index)) {
-                    return static_cast<table>(index);
-                }
-
-                return static_cast<uint8_t>(index); // Return the index as an uint8_t if it's not a control character
-            }
-            
-            inline std::variant<table, uint8_t> get(uint8_t row, uint8_t column) {
-                // Sanitize params
-                row &= 0x0F;        // Only the first 4 bits are allowed
-                column &= 0x07;     // Only the first 3 bits are allowed
-
-                uint8_t index = (row << 4) | column; // Combine row and column to get the index
-
-                return get(index);
             };
         }
     }

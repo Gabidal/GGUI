@@ -21,6 +21,14 @@ namespace GGUI {
         query inputQuery;
         bitMask<features> enabledFeatures;
 
+        size_t device::outputCapture::getActiveIndex() const {
+            return (cursor.y * dimensions.x) + cursor.x;
+        }
+
+        std::string device::outputCapture::toString() const {
+            return "(" + cursor.To_String() + ")";
+        }
+
         void init() {
             // The following code is for nominal use of GGUI via Unix/Windows terminal emulators. TODO: enable direct /dev/ ral Terminal device contact.
             enabledFeatures = fetchIOPermissions();
