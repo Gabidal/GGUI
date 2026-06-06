@@ -1097,6 +1097,300 @@ namespace GGUI {
                             );
                         }
                     }
+
+                    void operate_INSERT_CHARACTER(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto amountToInsert = params.front().getValueAsInteger();
+
+                        const auto& activeModes = currentStates.components.activeModes;
+
+                        auto cursorPositionAtBuffer = currentStates.screen.cellBuffer->begin() + currentStates.screen.getActiveIndex();
+                        auto lineLimitAtBuffer = currentStates.screen.cellBuffer->begin() + (
+                            currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
+                        ) + currentStates.components.lineLimitPosition.x;
+                        auto lineHomeAtBuffer = currentStates.screen.cellBuffer->begin() + (
+                            currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
+                        ) + currentStates.components.homeLinePosition.x;
+
+                        // Since we actually cannot insert anything, because this is a screen buffer.
+                        // Instead we are going to move the data by the amount
+                        if (activeModes.has(table::mode::presets::HEM_FOLLOWING)) {
+                            std::move_backward(
+                                cursorPositionAtBuffer,
+                                lineLimitAtBuffer,
+                                lineLimitAtBuffer + amountToInsert
+                            );
+
+                            std::fill(
+                                cursorPositionAtBuffer,
+                                cursorPositionAtBuffer + amountToInsert,
+                                UTF()
+                            );
+                        } else {
+                            auto startOfAffectedArea = cursorPositionAtBuffer - amountToInsert + 1;
+
+                            std::move_backward(
+                                lineHomeAtBuffer,
+                                startOfAffectedArea,
+                                cursorPositionAtBuffer + 1
+                            );
+
+                            std::fill(
+                                startOfAffectedArea,
+                                cursorPositionAtBuffer + 1,
+                                UTF()
+                            );
+                        }
+                    }
+
+                    void operate_INSERT_LINE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto amountToInsert = params.front().getValueAsInteger();
+
+                        const auto& activeModes = currentStates.components.activeModes;
+
+                        auto screenWidth = currentStates.screen.dimensions.x;
+
+                        auto activeLineBegin = currentStates.screen.cellBuffer->begin() + (
+                            currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x
+                        );
+
+                        auto lineLimitAtBuffer = currentStates.screen.cellBuffer->begin() + (
+                            currentStates.components.lineLimitPosition.y + 1
+                        ) * screenWidth;
+
+                        auto insertedCellCount = amountToInsert * screenWidth;
+
+                        if (activeModes.has(table::mode::presets::VEM_FOLLOWING)) {
+                            std::move_backward(
+                                activeLineBegin,
+                                lineLimitAtBuffer,
+                                lineLimitAtBuffer + insertedCellCount
+                            );
+
+                            std::fill(
+                                activeLineBegin,
+                                activeLineBegin + insertedCellCount,
+                                UTF()
+                            );
+                        } else {
+                            auto startOfAffectedArea = activeLineBegin - insertedCellCount + screenWidth;
+
+                            std::move_backward(
+                                currentStates.screen.cellBuffer->begin(),
+                                startOfAffectedArea,
+                                activeLineBegin + screenWidth
+                            );
+
+                            std::fill(
+                                startOfAffectedArea,
+                                activeLineBegin + screenWidth,
+                                UTF()
+                            );
+                        }
+                    }
+                }
+
+                namespace cursorControlFunctions {
+                    void operate_CURSOR_NEXT_LINE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = params.front().getValueAsInteger();
+
+                        currentStates.components.activePresentationPosition.y += line;
+                        currentStates.components.activePresentationPosition.x = 0;  // TODO: line home position?
+                    }
+
+                    void operate_CURSOR_PRECEDING_LINE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = params.front().getValueAsInteger();
+
+                        currentStates.components.activePresentationPosition.y -= line;
+                        currentStates.components.activePresentationPosition.x = 0;  // TODO: line home position?
+                    }
+
+                    void operate_CURSOR_LEFT(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto character = params.front().getValueAsInteger();
+
+                        currentStates.components.activePresentationPosition.x -= character;
+                    }
+
+                    void operate_CURSOR_DOWN(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = params.front().getValueAsInteger();
+
+                        currentStates.components.activePresentationPosition.y += line;
+                    }
+
+                    void operate_CURSOR_RIGHT(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto character = params.front().getValueAsInteger();
+
+                        currentStates.components.activePresentationPosition.x += character;
+                    }
+
+                    void operate_CURSOR_POSITION(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 2);
+
+                        auto line = params.front().getValueAsInteger();
+                        auto character = params.back().getValueAsInteger();
+
+                        currentStates.components.activePresentationPosition.y = line;
+                        currentStates.components.activePresentationPosition.x = character;
+                    }
+
+                    void operate_CURSOR_UP(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = params.front().getValueAsInteger();
+
+                        currentStates.components.activePresentationPosition.y -= line;
+                    }
+                }
+
+                namespace displayControlFunctions {
+                    void operate_NEXT_PAGE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto page = params.front().getValueAsInteger();
+
+                        currentStates.components.activePageIndex += page;
+                    }
+
+                    void operate_PRECEDING_PAGE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto page = params.front().getValueAsInteger();
+
+                        currentStates.components.activePageIndex -= page;
+                    }
+
+                    void operate_SCROLL_DOWN(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = params.front().getValueAsInteger();
+
+                        currentStates.mouse.scroll.Scalar += line;   // TODO: Missing horizontal scroll
+                    }
+
+                    void operate_SCROLL_UP(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto line = params.front().getValueAsInteger();
+
+                        currentStates.mouse.scroll.Scalar -= line;   // TODO: Missing horizontal scroll
+                    }
+                }
+
+                namespace deviceControlFunctions {
+                    void operate_DEVICE_CONTROL_ONE(sequence::prefix* /*ignored*/) {
+                        currentStates.components.powerStatus = ancillaryStates::X_ON;
+                    }
+
+                    void operate_DEVICE_CONTROL_TWO(sequence::prefix* /*ignored*/) {
+                        currentStates.components.powerStatus = ancillaryStates::BASIC_MODE;
+                    }
+
+                    void operate_DEVICE_CONTROL_THREE(sequence::prefix* /*ignored*/) {
+                        currentStates.components.powerStatus = ancillaryStates::X_OFF;
+                    }
+
+                    void operate_DEVICE_CONTROL_FOUR(sequence::prefix* /*ignored*/) {
+                        currentStates.components.powerStatus = ancillaryStates::INTERRUPT;
+                    }
+                }
+
+                namespace modeSettings {
+                    void operate_RESET_MODE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<table::mode::types>>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() > 0);
+
+                        for (auto& p : params) {
+                            auto typed = p.getValueAsInteger();
+
+                            currentStates.components.activeModes.set(table::mode::base(typed, table::mode::definition::RESET));
+                        }
+                    }
+
+                    void operate_SET_MODE(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<table::mode::types>>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() > 0);
+
+                        for (auto& p : params) {
+                            auto typed = p.getValueAsInteger();
+
+                            currentStates.components.activeModes.set(table::mode::base(typed, table::mode::definition::SET));
+                        }
+                    }
+                }
+
+                namespace transmissionControlFunctions {
+                    
                 }
             }
         }

@@ -1757,6 +1757,14 @@ namespace GGUI {
                 graphicAttributes(IVector2 Start) : bitMask(0), start(Start), end(0) {}
             };
 
+            enum class ancillaryStates {
+                UNKNOWN,
+                X_ON,
+                BASIC_MODE,
+                X_OFF,
+                INTERRUPT
+            };
+
             struct components {
                 /**
                  * Data component moves in the page space, presentation component is the window to this page space
@@ -1855,6 +1863,8 @@ namespace GGUI {
                 // std::vector<
 
                 std::vector<graphicAttributes> registeredGraphicAttributes;
+
+                ancillaryStates powerStatus = ancillaryStates::UNKNOWN;
             };
 
             namespace sequences {
@@ -3049,6 +3059,8 @@ namespace GGUI {
                 namespace editorFunctions {
                     extern void operate_DELETE_CHARACTER(sequence::prefix*);
                     extern void operate_DELETE_LINE(sequence::prefix*);
+                    extern void operate_INSERT_CHARACTER(sequence::prefix*);
+                    extern void operate_INSERT_LINE(sequence::prefix*);
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, DCH causes the
@@ -3243,7 +3255,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/00` or `9/11 Pn 04/00`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> INSERT_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::ICH), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> INSERT_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::ICH), {1}, {operate_INSERT_CHARACTER});
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, IL is used to
@@ -3270,10 +3282,18 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/12` or `9/11 Pn 04/12`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> INSERT_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::IL), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> INSERT_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::IL), {1}, {operate_INSERT_LINE});
                 }
 
                 namespace cursorControlFunctions {
+                    extern void operate_CURSOR_NEXT_LINE(sequence::prefix*);
+                    extern void operate_CURSOR_PRECEDING_LINE(sequence::prefix*);
+                    extern void operate_CURSOR_LEFT(sequence::prefix*);
+                    extern void operate_CURSOR_DOWN(sequence::prefix*);
+                    extern void operate_CURSOR_RIGHT(sequence::prefix*);
+                    extern void operate_CURSOR_POSITION(sequence::prefix*);
+                    extern void operate_CURSOR_UP(sequence::prefix*);
+
                     /**
                      * @brief CBT causes the active presentation position to be moved to the character position corresponding to the
                      * n-th preceding character tabulation stop in the presentation component, according to the character path,
@@ -3306,7 +3326,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/05` or `9/11 Pn 04/05`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_NEXT_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CNL), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_NEXT_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CNL), {1}, {operate_CURSOR_NEXT_LINE});
                     
                     /**
                      * @brief CPL causes the active presentation position to be moved to the first character position of the n-th
@@ -3314,7 +3334,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/06` or `9/11 Pn 04/06`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_PRECEDING_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CPL), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_PRECEDING_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CPL), {1}, {operate_CURSOR_PRECEDING_LINE});
                     
                     /**
                      * @brief CTC causes one or more tabulation stops to be set or cleared in the presentation component, depending on the parameter values.
@@ -3342,7 +3362,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/04` or `9/11 Pn 04/04`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_LEFT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUB), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_LEFT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUB), {1}, {operate_CURSOR_LEFT});
                     
                     /**
                      * @brief CUD causes the active presentation position to be moved downwards in the presentation component by n
@@ -3351,7 +3371,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/02` or `9/11 Pn 04/02`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_DOWN(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUD), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_DOWN(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUD), {1}, {operate_CURSOR_DOWN});
                     
                     /**
                      * @brief CUF causes the active presentation position to be moved rightwards in the presentation component by n
@@ -3360,7 +3380,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/03` or `9/11 Pn 04/03`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_RIGHT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUF), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_RIGHT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUF), {1}, {operate_CURSOR_RIGHT});
                     
                     /**
                      * @brief CUP causes the active presentation position to be moved in the presentation component to the n-th line
@@ -3370,7 +3390,7 @@ namespace GGUI {
                      * @param Pn1 default(1)
                      * @param Pn2 default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CURSOR_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUP), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CURSOR_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUP), {1}, {operate_CURSOR_POSITION});
                     
                     /**
                      * @brief CUU causes the active presentation position to be moved upwards in the presentation component by n
@@ -3379,7 +3399,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/01` or `9/11 Pn 04/01`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_UP(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUU), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_UP(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUU), {1}, {operate_CURSOR_UP});
                     
                     /**
                      * @brief CVT causes the active presentation position to be moved to the corresponding character position of the
@@ -3392,14 +3412,18 @@ namespace GGUI {
                 }
 
                 namespace displayControlFunctions {
-                    
+                    extern void operate_NEXT_PAGE(sequence::prefix*);
+                    extern void operate_PRECEDING_PAGE(sequence::prefix*);
+                    extern void operate_SCROLL_DOWN(sequence::prefix*);
+                    extern void operate_SCROLL_UP(sequence::prefix*);
+
                     /**
                      * @brief NP causes the n-th following page in the presentation component to be displayed, where n equals the value of Pn.
                      * NOTE: The effect of this control function on the active presentation position is not defined by this Standard. 
                      * @example `01/11 05/11 Pn 05/05` or `9/11 Pn 05/05`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> NEXT_PAGE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::NP), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> NEXT_PAGE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::NP), {1}, {operate_NEXT_PAGE});
                     
                     /**
                      * @brief PP causes the n-th preceding page in the presentation component to be displayed, where n equals the value of Pn. 
@@ -3407,7 +3431,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/06` or `9/11 Pn 05/06`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PRECEDING_PAGE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::PP), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PRECEDING_PAGE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::PP), {1}, {operate_PRECEDING_PAGE});
                     
                     /**
                      * @brief SD causes the data in the presentation component to be moved by n line positions if the line orientation
@@ -3417,7 +3441,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/04` or `9/11 Pn 05/04`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_DOWN(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::SD), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_DOWN(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::SD), {1}, {operate_SCROLL_DOWN});
                     
                     /**
                      * @brief SL causes the data in the presentation component to be moved by n character positions if the line
@@ -3444,10 +3468,15 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/03` or `9/11 Pn 05/03`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_UP(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::SU), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_UP(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::SU), {1}, {operate_SCROLL_UP});
                 }
 
                 namespace deviceControlFunctions {
+                    extern void operate_DEVICE_CONTROL_ONE(sequence::prefix*);
+                    extern void operate_DEVICE_CONTROL_TWO(sequence::prefix*);
+                    extern void operate_DEVICE_CONTROL_THREE(sequence::prefix*);
+                    extern void operate_DEVICE_CONTROL_FOUR(sequence::prefix*);
+
                     /**
                      * @brief DC1 is primarily intended for turning on or starting an ancillary device. 
                      * If it is not required for this purpose, it may be used to restore a device to the basic mode of operation (see also DC2 and DC3), or
@@ -3455,7 +3484,7 @@ namespace GGUI {
                      * NOTE: When used for data flow control, DC1 is sometimes called "X-ON". 
                      * @example `01/01`
                      */
-                    inline auto DEVICE_CONTROL_ONE             = base<sequence::prefix>(table::C0::DC1);
+                    inline auto DEVICE_CONTROL_ONE             = base<sequence::prefix>(table::C0::DC1, {}, {operate_DEVICE_CONTROL_ONE});
                     
                     /**
                      * @brief DC2 is primarily intended for turning on or starting an ancillary device. 
@@ -3463,7 +3492,7 @@ namespace GGUI {
                      * or for any other device control function not provided by other DCs.
                      * @example `01/02`
                      */
-                    inline auto DEVICE_CONTROL_TWO             = base<sequence::prefix>(table::C0::DC2);
+                    inline auto DEVICE_CONTROL_TWO             = base<sequence::prefix>(table::C0::DC2, {}, {operate_DEVICE_CONTROL_TWO});
                     
                     /**
                      * @brief DC3 is primarily intended for turning off or stopping an ancillary device. 
@@ -3472,14 +3501,14 @@ namespace GGUI {
                      * NOTE: When used for data flow control, DC3 is sometimes called "X-OFF". 
                      * @example `01/03`
                      */
-                    inline auto DEVICE_CONTROL_THREE           = base<sequence::prefix>(table::C0::DC3);
+                    inline auto DEVICE_CONTROL_THREE           = base<sequence::prefix>(table::C0::DC3, {}, {operate_DEVICE_CONTROL_THREE});
                     
                     /**
                      * @brief DC4 is primarily intended for turning off, stopping or interrupting an ancillary device. 
                      * If it is not required for this purpose, it may be used for any other device control function not provided by other DCs. 
                      * @example `01/04`
                      */
-                    inline auto DEVICE_CONTROL_FOUR            = base<sequence::prefix>(table::C0::DC4);
+                    inline auto DEVICE_CONTROL_FOUR            = base<sequence::prefix>(table::C0::DC4, {}, {operate_DEVICE_CONTROL_FOUR});
                 }
 
                 namespace informationSeparators {
@@ -3563,6 +3592,9 @@ namespace GGUI {
                 }
 
                 namespace modeSettings {
+                    extern void operate_RESET_MODE(sequence::prefix*);
+                    extern void operate_SET_MODE(sequence::prefix*);
+
                     /**
                      * @brief RM causes the modes of the receiving device to be reset as specified by the parameter values.
                      * NOTE: Private modes may be implemented using private parameters, see 5.4.1 and 7.4. 
@@ -3570,7 +3602,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<table::mode::types>>, sequence::parameter::selectable<table::mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::control<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::RM), {});
+                    inline base<sequence::control<sequence::parameter::selectable<table::mode::types>>, sequence::parameter::selectable<table::mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::control<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::RM), {}, {operate_RESET_MODE});
 
                     /**
                      * @brief SM causes the modes of the receiving device to be set as specified by the parameter values.
@@ -3579,7 +3611,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<table::mode::types>>, sequence::parameter::selectable<table::mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::control<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::SM), {});
+                    inline base<sequence::control<sequence::parameter::selectable<table::mode::types>>, sequence::parameter::selectable<table::mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::control<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::SM), {}, {operate_SET_MODE});
                 }
 
                 namespace transmissionControlFunctions {
