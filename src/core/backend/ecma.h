@@ -504,6 +504,7 @@ namespace GGUI {
                     INDEPENDENT_FUNCTION,
                     CSI,
                     STRING,
+                    TRANSMISSION,   // TODO: converged with string later on.
                     GRAPHICAL_CHARACTER
                 };
 
@@ -683,12 +684,12 @@ namespace GGUI {
                 // APC, DCS, OSC, PM or SOS
                 class string : public prefix {
                 protected:           
-                    std::vector<uint8_t> characters;            // For when SOS is used in the opening delimeter, can contain in range of 00/00 to 07/15 or the command strings In the range 00/08 to 00/13 and 02/00 to 07/14
+                    std::vector<char> characters;            // For when SOS is used in the opening delimeter, can contain in range of 00/00 to 07/15 or the command strings In the range 00/08 to 00/13 and 02/00 to 07/14
                     prefix terminator;
                 public:
                     string(
                         table::C1 delimeter,
-                        std::vector<uint8_t> chars
+                        std::vector<char> chars
                     ) : prefix(delimeter, types::STRING), characters(chars), terminator(table::C1::ST) {}
 
                     string(
@@ -696,6 +697,26 @@ namespace GGUI {
                     ) : prefix(delimeter, types::STRING), terminator(table::C1::ST) {}
 
                     std::string toString() const override;
+                };
+
+                // Used as second pass post-processing via the callbacks
+                class transmission : public prefix {
+                public:
+                    enum class types {
+                        HEADER,
+                        TEXT
+                    } type;
+
+                    std::vector<char> header;    // Given by STX --- HEADING --- STX/ETX/ETB
+                    std::vector<char> body;      // Given by SOH ---  TEXT   --- ETX/ETB
+
+                    transmission(table::C0 t = table::C0::STX) : prefix(t, sequence::types::TRANSMISSION) {
+                        if (t == table::C0::STX) {
+                            type = types::TEXT;
+                        } else if (t == table::C0::SOH) {
+                            type = types::HEADER;
+                        }
+                    }
                 };
 
                 class graphicalCharacter : public prefix {
@@ -1604,7 +1625,7 @@ namespace GGUI {
             // This is used for secondary multi-sequence post-processing, like GCC for multi character combinations and such
             struct callBack {
                 size_t start, end;  // These represent the area of sequences to be processed together
-                void(*handler)(callBack) = nullptr;
+                void(*handler)(callBack, size_t&, size_t&, std::vector<sequence::prefix*>&) = nullptr;
             };
 
             // Small helper class
@@ -3615,48 +3636,53 @@ namespace GGUI {
                 }
 
                 namespace transmissionControlFunctions {
-                    
+                    extern void operate_ACKNOWLEDGE(sequence::prefix*);
+                    extern void operate_DATA_LINK_ESCAPE(sequence::prefix*);
+                    extern void operate_ENQUIRY(sequence::prefix*);
+                    extern void operate_START_OF_TRANSMISSION(sequence::prefix*);
+                    extern void operate_END_OF_TRANSMISSION(sequence::prefix*);
+
                     /**
                      * @brief ACK is transmitted by a receiver as an affirmative response to the sender.
                      * The use of ACK is defined in ISO 1745. 
                      * @example `00/06`
                      */
-                    inline auto ACKNOWLEDGE                    = base<sequence::prefix>(table::C0::ACK);
+                    inline auto ACKNOWLEDGE                    = base<sequence::prefix>(table::C0::ACK, {}, {operate_ACKNOWLEDGE});
                     
                     /**
                      * @brief DLE is used exclusively to provide supplementary transmission control functions.
                      * The use of DLE is defined in ISO 1745. 
                      * @example `01/00`
                      */
-                    inline auto DATA_LINK_ESCAPE               = base<sequence::prefix>(table::C0::DLE);
+                    inline auto DATA_LINK_ESCAPE               = base<sequence::prefix>(table::C0::DLE, {}, {operate_DATA_LINK_ESCAPE});
                     
                     /**
                      * @brief ENQ is transmitted by a sender as a request for a response from a receiver.
                      * The use of ENQ is defined in ISO 1745. 
                      * @example `00/05`
                      */
-                    inline auto ENQUIRY                        = base<sequence::prefix>(table::C0::ENQ);
+                    inline auto ENQUIRY                        = base<sequence::prefix>(table::C0::ENQ, {}, {operate_ENQUIRY});
                     
                     /**
                      * @brief EOT is used to indicate the conclusion of the transmission of one or more texts.
                      * The use of EOT is defined in ISO 1745. 
                      * @example `00/04`
                      */
-                    inline auto END_OF_TRANSMISSION            = base<sequence::prefix>(table::C0::EOT);
+                    inline auto END_OF_TRANSMISSION            = base<sequence::prefix>(table::C0::EOT, {}, {operate_END_OF_TRANSMISSION});
                     
                     /**
                      * @brief ETB is used to indicate the end of a block of data where the data are divided into such blocks for transmission purposes.
                      * The use of ETB is defined in ISO 1745. 
                      * @example `01/07`
                      */
-                    inline auto END_OF_TRANSMISSION_BLOCK      = base<sequence::prefix>(table::C0::ETB);
+                    inline auto END_OF_TRANSMISSION_BLOCK      = base<sequence::prefix>(table::C0::ETB, {}, {operate_END_OF_TRANSMISSION});
                     
                     /**
                      * @brief ETX is used to indicate the end of a text.
                      * The use of ETX is defined in ISO 1745.
                      * @example `00/03`
                      */
-                    inline auto END_OF_TEXT                    = base<sequence::prefix>(table::C0::ETX);
+                    inline auto END_OF_TEXT                    = base<sequence::prefix>(table::C0::ETX, {}, {operate_END_OF_TRANSMISSION});
                     
                     /**
                      * @brief NAK is transmitted by a receiver as a negative response to the sender.
@@ -3670,14 +3696,14 @@ namespace GGUI {
                      * The use of SOH is defined in ISO 1745. 
                      * @example `00/01`
                      */
-                    inline auto START_OF_HEADING               = base<sequence::prefix>(table::C0::SOH);
+                    inline auto START_OF_HEADING               = base<sequence::prefix>(table::C0::SOH, {}, {operate_START_OF_TRANSMISSION});
                     
                     /**
                      * @brief STX is used to indicate the beginning of a text and the end of a heading.
                      * The use of STX is defined in ISO 1745. 
                      * @example `00/02`
                      */
-                    inline auto START_OF_TEXT                  = base<sequence::prefix>(table::C0::STX);
+                    inline auto START_OF_TEXT                  = base<sequence::prefix>(table::C0::STX, {}, {operate_START_OF_TRANSMISSION});
                     
                     /**
                      * @brief SYN is used by a synchronous transmission system in the absence of any other character (idle condition) to

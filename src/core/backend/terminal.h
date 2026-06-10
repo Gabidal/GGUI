@@ -35,12 +35,26 @@ namespace GGUI {
 
         struct query {
             // Some compile time constants; 510, is enough. If need raise this.
-            static const unsigned int capacity = UINT8_MAX * 2;
+            static constexpr unsigned int capacity = UINT8_MAX * 2;
 
-            std::array<char, capacity> buffer;
-            unsigned int size = 0;
+            std::array<char, capacity> inputBuffer;     // This is what we receive
+            unsigned int inputSize = 0;
+            
+            std::array<char, capacity> outputBuffer;    // This is what we send (only for input query uses, like protocol and such...)
+            unsigned int outputSize = 0;
+
+            template<typename containerType>
+            void addToQueue(containerType& input) {
+                if (input.size() + outputSize > capacity) {
+                    GGUI::INTERNAL::LOGGER::log("ERROR: Output queue clogged!");
+                    return;
+                }
+
+                std::copy(input.begin(), input.end(), outputBuffer.begin() + outputSize);
+                outputSize += input.size();
+            }
         };
-        extern query inputQuery;
+        extern query queue;
         
         struct device {
             // Namespace like structuring of code, because why not :)
@@ -101,7 +115,9 @@ namespace GGUI {
 
         extern void deinit();               // Terminal Specific
 
-        extern void queryInputs();         // Platform Specific
+        extern void queryInputs();          // Platform Specific
+
+        extern void queryOutput();          // Platform Specific
 
         extern void parseInput();           // Terminal Specific
 

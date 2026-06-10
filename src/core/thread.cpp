@@ -259,6 +259,9 @@ namespace GGUI{
                     DRM::pollInputs();
                 }
                 else {
+                    // Send requested responses if need.
+                    terminal::queryOutput();
+
                     // Wait for user input.
                     terminal::queryInputs();
                 }

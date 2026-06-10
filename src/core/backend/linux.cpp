@@ -315,9 +315,7 @@ namespace GGUI {
         }
 
         // Default deinit (NOP)
-        void platformDeinit() {
-            
-        }
+        void platformDeinit() {}
 
         void queryInputs() {
             // If stdin isn't a TTY (e.g., piped/timeout), read() may return 0 (EOF) repeatedly; avoid spinning.
@@ -336,15 +334,30 @@ namespace GGUI {
                     TIME::SECOND    // Max allowed wait time, could be replaced with -1, to wait as long as needed.
                 ) <= 0) {
                     // No data; avoid spinning
-                    inputQuery.size = 0;
+                    queue.inputSize = 0;
                     return;
                 }
             }
 
-            inputQuery.size = read(STDIN_FILENO, inputQuery.buffer.begin(), inputQuery.capacity);
-            if (inputQuery.size <= 0) {
+            queue.inputSize = read(STDIN_FILENO, queue.inputBuffer.begin(), queue.capacity);
+            if (queue.inputSize <= 0) {
                 // EOF or error; normalize to 0 to signal no input
-                inputQuery.size = 0;
+                queue.inputSize = 0;
+            }
+        }
+
+        void queryOutput() {
+            // For output queries, we can just write to stdout directly; the caller is responsible for formatting the output buffer correctly.
+            if (queue.outputSize > 0) {
+                ssize_t written = write(STDOUT_FILENO, queue.outputBuffer.data(), queue.outputSize);
+                if (written < 0) {
+                    GGUI::INTERNAL::LOGGER::log("ERROR: Failed to write output query response: " + std::string(strerror(errno)));
+                } else if (queue.outputSize != written) {   // Move the buffer
+                    // NOTE: this will be potentially really slow
+                    std::memmove(queue.outputBuffer.data(), queue.outputBuffer.data() + written, queue.outputSize - written);
+
+                    queue.outputSize -= written;
+                }
             }
         }
     }

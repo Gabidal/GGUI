@@ -825,7 +825,7 @@ namespace GGUI {
                         auto currentParsingIndex = currentStates.components.currentParsingSequenceIndex;
                         auto& callBacks = currentStates.components.callBacks;
 
-                        auto callBackHandler = [](callBack /*self*/){
+                        auto callBackHandler = [](callBack /*self*/, size_t& /*callBackIndex*/, size_t& /*parsingIndex*/, std::vector<sequence::prefix*>& /*parsed*/){
                             return; // TODO: ...
                         };
 
@@ -1390,7 +1390,128 @@ namespace GGUI {
                 }
 
                 namespace transmissionControlFunctions {
-                    
+                    void operate_ACKNOWLEDGE(sequence::prefix*) {
+                        // Not used.
+                        // TODO: we could use this signal for ASYNC operations with condition variables awaiting for it.
+                    }
+
+                    void operate_DATA_LINK_ESCAPE(sequence::prefix*) {
+                        // TODO: ...
+                    }
+
+                    void operate_ENQUIRY(sequence::prefix*) {
+                        std::string answer;
+
+                        // triggers on first use.
+                        static bool hiddenStateForFirstEnquiry = false;
+
+                        constexpr std::string_view GGUI_IDENTIFIER = "GGUI";
+
+                        if (!hiddenStateForFirstEnquiry) {
+                            // auto a = ACKNOWLEDGE.function
+                        }
+
+                        queue.addToQueue(answer);
+                    }
+
+                    void operate_START_OF_TRANSMISSION(sequence::prefix*) {
+                        auto currentParsingIndex = currentStates.components.currentParsingSequenceIndex;
+                        auto& callBacks = currentStates.components.callBacks;
+
+                        auto callBackHandler = [](callBack self, size_t& callBackIndex, size_t& parsingIndex, std::vector<sequence::prefix*>& parsed){
+                            table::C0 currentTransmission = parsed[parsingIndex]->get<table::C0>();
+
+                            sequence::transmission result(currentTransmission);
+
+                            size_t primaryTransmissionEnd = self.end;
+                            
+                            bool dualCallBackCombine = (
+                                primaryTransmissionEnd == 0 && 
+                                currentStates.components.callBacks.back().start > self.start &&
+                                result.type == sequence::transmission::types::HEADER
+                            );
+                            
+                            if (dualCallBackCombine) {  // the second callBack is an start of text transmission block, which will indicate our primary set end.
+                                primaryTransmissionEnd = currentStates.components.callBacks[callBackIndex + 1].start - 1;   // -1 to ignore the STX/ETX/ETB of the second transmission block
+                            }
+
+                            size_t actualTransmissionEnd = primaryTransmissionEnd;
+                            
+                            std::vector<char> primary;
+                            primary.resize(primaryTransmissionEnd - self.start + 1);
+
+                            // Now we can safely copy all graphical character parsed sequences into primary set
+                            for (size_t i = self.start + 1; i <= primaryTransmissionEnd; i++) {
+                                auto& s = parsed[i];
+
+                                if (s->getType() != sequence::types::GRAPHICAL_CHARACTER) {
+                                    GGUI::INTERNAL::LOGGER::log("Non-graphical transmission block found!");
+                                    continue;
+                                }
+
+                                char gc = static_cast<sequence::graphicalCharacter*>(s)->getValue();
+
+                                // i - , because primary starts from zero where as our indexing does not
+                                primary[i - self.start] = gc;
+                            }
+
+                            if (dualCallBackCombine) {
+                                auto& body = currentStates.components.callBacks[callBackIndex + 1];
+                                std::vector<char> secondary;
+                                secondary.resize(body.end - body.start + 1);
+
+                                for (size_t i = body.start + 1; i <= body.end; i++) {
+                                    auto& s = parsed[i];
+
+                                    if (s->getType() != sequence::types::GRAPHICAL_CHARACTER) {
+                                        GGUI::INTERNAL::LOGGER::log("Non-graphical transmission block found!");
+                                        continue;
+                                    }
+
+                                    char gc = static_cast<sequence::graphicalCharacter*>(s)->getValue();
+
+                                    // i - , because secondary starts from zero where as our indexing does not
+                                    secondary[i - body.start] = gc;
+                                }
+
+                                result.header = std::move(primary);
+                                result.body = std::move(secondary);
+
+                                actualTransmissionEnd = body.end;
+
+                            } else if (result.type == sequence::transmission::types::HEADER){
+                                result.header = std::move(primary); // SOH
+                            } else {
+                                result.body = std::move(primary);   // STX
+                            }
+
+                            // Now we can remove all prefixes from the parsed
+                            parsed.erase(
+                                parsed.begin() + self.start,
+                                parsed.begin() + actualTransmissionEnd + 1
+                            );
+
+                            // Adjust parsing index
+                            parsingIndex -= (actualTransmissionEnd - self.start + 1);
+                        };
+
+                        // We can use non-terminated callback mean that of end of header and start of body
+                        callBacks.push_back({
+                            currentParsingIndex+1,  // Ignore current sequence
+                            0,
+                            callBackHandler
+                        });
+                    }
+
+                    void operate_END_OF_TRANSMISSION(sequence::prefix*) {
+                        // Check that a open-ended transmission exists.
+                        if (currentStates.components.callBacks.empty() || currentStates.components.callBacks.back().end != 0) {
+                            GGUI::INTERNAL::LOGGER::log("Unexpected EOT/ETX/ETB!");
+                            return;
+                        }
+
+                        currentStates.components.callBacks.back().end = currentStates.components.currentParsingSequenceIndex;
+                    }
                 }
             }
         }
