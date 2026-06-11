@@ -215,11 +215,10 @@ namespace GGUI {
 
                 std::pair<size_t, prefix*> defaultSequenceParser(std::string_view input) {
                     prefix* result = nullptr;
-
                     prefix* header = nullptr;
+                    std::pair<prefix*, size_t> extension;
                     size_t i = 0;
 
-                    // Header prefetch ------------------------------------------------
                     if (table::contains<table::C0>(input[i])) {
                         header = new prefix(static_cast<table::C0>(input[i]));
 
@@ -232,20 +231,16 @@ namespace GGUI {
                                 header = new prefix(static_cast<table::C1>(input[i]));
                             }
                         }
-                    } else if (table::contains<table::C1>(input[i]))  header = new prefix(static_cast<table::C1>(input[i]));
+
+                        extension = parsePostfixForC0(input.substr(i));
+                        
+                    } else if (table::contains<table::C1>(input[i])) { 
+                        header = new prefix(static_cast<table::C1>(input[i]));
+                        
+                        extension = parsePostfixForC1(input.substr(i));
+                    }
                     else {  // header == nullptr => means this is a graphical character
                         result = new graphicalCharacter(input[i]);
-                    }
-                    // ----------------------------------------------------------------
-
-                    // Header Extension -----------------------------------------------
-                    std::pair<prefix*, size_t> extension;
-
-                    // Now we can check for extensions of prefix type class:
-                    if (std::holds_alternative<table::C1>(header->getFunction())){
-                        extension = parsePostfixForC1(input.substr(i));
-                    } else {    // table::C0
-                        extension = parsePostfixForC0(input.substr(i));
                     }
 
                     // Even shifts are reported for status checks, put this after shift check to disable shift reporting.
@@ -494,9 +489,9 @@ namespace GGUI {
 
                     void operate_LINE_FEED(sequence::prefix* /*ignored*/) {
                         if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
-                            currentStates.components.activePresentationPosition = currentStates.components.activeDataPosition;
+                            currentStates.components.activePresentationPosition.y++;
                         } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
-                            currentStates.components.activeDataPosition = currentStates.components.activePresentationPosition;
+                            currentStates.components.activeDataPosition.y++;
                         }
                     }
 
@@ -706,8 +701,8 @@ namespace GGUI {
                             std::remove_if(
                                 currentStates.components.tabulationStops.begin(), 
                                 currentStates.components.tabulationStops.end(), 
-                                [](tabulationStop stop) { 
-                                    return stop.type == tabulationStop::types::CHARACTER && stop.position == currentStates.components.activePresentationPosition;
+                                [&index](tabulationStop stop) { 
+                                    return stop.type == tabulationStop::types::CHARACTER && stop.position == IVector2{ index, currentStates.components.activePresentationPosition.y };
                                 }
                             ),
                             currentStates.components.tabulationStops.end()
