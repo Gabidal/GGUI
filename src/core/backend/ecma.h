@@ -2,11 +2,10 @@
 #define _ECMA_H_
 
 #include "../utils/types.h"
-#include "../utils/utils.h"
 
 #include <bitset>
-#include <functional>
 #include <cassert>
+#include <variant>
 
 namespace GGUI {
     namespace terminal {
@@ -49,6 +48,14 @@ namespace GGUI {
 
             namespace table {
                 constexpr uint8_t tableRows = 16;
+
+                // If an enum is small enough, then it should be possible to be to stringed.
+                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType>>>
+                std::string toString(enumType val) {
+                    static_assert(sizeof(enumType) == sizeof(uint8_t), "Enum type must be size of uint8_t");
+
+                    return std::string(1, (char)val);
+                }
 
                 constexpr uint8_t toInt(uint8_t column, uint8_t row) {
                     return (column * tableRows) + row;
@@ -670,6 +677,12 @@ namespace GGUI {
                         return result;
                     }
 
+                    template<std::size_t N>
+                    control<containerType> compile(const std::array<containerType, N>& params) const {
+                        std::vector<containerType> vec(params.begin(), params.end());
+                        return compile(vec);
+                    }
+
                     postfix<uint8_t> getPostfix() const override {
                         return postfix<uint8_t>(finalByte.getIntermediates(), static_cast<uint8_t>(std::visit([](auto&& arg) -> uint8_t {
                             return static_cast<uint8_t>(arg);
@@ -707,8 +720,8 @@ namespace GGUI {
                         TEXT
                     } type;
 
-                    std::vector<char> header;    // Given by STX --- HEADING --- STX/ETX/ETB
-                    std::vector<char> body;      // Given by SOH ---  TEXT   --- ETX/ETB
+                    std::vector<char> primary;      // Given by STX --- HEADING --- STX/ETX/ETB
+                    std::vector<char> secondary;    // Given by SOH ---  TEXT   --- ETX/ETB
 
                     transmission(table::C0 t = table::C0::STX) : prefix(t, sequence::types::TRANSMISSION) {
                         if (t == table::C0::STX) {
@@ -716,6 +729,31 @@ namespace GGUI {
                         } else if (t == table::C0::SOH) {
                             type = types::HEADER;
                         }
+                    }
+
+                    transmission(std::string_view simpleText) : prefix(table::C0::STX, sequence::types::TRANSMISSION) {
+                        type = types::TEXT;
+                        primary.reserve(simpleText.size());
+                        for (char c : simpleText) primary.push_back(c);
+                    }
+
+                    std::string toString() const override {
+                        std::string result;
+
+                        if (type == types::HEADER) result += table::toString(table::C0::SOH);
+                        else                       result += table::toString(table::C0::STX);
+
+                        result += std::string(primary.begin(), primary.end());
+
+                        if (!secondary.empty()) {
+                            result += table::toString(table::C0::STX);
+                            result += std::string(secondary.begin(), secondary.end());
+                        } else {
+                            if (type == types::HEADER)  result += table::toString(table::C0::ETB);
+                            else                        result += table::toString(table::C0::ETX);
+                        }
+
+                        return result;
                     }
                 };
 
@@ -1528,14 +1566,6 @@ namespace GGUI {
                         }
                     }
                 }
-
-                // If an enum is small enough, then it should be possible to be to stringed.
-                template<typename enumType>
-                std::string toString(enumType val) {
-                    static_assert(sizeof(enumType) == sizeof(uint8_t), "Enum type must be size of uint8_t");
-
-                    return std::string(1, (char)val);
-                }
             }
 
             // A simple helper structure of what a assigned tabulation stop looks like.
@@ -1886,6 +1916,40 @@ namespace GGUI {
                 std::vector<graphicAttributes> registeredGraphicAttributes;
 
                 ancillaryStates powerStatus = ancillaryStates::UNKNOWN;
+
+                void reset() {
+                    activePageIndex = 0;
+                    establishedCurrentDefaultPage = dataPage();
+                    dataPages.clear();
+
+                    activeArea = {};
+                    activeField = {};
+                    activeDataPosition = {0, 0};
+                    activePresentationPosition = {0, 0};
+                    activeCharacterMovementDirection = {0, 0};
+
+                    activeModes = table::mode::flags<>();
+
+                    homeLinePosition = {0, 0};
+                    lineLimitPosition = {0, 0};
+                    activeTabulationAlignment = tabulationStop::modes::LEADING_EDGE;
+                    tabulationStops.clear();
+                    currentPresentationDirection = sequences::presentationDirections();
+                    imaginaryLines.clear();
+                    lineBreaks.clear();
+                    activeFonts.fill(0);
+
+                    currentParsingSequenceIndex = 0;
+                    callBacks.clear();
+
+                    registeredFontAttributes.clear();
+                    registeredJustifications.clear();
+                    lineContinuations.clear();
+                    activeSpacingFactor = spacingFactor();
+                    registeredGraphicAttributes.clear();
+
+                    powerStatus = ancillaryStates::UNKNOWN;
+                }
             };
 
             namespace sequences {
@@ -3715,6 +3779,9 @@ namespace GGUI {
                 }
 
                 namespace miscellaneousControlFunctions {
+                    extern void operate_ACTIVE_POSITION_REPORT(sequence::prefix*);
+                    extern void operate_DEVICE_ATTRIBUTES(sequence::prefix*);
+                    extern void operate_RESET_TO_INITIAL_STATE(sequence::prefix*);
                     
                     /**
                      * @brief BEL is used when there is a need to call for attention; it may control alarm or attention devices.
@@ -3753,7 +3820,7 @@ namespace GGUI {
                      * @param Pn1 default(1)
                      * @param Pn2 default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> ACTIVE_POSITION_REPORT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CPR), {1});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> ACTIVE_POSITION_REPORT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CPR), {1, 1});
                     
                     /**
                      * @brief With a parameter value not equal to 0, DA is used to identify the device which sends the DA. 
@@ -3762,7 +3829,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 06/03` or `9/11 Ps 06/03`
                      * @param Ps default(0)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DEVICE_ATTRIBUTES(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DA), {0});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DEVICE_ATTRIBUTES(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DA), {0}, {operate_DEVICE_ATTRIBUTES});
                     
                     /**
                      * @brief DMI causes the manual input facilities of a device to be disabled.
@@ -3906,7 +3973,7 @@ namespace GGUI {
                      * the first line in the data component, set the modes into the reset state, etc. 
                      * @example `01/11 06/03`
                      */
-                    inline auto RESET_TO_INITIAL_STATE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::RIS);
+                    inline auto RESET_TO_INITIAL_STATE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::RIS, {}, {operate_RESET_TO_INITIAL_STATE});
 
                     /**
                      * @brief SEE is used to establish the editing extent for subsequent character or line insertion or deletion. 
@@ -3935,9 +4002,7 @@ namespace GGUI {
                      * @param Pn1 default(0) - 0: eject sheet, no new sheet loaded; 1-n: eject sheet and load another from bin n
                      * @param Pn2 default(0) - 0: eject sheet, no stacker specified; 1-n: eject sheet into stacker n
                      */
-                    namespace SHEET_EJECT_AND_FEED {
-                        inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> code(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SEF), {0, 0});
-                    }
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> SHEET_EJECT_AND_FEED(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SEF), {0, 0});
 
                     /**
                      * @brief STS is used to establish the transmit state in the receiving device. 

@@ -1,7 +1,6 @@
-#include "ecma.h"
 #include "terminal.h"
 
-#include "../utils/types.h"
+#include <algorithm> // std::remove_if
 
 namespace GGUI {
     namespace terminal {
@@ -1389,6 +1388,7 @@ namespace GGUI {
                     }
                 }
 
+                // These have been made according to: ISO/R 1745:1971
                 namespace transmissionControlFunctions {
                     void operate_ACKNOWLEDGE(sequence::prefix*) {
                         // Not used.
@@ -1403,12 +1403,14 @@ namespace GGUI {
                         std::string answer;
 
                         // triggers on first use.
-                        static bool hiddenStateForFirstEnquiry = false;
+                        static bool hiddenState_isFirstEnquiry = false;
 
-                        constexpr std::string_view GGUI_IDENTIFIER = "GGUI";
+                        if (!hiddenState_isFirstEnquiry) {
+                            static const sequence::transmission response("GGUI"); 
 
-                        if (!hiddenStateForFirstEnquiry) {
-                            // auto a = ACKNOWLEDGE.function
+                            answer = response.toString();
+                        } else {
+                            // TODO: ...
                         }
 
                         queue.addToQueue(answer);
@@ -1455,6 +1457,8 @@ namespace GGUI {
                                 primary[i - self.start] = gc;
                             }
 
+                            result.primary = std::move(primary);
+
                             if (dualCallBackCombine) {
                                 auto& body = currentStates.components.callBacks[callBackIndex + 1];
                                 std::vector<char> secondary;
@@ -1474,15 +1478,9 @@ namespace GGUI {
                                     secondary[i - body.start] = gc;
                                 }
 
-                                result.header = std::move(primary);
-                                result.body = std::move(secondary);
+                                result.secondary = std::move(secondary);
 
                                 actualTransmissionEnd = body.end;
-
-                            } else if (result.type == sequence::transmission::types::HEADER){
-                                result.header = std::move(primary); // SOH
-                            } else {
-                                result.body = std::move(primary);   // STX
                             }
 
                             // Now we can remove all prefixes from the parsed
@@ -1511,6 +1509,55 @@ namespace GGUI {
                         }
 
                         currentStates.components.callBacks.back().end = currentStates.components.currentParsingSequenceIndex;
+                    }
+                }
+
+                namespace miscellaneousControlFunctions {
+                    void operate_ACTIVE_POSITION_REPORT(sequence::prefix* input) {
+                        
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        
+                        auto params = controlSequence->getParameters();
+                        
+                        assert(params.size() == 2);
+                        
+                        IVector2 reporting = {
+                            params.front().getValueAsInteger(),
+                            params.back().getValueAsInteger()
+                        };
+
+                        if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                            currentStates.components.activePresentationPosition = reporting;
+                        } else {    // DCSM_DATA
+                            currentStates.components.activeDataPosition = reporting;
+                        }
+                    }
+
+                    void operate_DEVICE_ATTRIBUTES(sequence::prefix* input) {
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
+
+                        auto deviceType = params.back().getValueAsInteger();
+
+                        if (deviceType == 0) {  // This is an request, and we will need to answer.
+                            // We can either respond with our own code declaring GGUI, or using ecma-48 as identification.
+
+                            constexpr uint32_t GGUI_SINGLE_VALUE_IDENTIFIER = 733;
+
+                            auto response = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({GGUI_SINGLE_VALUE_IDENTIFIER}).toString();
+
+                            queue.addToQueue(response);
+                        } else {
+                            // This needs to be already overridden via the DEC page re-route, something went wrong here...
+                            GGUI::INTERNAL::LOGGER::log("ERROR: Unjustified device identification: " + std::to_string(deviceType));
+                        }
+                    }
+
+                    void operate_RESET_TO_INITIAL_STATE(sequence::prefix* /*ignored*/) {
+                        currentStates.components.reset();
                     }
                 }
             }

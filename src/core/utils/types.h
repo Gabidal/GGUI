@@ -7,9 +7,6 @@
 #include <mutex>
 #include <memory>
 
-#include "constants.h"
-#include "color.h"
-
 namespace GGUI{
     
     // Literal type
