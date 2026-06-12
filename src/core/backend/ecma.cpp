@@ -53,15 +53,6 @@ namespace GGUI {
             }
 
             namespace sequence {
-                std::string prefix::toString() const {
-                    // only primary set
-                    if (std::holds_alternative<table::C0>(function)) {
-                        return table::toString(std::get<table::C0>(function));
-                    } else {
-                        return table::toString(table::C0::ESC) + table::toString(std::get<table::C1>(function));
-                    }
-                }
-
                 std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte) {
                     std::string result = "";
 
@@ -130,7 +121,7 @@ namespace GGUI {
                     return result;
                 }
 
-                std::pair<prefix*, size_t> parsePostfixForC1(std::string_view input) {
+                std::pair<sequence::base*, size_t> parsePostfixForC1(std::string_view input) {
                     table::C1 header = static_cast<table::C1>(input.front());
 
                     if (header == table::C1::CSI) {
@@ -191,7 +182,7 @@ namespace GGUI {
                     }
                 }
 
-                std::pair<prefix*, size_t> parsePostfixForC0(std::string_view input) {
+                std::pair<sequence::base*, size_t> parsePostfixForC0(std::string_view input) {
                     table::C0 header = static_cast<table::C0>(input.front());
 
                     if (header == table::C0::ESC) { // Proceeding bytes cannot be that of CSI, since it would have been captured at the previous parsing stage.
@@ -213,30 +204,20 @@ namespace GGUI {
                     }
                 }
 
-                std::pair<size_t, prefix*> defaultSequenceParser(std::string_view input) {
-                    prefix* result = nullptr;
-                    prefix* header = nullptr;
-                    std::pair<prefix*, size_t> extension;
+                std::pair<size_t, sequence::base*> defaultSequenceParser(std::string_view input) {
+                    sequence::base* result = nullptr;
+                    std::pair<sequence::base*, size_t> extension;
                     size_t i = 0;
 
                     if (table::contains<table::C0>(input[i])) {
-                        header = new prefix(static_cast<table::C0>(input[i]));
-
                         // We can skip ESC and set header to point into C1 if possible
-                        if (header->contains(table::C0::ESC)) {     // Now we can check if i+1 contains a C1 bytecode
+                        if (table::is(input[i], table::C0::ESC)) {     // Now we can check if i+1 contains a C1 bytecode
                             i++;
-
-                            // We can promote the ECS + C1 code into a single 8-bit C1 bytecode
-                            if (i < input.size() && table::contains<table::C1>(input[i])) {
-                                header = new prefix(static_cast<table::C1>(input[i]));
-                            }
                         }
 
                         extension = parsePostfixForC0(input.substr(i));
                         
                     } else if (table::contains<table::C1>(input[i])) { 
-                        header = new prefix(static_cast<table::C1>(input[i]));
-                        
                         extension = parsePostfixForC1(input.substr(i));
                     }
                     else {  // header == nullptr => means this is a graphical character
@@ -253,8 +234,8 @@ namespace GGUI {
                     return {i, result};
                 }
 
-                std::vector<prefix*> parse(std::string_view input) {
-                    std::vector<prefix*> result;
+                std::vector<sequence::base*> parse(std::string_view input) {
+                    std::vector<sequence::base*> result;
 
                     for (size_t i = 0; i < input.size(); i++) {
                         // First check while temporary loads are active from previous loop
@@ -272,7 +253,7 @@ namespace GGUI {
                 }
             }
 
-            std::pair<size_t, sequence::prefix*> table::configuration::manager::interpret(std::string_view input) {
+            std::pair<size_t, sequence::base*> table::configuration::manager::interpret(std::string_view input) {
                 auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
                 auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
 
@@ -285,7 +266,7 @@ namespace GGUI {
                 if (parsedArea.first == 0) return {0, nullptr};    // No progress, means no match, return null.
                 
                 // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
-                currentCell = currentPage.get(*parsedArea.second, parsedArea.second->getPostfix());
+                currentCell = currentPage.get(parsedArea.second, static_cast<sequence::prefix<>*>(parsedArea.second)->getPostfix());
 
                 // Call the functionality given by the parser
                 currentCell.handler(parsedArea.second);
@@ -302,7 +283,7 @@ namespace GGUI {
                 namespace shiftFunctions {
                     auto layoutType = table::configuration::layout::graphical::type::A;     // TODO: Dynamically adjust this.
 
-                    void operateShift_LS0(sequence::prefix*) {
+                    void operateShift_LS0(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G0, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
@@ -310,7 +291,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_LS1(sequence::prefix*) {
+                    void operateShift_LS1(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G1, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
@@ -318,7 +299,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_SS2(sequence::prefix*) {
+                    void operateShift_SS2(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G2, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
@@ -326,7 +307,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_SS3(sequence::prefix*) {
+                    void operateShift_SS3(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G3, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
@@ -334,7 +315,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_LS1R(sequence::prefix*) {
+                    void operateShift_LS1R(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G1, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
@@ -342,7 +323,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_LS2(sequence::prefix*) {
+                    void operateShift_LS2(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G2, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
@@ -350,7 +331,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_LS2R(sequence::prefix*) {
+                    void operateShift_LS2R(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G2, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
@@ -358,7 +339,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_LS3(sequence::prefix*) {
+                    void operateShift_LS3(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G3, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
@@ -366,7 +347,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operateShift_LS3R(sequence::prefix*) {
+                    void operateShift_LS3R(sequence::base*) {
                         pageState.load(
                             table::configuration::repertoire::G3, 
                             table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
@@ -377,14 +358,14 @@ namespace GGUI {
                 }
 
                 namespace formatEffectors {
-                    void operate_BACKSPACE(sequence::prefix* /*ignored*/) {
+                    void operate_BACKSPACE(sequence::base* /*ignored*/) {
                         // First we get the direction and a base vector for the opposite direction
                         IVector2 oppositeDirection = currentStates.components.activeCharacterMovementDirection * -1;
                     
                         currentStates.components.activeDataPosition += oppositeDirection;
                     }
 
-                    void operate_CARRIAGE_RETURN(sequence::prefix* /*ignored*/) {
+                    void operate_CARRIAGE_RETURN(sequence::base* /*ignored*/) {
                         if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
                             if (currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
                                 currentStates.components.activePresentationPosition.x = currentStates.components.homeLinePosition.x;
@@ -400,7 +381,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_FORM_FEED(sequence::prefix* /*ignored*/) {
+                    void operate_FORM_FEED(sequence::base* /*ignored*/) {
                         // FF causes the active presentation position to be moved to the corresponding 
                         // character position of the line at the page home position of the next form or page.
                         // Move to the next page by advancing past the current active area
@@ -412,7 +393,7 @@ namespace GGUI {
                         currentStates.components.activePresentationPosition = currentStates.components.homeLinePosition;
                     }
 
-                    void operate_CHARACTER_POSITION_ABSOLUTE(sequence::prefix* input) {
+                    void operate_CHARACTER_POSITION_ABSOLUTE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -420,7 +401,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition.x = params.front().getValueAsInteger();
                     }
 
-                    void operate_CHARACTER_POSITION_BACKWARD(sequence::prefix* input) {
+                    void operate_CHARACTER_POSITION_BACKWARD(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -431,7 +412,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition += directionVector;
                     }
 
-                    void operate_CHARACTER_POSITION_FORWARD(sequence::prefix* input) {
+                    void operate_CHARACTER_POSITION_FORWARD(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -442,7 +423,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition += directionVector;
                     }
                     
-                    void operate_CHARACTER_TABULATION(sequence::prefix* /*ignored*/) {
+                    void operate_CHARACTER_TABULATION(sequence::base* /*ignored*/) {
                         tabulationStop nextTabulation;
 
                         // Find next tabulation 
@@ -465,7 +446,7 @@ namespace GGUI {
                         // TODO: add here the code for detecting multi-line tabulation support and if so, also move the activeLinePosition.
                     }
 
-                    void operate_CHARACTER_TABULATION_SET(sequence::prefix* /*ignored*/) {
+                    void operate_CHARACTER_TABULATION_SET(sequence::base* /*ignored*/) {
                         // This function sets a tabulation stop at the current active line position and presentation position, with the current tabulation alignment mode.
                         currentStates.components.tabulationStops.push_back(tabulationStop{
                             currentStates.components.activeTabulationAlignment,
@@ -474,7 +455,7 @@ namespace GGUI {
                         });
                     }
 
-                    void operate_CHARACTER_AND_LINE_POSITION(sequence::prefix* input) {
+                    void operate_CHARACTER_AND_LINE_POSITION(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -487,7 +468,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition = {x, y};
                     }
 
-                    void operate_LINE_FEED(sequence::prefix* /*ignored*/) {
+                    void operate_LINE_FEED(sequence::base* /*ignored*/) {
                         if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
                             currentStates.components.activePresentationPosition.y++;
                         } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
@@ -495,7 +476,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_NEXT_LINE(sequence::prefix* /*ignored*/) {
+                    void operate_NEXT_LINE(sequence::base* /*ignored*/) {
                         bool has_presentation = currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION);
                         bool has_data = currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA);
                         auto movement_direction = currentStates.components.toCharacterMovementDirection(currentStates.components.activeCharacterMovementDirection);
@@ -515,7 +496,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_PARTIAL_LINE_FORWARD(sequence::prefix* /*ignored*/) {
+                    void operate_PARTIAL_LINE_FORWARD(sequence::base* /*ignored*/) {
                         auto direction = imaginaryLine::types::SUBSCRIPT;
 
                         // This part is going to be ugly, TODO: clean this up:
@@ -556,11 +537,11 @@ namespace GGUI {
                         });
                     }
 
-                    void operate_PARTIAL_LINE_BACKWARD(sequence::prefix* /*ignored*/) {
+                    void operate_PARTIAL_LINE_BACKWARD(sequence::base* /*ignored*/) {
                         currentStates.components.imaginaryLines.back().end = currentStates.components.activePresentationPosition;
                     }
 
-                    void operate_PAGE_POSITION_ABSOLUTE(sequence::prefix* input) {
+                    void operate_PAGE_POSITION_ABSOLUTE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -572,7 +553,7 @@ namespace GGUI {
                         currentStates.components.activePageIndex = PageIndex;
                     }
 
-                    void operate_PAGE_POSITION_BACKWARD(sequence::prefix* input) {
+                    void operate_PAGE_POSITION_BACKWARD(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -584,7 +565,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition.y = currentStates.components.dataPages[currentStates.components.activePageIndex - PageIndex].start.y;
                     }
 
-                    void operate_PAGE_POSITION_FORWARD(sequence::prefix* input) {
+                    void operate_PAGE_POSITION_FORWARD(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -596,7 +577,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition.y = currentStates.components.dataPages[currentStates.components.activePageIndex + PageIndex].start.y;
                     }
 
-                    void operate_REVERSE_LINE_FEED(sequence::prefix* /*ignored*/) {
+                    void operate_REVERSE_LINE_FEED(sequence::base* /*ignored*/) {
                         if (currentStates.components.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
                             currentStates.components.activePresentationPosition.y--;
                         } else if (currentStates.components.activeModes.has(table::mode::presets::DCSM_DATA)) {
@@ -604,7 +585,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_TABULATION_CLEAR(sequence::prefix* input) {
+                    void operate_TABULATION_CLEAR(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<sequences::formatEffectors::TABULATION_CLEAR::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -685,7 +666,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_TABULATION_STOP_REMOVE(sequence::prefix* input) {
+                    void operate_TABULATION_STOP_REMOVE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -709,7 +690,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operate_LINE_POSITION_ABSOLUTE(sequence::prefix* input) {
+                    void operate_LINE_POSITION_ABSOLUTE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -723,7 +704,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition.y = lineProgression.y * line;
                     }
 
-                    void operate_LINE_POSITION_BACKWARD(sequence::prefix* input) {
+                    void operate_LINE_POSITION_BACKWARD(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -737,7 +718,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition.y += -lineProgression.y * line;
                     }
 
-                    void operate_LINE_POSITION_FORWARD(sequence::prefix* input) {
+                    void operate_LINE_POSITION_FORWARD(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -751,7 +732,7 @@ namespace GGUI {
                         currentStates.components.activeDataPosition.y += lineProgression.y * line;
                     }
 
-                    void operate_LINE_TABULATION(sequence::prefix* /*ignore*/) {
+                    void operate_LINE_TABULATION(sequence::base* /*ignore*/) {
                         // First find the tabulation top at the current presentation position line
                         for (auto currentTabStop : currentStates.components.tabulationStops) {
                             if (
@@ -765,7 +746,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_LINE_TABULATION_SET(sequence::prefix* /*ignore*/) {
+                    void operate_LINE_TABULATION_SET(sequence::base* /*ignore*/) {
                         currentStates.components.tabulationStops.push_back(tabulationStop{
                             currentStates.components.activeTabulationAlignment,
                             tabulationStop::types::LINE,
@@ -775,13 +756,13 @@ namespace GGUI {
                 }
 
                 namespace presentationControlFunctions {
-                    void operate_BREAK_PERMITTED_HERE(sequence::prefix* /*ignore*/) {
+                    void operate_BREAK_PERMITTED_HERE(sequence::base* /*ignore*/) {
                         currentStates.components.lineBreaks.push_back(currentStates.components.activePresentationPosition);
                         currentStates.components.activePresentationPosition.y++;
                         currentStates.components.activePresentationPosition.x = 0;
                     }
 
-                    void operate_DIMENSION_TEXT_AREA(sequence::prefix* input) {
+                    void operate_DIMENSION_TEXT_AREA(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -794,7 +775,7 @@ namespace GGUI {
                         currentStates.components.establishedCurrentDefaultPage = {start, end};
                     }
 
-                    void operate_FONT_SELECTION(sequence::prefix* input) {
+                    void operate_FONT_SELECTION(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<fontSlots>>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -807,7 +788,7 @@ namespace GGUI {
                         currentStates.components.activeFonts[(size_t)fontSlot] = fontID;
                     }
 
-                    void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::prefix* input) {
+                    void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<GRAPHIC_CHARACTER_COMBINATION::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -819,7 +800,7 @@ namespace GGUI {
                         auto currentParsingIndex = currentStates.components.currentParsingSequenceIndex;
                         auto& callBacks = currentStates.components.callBacks;
 
-                        auto callBackHandler = [](callBack /*self*/, size_t& /*callBackIndex*/, size_t& /*parsingIndex*/, std::vector<sequence::prefix*>& /*parsed*/){
+                        auto callBackHandler = [](callBack /*self*/, size_t& /*callBackIndex*/, size_t& /*parsingIndex*/, std::vector<sequence::base*>& /*parsed*/){
                             return; // TODO: ...
                         };
 
@@ -851,7 +832,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_GRAPHIC_SIZE_MODIFICATION(sequence::prefix* input) {
+                    void operate_GRAPHIC_SIZE_MODIFICATION(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -888,7 +869,7 @@ namespace GGUI {
 
                     }
 
-                    void operate_GRAPHIC_SIZE_SELECTION(sequence::prefix* input) {
+                    void operate_GRAPHIC_SIZE_SELECTION(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -911,7 +892,7 @@ namespace GGUI {
                         );
                     }
 
-                    void operate_JUSTIFY(sequence::prefix* input) {
+                    void operate_JUSTIFY(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<justify::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -938,11 +919,11 @@ namespace GGUI {
                         currentStates.components.registeredJustifications.push_back(newJustification);
                     }
 
-                    void operate_NO_BREAK_HERE(sequence::prefix* /*ignored*/) {
+                    void operate_NO_BREAK_HERE(sequence::base* /*ignored*/) {
                         currentStates.components.lineContinuations.push_back(currentStates.components.activePresentationPosition);
                     }
 
-                    void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::prefix* input) {
+                    void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<spacingFactor::types>>*>(input);
                     
                         auto params = controlSequence->getParameters();
@@ -954,7 +935,7 @@ namespace GGUI {
                         currentStates.components.activeSpacingFactor.type = spacingFactorType;
                     }
 
-                    void operate_SELECT_GRAPHIC_RENDITION(sequence::prefix* input) {
+                    void operate_SELECT_GRAPHIC_RENDITION(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<graphicAttributes::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -983,7 +964,7 @@ namespace GGUI {
                         currentStates.components.registeredGraphicAttributes.push_back(newAttributes);
                     }
 
-                    void operate_SET_LINE_HOME(sequence::prefix* input) {
+                    void operate_SET_LINE_HOME(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1005,7 +986,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_SET_LINE_LIMIT(sequence::prefix* input) {
+                    void operate_SET_LINE_LIMIT(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1029,7 +1010,7 @@ namespace GGUI {
                 }
 
                 namespace editorFunctions {
-                    void operate_DELETE_CHARACTER(sequence::prefix* input) {
+                    void operate_DELETE_CHARACTER(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1063,7 +1044,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_DELETE_LINE(sequence::prefix* input) {
+                    void operate_DELETE_LINE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1092,7 +1073,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_INSERT_CHARACTER(sequence::prefix* input) {
+                    void operate_INSERT_CHARACTER(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1142,7 +1123,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_INSERT_LINE(sequence::prefix* input) {
+                    void operate_INSERT_LINE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1196,7 +1177,7 @@ namespace GGUI {
                 }
 
                 namespace cursorControlFunctions {
-                    void operate_CURSOR_NEXT_LINE(sequence::prefix* input) {
+                    void operate_CURSOR_NEXT_LINE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1209,7 +1190,7 @@ namespace GGUI {
                         currentStates.components.activePresentationPosition.x = 0;  // TODO: line home position?
                     }
 
-                    void operate_CURSOR_PRECEDING_LINE(sequence::prefix* input) {
+                    void operate_CURSOR_PRECEDING_LINE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1222,7 +1203,7 @@ namespace GGUI {
                         currentStates.components.activePresentationPosition.x = 0;  // TODO: line home position?
                     }
 
-                    void operate_CURSOR_LEFT(sequence::prefix* input) {
+                    void operate_CURSOR_LEFT(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1234,7 +1215,7 @@ namespace GGUI {
                         currentStates.components.activePresentationPosition.x -= character;
                     }
 
-                    void operate_CURSOR_DOWN(sequence::prefix* input) {
+                    void operate_CURSOR_DOWN(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1246,7 +1227,7 @@ namespace GGUI {
                         currentStates.components.activePresentationPosition.y += line;
                     }
 
-                    void operate_CURSOR_RIGHT(sequence::prefix* input) {
+                    void operate_CURSOR_RIGHT(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1258,7 +1239,7 @@ namespace GGUI {
                         currentStates.components.activePresentationPosition.x += character;
                     }
 
-                    void operate_CURSOR_POSITION(sequence::prefix* input) {
+                    void operate_CURSOR_POSITION(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1272,7 +1253,7 @@ namespace GGUI {
                         currentStates.components.activePresentationPosition.x = character;
                     }
 
-                    void operate_CURSOR_UP(sequence::prefix* input) {
+                    void operate_CURSOR_UP(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1286,7 +1267,7 @@ namespace GGUI {
                 }
 
                 namespace displayControlFunctions {
-                    void operate_NEXT_PAGE(sequence::prefix* input) {
+                    void operate_NEXT_PAGE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1298,7 +1279,7 @@ namespace GGUI {
                         currentStates.components.activePageIndex += page;
                     }
 
-                    void operate_PRECEDING_PAGE(sequence::prefix* input) {
+                    void operate_PRECEDING_PAGE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1310,7 +1291,7 @@ namespace GGUI {
                         currentStates.components.activePageIndex -= page;
                     }
 
-                    void operate_SCROLL_DOWN(sequence::prefix* input) {
+                    void operate_SCROLL_DOWN(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1322,7 +1303,7 @@ namespace GGUI {
                         currentStates.mouse.scroll.Scalar += line;   // TODO: Missing horizontal scroll
                     }
 
-                    void operate_SCROLL_UP(sequence::prefix* input) {
+                    void operate_SCROLL_UP(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1336,25 +1317,25 @@ namespace GGUI {
                 }
 
                 namespace deviceControlFunctions {
-                    void operate_DEVICE_CONTROL_ONE(sequence::prefix* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_ONE(sequence::base* /*ignored*/) {
                         currentStates.components.powerStatus = ancillaryStates::X_ON;
                     }
 
-                    void operate_DEVICE_CONTROL_TWO(sequence::prefix* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_TWO(sequence::base* /*ignored*/) {
                         currentStates.components.powerStatus = ancillaryStates::BASIC_MODE;
                     }
 
-                    void operate_DEVICE_CONTROL_THREE(sequence::prefix* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_THREE(sequence::base* /*ignored*/) {
                         currentStates.components.powerStatus = ancillaryStates::X_OFF;
                     }
 
-                    void operate_DEVICE_CONTROL_FOUR(sequence::prefix* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_FOUR(sequence::base* /*ignored*/) {
                         currentStates.components.powerStatus = ancillaryStates::INTERRUPT;
                     }
                 }
 
                 namespace modeSettings {
-                    void operate_RESET_MODE(sequence::prefix* input) {
+                    void operate_RESET_MODE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<table::mode::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1368,7 +1349,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_SET_MODE(sequence::prefix* input) {
+                    void operate_SET_MODE(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<table::mode::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1385,16 +1366,16 @@ namespace GGUI {
 
                 // These have been made according to: ISO/R 1745:1971
                 namespace transmissionControlFunctions {
-                    void operate_ACKNOWLEDGE(sequence::prefix*) {
+                    void operate_ACKNOWLEDGE(sequence::base*) {
                         // Not used.
                         // TODO: we could use this signal for ASYNC operations with condition variables awaiting for it.
                     }
 
-                    void operate_DATA_LINK_ESCAPE(sequence::prefix*) {
+                    void operate_DATA_LINK_ESCAPE(sequence::base*) {
                         // TODO: ...
                     }
 
-                    void operate_ENQUIRY(sequence::prefix*) {
+                    void operate_ENQUIRY(sequence::base*) {
                         std::string answer;
 
                         // triggers on first use.
@@ -1411,14 +1392,14 @@ namespace GGUI {
                         queue.addToQueue(answer);
                     }
 
-                    void operate_START_OF_TRANSMISSION(sequence::prefix*) {
+                    void operate_START_OF_TRANSMISSION(sequence::base*) {
                         auto currentParsingIndex = currentStates.components.currentParsingSequenceIndex;
                         auto& callBacks = currentStates.components.callBacks;
 
-                        auto callBackHandler = [](callBack self, size_t& callBackIndex, size_t& parsingIndex, std::vector<sequence::prefix*>& parsed){
-                            table::C0 currentTransmission = parsed[parsingIndex]->get<table::C0>();
+                        auto callBackHandler = [](callBack self, size_t& callBackIndex, size_t& parsingIndex, std::vector<sequence::base*>& parsed){
+                            auto currentTransmission = static_cast<sequence::prefix<table::C0>*>(parsed[parsingIndex]);
 
-                            sequence::transmission result(currentTransmission);
+                            sequence::transmission result(currentTransmission->getValue());
 
                             size_t primaryTransmissionEnd = self.end;
                             
@@ -1496,7 +1477,7 @@ namespace GGUI {
                         });
                     }
 
-                    void operate_END_OF_TRANSMISSION(sequence::prefix*) {
+                    void operate_END_OF_TRANSMISSION(sequence::base*) {
                         // Check that a open-ended transmission exists.
                         if (currentStates.components.callBacks.empty() || currentStates.components.callBacks.back().end != 0) {
                             GGUI::INTERNAL::LOGGER::log("Unexpected EOT/ETX/ETB!");
@@ -1508,7 +1489,7 @@ namespace GGUI {
                 }
 
                 namespace miscellaneousControlFunctions {
-                    void operate_ACTIVE_POSITION_REPORT(sequence::prefix* input) {
+                    void operate_ACTIVE_POSITION_REPORT(sequence::base* input) {
                         
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
                         
@@ -1528,7 +1509,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_DEVICE_ATTRIBUTES(sequence::prefix* input) {
+                    void operate_DEVICE_ATTRIBUTES(sequence::base* input) {
                         auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
                         auto params = controlSequence->getParameters();
@@ -1551,7 +1532,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_RESET_TO_INITIAL_STATE(sequence::prefix* /*ignored*/) {
+                    void operate_RESET_TO_INITIAL_STATE(sequence::base* /*ignored*/) {
                         currentStates.components.reset();
                     }
                 }

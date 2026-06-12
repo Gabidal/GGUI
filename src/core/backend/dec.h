@@ -1,7 +1,7 @@
 #ifndef _DEC_H_
 #define _DEC_H_
 
-#include "ansi.h"
+#include "ecma.h"
 
 namespace GGUI {
     namespace terminal {
@@ -11,6 +11,8 @@ namespace GGUI {
         */
         namespace dec {
             namespace VT100 {
+                extern ecma::table::configuration::page G3;
+
                 namespace mode {
                     // Since so many VTxxx sequences depend on their private modes, we need to introduce bindings to enforce correct sequence for each mode.
                     namespace privates {
@@ -52,9 +54,17 @@ namespace GGUI {
                     ecma::table::mode::flags<mode::privates::types> modes;
                 };
 
-                enum class arrowKeysReset {
-                    // UP = ecma::sequences::cursorControlFunctions::CURSOR_UP
-                };
+                namespace sequences {
+                    using namespace ecma::sequences;
+
+                    // The CSI variants are in ecma.h
+                    namespace cursorControlFunctions {
+                        extern void operate_CURSOR_UP(ecma::sequence::base*);
+                        extern void operate_CURSOR_DOWN(ecma::sequence::base*);
+
+                        inline auto CURSOR_UP = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUU);
+                    }
+                }
 
             }
         }
