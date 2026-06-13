@@ -13,6 +13,26 @@ namespace GGUI {
             namespace VT100 {
                 extern ecma::table::configuration::page G3;
 
+                namespace table {
+                    constexpr auto toInt = ecma::table::toInt;
+
+                    enum class keypadCodes {
+                        /* COLUMN 4 */          /* COLUMN 5 */              /* COLUMN 6 */          /* COLUMN 7 */
+                        ENTER = toInt(4, 13),   FUNCTION_1 = toInt(5, 0),   COMMA =  toInt(6, 12),  ZERO  = toInt(7, 0),
+                                                FUNCTION_2 = toInt(5, 1),   DASH  =  toInt(6, 13),  ONE   = toInt(7, 1),
+                                                FUNCTION_3 = toInt(5, 2),   PERIOD = toInt(6, 14),  TWO   = toInt(7, 2),
+                                                FUNCTION_4 = toInt(5, 3),                           THREE = toInt(7, 3),
+                                                                                                    FOUR  = toInt(7, 4),
+                                                                                                    FIVE  = toInt(7, 5),
+                                                                                                    SIX   = toInt(7, 6),
+                                                                                                    SEVEN = toInt(7, 7),
+                                                                                                    EIGHT = toInt(7, 8),
+                                                                                                    NINE  = toInt(7, 9),
+                        
+                    };
+
+                }
+
                 namespace mode {
                     // Since so many VTxxx sequences depend on their private modes, we need to introduce bindings to enforce correct sequence for each mode.
                     namespace privates {
@@ -68,6 +88,10 @@ namespace GGUI {
                         inline auto CURSOR_DOWN = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUD, {}, {operate_CURSOR_DOWN}, &G3);
                         inline auto CURSOR_LEFT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUF, {}, {operate_CURSOR_LEFT}, &G3);
                         inline auto CURSOR_RIGHT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUB, {}, {operate_CURSOR_RIGHT}, &G3);
+                    }
+
+                    namespace  auxiliaryKeyCodes {
+                        inline auto ZERO = base<ecma::sequence::prefix<table::keypadCodes>>(table::keypadCodes::ZERO, {}, {}, &G3);
                     }
                 }
 
