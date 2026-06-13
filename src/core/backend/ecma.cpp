@@ -121,7 +121,7 @@ namespace GGUI {
                     return result;
                 }
 
-                std::pair<sequence::base*, size_t> parsePostfixForC1(std::string_view input) {
+                std::pair<size_t, sequence::base*> parsePostfixForC1(std::string_view input) {
                     table::C1 header = static_cast<table::C1>(input.front());
 
                     if (header == table::C1::CSI) {
@@ -168,21 +168,21 @@ namespace GGUI {
                         }
 
                         return {
-                            new sequence::control<sequence::parameter::numeric>(params, tail),
-                            finalFunctionAt + 1
+                            finalFunctionAt + 1,
+                            new sequence::control<sequence::parameter::numeric>(params, tail)
                         };
 
                     } else if (header == table::C1::APC || header == table::C1::DCS || header == table::C1::OSC || header == table::C1::PM || header == table::C1::SOS) {
 
                         // TODO: ...
-                        return {nullptr, 0};
+                        return {0, nullptr};
 
                     } else {    // TODO: ...
-                        return {nullptr, 0};
+                        return {0, nullptr};
                     }
                 }
 
-                std::pair<sequence::base*, size_t> parsePostfixForC0(std::string_view input) {
+                std::pair<size_t, sequence::base*> parsePostfixForC0(std::string_view input) {
                     table::C0 header = static_cast<table::C0>(input.front());
 
                     if (header == table::C0::ESC) { // Proceeding bytes cannot be that of CSI, since it would have been captured at the previous parsing stage.
@@ -197,16 +197,18 @@ namespace GGUI {
                             static_cast<table::independentFunctions>(input.at(startOfIntermediates + intermediates.size()))
                         });
 
-                        return {result, startOfIntermediates + intermediates.size()};
+                        return {
+                            startOfIntermediates + intermediates.size(),
+                            result
+                        };
 
-                    } else {
-                        return {nullptr, 0};
+                    } else {    // TODO: ...
+                        return {0, nullptr};
                     }
                 }
 
                 std::pair<size_t, sequence::base*> defaultSequenceParser(std::string_view input) {
-                    sequence::base* result = nullptr;
-                    std::pair<sequence::base*, size_t> extension;
+                    std::pair<size_t, sequence::base*> result;
                     size_t i = 0;
 
                     if (table::contains<table::C0>(input[i])) {
@@ -215,23 +217,16 @@ namespace GGUI {
                             i++;
                         }
 
-                        extension = parsePostfixForC0(input.substr(i));
+                        result = parsePostfixForC0(input.substr(i));
                         
                     } else if (table::contains<table::C1>(input[i])) { 
-                        extension = parsePostfixForC1(input.substr(i));
+                        result = parsePostfixForC1(input.substr(i));
                     }
                     else {  // header == nullptr => means this is a graphical character
-                        result = new graphicalCharacter(input[i]);
+                        result = {i, new graphicalCharacter(input[i])}; // i == 0, because parser will increment i by one after loop.
                     }
 
-                    // Even shifts are reported for status checks, put this after shift check to disable shift reporting.
-                    if (extension.first != nullptr) {
-                        result = extension.first;
-                        i += extension.second;
-                    }
-                    // ----------------------------------------------------------------
-
-                    return {i, result};
+                    return result;
                 }
 
                 std::vector<sequence::base*> parse(std::string_view input) {

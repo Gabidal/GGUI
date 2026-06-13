@@ -61,8 +61,13 @@ namespace GGUI {
                     namespace cursorControlFunctions {
                         extern void operate_CURSOR_UP(ecma::sequence::base*);
                         extern void operate_CURSOR_DOWN(ecma::sequence::base*);
+                        extern void operate_CURSOR_LEFT(ecma::sequence::base*);
+                        extern void operate_CURSOR_RIGHT(ecma::sequence::base*);
 
-                        inline auto CURSOR_UP = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUU);
+                        inline auto CURSOR_UP = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUU, {}, {operate_CURSOR_UP}, &G3);
+                        inline auto CURSOR_DOWN = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUD, {}, {operate_CURSOR_DOWN}, &G3);
+                        inline auto CURSOR_LEFT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUF, {}, {operate_CURSOR_LEFT}, &G3);
+                        inline auto CURSOR_RIGHT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUB, {}, {operate_CURSOR_RIGHT}, &G3);
                     }
                 }
 

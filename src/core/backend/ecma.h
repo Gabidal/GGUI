@@ -290,7 +290,7 @@ namespace GGUI {
                         // Pages are only loaded by column offset, so rows are not necessary for relative offset calculation.
                         // And 96 vs 94 row differences are already baked into the incoming cell index, so these are not accounted for either
                         constexpr location getRelative(location parent) const {
-                            return compute() - parent.column;
+                            return compute() - parent.column;   // TODO: this is highly probable to be wrong, switch to simple 8'th bit removal.
                         }
 
                         // Used when the column shift is known like 7bit -> 8bit
@@ -327,7 +327,7 @@ namespace GGUI {
                             }
 
                             constexpr bool in(uint8_t val) const {
-                                return val >= lower.compute() && val <= upper.compute();
+                                return val >= lower.compute() && val <= upper.compute();    // Both have equals, because of single shift load pages.
                             }
 
                             // Promotes the location into a 8-bit field
@@ -519,19 +519,19 @@ namespace GGUI {
 
                 // Represents the end of all possible sequences, *** I..I F
                 // NOTE: Only use indirectly via an inheritant class of prefix
-                template<typename finalByteType = uint8_t>
+                template<typename functionType = uint8_t>
                 class postfix {
                 protected:
                     std::vector<table::intermediate::identifiers> intermediates;
-                    finalByteType finalByte;
+                    functionType function;
                 public:
                     postfix(
                         std::vector<table::intermediate::identifiers> interms = {},
-                        finalByteType Func = {}
-                    ) : intermediates(interms), finalByte(Func) {}
+                        functionType Func = {}
+                    ) : intermediates(interms), function(Func) {}
 
                     std::vector<table::intermediate::identifiers> getIntermediates() const { return intermediates; }
-                    finalByteType getFinalByte() const { return finalByte; }
+                    functionType getFinalByte() const { return function; }
 
                     void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
                         intermediates = newInterms;
@@ -544,7 +544,7 @@ namespace GGUI {
                             result += static_cast<char>(interm);
                         }
 
-                        result += GGUI::terminal::ecma::sequence::toString(finalByte);
+                        result += GGUI::terminal::ecma::sequence::toString(function);
 
                         return result;
                     }
@@ -568,32 +568,32 @@ namespace GGUI {
                 template<typename containerType = uint8_t, typename = std::enable_if<(sizeof(containerType) == sizeof(uint8_t))>>
                 class prefix : public base {  // Made for C0 and C1 functions 
                 protected:
-                    containerType function;
+                    containerType header;
                 public:
-                    prefix(containerType func, types t = types::SINGLE_BYTE) : base(t), function(func) {}
+                    prefix(containerType val, types t = types::SINGLE_BYTE) : base(t), header(val) {}
 
                     template<typename otherContainerType, typename = std::enable_if<(sizeof(otherContainerType) == sizeof(containerType))>>
-                    prefix(const prefix<otherContainerType>& other) : base(other.getType()), function(static_cast<containerType>(other.getValue())) {}
+                    prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
 
                     virtual ~prefix() = default;
                     virtual std::string toString() const {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
-                            return table::toString(table::C0::ESC) + table::toString(function);
+                            return table::toString(table::C0::ESC) + table::toString(header);
                         } else {
-                            return table::toString(function);
+                            return table::toString(header);
                         }
                     }
                     
                     bool contains(containerType enumValue) {
-                        return function == enumValue;
+                        return header == enumValue;
                     }
 
                     constexpr containerType getValue() const {
-                        return function;
+                        return header;
                     }
 
                     constexpr uint8_t getAsInt() const {
-                        return static_cast<uint8_t>(function);
+                        return static_cast<uint8_t>(header);
                     }
 
                     virtual postfix<> getPostfix() const { return {{}, 0}; }

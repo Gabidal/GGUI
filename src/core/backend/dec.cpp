@@ -14,6 +14,18 @@ namespace GGUI {
                         void operate_CURSOR_UP(ecma::sequence::base* /*ignored*/) {
                             currentStates.components.activePresentationPosition.y--;
                         }
+
+                        void operate_CURSOR_DOWN(ecma::sequence::base* /*ignored*/) {
+                            currentStates.components.activePresentationPosition.y++;
+                        }
+
+                        void operate_CURSOR_LEFT(ecma::sequence::base* /*ignored*/) {
+                            currentStates.components.activePresentationPosition.x--;
+                        }
+
+                        void operate_CURSOR_RIGHT(ecma::sequence::base* /*ignored*/) {
+                            currentStates.components.activePresentationPosition.x++;
+                        }
                     }
                 }
             }
