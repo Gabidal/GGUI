@@ -287,10 +287,9 @@ namespace GGUI {
                             return table::toInt(column, row);
                         }
 
-                        // Pages are only loaded by column offset, so rows are not necessary for relative offset calculation.
-                        // And 96 vs 94 row differences are already baked into the incoming cell index, so these are not accounted for either
-                        constexpr location getRelative(location parent) const {
-                            return compute() - parent.column;   // TODO: this is highly probable to be wrong, switch to simple 8'th bit removal.
+                        // This way we dont need to make each page more than 96 cells.
+                        constexpr location getRelative() const {
+                            return compute() & 0x7F;
                         }
 
                         // Used when the column shift is known like 7bit -> 8bit
@@ -883,6 +882,10 @@ namespace GGUI {
                         customSequenceHandler handler;
 
                         constexpr cell(customSequenceHandler h = unSupported, customSequenceParser p = sequence::defaultSequenceParser) : parser(p), handler(h) {}
+
+                        constexpr bool operator==(const cell& other) const {
+                            return parser == other.parser && handler == other.handler;
+                        }
                     };
 
                     /**
@@ -914,7 +917,7 @@ namespace GGUI {
 
                             assert(intermediateOffset.row < pageDepth);    // Check that the intermediate value is within the page depth
 
-                            const size_t headerByteRelativeLocationInPage = location(header.getAsInt()).getRelative(status.range.get().first).compute();
+                            const size_t headerByteRelativeLocationInPage = location(header.getAsInt()).getRelative().compute();
                             assert(status.range.in(headerByteRelativeLocationInPage));    // Check that the header byte is within the loaded area 
 
                             const size_t finalFunctionOffset = body.getFinalByte();
@@ -1961,6 +1964,8 @@ namespace GGUI {
                         table::configuration::cell functionality = {},
                         table::configuration::page* page = nullptr     // Give empty for automatic page detection
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
+                        if (functionality == table::configuration::cell())  return; // Nothing todo here.
+
                         if (page == nullptr) {  // Automatic page deduction
                             // All codes must be that of prefix
                             using func = decltype(std::declval<codeType>().getValue());

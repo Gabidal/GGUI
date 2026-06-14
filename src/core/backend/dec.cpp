@@ -6,6 +6,7 @@ namespace GGUI {
         namespace dec {
             
             namespace VT100 {
+                ecma::table::configuration::page G1(ecma::table::configuration::layout::graphical::getRelativeGraphicalPageLayout(ecma::table::configuration::layout::graphical::type::B));
                 ecma::table::configuration::page G3(ecma::table::configuration::layout::graphical::getRelativeGraphicalPageLayout(ecma::table::configuration::layout::graphical::type::B));
             
                 namespace sequences {
