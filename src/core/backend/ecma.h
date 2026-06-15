@@ -235,30 +235,52 @@ namespace GGUI {
                     __max = toInt(7, 14)   // For internal automation
                 };
 
-                namespace intermediate {
-                    constexpr uint8_t column = 2;
+                enum class parameters : uint8_t {
+                    __min   = toInt(3, 0),    // For internal automation
 
+                    // Column 3
+                    ZERO        = toInt(3, 0),
+                    ONE         = toInt(3, 1),
+                    TWO         = toInt(3, 2),
+                    THREE       = toInt(3, 3),
+                    FOUR        = toInt(3, 4),
+                    FIVE        = toInt(3, 5),
+                    SIX         = toInt(3, 6),
+                    SEVEN       = toInt(3, 7),
+                    EIGHT       = toInt(3, 8),
+                    NINE        = toInt(3, 9),
+                    FRACTION    = toInt(3, 10),
+                    SEPARATOR   = toInt(3, 11),
+                    /* ... */
+                    /* ... */
+                    /* ... */
+                    PRIVATE     = toInt(3, 15),
+
+                    __max = toInt(3, 15)     // For internal automation
+                };
+
+                namespace intermediate {
                     enum class identifiers : uint8_t {
-                        __min = toInt(column, 0),
+                        __min = toInt(2, 0),
 
                         // First Intermediate byte                          // Second Intermediate byte
-                        ANNOUNCER                   = toInt(column, 0),     DRCS                            = toInt(column, 0),
-                        DESIGNATE_C0                = toInt(column, 1),     REGISTRATION_AUTH_USE_1         = toInt(column, 1),
-                        DESIGNATE_C1                = toInt(column, 2),     REGISTRATION_AUTH_USE_2         = toInt(column, 2),
-                        SINGLE_CONTROL_FUNCTIONS    = toInt(column, 3),     REGISTRATION_AUTH_USE_3         = toInt(column, 3),
-                        MULTI_BYTE_DESIGNATES       = toInt(column, 4),
-                        OTHER_CODING_SYSTEM         = toInt(column, 5),
+                        ANNOUNCER                   = toInt(2, 0),     DRCS                            = toInt(2, 0),
+                        DESIGNATE_C0                = toInt(2, 1),     REGISTRATION_AUTH_USE_1         = toInt(2, 1),
+                        DESIGNATE_C1                = toInt(2, 2),     REGISTRATION_AUTH_USE_2         = toInt(2, 2),
+                        SINGLE_CONTROL_FUNCTIONS    = toInt(2, 3),     REGISTRATION_AUTH_USE_3         = toInt(2, 3),
+                        MULTI_BYTE_DESIGNATES       = toInt(2, 4),
+                        OTHER_CODING_SYSTEM         = toInt(2, 5),
                         //??
-                        DESIGNATE_G0_94             = toInt(column, 8),
-                        DESIGNATE_G1_94             = toInt(column, 9),
-                        DESIGNATE_G2_94             = toInt(column, 10),
-                        DESIGNATE_G3_94             = toInt(column, 11),
+                        DESIGNATE_G0_94             = toInt(2, 8),
+                        DESIGNATE_G1_94             = toInt(2, 9),
+                        DESIGNATE_G2_94             = toInt(2, 10),
+                        DESIGNATE_G3_94             = toInt(2, 11),
                         
-                        DESIGNATE_G1_96             = toInt(column, 13),
-                        DESIGNATE_G2_96             = toInt(column, 14),
-                        DESIGNATE_G3_96             = toInt(column, 15),    NO_STANDARD_RETURN              = toInt(column, 15),
+                        DESIGNATE_G1_96             = toInt(2, 13),
+                        DESIGNATE_G2_96             = toInt(2, 14),
+                        DESIGNATE_G3_96             = toInt(2, 15),    NO_STANDARD_RETURN              = toInt(2, 15),
 
-                        __max = toInt(column, 15)   // For internal automation
+                        __max = toInt(2, 15)   // For internal automation
                     };
 
                     enum class rules : uint8_t {
@@ -280,6 +302,7 @@ namespace GGUI {
                         constexpr location(finalWithIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
                         constexpr location(independentFunctions preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
                         constexpr location(intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
+                        constexpr location(parameters preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
                         constexpr location(uint8_t raw) : column(raw / tableRows), row(raw % tableRows) {}
 
                         // Transforms the xx/yy coordinates into usable index
@@ -405,11 +428,6 @@ namespace GGUI {
 
             namespace sequence {
                 namespace parameter {
-                    constexpr uint8_t column         = 3;
-                    constexpr uint8_t sub_delimeter  = table::toInt(column, 10); // Translates into ':'
-                    constexpr uint8_t delimeter      = table::toInt(column, 11); // Translates into ';'
-                    constexpr int8_t numberCharacterPositionOffset = table::toInt(column, 0);   // The position of the first number character in the table, used to convert char to number.
-
                     template<typename containerType>
                     class base {
                     protected:
@@ -430,24 +448,24 @@ namespace GGUI {
                             int32_t currentNumber = 0;
                             bool has_digit = true;          // Default true, so that ;;;; are possible.
 
-                            table::configuration::layout::bounds normalParameterCharacters = {{column, 0}, {column, 9}};
-                            table::configuration::layout::bounds specialParameterCharacters = {{column, 9}, {column, 15}};
+                            table::configuration::layout::bounds normalParameterCharacters = {table::parameters::ZERO, table::parameters::NINE};
+                            table::configuration::layout::bounds specialParameterCharacters = {table::parameters::FRACTION, table::parameters::PRIVATE};
 
 
                             for (char i : input) {
                                 int8_t currentChar = i;
 
-                                // Special values where currentChar => 03/09 - 03/15
+                                // Special values where currentChar => 03/10 - 03/15
                                 if (specialParameterCharacters.in(currentChar)) {
 
-                                    if (currentChar == sub_delimeter) { // 03/10 ':'
+                                    if (currentChar == (uint8_t)table::parameters::FRACTION) { // 03/10 ':'
                                         if (has_digit) {
-                                            subNumbers.push_back(static_cast<containerType>(currentNumber - numberCharacterPositionOffset));
+                                            subNumbers.push_back(static_cast<containerType>(currentNumber - (uint8_t)table::parameters::ZERO));
                                         } else {
                                             subNumbers.push_back(static_cast<containerType>(0)); // empty sub-string -> default / zero
                                         }
                                     } else {    // Special parameter values like '?'
-                                        subNumbers.push_back(currentChar - numberCharacterPositionOffset);
+                                        subNumbers.push_back(currentChar - (uint8_t)table::parameters::ZERO);
                                     }
 
                                     // Reset
@@ -456,7 +474,7 @@ namespace GGUI {
                                     length++;
                                 } else if (normalParameterCharacters.in(currentChar)) {    // 03/00 - 03/09
                                     // Transform the char number into usable form.
-                                    currentNumber = currentNumber * 10 + (currentChar - numberCharacterPositionOffset);
+                                    currentNumber = currentNumber * 10 + (currentChar - (uint8_t)table::parameters::ZERO);
                                     has_digit = true;
                                     length++;
                                 } else {
@@ -479,7 +497,7 @@ namespace GGUI {
                             result.reserve(subNumbers.size());
 
                             for (size_t i = 0; i < subNumbers.size(); i++) {
-                                char convertedValue = static_cast<char>(subNumbers[i]) + numberCharacterPositionOffset;
+                                char convertedValue = static_cast<char>(subNumbers[i]) + (uint8_t)table::parameters::ZERO;
 
                                 result += convertedValue;
                             }
@@ -670,7 +688,7 @@ namespace GGUI {
                         // Output all parameters, separated by the parameter delimiter (03/11 ';')
                         for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
                             if (parameterIndex > 0) {
-                                result += static_cast<char>(parameter::delimeter);
+                                result += static_cast<char>(table::parameters::SEPARATOR);
                             }
                             result += parameters[parameterIndex].toString();
                         }
@@ -1160,6 +1178,9 @@ namespace GGUI {
                         definition  value;                          // Is the data being set/reset on that index
                         
                         base(enumType idx, definition val) : index(idx), value(val) {}
+
+                        template<typename rawValueType, typename = std::enable_if<(sizeof(enumType) == sizeof(rawValueType))>>
+                        base(rawValueType idx, definition val) : index(static_cast<enumType>(idx)), value(val) {}
                         
                         flags<enumType> operator|(base other) const {
                             return flags(*this) | flags(other);
@@ -3670,7 +3691,7 @@ namespace GGUI {
                     inline auto START_OF_SELECTED_AREA         = base<sequence::prefix<table::C1>>(table::C1::SSA);
                 }
 
-                namespace modeSettings {
+                namespace modeSettingFunctions {
                     extern void operate_RESET_MODE(sequence::base*);
                     extern void operate_SET_MODE(sequence::base*);
 

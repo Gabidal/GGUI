@@ -26,6 +26,29 @@ namespace GGUI {
                 namespace table {
                     constexpr auto toInt = ecma::table::toInt;
 
+                    /**
+                     * NOTE: When using this table, please cast it into ecma::table::finalWithoutIntermediate because this table represents that 7'th column in finalWithoutIntermediates!
+                     */
+                    enum class privateFunctions : uint8_t {
+                        /* COLUMN 7 */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        /* ... */
+                        TEST    = toInt(7, 15)
+                    };
+
                     enum class keypadCodes {
                         /* COLUMN 4 */          /* COLUMN 5 */              /* COLUMN 6 */           /* COLUMN 7 */
                         ENTER = toInt(4, 13),   FUNCTION_1 = toInt(5, 0),   COMMA  = toInt(6, 12),  ZERO  = toInt(7, 0),
@@ -62,45 +85,45 @@ namespace GGUI {
                     };
                 }
 
-                namespace mode {
-                    // Since so many VTxxx sequences depend on their private modes, we need to introduce bindings to enforce correct sequence for each mode.
-                    namespace privates {
-                        enum class types {
-                            __min = 0,
+                enum class deviceAttributeResponseTypes : uint8_t {
+                    NO_OPTIONS                  = 0,        // base option
+                    PROCESSOR_OPTIONS           = 1 << 0,   // STP
+                    ADVANCED_VIDEO_OPTIONS      = 1 << 1,   // AVO
+                    AVO_AND_STP                 = ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,           // processor and advanced video options
+                    GRAPHIC_PROCESSOR_OPTION    = 1 << 2,   // GPO
+                    GPO_AND_STP                 = GRAPHIC_PROCESSOR_OPTION | PROCESSOR_OPTIONS,         // processor and graphic processor options
+                    GPO_AND_AVO                 = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS,    // advanced video and graphic processor options
+                    GPO_STP_AND_AVO             = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,          // processor, advanced video and graphic processor options
+                };
 
-                            NONE,                               // Error (ignored)
-                            CURSOR_KEY_MODE,                    // Cursor key       (DECCKM)
-                            ANSI_MODE,                          // ANSI/VT52        (DECANM)
-                            COLUMN_MODE,                        // Column           (DECCOLM)
-                            SCROLLING_MODE,                     // Scrolling        (DECSCLM)
-                            SCREEN_MODE,                        // Screen           (DECSCNM)
-                            ORIGIN_MODE,                        // Origin           (DECOM)
-                            AUTO_WRAP_MODE,                     // Auto wrap        (DECAWM)
-                            AUTO_REPEATING_MODE,                // Auto repeating   (DECARM)
-                            INTERLACE_MODE,                      // Interface        (DECINLM)
+                enum class testTypes : uint8_t {
+                    NONE                                    = 0,
+                    POWER_UP                                = 1 << 0,       // Power-up self test (ROM checksum, RAM, NVR, keyboard and AVO is installed)
+                    DATA_LOOP_BACK                          = 1 << 1,       // Loopback connector required
+                    EIA_MODEM_CONTROL                       = 1 << 2,       // loopback connector required
+                    REPEAT_SELECTED_TESTS_UNTIL_FAILURE     = 1 << 3,       // Repeat selected test(s) indefinitely (until failure or power off)
+                };
 
-                            __max = INTERLACE_MODE
-                        };
+                enum class modeTypes : uint8_t {
+                    __min = 0,
 
-                        inline const auto privateModeSetter = ecma::table::toInt(3, 15);        // '?'
-                        
-                        inline auto editMode(types t, ecma::table::mode::definition status) {
-                            const std::vector<ecma::sequence::parameter::selectable<ecma::table::mode::types>> params = {
-                                ecma::sequence::parameter::selectable<ecma::table::mode::types>(static_cast<ecma::table::mode::types>(privateModeSetter)),
-                                ecma::sequence::parameter::selectable<ecma::table::mode::types>(static_cast<ecma::table::mode::types>(t))
-                            };
+                    NONE,                               // Error (ignored)
+                    CURSOR_KEY_MODE,                    // Cursor key       (DECCKM)
+                    ANSI_MODE,                          // ANSI/VT52        (DECANM)
+                    COLUMN_MODE,                        // Column           (DECCOLM)
+                    SCROLLING_MODE,                     // Scrolling        (DECSCLM)
+                    SCREEN_MODE,                        // Screen           (DECSCNM)
+                    ORIGIN_MODE,                        // Origin           (DECOM)
+                    AUTO_WRAP_MODE,                     // Auto wrap        (DECAWM)
+                    AUTO_REPEATING_MODE,                // Auto repeating   (DECARM)
+                    INTERLACE_MODE,                     // Interface        (DECINLM)
 
-                            if (status == ecma::table::mode::definition::SET) {
-                                return ecma::sequences::modeSettings::SET_MODE.compile(params);
-                            } else {
-                                return ecma::sequences::modeSettings::RESET_MODE.compile(params);
-                            }
-                        }
-                    }
-                }
+                    __max,
+                };
 
                 struct components {
-                    ecma::table::mode::flags<mode::privates::types> modes;
+                    ecma::table::mode::flags<modeTypes> modes;
+                    INTERNAL::bitMask<deviceAttributeResponseTypes> activeDeviceAttributes;
                 };
 
                 namespace sequences {
@@ -183,9 +206,78 @@ namespace GGUI {
 
                         inline auto UK_POUND_SIGN = base<ecma::sequence::prefix<table::specialGraphicCharacter>>(table::specialGraphicCharacter::UK_POUND_SIGN, {}, {}, &G1);
                     }
+
+                    // Override of ecma miscellaneousControlFunctions
+                    namespace miscellaneousControlFunctions {
+                        extern void operate_DEVICE_ATTRIBUTES(ecma::sequence::base*);
+                        extern void operate_CONFIDENCE_TEST(ecma::sequence::base*);
+
+                        /**
+                         * @brief override of ecma DA function, by:
+                         * Invoked with: `01/11 05/11 0 06/03` or `01/11 05/11 06/03`
+                         * Responses with: `01/11 05/11 ? 03/01 ; Ps 06/03`
+                         */
+                        inline base<
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>, 
+                            ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>, 
+                            2
+                        > DEVICE_ATTRIBUTES(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>(ecma::table::finalWithoutIntermediate::DA), 
+                            {
+                                (deviceAttributeResponseTypes)1,        // TODO: add multi selectable types for parameters.
+                                deviceAttributeResponseTypes::NO_OPTIONS
+                            },
+                            {operate_DEVICE_ATTRIBUTES}
+                        );
+
+                        inline base<
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<testTypes>>,
+                            ecma::sequence::parameter::selectable<testTypes>,
+                            2
+                        > CONFIDENCE_TEST(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<testTypes>>((ecma::table::finalWithoutIntermediate)table::privateFunctions::TEST),
+                            {testTypes::DATA_LOOP_BACK, testTypes::NONE},
+                            {}  // TODO: add confidence test handler, whatever that means for an interpreter 
+                        );
+                    }
+
+                    namespace modeSettingFunctions {
+                        extern void operate_RESET_MODE(ecma::sequence::base*);
+                        extern void operate_SET_MODE(ecma::sequence::base*);
+
+                        inline base<
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>,
+                            ecma::sequence::parameter::selectable<modeTypes>,
+                            0, 
+                            specialTypes::HAS_INFINITE_PARAMETERS
+                        > RESET_MODE(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>(ecma::table::finalWithoutIntermediate::RM),
+                            {},
+                            {operate_RESET_MODE}
+                        );
+
+                        inline base<
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>,
+                            ecma::sequence::parameter::selectable<modeTypes>,
+                            0, 
+                            specialTypes::HAS_INFINITE_PARAMETERS
+                        > SET_MODE(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>(ecma::table::finalWithoutIntermediate::SM),
+                            {},
+                            {operate_SET_MODE}
+                        );
+                    }
                 }
 
             }
+        
+            namespace VT220 {
+                
+            }
+
+            struct components {
+                VT100::components VT100Components;
+            };
         }
     }
 }

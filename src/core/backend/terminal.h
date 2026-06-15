@@ -5,7 +5,12 @@
 #include <chrono>
 
 #include "ascii.h"
+
+// Modules:
 #include "ecma.h"
+#include "dec.h"
+// -----
+
 #include "../utils/types.h"
 #include "../utils/utf.h"
 
@@ -82,7 +87,8 @@ namespace GGUI {
 
             std::array<button, (size_t)ASCII::table::MAX_VALUE> keyboard;
 
-            ecma::components components;
+            ecma::components ecmaComponents;
+            dec::components decComponents;
 
             struct outputCapture{
                 IVector2& cursor;
@@ -95,7 +101,7 @@ namespace GGUI {
 
                 // Displays cursor position
                 std::string toString() const;
-            } screen = outputCapture(components.activePresentationPosition);
+            } screen = outputCapture(ecmaComponents.activePresentationPosition);
 
         };
 
