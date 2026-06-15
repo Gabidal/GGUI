@@ -256,7 +256,8 @@ namespace GGUI {
                 table::configuration::cell currentCell = currentPage.get(input.front());
 
                 // Call the sequence parser
-                auto parsedArea = currentCell.parser(input);
+                // auto parsedArea = currentCell.parser(input);
+                auto parsedArea = sequence::defaultSequenceParser(input);
 
                 if (parsedArea.first == 0) return {0, nullptr};    // No progress, means no match, return null.
                 

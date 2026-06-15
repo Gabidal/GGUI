@@ -896,13 +896,13 @@ namespace GGUI {
 
                     // A simple data structure representing a cell in the character page, containing a handler and a parser for the incoming data stream
                     struct cell {
-                        customSequenceParser parser;
-                        customSequenceHandler handler;
+                        // customSequenceParser parser;
+                        customSequenceHandler handler;      // Maybe put the sequences inside a class for class static instance label + fuction offset for smaller memory footprint?
 
-                        constexpr cell(customSequenceHandler h = unSupported, customSequenceParser p = sequence::defaultSequenceParser) : parser(p), handler(h) {}
+                        constexpr cell(customSequenceHandler h = unSupported) : handler(h) {}
 
                         constexpr bool operator==(const cell& other) const {
-                            return parser == other.parser && handler == other.handler;
+                            return handler == other.handler;
                         }
                     };
 
@@ -912,7 +912,7 @@ namespace GGUI {
                     class page {
                     public:
                         static constexpr size_t pageWidth = layout::bounds({C0::NUL}, {7, 15}).getSize();    // full 96^n'th support
-                        static constexpr size_t pageDepth = layout::bounds({intermediate::identifiers::__min}, {intermediate::identifiers::__max}).getSize();    // full intermediate support
+                        static constexpr size_t pageDepth = layout::bounds({intermediate::identifiers::__min}, {intermediate::identifiers::ANNOUNCER}).getSize();    // full intermediate support
                     protected:
                         std::array<
                             cell, 
