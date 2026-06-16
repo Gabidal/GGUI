@@ -352,6 +352,10 @@ namespace GGUI {
                                 return val >= lower.compute() && val <= upper.compute();    // Both have equals, because of single shift load pages.
                             }
 
+                            constexpr bool contains(bounds&& other) const {
+                                return other.lower.compute() >= lower.compute() && other.upper.compute() <= upper.compute();
+                            }
+
                             // Promotes the location into a 8-bit field
                             constexpr bounds to8bit() const {
                                 return bounds(lower.shiftToRight(columns::FOUR), upper.shiftToRight(columns::FOUR));
@@ -587,10 +591,10 @@ namespace GGUI {
                 protected:
                     containerType header;
                 public:
-                    prefix(containerType val, types t = types::SINGLE_BYTE) : base(t), header(val) {}
+                    constexpr prefix(containerType val, types t = types::SINGLE_BYTE) : base(t), header(val) {}
 
                     template<typename otherContainerType, typename = std::enable_if<(sizeof(otherContainerType) == sizeof(containerType))>>
-                    prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
+                    constexpr prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
 
                     virtual ~prefix() = default;
                     virtual std::string toString() const {
@@ -904,6 +908,10 @@ namespace GGUI {
                         constexpr bool operator==(const cell& other) const {
                             return handler == other.handler;
                         }
+
+                        constexpr bool empty() const {
+                            return handler == unSupported;
+                        }
                     };
 
                     /**
@@ -1015,6 +1023,45 @@ namespace GGUI {
                         constexpr lifetime::base getLifetime() const { return status; }
                     };
 
+                    class cellPatch {
+                    protected:
+                        size_t getActualLocation(sequence::postfix<> body = {}) {
+                            location intermediateOffset = 0;
+
+                            for (auto inter : body.getIntermediates()) {
+                                intermediateOffset = inter;
+
+                                // As the announcer is at row = zero, for distinguishing these states we add +1 to count zero index.
+                                intermediateOffset.row += 1;
+
+                                break;  // only the introducer e.g first intermediate is needed
+                            }
+
+                            assert(intermediateOffset.row < page::pageDepth);    // Check that the intermediate value is within the page depth
+
+                            const size_t finalFunctionOffset = body.getFinalByte();
+                            assert(finalFunctionOffset < page::pageWidth);       // Check that the final function is within the page width
+
+                            const size_t actualLocation =   intermediateOffset.row * page::pageWidth +    // Intermediate variants for page variants
+                                                            finalFunctionOffset;                          // The same header function in the column
+
+                            return actualLocation;
+                        }
+                    public:
+                        const uint8_t instructionSeries;
+                        
+                        std::array<std::pair<cell, sequence::postfix<>>, page::pageWidth * page::pageDepth> patch;  // TODO: change this into a std::vector when we switch to c++20
+
+                        cellPatch(uint8_t mainInstruction) : instructionSeries(mainInstruction), patch{} {}
+
+                        template<typename enumType, typename = std::enable_if<std::is_enum_v<enumType> == true>>
+                        constexpr cellPatch(enumType mainInstruction) : instructionSeries(static_cast<uint8_t>(mainInstruction)), patch{} {}
+
+                        void add(cell customFunctions, sequence::postfix<> body = {}) {
+                            patch[getActualLocation(body)] = { customFunctions, body }; 
+                        }
+                    };
+
                     /**
                      * @brief Maintains a map of repertoire IDs that tracks which character set is active at each position in memory.
                      */
@@ -1036,6 +1083,22 @@ namespace GGUI {
                          */
                         constexpr void add(page& p, repertoire position) {
                             pages[static_cast<size_t>(position)] = p;
+                        }
+
+                        /**
+                         * @brief Used for extensions to be able to patch in their own additions to the standard
+                         */
+                        constexpr void patch(cellPatch& source, repertoire destination) {
+                            page& dest = pages[static_cast<size_t>(destination)];
+                            
+                            // Let's do some sanity checks first.
+                            assert(dest.getLifetime().range.in(source.instructionSeries));
+
+                            for (const auto& [customFunctions, body] : source.patch) {
+                                if (customFunctions.empty()) continue;
+
+                                dest.add(customFunctions, source.instructionSeries, body);
+                            }
                         }
 
                         /**
@@ -2003,6 +2066,20 @@ namespace GGUI {
                         sequence::postfix<> tail = function.getPostfix();
 
                         page->add(functionality, static_cast<sequence::prefix<>>(function), tail);
+                    }
+
+                    template<typename U>
+                    base(
+                        U code,
+                        std::array<parameterType, paramCount> defaultParamValues,
+                        table::configuration::cell functionality,
+                        table::configuration::cellPatch* customCellFunctions
+                    ) : function(code), parameterDefaultValue(defaultParamValues) {
+                        if (functionality == table::configuration::cell())  return; // Nothing todo here.
+
+                        sequence::postfix<> tail = function.getPostfix();
+
+                        customCellFunctions->add(functionality, tail);
                     }
 
                     template<

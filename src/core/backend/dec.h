@@ -12,11 +12,13 @@ namespace GGUI {
         */
         namespace dec {
             namespace VT100 {
+                extern ecma::table::configuration::cellPatch csiPatch;
+                
                 extern ecma::table::configuration::page G1;
                 extern ecma::table::configuration::page G3;
 
-                constexpr limitations limits{
-                    baudRate::B19200,
+                inline constexpr limitations limits {
+                    baudRate::BYTES_19200,
                     transmissionMode::DUPLEX,
                     64,     // Maximum buffer capacity
                     32,     // buffer threshold before XOFF signal is sent to avoid overflow
@@ -49,7 +51,7 @@ namespace GGUI {
                         TEST    = toInt(7, 15)
                     };
 
-                    enum class keypadCodes {
+                    enum class keypadCodes : uint8_t{
                         /* COLUMN 4 */          /* COLUMN 5 */              /* COLUMN 6 */           /* COLUMN 7 */
                         ENTER = toInt(4, 13),   FUNCTION_1 = toInt(5, 0),   COMMA  = toInt(6, 12),  ZERO  = toInt(7, 0),
                                                 FUNCTION_2 = toInt(5, 1),   DASH   = toInt(6, 13),  ONE   = toInt(7, 1),
@@ -64,7 +66,7 @@ namespace GGUI {
                     };
 
                     // 8-bit characters, loaded into right side graphical page.
-                    enum class specialGraphicCharacter {
+                    enum class specialGraphicCharacter : uint8_t {
                         /* COLUMN 8 */                  /* COLUMN 9 */                      /* COLUMN 10 */                         /* COLUMN 11 */
                                                         CARRIAGE_RETURN    = toInt(9, 0),   HORIZONTAL_LINE_3     = toInt(10, 0),   CENTERED_DOT    = toInt(11, 0),
                                                         LINE_FEED          = toInt(9, 1),   HORIZONTAL_LINE_5     = toInt(10, 1),
@@ -136,10 +138,10 @@ namespace GGUI {
                         extern void operate_CURSOR_LEFT(ecma::sequence::base*);
                         extern void operate_CURSOR_RIGHT(ecma::sequence::base*);
 
-                        inline auto CURSOR_UP = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUU, {}, {operate_CURSOR_UP}, &G3);
-                        inline auto CURSOR_DOWN = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUD, {}, {operate_CURSOR_DOWN}, &G3);
-                        inline auto CURSOR_LEFT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUF, {}, {operate_CURSOR_LEFT}, &G3);
-                        inline auto CURSOR_RIGHT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUB, {}, {operate_CURSOR_RIGHT}, &G3);
+                        inline auto CURSOR_UP = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUU, {}, operate_CURSOR_UP, &G3);
+                        inline auto CURSOR_DOWN = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUD, {}, operate_CURSOR_DOWN, &G3);
+                        inline auto CURSOR_LEFT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUF, {}, operate_CURSOR_LEFT, &G3);
+                        inline auto CURSOR_RIGHT = base<ecma::sequence::prefix<ecma::table::finalWithoutIntermediate>>(ecma::table::finalWithoutIntermediate::CUB, {}, operate_CURSOR_RIGHT, &G3);
                     }
 
                     namespace keypadFunctions {
@@ -227,7 +229,8 @@ namespace GGUI {
                                 (deviceAttributeResponseTypes)1,        // TODO: add multi selectable types for parameters.
                                 deviceAttributeResponseTypes::NO_OPTIONS
                             },
-                            {operate_DEVICE_ATTRIBUTES}
+                            operate_DEVICE_ATTRIBUTES,
+                            &csiPatch
                         );
 
                         inline base<
@@ -237,7 +240,8 @@ namespace GGUI {
                         > CONFIDENCE_TEST(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<testTypes>>((ecma::table::finalWithoutIntermediate)table::privateFunctions::TEST),
                             {testTypes::DATA_LOOP_BACK, testTypes::NONE},
-                            {}  // TODO: add confidence test handler, whatever that means for an interpreter 
+                            {},  // TODO: add confidence test handler, whatever that means for an interpreter 
+                            &csiPatch
                         );
                     }
 
@@ -253,7 +257,8 @@ namespace GGUI {
                         > RESET_MODE(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>(ecma::table::finalWithoutIntermediate::RM),
                             {},
-                            {operate_RESET_MODE}
+                            operate_RESET_MODE,
+                            &csiPatch
                         );
 
                         inline base<
@@ -264,7 +269,8 @@ namespace GGUI {
                         > SET_MODE(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>(ecma::table::finalWithoutIntermediate::SM),
                             {},
-                            {operate_SET_MODE}
+                            operate_SET_MODE,
+                            &csiPatch
                         );
                     }
                 }
