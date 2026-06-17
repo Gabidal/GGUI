@@ -1296,7 +1296,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.mouse.scroll.Scalar += line;   // TODO: Missing horizontal scroll
+                        currentStates.ecmaComponents.activePresentationPosition.y += line;   // TODO: Missing horizontal scroll
                     }
 
                     void operate_SCROLL_UP(sequence::base* input) {
@@ -1308,7 +1308,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.mouse.scroll.Scalar -= line;   // TODO: Missing horizontal scroll
+                        currentStates.ecmaComponents.activePresentationPosition.y -= line;   // TODO: Missing horizontal scroll
                     }
                 }
 

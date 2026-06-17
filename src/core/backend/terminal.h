@@ -2,9 +2,6 @@
 #define _TERMINAL_H_
 
 #include <cstdint>
-#include <chrono>
-
-#include "ascii.h"
 
 // Modules:
 #include "ecma.h"
@@ -62,30 +59,7 @@ namespace GGUI {
         extern query queue;
         
         struct device {
-            // Namespace like structuring of code, because why not :)
-            struct button {
-                // Simple value + time snapshot
-                bool state; std::chrono::steady_clock::time_point captureTime;
-                // Capture time as creation
-                button(bool State = false) : state(State), captureTime(std::chrono::steady_clock::now()) {}
-            };
-
-            struct wheel {
-                signed char Scalar = 0;     // going up > 0 | going down < 0
-            };
-
-            /**
-             * NOTE: This component is not part of the normal ECMA-48 nor DEC-VTxxx.
-             * Mouse position reporting comes from XTerm, the xterm.cpp module will be responsible to maintain these values of this struct.
-             * The reason why this struct is here in terminal.h instead of xterm.cpp, is because of GGDirect to be able to also send and maintain mouse position regardless of xterm support.
-             */
-            struct {
-                button left, right, middle;
-                wheel scroll;               // Only for vertical
-                IVector2 position;          // Absolute
-            } mouse;
-
-            std::array<button, (size_t)ASCII::table::MAX_VALUE> keyboard;
+            std::array<key, (size_t)ecma::table::getSize<key::types>()> keys;
 
             ecma::components ecmaComponents;
             dec::components decComponents;
@@ -102,7 +76,6 @@ namespace GGUI {
                 // Displays cursor position
                 std::string toString() const;
             } screen = outputCapture(ecmaComponents.activePresentationPosition);
-
         };
 
         // Read from this to get current device states of the terminal peripherals.

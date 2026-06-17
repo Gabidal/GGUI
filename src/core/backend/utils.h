@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <algorithm>
+#include <chrono>
 
 namespace GGUI {
     namespace terminal {
@@ -83,6 +84,66 @@ namespace GGUI {
                     (frameInfo.getStartBitCount() + currentTransmission.bitsPerCharacter + frameInfo.getParityBitCount() + frameInfo.getStopBitCount())
                 ) / (float)currentTransmission.input;
             }
+        };
+
+        // This is a simplification struct, made for the user to interface with.
+        struct key {
+            enum class types : uint8_t {
+                __min                   = 32,
+
+                SPACE                   = 32,
+
+                // Visible characters
+                // ...
+                // - END
+
+                DELETE                  = 127,
+
+                INSERT,
+
+                SHIFT,
+                CTRL,
+                SUPER,
+                ALT,
+                ALTGR,
+                FN,
+
+                F1,
+                F2,
+                F3,
+                F4,
+                F5,
+                F6,
+                F7,
+                F8,
+                F9,
+                F10,
+                F11,
+                F12,
+
+                ARROW_UP,
+                ARROW_DOWN,
+                ARROW_LEFT,
+                ARROW_RIGHT,
+
+                HOME,
+                END,
+
+                PAGE_UP,
+                PAGE_DOWN,
+
+                LEFT_CLICK,
+                MIDDLE_CLICK,
+                RIGHT_CLICK,
+
+                __max,  // Always +1, so that arrays count zero
+            };
+            
+            // Simple value + time snapshot
+            bool state; std::chrono::steady_clock::time_point captureTime;
+
+            // Capture time as creation
+            key(bool State = false) : state(State), captureTime(std::chrono::steady_clock::now()) {}
         };
 
     }

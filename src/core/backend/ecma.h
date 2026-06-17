@@ -97,6 +97,11 @@ namespace GGUI {
                     return static_cast<uint8_t>(val) == static_cast<uint8_t>(selected);
                 }
 
+                template<typename enumType, typename = std::is_enum<enumType>>
+                constexpr size_t getSize() {
+                    return (static_cast<uint8_t>(enumType::__max) - static_cast<uint8_t>(enumType::__min)) + 1;
+                }
+
                 constexpr bool checkBit(uint8_t val, int i) {
                     return (val & (1 << i)) != 0;
                 }

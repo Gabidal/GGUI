@@ -120,7 +120,7 @@ if build_type == 'debugoptimized' or build_type == 'debug'
   if host_machine.system() == 'windows'
     link_args += ['-lDbgHelp', '-Wl,--export-all-symbols']    # Link with DbgHelp library and export all symbols for stacktrace
   elif host_machine.system() == 'linux'
-    cpp_args += ['-rdynamic']   # Export all symbols for stacktrace
+    link_args += ['-rdynamic']   # Export all symbols for stacktrace
   endif
 endif
 
@@ -131,6 +131,12 @@ elif build_type == 'debug'
   cpp_args += ['-DGGUI_DEBUG']  # no flto nor -Og since debugging becomes an hassle with weird line skipping.
 elif build_type == 'release'
   cpp_args += ['-DGGUI_RELEASE']
+endif
+
+# Try clang's own std library if it is the default one
+if cppc.get_id() == 'clang'
+  cpp_args += ['-stdlib=libc++']
+  link_args += ['-stdlib=libc++']
 endif
 
 # Apply computed flags project-wide so individual targets don't need to repeat them
