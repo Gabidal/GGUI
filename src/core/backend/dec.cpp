@@ -94,10 +94,6 @@ namespace GGUI {
                     }
                 }
             }
-
-            bitMask<features> probe() {
-                return {};
-            }
         }
     }
 }

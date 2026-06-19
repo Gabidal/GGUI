@@ -8,19 +8,6 @@
 namespace GGUI {
     namespace terminal {
 
-        namespace ecma {
-            extern bitMask<features> probe();
-        }
-
-        namespace dec {
-            extern bitMask<features> probe();
-        }
-
-        device currentStates;
-        device previousStates;  // Used for to time how long buttons are held down for.
-        query queue;
-        bitMask<features> enabledFeatures;
-
         size_t device::outputCapture::getActiveIndex() const {
             return (cursor.y * dimensions.x) + cursor.x;
         }
@@ -30,32 +17,32 @@ namespace GGUI {
         }
 
         void init() {
-            // The following code is for nominal use of GGUI via Unix/Windows terminal emulators. TODO: enable direct /dev/ ral Terminal device contact.
-            enabledFeatures = fetchIOPermissions();
+            // // The following code is for nominal use of GGUI via Unix/Windows terminal emulators. TODO: enable direct /dev/ ral Terminal device contact.
+            // enabledFeatures = fetchIOPermissions();
 
-            // Check what permissions we have
-            if (enabledFeatures.get() == features::NONE) {
-                GGUI::INTERNAL::LOGGER::log("ERROR: No terminal features detected!");
-                return;
-            } 
+            // // Check what permissions we have
+            // if (enabledFeatures.get() == features::NONE) {
+            //     GGUI::INTERNAL::LOGGER::log("ERROR: No terminal features detected!");
+            //     return;
+            // } 
 
-            if (!enabledFeatures.has(features::READ)) {
-                GGUI::INTERNAL::LOGGER::log("WARNING: No read permissions detected!");
-            } else if (!enabledFeatures.has(features::WRITE)) {
-                GGUI::INTERNAL::LOGGER::log("WARNING: No write permissions detected!");
-            }
+            // if (!enabledFeatures.has(features::READ)) {
+            //     GGUI::INTERNAL::LOGGER::log("WARNING: No read permissions detected!");
+            // } else if (!enabledFeatures.has(features::WRITE)) {
+            //     GGUI::INTERNAL::LOGGER::log("WARNING: No write permissions detected!");
+            // }
 
-            if (!enabledFeatures.has(features::TTY)) {
-                GGUI::INTERNAL::LOGGER::log("INFO: Non-interactive mode detected.");
-            }
+            // if (!enabledFeatures.has(features::TTY)) {
+            //     GGUI::INTERNAL::LOGGER::log("INFO: Non-interactive mode detected.");
+            // }
 
-            if (!snapshot()) {     // Load checkpoint
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to snapshot terminal configuration!");
-                return;
-            } else if (!apply()) {  // Apply preferences
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to apply terminal configuration!");
-                return;
-            }
+            // if (!snapshot()) {     // Load checkpoint
+            //     GGUI::INTERNAL::LOGGER::log("ERROR: Failed to snapshot terminal configuration!");
+            //     return;
+            // } else if (!apply()) {  // Apply preferences
+            //     GGUI::INTERNAL::LOGGER::log("ERROR: Failed to apply terminal configuration!");
+            //     return;
+            // }
         }
 
         extern void platformDeinit();
@@ -82,7 +69,7 @@ namespace GGUI {
             // Parses input based on modular features, each brought by their own respective flag.
 
             // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
-            for (auto sequence : ecma::sequence::parse(std::string_view(queue.inputBuffer.data(), queue.inputSize))) {
+            for (auto sequence : ecma::sequence::parse(std::string_view(currentStates.transmission.inputBuffer.data(), currentStates.transmission.inputSize))) {
 
                 // This is likely redundant, since all operations have their own handler to process the functionality of the specific operation
                 switch (sequence->getType()) {

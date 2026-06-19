@@ -260,7 +260,7 @@ namespace GGUI{
                 }
                 else {
                     // Send requested responses if need.
-                    terminal::queryOutput();
+                    terminal::queryResponse();
 
                     // Wait for user input.
                     terminal::queryInputs();

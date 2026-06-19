@@ -243,6 +243,8 @@ namespace GGUI {
                         currentStates.ecmaComponents.currentParsingSequenceIndex++;     // Only for META operators
 
                         i += pageCallReturn.first;      // TODO: check for maybe adding -1, since the loop increases 'i' either way.
+
+                        // TODO: there is a possibility that we need to put the Active Data Position to be incremented here as the index does.
                     }
                     return result;
                 }
@@ -1385,7 +1387,7 @@ namespace GGUI {
                             // TODO: ...
                         }
 
-                        queue.addToQueue(answer);
+                        currentStates.transmission.addToQueue(answer);
                     }
 
                     void operate_START_OF_TRANSMISSION(sequence::base*) {
@@ -1521,7 +1523,7 @@ namespace GGUI {
 
                             auto response = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({GGUI_SINGLE_VALUE_IDENTIFIER}).toString();
 
-                            queue.addToQueue(response);
+                            currentStates.transmission.addToQueue(response);
                         } else {
                             // This needs to be already overridden via the DEC page re-route, something went wrong here...
                             GGUI::INTERNAL::LOGGER::log("ERROR: Unjustified device identification: " + std::to_string(deviceType));

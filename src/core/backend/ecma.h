@@ -4000,7 +4000,7 @@ namespace GGUI {
 
                     /**
                      * @brief INT is used to indicate to the receiving device that the current process is to be interrupted and an agreed procedure is to be initiated. 
-                     * This control function is applicable to either direction of transmission. 
+                     * This control function is applicable to either direction of currentStates.transmission. 
                      * @example `01/11 06/01`
                      */
                     inline auto INTERRUPT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::INT);

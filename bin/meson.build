@@ -136,7 +136,7 @@ endif
 # Try clang's own std library if it is the default one
 if cppc.get_id() == 'clang'
   cpp_args += ['-stdlib=libc++']
-  link_args += ['-stdlib=libc++']
+  link_args += ['-stdlib=libc++', '-fuse-ld=lld']
 endif
 
 # Apply computed flags project-wide so individual targets don't need to repeat them
