@@ -65,6 +65,14 @@ namespace GGUI {
                     return result;
                 }
 
+                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, superString& preAllocated) {
+                    if (std::holds_alternative<table::finalWithoutIntermediate>(controlStringFinalByte)) {
+                        preAllocated.add(static_cast<char>(std::get<table::finalWithoutIntermediate>(controlStringFinalByte)));
+                    } else {
+                        preAllocated.add(static_cast<char>(std::get<table::finalWithIntermediate>(controlStringFinalByte)));
+                    }
+                }
+
                 /**
                  * Converts the control string to its string representation.
                  * 

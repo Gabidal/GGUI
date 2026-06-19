@@ -16,11 +16,22 @@ namespace GGUI {
     namespace terminal {
         // These are re-routable, set these to master/slave handles for PTY or anything really.
         static struct device {
-            int32_t handle = -1;
-            termios state = {};
+            static constexpr int32_t CLOSED_HANDLE = -1;
+
+            int32_t handle;
+            termios state;
+
+            device() {
+                handle = CLOSED_HANDLE;
+                state = {};
+            }
+
+            ~device() {
+                if (handle != CLOSED_HANDLE) close(handle); // Clean up handle on destruction
+            }
 
             void update(int32_t newHandle) {
-                if (handle != -1) close(handle); // Close previous handle if open
+                if (handle != CLOSED_HANDLE) close(handle); // Close previous handle if open
 
                 handle = newHandle;
 
@@ -34,11 +45,6 @@ namespace GGUI {
                     cfmakeraw(&state);
                 }
             }
-
-            ~device() {
-                if (handle != -1) close(handle); // Clean up handle on destruction
-            }
-
         } 
             input,          // Used to read input from the incoming transmission
             output,         // Used to write into the presentation buffer, which is shown
@@ -52,20 +58,20 @@ namespace GGUI {
 
         void routeTo(routable in, routable out, routable res) {
             // Open the input and output files with the specified flags
-            int32_t inHandle = open(in.AbsolutePath.data(), in.flags);
-            if (inHandle == -1) {
+            int32_t inHandle = open(in.AbsolutePath.data(), in.flags | O_RDONLY);
+            if (inHandle == device::CLOSED_HANDLE) {
                 GGUI::INTERNAL::LOGGER::log("ERROR: Failed to open input route: " + std::string(strerror(errno)));
                 return;
             }
 
-            int32_t outHandle = open(out.AbsolutePath.data(), out.flags);
-            if (outHandle == -1) {
+            int32_t outHandle = open(out.AbsolutePath.data(), out.flags | O_WRONLY);
+            if (outHandle == device::CLOSED_HANDLE) {
                 GGUI::INTERNAL::LOGGER::log("ERROR: Failed to open output route: " + std::string(strerror(errno)));
                 return;
             }
 
-            int32_t responseHandle = open(res.AbsolutePath.data(), res.flags);
-            if (responseHandle == -1) {
+            int32_t responseHandle = open(res.AbsolutePath.data(), res.flags | O_WRONLY);
+            if (responseHandle == device::CLOSED_HANDLE) {
                 GGUI::INTERNAL::LOGGER::log("ERROR: Failed to open response route: " + std::string(strerror(errno)));
                 return;
             }
@@ -76,9 +82,33 @@ namespace GGUI {
             response.update(responseHandle);
         }
 
+        void platformInit() {
 
+        }
 
-        void platformInit() {}
+        /**
+         * @brief Renders the contents of the Frame_Buffer to the standard output (STDOUT).
+         * @details This function moves the cursor to the top-left corner of the terminal, flushes the output
+         *          buffer to ensure immediate writing, and writes the contents of the Frame_Buffer to STDOUT.
+         *          If the write operation fails or writes fewer bytes than expected, an error message is reported.
+         */
+        void renderFrame() {
+            static ecma::sequence::superString preAllocatedCombinator;
+            static char preAllocatedBuffer[ecma::sequence::MAX_SUPER_STRING_BUFFER_SIZE] = {0}; // Pre-allocated buffer for combinator sequences
+
+            // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
+            static INTERNAL::compactString cursorReset = ecma::sequences::cursorControlFunctions::CURSOR_POSITION.compile({0, 0}).toString(preAllocatedCombinator).toString(preAllocatedBuffer);
+
+            iovec vec[2] = {
+                { (void*)cursorReset.text,                      cursorReset.size },
+                { (void*)currentStates.screen.buffer->data(),   currentStates.screen.buffer->size() }
+            };
+
+            ssize_t wrote = writev(output.handle, vec, 2);
+            if (wrote != (ssize_t)cursorReset.size + (ssize_t)currentStates.screen.buffer->size()) {
+                GGUI::INTERNAL::LOGGER::log("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
+            }
+        }
 
         // Default deinit (NOP)
         void platformDeinit() {}

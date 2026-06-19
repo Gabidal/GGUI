@@ -4,8 +4,6 @@
 #include <string>
 #include <cstring>
 #include <array>
-#include <vector>
-#include <variant>
 #include <initializer_list>
 
 namespace GGUI{
@@ -478,6 +476,21 @@ namespace GGUI{
                     currentUTFInsertIndex += Data.size;
                 }
                 return result;
+            }
+
+            compactString toString(char* preAllocated) const {
+                for (size_t i = 0, pos = 0; i < currentIndex; i++) {
+                    const compactString& Data = data[i];
+
+                    if (Data.size == 0)
+                        break;
+
+                    // Replace the current contents of the string with the contents of the Unicode Data.
+                    std::memcpy(preAllocated + pos, Data.text, Data.size);
+                    pos += Data.size;
+                }
+
+                return compactString(preAllocated, liquefiedSize, true);
             }
         };
     }

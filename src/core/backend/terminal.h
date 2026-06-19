@@ -27,8 +27,8 @@ namespace GGUI {
             struct outputCapture{
                 IVector2& cursor;
                 IVector2 dimensions;
-                std::vector<UTF>* cellBuffer = nullptr;
-                std::vector<ecma::sequence::base*>* parsedBuffer = nullptr; 
+                std::string* buffer = nullptr;
+                std::vector<UTF>* cellBuffer;
 
                 outputCapture(IVector2& presentationPosition) : cursor(presentationPosition) {}
 

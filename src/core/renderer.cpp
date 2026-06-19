@@ -16,7 +16,6 @@
 #include <cstdio>
 #include <exception>
 #include <csignal>
-#include <atomic>
 #include <iomanip>
 
 #if _WIN32
@@ -31,7 +30,6 @@
     #include <termios.h>
     #include <unistd.h>
     #include <sys/uio.h> // Needed for writev
-    #include <errno.h>
     #include <cstring>
     #include <poll.h>
 #endif

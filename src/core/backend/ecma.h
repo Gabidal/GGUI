@@ -2,6 +2,7 @@
 #define _ECMA_H_
 
 #include "../utils/types.h"
+#include "../utils/superString.h"
 
 #include <bitset>
 #include <cassert>
@@ -436,6 +437,9 @@ namespace GGUI {
             }
 
             namespace sequence {
+                inline constexpr size_t MAX_SUPER_STRING_BUFFER_SIZE = UINT8_MAX * 2;
+                using superString = INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>;
+
                 namespace parameter {
                     template<typename containerType>
                     class base {
@@ -514,6 +518,14 @@ namespace GGUI {
                             return result;
                         }
 
+                        void toString(superString& preAllocated) const {
+                            for (size_t i = 0; i < subNumbers.size(); i++) {
+                                char convertedValue = static_cast<char>(subNumbers[i]) + (uint8_t)table::parameters::ZERO;
+
+                                preAllocated.add(convertedValue);
+                            }
+                        }
+
                         containerType getValueAsInteger() const { return subNumbers.front(); }
                         std::vector<containerType> getValueAsRational() const { return subNumbers; }
 
@@ -542,6 +554,7 @@ namespace GGUI {
                 };
 
                 std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
+                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, superString preAllocated);
 
                 // Represents the end of all possible sequences, *** I..I F
                 // NOTE: Only use indirectly via an inheritant class of prefix
@@ -573,6 +586,16 @@ namespace GGUI {
                         result += GGUI::terminal::ecma::sequence::toString(function);
 
                         return result;
+                    }
+
+                    superString& toString(superString& preAllocated) const {
+                        for (const auto& interm : intermediates) {
+                            preAllocated.add(static_cast<char>(interm));
+                        }
+
+                        GGUI::terminal::ecma::sequence::toString(function, preAllocated);
+
+                        return preAllocated;
                     }
                 };
 
@@ -609,6 +632,18 @@ namespace GGUI {
                             return table::toString(header);
                         }
                     }
+
+                    // This will break unless the buffer is correctly pre allocated and correct size.
+                    virtual superString& toString(superString& preAllocated) const {
+                        if constexpr (std::is_same<containerType, table::C1>::value) {
+                            preAllocated.add(static_cast<char>(table::C0::ESC));
+                            preAllocated.add(static_cast<char>(header));
+                        } else {
+                            preAllocated.add(static_cast<char>(header));
+                        }
+
+                        return preAllocated;
+                    }
                     
                     bool contains(containerType enumValue) {
                         return header == enumValue;
@@ -621,6 +656,7 @@ namespace GGUI {
                     constexpr uint8_t getAsInt() const {
                         return static_cast<uint8_t>(header);
                     }
+
 
                     virtual postfix<> getPostfix() const { return {{}, 0}; }
                 };
@@ -705,6 +741,21 @@ namespace GGUI {
                         result += finalByte.toString();
 
                         return result;
+                    }
+
+                    superString& toString(superString& preAllocated) const override {
+                        prefix::toString(preAllocated);
+
+                        for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
+                            if (parameterIndex > 0) {
+                                preAllocated.add(static_cast<char>(table::parameters::SEPARATOR));
+                            }
+                            parameters[parameterIndex].toString(preAllocated);
+                        }
+
+                        finalByte.toString(preAllocated);
+
+                        return preAllocated;
                     }
 
                     // Produces a new control sequence based on this template preset
@@ -3572,7 +3623,7 @@ namespace GGUI {
                      * @param Pn1 default(1)
                      * @param Pn2 default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CURSOR_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUP), {1}, {operate_CURSOR_POSITION});
+                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CURSOR_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUP), {1, 1}, {operate_CURSOR_POSITION});
                     
                     /**
                      * @brief CUU causes the active presentation position to be moved upwards in the presentation component by n
