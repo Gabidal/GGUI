@@ -1,5 +1,4 @@
 #include "terminal.h"
-#include "dec.h"
 
 /**
  * Cross platform functions and containers are held here:
@@ -7,12 +6,13 @@
 
 namespace GGUI {
     namespace terminal {
+        base currentStates;
 
-        size_t device::outputCapture::getActiveIndex() const {
+        size_t base::outputCapture::getActiveIndex() const {
             return (cursor.y * dimensions.x) + cursor.x;
         }
 
-        std::string device::outputCapture::toString() const {
+        std::string base::outputCapture::toString() const {
             return "(" + cursor.To_String() + ")";
         }
 
@@ -49,10 +49,6 @@ namespace GGUI {
         void deinit() {
             // Calls based on feature flags correct public and/or private SGR or other extension CSI's.
 
-            if (enabledFeatures.has(features::TTY)) {
-
-            }
-
             // Now cal platform specific de-initializers
             platformDeinit();
         }
@@ -78,10 +74,6 @@ namespace GGUI {
                 }
 
             }
-        }
-
-        void postInputs() {
-            // Reads terminal::device::currentState and posts input events for GGUI event handlers to handle. 
         }
     }
 }

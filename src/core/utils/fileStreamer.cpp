@@ -2,6 +2,7 @@
 #include "../renderer.h"
 
 #include <filesystem>
+#include <iostream>
 
 #if _WIN32
     #include <windows.h>

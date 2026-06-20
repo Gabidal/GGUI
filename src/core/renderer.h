@@ -5,18 +5,13 @@
 #undef max
 
 #include <functional>
-#include <thread>
-#include <atomic>
 #include <mutex>
 #include <condition_variable>
 
-#include "../elements/textField.h"
-#include "../elements/listView.h"
 #include "../elements/canvas.h"
 
 #include "../core/utils/superString.h"
 #include "../core/utils/constants.h"
-#include "../core/utils/color.h"
 #include "../core/utils/utf.h"
 #include "../core/utils/style.h"
 #include "../core/utils/conveyorAllocator.h"

@@ -1,16 +1,14 @@
 #ifndef _STYLE_H_
 #define _STYLE_H_
 
-#include "utf.h"
 #include "types.h"
 #include "logger.h"
+#include "color.h"
 
-#include <variant>
 #include <array>
 #include <string>
 #include <cassert>
 #include <cstdarg>
-#include <algorithm>
 
 namespace GGUI{
     // Externies

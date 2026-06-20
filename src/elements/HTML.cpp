@@ -2,6 +2,8 @@
 #include "../core/renderer.h"
 #include "../core/utils/utils.h"
 
+#include "listView.h"
+
 #include <vector>
 
 namespace GGUI{

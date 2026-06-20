@@ -1,14 +1,17 @@
 #include "logger.h"
 #include "../renderer.h"
+#include "../../elements/listView.h"
+#include "../../elements/textField.h"
 
 #include "fileStreamer.h"
 #include "utils.h"
-#include "../renderer.h"
 #include "settings.h"
 
 #include <functional>
 #include <vector>
 #include <string>
+#include <thread>
+#include <iostream>
 
 #ifndef GGUI_RELEASE
     #if _WIN32

@@ -554,7 +554,7 @@ namespace GGUI {
                 };
 
                 std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
-                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, superString preAllocated);
+                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, superString& preAllocated);
 
                 // Represents the end of all possible sequences, *** I..I F
                 // NOTE: Only use indirectly via an inheritant class of prefix

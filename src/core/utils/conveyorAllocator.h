@@ -1,7 +1,6 @@
 #ifndef _FAST_VECTOR_H_
 #define _FAST_VECTOR_H_
 
-#include <type_traits>
 #include <cstring> // std::memcpy
 
 #include "superString.h"

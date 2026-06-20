@@ -1,8 +1,6 @@
 #ifndef _COLOR_H_
 #define _COLOR_H_
 
-#include <string>
-#include <limits>
 #include <math.h>
 #include <cstdint>
 #include <ostream>

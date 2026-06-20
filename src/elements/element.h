@@ -2,18 +2,11 @@
 #define _ELEMENT_H_
 
 #include <string>
-#include <sstream>
 #include <cstring>
 #include <vector>
 #include <functional>
-#include <chrono>
-#include <atomic>
-#include <limits>
-
-#include <iostream>
 
 #include "../core/utils/superString.h"
-#include "../core/utils/constants.h"
 #include "../core/utils/color.h"
 #include "../core/utils/utf.h"
 #include "../core/utils/style.h"

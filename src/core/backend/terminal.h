@@ -12,9 +12,7 @@
 #include "../utils/utf.h"
 
 namespace GGUI {
-    /**
-     * Contains the interface for terminal handling in terminal emulators.
-    */
+    // ggui::terminal's job is to be the bridge between the serial/device and platform specificity and the standard ecma/dec/xterm protocol
     namespace terminal {
         using keyListing = std::array<key, (size_t)ecma::table::getSize<key::types>()>;
 
@@ -63,9 +61,6 @@ namespace GGUI {
 
         // Read from this to get current device states of the terminal peripherals.
         extern base currentStates;
-        // extern device previousStates;    // Only accessible inside the terminal.cpp for internal use only!
-
-        // extern bitMask<features> fetchIOPermissions();
 
         extern void init();                 // non-Platform Specific
 
@@ -73,13 +68,9 @@ namespace GGUI {
 
         extern void queryInputs();          // Platform Specific
 
-        extern void queryResponse();          // Platform Specific
+        extern void queryResponse();        // Platform Specific
 
         extern void parseInput();           // Terminal Specific
-
-        // This is a general function whose job is to post GGUI input events for event handlers to catch.
-        // extern void postInputs();           // General
-    
     }
 }
 

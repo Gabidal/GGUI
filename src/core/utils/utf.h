@@ -1,10 +1,7 @@
 #ifndef _UTF_H_
 #define _UTF_H_
 
-#include <string>
-#include <variant>
 #include <utility>
-#include <cstdint>
 
 #include "superString.h"
 #include "color.h"

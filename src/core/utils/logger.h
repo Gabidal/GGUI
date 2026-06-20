@@ -1,8 +1,6 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-#include <queue>
-
 #include "types.h"
 
 namespace GGUI{

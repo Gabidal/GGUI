@@ -1,12 +1,12 @@
-#include <string>
-#include <cmath>
-#include <algorithm>
-
 #include "utils.h"
 #include "../../elements/element.h"
 #include "fileStreamer.h"
 #include "../renderer.h"
 #include "settings.h"
+
+#include <string>
+#include <cmath>
+#include <iostream>
 
 namespace GGUI{
     namespace INTERNAL{

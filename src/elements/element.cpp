@@ -1,13 +1,10 @@
 #include "element.h"
-#include "HTML.h"
 
 #include "../core/renderer.h"
 #include "../core/utils/utils.h"
-#include "../core/utils/settings.h"
 
 #include <algorithm>
 #include <vector>
-#include <cmath>
 
 #undef min
 #undef max

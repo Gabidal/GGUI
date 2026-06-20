@@ -1,11 +1,9 @@
 #include "listView.h"
 #include "../core/renderer.h"
 #include "../core/utils/utils.h"
-#include "HTML.h"
 
 //undefine these before algorithm.h is included
 
-#include <algorithm>
 #undef RGB
 #undef BOOL
 #undef NUMBER

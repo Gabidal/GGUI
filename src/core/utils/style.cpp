@@ -1,9 +1,8 @@
 #include "style.h"
 #include "../../elements/element.h"
-#include "../../elements/listView.h"
 #include "../../elements/textField.h"
 #include "../../elements/switch.h"
-#include "../renderer.h"
+#include "../../elements/canvas.h"
 
 #include "./utils.h"
 

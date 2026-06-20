@@ -1,9 +1,7 @@
 #ifndef _SETTINGS_H_
 #define _SETTINGS_H_
 
-#include <chrono>
 #include <string>
-#include <vector>
 #include <functional>
 
 namespace GGUI {

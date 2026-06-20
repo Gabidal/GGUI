@@ -1,10 +1,7 @@
 #include "settings.h"
 #include <string>
 #include <vector>
-#include <iostream>
-#include <sstream>
 #include <algorithm>
-#include <stdexcept>
 #include <cstring>
 #include <cctype>
 
