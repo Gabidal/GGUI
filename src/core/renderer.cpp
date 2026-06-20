@@ -1,13 +1,13 @@
 #include "renderer.h"
-#include "./utils/fileStreamer.h"
-#include "./utils/logger.h"
-#include "./utils/utils.h"
-#include "./utils/constants.h"
-#include "./addons/addons.h"
-#include "./utils/settings.h"
-#include "./utils/drm.h"
-#include "./utils/conveyorAllocator.h"
-#include "./backend/terminal.h"
+#include "utils/fileStreamer.h"
+#include "utils/logger.h"
+#include "utils/utils.h"
+#include "utils/constants.h"
+#include "addons/addons.h"
+#include "utils/settings.h"
+#include "utils/drm.h"
+#include "utils/conveyorAllocator.h"
+#include "backend/terminal.h"
 
 #include <string>
 #include <cassert>

@@ -1,4 +1,4 @@
-#include "./addons.h"
+#include "addons.h"
 #include "../../elements/element.h"
 #include "../../elements/listView.h"
 #include "../../elements/textField.h"

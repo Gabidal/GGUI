@@ -1,11 +1,11 @@
-#include "./utils/utils.h"
-#include "./renderer.h"
-#include "./utils/fileStreamer.h"
-#include "./utils/settings.h"
+#include "utils/utils.h"
+#include "renderer.h"
+#include "utils/fileStreamer.h"
+#include "utils/settings.h"
 
-#include "./backend/terminal.h"
+#include "backend/terminal.h"
 
-#include "./utils/drm.h"
+#include "utils/drm.h"
 
 #include <thread>
 #include <memory>

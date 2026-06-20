@@ -15,7 +15,7 @@
 #include "../core/utils/utf.h"
 #include "../core/utils/style.h"
 #include "../core/utils/conveyorAllocator.h"
-#include "./utils/utils.h"
+#include "utils/utils.h"
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code

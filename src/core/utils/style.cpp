@@ -4,7 +4,7 @@
 #include "../../elements/switch.h"
 #include "../../elements/canvas.h"
 
-#include "./utils.h"
+#include "utils.h"
 
 namespace GGUI{
 
