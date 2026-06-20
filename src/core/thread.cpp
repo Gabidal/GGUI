@@ -96,18 +96,18 @@ namespace GGUI{
 
                         if (!identicalFrame){
                             if (SETTINGS::enableDRM) {
-                                DRM::sendBuffer(*abstractFrameBuffer);
+                                DRM::sendBuffer(*terminal::currentStates.screen.cellBuffer);
                             }
                             else {
                                 // ENCODE for optimize
-                                encodeBuffer(abstractFrameBuffer);
+                                encodeBuffer(terminal::currentStates.screen.cellBuffer);
 
                                 unsigned int Liquefied_Size = 0;
-                                conveyorAllocator<compactString> CS_Buffer = liquifyUTFText(abstractFrameBuffer, Liquefied_Size, main->getWidth(), main->getHeight());
+                                conveyorAllocator<compactString> CS_Buffer = liquifyUTFText(terminal::currentStates.screen.cellBuffer, Liquefied_Size, main->getWidth(), main->getHeight());
                                 
-                                frameBuffer = toString(CS_Buffer, Liquefied_Size);
+                                terminal::currentStates.screen.buffer = toString(CS_Buffer, Liquefied_Size);
                                 
-                                renderFrame();
+                                terminal::renderFrame();
                             }
                         }
                         else{

@@ -64,12 +64,16 @@ namespace GGUI {
 
         extern void init();                 // non-Platform Specific
 
+        extern void platformInit();         // Platform Specific
+
         extern void deinit();               // Terminal Specific
 
         extern void queryInputs();          // Platform Specific
 
         extern void queryResponse();        // Platform Specific
 
+        extern void renderFrame();          // Platform Specific
+        
         extern void parseInput();           // Terminal Specific
     }
 }

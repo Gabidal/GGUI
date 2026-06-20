@@ -131,17 +131,6 @@ namespace GGUI{
         extern void Cleanup();
 
         /**
-         * @brief Renders the current frame to the console.
-         * 
-         * This function moves the console cursor to the top left corner of the screen
-         * and writes the contents of the Frame_Buffer to the console.
-         * 
-         * @note The number of bytes written to the console is stored in a temporary
-         * variable but is not used elsewhere in the function.
-         */
-        extern void renderFrame();
-
-        /**
          * @brief Updates the maximum width and height of the console window.
          * 
          * This function retrieves the current console screen buffer information and updates

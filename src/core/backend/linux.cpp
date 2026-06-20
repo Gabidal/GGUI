@@ -83,21 +83,17 @@ namespace GGUI {
         }
 
         void platformInit() {
-
+            // By default we route to the standard streams, but this can be changed by calling routeTo with custom paths and flags.
+            routeTo(
+                { "/dev/stdin",  0 },   // Input route
+                { "/dev/stdout", 0 },   // Output route
+                { "/dev/stdout", 0 }    // Response route
+             );
         }
 
-        /**
-         * @brief Renders the contents of the Frame_Buffer to the standard output (STDOUT).
-         * @details This function moves the cursor to the top-left corner of the terminal, flushes the output
-         *          buffer to ensure immediate writing, and writes the contents of the Frame_Buffer to STDOUT.
-         *          If the write operation fails or writes fewer bytes than expected, an error message is reported.
-         */
         void renderFrame() {
-            static ecma::sequence::superString preAllocatedCombinator;
-            static char preAllocatedBuffer[ecma::sequence::MAX_SUPER_STRING_BUFFER_SIZE] = {0}; // Pre-allocated buffer for combinator sequences
-
             // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
-            static INTERNAL::compactString cursorReset = ecma::sequences::cursorControlFunctions::CURSOR_POSITION.compile({0, 0}).toString(preAllocatedCombinator).toString(preAllocatedBuffer);
+            static INTERNAL::compactString cursorReset = ecma::sequence::liquify(ecma::sequences::cursorControlFunctions::CURSOR_POSITION.compile({0, 0}));
 
             iovec vec[2] = {
                 { (void*)cursorReset.text,                      cursorReset.size },

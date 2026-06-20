@@ -17,32 +17,7 @@ namespace GGUI {
         }
 
         void init() {
-            // // The following code is for nominal use of GGUI via Unix/Windows terminal emulators. TODO: enable direct /dev/ ral Terminal device contact.
-            // enabledFeatures = fetchIOPermissions();
-
-            // // Check what permissions we have
-            // if (enabledFeatures.get() == features::NONE) {
-            //     GGUI::INTERNAL::LOGGER::log("ERROR: No terminal features detected!");
-            //     return;
-            // } 
-
-            // if (!enabledFeatures.has(features::READ)) {
-            //     GGUI::INTERNAL::LOGGER::log("WARNING: No read permissions detected!");
-            // } else if (!enabledFeatures.has(features::WRITE)) {
-            //     GGUI::INTERNAL::LOGGER::log("WARNING: No write permissions detected!");
-            // }
-
-            // if (!enabledFeatures.has(features::TTY)) {
-            //     GGUI::INTERNAL::LOGGER::log("INFO: Non-interactive mode detected.");
-            // }
-
-            // if (!snapshot()) {     // Load checkpoint
-            //     GGUI::INTERNAL::LOGGER::log("ERROR: Failed to snapshot terminal configuration!");
-            //     return;
-            // } else if (!apply()) {  // Apply preferences
-            //     GGUI::INTERNAL::LOGGER::log("ERROR: Failed to apply terminal configuration!");
-            //     return;
-            // }
+            platformInit();
         }
 
         extern void platformDeinit();
@@ -51,14 +26,6 @@ namespace GGUI {
 
             // Now cal platform specific de-initializers
             platformDeinit();
-        }
-
-        // Helper function to automatically check whether the enum does not belong to the activates set.
-        template<typename T, typename... Vs> bool contains(const std::variant<Vs...>& v, T value) {
-            // static_assert that T is actually one of the variant's types
-            static_assert((std::is_same_v<T, Vs> || ...),  "T is not a member of this variant");
-            const auto* p = std::get_if<T>(&v);
-            return p && *p == value;
         }
 
         void parseInput() {

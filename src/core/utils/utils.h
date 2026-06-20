@@ -191,14 +191,6 @@ namespace GGUI{
         constexpr bool hasBitAt(char val, int i) noexcept { return (val & (1 << i)) != 0; }
 
         /**
-         * @brief Gets the contents of a given position in the buffer.
-         * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
-         * @param Absolute_Position The position to get the contents of.
-         * @return The contents of the given position, or nullptr if the position is out of bounds.
-         */
-        extern GGUI::UTF* get(GGUI::IVector3 Absolute_Position);
-
-        /**
          * @brief Calculates the current load of the GGUI thread based on the given current position.
          * @param Min The minimum value the load can have.
          * @param Max The maximum value the load can have.

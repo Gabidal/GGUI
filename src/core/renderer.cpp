@@ -38,8 +38,8 @@
 
 namespace GGUI{
     namespace INTERNAL{
-        std::vector<UTF>* abstractFrameBuffer = nullptr;                // Terminal Cell buffer
-        std::string* frameBuffer;                                       // ANSI Escape sequenced string, this what gets drawn to console
+        // std::vector<UTF>* abstractFrameBuffer = nullptr;                // Terminal Cell buffer
+        // std::string* frameBuffer;                                       // ANSI Escape sequenced string, this what gets drawn to console
         std::vector<std::function<void()>> userCleanupCallbacks;        // User defined functions to be called on cleanup
         
         // platformState platformState;
@@ -755,28 +755,6 @@ namespace GGUI{
             }
 
             platformState.deInitialized = true;
-        }
-
-        /**
-         * @brief Renders the contents of the Frame_Buffer to the standard output (STDOUT).
-         * @details This function moves the cursor to the top-left corner of the terminal, flushes the output
-         *          buffer to ensure immediate writing, and writes the contents of the Frame_Buffer to STDOUT.
-         *          If the write operation fails or writes fewer bytes than expected, an error message is reported.
-         */
-        void renderFrame() {
-            // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
-            const char* cursorReset = GGUI::constants::ANSI::SET_CURSOR_TO_START.text;
-            size_t cursorResetLength = GGUI::constants::ANSI::SET_CURSOR_TO_START.size;
-
-            iovec vec[2] = {
-                { (void*)cursorReset,           cursorResetLength },
-                { (void*)frameBuffer->data(),  frameBuffer->size() }
-            };
-
-            ssize_t wrote = writev(STDOUT_FILENO, vec, 2);
-            if (wrote != (ssize_t)cursorResetLength + (ssize_t)frameBuffer->size()) {
-                LOGGER::log("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
-            }
         }
 
         /**

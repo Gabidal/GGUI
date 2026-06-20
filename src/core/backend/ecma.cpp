@@ -256,6 +256,13 @@ namespace GGUI {
                     }
                     return result;
                 }
+
+                INTERNAL::compactString liquify(base&& parsed) {
+                    thread_local static ecma::sequence::superString preAllocatedCombinator;
+                    thread_local static char preAllocatedBuffer[ecma::sequence::MAX_SUPER_STRING_BUFFER_SIZE] = {0}; // Pre-allocated buffer for combinator sequences
+
+                    return parsed.toString(preAllocatedCombinator).toString(preAllocatedBuffer);
+                }
             }
 
             std::pair<size_t, sequence::base*> table::configuration::manager::interpret(std::string_view input) {

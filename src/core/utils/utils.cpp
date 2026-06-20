@@ -405,27 +405,6 @@ namespace GGUI{
             return Best_Candidate;
         }
 
-        /**
-         * @brief Gets the contents of a given position in the buffer.
-         * @details This function takes a position in the buffer and returns the contents of that position. If the position is out of bounds, it will return nullptr.
-         * @param Absolute_Position The position to get the contents of.
-         * @return The contents of the given position, or nullptr if the position is out of bounds.
-         */
-        GGUI::UTF* get(GGUI::IVector3 Absolute_Position){
-            if (Absolute_Position.x >= INTERNAL::getMaxWidth() || 
-                Absolute_Position.y >= INTERNAL::getMaxHeight() ||
-                Absolute_Position.x < 0 || 
-                Absolute_Position.y < 0)
-            {
-                // The position is out of bounds, return nullptr
-                return nullptr;
-            }
-            else{
-                // The position is in bounds, return the contents of that position
-                return &INTERNAL::abstractFrameBuffer->at(Absolute_Position.y * INTERNAL::getMaxWidth() + Absolute_Position.x);
-            }
-        }
-
         bool has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag){
             return has((unsigned long long)f, (unsigned long long)flag);
         }

@@ -607,6 +607,10 @@ namespace GGUI {
                     types getType() const { return type; }
 
                     base(types t) : type(t) {}
+                    virtual ~base() {}
+
+                    virtual std::string toString() const { return ""; }
+                    virtual superString& toString(superString& fail) const { return fail; }
                 };
 
                 /** 
@@ -625,7 +629,7 @@ namespace GGUI {
                     constexpr prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
 
                     virtual ~prefix() = default;
-                    virtual std::string toString() const {
+                    std::string toString() const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
                             return table::toString(table::C0::ESC) + table::toString(header);
                         } else {
@@ -634,7 +638,7 @@ namespace GGUI {
                     }
 
                     // This will break unless the buffer is correctly pre allocated and correct size.
-                    virtual superString& toString(superString& preAllocated) const {
+                    superString& toString(superString& preAllocated) const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
                             preAllocated.add(static_cast<char>(table::C0::ESC));
                             preAllocated.add(static_cast<char>(header));
@@ -850,6 +854,9 @@ namespace GGUI {
                 std::pair<size_t, base*> defaultSequenceParser(std::string_view input);
                 
                 std::vector<base*> parse(std::string_view input);
+
+                // Use this for simplifying prefix -> string process and fast
+                INTERNAL::compactString liquify(base&& parsed);
             }
 
             /** 
@@ -976,7 +983,7 @@ namespace GGUI {
                     class page {
                     public:
                         static constexpr size_t pageWidth = layout::bounds({C0::NUL}, {7, 15}).getSize();    // full 96^n'th support
-                        static constexpr size_t pageDepth = layout::bounds({intermediate::identifiers::__min}, {intermediate::identifiers::ANNOUNCER}).getSize();    // full intermediate support
+                        static constexpr size_t pageDepth = layout::bounds({intermediate::identifiers::__min}, {intermediate::identifiers::ANNOUNCER}).getSize() + 1;    // full intermediate support
                     protected:
                         std::array<
                             cell, 
