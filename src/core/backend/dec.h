@@ -12,10 +12,10 @@ namespace GGUI {
         */
         namespace dec {
             namespace VT100 {
-                extern ecma::table::configuration::cellPatch csiPatch;
+                extern ecma::configuration::cellPatch csiPatch;
                 
-                extern ecma::table::configuration::page G1;
-                extern ecma::table::configuration::page G3;
+                extern ecma::configuration::page G1;
+                extern ecma::configuration::page G3;
 
                 inline constexpr limitations limits {
                     baudRate::BYTES_19200,
@@ -124,7 +124,7 @@ namespace GGUI {
                 };
 
                 struct components {
-                    ecma::table::mode::flags<modeTypes> modes;
+                    ecma::mode::flags<modeTypes> modes;
                     INTERNAL::bitMask<deviceAttributeResponseTypes> activeDeviceAttributes;
                 };
 

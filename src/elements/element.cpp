@@ -55,27 +55,27 @@ void GGUI::UTF::toSuperString(
  * @param Background_Colour The Super_String where the background colour will be stored.
  */
 void GGUI::UTF::toEncodedSuperString(
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result
+    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* /*Result*/
 ) const{
 
-    if (is(INTERNAL::ENCODING_FLAG::START)) {
-        Result->add(INTERNAL::textOverheadPrecompute);
-        foreground.getColourAsSuperString(Result);
+    // if (is(INTERNAL::ENCODING_FLAG::START)) {
+    //     Result->add(INTERNAL::textOverheadPrecompute);
+    //     foreground.getColourAsSuperString(Result);
         
-        Result->add(constants::ANSI::END_COMMAND);
-        Result->add(INTERNAL::backgroundOverheadPrecompute);
+    //     Result->add(constants::ANSI::END_COMMAND);
+    //     Result->add(INTERNAL::backgroundOverheadPrecompute);
 
-        background.getColourAsSuperString(Result);
-        Result->add(constants::ANSI::END_COMMAND);
-    }
+    //     background.getColourAsSuperString(Result);
+    //     Result->add(constants::ANSI::END_COMMAND);
+    // }
 
-    // Append the Unicode character to the result
-    Result->add(text, size);
+    // // Append the Unicode character to the result
+    // Result->add(text, size);
 
-    if (is(INTERNAL::ENCODING_FLAG::END)) {
-        // Add the reset ANSI code to the end of the string
-        Result->add(constants::ANSI::RESET_COLOR);
-    }
+    // if (is(INTERNAL::ENCODING_FLAG::END)) {
+    //     // Add the reset ANSI code to the end of the string
+    //     Result->add(constants::ANSI::RESET_COLOR);
+    // }
 }
 
 /**

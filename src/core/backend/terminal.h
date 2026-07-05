@@ -9,7 +9,7 @@
 // -----
 
 #include "../utils/types.h"
-#include "../utils/utf.h"
+#include "../utils/superString.h"
 
 namespace GGUI {
     // ggui::terminal's job is to be the bridge between the serial/device and platform specificity and the standard ecma/dec/xterm protocol
@@ -17,24 +17,32 @@ namespace GGUI {
         using keyListing = std::array<key, (size_t)ecma::table::getSize<key::types>()>;
 
         struct base {
-            keyListing keys;
+            using compactString = INTERNAL::compactString;
 
+            keyListing keys;
+            
             ecma::components ecmaComponents;
             dec::components decComponents;
 
-            struct outputCapture{
+            RGB colorIndexMap[UINT8_MAX] = {};
+
+            class outputCapture{
+            protected:
+                std::string* liquefiedBuffer = nullptr;      // This is what send back into the output device to be rendered into the screen.       
+                std::vector<ecma::graphicAttributes>& registeredGraphicAttributes;   // This is the metadata of the presendted buffer.
+            public:
+                // These are public, since these are used by ecma and others to manipulate presentation.
                 IVector2& cursor;
                 IVector2 dimensions;
-                std::string* buffer = nullptr;
-                std::vector<UTF>* cellBuffer;
-
-                outputCapture(IVector2& presentationPosition) : cursor(presentationPosition) {}
+                std::vector<compactString>* buffer;  // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
+                
+                outputCapture(IVector2& presentationPosition, std::vector<ecma::graphicAttributes>& RGA) : registeredGraphicAttributes(RGA), cursor(presentationPosition) {}
 
                 size_t getActiveIndex() const;
 
                 // Displays cursor position
                 std::string toString() const;
-            } screen = outputCapture(ecmaComponents.activePresentationPosition);
+            } screen = outputCapture(ecmaComponents.activePresentationPosition, ecmaComponents.registeredGraphicAttributes);
 
             struct query {
                 // Some compile time constants; 510, is enough. If need raise this.

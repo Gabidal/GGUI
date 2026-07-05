@@ -5,13 +5,12 @@
 
 #include "superString.h"
 #include "color.h"
-#include "types.h"
 #include "constants.h"
 
 namespace GGUI{
     class UTF : public INTERNAL::compactString {
     public:
-        INTERNAL::ENCODING_FLAG flags = INTERNAL::ENCODING_FLAG::NONE;
+        // INTERNAL::ENCODING_FLAG flags = INTERNAL::ENCODING_FLAG::NONE;
 
         RGB foreground;
         RGB background;
@@ -65,9 +64,9 @@ namespace GGUI{
          * @param utf_flag The UTF flag to check.
          * @return True if the flag is set, otherwise false.
          */
-        constexpr bool is(const INTERNAL::ENCODING_FLAG flag) const {
-            return (flags & flag) == flag;
-        }
+        // constexpr bool is(const INTERNAL::ENCODING_FLAG flag) const {
+        //     return (flags & flag) == flag;
+        // }
 
         /**
          * @brief Checks if a specific UTF flag is set.
@@ -92,9 +91,9 @@ namespace GGUI{
          * @brief Sets a specific UTF flag.
          * @param utf_flag The UTF flag to set.
          */
-        constexpr void setFlag(const INTERNAL::ENCODING_FLAG flag) {
-            flags |= flag;
-        }
+        // constexpr void setFlag(const INTERNAL::ENCODING_FLAG flag) {
+        //     flags |= flag;
+        // }
 
         /**
          * @brief Sets the foreground color of the UTF element.

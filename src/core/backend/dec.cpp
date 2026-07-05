@@ -6,10 +6,10 @@ namespace GGUI {
         namespace dec {
             
             namespace VT100 {
-                ecma::table::configuration::cellPatch csiPatch(ecma::table::C1::CSI);
+                ecma::configuration::cellPatch csiPatch(ecma::table::C1::CSI);
 
-                ecma::table::configuration::page G1(ecma::table::configuration::layout::graphical::getRelativeGraphicalPageLayout(ecma::table::configuration::layout::graphical::type::B));
-                ecma::table::configuration::page G3(ecma::table::configuration::layout::graphical::getRelativeGraphicalPageLayout(ecma::table::configuration::layout::graphical::type::B));
+                ecma::configuration::page G1(ecma::configuration::layout::graphical::getRelativeGraphicalPageLayout(ecma::configuration::layout::graphical::type::B));
+                ecma::configuration::page G3(ecma::configuration::layout::graphical::getRelativeGraphicalPageLayout(ecma::configuration::layout::graphical::type::B));
             
                 namespace sequences {
                     
@@ -61,7 +61,7 @@ namespace GGUI {
                                     auto typed = params[i].getValueAsInteger();
 
                                     if (ecma::table::contains<modeTypes>(typed)) {
-                                        currentStates.decComponents.VT100Components.modes.set({typed, ecma::table::mode::definition::RESET});
+                                        currentStates.decComponents.VT100Components.modes.set({typed, ecma::mode::definition::RESET});
                                     }
 
                                 }
@@ -83,7 +83,7 @@ namespace GGUI {
                                     auto typed = params[i].getValueAsInteger();
 
                                     if (ecma::table::contains<modeTypes>(typed)) {
-                                        currentStates.decComponents.VT100Components.modes.set({typed, ecma::table::mode::definition::SET});
+                                        currentStates.decComponents.VT100Components.modes.set({typed, ecma::mode::definition::SET});
                                     }
 
                                 }

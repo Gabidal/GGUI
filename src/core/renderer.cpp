@@ -2109,23 +2109,18 @@ namespace GGUI{
          *          It checks each UTF element's foreground and background colors with its adjacent elements
          *          to determine where encoding strips start and end.
          */
+
+        // DECOMMISSIONED :)
         void encodeBuffer(std::vector<GGUI::UTF>* Buffer) {
             const size_t Count = Buffer->size();
             if (Count == 0) return;
 
-            // Flags are used as per-frame markers. If we don't reset them, stale END flags from
-            // earlier frames can cause an early RESET_COLOR and make the rest of the frame render
-            // with default colors.
-            // for (auto& cell : *Buffer) {
-            //     cell.flags = ENCODING_FLAG::NONE;
-            // }
-
             // Set START flag for the first element
-            Buffer->front().setFlag(ENCODING_FLAG::START);
+            // Buffer->front().setFlag(ENCODING_FLAG::START);
 
             // If only one element, also mark as END
             if (Count == 1) {
-                Buffer->front().setFlag(ENCODING_FLAG::END);
+                // Buffer->front().setFlag(ENCODING_FLAG::END);
                 return;
             }
 
@@ -2149,13 +2144,13 @@ namespace GGUI{
                 bool SameAsNext = (Curr->foreground == Next->foreground) && (Curr->background == Next->background);
 
                 if (!SameAsPrev) {
-                    Curr->setFlag(ENCODING_FLAG::START);
+                    // Curr->setFlag(ENCODING_FLAG::START);
                     // for logging:
                     INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
                 }
 
                 if (!SameAsNext) {
-                    Curr->setFlag(ENCODING_FLAG::END);
+                    // Curr->setFlag(ENCODING_FLAG::END);
                     // for logging:
                     INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForReset;
                 }
@@ -2172,14 +2167,14 @@ namespace GGUI{
 
             // Handle the last element
             auto& Last = Buffer->back();
-            Last.setFlag(ENCODING_FLAG::END);
+            // Last.setFlag(ENCODING_FLAG::END);
             // for logging:
             INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
 
             // Compare last with second-last for possible START flag
             const auto& SecondLast = Buffer->at(Count - 2);
             if (!(Last.foreground == SecondLast.foreground) || !(Last.background == SecondLast.background)) {
-                Last.setFlag(ENCODING_FLAG::START);
+                // Last.setFlag(ENCODING_FLAG::START);
                 // for logging:
                 INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
             }

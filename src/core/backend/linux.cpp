@@ -97,11 +97,11 @@ namespace GGUI {
 
             iovec vec[2] = {
                 { (void*)cursorReset.text,                      cursorReset.size },
-                { (void*)currentStates.screen.buffer->data(),   currentStates.screen.buffer->size() }
+                { (void*)currentStates.screen.liquifiedBuffer->data(),   currentStates.screen.liquifiedBuffer->size() }
             };
 
             ssize_t wrote = writev(output.handle, vec, 2);
-            if (wrote != (ssize_t)cursorReset.size + (ssize_t)currentStates.screen.buffer->size()) {
+            if (wrote != (ssize_t)cursorReset.size + (ssize_t)currentStates.screen.liquifiedBuffer->size()) {
                 GGUI::INTERNAL::LOGGER::log("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
             }
         }

@@ -92,20 +92,20 @@ namespace GGUI{
 
                     // Skip rendering until DRM sends us the window size.
                     if (!FirstDRMRender) {
-                        terminal::currentStates.screen.cellBuffer = &main->render();
+                        terminal::currentStates.screen.buffer = &main->render();
 
                         if (!identicalFrame){
                             if (SETTINGS::enableDRM) {
-                                DRM::sendBuffer(*terminal::currentStates.screen.cellBuffer);
+                                DRM::sendBuffer(*terminal::currentStates.screen.buffer);
                             }
                             else {
                                 // ENCODE for optimize
-                                encodeBuffer(terminal::currentStates.screen.cellBuffer);
+                                encodeBuffer(terminal::currentStates.screen.buffer);
 
                                 unsigned int Liquefied_Size = 0;
-                                conveyorAllocator<compactString> CS_Buffer = liquifyUTFText(terminal::currentStates.screen.cellBuffer, Liquefied_Size, main->getWidth(), main->getHeight());
+                                conveyorAllocator<compactString> CS_Buffer = liquifyUTFText(terminal::currentStates.screen.buffer, Liquefied_Size, main->getWidth(), main->getHeight());
                                 
-                                terminal::currentStates.screen.buffer = toString(CS_Buffer, Liquefied_Size);
+                                terminal::currentStates.screen.liquefiedBuffer = toString(CS_Buffer, Liquefied_Size);
                                 
                                 terminal::renderFrame();
                             }

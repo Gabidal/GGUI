@@ -5,11 +5,11 @@
 namespace GGUI {
     namespace terminal {
         namespace ecma {
-            table::configuration::page C0(table::configuration::layout::functional::getRelativeFunctionalPageLayout(table::configuration::layout::functional::type::C0));
-            table::configuration::page C1(table::configuration::layout::functional::getRelativeFunctionalPageLayout(table::configuration::layout::functional::type::C1));
-            table::configuration::page G0(table::configuration::layout::graphical::getRelativeGraphicalPageLayout(table::configuration::layout::graphical::type::B));
+            configuration::page C0(configuration::layout::functional::getRelativeFunctionalPageLayout(configuration::layout::functional::type::C0));
+            configuration::page C1(configuration::layout::functional::getRelativeFunctionalPageLayout(configuration::layout::functional::type::C1));
+            configuration::page G0(configuration::layout::graphical::getRelativeGraphicalPageLayout(configuration::layout::graphical::type::B));
 
-            static table::configuration::manager pageState;
+            static configuration::manager pageState;
 
             std::pair<IVector2, IVector2> components::getPresentationDirectionAsVector() {
                 IVector2 linePath, characterPath;
@@ -265,12 +265,71 @@ namespace GGUI {
                 }
             }
 
-            std::pair<size_t, sequence::base*> table::configuration::manager::interpret(std::string_view input) {
+            // parses sequence coming from SGR
+            std::pair<size_t, RGB> parseColorFromSGR(graphicAttributes::directColorTypes dt, size_t start, std::vector<sequence::parameter::selectable<graphicAttributes::types>>& params) {
+                switch (dt) {
+                    case graphicAttributes::directColorTypes::INDEXED:
+                        return {1, currentStates.colorIndexMap[(uint8_t)params[start].getValueAsInteger()]};
+                    case graphicAttributes::directColorTypes::RGB:
+                        return {3, RGB(
+                            (uint8_t)params[start].getValueAsInteger(),
+                            (uint8_t)params[start + 1].getValueAsInteger(),
+                            (uint8_t)params[start + 2].getValueAsInteger()
+                        )};
+                    case graphicAttributes::directColorTypes::CMY:
+                        return {3, RGB(
+                            (uint8_t)(UINT8_MAX - (uint8_t)params[start].getValueAsInteger()),
+                            (uint8_t)(UINT8_MAX - (uint8_t)params[start + 1].getValueAsInteger()),
+                            (uint8_t)(UINT8_MAX - (uint8_t)params[start + 2].getValueAsInteger())
+                        )};
+                    case graphicAttributes::directColorTypes::CMYK: {
+                        uint8_t c = (uint8_t)params[start].getValueAsInteger();
+                        uint8_t m = (uint8_t)params[start + 1].getValueAsInteger();
+                        uint8_t y = (uint8_t)params[start + 2].getValueAsInteger();
+                        uint8_t k = (uint8_t)params[start + 3].getValueAsInteger();
+
+                        return {4, RGB(
+                            (uint8_t)(((UINT8_MAX - c) * (UINT8_MAX - k)) / UINT8_MAX),
+                            (uint8_t)(((UINT8_MAX - m) * (UINT8_MAX - k)) / UINT8_MAX),
+                            (uint8_t)(((UINT8_MAX - y) * (UINT8_MAX - k)) / UINT8_MAX)
+                        )};
+                    } case graphicAttributes::directColorTypes::TRANSPARENT:
+                        return {0, RGB(0, 0, 0)};
+                    default:
+                        throw std::runtime_error("Invalid color type.");
+                }
+            }
+
+            void graphicAttributes::parseArguments(std::vector<sequence::parameter::selectable<graphicAttributes::types>>& params) {
+                for (size_t i = 0; i < params.size(); i++) {
+                    // Check for special case attributes, which are via the fg and bg, given with the parameter::fraction
+                    if (params[i].hasSecondaries()) {   // Highly likely to be a FG or BG sequence
+                        graphicAttributes::types currentType = params[i].getValueAsInteger();
+
+                        // sanity check that the fraction is used correctly and the primary value is truly Fg or BG
+                        if (currentType != graphicAttributes::types::FOREGROUND_COLOR && currentType != graphicAttributes::types::BACKGROUND_COLOR) {
+                            throw std::runtime_error("Invalid SGR parameter: fraction used with non-FG/BG primary value.");
+                        }
+
+                        graphicAttributes::directColorTypes colorType = (graphicAttributes::directColorTypes)params[i].getPrimaryValueAndSecondaries().back();
+
+                        std::pair<size_t, RGB> parsedColor = parseColorFromSGR(colorType, i + 1, params);
+
+                        directColor = parsedColor.second;
+
+                        i += parsedColor.first - 1; // -1, since we already +1 at the start of the loop
+                    } else {
+                        add(params[i].getValueAsInteger());
+                    }
+                }
+            }
+
+            std::pair<size_t, sequence::base*> configuration::manager::interpret(std::string_view input) {
                 auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
                 auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
 
                 // Jump through and fetch the page cell
-                table::configuration::cell currentCell = currentPage.get(input.front());
+                configuration::cell currentCell = currentPage.get(input.front());
 
                 // Call the sequence parser
                 // auto parsedArea = currentCell.parser(input);
@@ -294,77 +353,77 @@ namespace GGUI {
                 namespace introducers {}
 
                 namespace shiftFunctions {
-                    auto layoutType = table::configuration::layout::graphical::type::A;     // TODO: Dynamically adjust this.
+                    auto layoutType = configuration::layout::graphical::type::A;     // TODO: Dynamically adjust this.
 
                     void operateShift_LS0(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G0, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                            table::configuration::lifetime::types::LOCKING
+                            configuration::repertoire::G0, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            configuration::lifetime::types::LOCKING
                         );
                     }
 
                     void operateShift_LS1(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G1, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                            table::configuration::lifetime::types::LOCKING
+                            configuration::repertoire::G1, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            configuration::lifetime::types::LOCKING
                         );
                     }
 
                     void operateShift_SS2(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G2, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                            table::configuration::lifetime::types::TEMPORARY
+                            configuration::repertoire::G2, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            configuration::lifetime::types::TEMPORARY
                         );
                     }
 
                     void operateShift_SS3(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G3, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                            table::configuration::lifetime::types::TEMPORARY
+                            configuration::repertoire::G3, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            configuration::lifetime::types::TEMPORARY
                         );
                     }
 
                     void operateShift_LS1R(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G1, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
-                            table::configuration::lifetime::types::LOCKING
+                            configuration::repertoire::G1, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                            configuration::lifetime::types::LOCKING
                         );
                     }
 
                     void operateShift_LS2(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G2, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                            table::configuration::lifetime::types::LOCKING
+                            configuration::repertoire::G2, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            configuration::lifetime::types::LOCKING
                         );
                     }
 
                     void operateShift_LS2R(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G2, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
-                            table::configuration::lifetime::types::LOCKING
+                            configuration::repertoire::G2, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                            configuration::lifetime::types::LOCKING
                         );
                     }
 
                     void operateShift_LS3(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G3, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
-                            table::configuration::lifetime::types::LOCKING
+                            configuration::repertoire::G3, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
+                            configuration::lifetime::types::LOCKING
                         );
                     }
 
                     void operateShift_LS3R(sequence::base*) {
                         pageState.load(
-                            table::configuration::repertoire::G3, 
-                            table::configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
-                            table::configuration::lifetime::types::LOCKING
+                            configuration::repertoire::G3, 
+                            configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
+                            configuration::lifetime::types::LOCKING
                         );
                     }
                     
@@ -379,13 +438,13 @@ namespace GGUI {
                     }
 
                     void operate_CARRIAGE_RETURN(sequence::base* /*ignored*/) {
-                        if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             if (currentStates.ecmaComponents.toCharacterMovementDirection(currentStates.ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
                                 currentStates.ecmaComponents.activePresentationPosition.x = currentStates.ecmaComponents.homeLinePosition.x;
                             } else {
                                 currentStates.ecmaComponents.activePresentationPosition.x = currentStates.ecmaComponents.lineLimitPosition.x;
                             }
-                        } else if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_DATA)) {
+                        } else if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
                             if (currentStates.ecmaComponents.toCharacterMovementDirection(currentStates.ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
                                 currentStates.ecmaComponents.activeDataPosition.x = currentStates.ecmaComponents.homeLinePosition.x;
                             } else {
@@ -482,16 +541,16 @@ namespace GGUI {
                     }
 
                     void operate_LINE_FEED(sequence::base* /*ignored*/) {
-                        if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates.ecmaComponents.activePresentationPosition.y++;
-                        } else if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_DATA)) {
+                        } else if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
                             currentStates.ecmaComponents.activeDataPosition.y++;
                         }
                     }
 
                     void operate_NEXT_LINE(sequence::base* /*ignored*/) {
-                        bool has_presentation = currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_PRESENTATION);
-                        bool has_data = currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_DATA);
+                        bool has_presentation = currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION);
+                        bool has_data = currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA);
                         auto movement_direction = currentStates.ecmaComponents.toCharacterMovementDirection(currentStates.ecmaComponents.activeCharacterMovementDirection);
                         
                         if (has_presentation) {
@@ -591,9 +650,9 @@ namespace GGUI {
                     }
 
                     void operate_REVERSE_LINE_FEED(sequence::base* /*ignored*/) {
-                        if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates.ecmaComponents.activePresentationPosition.y--;
-                        } else if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_DATA)) {
+                        } else if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
                             currentStates.ecmaComponents.activeDataPosition.y--;
                         }
                     }
@@ -606,7 +665,7 @@ namespace GGUI {
                         assert(params.size() == 1);
 
                         // If, false, then multiline tabulation is enabled.
-                        // bool singleTabulationMode = currentStates.components.activeModes.has(table::mode::presets::TSM_SINGLE);
+                        // bool singleTabulationMode = currentStates.components.activeModes.has(mode::presets::TSM_SINGLE);
                     
                         switch (params.front().getValueAsInteger()) {
                             using namespace sequences::formatEffectors::TABULATION_CLEAR;
@@ -957,21 +1016,15 @@ namespace GGUI {
 
                         graphicAttributes newAttributes(currentStates.ecmaComponents.activePresentationPosition);
 
-                        for (auto& p : params) {
-                            newAttributes.add(p.getValueAsInteger());
-                        }
+                        newAttributes.parseArguments(params);
 
-                        bool cumulateFromPrevious = currentStates.ecmaComponents.activeModes.has(table::mode::presets::GRCM_CUMULATIVE);
+                        bool cumulateFromPrevious = currentStates.ecmaComponents.activeModes.has(mode::presets::GRCM_CUMULATIVE);
 
                         // Check if the current GRCM is replacing or cumulative
-                        if (!currentStates.ecmaComponents.registeredGraphicAttributes.empty()) {
+                        if (!currentStates.ecmaComponents.registeredGraphicAttributes.empty() && cumulateFromPrevious) {
                             auto& previousAttributes = currentStates.ecmaComponents.registeredGraphicAttributes.back();
 
-                            if (previousAttributes.end == 0) {
-                                previousAttributes.end = currentStates.ecmaComponents.activePresentationPosition;
-
-                                if (cumulateFromPrevious) newAttributes.add(previousAttributes);
-                            }
+                            newAttributes.add(previousAttributes);
                         }
 
                         currentStates.ecmaComponents.registeredGraphicAttributes.push_back(newAttributes);
@@ -986,7 +1039,7 @@ namespace GGUI {
 
                         auto characterPosition = params.front().getValueAsInteger();
 
-                        if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates.ecmaComponents.homeLinePosition = {
                                 characterPosition,
                                 currentStates.ecmaComponents.activePresentationPosition.y
@@ -1008,7 +1061,7 @@ namespace GGUI {
 
                         auto characterPosition = params.front().getValueAsInteger();
 
-                        if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates.ecmaComponents.lineLimitPosition = {
                                 characterPosition,
                                 currentStates.ecmaComponents.activePresentationPosition.y
@@ -1034,23 +1087,23 @@ namespace GGUI {
 
                         const auto& activeModes = currentStates.ecmaComponents.activeModes;
 
-                        if (activeModes.has(table::mode::presets::DCSM_DATA)) {
+                        if (activeModes.has(mode::presets::DCSM_DATA)) {
                             GGUI::INTERNAL::LOGGER::log("GGUI Does not support input data stream manipulation!");
                             return;
                         }
 
-                        auto cursorPositionAtBuffer = currentStates.screen.cellBuffer->begin() + currentStates.screen.getActiveIndex();
-                        if (activeModes.has(table::mode::group::characterReplacement::IRM_INSERT_HEM_FOLLOWING)) {
+                        auto cursorPositionAtBuffer = currentStates.screen.buffer->begin() + currentStates.screen.getActiveIndex();
+                        if (activeModes.has(mode::group::characterReplacement::IRM_INSERT_HEM_FOLLOWING)) {
                             std::fill(
                                 cursorPositionAtBuffer,
                                 cursorPositionAtBuffer + amountToRemove,
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
-                        } else if (activeModes.has(table::mode::group::characterReplacement::IRM_INSERT_HEM_PRECEDING)) {
+                        } else if (activeModes.has(mode::group::characterReplacement::IRM_INSERT_HEM_PRECEDING)) {
                             std::fill(
                                 cursorPositionAtBuffer - amountToRemove,
                                 cursorPositionAtBuffer,
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         } else {
                             GGUI::INTERNAL::LOGGER::log("Unknown delete mode at: " + currentStates.screen.toString());
@@ -1068,20 +1121,20 @@ namespace GGUI {
 
                         const auto& activeModes = currentStates.ecmaComponents.activeModes;
 
-                        auto cursorPositionAtBuffer = currentStates.screen.cellBuffer->begin() + currentStates.screen.getActiveIndex();
+                        auto cursorPositionAtBuffer = currentStates.screen.buffer->begin() + currentStates.screen.getActiveIndex();
                         auto screenWidth = currentStates.screen.dimensions.x;
 
-                        if (activeModes.has(table::mode::presets::VEM_FOLLOWING)) {
+                        if (activeModes.has(mode::presets::VEM_FOLLOWING)) {
                             std::fill(
                                 cursorPositionAtBuffer,
                                 cursorPositionAtBuffer + (amountToRemove * screenWidth),
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         } else {
                             std::fill(
                                 cursorPositionAtBuffer - (amountToRemove * screenWidth),
                                 cursorPositionAtBuffer,
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         }
                     }
@@ -1097,17 +1150,17 @@ namespace GGUI {
 
                         const auto& activeModes = currentStates.ecmaComponents.activeModes;
 
-                        auto cursorPositionAtBuffer = currentStates.screen.cellBuffer->begin() + currentStates.screen.getActiveIndex();
-                        auto lineLimitAtBuffer = currentStates.screen.cellBuffer->begin() + (
+                        auto cursorPositionAtBuffer = currentStates.screen.buffer->begin() + currentStates.screen.getActiveIndex();
+                        auto lineLimitAtBuffer = currentStates.screen.buffer->begin() + (
                             currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
                         ) + currentStates.ecmaComponents.lineLimitPosition.x;
-                        auto lineHomeAtBuffer = currentStates.screen.cellBuffer->begin() + (
+                        auto lineHomeAtBuffer = currentStates.screen.buffer->begin() + (
                             currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
                         ) + currentStates.ecmaComponents.homeLinePosition.x;
 
                         // Since we actually cannot insert anything, because this is a screen buffer.
                         // Instead we are going to move the data by the amount
-                        if (activeModes.has(table::mode::presets::HEM_FOLLOWING)) {
+                        if (activeModes.has(mode::presets::HEM_FOLLOWING)) {
                             std::move_backward(
                                 cursorPositionAtBuffer,
                                 lineLimitAtBuffer,
@@ -1117,7 +1170,7 @@ namespace GGUI {
                             std::fill(
                                 cursorPositionAtBuffer,
                                 cursorPositionAtBuffer + amountToInsert,
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         } else {
                             auto startOfAffectedArea = cursorPositionAtBuffer - amountToInsert + 1;
@@ -1131,7 +1184,7 @@ namespace GGUI {
                             std::fill(
                                 startOfAffectedArea,
                                 cursorPositionAtBuffer + 1,
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         }
                     }
@@ -1149,17 +1202,17 @@ namespace GGUI {
 
                         auto screenWidth = currentStates.screen.dimensions.x;
 
-                        auto activeLineBegin = currentStates.screen.cellBuffer->begin() + (
+                        auto activeLineBegin = currentStates.screen.buffer->begin() + (
                             currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x
                         );
 
-                        auto lineLimitAtBuffer = currentStates.screen.cellBuffer->begin() + (
+                        auto lineLimitAtBuffer = currentStates.screen.buffer->begin() + (
                             currentStates.ecmaComponents.lineLimitPosition.y + 1
                         ) * screenWidth;
 
                         auto insertedCellCount = amountToInsert * screenWidth;
 
-                        if (activeModes.has(table::mode::presets::VEM_FOLLOWING)) {
+                        if (activeModes.has(mode::presets::VEM_FOLLOWING)) {
                             std::move_backward(
                                 activeLineBegin,
                                 lineLimitAtBuffer,
@@ -1169,13 +1222,13 @@ namespace GGUI {
                             std::fill(
                                 activeLineBegin,
                                 activeLineBegin + insertedCellCount,
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         } else {
                             auto startOfAffectedArea = activeLineBegin - insertedCellCount + screenWidth;
 
                             std::move_backward(
-                                currentStates.screen.cellBuffer->begin(),
+                                currentStates.screen.buffer->begin(),
                                 startOfAffectedArea,
                                 activeLineBegin + screenWidth
                             );
@@ -1183,7 +1236,7 @@ namespace GGUI {
                             std::fill(
                                 startOfAffectedArea,
                                 activeLineBegin + screenWidth,
-                                UTF()
+                                INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         }
                     }
@@ -1349,7 +1402,7 @@ namespace GGUI {
 
                 namespace modeSettingFunctions {
                     void operate_RESET_MODE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<table::mode::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<mode::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1358,12 +1411,12 @@ namespace GGUI {
                         for (auto& p : params) {
                             auto typed = p.getValueAsInteger();
 
-                            currentStates.ecmaComponents.activeModes.set({typed, table::mode::definition::RESET});
+                            currentStates.ecmaComponents.activeModes.set({typed, mode::definition::RESET});
                         }
                     }
 
                     void operate_SET_MODE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<table::mode::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<mode::types>>*>(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1372,7 +1425,7 @@ namespace GGUI {
                         for (auto& p : params) {
                             auto typed = p.getValueAsInteger();
 
-                            currentStates.ecmaComponents.activeModes.set({typed, table::mode::definition::SET});
+                            currentStates.ecmaComponents.activeModes.set({typed, mode::definition::SET});
                         }
                     }
                 }
@@ -1515,7 +1568,7 @@ namespace GGUI {
                             params.back().getValueAsInteger()
                         };
 
-                        if (currentStates.ecmaComponents.activeModes.has(table::mode::presets::DCSM_PRESENTATION)) {
+                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates.ecmaComponents.activePresentationPosition = reporting;
                         } else {    // DCSM_DATA
                             currentStates.ecmaComponents.activeDataPosition = reporting;

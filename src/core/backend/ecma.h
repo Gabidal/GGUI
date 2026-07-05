@@ -3,6 +3,7 @@
 
 #include "../utils/types.h"
 #include "../utils/superString.h"
+#include "../utils/color.h"
 
 #include <bitset>
 #include <cassert>
@@ -34,18 +35,16 @@ namespace GGUI {
         */
         namespace ecma {
 
-            namespace table {
-                namespace configuration {
-                    class page;
-                }
+            namespace configuration {
+                class page;
             }
 
             // Extern pointing primary pages:
             // These are primarily made so that the sequences::base's are able to flash their contents into these primary pages.
             // TODO: maybe make these ptr, so that initialization is on demand.
-            extern table::configuration::page C0;
-            extern table::configuration::page C1;
-            extern table::configuration::page G0;
+            extern configuration::page C0;
+            extern configuration::page C1;
+            extern configuration::page G0;
 
             namespace table {
                 constexpr uint8_t tableRows = 16;
@@ -295,82 +294,82 @@ namespace GGUI {
                         YES             //  2nd I byte shall be present for use as indicated under "Use".
                     };
                 }
+            }
 
-                namespace configuration {
-                    // A simple helper class for cell location
-                    struct location {
-                        uint8_t column, row;
+            namespace configuration {
+                // A simple helper class for cell location
+                struct location {
+                    uint8_t column, row;
 
-                        constexpr location(uint8_t c, uint8_t r) : column(c), row(r) {}
-                        constexpr location(C0 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(C1 preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(finalWithoutIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(finalWithIntermediate preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(independentFunctions preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(parameters preset) : column(static_cast<uint8_t>(preset) / tableRows), row(static_cast<uint8_t>(preset) % tableRows) {}
-                        constexpr location(uint8_t raw) : column(raw / tableRows), row(raw % tableRows) {}
+                    constexpr location(uint8_t c, uint8_t r) : column(c), row(r) {}
+                    constexpr location(table::C0 preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
+                    constexpr location(table::C1 preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
+                    constexpr location(table::finalWithoutIntermediate preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
+                    constexpr location(table::finalWithIntermediate preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
+                    constexpr location(table::independentFunctions preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
+                    constexpr location(table::intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
+                    constexpr location(table::parameters preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
+                    constexpr location(uint8_t raw) : column(raw / table::tableRows), row(raw % table::tableRows) {}
 
-                        // Transforms the xx/yy coordinates into usable index
-                        constexpr uint8_t compute() const {
-                            return table::toInt(column, row);
-                        }
-
-                        // This way we dont need to make each page more than 96 cells.
-                        constexpr location getRelative() const {
-                            return compute() & 0x7F;
-                        }
-
-                        // Used when the column shift is known like 7bit -> 8bit
-                        constexpr location shiftToRight(columns amount) const {
-                            return location(column + static_cast<uint8_t>(amount), row);
-                        }
-
-                        // Used when the highest bit is not needed for evaluation and checking it would be unnecessary
-                        constexpr location to7bit() const {
-                            return location(table::removeHighestBit(column), row);
-                        }
-                    };
-
-                    namespace layout {
-                        class bounds {
-                        protected:
-                            //       <lower,   upper>
-                            location lower, upper;
-                        public:
-                            constexpr bounds(location Lower = 0, location Upper = 0) : lower(Lower), upper(Upper) {}
-
-                            // Get precomputed layout lower and upped bounds.
-                            constexpr std::pair<uint8_t, uint8_t> get() const {
-                                return {
-                                    lower.compute(),
-                                    upper.compute()
-                                };
-                            }
-
-                            // Returns the actual range of the enum. Accounts zero index via +1.
-                            constexpr uint16_t getSize() const {
-                                auto [lowerVal, upperVal] = get();
-                                return (upperVal - lowerVal) + 1;
-                            }
-
-                            constexpr bool in(uint8_t val) const {
-                                return val >= lower.compute() && val <= upper.compute();    // Both have equals, because of single shift load pages.
-                            }
-
-                            constexpr bool contains(bounds&& other) const {
-                                return other.lower.compute() >= lower.compute() && other.upper.compute() <= upper.compute();
-                            }
-
-                            // Promotes the location into a 8-bit field
-                            constexpr bounds to8bit() const {
-                                return bounds(lower.shiftToRight(columns::FOUR), upper.shiftToRight(columns::FOUR));
-                            }
-
-                            constexpr location getUpper() const { return upper; }
-                            constexpr location getLower() const { return lower; } 
-                        };
+                    // Transforms the xx/yy coordinates into usable index
+                    constexpr uint8_t compute() const {
+                        return table::toInt(column, row);
                     }
+
+                    // This way we dont need to make each page more than 96 cells.
+                    constexpr location getRelative() const {
+                        return compute() & 0x7F;
+                    }
+
+                    // Used when the column shift is known like 7bit -> 8bit
+                    constexpr location shiftToRight(table::columns amount) const {
+                        return location(column + static_cast<uint8_t>(amount), row);
+                    }
+
+                    // Used when the highest bit is not needed for evaluation and checking it would be unnecessary
+                    constexpr location to7bit() const {
+                        return location(table::removeHighestBit(column), row);
+                    }
+                };
+
+                namespace layout {
+                    class bounds {
+                    protected:
+                        //       <lower,   upper>
+                        location lower, upper;
+                    public:
+                        constexpr bounds(location Lower = 0, location Upper = 0) : lower(Lower), upper(Upper) {}
+
+                        // Get precomputed layout lower and upped bounds.
+                        constexpr std::pair<uint8_t, uint8_t> get() const {
+                            return {
+                                lower.compute(),
+                                upper.compute()
+                            };
+                        }
+
+                        // Returns the actual range of the enum. Accounts zero index via +1.
+                        constexpr uint16_t getSize() const {
+                            auto [lowerVal, upperVal] = get();
+                            return (upperVal - lowerVal) + 1;
+                        }
+
+                        constexpr bool in(uint8_t val) const {
+                            return val >= lower.compute() && val <= upper.compute();    // Both have equals, because of single shift load pages.
+                        }
+
+                        constexpr bool contains(bounds&& other) const {
+                            return other.lower.compute() >= lower.compute() && other.upper.compute() <= upper.compute();
+                        }
+
+                        // Promotes the location into a 8-bit field
+                        constexpr bounds to8bit() const {
+                            return bounds(lower.shiftToRight(table::columns::FOUR), upper.shiftToRight(table::columns::FOUR));
+                        }
+
+                        constexpr location getUpper() const { return upper; }
+                        constexpr location getLower() const { return lower; } 
+                    };
                 }
             }
 
@@ -452,17 +451,17 @@ namespace GGUI {
                         base(containerType value) : subNumbers({value}) {}
 
                         /**
-                        * As stated by 5.4.2.b, f, g and h
-                        * 
-                        * We expect the input to already cut by the 03/11 (';') delimeter by the calling function.
-                        * Per char, only be in range of 03/00 - 03/09 or special sub-string delimeter of 03/10 (':')
-                        */
+                         * As stated by 5.4.2.b, f, g and h
+                         * 
+                         * We expect the input to already cut by the 03/11 (';') delimeter by the calling function.
+                         * Per char, only be in range of 03/00 - 03/09 or special sub-string delimeter of 03/10 (':')
+                         */
                         base(std::string_view input, size_t& length) {
                             int32_t currentNumber = 0;
                             bool has_digit = true;          // Default true, so that ;;;; are possible.
 
-                            table::configuration::layout::bounds normalParameterCharacters = {table::parameters::ZERO, table::parameters::NINE};
-                            table::configuration::layout::bounds specialParameterCharacters = {table::parameters::FRACTION, table::parameters::PRIVATE};
+                            configuration::layout::bounds normalParameterCharacters = {table::parameters::ZERO, table::parameters::NINE};
+                            configuration::layout::bounds specialParameterCharacters = {table::parameters::FRACTION, table::parameters::PRIVATE};
 
 
                             for (char i : input) {
@@ -512,6 +511,11 @@ namespace GGUI {
                             for (size_t i = 0; i < subNumbers.size(); i++) {
                                 char convertedValue = static_cast<char>(subNumbers[i]) + (uint8_t)table::parameters::ZERO;
 
+                                // check if this isn't the last index, if so add the fraction
+                                if (i != subNumbers.size() - 1) {
+                                    result += static_cast<char>(table::parameters::FRACTION);
+                                }
+
                                 result += convertedValue;
                             }
 
@@ -522,13 +526,19 @@ namespace GGUI {
                             for (size_t i = 0; i < subNumbers.size(); i++) {
                                 char convertedValue = static_cast<char>(subNumbers[i]) + (uint8_t)table::parameters::ZERO;
 
+                                // check if this isn't the last index, if so add the fraction
+                                if (i != subNumbers.size() - 1) {
+                                    preAllocated.add(static_cast<char>(table::parameters::FRACTION));
+                                }
+
                                 preAllocated.add(convertedValue);
                             }
                         }
 
                         containerType getValueAsInteger() const { return subNumbers.front(); }
-                        std::vector<containerType> getValueAsRational() const { return subNumbers; }
+                        std::vector<containerType> getPrimaryValueAndSecondaries() const { return subNumbers; }
 
+                        bool hasSecondaries() const { return subNumbers.size() > 1; }
                     };
 
                     using numeric = base<uint32_t>;
@@ -570,7 +580,7 @@ namespace GGUI {
                     ) : intermediates(interms), function(Func) {}
 
                     std::vector<table::intermediate::identifiers> getIntermediates() const { return intermediates; }
-                    functionType getFinalByte() const { return function; }
+                    constexpr functionType getFinalByte() const { return function; }
 
                     void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
                         intermediates = newInterms;
@@ -604,9 +614,9 @@ namespace GGUI {
                 protected:
                     types type;
                 public:
-                    types getType() const { return type; }
+                    constexpr types getType() const { return type; }
 
-                    base(types t) : type(t) {}
+                    constexpr base(types t) : type(t) {}
                     virtual ~base() {}
 
                     virtual std::string toString() const { return ""; }
@@ -722,15 +732,15 @@ namespace GGUI {
                     ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(tail) {}
 
                     /**
-                    * Converts the control sequence to its string representation.
-                    * 
-                    * Control sequences follow the format:
-                    *   - 7-bit: ESC (01/11) + CSI byte (05/11) + parameters + intermediates + final byte
-                    *   - 8-bit: 8-bit CSI (09/11) + parameters + intermediates + final byte
-                    * 
-                    * Parameters are separated by ';' (03/11) delimiter.
-                    * The final byte determines if intermediates are required based on the variant held.
-                    */
+                     * Converts the control sequence to its string representation.
+                     * 
+                     * Control sequences follow the format:
+                     *   - 7-bit: ESC (01/11) + CSI byte (05/11) + parameters + intermediates + final byte
+                     *   - 8-bit: 8-bit CSI (09/11) + parameters + intermediates + final byte
+                     * 
+                     * Parameters are separated by ';' (03/11) delimiter.
+                     * The final byte determines if intermediates are required based on the variant held.
+                     */
                     std::string toString() const override {
                         std::string result = prefix::toString();
 
@@ -862,844 +872,841 @@ namespace GGUI {
             /** 
              * @brief Since this can be a 3'rd party function, we do not know the incoming sequence length, so we need to know it afterwards to skip index.
              */
-             using customSequenceParser = std::pair<size_t, sequence::base*>(*)(std::string_view);     // Odd positioning, but will do for now.
+            using customSequenceParser = std::pair<size_t, sequence::base*>(*)(std::string_view);     // Odd positioning, but will do for now.
              
-             /** 
-             * @brief This function will assume that the global `table::configuration::manager pageState` is the correct state machine to modify.
+            /** 
+             * @brief This function will assume that the global `configuration::manager pageState` is the correct state machine to modify.
              */
             using customSequenceHandler = void(*)(sequence::base*);                                   // Odd positioning, but will do for now.
 
             // Default do-nothing implementations, can be used when the sequence is only for parsing or handling.
             constexpr customSequenceHandler unSupported = [](sequence::base*){ return; };
 
-            namespace table {
+            // This is from ECMA-35
+            namespace configuration {
 
-                // This is from ECMA-35
-                namespace configuration {
+                // Use this to tell the page manager to flash with 8/7-bit C1
+                enum class bitType {
+                    _7BIT,
+                    _8BIT
+                };
 
-                    // Use this to tell the page manager to flash with 8/7-bit C1
-                    enum class bitType {
-                        _7BIT,
-                        _8BIT
-                    };
+                namespace layout {
+                    // Contains layout preset information for graphical pages like [G0, ..., G3]
+                    namespace graphical {
+                        enum class type : uint8_t {
+                            A,      // 94 character layout, example: [02/01, 07/14]
+                            B       // 96 character layout, example: [02/00, 07/15]
+                        };
 
-                    namespace layout {
-                        // Contains layout preset information for graphical pages like [G0, ..., G3]
-                        namespace graphical {
-                            enum class type : uint8_t {
-                                A,      // 94 character layout, example: [02/01, 07/14]
-                                B       // 96 character layout, example: [02/00, 07/15]
+                        // Returns a 7-bit layout, for 8-bit set most significant bit on.
+                        constexpr bounds getRelativeGraphicalPageLayout(type t) {
+                            std::array<bounds, 2> presets = {
+                                bounds({table::intermediate::identifiers::DESIGNATE_C0}, {table::independentFunctions::LS1R}),    // A
+                                bounds({table::intermediate::identifiers::ANNOUNCER}, {7, 15})                             // B
                             };
 
-                            // Returns a 7-bit layout, for 8-bit set most significant bit on.
-                            constexpr bounds getRelativeGraphicalPageLayout(type t) {
-                                std::array<bounds, 2> presets = {
-                                    bounds({intermediate::identifiers::DESIGNATE_C0}, {independentFunctions::LS1R}),    // A
-                                    bounds({intermediate::identifiers::ANNOUNCER}, {7, 15})                             // B
-                                };
-
-                                return presets[static_cast<size_t>(t)];
-                            }
+                            return presets[static_cast<size_t>(t)];
                         }
+                    }
 
-                        namespace functional {
-                            enum class type : uint8_t {
-                                C0,     // only in 7-bit, example: [C0::__min, C0::__max]
-                                C1      // 8/7-bit,       example: [C1::__min, C1::__max]
+                    namespace functional {
+                        enum class type : uint8_t {
+                            C0,     // only in 7-bit, example: [C0::__min, C0::__max]
+                            C1      // 8/7-bit,       example: [C1::__min, C1::__max]
+                        };
+
+                        // Returns a 7-bit layout, for 8-bit set most significant bit on.
+                        constexpr bounds getRelativeFunctionalPageLayout(type t) {
+                            std::array<bounds, 2> presets = {
+                                bounds({table::C0::__min}, {table::C0::__max}),
+                                bounds({table::C1::__min}, {table::C1::__max})
                             };
 
-                            // Returns a 7-bit layout, for 8-bit set most significant bit on.
-                            constexpr bounds getRelativeFunctionalPageLayout(type t) {
-                                std::array<bounds, 2> presets = {
-                                    bounds({C0::__min}, {C0::__max}),
-                                    bounds({C1::__min}, {C1::__max})
-                                };
-
-                                return presets[static_cast<size_t>(t)];
-                            }
+                            return presets[static_cast<size_t>(t)];
                         }
-
-                        constexpr uint16_t MAXIMUM_SIZE = UINT8_MAX + 1;
                     }
 
-                    /**
-                     * @brief Character repertoire categories for ECMA-35 character set management.
-                     * 
-                     * These repertoires define the different character sets that can be loaded
-                     * and managed by the ECMA-35 terminal emulator. Each repertoire represents
-                     * a distinct character coding namespace.
-                     */
-                    enum class repertoire : uint8_t {
-                        C0,        // Contains C0 repertoires
-                        C1,        // Contains C1 repertoires
-
-                        G0,         // LS0, Primary character set (typically ASCII)
-                        G1,         // LS1, LS1R, Graphic set 1 (left-side)
-                        G2,         // LS2, SS2, LS2R, Graphic set 2 (left-side)
-                        G3,         // LS3, SS3, LS3R, Graphic set 3 (left-side)
-
-                        __max,       // Sentinel value for array sizing
-                    };
-                    
-                    /**
-                     * @brief Lifetime management for character pages.
-                     * 
-                     * Controls how long pages remain loaded in memory. Pages can be
-                     * permanently loaded (LOCKING), temporarily loaded (TEMPORARY),
-                     * or unloaded (UNLOADED).
-                     */
-                    namespace lifetime {
-                        enum class types : uint8_t {
-                            UNLOADED,
-                            LOCKING,
-                            TEMPORARY
-                        };
-                        
-                        struct base {
-                            layout::bounds range = {0, 0};
-                            types type = types::UNLOADED;
-                        };
-                    }
-
-                    // A simple data structure representing a cell in the character page, containing a handler and a parser for the incoming data stream
-                    struct cell {
-                        // customSequenceParser parser;
-                        customSequenceHandler handler;      // Maybe put the sequences inside a class for class static instance label + fuction offset for smaller memory footprint?
-
-                        constexpr cell(customSequenceHandler h = unSupported) : handler(h) {}
-
-                        constexpr bool operator==(const cell& other) const {
-                            return handler == other.handler;
-                        }
-
-                        constexpr bool empty() const {
-                            return handler == unSupported;
-                        }
-                    };
-
-                    /**
-                     * @brief A page represents a collection of callable cells (handlers).
-                     */
-                    class page {
-                    public:
-                        static constexpr size_t pageWidth = layout::bounds({C0::NUL}, {7, 15}).getSize();    // full 96^n'th support
-                        static constexpr size_t pageDepth = layout::bounds({intermediate::identifiers::__min}, {intermediate::identifiers::ANNOUNCER}).getSize() + 1;    // full intermediate support
-                    protected:
-                        std::array<
-                            cell, 
-                            pageWidth * pageWidth * pageDepth       // Access by postfix->intermediate * pageWidth * pageWidth + header->func * pageWidth + finalFunction
-                        > cells;
-
-                        lifetime::base status;
-
-                        size_t getActualLocation(sequence::prefix<> header, sequence::postfix<> body) {
-                            location intermediateOffset = 0;
-
-                            for (auto inter : body.getIntermediates()) {
-                                intermediateOffset = inter;
-
-                                // As the announcer is at row = zero, for distinguishing these states we add +1 to count zero index.
-                                intermediateOffset.row += 1;
-
-                                break;  // only the introducer e.g first intermediate is needed
-                            }
-
-                            assert(intermediateOffset.row < pageDepth);    // Check that the intermediate value is within the page depth
-
-                            const size_t headerByteRelativeLocationInPage = location(header.getAsInt()).getRelative().compute();
-                            assert(status.range.in(headerByteRelativeLocationInPage));    // Check that the header byte is within the loaded area 
-
-                            const size_t finalFunctionOffset = body.getFinalByte();
-                            assert(finalFunctionOffset < pageWidth);       // Check that the final function is within the page width
-
-                            const size_t actualLocation =   intermediateOffset.row * pageWidth * pageWidth +    // Intermediate variants for page variants
-                                                            headerByteRelativeLocationInPage * pageWidth +      // Final final function cell column
-                                                            finalFunctionOffset;                                // The same header function in the column
-
-                            return actualLocation;
-                        }
-                    public:
-                        /**
-                         * @brief Default constructor initializing an empty page.
-                         * 
-                         * Initializes all cells to null and sets status to UNLOADED.
-                         */
-                        constexpr page(layout::bounds defaultLocation = {}) : cells{}, status{defaultLocation} {}
-
-                        /**
-                         * @brief Adds a cell handler at the specified absolute position.
-                         */
-                        void add(cell customFunctions, sequence::prefix<> header, sequence::postfix<> body = {}) {
-                            cells[getActualLocation(header, body)] = customFunctions; 
-                        }
-
-                        /**
-                         * @brief Gets the cell handler at the specified position.
-                         */
-                        cell get(location primitive, sequence::postfix<> body = {}) {
-                            return cells[getActualLocation(primitive.to7bit().compute(), body)];
-                        }
-
-                        cell get(sequence::base* parsed, sequence::postfix<> body) {
-                            return cells[getActualLocation(*static_cast<sequence::prefix<>*>(parsed), body)];
-                        }
-
-                        /**
-                         * @brief Gets the size of the page's active range.
-                         * 
-                         * @return uint16_t The number of positions in the current page range
-                         */
-                        constexpr uint16_t getSize() const {
-                            return status.range.getSize();
-                        }
-
-                        /**
-                         * @brief Loads the page with the specified lifetime configuration.
-                         * 
-                         * @param into The lifetime configuration specifying the range and type
-                         * 
-                         * Sets the page's active range and lifetime type. The page becomes
-                         * active and can be used for character lookups and invocations.
-                         */
-                        constexpr void load(lifetime::base into) {
-                            status = into;
-                        }
-
-                        /**
-                         * @brief Unloads the page, setting it to an empty state.
-                         * 
-                         * Resets the page's range to {0,0} and sets lifetime type to UNLOADED.
-                         * The page will no longer be active for character operations.
-                         */
-                        constexpr void unload() {
-                            load({
-                                {0, 0},
-                                lifetime::types::UNLOADED
-                            });
-                        }
-
-                        /**
-                         * @brief Gets the current lifetime configuration of this page.
-                         * 
-                         * @return lifetime::base The current lifetime status including range and type
-                         */
-                        constexpr lifetime::base getLifetime() const { return status; }
-                    };
-
-                    class cellPatch {
-                    protected:
-                        size_t getActualLocation(sequence::postfix<> body = {}) {
-                            location intermediateOffset = 0;
-
-                            for (auto inter : body.getIntermediates()) {
-                                intermediateOffset = inter;
-
-                                // As the announcer is at row = zero, for distinguishing these states we add +1 to count zero index.
-                                intermediateOffset.row += 1;
-
-                                break;  // only the introducer e.g first intermediate is needed
-                            }
-
-                            assert(intermediateOffset.row < page::pageDepth);    // Check that the intermediate value is within the page depth
-
-                            const size_t finalFunctionOffset = body.getFinalByte();
-                            assert(finalFunctionOffset < page::pageWidth);       // Check that the final function is within the page width
-
-                            const size_t actualLocation =   intermediateOffset.row * page::pageWidth +    // Intermediate variants for page variants
-                                                            finalFunctionOffset;                          // The same header function in the column
-
-                            return actualLocation;
-                        }
-                    public:
-                        const uint8_t instructionSeries;
-                        
-                        std::array<std::pair<cell, sequence::postfix<>>, page::pageWidth * page::pageDepth> patch;  // TODO: change this into a std::vector when we switch to c++20
-
-                        cellPatch(uint8_t mainInstruction) : instructionSeries(mainInstruction), patch{} {}
-
-                        template<typename enumType, typename = std::enable_if<std::is_enum_v<enumType> == true>>
-                        constexpr cellPatch(enumType mainInstruction) : instructionSeries(static_cast<uint8_t>(mainInstruction)), patch{} {}
-
-                        void add(cell customFunctions, sequence::postfix<> body = {}) {
-                            patch[getActualLocation(body)] = { customFunctions, body }; 
-                        }
-                    };
-
-                    /**
-                     * @brief Maintains a map of repertoire IDs that tracks which character set is active at each position in memory.
-                     */
-                    class manager {
-                    protected:
-                        // Contains all of the initialized pages with their usable jump blocks.
-                        std::array<page, static_cast<size_t>(repertoire::__max)> pages;
-
-                        std::array<
-                            repertoire,
-                            layout::MAXIMUM_SIZE
-                        > map;   // The loaded memory, containing the cell::repertoire jump block ID's
-                    public: 
-
-                        /**
-                         * @brief Adds a page to the repertoire at the specified position.
-                         * @param p The page to add
-                         * @param position The repertoire position where the page should be loaded
-                         */
-                        constexpr void add(page& p, repertoire position) {
-                            pages[static_cast<size_t>(position)] = p;
-                        }
-
-                        /**
-                         * @brief Used for extensions to be able to patch in their own additions to the standard
-                         */
-                        constexpr void patch(cellPatch& source, repertoire destination) {
-                            page& dest = pages[static_cast<size_t>(destination)];
-                            
-                            // Let's do some sanity checks first.
-                            assert(dest.getLifetime().range.in(source.instructionSeries));
-
-                            for (const auto& [customFunctions, body] : source.patch) {
-                                if (customFunctions.empty()) continue;
-
-                                dest.add(customFunctions, source.instructionSeries, body);
-                            }
-                        }
-
-                        /**
-                         * @brief flashes the repertoire jump block map into the initial state.
-                         */
-                        constexpr void flash(bitType mode) {
-                            // First unload all pages.
-                            for (auto& p : pages) {
-                                p.unload();
-                            }
-
-                            // Load C0
-                            pages[static_cast<size_t>(repertoire::C0)].load({
-                                layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C0),
-                                lifetime::types::LOCKING
-                            });
-
-                            // Load G0
-                            pages[static_cast<size_t>(repertoire::G0)].load({
-                                layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A),
-                                lifetime::types::LOCKING
-                            });
-
-                            enableC1(mode); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
-
-                            // Write the initialized flash state.
-                            flush();
-                        }
-
-                        /**
-                         * @brief Enables 7/8-bit C1 character set.
-                         * Loads and overrides the columns where 7/8-bit C1 overlaps with the 8-bit graphical set.
-                         * According to ecma-35, only one C1 layout can be loaded at a time.
-                         */
-                        constexpr void enableC1(bitType mode) {
-
-                            layout::bounds location = layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
-
-                            if (mode == bitType::_8BIT) location.to8bit();
-
-                            // Load and override the columns where 8-bit C1 overlaps with the 8-bit graphical set
-                            pages[static_cast<size_t>(repertoire::C1)].load({
-                                location,
-                                lifetime::types::LOCKING
-                            });
-                            
-                            flush();
-                        }
-
-                        /**
-                         * @brief Updates the page states on each read-byte operation.
-                         * Unloads any pages that were loaded for temporary use (TEMPORARY lifetime type).
-                         * Should be called for each read-byte to maintain proper page state management.
-                         */
-                        constexpr void update() {
-                            flush();    // Flush current iteration of temporaries and other goodies, next iteration after interpretation temporary is unloaded fully.
-
-                            for (auto& p : pages) {
-                                if (p.getLifetime().type == lifetime::types::TEMPORARY) {
-                                    p.unload(); // When this is UNLOADED, the flush() will override this slot with the new value automatically.
-                                }
-                            }
-                        }
-
-                        /**
-                         * @brief Flushes the loaded page states into the repertoire map.
-                         *
-                         */
-                        constexpr void flush() {
-                            // Go through the pages
-                            for (size_t i = 0; i < static_cast<size_t>(repertoire::__max); i++) {
-                                auto& page = pages[i];
-                                
-                                // Skip unloaded
-                                if (page.getLifetime().type == lifetime::types::UNLOADED) continue;
-
-                                // Fetch loaded section
-                                auto [lower, upper] = page.getLifetime().range.get();
-
-                                // Write the loaded section to the map
-                                for (size_t j = lower; j <= upper; j++) {
-                                    map[j] = static_cast<repertoire>(i);
-                                }
-                            }
-                        }
-
-                        constexpr void load(repertoire pageName, layout::bounds loadedArea, lifetime::types lifetimeType) {
-                            pages[static_cast<size_t>(pageName)].load({
-                                loadedArea,
-                                lifetimeType
-                            });
-                        }
-
-                        std::pair<size_t, sequence::base*> interpret(std::string_view input);
-                    };
-
+                    constexpr uint16_t MAXIMUM_SIZE = UINT8_MAX + 1;
                 }
 
-                namespace mode {
+                /**
+                 * @brief Character repertoire categories for ECMA-35 character set management.
+                 * 
+                 * These repertoires define the different character sets that can be loaded
+                 * and managed by the ECMA-35 terminal emulator. Each repertoire represents
+                 * a distinct character coding namespace.
+                */
+                enum class repertoire : uint8_t {
+                    C0,        // Contains C0 repertoires
+                    C1,        // Contains C1 repertoires
+
+                    G0,         // LS0, Primary character set (typically ASCII)
+                    G1,         // LS1, LS1R, Graphic set 1 (left-side)
+                    G2,         // LS2, SS2, LS2R, Graphic set 2 (left-side)
+                    G3,         // LS3, SS3, LS3R, Graphic set 3 (left-side)
+
+                    __max,       // Sentinel value for array sizing
+                };
+                
+                /**
+                 * @brief Lifetime management for character pages.
+                 * 
+                 * Controls how long pages remain loaded in memory. Pages can be
+                 * permanently loaded (LOCKING), temporarily loaded (TEMPORARY),
+                 * or unloaded (UNLOADED).
+                */
+                namespace lifetime {
                     enum class types : uint8_t {
-                        NONE,       // Only for internal use
-
-                        __min = 1,      // For internal automation
-
-                        GUARDED_AREA_TRANSFER_MODE          = 1,                // (GATM)
-                        KEYBOARD_ACTION_MODE,                                   // (KAM)
-                        CONTROL_REPRESENTATION_MODE,                            // (CRM)
-                        INSERTION_REPLACEMENT_MODE,                             // (IRM)
-                        STATUS_REPORT_TRANSFER_MODE,                            // (SRTM)
-                        ERASURE_MODE,                                           // (ERM)
-                        LINE_EDITING_MODE,                                      // (VEM)
-                        BI_DIRECTIONAL_SUPPORT_MODE,                            // (BDSM)
-                        DEVICE_COMPONENT_SELECT_MODE,                           // (DCSM)
-                        CHARACTER_EDITING_MODE,                                 // (HEM)
-                        POSITIONING_UNIT_MODE,                                  // (PUM)
-                        SEND_RECEIVE_MODE,                                      // (SRM)
-                        FORMAT_EFFECTOR_ACTION_MODE,                            // (FEAM)
-                        FORMAT_EFFECTOR_TRANSFER_MODE,                          // (FETM)
-                        MULTIPLE_AREA_TRANSFER_MODE,                            // (MATM)
-                        TRANSFER_TERMINATION_MODE,                              // (TTM)
-                        SELECTED_AREA_TRANSFER_MODE,                            // (SATM)
-                        TABULATION_STOP_MODE                = 18,               // (TSM)
-                        GRAPHIC_RENDITION_COMBINATION_MODE  = 21,               // (GRCM)
-                        ZERO_DEFAULT_MODE,                                      // (ZDM)
-
-                        __max = ZERO_DEFAULT_MODE     // For internal automation
+                        UNLOADED,
+                        LOCKING,
+                        TEMPORARY
                     };
-
-                    enum class definition : bool {
-                        RESET       = false,    // (RM)
-                        SET         = true      // (SM)
-                    };
-
-                    template<typename enumType = mode::types>
-                    class flags;
                     
-                    template<typename enumType>
                     struct base {
-                        enumType    index = enumType::NONE;         // Tells the bitmask where to set the value
-                        definition  value;                          // Is the data being set/reset on that index
-                        
-                        base(enumType idx, definition val) : index(idx), value(val) {}
-
-                        template<typename rawValueType, typename = std::enable_if<(sizeof(enumType) == sizeof(rawValueType))>>
-                        base(rawValueType idx, definition val) : index(static_cast<enumType>(idx)), value(val) {}
-                        
-                        flags<enumType> operator|(base other) const {
-                            return flags(*this) | flags(other);
-                        }
+                        layout::bounds range = {0, 0};
+                        types type = types::UNLOADED;
                     };
-                    
-                    template<typename enumType>
-                    class flags {
-                    protected:
-                        std::bitset<(size_t)enumType::__max> data = 0;
-                    public:
-                        constexpr static flags empty() { return flags(); }
+                }
 
-                        // Simple setter
-                        void set(base<enumType> val) { data.set(static_cast<size_t>(val.index), (bool)val.value); }
+                // A simple data structure representing a cell in the character page, containing a handler and a parser for the incoming data stream
+                struct cell {
+                    // customSequenceParser parser;
+                    customSequenceHandler handler;      // Maybe put the sequences inside a class for class static instance label + fuction offset for smaller memory footprint?
 
-                        // Simple getter
-                        definition get(enumType index) const { return static_cast<definition>(data.test(static_cast<size_t>(index))); }
+                    constexpr cell(customSequenceHandler h = unSupported) : handler(h) {}
 
-                        // used for group detection
-                        bool has(flags others) const { return (data & others.data) == others.data; }
-
-                        flags(base<enumType> startingValue) { set(startingValue); }
-                        flags() = default;
-
-                        flags operator|(flags other) const {
-                            flags result(*this);
-                            result.data |= other.data;
-                            return result;
-                        }
-                    };
-
-                    namespace presets {
-                        /**
-                         * @brief Control functions are performed in the data component or in the presentation component, 
-                         * depending on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).
-                         */
-                        inline const base BDSM_EXPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::RESET   };
-
-                        /**
-                         * @brief Control functions are performed in the data component. All bi-directional aspects of data are handled by the device itself. 
-                         */
-                        inline const base BDSM_IMPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::SET     };
-
-                        /**
-                         * @brief All control functions are performed as defined; 
-                         * the way formator functions are processed depends on the setting of the FORMAT EFFECTOR ACTION MODE (FEAM). 
-                         * A device may choose to image the graphical representations of control functions in addition to performing them. 
-                         * NOTE: All control functions, except RM, are affected. 
-                         */
-                        inline const base CRM_CONTROL               = {     types::CONTROL_REPRESENTATION_MODE,         definition::RESET   };
-
-                        /**
-                         * @brief All control functions, except RESET MODE (RM), are treated as graphic characters. 
-                         * A device may choose to perform some control functions in addition to storing them and imaging their graphical representations. 
-                         * NOTE: All control functions, except RM, are affected. 
-                         */
-                        inline const base CRM_GRAPHIC               = {     types::CONTROL_REPRESENTATION_MODE,         definition::SET     };
-
-                        /**
-                         * @brief Certain control functions are performed in the presentation component. 
-                         The active presentation position (or the active line, where applicable) in the presentation component is the reference position against which the relevant control functions are performed. 
-                         * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
-                         */
-                        inline const base DCSM_PRESENTATION         = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::RESET   };
-
-                        /**
-                         * @brief Certain control functions are performed in the data component. 
-                         * The active data position (or the active line, where applicable) in the data component is the reference position against which the relevant control functions are performed. 
-                         * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
-                         */
-                        inline const base DCSM_DATA                 = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::SET     };
-
-                        /**
-                         * @brief Only the contents of unprotected areas are affected by an erasure control function. 
-                         * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
-                         */
-                        inline const base ERM_PROTECT               = {     types::ERASURE_MODE,                         definition::RESET   };
-                        
-                        /**
-                         * @brief The contents of protected as well as of unprotected areas are affected by an erasure control function. 
-                         * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
-                         */
-                        inline const base ERM_ALL                   = {     types::ERASURE_MODE,                         definition::SET     };
-
-                        /**
-                         * @brief Formator functions are performed immediately and may be stored in addition to being performed.
-                         * NOTE: Control functions affected are: BPH, BS, CR, DTA, FF, FNT, GCC, GSM, GSS, HPA, HPB, HPR, HT, 
-                         * HTJ, HTS, HVP, JFY, NEL, PEC, PFS, PLD, PLU, PPA, PPB, PPR, PTX, QUAD, RI, SACS, SAPV, 
-                         * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
-                         * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
-                         */
-                        inline const base FEAM_EXECUTE              = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::RESET   };
-
-                        /**
-                         * @brief Formator functions are stored but not performed. 
-                         * In this case, the specified action is intended to be performed by another device when the associated data are transmitted or transferred.
-                         * NOTE: Control functions affected are: BPH, BS, CR, DTA, FF, FNT, GCC, GSM, GSS, HPA, HPB, HPR, HT, 
-                         * HTJ, HTS, HVP, JFY, NEL, PEC, PFS, PLD, PLU, PPA, PPB, PPR, PTX, QUAD, RI, SACS, SAPV, 
-                         * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
-                         * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
-                         */
-                        inline const base FEAM_STORE                = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::SET     };
-
-                        /**
-                         * @brief Formator functions may be inserted in a data stream to be transmitted or in data to be transferred to an auxiliary input/output device.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base FETM_INSERT               = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::RESET   };
-
-                        /**
-                         * @brief No formator functions other than those received while the FORMAT EFFECTOR ACTION MODE (FEAM) is set to STORE are included in a transmitted data stream or in data transferred to an auxiliary input/output device.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base FETM_EXCLUDE              = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::SET     };
-
-                        /**
-                         * @brief Only the contents of unguarded areas in an eligible area are transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base GATM_GUARD                = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::RESET   };
-
-                        /**
-                         * @brief The contents of guarded as well as of unguarded areas in an eligible area are transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base GATM_ALL                  = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::SET     };
-
-                        /**
-                         * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) cancels the effect of any preceding occurrence. 
-                         * Any graphic rendition aspects that are to remain unchanged after an occurrence of SGR have to be re-specified by that SGR.
-                         * NOTE: Control function affected is SGR.
-                         */
-                        inline const base GRCM_REPLACING            = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::RESET   };
-
-                        /**
-                         * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) causes only those graphic rendition aspects to be changed that are specified by that SGR. 
-                         * All other graphic rendition aspects remain unchanged.
-                         * NOTE: Control function affected is SGR.
-                         */
-                        inline const base GRCM_CUMULATIVE           = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::SET     };
-
-                        /**
-                         * @brief This mode is dependant of the following conditions:
-                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a character insertion causes the contents of the active presentation position and of the following character positions in the presentation component to be shifted in the direction of the character path; a character deletion causes the contents of the character positions following the active presentation position to be shifted in the direction opposite to that of the character path.
-                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of the following character positions in the data component to be shifted in the direction of the character progression; a character deletion causes the contents of the character positions following the active data position to be shifted in the direction opposite to that of the character progression.
-                         * NOTE: Control functions affected are: DCH, ICH.
-                         */
-                        inline const base HEM_FOLLOWING             = {     types::CHARACTER_EDITING_MODE,               definition::RESET   };
-
-                        /**
-                         * @brief This mode is dependant of the following conditions:
-                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a character insertion causes the contents of the active presentation position and of the following character positions in the presentation component to be shifted in the direction opposite to that of the character path; a character deletion causes the contents of the character positions following the active presentation position to be shifted in the direction of the character path.
-                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of preceding character positions in the data component to be shifted in the direction opposite to that of the character progression; a character deletion causes the contents of the character positions preceding the active data position to be shifted in the direction of the character progression.
-                         * NOTE: Control functions affected are: DCH, ICH.
-                         */
-                        inline const base HEM_PRECEDING             = {     types::CHARACTER_EDITING_MODE,               definition::SET     };
-
-                        /**
-                         * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, replaces (or, depending upon the implementation, is combined with) the graphic symbol imaged at the active presentation position.
-                         * NOTE: Only control functions for which a graphical representation is required are affected.
-                         */
-                        inline const base IRM_REPLACE               = {     types::INSERTION_REPLACEMENT_MODE,           definition::RESET   };
-
-                        /**
-                         * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, is inserted at the active presentation position.
-                         * NOTE: Only control functions for which a graphical representation is required are affected.
-                         */
-                        inline const base IRM_INSERT                = {     types::INSERTION_REPLACEMENT_MODE,           definition::SET     };
-
-                        /**
-                         * @brief All or part of the manual input facilities are enabled to be used.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base KAM_ENABLED               = {     types::KEYBOARD_ACTION_MODE,                 definition::RESET   };
-
-                        /**
-                         * @brief All or part of the manual input facilities are disabled.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base KAM_DISABLED              = {     types::KEYBOARD_ACTION_MODE,                 definition::SET     };
-
-                        /**
-                         * @brief Only the contents of the selected area which contains the active presentation position are eligible to be transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base MATM_SINGLE               = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::RESET   };
-
-                        /**
-                         * @brief The contents of all selected areas are eligible to be transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base MATM_MULTIPLE             = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::SET     };
-
-                        // skip PUM - POSITIONING UNIT MODE, since Annex F.4.1
-                        
-                        /**
-                         * @brief Only the contents of selected areas are eligible to be transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base SATM_SELECT               = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::RESET   };
-
-                        /**
-                         * @brief The contents of all character positions, irrespective of any explicitly defined selected areas, are eligible to be transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base SATM_ALL                  = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::SET     };
-
-                        /**
-                         * @brief Data which are locally entered are immediately imaged.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base SRM_MONITOR               = {     types::SEND_RECEIVE_MODE,                    definition::RESET   };
-
-                        /**
-                         * @brief Local input facilities are logically disconnected from the output mechanism; only data which are sent to the device are imaged.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base SRM_SIMULTANEOUS          = {     types::SEND_RECEIVE_MODE,                    definition::SET     };
-
-                        /**
-                         * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are not generated automatically.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base SRTM_NORMAL               = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::RESET   };
-
-                        /**
-                         * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are included in every data stream transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base SRTM_DIAGNOSTIC           = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::SET     };
-
-                        /**
-                         * @brief Character tabulation stops in the presentation component are set or cleared in the active line (the line that contains the active presentation position) and in the corresponding character positions of the preceding lines and of the following lines.
-                         * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
-                         */
-                        inline const base TSM_MULTIPLE              = {     types::TABULATION_STOP_MODE,                 definition::RESET   };
-
-                        /**
-                         * @brief Character tabulation stops in the presentation component are set or cleared in the active line only.
-                         * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
-                         */
-                        inline const base TSM_SINGLE                = {     types::TABULATION_STOP_MODE,                 definition::SET     };
-
-                        /**
-                         * @brief Only the contents of the character positions preceding the active presentation position in the presentation component are eligible to be transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base TTM_CURSOR                = {     types::TRANSFER_TERMINATION_MODE,            definition::RESET   };
-
-                        /**
-                         * @brief The contents of character positions preceding, following, and at the active presentation position are eligible to be transmitted or transferred.
-                         * NOTE: No control functions are affected.
-                         */
-                        inline const base TTM_ALL                   = {     types::TRANSFER_TERMINATION_MODE,            definition::SET     };
-
-                        /**
-                         * @brief This mode is dependant of the following conditions:
-                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a line insertion causes the contents of the active line (the line that contains the active presentation position) and of the following lines in the presentation component to be shifted in the direction of the line progression; a line deletion causes the contents of the lines following the active line to be shifted in the direction opposite to that of the line progression.
-                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the following lines in the data component to be shifted in the direction of the line progression; a line deletion causes the contents of the lines following the active line to be shifted in the direction opposite to that of the line progression.
-                         * NOTE: Control functions affected are: DL, IL.
-                         */
-                        inline const base VEM_FOLLOWING             = {     types::LINE_EDITING_MODE,                    definition::RESET   };
-
-                        /**
-                         * @brief This mode is dependant of the following conditions: 
-                         * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a line insertion causes the contents of the active line (the line that contains the active presentation position) and of the preceding lines to be shifted in the direction opposite to that of the line progression; a line deletion causes the contents of the lines preceding the active line to be shifted in the direction of the line progression.
-                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the preceding lines to be shifted in the direction opposite to that of the line progression; a line deletion causes the contents of the lines preceding the active line to be shifted in the direction of the line progression.
-                         * NOTE: Control functions affected are: DL, IL.
-                         */
-                        inline const base VEM_PRECEDING             = {     types::LINE_EDITING_MODE,                    definition::SET     };
-
-                        // skip ZDM - ZERO DEFAULT MODE, since Annex F.4.2
+                    constexpr bool operator==(const cell& other) const {
+                        return handler == other.handler;
                     }
 
-                    namespace group {
-                        /**
-                         * @brief GUARDED AREA TRANSFER MODE (GATM), MULTIPLE AREA TRANSFER MODE (MATM), 
-                         * SELECTED AREA TRANSFER MODE (SATM), and TRANSFER TERMINATION MODE (TTM)
-                         * These modes have a combined effect on the format of a transmitted data stream or of a data stream transferred to an auxiliary input/output device, as described hereafter.
-                         * The term "active selected area" is used to denote the selected area in the presentation component containing the active presentation position.
-                         * The term "eligible" is used for denoting any area which may be considered for transmitting or transferring. 
-                         * If the active presentation position is not within a selected area, the format of the data stream in the first and fourth case above is not defined by this Standard. 
-                         */
-                        namespace guardedTransfer {
-                            /**
-                             * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to SINGLE, then the contents of the active selected area, up to but excluding the active presentation position, are eligible.  
-                             */
-                            inline const flags TTM_CURSOR_SATM_SELECT_MATM_SINGLE                   = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_SINGLE;
+                    constexpr bool empty() const {
+                        return handler == unSupported;
+                    }
+                };
+
+                /**
+                 * @brief A page represents a collection of callable cells (handlers).
+                 */
+                class page {
+                public:
+                    static constexpr size_t pageWidth = layout::bounds({table::C0::NUL}, {7, 15}).getSize();    // full 96^n'th support
+                    static constexpr size_t pageDepth = layout::bounds({table::intermediate::identifiers::__min}, {table::intermediate::identifiers::ANNOUNCER}).getSize() + 1;    // full intermediate support
+                protected:
+                    std::array<
+                        cell, 
+                        pageWidth * pageWidth * pageDepth       // Access by postfix->intermediate * pageWidth * pageWidth + header->func * pageWidth + finalFunction
+                    > cells;
+
+                    lifetime::base status;
+
+                    size_t getActualLocation(sequence::prefix<> header, sequence::postfix<> body) {
+                        location intermediateOffset = 0;
+
+                        for (auto inter : body.getIntermediates()) {
+                            intermediateOffset = inter;
+
+                            // As the announcer is at row = zero, for distinguishing these states we add +1 to count zero index.
+                            intermediateOffset.row += 1;
+
+                            break;  // only the introducer e.g first intermediate is needed
+                        }
+
+                        assert(intermediateOffset.row < pageDepth);    // Check that the intermediate value is within the page depth
+
+                        const size_t headerByteRelativeLocationInPage = location(header.getAsInt()).getRelative().compute();
+                        assert(status.range.in(headerByteRelativeLocationInPage));    // Check that the header byte is within the loaded area 
+
+                        const size_t finalFunctionOffset = body.getFinalByte();
+                        assert(finalFunctionOffset < pageWidth);       // Check that the final function is within the page width
+
+                        const size_t actualLocation =   intermediateOffset.row * pageWidth * pageWidth +    // Intermediate variants for page variants
+                                                        headerByteRelativeLocationInPage * pageWidth +      // Final final function cell column
+                                                        finalFunctionOffset;                                // The same header function in the column
+
+                        return actualLocation;
+                    }
+                public:
+                    /**
+                        * @brief Default constructor initializing an empty page.
+                        * 
+                        * Initializes all cells to null and sets status to UNLOADED.
+                        */
+                    constexpr page(layout::bounds defaultLocation = {}) : cells{}, status{defaultLocation} {}
+
+                    /**
+                        * @brief Adds a cell handler at the specified absolute position.
+                        */
+                    void add(cell customFunctions, sequence::prefix<> header, sequence::postfix<> body = {}) {
+                        cells[getActualLocation(header, body)] = customFunctions; 
+                    }
+
+                    /**
+                        * @brief Gets the cell handler at the specified position.
+                        */
+                    cell get(location primitive, sequence::postfix<> body = {}) {
+                        return cells[getActualLocation(primitive.to7bit().compute(), body)];
+                    }
+
+                    cell get(sequence::base* parsed, sequence::postfix<> body) {
+                        return cells[getActualLocation(*static_cast<sequence::prefix<>*>(parsed), body)];
+                    }
+
+                    /**
+                        * @brief Gets the size of the page's active range.
+                        * 
+                        * @return uint16_t The number of positions in the current page range
+                        */
+                    constexpr uint16_t getSize() const {
+                        return status.range.getSize();
+                    }
+
+                    /**
+                        * @brief Loads the page with the specified lifetime configuration.
+                        * 
+                        * @param into The lifetime configuration specifying the range and type
+                        * 
+                        * Sets the page's active range and lifetime type. The page becomes
+                        * active and can be used for character lookups and invocations.
+                        */
+                    constexpr void load(lifetime::base into) {
+                        status = into;
+                    }
+
+                    /**
+                        * @brief Unloads the page, setting it to an empty state.
+                        * 
+                        * Resets the page's range to {0,0} and sets lifetime type to UNLOADED.
+                        * The page will no longer be active for character operations.
+                        */
+                    constexpr void unload() {
+                        load({
+                            {0, 0},
+                            lifetime::types::UNLOADED
+                        });
+                    }
+
+                    /**
+                        * @brief Gets the current lifetime configuration of this page.
+                        * 
+                        * @return lifetime::base The current lifetime status including range and type
+                        */
+                    constexpr lifetime::base getLifetime() const { return status; }
+                };
+
+                class cellPatch {
+                protected:
+                    size_t getActualLocation(sequence::postfix<> body = {}) {
+                        location intermediateOffset = 0;
+
+                        for (auto inter : body.getIntermediates()) {
+                            intermediateOffset = inter;
+
+                            // As the announcer is at row = zero, for distinguishing these states we add +1 to count zero index.
+                            intermediateOffset.row += 1;
+
+                            break;  // only the introducer e.g first intermediate is needed
+                        }
+
+                        assert(intermediateOffset.row < page::pageDepth);    // Check that the intermediate value is within the page depth
+
+                        const size_t finalFunctionOffset = body.getFinalByte();
+                        assert(finalFunctionOffset < page::pageWidth);       // Check that the final function is within the page width
+
+                        const size_t actualLocation =   intermediateOffset.row * page::pageWidth +    // Intermediate variants for page variants
+                                                        finalFunctionOffset;                          // The same header function in the column
+
+                        return actualLocation;
+                    }
+                public:
+                    const uint8_t instructionSeries;
+                    
+                    std::array<std::pair<cell, sequence::postfix<>>, page::pageWidth * page::pageDepth> patch;  // TODO: change this into a std::vector when we switch to c++20
+
+                    cellPatch(uint8_t mainInstruction) : instructionSeries(mainInstruction), patch{} {}
+
+                    template<typename enumType, typename = std::enable_if<std::is_enum_v<enumType> == true>>
+                    constexpr cellPatch(enumType mainInstruction) : instructionSeries(static_cast<uint8_t>(mainInstruction)), patch{} {}
+
+                    void add(cell customFunctions, sequence::postfix<> body = {}) {
+                        patch[getActualLocation(body)] = { customFunctions, body }; 
+                    }
+                };
+
+                /**
+                    * @brief Maintains a map of repertoire IDs that tracks which character set is active at each position in memory.
+                    */
+                class manager {
+                protected:
+                    // Contains all of the initialized pages with their usable jump blocks.
+                    std::array<page, static_cast<size_t>(repertoire::__max)> pages;
+
+                    std::array<
+                        repertoire,
+                        layout::MAXIMUM_SIZE
+                    > map;   // The loaded memory, containing the cell::repertoire jump block ID's
+                public: 
+
+                    /**
+                        * @brief Adds a page to the repertoire at the specified position.
+                        * @param p The page to add
+                        * @param position The repertoire position where the page should be loaded
+                        */
+                    constexpr void add(page& p, repertoire position) {
+                        pages[static_cast<size_t>(position)] = p;
+                    }
+
+                    /**
+                        * @brief Used for extensions to be able to patch in their own additions to the standard
+                        */
+                    constexpr void patch(cellPatch& source, repertoire destination) {
+                        page& dest = pages[static_cast<size_t>(destination)];
                         
-                            /**
-                             * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to MULTIPLE, then the contents of any selected area, up to but excluding the active presentation position, are eligible.  
-                             */
-                            inline const flags TTM_CURSOR_SATM_SELECT_MATM_MULTIPLE                 = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_MULTIPLE;
+                        // Let's do some sanity checks first.
+                        assert(dest.getLifetime().range.in(source.instructionSeries));
 
-                            /**
-                             * @brief If the TTM is set to CURSOR and the SATM to ALL, then the contents of the buffer up to but excluding the active presentation position, are eligible. 
-                             */
-                            inline const flags TTM_CURSOR_SATM_ALL                                  = presets::TTM_CURSOR | presets::SATM_ALL;
+                        for (const auto& [customFunctions, body] : source.patch) {
+                            if (customFunctions.empty()) continue;
 
-                            /**
-                             * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to SINGLE, then the complete contents of the active selected area are eligible. 
-                             */
-                            inline const flags TTM_ALL_SATM_SELECT_MATM_SINGLE                      = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_SINGLE;
-
-                            /**
-                             * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to MULTIPLE, then the complete contents of all selected areas are eligible. 
-                             */
-                            inline const flags TTM_ALL_SATM_SELECT_MATM_MULTIPLE                    = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_MULTIPLE;
-
-                            /**
-                             * @brief If the TTM and the SATM are both set to ALL, then the complete contents of the buffer are eligible. 
-                             */
-                            inline const flags TTM_ALL_SATM_ALL                                     = presets::TTM_ALL | presets::SATM_ALL;
-
-                            /**
-                             * @brief If the GATM is set to GUARD, the contents of the eligible area or areas are transmitted or transferred, 
-                             * except for the contents of guarded areas which are completely contained within an eligible area. 
-                             * In the case where a guarded area is only partly contained within an eligible area, 
-                             * the contents of the part contained in the eligible area may be transmitted or not, depending on the implementation. 
-                             */
-                            inline const base GATM_GUARD                                            = presets::GATM_GUARD;
-
-                            /**
-                             * @brief If the GATM is set to ALL, guarded as well as unguarded data in an eligible area are transmitted or transferred. 
-                             */
-                            inline const base GATM_ALL                                              = presets::GATM_ALL;
+                            dest.add(customFunctions, source.instructionSeries, body);
                         }
+                    }
+
+                    /**
+                        * @brief flashes the repertoire jump block map into the initial state.
+                        */
+                    constexpr void flash(bitType mode) {
+                        // First unload all pages.
+                        for (auto& p : pages) {
+                            p.unload();
+                        }
+
+                        // Load C0
+                        pages[static_cast<size_t>(repertoire::C0)].load({
+                            layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C0),
+                            lifetime::types::LOCKING
+                        });
+
+                        // Load G0
+                        pages[static_cast<size_t>(repertoire::G0)].load({
+                            layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A),
+                            lifetime::types::LOCKING
+                        });
+
+                        enableC1(mode); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
+
+                        // Write the initialized flash state.
+                        flush();
+                    }
+
+                    /**
+                        * @brief Enables 7/8-bit C1 character set.
+                        * Loads and overrides the columns where 7/8-bit C1 overlaps with the 8-bit graphical set.
+                        * According to ecma-35, only one C1 layout can be loaded at a time.
+                        */
+                    constexpr void enableC1(bitType mode) {
+
+                        layout::bounds location = layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
+
+                        if (mode == bitType::_8BIT) location.to8bit();
+
+                        // Load and override the columns where 8-bit C1 overlaps with the 8-bit graphical set
+                        pages[static_cast<size_t>(repertoire::C1)].load({
+                            location,
+                            lifetime::types::LOCKING
+                        });
+                        
+                        flush();
+                    }
+
+                    /**
+                        * @brief Updates the page states on each read-byte operation.
+                        * Unloads any pages that were loaded for temporary use (TEMPORARY lifetime type).
+                        * Should be called for each read-byte to maintain proper page state management.
+                        */
+                    constexpr void update() {
+                        flush();    // Flush current iteration of temporaries and other goodies, next iteration after interpretation temporary is unloaded fully.
+
+                        for (auto& p : pages) {
+                            if (p.getLifetime().type == lifetime::types::TEMPORARY) {
+                                p.unload(); // When this is UNLOADED, the flush() will override this slot with the new value automatically.
+                            }
+                        }
+                    }
+
+                    /**
+                        * @brief Flushes the loaded page states into the repertoire map.
+                        *
+                        */
+                    constexpr void flush() {
+                        // Go through the pages
+                        for (size_t i = 0; i < static_cast<size_t>(repertoire::__max); i++) {
+                            auto& page = pages[i];
+                            
+                            // Skip unloaded
+                            if (page.getLifetime().type == lifetime::types::UNLOADED) continue;
+
+                            // Fetch loaded section
+                            auto [lower, upper] = page.getLifetime().range.get();
+
+                            // Write the loaded section to the map
+                            for (size_t j = lower; j <= upper; j++) {
+                                map[j] = static_cast<repertoire>(i);
+                            }
+                        }
+                    }
+
+                    constexpr void load(repertoire pageName, layout::bounds loadedArea, lifetime::types lifetimeType) {
+                        pages[static_cast<size_t>(pageName)].load({
+                            loadedArea,
+                            lifetimeType
+                        });
+                    }
+
+                    std::pair<size_t, sequence::base*> interpret(std::string_view input);
+                };
+
+            }
+
+            namespace mode {
+                enum class types : uint8_t {
+                    NONE,       // Only for internal use
+
+                    __min = 1,      // For internal automation
+
+                    GUARDED_AREA_TRANSFER_MODE          = 1,                // (GATM)
+                    KEYBOARD_ACTION_MODE,                                   // (KAM)
+                    CONTROL_REPRESENTATION_MODE,                            // (CRM)
+                    INSERTION_REPLACEMENT_MODE,                             // (IRM)
+                    STATUS_REPORT_TRANSFER_MODE,                            // (SRTM)
+                    ERASURE_MODE,                                           // (ERM)
+                    LINE_EDITING_MODE,                                      // (VEM)
+                    BI_DIRECTIONAL_SUPPORT_MODE,                            // (BDSM)
+                    DEVICE_COMPONENT_SELECT_MODE,                           // (DCSM)
+                    CHARACTER_EDITING_MODE,                                 // (HEM)
+                    POSITIONING_UNIT_MODE,                                  // (PUM)
+                    SEND_RECEIVE_MODE,                                      // (SRM)
+                    FORMAT_EFFECTOR_ACTION_MODE,                            // (FEAM)
+                    FORMAT_EFFECTOR_TRANSFER_MODE,                          // (FETM)
+                    MULTIPLE_AREA_TRANSFER_MODE,                            // (MATM)
+                    TRANSFER_TERMINATION_MODE,                              // (TTM)
+                    SELECTED_AREA_TRANSFER_MODE,                            // (SATM)
+                    TABULATION_STOP_MODE                = 18,               // (TSM)
+                    GRAPHIC_RENDITION_COMBINATION_MODE  = 21,               // (GRCM)
+                    ZERO_DEFAULT_MODE,                                      // (ZDM)
+
+                    __max = ZERO_DEFAULT_MODE     // For internal automation
+                };
+
+                enum class definition : bool {
+                    RESET       = false,    // (RM)
+                    SET         = true      // (SM)
+                };
+
+                template<typename enumType = mode::types>
+                class flags;
+                
+                template<typename enumType>
+                struct base {
+                    enumType    index = enumType::NONE;         // Tells the bitmask where to set the value
+                    definition  value;                          // Is the data being set/reset on that index
+                    
+                    base(enumType idx, definition val) : index(idx), value(val) {}
+
+                    template<typename rawValueType, typename = std::enable_if<(sizeof(enumType) == sizeof(rawValueType))>>
+                    base(rawValueType idx, definition val) : index(static_cast<enumType>(idx)), value(val) {}
+                    
+                    flags<enumType> operator|(base other) const {
+                        return flags(*this) | flags(other);
+                    }
+                };
+                
+                template<typename enumType>
+                class flags {
+                protected:
+                    std::bitset<(size_t)enumType::__max> data = 0;
+                public:
+                    constexpr static flags empty() { return flags(); }
+
+                    // Simple setter
+                    void set(base<enumType> val) { data.set(static_cast<size_t>(val.index), (bool)val.value); }
+
+                    // Simple getter
+                    definition get(enumType index) const { return static_cast<definition>(data.test(static_cast<size_t>(index))); }
+
+                    // used for group detection
+                    bool has(flags others) const { return (data & others.data) == others.data; }
+
+                    flags(base<enumType> startingValue) { set(startingValue); }
+                    flags() = default;
+
+                    flags operator|(flags other) const {
+                        flags result(*this);
+                        result.data |= other.data;
+                        return result;
+                    }
+                };
+
+                namespace presets {
+                    /**
+                        * @brief Control functions are performed in the data component or in the presentation component, 
+                        * depending on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).
+                        */
+                    inline const base BDSM_EXPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::RESET   };
+
+                    /**
+                        * @brief Control functions are performed in the data component. All bi-directional aspects of data are handled by the device itself. 
+                        */
+                    inline const base BDSM_IMPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::SET     };
+
+                    /**
+                        * @brief All control functions are performed as defined; 
+                        * the way formator functions are processed depends on the setting of the FORMAT EFFECTOR ACTION MODE (FEAM). 
+                        * A device may choose to image the graphical representations of control functions in addition to performing them. 
+                        * NOTE: All control functions, except RM, are affected. 
+                        */
+                    inline const base CRM_CONTROL               = {     types::CONTROL_REPRESENTATION_MODE,         definition::RESET   };
+
+                    /**
+                        * @brief All control functions, except RESET MODE (RM), are treated as graphic characters. 
+                        * A device may choose to perform some control functions in addition to storing them and imaging their graphical representations. 
+                        * NOTE: All control functions, except RM, are affected. 
+                        */
+                    inline const base CRM_GRAPHIC               = {     types::CONTROL_REPRESENTATION_MODE,         definition::SET     };
+
+                    /**
+                        * @brief Certain control functions are performed in the presentation component. 
+                        The active presentation position (or the active line, where applicable) in the presentation component is the reference position against which the relevant control functions are performed. 
+                        * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
+                        */
+                    inline const base DCSM_PRESENTATION         = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::RESET   };
+
+                    /**
+                        * @brief Certain control functions are performed in the data component. 
+                        * The active data position (or the active line, where applicable) in the data component is the reference position against which the relevant control functions are performed. 
+                        * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
+                        */
+                    inline const base DCSM_DATA                 = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::SET     };
+
+                    /**
+                        * @brief Only the contents of unprotected areas are affected by an erasure control function. 
+                        * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
+                        */
+                    inline const base ERM_PROTECT               = {     types::ERASURE_MODE,                         definition::RESET   };
+                    
+                    /**
+                        * @brief The contents of protected as well as of unprotected areas are affected by an erasure control function. 
+                        * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
+                        */
+                    inline const base ERM_ALL                   = {     types::ERASURE_MODE,                         definition::SET     };
+
+                    /**
+                        * @brief Formator functions are performed immediately and may be stored in addition to being performed.
+                        * NOTE: Control functions affected are: BPH, BS, CR, DTA, FF, FNT, GCC, GSM, GSS, HPA, HPB, HPR, HT, 
+                        * HTJ, HTS, HVP, JFY, NEL, PEC, PFS, PLD, PLU, PPA, PPB, PPR, PTX, QUAD, RI, SACS, SAPV, 
+                        * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
+                        * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
+                        */
+                    inline const base FEAM_EXECUTE              = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::RESET   };
+
+                    /**
+                        * @brief Formator functions are stored but not performed. 
+                        * In this case, the specified action is intended to be performed by another device when the associated data are transmitted or transferred.
+                        * NOTE: Control functions affected are: BPH, BS, CR, DTA, FF, FNT, GCC, GSM, GSS, HPA, HPB, HPR, HT, 
+                        * HTJ, HTS, HVP, JFY, NEL, PEC, PFS, PLD, PLU, PPA, PPB, PPR, PTX, QUAD, RI, SACS, SAPV, 
+                        * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
+                        * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
+                        */
+                    inline const base FEAM_STORE                = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::SET     };
+
+                    /**
+                        * @brief Formator functions may be inserted in a data stream to be transmitted or in data to be transferred to an auxiliary input/output device.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base FETM_INSERT               = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::RESET   };
+
+                    /**
+                        * @brief No formator functions other than those received while the FORMAT EFFECTOR ACTION MODE (FEAM) is set to STORE are included in a transmitted data stream or in data transferred to an auxiliary input/output device.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base FETM_EXCLUDE              = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::SET     };
+
+                    /**
+                        * @brief Only the contents of unguarded areas in an eligible area are transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base GATM_GUARD                = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::RESET   };
+
+                    /**
+                        * @brief The contents of guarded as well as of unguarded areas in an eligible area are transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base GATM_ALL                  = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::SET     };
+
+                    /**
+                        * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) cancels the effect of any preceding occurrence. 
+                        * Any graphic rendition aspects that are to remain unchanged after an occurrence of SGR have to be re-specified by that SGR.
+                        * NOTE: Control function affected is SGR.
+                        */
+                    inline const base GRCM_REPLACING            = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::RESET   };
+
+                    /**
+                        * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) causes only those graphic rendition aspects to be changed that are specified by that SGR. 
+                        * All other graphic rendition aspects remain unchanged.
+                        * NOTE: Control function affected is SGR.
+                        */
+                    inline const base GRCM_CUMULATIVE           = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::SET     };
+
+                    /**
+                        * @brief This mode is dependant of the following conditions:
+                        * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a character insertion causes the contents of the active presentation position and of the following character positions in the presentation component to be shifted in the direction of the character path; a character deletion causes the contents of the character positions following the active presentation position to be shifted in the direction opposite to that of the character path.
+                        * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of the following character positions in the data component to be shifted in the direction of the character progression; a character deletion causes the contents of the character positions following the active data position to be shifted in the direction opposite to that of the character progression.
+                        * NOTE: Control functions affected are: DCH, ICH.
+                        */
+                    inline const base HEM_FOLLOWING             = {     types::CHARACTER_EDITING_MODE,               definition::RESET   };
+
+                    /**
+                        * @brief This mode is dependant of the following conditions:
+                        * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a character insertion causes the contents of the active presentation position and of the following character positions in the presentation component to be shifted in the direction opposite to that of the character path; a character deletion causes the contents of the character positions following the active presentation position to be shifted in the direction of the character path.
+                        * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of preceding character positions in the data component to be shifted in the direction opposite to that of the character progression; a character deletion causes the contents of the character positions preceding the active data position to be shifted in the direction of the character progression.
+                        * NOTE: Control functions affected are: DCH, ICH.
+                        */
+                    inline const base HEM_PRECEDING             = {     types::CHARACTER_EDITING_MODE,               definition::SET     };
+
+                    /**
+                        * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, replaces (or, depending upon the implementation, is combined with) the graphic symbol imaged at the active presentation position.
+                        * NOTE: Only control functions for which a graphical representation is required are affected.
+                        */
+                    inline const base IRM_REPLACE               = {     types::INSERTION_REPLACEMENT_MODE,           definition::RESET   };
+
+                    /**
+                        * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, is inserted at the active presentation position.
+                        * NOTE: Only control functions for which a graphical representation is required are affected.
+                        */
+                    inline const base IRM_INSERT                = {     types::INSERTION_REPLACEMENT_MODE,           definition::SET     };
+
+                    /**
+                        * @brief All or part of the manual input facilities are enabled to be used.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base KAM_ENABLED               = {     types::KEYBOARD_ACTION_MODE,                 definition::RESET   };
+
+                    /**
+                        * @brief All or part of the manual input facilities are disabled.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base KAM_DISABLED              = {     types::KEYBOARD_ACTION_MODE,                 definition::SET     };
+
+                    /**
+                        * @brief Only the contents of the selected area which contains the active presentation position are eligible to be transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base MATM_SINGLE               = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::RESET   };
+
+                    /**
+                        * @brief The contents of all selected areas are eligible to be transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base MATM_MULTIPLE             = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::SET     };
+
+                    // skip PUM - POSITIONING UNIT MODE, since Annex F.4.1
+                    
+                    /**
+                        * @brief Only the contents of selected areas are eligible to be transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base SATM_SELECT               = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::RESET   };
+
+                    /**
+                        * @brief The contents of all character positions, irrespective of any explicitly defined selected areas, are eligible to be transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base SATM_ALL                  = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::SET     };
+
+                    /**
+                        * @brief Data which are locally entered are immediately imaged.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base SRM_MONITOR               = {     types::SEND_RECEIVE_MODE,                    definition::RESET   };
+
+                    /**
+                        * @brief Local input facilities are logically disconnected from the output mechanism; only data which are sent to the device are imaged.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base SRM_SIMULTANEOUS          = {     types::SEND_RECEIVE_MODE,                    definition::SET     };
+
+                    /**
+                        * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are not generated automatically.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base SRTM_NORMAL               = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::RESET   };
+
+                    /**
+                        * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are included in every data stream transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base SRTM_DIAGNOSTIC           = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::SET     };
+
+                    /**
+                        * @brief Character tabulation stops in the presentation component are set or cleared in the active line (the line that contains the active presentation position) and in the corresponding character positions of the preceding lines and of the following lines.
+                        * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
+                        */
+                    inline const base TSM_MULTIPLE              = {     types::TABULATION_STOP_MODE,                 definition::RESET   };
+
+                    /**
+                        * @brief Character tabulation stops in the presentation component are set or cleared in the active line only.
+                        * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
+                        */
+                    inline const base TSM_SINGLE                = {     types::TABULATION_STOP_MODE,                 definition::SET     };
+
+                    /**
+                        * @brief Only the contents of the character positions preceding the active presentation position in the presentation component are eligible to be transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base TTM_CURSOR                = {     types::TRANSFER_TERMINATION_MODE,            definition::RESET   };
+
+                    /**
+                        * @brief The contents of character positions preceding, following, and at the active presentation position are eligible to be transmitted or transferred.
+                        * NOTE: No control functions are affected.
+                        */
+                    inline const base TTM_ALL                   = {     types::TRANSFER_TERMINATION_MODE,            definition::SET     };
+
+                    /**
+                        * @brief This mode is dependant of the following conditions:
+                        * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a line insertion causes the contents of the active line (the line that contains the active presentation position) and of the following lines in the presentation component to be shifted in the direction of the line progression; a line deletion causes the contents of the lines following the active line to be shifted in the direction opposite to that of the line progression.
+                        * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the following lines in the data component to be shifted in the direction of the line progression; a line deletion causes the contents of the lines following the active line to be shifted in the direction opposite to that of the line progression.
+                        * NOTE: Control functions affected are: DL, IL.
+                        */
+                    inline const base VEM_FOLLOWING             = {     types::LINE_EDITING_MODE,                    definition::RESET   };
+
+                    /**
+                        * @brief This mode is dependant of the following conditions: 
+                        * a) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, a line insertion causes the contents of the active line (the line that contains the active presentation position) and of the preceding lines to be shifted in the direction opposite to that of the line progression; a line deletion causes the contents of the lines preceding the active line to be shifted in the direction of the line progression.
+                        * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the preceding lines to be shifted in the direction opposite to that of the line progression; a line deletion causes the contents of the lines preceding the active line to be shifted in the direction of the line progression.
+                        * NOTE: Control functions affected are: DL, IL.
+                        */
+                    inline const base VEM_PRECEDING             = {     types::LINE_EDITING_MODE,                    definition::SET     };
+
+                    // skip ZDM - ZERO DEFAULT MODE, since Annex F.4.2
+                }
+
+                namespace group {
+                    /**
+                        * @brief GUARDED AREA TRANSFER MODE (GATM), MULTIPLE AREA TRANSFER MODE (MATM), 
+                        * SELECTED AREA TRANSFER MODE (SATM), and TRANSFER TERMINATION MODE (TTM)
+                        * These modes have a combined effect on the format of a transmitted data stream or of a data stream transferred to an auxiliary input/output device, as described hereafter.
+                        * The term "active selected area" is used to denote the selected area in the presentation component containing the active presentation position.
+                        * The term "eligible" is used for denoting any area which may be considered for transmitting or transferring. 
+                        * If the active presentation position is not within a selected area, the format of the data stream in the first and fourth case above is not defined by this Standard. 
+                        */
+                    namespace guardedTransfer {
+                        /**
+                            * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to SINGLE, then the contents of the active selected area, up to but excluding the active presentation position, are eligible.  
+                            */
+                        inline const flags TTM_CURSOR_SATM_SELECT_MATM_SINGLE                   = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_SINGLE;
+                    
+                        /**
+                            * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to MULTIPLE, then the contents of any selected area, up to but excluding the active presentation position, are eligible.  
+                            */
+                        inline const flags TTM_CURSOR_SATM_SELECT_MATM_MULTIPLE                 = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_MULTIPLE;
 
                         /**
-                         * @brief CONTROL REPRESENTATION MODE (CRM) and FORMAT EFFECTOR ACTION MODE (FEAM)
-                         */
-                        namespace representationFormat {
-                            /**
-                             * @brief If the CRM is set to CONTROL, and the FEAM is set to EXECUTE, all control functions are performed as defined. 
-                             */
-                            inline const flags CRM_CONTROL_FEAM_EXECUTE                             = presets::CRM_CONTROL | presets::FEAM_EXECUTE;
-
-                            /**
-                             * @brief If the CRM is set to CONTROL, and the FEAM is set to STORE, formator functions are treated as graphic characters. 
-                             */
-                            inline const flags CRM_CONTROL_FEAM_STORE                               = presets::CRM_CONTROL | presets::FEAM_STORE;
-
-                            /**
-                             * @brief If the CRM is set to GRAPHIC, all control functions except RM are treated as graphic characters. 
-                             */
-                            inline const base CRM_GRAPHIC                                           = presets::CRM_GRAPHIC;
-                        }
+                            * @brief If the TTM is set to CURSOR and the SATM to ALL, then the contents of the buffer up to but excluding the active presentation position, are eligible. 
+                            */
+                        inline const flags TTM_CURSOR_SATM_ALL                                  = presets::TTM_CURSOR | presets::SATM_ALL;
 
                         /**
-                         * @brief CHARACTER EDITING MODE (HEM) and INSERTION REPLACEMENT MODE (IRM) 
-                         * Whether the active position referred to above is the active data position in the data component or the
-                         * active presentation position in the presentation component, depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).  
-                         */
-                        namespace characterReplacement {
-                            /**
-                             * @brief If the IRM is set to REPLACE, the HEM influences the control functions DELETE CHARACTER (DCH) and INSERT CHARACTER (ICH) only. 
-                             */
-                            inline const base IRM_REPLACE                                           = presets::IRM_REPLACE;
-
-                            /**
-                             * @brief If the IRM is set to INSERT, then, in addition, the effect of the receipt of a graphic character or a
-                             * control function for which a graphical representation is required, depends on the setting of the HEM.
-                             * If the HEM is set to FOLLOWING, the implicit movement of the active position is performed normally;
-                             * if it is set to PRECEDING, the active position does not move. 
-                             */
-                            inline const flags IRM_INSERT_HEM_FOLLOWING                             = presets::IRM_INSERT | presets::HEM_FOLLOWING;
-                            inline const flags IRM_INSERT_HEM_PRECEDING                             = presets::IRM_INSERT | presets::HEM_PRECEDING;
-                        }
+                            * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to SINGLE, then the complete contents of the active selected area are eligible. 
+                            */
+                        inline const flags TTM_ALL_SATM_SELECT_MATM_SINGLE                      = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_SINGLE;
 
                         /**
-                         * @brief BI-DIRECTIONAL SUPPORT MODE (BDSM) and DEVICE COMPONENT SELECT MODE (DCSM)
-                         * NOTE: Control functions affected are: 
-                         * CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL , LF, NEL, RI, SLH, SLL, SPH, SPL.
-                         */
-                        namespace biDirectionalDevice {
-                            /**
-                             * @brief If the BDSM is set to EXPLICIT and the DCSM is set to DATA, certain control functions are performed in the data component. 
-                             */
-                            inline const flags BDSM_EXPLICIT_DCSM_DATA                              = presets::BDSM_EXPLICIT | presets::DCSM_DATA;
+                            * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to MULTIPLE, then the complete contents of all selected areas are eligible. 
+                            */
+                        inline const flags TTM_ALL_SATM_SELECT_MATM_MULTIPLE                    = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_MULTIPLE;
 
-                            /**
-                             * @brief If the BDSM is set to EXPLICIT and the DCSM is set to PRESENTATION, certain control functions are performed in the presentation component.
-                             */
-                            inline const flags BDSM_EXPLICIT_DCSM_PRESENTATION                      = presets::BDSM_EXPLICIT | presets::DCSM_PRESENTATION;
+                        /**
+                            * @brief If the TTM and the SATM are both set to ALL, then the complete contents of the buffer are eligible. 
+                            */
+                        inline const flags TTM_ALL_SATM_ALL                                     = presets::TTM_ALL | presets::SATM_ALL;
 
-                            /**
-                             * @brief If the BDSM is set to IMPLICIT, all relevant control functions are performed in the data component; 
-                             * all bi-directional aspects of the data are handled by the device itself. 
-                             * The setting of the DCSM has no effect; it is considered to be set to DATA (the reset state). 
-                             */
-                            inline const base BDSM_IMPLICIT                                         = presets::BDSM_IMPLICIT;
-                        }
+                        /**
+                            * @brief If the GATM is set to GUARD, the contents of the eligible area or areas are transmitted or transferred, 
+                            * except for the contents of guarded areas which are completely contained within an eligible area. 
+                            * In the case where a guarded area is only partly contained within an eligible area, 
+                            * the contents of the part contained in the eligible area may be transmitted or not, depending on the implementation. 
+                            */
+                        inline const base GATM_GUARD                                            = presets::GATM_GUARD;
+
+                        /**
+                            * @brief If the GATM is set to ALL, guarded as well as unguarded data in an eligible area are transmitted or transferred. 
+                            */
+                        inline const base GATM_ALL                                              = presets::GATM_ALL;
+                    }
+
+                    /**
+                        * @brief CONTROL REPRESENTATION MODE (CRM) and FORMAT EFFECTOR ACTION MODE (FEAM)
+                        */
+                    namespace representationFormat {
+                        /**
+                            * @brief If the CRM is set to CONTROL, and the FEAM is set to EXECUTE, all control functions are performed as defined. 
+                            */
+                        inline const flags CRM_CONTROL_FEAM_EXECUTE                             = presets::CRM_CONTROL | presets::FEAM_EXECUTE;
+
+                        /**
+                            * @brief If the CRM is set to CONTROL, and the FEAM is set to STORE, formator functions are treated as graphic characters. 
+                            */
+                        inline const flags CRM_CONTROL_FEAM_STORE                               = presets::CRM_CONTROL | presets::FEAM_STORE;
+
+                        /**
+                            * @brief If the CRM is set to GRAPHIC, all control functions except RM are treated as graphic characters. 
+                            */
+                        inline const base CRM_GRAPHIC                                           = presets::CRM_GRAPHIC;
+                    }
+
+                    /**
+                        * @brief CHARACTER EDITING MODE (HEM) and INSERTION REPLACEMENT MODE (IRM) 
+                        * Whether the active position referred to above is the active data position in the data component or the
+                        * active presentation position in the presentation component, depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).  
+                        */
+                    namespace characterReplacement {
+                        /**
+                            * @brief If the IRM is set to REPLACE, the HEM influences the control functions DELETE CHARACTER (DCH) and INSERT CHARACTER (ICH) only. 
+                            */
+                        inline const base IRM_REPLACE                                           = presets::IRM_REPLACE;
+
+                        /**
+                            * @brief If the IRM is set to INSERT, then, in addition, the effect of the receipt of a graphic character or a
+                            * control function for which a graphical representation is required, depends on the setting of the HEM.
+                            * If the HEM is set to FOLLOWING, the implicit movement of the active position is performed normally;
+                            * if it is set to PRECEDING, the active position does not move. 
+                            */
+                        inline const flags IRM_INSERT_HEM_FOLLOWING                             = presets::IRM_INSERT | presets::HEM_FOLLOWING;
+                        inline const flags IRM_INSERT_HEM_PRECEDING                             = presets::IRM_INSERT | presets::HEM_PRECEDING;
+                    }
+
+                    /**
+                        * @brief BI-DIRECTIONAL SUPPORT MODE (BDSM) and DEVICE COMPONENT SELECT MODE (DCSM)
+                        * NOTE: Control functions affected are: 
+                        * CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL , LF, NEL, RI, SLH, SLL, SPH, SPL.
+                        */
+                    namespace biDirectionalDevice {
+                        /**
+                            * @brief If the BDSM is set to EXPLICIT and the DCSM is set to DATA, certain control functions are performed in the data component. 
+                            */
+                        inline const flags BDSM_EXPLICIT_DCSM_DATA                              = presets::BDSM_EXPLICIT | presets::DCSM_DATA;
+
+                        /**
+                            * @brief If the BDSM is set to EXPLICIT and the DCSM is set to PRESENTATION, certain control functions are performed in the presentation component.
+                            */
+                        inline const flags BDSM_EXPLICIT_DCSM_PRESENTATION                      = presets::BDSM_EXPLICIT | presets::DCSM_PRESENTATION;
+
+                        /**
+                            * @brief If the BDSM is set to IMPLICIT, all relevant control functions are performed in the data component; 
+                            * all bi-directional aspects of the data are handled by the device itself. 
+                            * The setting of the DCSM has no effect; it is considered to be set to DATA (the reset state). 
+                            */
+                        inline const base BDSM_IMPLICIT                                         = presets::BDSM_IMPLICIT;
                     }
                 }
             }
@@ -1826,6 +1833,7 @@ namespace GGUI {
                 spacingFactor(types t = types::NORMAL) : type(t) {}
             };
 
+            // Only used to store metadata, actual colors are found in the UTFs
             class graphicAttributes {
             public:
                 enum class types : uint8_t {
@@ -1867,7 +1875,7 @@ namespace GGUI {
                     FG_MAGENTA,                                     // magenta display
                     FG_CYAN,                                        // cyan display
                     FG_WHITE,                                       // white display
-                    RESERVED_FG_COLOR,                              // (reserved for future standardization; intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                    FOREGROUND_COLOR,                               // intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
                     FG_DEFAULT,                                     // default display colour (implementation-defined)
                     BG_BLACK,                                       // black background
                     BG_RED,                                         // red background
@@ -1877,7 +1885,7 @@ namespace GGUI {
                     BG_MAGENTA,                                     // magenta background
                     BG_CYAN,                                        // cyan background
                     BG_WHITE,                                       // white background
-                    RESERVED_BG_COLOR,                              // (reserved for future standardization; intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                    BACKGROUND_COLOR,                               // intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
                     BG_DEFAULT,                                     // default background colour (implementation-defined)
                     RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
                     FRAMED,                                         // framed
@@ -1896,6 +1904,16 @@ namespace GGUI {
                     IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
                     IDEOGRAM_ATTRIBUTES_OFF                         // cancels the effect of the rendition aspects established by parameter values 60 to 64
                 };
+
+                // These are given if types::Foreground or types::Background is used, directColorTypes are appended after these via the table::parameter::FRACTION
+                enum class directColorTypes : uint8_t {
+                    NONE,           // This is usually meant for custom implementation defined, but i haven't seen anyone actually implement this.
+                    TRANSPARENT,    // 
+                    RGB,            //
+                    CMY,            //
+                    CMYK,           //
+                    INDEXED,        // Use this when selecting one of the predetermined colors from graphicAttributes::types::*
+                };
             private:
                 uint64_t bitMask = toBitMask(types::DEFAULT);
 
@@ -1905,6 +1923,14 @@ namespace GGUI {
                     return 1ULL << (static_cast<uint64_t>(t) - 1);  // This way default will stay at zero, and max is 63'th bit
                 }
             public:
+                IVector2 start;     // The end of these attributes is at the start of the next attribute.
+                RGB directColor;    // one graphical attribute holds one color...? TODO: remove this and unify styles::Base with this.
+
+                graphicAttributes(IVector2 Start) : bitMask(0), start(Start) {}
+
+                // NOTE: Since this class only contains metadata, if there is colors in the params via RGB or other formats these will be written into the terminal::screen.cellBuffer!
+                void parseArguments(std::vector<sequence::parameter::selectable<graphicAttributes::types>>& params);
+
                 void add(types t) {
                     // Special case:
                     if (t == types::IDEOGRAM_ATTRIBUTES_OFF) {
@@ -1939,9 +1965,9 @@ namespace GGUI {
                             (bitMask & tAsBitMask) != 0;   // Or atleast bits from t are present
                 }
 
-                IVector2 start, end = 0;
-
-                graphicAttributes(IVector2 Start) : bitMask(0), start(Start), end(0) {}
+                bool operator==(const graphicAttributes& other) const {
+                    return bitMask == other.bitMask;
+                }
             };
 
             enum class ancillaryStates {
@@ -1970,13 +1996,13 @@ namespace GGUI {
                  * @brief The area in the data component which contains the active data position.
                  * The area in the presentation component which contains the active presentation position
                  */
-                table::configuration::layout::bounds activeArea;
+                configuration::layout::bounds activeArea;
 
                 /**
                  * @brief The field in the data component which contains the active data position.
                  * The field in the presentation component which contains the active presentation position. 
                  */
-                table::configuration::layout::bounds activeField;
+                configuration::layout::bounds activeField;
 
                 IVector2 activeDataPosition;
                 IVector2 activePresentationPosition;
@@ -2003,7 +2029,7 @@ namespace GGUI {
                     }
                 }
 
-                table::mode::flags<> activeModes;
+                mode::flags<> activeModes;
 
                 /**
                  * @brief A reference position on a line in the data component ahead of which the active data position can normally not be moved. 
@@ -2049,9 +2075,8 @@ namespace GGUI {
                 // Spacing factors, PEC, SCS, SHS, SPI.
                 spacingFactor activeSpacingFactor;
 
-                // std::vector<
-
-                std::vector<graphicAttributes> registeredGraphicAttributes;
+                // Metadata of the rendered graphical attributes.
+                std::vector<ecma::graphicAttributes> registeredGraphicAttributes;
 
                 ancillaryStates powerStatus = ancillaryStates::UNKNOWN;
 
@@ -2066,7 +2091,7 @@ namespace GGUI {
                     activePresentationPosition = {0, 0};
                     activeCharacterMovementDirection = {0, 0};
 
-                    activeModes = table::mode::flags<>();
+                    activeModes = mode::flags<>();
 
                     homeLinePosition = {0, 0};
                     lineLimitPosition = {0, 0};
@@ -2084,7 +2109,7 @@ namespace GGUI {
                     registeredJustifications.clear();
                     lineContinuations.clear();
                     activeSpacingFactor = spacingFactor();
-                    registeredGraphicAttributes.clear();
+                    // registeredGraphicAttributes.clear();
 
                     powerStatus = ancillaryStates::UNKNOWN;
                 }
@@ -2108,10 +2133,10 @@ namespace GGUI {
                     base(
                         U code,
                         std::array<parameterType, paramCount> defaultParamValues = {},
-                        table::configuration::cell functionality = {},
-                        table::configuration::page* page = nullptr     // Give empty for automatic page detection
+                        configuration::cell functionality = {},
+                        configuration::page* page = nullptr     // Give empty for automatic page detection
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
-                        if (functionality == table::configuration::cell())  return; // Nothing todo here.
+                        if (functionality == configuration::cell())  return; // Nothing todo here.
 
                         if (page == nullptr) {  // Automatic page deduction
                             // All codes must be that of prefix
@@ -2135,10 +2160,10 @@ namespace GGUI {
                     base(
                         U code,
                         std::array<parameterType, paramCount> defaultParamValues,
-                        table::configuration::cell functionality,
-                        table::configuration::cellPatch* customCellFunctions
+                        configuration::cell functionality,
+                        configuration::cellPatch* customCellFunctions
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
-                        if (functionality == table::configuration::cell())  return; // Nothing todo here.
+                        if (functionality == configuration::cell())  return; // Nothing todo here.
 
                         sequence::postfix<> tail = function.getPostfix();
 
@@ -3842,7 +3867,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<table::mode::types>>, sequence::parameter::selectable<table::mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::control<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::RM), {}, {operate_RESET_MODE});
+                    inline base<sequence::control<sequence::parameter::selectable<mode::types>>, sequence::parameter::selectable<mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::control<sequence::parameter::selectable<mode::types>>(table::finalWithoutIntermediate::RM), {}, {operate_RESET_MODE});
 
                     /**
                      * @brief SM causes the modes of the receiving device to be set as specified by the parameter values.
@@ -3851,7 +3876,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<table::mode::types>>, sequence::parameter::selectable<table::mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::control<sequence::parameter::selectable<table::mode::types>>(table::finalWithoutIntermediate::SM), {}, {operate_SET_MODE});
+                    inline base<sequence::control<sequence::parameter::selectable<mode::types>>, sequence::parameter::selectable<mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::control<sequence::parameter::selectable<mode::types>>(table::finalWithoutIntermediate::SM), {}, {operate_SET_MODE});
                 }
 
                 namespace transmissionControlFunctions {
