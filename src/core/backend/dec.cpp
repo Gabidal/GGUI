@@ -45,6 +45,8 @@ namespace GGUI {
                                 assert(false);
                             }
                         }
+
+                        TODO("add confidence test handler, whatever that means for an interpreter.")
                     }
 
                     namespace modeSettingFunctions {

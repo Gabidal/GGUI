@@ -97,7 +97,8 @@ namespace GGUI{
 
                         if (!identicalFrame){
                             if (SETTINGS::enableDRM) {
-                                // DRM::sendBuffer(*terminal::currentStates->screen.buffer);     // TODO: do something about this...
+                                // DRM::sendBuffer(*terminal::currentStates->screen.buffer);
+                                TODO("Implement DRM::sendBuffer() to accept compactString instead of std::vector<UTF> for better performance and memory efficiency.")
                             }
                             else {
                                 // ENCODE for optimize

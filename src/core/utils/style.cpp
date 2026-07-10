@@ -6,6 +6,8 @@
 
 #include "utils.h"
 
+TODO("add capability to call reportStack in Styles.h")
+
 namespace GGUI{
 
     /**
@@ -371,7 +373,7 @@ namespace GGUI{
     }
 
     INTERNAL::STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
-        // TODO: Remove this with 0.1.9, with de-standardization of std::string.
+        TODO("Remove this with 0.1.9, with de-standardization of std::string.")
         std::string tmp = std::string(value.text, value.size);
 
         owner->setName(tmp);

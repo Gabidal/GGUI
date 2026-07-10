@@ -1883,7 +1883,6 @@ namespace GGUI{
                                         continue;
                                     }
                                     else{
-                                        // TODO: report miscarried event job.
                                         INTERNAL::reportStack("Job '" + currentEventHandler->ID + "' failed!");
                                     }
                                 }

@@ -4,6 +4,7 @@
 #include "types.h"
 #include "logger.h"
 #include "color.h"
+#include "utils.h"
 
 #include <array>
 #include <string>
@@ -215,7 +216,6 @@ namespace GGUI{
 
             constexpr value<T> operator-(const value<T>& other){
                 if (evaluationType != other.evaluationType){
-                    // TODO: add capability to call reportStack in Styles.h
                     INTERNAL::LOGGER::log("Cannot substract two different eval type values!");
                     EXIT(1);
                     return false;   // for warnings.

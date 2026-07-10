@@ -4,6 +4,7 @@
 #include "../utils/types.h"
 #include "../utils/superString.h"
 #include "../utils/color.h"
+#include "../utils/utils.h"
 
 #include <bitset>
 #include <cassert>
@@ -42,7 +43,6 @@ namespace GGUI {
 
             // Extern pointing primary pages:
             // These are primarily made so that the sequences::base's are able to flash their contents into these primary pages.
-            // TODO: maybe make these ptr, so that initialization is on demand.
             extern configuration::page C0;
             extern configuration::page C1;
             extern configuration::page G0;
@@ -445,7 +445,6 @@ namespace GGUI {
                     class base {
                     protected:
                         std::vector<containerType> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
-                        // TODO: maybe for better compatibility try giving a custom default param value, so that it can be used instead of the hardcoded zero.
                     public:
                         base() = default;
                         base(std::vector<containerType> values) : subNumbers(values) {}
@@ -558,7 +557,7 @@ namespace GGUI {
                     INDEPENDENT_FUNCTION,
                     CSI,
                     STRING,
-                    TRANSMISSION,   // TODO: converged with string later on.
+                    TRANSMISSION,
                     GRAPHICAL_CHARACTER,
                     
                     PRIVATE // For custom sequences introduces by 3rd party manufacturers such as DEC.
@@ -1122,7 +1121,7 @@ namespace GGUI {
                 public:
                     const uint8_t instructionSeries;
                     
-                    std::array<std::pair<cell, sequence::postfix<>>, page::pageWidth * page::pageDepth> patch;  // TODO: change this into a std::vector when we switch to c++20
+                    std::array<std::pair<cell, sequence::postfix<>>, page::pageWidth * page::pageDepth> patch;
 
                     cellPatch(uint8_t mainInstruction) : instructionSeries(mainInstruction), patch{} {}
 
@@ -1925,7 +1924,7 @@ namespace GGUI {
                 }
             public:
                 IVector2 start;     // The end of these attributes is at the start of the next attribute.
-                RGB directColor;    // one graphical attribute holds one color...? TODO: remove this and unify styles::Base with this.
+                RGB directColor;    // TODO("remove this and unify styles::Base with this.")
 
                 graphicAttributes(IVector2 Start) : bitMask(0), start(Start) {}
 
@@ -2144,7 +2143,7 @@ namespace GGUI {
                         configuration::cell functionality = {},
                         configuration::page* page = nullptr     // Give empty for automatic page detection
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
-                        if (functionality == configuration::cell())  return; // Nothing todo here.
+                        if (functionality == configuration::cell())  return; // Nothing to do here.
 
                         if (page == nullptr) {  // Automatic page deduction
                             // All codes must be that of prefix
@@ -2171,7 +2170,7 @@ namespace GGUI {
                         configuration::cell functionality,
                         configuration::cellPatch* customCellFunctions
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
-                        if (functionality == configuration::cell())  return; // Nothing todo here.
+                        if (functionality == configuration::cell())  return; // Nothing to do here.
 
                         sequence::postfix<> tail = function.getPostfix();
 
@@ -2287,7 +2286,6 @@ namespace GGUI {
                     inline auto STRING_TERMINATOR = base<sequence::prefix<table::C1>>(table::C1::ST);
                 };
 
-                // TODO: In future we can splice the current primary default sequence parser to actually just one of these three introducers and their own introduced sequence parsers.
                 namespace introducers {
                     /**
                      * @brief CSI is used as the first character of a control sequence.

@@ -226,7 +226,7 @@ namespace GGUI {
                         > DEVICE_ATTRIBUTES(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>(ecma::table::finalWithoutIntermediate::DA), 
                             {
-                                (deviceAttributeResponseTypes)1,        // TODO: add multi selectable types for parameters.
+                                (deviceAttributeResponseTypes)1,
                                 deviceAttributeResponseTypes::NO_OPTIONS
                             },
                             operate_DEVICE_ATTRIBUTES,
@@ -240,7 +240,7 @@ namespace GGUI {
                         > CONFIDENCE_TEST(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<testTypes>>((ecma::table::finalWithoutIntermediate)table::privateFunctions::TEST),
                             {testTypes::DATA_LOOP_BACK, testTypes::NONE},
-                            {},  // TODO: add confidence test handler, whatever that means for an interpreter 
+                            {},
                             &csiPatch
                         );
                     }

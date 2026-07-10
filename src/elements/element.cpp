@@ -110,7 +110,6 @@ GGUI::element::element(STYLING_INTERNAL::styleBase& style, bool Embed_Styles_On_
     }
     else{
         // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
-        // TODO:
         Style->copyUnParsedStyles();
     }
 }
@@ -1446,7 +1445,7 @@ void GGUI::element::applyColors(){
     // color specified in the style.
     const auto composedRGB = composeAllTextRGBvalues();
 
-    // TODO: pipe forward rectangle colored area for graphicAttributes
+    TODO("pipe forward rectangle colored area for graphicAttributes")
 
     // for (auto& utf : Result){
     //     utf.setColor(composedRGB);
@@ -1464,7 +1463,7 @@ void GGUI::element::renderBorders(std::vector<INTERNAL::compactString>& Result){
 
     const unsigned int Width  = getWidth();
     const unsigned int Height = getHeight();
-    const auto composedRGB    = composeAllBorderRGBvalues();    // TODO: pipe forward rectangle colored area for graphicAttributes
+    const auto composedRGB    = composeAllBorderRGBvalues();    TODO("pipe forward rectangle colored area for graphicAttributes")
     const auto& Border        = Style->Border_Style;
 
     // Corners
@@ -1518,7 +1517,7 @@ void GGUI::element::renderTitle(std::vector<INTERNAL::compactString>& Result){
     static constexpr INTERNAL::compactString Ellipsis = "...";
     bool Enable_Ellipsis = false;
 
-    std::pair<RGB, RGB> composedColor = composeAllTextRGBvalues();  // TODO: pipe forward rectangle colored area for graphicAttributes
+    std::pair<RGB, RGB> composedColor = composeAllTextRGBvalues();  TODO("pipe forward rectangle colored area for graphicAttributes")
 
     unsigned int Writable_Length = INTERNAL::Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.size - 1);
 

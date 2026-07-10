@@ -19,6 +19,17 @@ namespace GGUI{
     class UTF;
     class RGB;
 
+    // ===  TODO MACRO   ===
+    #define GGUI_STR_IMPL(x) #x
+    #define GGUI_STR(x) GGUI_STR_IMPL(x)
+
+    #if defined(__clang__) || defined(__GNUC__)
+        #define TODO(text) _Pragma(GGUI_STR(message("TODO: " text)))
+    #else
+        #define TODO(text)
+    #endif
+    // ===               ===, this is probably useless weight, but im gonna try this regardless hehe :)
+
     // autoGen: Ignore start
     namespace INTERNAL{
         extern std::string constructLoggerFileName();
@@ -368,8 +379,8 @@ namespace GGUI{
          * @return Pointer to an internally cached std::string containing the concatenated bytes.
          * @warning The returned pointer becomes invalid after the next call to this function.
          */
-        // inline std::string* toString(conveyorAllocator<compactString> Data, unsigned int Liquefied_Size) noexcept {  // TODO: remember to switch mack to conveyor allocator!!!
-        inline std::string* toString(std::vector<compactString>& Data, unsigned int Liquefied_Size) noexcept {
+        // inline std::string* toString(conveyorAllocator<compactString> Data, unsigned int Liquefied_Size) noexcept {  
+        inline std::string* toString(std::vector<compactString>& Data, unsigned int Liquefied_Size) noexcept {  // TODO("remember to switch mack to conveyor allocator!!!")
             static std::string result; // internal cache between renders
 
             if (result.size() != Liquefied_Size){

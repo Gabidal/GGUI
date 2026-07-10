@@ -1,10 +1,13 @@
 #include "terminal.h"
 
+#include "../utils/utils.h"
+
 #include <algorithm> // std::remove_if
 
 namespace GGUI {
     namespace terminal {
         namespace ecma {
+            TODO("maybe make these ptr, so that initialization is on demand.")
             configuration::page C0(configuration::layout::functional::getRelativeFunctionalPageLayout(configuration::layout::functional::type::C0));
             configuration::page C1(configuration::layout::functional::getRelativeFunctionalPageLayout(configuration::layout::functional::type::C1));
             configuration::page G0(configuration::layout::graphical::getRelativeGraphicalPageLayout(configuration::layout::graphical::type::B));
@@ -53,6 +56,8 @@ namespace GGUI {
             }
 
             namespace sequence {
+                TODO("converge transmission with string later on.")
+
                 std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte) {
                     std::string result = "";
 
@@ -94,6 +99,8 @@ namespace GGUI {
 
                     return result;
                 }
+
+                TODO("maybe for better compatibility try giving a custom default param value, so that it can be used instead of the hardcoded zero.")
 
                 // Slices the input by the sequence::parameter::delimeter character
                 std::vector<sequence::parameter::numeric> parseParameterSequence(std::string_view input) {
@@ -182,10 +189,10 @@ namespace GGUI {
 
                     } else if (header == table::C1::APC || header == table::C1::DCS || header == table::C1::OSC || header == table::C1::PM || header == table::C1::SOS) {
 
-                        // TODO: ...
+                        TODO("Implement parsing for APC, DCS, OSC, PM, and SOS sequences.");
                         return {0, nullptr};
 
-                    } else {    // TODO: ...
+                    } else {    TODO("Implement parsing for other C1 sequences.");
                         return {0, nullptr};
                     }
                 }
@@ -210,7 +217,7 @@ namespace GGUI {
                             result
                         };
 
-                    } else {    // TODO: ...
+                    } else {    TODO("Implement parsing for other C0 sequences.");
                         return {0, nullptr};
                     }
                 }
@@ -250,9 +257,9 @@ namespace GGUI {
 
                         currentStates->ecmaComponents.currentParsingSequenceIndex++;     // Only for META operators
 
-                        i += pageCallReturn.first;      // TODO: check for maybe adding -1, since the loop increases 'i' either way.
+                        i += pageCallReturn.first;      TODO("check for maybe adding -1, since the loop increases 'i' either way.")
 
-                        // TODO: there is a possibility that we need to put the Active Data Position to be incremented here as the index does.
+                        TODO("there is a possibility that we need to put the Active Data Position to be incremented here as the index does.")
                     }
                     return result;
                 }
@@ -347,13 +354,13 @@ namespace GGUI {
                 return parsedArea;
             }
 
-            namespace sequences {
+            namespace sequences {   TODO("add multi selectable types for parameters.")
                 namespace delimiters {}
 
                 namespace introducers {}
 
                 namespace shiftFunctions {
-                    auto layoutType = configuration::layout::graphical::type::A;     // TODO: Dynamically adjust this.
+                    auto layoutType = configuration::layout::graphical::type::A;     TODO("Dynamically adjust this.")
 
                     void operateShift_LS0(sequence::base*) {
                         pageState.load(
@@ -515,7 +522,7 @@ namespace GGUI {
                         // Now we need to also enable the current tabulation mode so that the following string literals are aligned properly.
                         currentStates->ecmaComponents.activeTabulationAlignment = nextTabulation.mode;
 
-                        // TODO: add here the code for detecting multi-line tabulation support and if so, also move the activeLinePosition.
+                        TODO("add here the code for detecting multi-line tabulation support and if so, also move the activeLinePosition.")
                     }
 
                     void operate_CHARACTER_TABULATION_SET(sequence::base* /*ignored*/) {
@@ -571,7 +578,7 @@ namespace GGUI {
                     void operate_PARTIAL_LINE_FORWARD(sequence::base* /*ignored*/) {
                         auto direction = imaginaryLine::types::SUBSCRIPT;
 
-                        // This part is going to be ugly, TODO: clean this up:
+                        TODO("This part is going to be ugly, clean this up!")
                         switch (currentStates->ecmaComponents.currentPresentationDirection) {
                             case presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT:
                                 direction = imaginaryLine::types::SUBSCRIPT;
@@ -749,7 +756,7 @@ namespace GGUI {
 
                         assert(index != UINT32_MAX);    // -1 means default, but this operation does not accept default values!
 
-                        // TODO: This one wont break after hit, so maybe change into a normal loop.
+                        TODO("This one wont break after hit, so maybe change into a normal loop.")
                         currentStates->ecmaComponents.tabulationStops.erase(
                             std::remove_if(
                                 currentStates->ecmaComponents.tabulationStops.begin(), 
@@ -873,7 +880,7 @@ namespace GGUI {
                         auto& callBacks = currentStates->ecmaComponents.callBacks;
 
                         auto callBackHandler = [](callBack /*self*/, size_t& /*callBackIndex*/, size_t& /*parsingIndex*/, std::vector<sequence::base*>& /*parsed*/){
-                            return; // TODO: ...
+                            return; TODO("Implement the callback handler for GRAPHIC_CHARACTER_COMBINATION.");
                         };
 
                         switch (combinationType) {
@@ -1253,7 +1260,7 @@ namespace GGUI {
                         auto line = params.front().getValueAsInteger();
 
                         currentStates->ecmaComponents.activePresentationPosition.y += line;
-                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  // TODO: line home position?
+                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  TODO("line home position?")
                     }
 
                     void operate_CURSOR_PRECEDING_LINE(sequence::base* input) {
@@ -1266,7 +1273,7 @@ namespace GGUI {
                         auto line = params.front().getValueAsInteger();
 
                         currentStates->ecmaComponents.activePresentationPosition.y -= line;
-                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  // TODO: line home position?
+                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  TODO("line home position?")
                     }
 
                     void operate_CURSOR_LEFT(sequence::base* input) {
@@ -1366,7 +1373,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y += line;   // TODO: Missing horizontal scroll
+                        currentStates->ecmaComponents.activePresentationPosition.y += line;   TODO("Missing horizontal scroll")
                     }
 
                     void operate_SCROLL_UP(sequence::base* input) {
@@ -1378,7 +1385,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y -= line;   // TODO: Missing horizontal scroll
+                        currentStates->ecmaComponents.activePresentationPosition.y -= line;   TODO("Missing horizontal scroll")
                     }
                 }
 
@@ -1434,11 +1441,11 @@ namespace GGUI {
                 namespace transmissionControlFunctions {
                     void operate_ACKNOWLEDGE(sequence::base*) {
                         // Not used.
-                        // TODO: we could use this signal for ASYNC operations with condition variables awaiting for it.
+                        TODO("Implement ACK operation.")
                     }
 
                     void operate_DATA_LINK_ESCAPE(sequence::base*) {
-                        // TODO: ...
+                        TODO("Implement DLE operation.");
                     }
 
                     void operate_ENQUIRY(sequence::base*) {
@@ -1452,7 +1459,7 @@ namespace GGUI {
 
                             answer = response.toString();
                         } else {
-                            // TODO: ...
+                            TODO("Implement response for subsequent ENQUIRY signals. This could include system status, version info, etc.");
                         }
 
                         currentStates->transmission.addToQueue(answer);
