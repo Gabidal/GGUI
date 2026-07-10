@@ -195,7 +195,7 @@ namespace GGUI{
              * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
              * @return A vector of UTF objects representing the rendered progress bar.
              */
-            std::vector<GGUI::UTF>& render() override;
+            std::vector<INTERNAL::compactString>& render() override;
             
             /**
              * @brief Creates a deep copy of the Progress_Bar object.

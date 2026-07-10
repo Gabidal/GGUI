@@ -293,7 +293,7 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the switch element is rendered correctly.
          * @return A vector of UTF objects representing the rendered switch element.
          */
-        std::vector<GGUI::UTF>& render() override;
+        std::vector<INTERNAL::compactString>& render() override;
         
         /**
          * @brief Creates a deep copy of the Switch object.

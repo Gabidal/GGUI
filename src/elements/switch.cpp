@@ -132,8 +132,8 @@ namespace GGUI{
      * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the switch element is rendered correctly.
      * @return A vector of UTF objects representing the rendered switch element.
      */
-    std::vector<GGUI::UTF>& switchBox::render(){
-        std::vector<GGUI::UTF>& Result = renderBuffer;
+    std::vector<INTERNAL::compactString>& switchBox::render(){
+        std::vector<INTERNAL::compactString>& Result = renderBuffer;
         
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
@@ -212,7 +212,7 @@ namespace GGUI{
             // Clean the color stain after applying the color system.
             Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
-            applyColors(Result);
+            applyColors();
         }
 
         // Add borders and titles if the EDGE stain is detected.

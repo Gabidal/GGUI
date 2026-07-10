@@ -208,6 +208,7 @@ namespace GGUI{
 
     namespace SYMBOLS{
         inline const UTF EMPTY_UTF(' ', {COLOR::WHITE, COLOR::BLACK});
+        inline constexpr INTERNAL::compactString EMPTY_COMPACT_STRING = ' ';
     }
 
     // autoGen: Ignore start

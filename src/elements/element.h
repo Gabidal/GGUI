@@ -8,15 +8,15 @@
 
 #include "../core/utils/superString.h"
 #include "../core/utils/color.h"
-#include "../core/utils/utf.h"
 #include "../core/utils/style.h"
 
 namespace GGUI{
-    namespace STYLING_INTERNAL {
-        class styleBase;
-    }
     namespace INTERNAL {
         extern void renderer();
+    }
+
+    namespace terminal {
+        class outputCapture;
     }
 
     class element{
@@ -31,7 +31,7 @@ namespace GGUI{
         // Determines if the element is rendered or not.
         bool Show = true;
         
-        std::vector<UTF> renderBuffer;
+        std::vector<INTERNAL::compactString> renderBuffer;
 
         // State machine for render pipeline only focus on changed aspects.
         INTERNAL::STAIN Dirty;
@@ -332,7 +332,7 @@ namespace GGUI{
          *          It returns true if the element has a border, false otherwise.
          * @return True if the element has a border, false otherwise.
          */
-        bool hasBorder();
+        bool hasBorder() const;
 
         /**
          * @brief Displays or hides the element and all its children.
@@ -416,14 +416,14 @@ namespace GGUI{
          * @details This function returns the width of the element.
          * @return The width of the element.
          */
-        constexpr int getWidth(){ return Style->Width.get(); }
+        constexpr int getWidth() const { return Style->Width.get(); }
 
         /**
          * @brief Get the height of the element.
          * @details This function returns the height of the element.
          * @return The height of the element.
          */
-        constexpr int getHeight() { return Style->Height.get(); }
+        constexpr int getHeight() const { return Style->Height.get(); }
 
         /**
          * @brief Set the width of the element.
@@ -451,7 +451,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        INTERNAL::EVALUATION_TYPE getWidthType() { return Style->Width.number.getType(); }
+        constexpr INTERNAL::EVALUATION_TYPE getWidthType() const { return Style->Width.number.getType(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -460,7 +460,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        INTERNAL::EVALUATION_TYPE getHeightType() { return Style->Height.number.getType(); }
+        constexpr INTERNAL::EVALUATION_TYPE getHeightType() const { return Style->Height.number.getType(); }
 
         /**
          * @brief Set the position of the element.
@@ -494,7 +494,7 @@ namespace GGUI{
          * @details This function retrieves the position of the element from its style.
          * @return The position of the element as an IVector3 object.
          */
-        constexpr IVector3 getPosition() { return Style->Position.get(); }
+        constexpr IVector3 getPosition() const { return Style->Position.get(); }
 
         /**
          * @brief Get the absolute position of the element.
@@ -502,7 +502,7 @@ namespace GGUI{
          *          The absolute position is the position of the element in the context of the entire document or window.
          * @return The absolute position of the element as an IVector3 object.
          */
-        constexpr IVector3 getAbsolutePosition() { return absolutePositionCache; }
+        constexpr IVector3 getAbsolutePosition() const { return absolutePositionCache; }
 
         /**
          * @brief Sets the title of the window and updates border visibility and colors accordingly.
@@ -519,7 +519,7 @@ namespace GGUI{
          * 
          * @return The title of the window as a string.
          */
-        INTERNAL::compactString getTitle();
+        INTERNAL::compactString getTitle() const;
 
         /**
          * @brief Set the margin of the element.
@@ -534,7 +534,7 @@ namespace GGUI{
          * @details This function retrieves the margin of the element from its style.
          * @return The margin of the element as a GGUI::margin object.
          */
-        margin getMargin() { return Style->Margin; }
+        margin getMargin() const { return Style->Margin; }
         
         /**
          * @brief Sets the background color of the element.
@@ -556,7 +556,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's background.
          */
-        constexpr RGB getBackgroundColor() { return Style->Background_Color.color.get<RGB>(); }
+        constexpr RGB getBackgroundColor() const { return Style->Background_Color.color.get<RGB>(); }
         
         /**
          * @brief Sets the border color of the element.
@@ -575,7 +575,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border.
          */
-        constexpr RGB getBorderColor(){ return Style->Border_Color.color.get<RGB>(); }
+        constexpr RGB getBorderColor() const { return Style->Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the border background color of the element.
@@ -595,7 +595,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border background.
          */
-        constexpr RGB getBorderBackgroundColor(){ return Style->Border_Background_Color.color.get<RGB>(); }
+        constexpr RGB getBorderBackgroundColor() const { return Style->Border_Background_Color.color.get<RGB>(); }
         
         /**
          * @brief Sets the text color of the element.
@@ -615,7 +615,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's text.
          */
-        constexpr RGB getTextColor(){ return Style->Text_Color.color.get<RGB>(); }
+        constexpr RGB getTextColor() const { return Style->Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover border color of the element.
@@ -636,7 +636,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border.
          */
-        constexpr RGB getHoverBorderColor(){ return Style->Hover_Border_Color.color.get<RGB>(); }
+        constexpr RGB getHoverBorderColor() const { return Style->Hover_Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover background color of the element.
@@ -657,7 +657,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover background.
          */
-        constexpr RGB getHoverBackgroundColor(){ return Style->Hover_Background_Color.color.get<RGB>(); }
+        constexpr RGB getHoverBackgroundColor() const { return Style->Hover_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover text color of the element.
@@ -678,7 +678,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover text.
          */
-        constexpr RGB getHoverTextColor(){ return Style->Hover_Text_Color.color.get<RGB>(); }
+        constexpr RGB getHoverTextColor() const { return Style->Hover_Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover border background color of the element.
@@ -699,7 +699,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border background.
          */
-        constexpr RGB getHoverBorderBackgroundColor(){ return Style->Hover_Border_Background_Color.color.get<RGB>(); }
+        constexpr RGB getHoverBorderBackgroundColor() const { return Style->Hover_Border_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus border color of the element.
@@ -718,7 +718,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border.
          */
-        constexpr RGB getFocusBorderColor(){ return Style->Focus_Border_Color.color.get<RGB>(); }
+        constexpr RGB getFocusBorderColor() const { return Style->Focus_Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus background color of the element.
@@ -737,7 +737,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus background.
          */
-        constexpr RGB getFocusBackgroundColor(){ return Style->Focus_Background_Color.color.get<RGB>(); }
+        constexpr RGB getFocusBackgroundColor() const { return Style->Focus_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus text color of the element.
@@ -756,7 +756,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus text.
          */
-        constexpr RGB getFocusTextColor(){ return Style->Focus_Text_Color.color.get<RGB>(); }
+        constexpr RGB getFocusTextColor() const { return Style->Focus_Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus border background color of the element.
@@ -776,7 +776,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border background.
          */
-        constexpr RGB getFocusBorderBackgroundColor(){ return Style->Focus_Border_Background_Color.color.get<RGB>(); }
+        constexpr RGB getFocusBorderBackgroundColor() const { return Style->Focus_Border_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the alignment of the element.
@@ -794,7 +794,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        constexpr ANCHOR getAlign(){ return Style->Align.value; }
+        constexpr ANCHOR getAlign() const { return Style->Align.value; }
 
         /**
          * @brief Sets the flow priority of the element.
@@ -814,7 +814,7 @@ namespace GGUI{
          * 
          * @return The flow priority value of the element.
          */
-        constexpr DIRECTION getFlowPriority(){ return Style->Flow_Priority.value; }
+        constexpr DIRECTION getFlowPriority() const { return Style->Flow_Priority.value; }
 
         /**
          * @brief Sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
@@ -835,7 +835,7 @@ namespace GGUI{
          * 
          * @return True if the element will wrap its contents, false otherwise.
          */
-        constexpr bool getWrap(){ return Style->Wrap.value; }
+        constexpr bool getWrap() const { return Style->Wrap.value; }
 
         /**
          * @brief Sets whether the element is allowed to dynamically resize.
@@ -855,7 +855,7 @@ namespace GGUI{
          * 
          * @return True if the element is allowed to dynamically resize, false otherwise.
          */
-        constexpr bool isDynamicSizeAllowed(){ return Style->Allow_Dynamic_Size.value; }
+        constexpr bool isDynamicSizeAllowed() const { return Style->Allow_Dynamic_Size.value; }
 
         /**
          * @brief Sets whether the element allows overflow.
@@ -875,7 +875,7 @@ namespace GGUI{
          * 
          * @return True if the element allows overflow, false otherwise.
          */
-        constexpr bool isOverflowAllowed(){ return Style->Allow_Overflow.value; }
+        constexpr bool isOverflowAllowed() const { return Style->Allow_Overflow.value; }
         
         /**
          * @brief Recursively computes the size of the element based on its children.
@@ -933,7 +933,7 @@ namespace GGUI{
          * @brief Gets the custom border style of the element.
          * @return The custom border style of the element.
          */
-        GGUI::styledBorder getCustomBorderStyle(){ return Style->Border_Style; }
+        GGUI::styledBorder getCustomBorderStyle() const { return Style->Border_Style; }
 
         /**
          * @brief Composes the RGB values of the text color and background color of the element.
@@ -949,7 +949,7 @@ namespace GGUI{
          * 
          * @return A pair of RGB values representing the text color and background color of the element.
          */
-        constexpr std::pair<RGB, RGB>  composeAllTextRGBvalues(){
+        constexpr std::pair<RGB, RGB>  composeAllTextRGBvalues() const {
             if (Focused){
                 return {Style->Focus_Text_Color.color.get<RGB>(), Style->Focus_Background_Color.color.get<RGB>()};
             }
@@ -969,7 +969,7 @@ namespace GGUI{
          * Otherwise, the function will return the RGB values of the normal border color and background color.
          * @return A pair of RGB values representing the border color and background color of the element.
          */
-        constexpr std::pair<RGB, RGB> composeAllBorderRGBvalues(){
+        constexpr std::pair<RGB, RGB> composeAllBorderRGBvalues() const {
             if (Focused){
                 return {Style->Focus_Border_Color.color.get<RGB>(), Style->Focus_Border_Background_Color.color.get<RGB>()};
             }
@@ -1071,7 +1071,7 @@ namespace GGUI{
          * @return A vector of pointers to the elements that have the same type as the given template.
          */
         template<typename T>
-        std::vector<T*> getElements(){
+        std::vector<T*> getElements() {
             std::vector<T*> result;
 
             // Check if the element in question is of the same type as the template T.
@@ -1245,14 +1245,14 @@ namespace GGUI{
          * 
          * @return GGUI::styling* Pointer to the direct styling object of the element.
          */
-        styling* getDirectStyle();
+        styling* getDirectStyle() const;
 
         /**
          * @brief Add the border of the window to the rendered string.
          *
          * @param Result The string to add the border to.
          */
-        void renderBorders(std::vector<UTF>& Result);
+        void renderBorders(std::vector<INTERNAL::compactString>& Result);
 
         /**
          * @brief Renders the title of the element into the provided result buffer.
@@ -1276,7 +1276,7 @@ namespace GGUI{
          * @note The function assumes that the `Result` vector is pre-allocated and large enough
          *       to hold the rendered title and ellipsis.
          */
-        void renderTitle(std::vector<UTF>& Result);
+        void renderTitle(std::vector<INTERNAL::compactString>& Result);
 
         /**
          * @brief Apply the color system to the rendered string.
@@ -1287,7 +1287,7 @@ namespace GGUI{
          *
          * @param Result The vector containing the rendered string.
          */
-        void applyColors(std::vector<UTF>& Result);
+        void applyColors();
         
         /**
          * @brief Posts a process that handles the intersection of borders between two elements and their parent.
@@ -1298,7 +1298,7 @@ namespace GGUI{
          * @param B The second element.
          * @param Parent_Buffer The buffer of the parent element.
          */
-        void postProcessBorders(element* A, element* B, std::vector<UTF>& Parent_Buffer);
+        void postProcessBorders(element* A, element* B, std::vector<INTERNAL::compactString>& Parent_Buffer);
 
         /**
          * @brief Update the absolute position cache of the element.
@@ -1311,7 +1311,7 @@ namespace GGUI{
          * @details This function will check if any of the children have changed, this is used to determine if the element needs to be re-drawn.
          * @return true if any children have changed, false otherwise.
          */
-        bool childrenChanged();
+        bool childrenChanged() const;
         
         /**
          * @brief Check if there are any transparent children.
@@ -1319,7 +1319,7 @@ namespace GGUI{
          *          are transparent and require redrawing.
          * @return True if any child is transparent and not clean; otherwise, false.
          */
-        bool hasTransparentChildren();    
+        bool hasTransparentChildren() const;    
         
         /**
          * @brief Retrieves the final size limit of the element.
@@ -1332,7 +1332,7 @@ namespace GGUI{
          *
          * @return GGUI::IVector3 The final size limit of the element.
          */
-        IVector3 getFinalLimit();
+        IVector3 getFinalLimit() const;
         
         /**
          * @brief Get the fitting dimensions for the given child element.
@@ -1345,7 +1345,7 @@ namespace GGUI{
          * @param child The child element for which the fitting dimensions are calculated.
          * @return A pair containing the width and height of the fitting dimensions.
          */
-        std::pair<int, int> getFittingDimensions(element* child);
+        std::pair<int, int> getFittingDimensions(element* child) const;
 
         /**
          * @brief Calculates the hitboxes of all child elements of the element.
@@ -1405,7 +1405,7 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
          * @return A vector of UTF objects representing the rendered element and its children.
          */
-        virtual std::vector<GGUI::UTF>& render();
+        virtual std::vector<INTERNAL::compactString>& render();
 
         // Give thread::renderer() access to our private render method.
         friend void INTERNAL::renderer();
@@ -1416,6 +1416,8 @@ namespace GGUI{
 
         // Since protected methods can be accessed via the derived class only if it is as "this" pointer, so we need to give it access.
         friend class listView;
+
+        friend class terminal::outputCapture;
     
     // Some of the above mentioned functions be of help
     public:

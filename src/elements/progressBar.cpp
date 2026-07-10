@@ -83,8 +83,8 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
          * @return A vector of UTF objects representing the rendered progress bar.
          */
-        std::vector<UTF>& Bar::render() {
-            std::vector<UTF>& Result = renderBuffer;
+        std::vector<INTERNAL::compactString>& Bar::render() {
+            std::vector<INTERNAL::compactString>& Result = renderBuffer;
 
             // Check for Dynamic attributes
             if(Style->evaluateDynamicDimensions(this))
@@ -138,7 +138,7 @@ namespace GGUI{
                 // Clean the color stain after applying the color system.
                 Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
-                applyColors(Result);
+                applyColors();
             }
 
             // Add child windows to the Result buffer if the DEEP stain is detected.

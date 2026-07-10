@@ -368,7 +368,8 @@ namespace GGUI{
          * @return Pointer to an internally cached std::string containing the concatenated bytes.
          * @warning The returned pointer becomes invalid after the next call to this function.
          */
-        inline std::string* toString(conveyorAllocator<compactString> Data, unsigned int Liquefied_Size) noexcept {
+        // inline std::string* toString(conveyorAllocator<compactString> Data, unsigned int Liquefied_Size) noexcept {  // TODO: remember to switch mack to conveyor allocator!!!
+        inline std::string* toString(std::vector<compactString>& Data, unsigned int Liquefied_Size) noexcept {
             static std::string result; // internal cache between renders
 
             if (result.size() != Liquefied_Size){
@@ -380,8 +381,8 @@ namespace GGUI{
             char* outputAddress = result.data();
             unsigned int outputIndex = 0;
 
-            const compactString* dataAddress = Data.getData();
-            const size_t cachedSize = Data.getSize();
+            const compactString* dataAddress = Data.data();
+            const size_t cachedSize = Data.size();
 
             for (size_t i = 0; i < cachedSize; i++) {
                 const compactString& data = dataAddress[i];

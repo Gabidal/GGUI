@@ -230,7 +230,7 @@ namespace GGUI{
          *          It also handles the multi-frame list and sprite animations.
          * @return A vector of UTF objects representing the rendered canvas.
          */
-        std::vector<GGUI::UTF>&  render() override;
+        std::vector<INTERNAL::compactString>&  render() override;
     };
 
     namespace DRAW{

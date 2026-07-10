@@ -14,7 +14,7 @@ namespace GGUI {
             std::pair<IVector2, IVector2> components::getPresentationDirectionAsVector() {
                 IVector2 linePath, characterPath;
 
-                switch (currentStates.ecmaComponents.currentPresentationDirection) {
+                switch (currentStates->ecmaComponents.currentPresentationDirection) {
                     case sequences::presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT:
                         linePath = {0, 1};  // top to bottom
                         characterPath = {1, 0}; // left to right
@@ -248,7 +248,7 @@ namespace GGUI {
 
                         result.push_back(pageCallReturn.second);
 
-                        currentStates.ecmaComponents.currentParsingSequenceIndex++;     // Only for META operators
+                        currentStates->ecmaComponents.currentParsingSequenceIndex++;     // Only for META operators
 
                         i += pageCallReturn.first;      // TODO: check for maybe adding -1, since the loop increases 'i' either way.
 
@@ -269,7 +269,7 @@ namespace GGUI {
             std::pair<size_t, RGB> parseColorFromSGR(graphicAttributes::directColorTypes dt, size_t start, std::vector<sequence::parameter::selectable<graphicAttributes::types>>& params) {
                 switch (dt) {
                     case graphicAttributes::directColorTypes::INDEXED:
-                        return {1, currentStates.colorIndexMap[(uint8_t)params[start].getValueAsInteger()]};
+                        return {1, currentStates->colorIndexMap[(uint8_t)params[start].getValueAsInteger()]};
                     case graphicAttributes::directColorTypes::RGB:
                         return {3, RGB(
                             (uint8_t)params[start].getValueAsInteger(),
@@ -432,23 +432,23 @@ namespace GGUI {
                 namespace formatEffectors {
                     void operate_BACKSPACE(sequence::base* /*ignored*/) {
                         // First we get the direction and a base vector for the opposite direction
-                        IVector2 oppositeDirection = currentStates.ecmaComponents.activeCharacterMovementDirection * -1;
+                        IVector2 oppositeDirection = currentStates->ecmaComponents.activeCharacterMovementDirection * -1;
                     
-                        currentStates.ecmaComponents.activeDataPosition += oppositeDirection;
+                        currentStates->ecmaComponents.activeDataPosition += oppositeDirection;
                     }
 
                     void operate_CARRIAGE_RETURN(sequence::base* /*ignored*/) {
-                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            if (currentStates.ecmaComponents.toCharacterMovementDirection(currentStates.ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates.ecmaComponents.activePresentationPosition.x = currentStates.ecmaComponents.homeLinePosition.x;
+                        if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
+                            if (currentStates->ecmaComponents.toCharacterMovementDirection(currentStates->ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
+                                currentStates->ecmaComponents.activePresentationPosition.x = currentStates->ecmaComponents.homeLinePosition.x;
                             } else {
-                                currentStates.ecmaComponents.activePresentationPosition.x = currentStates.ecmaComponents.lineLimitPosition.x;
+                                currentStates->ecmaComponents.activePresentationPosition.x = currentStates->ecmaComponents.lineLimitPosition.x;
                             }
-                        } else if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
-                            if (currentStates.ecmaComponents.toCharacterMovementDirection(currentStates.ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates.ecmaComponents.activeDataPosition.x = currentStates.ecmaComponents.homeLinePosition.x;
+                        } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
+                            if (currentStates->ecmaComponents.toCharacterMovementDirection(currentStates->ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
+                                currentStates->ecmaComponents.activeDataPosition.x = currentStates->ecmaComponents.homeLinePosition.x;
                             } else {
-                                currentStates.ecmaComponents.activeDataPosition.x = currentStates.ecmaComponents.lineLimitPosition.x;
+                                currentStates->ecmaComponents.activeDataPosition.x = currentStates->ecmaComponents.lineLimitPosition.x;
                             }
                         }
                     }
@@ -457,12 +457,12 @@ namespace GGUI {
                         // FF causes the active presentation position to be moved to the corresponding 
                         // character position of the line at the page home position of the next form or page.
                         // Move to the next page by advancing past the current active area
-                        if (currentStates.ecmaComponents.activeArea.getUpper().row != 0) {
-                            currentStates.ecmaComponents.activeDataPosition.y = currentStates.ecmaComponents.activeArea.getUpper().row + 1;
+                        if (currentStates->ecmaComponents.activeArea.getUpper().row != 0) {
+                            currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.activeArea.getUpper().row + 1;
                         }
                         
                         // Set the presentation position to the home line position of the new page
-                        currentStates.ecmaComponents.activePresentationPosition = currentStates.ecmaComponents.homeLinePosition;
+                        currentStates->ecmaComponents.activePresentationPosition = currentStates->ecmaComponents.homeLinePosition;
                     }
 
                     void operate_CHARACTER_POSITION_ABSOLUTE(sequence::base* input) {
@@ -470,7 +470,7 @@ namespace GGUI {
 
                         auto params = controlSequence->getParameters();
 
-                        currentStates.ecmaComponents.activeDataPosition.x = params.front().getValueAsInteger();
+                        currentStates->ecmaComponents.activeDataPosition.x = params.front().getValueAsInteger();
                     }
 
                     void operate_CHARACTER_POSITION_BACKWARD(sequence::base* input) {
@@ -479,9 +479,9 @@ namespace GGUI {
                         auto params = controlSequence->getParameters();
 
                         // Get the current direction vector and multiply it by the scalar of n via input and -1 to get the opposite vector.
-                        auto directionVector = currentStates.ecmaComponents.activeCharacterMovementDirection * -static_cast<signed int>(params.front().getValueAsInteger());
+                        auto directionVector = currentStates->ecmaComponents.activeCharacterMovementDirection * -static_cast<signed int>(params.front().getValueAsInteger());
 
-                        currentStates.ecmaComponents.activeDataPosition += directionVector;
+                        currentStates->ecmaComponents.activeDataPosition += directionVector;
                     }
 
                     void operate_CHARACTER_POSITION_FORWARD(sequence::base* input) {
@@ -490,19 +490,19 @@ namespace GGUI {
                         auto params = controlSequence->getParameters();
 
                         // Get the current direction vector and multiply it by the scalar of n via input to get the movement vector.
-                        auto directionVector = currentStates.ecmaComponents.activeCharacterMovementDirection * static_cast<signed int>(params.front().getValueAsInteger());
+                        auto directionVector = currentStates->ecmaComponents.activeCharacterMovementDirection * static_cast<signed int>(params.front().getValueAsInteger());
 
-                        currentStates.ecmaComponents.activeDataPosition += directionVector;
+                        currentStates->ecmaComponents.activeDataPosition += directionVector;
                     }
                     
                     void operate_CHARACTER_TABULATION(sequence::base* /*ignored*/) {
                         tabulationStop nextTabulation;
 
                         // Find next tabulation 
-                        for (auto currentTabulation : currentStates.ecmaComponents.tabulationStops) {
+                        for (auto currentTabulation : currentStates->ecmaComponents.tabulationStops) {
                             if (
-                                currentTabulation.position.y == currentStates.ecmaComponents.activePresentationPosition.y && 
-                                currentTabulation.position.x >= currentStates.ecmaComponents.activePresentationPosition.x &&
+                                currentTabulation.position.y == currentStates->ecmaComponents.activePresentationPosition.y && 
+                                currentTabulation.position.x >= currentStates->ecmaComponents.activePresentationPosition.x &&
                                 currentTabulation.position.x < nextTabulation.position.x  // This is meant to find the closest next tabulation stop
                             ) {
                                 nextTabulation = currentTabulation;
@@ -510,20 +510,20 @@ namespace GGUI {
                         }
 
                         // Now we move our active presentation position into it
-                        currentStates.ecmaComponents.activePresentationPosition = nextTabulation.position;
+                        currentStates->ecmaComponents.activePresentationPosition = nextTabulation.position;
 
                         // Now we need to also enable the current tabulation mode so that the following string literals are aligned properly.
-                        currentStates.ecmaComponents.activeTabulationAlignment = nextTabulation.mode;
+                        currentStates->ecmaComponents.activeTabulationAlignment = nextTabulation.mode;
 
                         // TODO: add here the code for detecting multi-line tabulation support and if so, also move the activeLinePosition.
                     }
 
                     void operate_CHARACTER_TABULATION_SET(sequence::base* /*ignored*/) {
                         // This function sets a tabulation stop at the current active line position and presentation position, with the current tabulation alignment mode.
-                        currentStates.ecmaComponents.tabulationStops.push_back(tabulationStop{
-                            currentStates.ecmaComponents.activeTabulationAlignment,
+                        currentStates->ecmaComponents.tabulationStops.push_back(tabulationStop{
+                            currentStates->ecmaComponents.activeTabulationAlignment,
                             tabulationStop::types::CHARACTER,
-                            currentStates.ecmaComponents.activePresentationPosition
+                            currentStates->ecmaComponents.activePresentationPosition
                         });
                     }
 
@@ -537,33 +537,33 @@ namespace GGUI {
                         auto y = params[0].getValueAsInteger();
                         auto x = params[1].getValueAsInteger();
 
-                        currentStates.ecmaComponents.activeDataPosition = {x, y};
+                        currentStates->ecmaComponents.activeDataPosition = {x, y};
                     }
 
                     void operate_LINE_FEED(sequence::base* /*ignored*/) {
-                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            currentStates.ecmaComponents.activePresentationPosition.y++;
-                        } else if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
-                            currentStates.ecmaComponents.activeDataPosition.y++;
+                        if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
+                            currentStates->ecmaComponents.activePresentationPosition.y++;
+                        } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
+                            currentStates->ecmaComponents.activeDataPosition.y++;
                         }
                     }
 
                     void operate_NEXT_LINE(sequence::base* /*ignored*/) {
-                        bool has_presentation = currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION);
-                        bool has_data = currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA);
-                        auto movement_direction = currentStates.ecmaComponents.toCharacterMovementDirection(currentStates.ecmaComponents.activeCharacterMovementDirection);
+                        bool has_presentation = currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION);
+                        bool has_data = currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA);
+                        auto movement_direction = currentStates->ecmaComponents.toCharacterMovementDirection(currentStates->ecmaComponents.activeCharacterMovementDirection);
                         
                         if (has_presentation) {
                             if (movement_direction == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates.ecmaComponents.activePresentationPosition.y = currentStates.ecmaComponents.homeLinePosition.y;
+                                currentStates->ecmaComponents.activePresentationPosition.y = currentStates->ecmaComponents.homeLinePosition.y;
                             } else {
-                                currentStates.ecmaComponents.activePresentationPosition.y = currentStates.ecmaComponents.lineLimitPosition.y;
+                                currentStates->ecmaComponents.activePresentationPosition.y = currentStates->ecmaComponents.lineLimitPosition.y;
                             }
                         } else if (has_data) {
                             if (movement_direction == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates.ecmaComponents.activeDataPosition.y = currentStates.ecmaComponents.homeLinePosition.y;
+                                currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.homeLinePosition.y;
                             } else {
-                                currentStates.ecmaComponents.activeDataPosition.y = currentStates.ecmaComponents.lineLimitPosition.y;
+                                currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.lineLimitPosition.y;
                             }
                         }
                     }
@@ -572,7 +572,7 @@ namespace GGUI {
                         auto direction = imaginaryLine::types::SUBSCRIPT;
 
                         // This part is going to be ugly, TODO: clean this up:
-                        switch (currentStates.ecmaComponents.currentPresentationDirection) {
+                        switch (currentStates->ecmaComponents.currentPresentationDirection) {
                             case presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT:
                                 direction = imaginaryLine::types::SUBSCRIPT;
                                 break;
@@ -602,15 +602,15 @@ namespace GGUI {
                                 assert(false && "Invalid presentation direction");
                         }
 
-                        currentStates.ecmaComponents.imaginaryLines.push_back(imaginaryLine{
+                        currentStates->ecmaComponents.imaginaryLines.push_back(imaginaryLine{
                             direction,
-                            currentStates.ecmaComponents.activePresentationPosition,
+                            currentStates->ecmaComponents.activePresentationPosition,
                             {}  // This is set by PLU
                         });
                     }
 
                     void operate_PARTIAL_LINE_BACKWARD(sequence::base* /*ignored*/) {
-                        currentStates.ecmaComponents.imaginaryLines.back().end = currentStates.ecmaComponents.activePresentationPosition;
+                        currentStates->ecmaComponents.imaginaryLines.back().end = currentStates->ecmaComponents.activePresentationPosition;
                     }
 
                     void operate_PAGE_POSITION_ABSOLUTE(sequence::base* input) {
@@ -622,7 +622,7 @@ namespace GGUI {
 
                         auto PageIndex = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePageIndex = PageIndex;
+                        currentStates->ecmaComponents.activePageIndex = PageIndex;
                     }
 
                     void operate_PAGE_POSITION_BACKWARD(sequence::base* input) {
@@ -634,7 +634,7 @@ namespace GGUI {
 
                         auto PageIndex = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activeDataPosition.y = currentStates.ecmaComponents.dataPages[currentStates.ecmaComponents.activePageIndex - PageIndex].start.y;
+                        currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.dataPages[currentStates->ecmaComponents.activePageIndex - PageIndex].start.y;
                     }
 
                     void operate_PAGE_POSITION_FORWARD(sequence::base* input) {
@@ -646,14 +646,14 @@ namespace GGUI {
 
                         auto PageIndex = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activeDataPosition.y = currentStates.ecmaComponents.dataPages[currentStates.ecmaComponents.activePageIndex + PageIndex].start.y;
+                        currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.dataPages[currentStates->ecmaComponents.activePageIndex + PageIndex].start.y;
                     }
 
                     void operate_REVERSE_LINE_FEED(sequence::base* /*ignored*/) {
-                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            currentStates.ecmaComponents.activePresentationPosition.y--;
-                        } else if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
-                            currentStates.ecmaComponents.activeDataPosition.y--;
+                        if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
+                            currentStates->ecmaComponents.activePresentationPosition.y--;
+                        } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
+                            currentStates->ecmaComponents.activeDataPosition.y--;
                         }
                     }
 
@@ -665,73 +665,73 @@ namespace GGUI {
                         assert(params.size() == 1);
 
                         // If, false, then multiline tabulation is enabled.
-                        // bool singleTabulationMode = currentStates.components.activeModes.has(mode::presets::TSM_SINGLE);
+                        // bool singleTabulationMode = currentStates->components.activeModes.has(mode::presets::TSM_SINGLE);
                     
                         switch (params.front().getValueAsInteger()) {
                             using namespace sequences::formatEffectors::TABULATION_CLEAR;
 
                             case types::ALL_LINE_AND_CHARACTER_TABULATORS: {
-                                currentStates.ecmaComponents.tabulationStops.clear();
+                                currentStates->ecmaComponents.tabulationStops.clear();
                                 break;
                             }
                             case types::ALL_LINE_TABULATORS: {
-                                currentStates.ecmaComponents.tabulationStops.erase(
+                                currentStates->ecmaComponents.tabulationStops.erase(
                                     std::remove_if(
-                                        currentStates.ecmaComponents.tabulationStops.begin(), 
-                                        currentStates.ecmaComponents.tabulationStops.end(), 
+                                        currentStates->ecmaComponents.tabulationStops.begin(), 
+                                        currentStates->ecmaComponents.tabulationStops.end(), 
                                         [](tabulationStop stop) { return stop.type == tabulationStop::types::LINE; }
                                     ),
-                                    currentStates.ecmaComponents.tabulationStops.end()
+                                    currentStates->ecmaComponents.tabulationStops.end()
                                 );
                                 break;
                             }
                             case types::ALL_CHARACTER_TABULATORS: {
-                                currentStates.ecmaComponents.tabulationStops.erase(
+                                currentStates->ecmaComponents.tabulationStops.erase(
                                     std::remove_if(
-                                        currentStates.ecmaComponents.tabulationStops.begin(), 
-                                        currentStates.ecmaComponents.tabulationStops.end(), 
+                                        currentStates->ecmaComponents.tabulationStops.begin(), 
+                                        currentStates->ecmaComponents.tabulationStops.end(), 
                                         [](tabulationStop stop) { return stop.type == tabulationStop::types::CHARACTER; }
                                     ),
-                                    currentStates.ecmaComponents.tabulationStops.end()
+                                    currentStates->ecmaComponents.tabulationStops.end()
                                 );
                                 break;
                             }
                             case types::ALL_CHARACTER_TABULATORS_IN_ACTIVE_LINE: {
-                                currentStates.ecmaComponents.tabulationStops.erase(
+                                currentStates->ecmaComponents.tabulationStops.erase(
                                     std::remove_if(
-                                        currentStates.ecmaComponents.tabulationStops.begin(), 
-                                        currentStates.ecmaComponents.tabulationStops.end(), 
+                                        currentStates->ecmaComponents.tabulationStops.begin(), 
+                                        currentStates->ecmaComponents.tabulationStops.end(), 
                                         [](tabulationStop stop) { 
-                                            return stop.type == tabulationStop::types::CHARACTER && stop.position.y == currentStates.ecmaComponents.activePresentationPosition.y; 
+                                            return stop.type == tabulationStop::types::CHARACTER && stop.position.y == currentStates->ecmaComponents.activePresentationPosition.y; 
                                         }
                                     ),
-                                    currentStates.ecmaComponents.tabulationStops.end()
+                                    currentStates->ecmaComponents.tabulationStops.end()
                                 );
                                 break;
                             }
                             case types::LINE_TABULATOR_IN_ACTIVE_LINE: {
-                                currentStates.ecmaComponents.tabulationStops.erase(
+                                currentStates->ecmaComponents.tabulationStops.erase(
                                     std::remove_if(
-                                        currentStates.ecmaComponents.tabulationStops.begin(), 
-                                        currentStates.ecmaComponents.tabulationStops.end(), 
+                                        currentStates->ecmaComponents.tabulationStops.begin(), 
+                                        currentStates->ecmaComponents.tabulationStops.end(), 
                                         [](tabulationStop stop) { 
-                                            return stop.type == tabulationStop::types::LINE && stop.position.y == currentStates.ecmaComponents.activePresentationPosition.y; 
+                                            return stop.type == tabulationStop::types::LINE && stop.position.y == currentStates->ecmaComponents.activePresentationPosition.y; 
                                         }
                                     ),
-                                    currentStates.ecmaComponents.tabulationStops.end()
+                                    currentStates->ecmaComponents.tabulationStops.end()
                                 );
                                 break;
                             }
                             case types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION: {
-                                currentStates.ecmaComponents.tabulationStops.erase(
+                                currentStates->ecmaComponents.tabulationStops.erase(
                                     std::remove_if(
-                                        currentStates.ecmaComponents.tabulationStops.begin(), 
-                                        currentStates.ecmaComponents.tabulationStops.end(), 
+                                        currentStates->ecmaComponents.tabulationStops.begin(), 
+                                        currentStates->ecmaComponents.tabulationStops.end(), 
                                         [](tabulationStop stop) { 
-                                            return stop.type == tabulationStop::types::CHARACTER && stop.position == currentStates.ecmaComponents.activePresentationPosition; 
+                                            return stop.type == tabulationStop::types::CHARACTER && stop.position == currentStates->ecmaComponents.activePresentationPosition; 
                                         }
                                     ),
-                                    currentStates.ecmaComponents.tabulationStops.end()
+                                    currentStates->ecmaComponents.tabulationStops.end()
                                 );
                                 break;
                             }
@@ -750,15 +750,15 @@ namespace GGUI {
                         assert(index != UINT32_MAX);    // -1 means default, but this operation does not accept default values!
 
                         // TODO: This one wont break after hit, so maybe change into a normal loop.
-                        currentStates.ecmaComponents.tabulationStops.erase(
+                        currentStates->ecmaComponents.tabulationStops.erase(
                             std::remove_if(
-                                currentStates.ecmaComponents.tabulationStops.begin(), 
-                                currentStates.ecmaComponents.tabulationStops.end(), 
+                                currentStates->ecmaComponents.tabulationStops.begin(), 
+                                currentStates->ecmaComponents.tabulationStops.end(), 
                                 [&index](tabulationStop stop) { 
-                                    return stop.type == tabulationStop::types::CHARACTER && stop.position == IVector2{ index, currentStates.ecmaComponents.activePresentationPosition.y };
+                                    return stop.type == tabulationStop::types::CHARACTER && stop.position == IVector2{ index, currentStates->ecmaComponents.activePresentationPosition.y };
                                 }
                             ),
-                            currentStates.ecmaComponents.tabulationStops.end()
+                            currentStates->ecmaComponents.tabulationStops.end()
                         );
                     }
 
@@ -771,9 +771,9 @@ namespace GGUI {
 
                         auto line = static_cast<signed int>(params.front().getValueAsInteger());
 
-                        auto lineProgression = currentStates.ecmaComponents.getPresentationDirectionAsVector().first;
+                        auto lineProgression = currentStates->ecmaComponents.getPresentationDirectionAsVector().first;
 
-                        currentStates.ecmaComponents.activeDataPosition.y = lineProgression.y * line;
+                        currentStates->ecmaComponents.activeDataPosition.y = lineProgression.y * line;
                     }
 
                     void operate_LINE_POSITION_BACKWARD(sequence::base* input) {
@@ -785,9 +785,9 @@ namespace GGUI {
 
                         auto line = static_cast<signed int>(params.front().getValueAsInteger());
 
-                        auto lineProgression = currentStates.ecmaComponents.getPresentationDirectionAsVector().first;
+                        auto lineProgression = currentStates->ecmaComponents.getPresentationDirectionAsVector().first;
 
-                        currentStates.ecmaComponents.activeDataPosition.y += -lineProgression.y * line;
+                        currentStates->ecmaComponents.activeDataPosition.y += -lineProgression.y * line;
                     }
 
                     void operate_LINE_POSITION_FORWARD(sequence::base* input) {
@@ -799,39 +799,39 @@ namespace GGUI {
 
                         auto line = static_cast<signed int>(params.front().getValueAsInteger());
 
-                        auto lineProgression = currentStates.ecmaComponents.getPresentationDirectionAsVector().first;
+                        auto lineProgression = currentStates->ecmaComponents.getPresentationDirectionAsVector().first;
 
-                        currentStates.ecmaComponents.activeDataPosition.y += lineProgression.y * line;
+                        currentStates->ecmaComponents.activeDataPosition.y += lineProgression.y * line;
                     }
 
                     void operate_LINE_TABULATION(sequence::base* /*ignore*/) {
                         // First find the tabulation top at the current presentation position line
-                        for (auto currentTabStop : currentStates.ecmaComponents.tabulationStops) {
+                        for (auto currentTabStop : currentStates->ecmaComponents.tabulationStops) {
                             if (
-                                currentTabStop.position.y == currentStates.ecmaComponents.activePresentationPosition.y &&
-                                currentTabStop.position.x > currentStates.ecmaComponents.activePresentationPosition.x &&
+                                currentTabStop.position.y == currentStates->ecmaComponents.activePresentationPosition.y &&
+                                currentTabStop.position.x > currentStates->ecmaComponents.activePresentationPosition.x &&
                                 currentTabStop.type == tabulationStop::types::LINE
                             ) {
-                                currentStates.ecmaComponents.activePresentationPosition = currentTabStop.position;
+                                currentStates->ecmaComponents.activePresentationPosition = currentTabStop.position;
                                 break;
                             }
                         }
                     }
 
                     void operate_LINE_TABULATION_SET(sequence::base* /*ignore*/) {
-                        currentStates.ecmaComponents.tabulationStops.push_back(tabulationStop{
-                            currentStates.ecmaComponents.activeTabulationAlignment,
+                        currentStates->ecmaComponents.tabulationStops.push_back(tabulationStop{
+                            currentStates->ecmaComponents.activeTabulationAlignment,
                             tabulationStop::types::LINE,
-                            currentStates.ecmaComponents.activePresentationPosition
+                            currentStates->ecmaComponents.activePresentationPosition
                         });
                     }
                 }
 
                 namespace presentationControlFunctions {
                     void operate_BREAK_PERMITTED_HERE(sequence::base* /*ignore*/) {
-                        currentStates.ecmaComponents.lineBreaks.push_back(currentStates.ecmaComponents.activePresentationPosition);
-                        currentStates.ecmaComponents.activePresentationPosition.y++;
-                        currentStates.ecmaComponents.activePresentationPosition.x = 0;
+                        currentStates->ecmaComponents.lineBreaks.push_back(currentStates->ecmaComponents.activePresentationPosition);
+                        currentStates->ecmaComponents.activePresentationPosition.y++;
+                        currentStates->ecmaComponents.activePresentationPosition.x = 0;
                     }
 
                     void operate_DIMENSION_TEXT_AREA(sequence::base* input) {
@@ -844,7 +844,7 @@ namespace GGUI {
                         auto start = params.front().getValueAsInteger();
                         auto end = params.back().getValueAsInteger();
 
-                        currentStates.ecmaComponents.establishedCurrentDefaultPage = {start, end};
+                        currentStates->ecmaComponents.establishedCurrentDefaultPage = {start, end};
                     }
 
                     void operate_FONT_SELECTION(sequence::base* input) {
@@ -857,7 +857,7 @@ namespace GGUI {
                         auto fontSlot = params.front().getValueAsInteger();
                         auto fontID = static_cast<uint8_t>(params.back().getValueAsInteger());
 
-                        currentStates.ecmaComponents.activeFonts[(size_t)fontSlot] = fontID;
+                        currentStates->ecmaComponents.activeFonts[(size_t)fontSlot] = fontID;
                     }
 
                     void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::base* input) {
@@ -869,8 +869,8 @@ namespace GGUI {
 
                         auto combinationType = params.front().getValueAsInteger();
 
-                        auto currentParsingIndex = currentStates.ecmaComponents.currentParsingSequenceIndex;
-                        auto& callBacks = currentStates.ecmaComponents.callBacks;
+                        auto currentParsingIndex = currentStates->ecmaComponents.currentParsingSequenceIndex;
+                        auto& callBacks = currentStates->ecmaComponents.callBacks;
 
                         auto callBackHandler = [](callBack /*self*/, size_t& /*callBackIndex*/, size_t& /*parsingIndex*/, std::vector<sequence::base*>& /*parsed*/){
                             return; // TODO: ...
@@ -919,8 +919,8 @@ namespace GGUI {
                         size_t previousFontSize = 0;
 
                         // We need to check if our scalar is different from the latest scalar
-                        if (!currentStates.ecmaComponents.registeredFontAttributes.empty()) {
-                            auto &latestFontAttribute = currentStates.ecmaComponents.registeredFontAttributes.back();
+                        if (!currentStates->ecmaComponents.registeredFontAttributes.empty()) {
+                            auto &latestFontAttribute = currentStates->ecmaComponents.registeredFontAttributes.back();
 
                             previousFontSize = latestFontAttribute.fontSize;
 
@@ -928,13 +928,13 @@ namespace GGUI {
                                 return;     
                             } else {
                                 // End the last font attribute at the current presentation position
-                                latestFontAttribute.end = currentStates.ecmaComponents.activePresentationPosition;
+                                latestFontAttribute.end = currentStates->ecmaComponents.activePresentationPosition;
                             }
                         }
 
                         // Now we can safely add the new font attribute with the new scalar from this point onward
-                        currentStates.ecmaComponents.registeredFontAttributes.emplace_back(
-                            currentStates.ecmaComponents.activePresentationPosition,    // start
+                        currentStates->ecmaComponents.registeredFontAttributes.emplace_back(
+                            currentStates->ecmaComponents.activePresentationPosition,    // start
                             previousFontSize,    // font size is inherited from the previous font attribute, as per ECMA-48 specification
                             scalar
                         );
@@ -951,15 +951,15 @@ namespace GGUI {
                         auto scalar = params.front().getValueAsInteger();
 
                         // if this triggers, it means this is the closing GSS
-                        if (!currentStates.ecmaComponents.registeredFontAttributes.empty()) {
-                            fontAttributes& previous = currentStates.ecmaComponents.registeredFontAttributes.back();
+                        if (!currentStates->ecmaComponents.registeredFontAttributes.empty()) {
+                            fontAttributes& previous = currentStates->ecmaComponents.registeredFontAttributes.back();
 
-                            previous.end = currentStates.ecmaComponents.activePresentationPosition;
+                            previous.end = currentStates->ecmaComponents.activePresentationPosition;
                         } 
 
                         // Regardless of previous GSS encounters, we will always create a new succeeding GSS from thi point onward
-                        currentStates.ecmaComponents.registeredFontAttributes.emplace_back(
-                            currentStates.ecmaComponents.activePresentationPosition,    // start
+                        currentStates->ecmaComponents.registeredFontAttributes.emplace_back(
+                            currentStates->ecmaComponents.activePresentationPosition,    // start
                             scalar
                         );
                     }
@@ -972,15 +972,15 @@ namespace GGUI {
                         assert(params.size() > 0);
 
                         // Check if previous justify exists and is trailing.
-                        if (!currentStates.ecmaComponents.registeredJustifications.empty()) {
-                            auto& trailingJustification = currentStates.ecmaComponents.registeredJustifications.back();
+                        if (!currentStates->ecmaComponents.registeredJustifications.empty()) {
+                            auto& trailingJustification = currentStates->ecmaComponents.registeredJustifications.back();
                             
                             if (trailingJustification.end != 0) {   // End trailing justification
-                                trailingJustification.end = currentStates.ecmaComponents.activePresentationPosition;
+                                trailingJustification.end = currentStates->ecmaComponents.activePresentationPosition;
                             }
                         }
 
-                        justify newJustification(currentStates.ecmaComponents.activePresentationPosition);
+                        justify newJustification(currentStates->ecmaComponents.activePresentationPosition);
 
                         for (auto& p : params) {
                             auto typed = p.getValueAsInteger();
@@ -988,11 +988,11 @@ namespace GGUI {
                             newJustification.add(typed);
                         }
 
-                        currentStates.ecmaComponents.registeredJustifications.push_back(newJustification);
+                        currentStates->ecmaComponents.registeredJustifications.push_back(newJustification);
                     }
 
                     void operate_NO_BREAK_HERE(sequence::base* /*ignored*/) {
-                        currentStates.ecmaComponents.lineContinuations.push_back(currentStates.ecmaComponents.activePresentationPosition);
+                        currentStates->ecmaComponents.lineContinuations.push_back(currentStates->ecmaComponents.activePresentationPosition);
                     }
 
                     void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::base* input) {
@@ -1004,7 +1004,7 @@ namespace GGUI {
 
                         auto spacingFactorType = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activeSpacingFactor.type = spacingFactorType;
+                        currentStates->ecmaComponents.activeSpacingFactor.type = spacingFactorType;
                     }
 
                     void operate_SELECT_GRAPHIC_RENDITION(sequence::base* input) {
@@ -1014,20 +1014,20 @@ namespace GGUI {
 
                         assert(params.size() > 0);
 
-                        graphicAttributes newAttributes(currentStates.ecmaComponents.activePresentationPosition);
+                        graphicAttributes newAttributes(currentStates->ecmaComponents.activePresentationPosition);
 
                         newAttributes.parseArguments(params);
 
-                        bool cumulateFromPrevious = currentStates.ecmaComponents.activeModes.has(mode::presets::GRCM_CUMULATIVE);
+                        bool cumulateFromPrevious = currentStates->ecmaComponents.activeModes.has(mode::presets::GRCM_CUMULATIVE);
 
                         // Check if the current GRCM is replacing or cumulative
-                        if (!currentStates.ecmaComponents.registeredGraphicAttributes.empty() && cumulateFromPrevious) {
-                            auto& previousAttributes = currentStates.ecmaComponents.registeredGraphicAttributes.back();
+                        if (!currentStates->ecmaComponents.registeredGraphicAttributes.empty() && cumulateFromPrevious) {
+                            auto& previousAttributes = currentStates->ecmaComponents.registeredGraphicAttributes.back();
 
                             newAttributes.add(previousAttributes);
                         }
 
-                        currentStates.ecmaComponents.registeredGraphicAttributes.push_back(newAttributes);
+                        currentStates->ecmaComponents.registeredGraphicAttributes.push_back(newAttributes);
                     }
 
                     void operate_SET_LINE_HOME(sequence::base* input) {
@@ -1039,15 +1039,15 @@ namespace GGUI {
 
                         auto characterPosition = params.front().getValueAsInteger();
 
-                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            currentStates.ecmaComponents.homeLinePosition = {
+                        if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
+                            currentStates->ecmaComponents.homeLinePosition = {
                                 characterPosition,
-                                currentStates.ecmaComponents.activePresentationPosition.y
+                                currentStates->ecmaComponents.activePresentationPosition.y
                             };
                         } else {    // data mode
-                            currentStates.ecmaComponents.homeLinePosition = {
+                            currentStates->ecmaComponents.homeLinePosition = {
                                 characterPosition,
-                                currentStates.ecmaComponents.activeDataPosition.y
+                                currentStates->ecmaComponents.activeDataPosition.y
                             };
                         }
                     }
@@ -1061,15 +1061,15 @@ namespace GGUI {
 
                         auto characterPosition = params.front().getValueAsInteger();
 
-                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            currentStates.ecmaComponents.lineLimitPosition = {
+                        if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
+                            currentStates->ecmaComponents.lineLimitPosition = {
                                 characterPosition,
-                                currentStates.ecmaComponents.activePresentationPosition.y
+                                currentStates->ecmaComponents.activePresentationPosition.y
                             };
                         } else {    // data mode
-                            currentStates.ecmaComponents.lineLimitPosition = {
+                            currentStates->ecmaComponents.lineLimitPosition = {
                                 characterPosition,
-                                currentStates.ecmaComponents.activeDataPosition.y
+                                currentStates->ecmaComponents.activeDataPosition.y
                             };
                         }
                     }
@@ -1085,14 +1085,14 @@ namespace GGUI {
 
                         auto amountToRemove = params.front().getValueAsInteger();
 
-                        const auto& activeModes = currentStates.ecmaComponents.activeModes;
+                        const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
                         if (activeModes.has(mode::presets::DCSM_DATA)) {
                             GGUI::INTERNAL::LOGGER::log("GGUI Does not support input data stream manipulation!");
                             return;
                         }
 
-                        auto cursorPositionAtBuffer = currentStates.screen.buffer->begin() + currentStates.screen.getActiveIndex();
+                        auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
                         if (activeModes.has(mode::group::characterReplacement::IRM_INSERT_HEM_FOLLOWING)) {
                             std::fill(
                                 cursorPositionAtBuffer,
@@ -1106,7 +1106,7 @@ namespace GGUI {
                                 INTERNAL::compactString()   // These will be literally empty, and is by design!
                             );
                         } else {
-                            GGUI::INTERNAL::LOGGER::log("Unknown delete mode at: " + currentStates.screen.toString());
+                            GGUI::INTERNAL::LOGGER::log("Unknown delete mode at: " + currentStates->ecmaComponents.activePresentationPosition.toString());
                         }
                     }
 
@@ -1119,10 +1119,10 @@ namespace GGUI {
 
                         auto amountToRemove = params.front().getValueAsInteger();
 
-                        const auto& activeModes = currentStates.ecmaComponents.activeModes;
+                        const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
-                        auto cursorPositionAtBuffer = currentStates.screen.buffer->begin() + currentStates.screen.getActiveIndex();
-                        auto screenWidth = currentStates.screen.dimensions.x;
+                        auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
+                        auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x;
 
                         if (activeModes.has(mode::presets::VEM_FOLLOWING)) {
                             std::fill(
@@ -1148,15 +1148,15 @@ namespace GGUI {
 
                         auto amountToInsert = params.front().getValueAsInteger();
 
-                        const auto& activeModes = currentStates.ecmaComponents.activeModes;
+                        const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
-                        auto cursorPositionAtBuffer = currentStates.screen.buffer->begin() + currentStates.screen.getActiveIndex();
-                        auto lineLimitAtBuffer = currentStates.screen.buffer->begin() + (
-                            currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
-                        ) + currentStates.ecmaComponents.lineLimitPosition.x;
-                        auto lineHomeAtBuffer = currentStates.screen.buffer->begin() + (
-                            currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
-                        ) + currentStates.ecmaComponents.homeLinePosition.x;
+                        auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
+                        auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
+                        ) + currentStates->ecmaComponents.lineLimitPosition.x;
+                        auto lineHomeAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
+                        ) + currentStates->ecmaComponents.homeLinePosition.x;
 
                         // Since we actually cannot insert anything, because this is a screen buffer.
                         // Instead we are going to move the data by the amount
@@ -1198,16 +1198,16 @@ namespace GGUI {
 
                         auto amountToInsert = params.front().getValueAsInteger();
 
-                        const auto& activeModes = currentStates.ecmaComponents.activeModes;
+                        const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
-                        auto screenWidth = currentStates.screen.dimensions.x;
+                        auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x;
 
-                        auto activeLineBegin = currentStates.screen.buffer->begin() + (
-                            currentStates.screen.getActiveIndex() - currentStates.screen.cursor.x
+                        auto activeLineBegin = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x
                         );
 
-                        auto lineLimitAtBuffer = currentStates.screen.buffer->begin() + (
-                            currentStates.ecmaComponents.lineLimitPosition.y + 1
+                        auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                            currentStates->ecmaComponents.lineLimitPosition.y + 1
                         ) * screenWidth;
 
                         auto insertedCellCount = amountToInsert * screenWidth;
@@ -1228,7 +1228,7 @@ namespace GGUI {
                             auto startOfAffectedArea = activeLineBegin - insertedCellCount + screenWidth;
 
                             std::move_backward(
-                                currentStates.screen.buffer->begin(),
+                                currentStates->ecmaComponents.activePresentationBuffer.begin(),
                                 startOfAffectedArea,
                                 activeLineBegin + screenWidth
                             );
@@ -1252,8 +1252,8 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.y += line;
-                        currentStates.ecmaComponents.activePresentationPosition.x = 0;  // TODO: line home position?
+                        currentStates->ecmaComponents.activePresentationPosition.y += line;
+                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  // TODO: line home position?
                     }
 
                     void operate_CURSOR_PRECEDING_LINE(sequence::base* input) {
@@ -1265,8 +1265,8 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.y -= line;
-                        currentStates.ecmaComponents.activePresentationPosition.x = 0;  // TODO: line home position?
+                        currentStates->ecmaComponents.activePresentationPosition.y -= line;
+                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  // TODO: line home position?
                     }
 
                     void operate_CURSOR_LEFT(sequence::base* input) {
@@ -1278,7 +1278,7 @@ namespace GGUI {
 
                         auto character = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.x -= character;
+                        currentStates->ecmaComponents.activePresentationPosition.x -= character;
                     }
 
                     void operate_CURSOR_DOWN(sequence::base* input) {
@@ -1290,7 +1290,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.y += line;
+                        currentStates->ecmaComponents.activePresentationPosition.y += line;
                     }
 
                     void operate_CURSOR_RIGHT(sequence::base* input) {
@@ -1302,7 +1302,7 @@ namespace GGUI {
 
                         auto character = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.x += character;
+                        currentStates->ecmaComponents.activePresentationPosition.x += character;
                     }
 
                     void operate_CURSOR_POSITION(sequence::base* input) {
@@ -1315,8 +1315,8 @@ namespace GGUI {
                         auto line = params.front().getValueAsInteger();
                         auto character = params.back().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.y = line;
-                        currentStates.ecmaComponents.activePresentationPosition.x = character;
+                        currentStates->ecmaComponents.activePresentationPosition.y = line;
+                        currentStates->ecmaComponents.activePresentationPosition.x = character;
                     }
 
                     void operate_CURSOR_UP(sequence::base* input) {
@@ -1328,7 +1328,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.y -= line;
+                        currentStates->ecmaComponents.activePresentationPosition.y -= line;
                     }
                 }
 
@@ -1342,7 +1342,7 @@ namespace GGUI {
 
                         auto page = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePageIndex += page;
+                        currentStates->ecmaComponents.activePageIndex += page;
                     }
 
                     void operate_PRECEDING_PAGE(sequence::base* input) {
@@ -1354,7 +1354,7 @@ namespace GGUI {
 
                         auto page = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePageIndex -= page;
+                        currentStates->ecmaComponents.activePageIndex -= page;
                     }
 
                     void operate_SCROLL_DOWN(sequence::base* input) {
@@ -1366,7 +1366,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.y += line;   // TODO: Missing horizontal scroll
+                        currentStates->ecmaComponents.activePresentationPosition.y += line;   // TODO: Missing horizontal scroll
                     }
 
                     void operate_SCROLL_UP(sequence::base* input) {
@@ -1378,25 +1378,25 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates.ecmaComponents.activePresentationPosition.y -= line;   // TODO: Missing horizontal scroll
+                        currentStates->ecmaComponents.activePresentationPosition.y -= line;   // TODO: Missing horizontal scroll
                     }
                 }
 
                 namespace deviceControlFunctions {
                     void operate_DEVICE_CONTROL_ONE(sequence::base* /*ignored*/) {
-                        currentStates.ecmaComponents.powerStatus = ancillaryStates::X_ON;
+                        currentStates->ecmaComponents.powerStatus = ancillaryStates::X_ON;
                     }
 
                     void operate_DEVICE_CONTROL_TWO(sequence::base* /*ignored*/) {
-                        currentStates.ecmaComponents.powerStatus = ancillaryStates::BASIC_MODE;
+                        currentStates->ecmaComponents.powerStatus = ancillaryStates::BASIC_MODE;
                     }
 
                     void operate_DEVICE_CONTROL_THREE(sequence::base* /*ignored*/) {
-                        currentStates.ecmaComponents.powerStatus = ancillaryStates::X_OFF;
+                        currentStates->ecmaComponents.powerStatus = ancillaryStates::X_OFF;
                     }
 
                     void operate_DEVICE_CONTROL_FOUR(sequence::base* /*ignored*/) {
-                        currentStates.ecmaComponents.powerStatus = ancillaryStates::INTERRUPT;
+                        currentStates->ecmaComponents.powerStatus = ancillaryStates::INTERRUPT;
                     }
                 }
 
@@ -1411,7 +1411,7 @@ namespace GGUI {
                         for (auto& p : params) {
                             auto typed = p.getValueAsInteger();
 
-                            currentStates.ecmaComponents.activeModes.set({typed, mode::definition::RESET});
+                            currentStates->ecmaComponents.activeModes.set({typed, mode::definition::RESET});
                         }
                     }
 
@@ -1425,7 +1425,7 @@ namespace GGUI {
                         for (auto& p : params) {
                             auto typed = p.getValueAsInteger();
 
-                            currentStates.ecmaComponents.activeModes.set({typed, mode::definition::SET});
+                            currentStates->ecmaComponents.activeModes.set({typed, mode::definition::SET});
                         }
                     }
                 }
@@ -1455,12 +1455,12 @@ namespace GGUI {
                             // TODO: ...
                         }
 
-                        currentStates.transmission.addToQueue(answer);
+                        currentStates->transmission.addToQueue(answer);
                     }
 
                     void operate_START_OF_TRANSMISSION(sequence::base*) {
-                        auto currentParsingIndex = currentStates.ecmaComponents.currentParsingSequenceIndex;
-                        auto& callBacks = currentStates.ecmaComponents.callBacks;
+                        auto currentParsingIndex = currentStates->ecmaComponents.currentParsingSequenceIndex;
+                        auto& callBacks = currentStates->ecmaComponents.callBacks;
 
                         auto callBackHandler = [](callBack self, size_t& callBackIndex, size_t& parsingIndex, std::vector<sequence::base*>& parsed){
                             auto currentTransmission = static_cast<sequence::prefix<table::C0>*>(parsed[parsingIndex]);
@@ -1471,12 +1471,12 @@ namespace GGUI {
                             
                             bool dualCallBackCombine = (
                                 primaryTransmissionEnd == 0 && 
-                                currentStates.ecmaComponents.callBacks.back().start > self.start &&
+                                currentStates->ecmaComponents.callBacks.back().start > self.start &&
                                 result.type == sequence::transmission::types::HEADER
                             );
                             
                             if (dualCallBackCombine) {  // the second callBack is an start of text transmission block, which will indicate our primary set end.
-                                primaryTransmissionEnd = currentStates.ecmaComponents.callBacks[callBackIndex + 1].start - 1;   // -1 to ignore the STX/ETX/ETB of the second transmission block
+                                primaryTransmissionEnd = currentStates->ecmaComponents.callBacks[callBackIndex + 1].start - 1;   // -1 to ignore the STX/ETX/ETB of the second transmission block
                             }
 
                             size_t actualTransmissionEnd = primaryTransmissionEnd;
@@ -1502,7 +1502,7 @@ namespace GGUI {
                             result.primary = std::move(primary);
 
                             if (dualCallBackCombine) {
-                                auto& body = currentStates.ecmaComponents.callBacks[callBackIndex + 1];
+                                auto& body = currentStates->ecmaComponents.callBacks[callBackIndex + 1];
                                 std::vector<char> secondary;
                                 secondary.resize(body.end - body.start + 1);
 
@@ -1545,12 +1545,12 @@ namespace GGUI {
 
                     void operate_END_OF_TRANSMISSION(sequence::base*) {
                         // Check that a open-ended transmission exists.
-                        if (currentStates.ecmaComponents.callBacks.empty() || currentStates.ecmaComponents.callBacks.back().end != 0) {
+                        if (currentStates->ecmaComponents.callBacks.empty() || currentStates->ecmaComponents.callBacks.back().end != 0) {
                             GGUI::INTERNAL::LOGGER::log("Unexpected EOT/ETX/ETB!");
                             return;
                         }
 
-                        currentStates.ecmaComponents.callBacks.back().end = currentStates.ecmaComponents.currentParsingSequenceIndex;
+                        currentStates->ecmaComponents.callBacks.back().end = currentStates->ecmaComponents.currentParsingSequenceIndex;
                     }
                 }
 
@@ -1568,10 +1568,10 @@ namespace GGUI {
                             params.back().getValueAsInteger()
                         };
 
-                        if (currentStates.ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            currentStates.ecmaComponents.activePresentationPosition = reporting;
+                        if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
+                            currentStates->ecmaComponents.activePresentationPosition = reporting;
                         } else {    // DCSM_DATA
-                            currentStates.ecmaComponents.activeDataPosition = reporting;
+                            currentStates->ecmaComponents.activeDataPosition = reporting;
                         }
                     }
 
@@ -1591,7 +1591,7 @@ namespace GGUI {
 
                             auto response = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({GGUI_SINGLE_VALUE_IDENTIFIER}).toString();
 
-                            currentStates.transmission.addToQueue(response);
+                            currentStates->transmission.addToQueue(response);
                         } else {
                             // This needs to be already overridden via the DEC page re-route, something went wrong here...
                             GGUI::INTERNAL::LOGGER::log("ERROR: Unjustified device identification: " + std::to_string(deviceType));
@@ -1599,7 +1599,7 @@ namespace GGUI {
                     }
 
                     void operate_RESET_TO_INITIAL_STATE(sequence::base* /*ignored*/) {
-                        currentStates.ecmaComponents.reset();
+                        currentStates->ecmaComponents.reset();
                     }
                 }
             }

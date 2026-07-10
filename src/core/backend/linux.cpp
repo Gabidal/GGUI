@@ -97,11 +97,11 @@ namespace GGUI {
 
             iovec vec[2] = {
                 { (void*)cursorReset.text,                      cursorReset.size },
-                { (void*)currentStates.screen.liquifiedBuffer->data(),   currentStates.screen.liquifiedBuffer->size() }
+                { (void*)currentStates->screen.liquefiedBuffer->data(),   currentStates->screen.liquefiedBuffer->size() }
             };
 
             ssize_t wrote = writev(output.handle, vec, 2);
-            if (wrote != (ssize_t)cursorReset.size + (ssize_t)currentStates.screen.liquifiedBuffer->size()) {
+            if (wrote != (ssize_t)cursorReset.size + (ssize_t)currentStates->screen.liquefiedBuffer->size()) {
                 GGUI::INTERNAL::LOGGER::log("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
             }
         }
@@ -127,28 +127,28 @@ namespace GGUI {
                     TIME::SECOND    // Max allowed wait time, could be replaced with -1, to wait as long as needed.
                 ) <= 0) {
                     // No data; avoid spinning
-                    currentStates.transmission.inputSize = 0;
+                    currentStates->transmission.inputSize = 0;
                     return;
                 }
             }
 
-            currentStates.transmission.inputSize = read(input.handle, currentStates.transmission.inputBuffer.begin(), currentStates.transmission.capacity);
-            if (currentStates.transmission.inputSize <= 0) {
+            currentStates->transmission.inputSize = read(input.handle, currentStates->transmission.inputBuffer.begin(), currentStates->transmission.capacity);
+            if (currentStates->transmission.inputSize <= 0) {
                 // EOF or error; normalize to 0 to signal no input
-                currentStates.transmission.inputSize = 0;
+                currentStates->transmission.inputSize = 0;
             }
         }
 
         void queryResponse() {
-            if (currentStates.transmission.responseSize > 0) {  // Check if we have a response
-                ssize_t written = write(response.handle, currentStates.transmission.responseBuffer.data(), currentStates.transmission.responseSize);
+            if (currentStates->transmission.responseSize > 0) {  // Check if we have a response
+                ssize_t written = write(response.handle, currentStates->transmission.responseBuffer.data(), currentStates->transmission.responseSize);
                 if (written < 0) {
                     GGUI::INTERNAL::LOGGER::log("ERROR: Failed to write output query response: " + std::string(strerror(errno)));
-                } else if (currentStates.transmission.responseSize != written) {   // Move the buffer
+                } else if (currentStates->transmission.responseSize != written) {   // Move the buffer
                     // NOTE: this will be potentially really slow
-                    std::memmove(currentStates.transmission.responseBuffer.data(), currentStates.transmission.responseBuffer.data() + written, currentStates.transmission.responseSize - written);
+                    std::memmove(currentStates->transmission.responseBuffer.data(), currentStates->transmission.responseBuffer.data() + written, currentStates->transmission.responseSize - written);
 
-                    currentStates.transmission.responseSize -= written;
+                    currentStates->transmission.responseSize -= written;
                 }
             }
         }

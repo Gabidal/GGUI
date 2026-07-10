@@ -70,7 +70,7 @@ namespace GGUI{
          *          of the text field. The function respects the maximum height and width of the text field 
          *          and handles overflow according to the Style settings.
          */
-        void alignTextLeft(std::vector<UTF>& Result);
+        void alignTextLeft(std::vector<INTERNAL::compactString>& Result);
         
         /**
          * @brief Aligns text to the right within the text field.
@@ -79,7 +79,7 @@ namespace GGUI{
          *          of the text field. The function respects the maximum height and width of the text field
          *          and handles overflow according to the Style settings.
          */
-        void alignTextRight(std::vector<UTF>& Result);
+        void alignTextRight(std::vector<INTERNAL::compactString>& Result);
         
         /**
          * @brief Aligns text to the center within the text field.
@@ -87,7 +87,7 @@ namespace GGUI{
          * @details This function iterates over each line in the Text_Cache and aligns them to the center of the text field. The function respects the maximum height and width of the text field
          *          and handles overflow according to the Style settings.
          */
-        void alignTextCenter(std::vector<UTF>& Result);
+        void alignTextCenter(std::vector<INTERNAL::compactString>& Result);
 
         /**
          * @brief Listens for input and calls a function when user presses any key.
@@ -106,7 +106,7 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
          * @return A vector of UTF objects representing the rendered text field.
          */
-        std::vector<GGUI::UTF>& render() override;
+        std::vector<INTERNAL::compactString>& render() override;
         
         /**
          * @brief Creates a new instance of the textField element.

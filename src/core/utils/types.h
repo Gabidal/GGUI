@@ -387,8 +387,8 @@ namespace GGUI{
          *
          * @return A string representation of the IVector2.
          */
-        std::string To_String() const {
-            return std::to_string(x) + ", " + std::to_string(y);
+        std::string toString() const {
+            return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
         }
     };
 
@@ -557,6 +557,14 @@ namespace GGUI{
         }
     };
 
+    class rectangle {
+    public:
+        IVector2 position;
+        IVector2 size;
+
+        constexpr rectangle(IVector2 pos = {}, IVector2 Size = {}) : position(pos), size(Size) {}
+        constexpr rectangle(const IVector2& pos, const IVector2& sz) : position(pos), size(sz) {}
+    };
 
     class event{
     public:

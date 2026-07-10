@@ -133,9 +133,9 @@ namespace GGUI{
      * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
      * @return A vector of UTF objects representing the rendered text field.
      */
-    std::vector<GGUI::UTF>& textField::render() {
+    std::vector<INTERNAL::compactString>& textField::render() {
         // Get reference to the render buffer
-        std::vector<GGUI::UTF>& Result = renderBuffer;
+        std::vector<INTERNAL::compactString>& Result = renderBuffer;
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
@@ -194,7 +194,7 @@ namespace GGUI{
             // Clean the color stain after applying the color system.
             Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
-            applyColors(Result);
+            applyColors();
         }
 
         // Align text and add child windows to the Result buffer if the DEEP stain is detected
@@ -243,7 +243,7 @@ namespace GGUI{
      *          of the text field. The function respects the maximum height and width of the text field 
      *          and handles overflow according to the Style settings.
      */
-    void textField::alignTextLeft(std::vector<UTF>& Result) {
+    void textField::alignTextLeft(std::vector<INTERNAL::compactString>& Result) {
         unsigned int Line_Index = 0;  // To keep track of the inter-line positioning.
         unsigned int writableWidth = getWidth() - hasBorder();
         unsigned int writableHeight = getHeight() - hasBorder();
@@ -282,7 +282,7 @@ namespace GGUI{
      *          of the text field. The function respects the maximum height and width of the text field
      *          and handles overflow according to the Style settings.
      */
-    void textField::alignTextRight(std::vector<UTF>& Result) {
+    void textField::alignTextRight(std::vector<INTERNAL::compactString>& Result) {
         unsigned int Line_Index = 0;    // To keep track of the inter-line positioning.
         unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
         unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
@@ -319,7 +319,7 @@ namespace GGUI{
      * @details This function iterates over each line in the Text_Cache and aligns them to the center of the text field. The function respects the maximum height and width of the text field
      *          and handles overflow according to the Style settings.
      */
-    void textField::alignTextCenter(std::vector<UTF>& Result) {
+    void textField::alignTextCenter(std::vector<INTERNAL::compactString>& Result) {
         unsigned int Line_Index = 0;    // To keep track of the inter-line positioning.
         unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
         unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.

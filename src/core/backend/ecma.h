@@ -34,6 +34,7 @@ namespace GGUI {
          * Stated here: https://ecma-international.org/policies/by-ipr/ecma-text-copyright-policy/
         */
         namespace ecma {
+            using compactString = INTERNAL::compactString;
 
             namespace configuration {
                 class page;
@@ -2006,6 +2007,13 @@ namespace GGUI {
 
                 IVector2 activeDataPosition;
                 IVector2 activePresentationPosition;
+                IVector2 activeScreenDimensions;
+
+                std::vector<compactString> activePresentationBuffer;
+
+                constexpr auto getPresentationPositionAsBufferAddress() {
+                    return activePresentationBuffer.begin() + activePresentationPosition.y * activeScreenDimensions.x + activePresentationPosition.x;
+                }
 
                 enum class characterMovementDirection : uint8_t {
                     DIRECTION_OF_CHARACTER_PROGRESSION,             // The direction of implicit movement is the same as that of the character progression, used as *1 coefficient of direction vector
@@ -4083,7 +4091,7 @@ namespace GGUI {
 
                     /**
                      * @brief INT is used to indicate to the receiving device that the current process is to be interrupted and an agreed procedure is to be initiated. 
-                     * This control function is applicable to either direction of currentStates.transmission. 
+                     * This control function is applicable to either direction of currentStates->transmission. 
                      * @example `01/11 06/01`
                      */
                     inline auto INTERRUPT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::INT);

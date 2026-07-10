@@ -15,19 +15,19 @@ namespace GGUI {
                     
                     namespace cursorControlFunctions {
                         void operate_CURSOR_UP(ecma::sequence::base* /*ignored*/) {
-                            currentStates.ecmaComponents.activePresentationPosition.y--;
+                            currentStates->ecmaComponents.activePresentationPosition.y--;
                         }
 
                         void operate_CURSOR_DOWN(ecma::sequence::base* /*ignored*/) {
-                            currentStates.ecmaComponents.activePresentationPosition.y++;
+                            currentStates->ecmaComponents.activePresentationPosition.y++;
                         }
 
                         void operate_CURSOR_LEFT(ecma::sequence::base* /*ignored*/) {
-                            currentStates.ecmaComponents.activePresentationPosition.x--;
+                            currentStates->ecmaComponents.activePresentationPosition.x--;
                         }
 
                         void operate_CURSOR_RIGHT(ecma::sequence::base* /*ignored*/) {
-                            currentStates.ecmaComponents.activePresentationPosition.x++;
+                            currentStates->ecmaComponents.activePresentationPosition.x++;
                         }
                     }
 
@@ -40,7 +40,7 @@ namespace GGUI {
                             if (params.size() == 1) {   // This is the request for identification, which is already implemented in the ecma.cpp, so we can just reroute into there.
                                 ecma::sequences::miscellaneousControlFunctions::operate_DEVICE_ATTRIBUTES(input);
                             } else if (params.size() == 2) {
-                                currentStates.decComponents.VT100Components.activeDeviceAttributes = params.back().getValueAsInteger();
+                                currentStates->decComponents.VT100Components.activeDeviceAttributes = params.back().getValueAsInteger();
                             } else {
                                 assert(false);
                             }
@@ -61,7 +61,7 @@ namespace GGUI {
                                     auto typed = params[i].getValueAsInteger();
 
                                     if (ecma::table::contains<modeTypes>(typed)) {
-                                        currentStates.decComponents.VT100Components.modes.set({typed, ecma::mode::definition::RESET});
+                                        currentStates->decComponents.VT100Components.modes.set({typed, ecma::mode::definition::RESET});
                                     }
 
                                 }
@@ -83,7 +83,7 @@ namespace GGUI {
                                     auto typed = params[i].getValueAsInteger();
 
                                     if (ecma::table::contains<modeTypes>(typed)) {
-                                        currentStates.decComponents.VT100Components.modes.set({typed, ecma::mode::definition::SET});
+                                        currentStates->decComponents.VT100Components.modes.set({typed, ecma::mode::definition::SET});
                                     }
 
                                 }

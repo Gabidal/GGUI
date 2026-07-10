@@ -1991,6 +1991,8 @@ namespace GGUI{
             INTERNAL::LOGGER::registerCurrentThread();
             INTERNAL::LOGGER::log("Starting GGUI Core initialization...");
 
+            terminal::init();
+
             INTERNAL::updateMaxWidthAndHeight();
             
             if (!SETTINGS::enableDRM){
@@ -2011,6 +2013,8 @@ namespace GGUI{
                 height(INTERNAL::maxHeight) | 
                 name("Main")
             , true);
+
+            terminal::currentStates->screen.link(main);
 
             std::thread renderingThread([](){
                 INTERNAL::LOGGER::registerCurrentThread();
@@ -2282,7 +2286,7 @@ namespace GGUI{
          * @param Parent_Buffer The parent element's buffer.
          * @param Child_Buffer The child element's buffer.
          */
-        void nestElement(GGUI::element* parent, GGUI::element* child, std::vector<GGUI::UTF>& Parent_Buffer, std::vector<GGUI::UTF>& Child_Buffer){
+        void nestElement(GGUI::element* parent, GGUI::element* child, std::vector<compactString>& Parent_Buffer, std::vector<compactString>& Child_Buffer){
             INTERNAL::fittingArea Limits = getFittingArea(parent, child);
 
             for (int y = Limits.start.y; y < Limits.end.y; y++){
@@ -2290,7 +2294,8 @@ namespace GGUI{
                     // Calculate the position of the child element in its own buffer.
                     int Child_Buffer_Y = (y - Limits.start.y + Limits.negativeOffset.y) * child->getWidth();
                     int Child_Buffer_X = (x - Limits.start.x + Limits.negativeOffset.x); 
-                    computeAlphaToNesting(Parent_Buffer[y * parent->getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacityByte());
+                    // computeAlphaToNesting(Parent_Buffer[y * parent->getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacityByte());
+                    Parent_Buffer[y * parent->getWidth() + x] = Child_Buffer[Child_Buffer_Y + Child_Buffer_X];
                 }
             }
         }

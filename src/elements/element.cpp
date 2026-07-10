@@ -183,7 +183,7 @@ GGUI::element::~element(){
  * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
  * @return A vector of UTF objects representing the rendered element and its children.
  */
-std::vector<GGUI::UTF>& GGUI::element::render(){
+std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
     // Check for Dynamic attributes
     if(Style->evaluateDynamicDimensions(this))
         Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
@@ -230,7 +230,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
     if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
         Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
-        std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
+        std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_COMPACT_STRING);
         
         Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
     }
@@ -239,7 +239,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
         
         renderBuffer.clear();
-        renderBuffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+        renderBuffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_COMPACT_STRING);
 
         Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
     }
@@ -256,7 +256,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
         // Clean the color stain after applying the color system.
         Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
 
-        applyColors(renderBuffer);
+        applyColors();
     }
 
     bool Connect_Borders_With_Parent = hasBorder();
@@ -277,7 +277,7 @@ std::vector<GGUI::UTF>& GGUI::element::render(){
             if (c->hasBorder())
                 Childs_With_Borders++;
 
-            std::vector<UTF>* tmp = &c->render();
+            std::vector<INTERNAL::compactString>* tmp = &c->render();
 
             nestElement(this, c, renderBuffer, *tmp);
         }
@@ -456,7 +456,7 @@ GGUI::styling GGUI::element::getStyle() const {
  * 
  * @return GGUI::styling* Pointer to the direct styling object of the element.
  */
-GGUI::styling* GGUI::element::getDirectStyle() {
+GGUI::styling* GGUI::element::getDirectStyle() const {
     return Style;
 }
 
@@ -519,7 +519,7 @@ void GGUI::element::showBorder(bool b, bool Previous_State) {
  *          It returns true if the element has a border, false otherwise.
  * @return True if the element has a border, false otherwise.
  */
-bool GGUI::element::hasBorder(){
+bool GGUI::element::hasBorder() const{
     return Style->Border_Enabled.value;
 }
 
@@ -883,7 +883,7 @@ void GGUI::element::setTitle(INTERNAL::compactString t){
     Style->Title.value = t;
 }
 
-GGUI::INTERNAL::compactString GGUI::element::getTitle(){
+GGUI::INTERNAL::compactString GGUI::element::getTitle() const {
     // Return the title of the element
     return Style->Title.value;
 }
@@ -1002,7 +1002,7 @@ void GGUI::element::embedStyles(){
  * @param child The child element for which the fitting dimensions are calculated.
  * @return A pair containing the width and height of the fitting dimensions.
  */
-std::pair<int, int> GGUI::element::getFittingDimensions(element* child) {
+std::pair<int, int> GGUI::element::getFittingDimensions(element* child) const {
     IVector3 Current_Position = child->getPosition();
 
     int Result_Width = 0;
@@ -1067,7 +1067,7 @@ std::pair<int, int> GGUI::element::getFittingDimensions(element* child) {
  *
  * @return GGUI::IVector3 The final size limit of the element.
  */
-GGUI::IVector3 GGUI::element::getFinalLimit(){
+GGUI::IVector3 GGUI::element::getFinalLimit() const{
     if (isOverflowAllowed()){
         return {INT16_MAX, INT16_MAX};
     }
@@ -1441,14 +1441,16 @@ void GGUI::element::computeDynamicSize(){
  *
  * @param Result The vector containing the rendered string.
  */
-void GGUI::element::applyColors(std::vector<UTF>& Result){
+void GGUI::element::applyColors(){
     // Loop over each UTF-8 character in the rendered string and set its color to the
     // color specified in the style.
     const auto composedRGB = composeAllTextRGBvalues();
 
-    for (auto& utf : Result){
-        utf.setColor(composedRGB);
-    }
+    // TODO: pipe forward rectangle colored area for graphicAttributes
+
+    // for (auto& utf : Result){
+    //     utf.setColor(composedRGB);
+    // }
 }
 
 /**
@@ -1456,31 +1458,31 @@ void GGUI::element::applyColors(std::vector<UTF>& Result){
  *
  * @param Result The string to add the border to.
  */
-void GGUI::element::renderBorders(std::vector<UTF>& Result){
+void GGUI::element::renderBorders(std::vector<INTERNAL::compactString>& Result){
     Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
     if (!hasBorder()) return;
 
     const unsigned int Width  = getWidth();
     const unsigned int Height = getHeight();
-    const auto composedRGB    = composeAllBorderRGBvalues();
+    const auto composedRGB    = composeAllBorderRGBvalues();    // TODO: pipe forward rectangle colored area for graphicAttributes
     const auto& Border        = Style->Border_Style;
 
     // Corners
-    Result[0] = GGUI::UTF(Border.topLeftCorner, composedRGB);
-    Result[Width - 1] = GGUI::UTF(Border.topRightCorner, composedRGB);
-    Result[(Height - 1) * Width] = GGUI::UTF(Border.bottomLeftCorner, composedRGB);
-    Result[(Height * Width) - 1] = GGUI::UTF(Border.bottomRightCorner, composedRGB);
+    Result[0] = Border.topLeftCorner;
+    Result[Width - 1] = Border.topRightCorner;
+    Result[(Height - 1) * Width] = Border.bottomLeftCorner;
+    Result[(Height * Width) - 1] = Border.bottomRightCorner;
 
     // Top and Bottom horizontal borders
     for (unsigned int x = 1; x < Width - 1; ++x) {
-        Result[x] = GGUI::UTF(Border.horizontalLine, composedRGB);                          // Top row
-        Result[(Height - 1) * Width + x] = GGUI::UTF(Border.horizontalLine, composedRGB);   // Bottom row
+        Result[x] = Border.horizontalLine;                          // Top row
+        Result[(Height - 1) * Width + x] = Border.horizontalLine;   // Bottom row
     }
 
     // Left and Right vertical borders
     for (unsigned int y = 1; y < Height - 1; ++y) {
-        Result[y * Width] = GGUI::UTF(Border.verticalLine, composedRGB);            // Left column
-        Result[y * Width + (Width - 1)] = GGUI::UTF(Border.verticalLine, composedRGB); // Right column
+        Result[y * Width] = Border.verticalLine;            // Left column
+        Result[y * Width + (Width - 1)] = Border.verticalLine; // Right column
     }
 }
 
@@ -1507,14 +1509,16 @@ void GGUI::element::renderBorders(std::vector<UTF>& Result){
  * @note The function assumes that the `Result` vector is pre-allocated and large enough
  *       to hold the rendered title and ellipsis.
  */
-void GGUI::element::renderTitle(std::vector<UTF>& Result){
+void GGUI::element::renderTitle(std::vector<INTERNAL::compactString>& Result){
     if (Style->Title.empty())
         return;
 
     unsigned int Title_Length = Style->Title.value.size; // +1 for trailing, since Compact_Strings do not include trailing characters in their size.
     unsigned int Horizontal_Offset = hasBorder();
-    INTERNAL::compactString Ellipsis = "...";
+    static constexpr INTERNAL::compactString Ellipsis = "...";
     bool Enable_Ellipsis = false;
+
+    std::pair<RGB, RGB> composedColor = composeAllTextRGBvalues();  // TODO: pipe forward rectangle colored area for graphicAttributes
 
     unsigned int Writable_Length = INTERNAL::Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.size - 1);
 
@@ -1523,7 +1527,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
 
     // Now we'll write what we can
     for (unsigned int x = Horizontal_Offset; x < Writable_Length + Horizontal_Offset; x++){
-        Result[x] = UTF(Style->Title.value[x - Horizontal_Offset], composeAllTextRGBvalues());
+        Result[x] = Style->Title.value[x - Horizontal_Offset];
     }
 
     // And then we'll add the ellipsis
@@ -1531,7 +1535,7 @@ void GGUI::element::renderTitle(std::vector<UTF>& Result){
         unsigned int Ellipsis_Offset = Writable_Length + Horizontal_Offset;
         for (unsigned int x = 0; x < Ellipsis.size; x++){
             if ((int64_t)(Ellipsis_Offset + x) < (int64_t)getWidth()){
-                Result[Ellipsis_Offset + x] = UTF(Ellipsis[x], composeAllTextRGBvalues());
+                Result[Ellipsis_Offset + x] = Ellipsis[x];
             }
         }
     }
@@ -1545,7 +1549,7 @@ inline bool Is_In_Bounds(GGUI::IVector3 index, GGUI::element* parent){
     return true;
 }
 
-inline GGUI::UTF* From(GGUI::IVector3 index, std::vector<GGUI::UTF>& Parent_Buffer, GGUI::element* Parent){
+inline GGUI::INTERNAL::compactString* From(GGUI::IVector3 index, std::vector<GGUI::INTERNAL::compactString>& Parent_Buffer, GGUI::element* Parent){
     return &Parent_Buffer[index.y * Parent->getWidth() + index.x];
 }
 
@@ -1574,7 +1578,7 @@ void GGUI::element::setCustomBorderStyle(GGUI::styledBorder style) {
  * @param B The second element.
  * @param Parent_Buffer The buffer of the parent element.
  */
-void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>& Parent_Buffer){
+void GGUI::element::postProcessBorders(element* A, element* B, std::vector<INTERNAL::compactString>& Parent_Buffer){
     // We only need to calculate the childs points in which they intersect with the parent borders.
     // At these intersecting points of border we will construct a bit mask that portraits the connections the middle point has.
     // With the calculated bit mask we can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
@@ -1701,7 +1705,7 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<UTF>&
             continue;
         }
 
-        From(c, Parent_Buffer, this)->setText(finalBorder);
+        From(c, Parent_Buffer, this)->set(finalBorder);
     }
 }
 
@@ -1769,7 +1773,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
  * @details This function will check if any of the children have changed, this is used to determine if the element needs to be re-drawn.
  * @return true if any children have changed, false otherwise.
  */
-bool GGUI::element::childrenChanged(){
+bool GGUI::element::childrenChanged() const {
     for (auto* e : Style->Childs){
         if (e->getDirty().is(INTERNAL::STAIN_TYPE::FINALIZE)){
             GGUI::INTERNAL::reportStack("Child element passthrough Finalization stage!");
@@ -1795,7 +1799,7 @@ bool GGUI::element::childrenChanged(){
  *          are transparent and require redrawing.
  * @return True if any child is transparent and not clean; otherwise, false.
  */
-bool GGUI::element::hasTransparentChildren() {
+bool GGUI::element::hasTransparentChildren() const {
     // If the element is not visible, return false.
     if (!Show)
         return false;
@@ -1859,7 +1863,7 @@ void GGUI::element::setName(std::string name){
  * @param name The name of the element to search for.
  * @return A pointer to the element with the specified name, or nullptr if no such element is found.
  */
-GGUI::element* GGUI::element::getElement(std::string name){
+GGUI::element* GGUI::element::getElement(std::string name) {
     for (auto* c : getChilds()){
         if (c->getNameAsRaw() == name)
             return c;

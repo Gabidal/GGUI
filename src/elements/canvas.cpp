@@ -141,8 +141,8 @@ namespace GGUI{
      *          It also handles the multi-frame list and sprite animations.
      * @return A vector of UTF objects representing the rendered canvas.
      */
-    std::vector<GGUI::UTF>& canvas::render() {
-        std::vector<GGUI::UTF>& Result = renderBuffer;
+    std::vector<INTERNAL::compactString>& canvas::render() {
+        std::vector<INTERNAL::compactString>& Result = renderBuffer;
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
