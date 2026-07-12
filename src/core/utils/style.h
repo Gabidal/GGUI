@@ -6,6 +6,8 @@
 #include "color.h"
 #include "utils.h"
 
+#include "../backend/utils.h"
+
 #include <array>
 #include <string>
 #include <cassert>
@@ -2306,6 +2308,65 @@ namespace GGUI{
         INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
+    enum class textAttributeTypes : uint8_t {
+        DEFAULT             = alias(terminal::graphicalTextAttributes::DEFAULT),
+        BOLD                = alias(terminal::graphicalTextAttributes::BOLD),
+        FAINT               = alias(terminal::graphicalTextAttributes::FAINT),
+        ITALIC              = alias(terminal::graphicalTextAttributes::ITALIC),
+        UNDERLINE           = alias(terminal::graphicalTextAttributes::UNDERLINE),
+        SLOW_BLINK          = alias(terminal::graphicalTextAttributes::SLOW_BLINK),
+        RAPID_BLINK         = alias(terminal::graphicalTextAttributes::RAPID_BLINK),
+        REVERSE_VIDEO       = alias(terminal::graphicalTextAttributes::REVERSE_VIDEO),
+        CROSSED_OUT         = alias(terminal::graphicalTextAttributes::CROSSED_OUT),
+        PRIMARY_FONT        = alias(terminal::graphicalTextAttributes::PRIMARY_FONT),
+        ALTERNATIVE_FONT_1  = alias(terminal::graphicalTextAttributes::ALT_FONT_1),
+        DOUBLE_UNDERLINE    = alias(terminal::graphicalTextAttributes::DOUBLY_UNDERLINED),
+        FRAMED              = alias(terminal::graphicalTextAttributes::FRAMED),
+        ENCIRCLED           = alias(terminal::graphicalTextAttributes::ENCIRCLED),
+        OVERLINE            = alias(terminal::graphicalTextAttributes::OVERLINED)
+    };
+
+    class textAttribute : public STYLING_INTERNAL::styleBase{
+    public:
+        INTERNAL::linearMask<uint64_t, textAttributeTypes> value;
+
+        constexpr textAttribute(const INTERNAL::linearMask<uint64_t, textAttributeTypes>& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
+        
+        constexpr textAttribute(const GGUI::textAttribute& other) : styleBase(other.status), value(other.value){}
+
+        inline ~textAttribute() override { styleBase::~styleBase(); }
+
+        inline styleBase* copy() const override {
+            return new textAttribute(*this);
+        }
+
+        constexpr textAttribute& operator=(const textAttribute& other){
+            // Only copy the information if the other is enabled.
+            if (other.status >= status){
+                value = other.value;
+
+                status = other.status;
+            }
+            return *this;
+        }
+
+        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
+
+        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+    };
+
+    // This is what styling compiles during element::render().
+    struct ActiveStyle {
+        rectangle area;     // relative position
+        RGB activeTextColor;
+        RGB activeBackgroundColor;
+        unsigned char opacity;
+        INTERNAL::linearMask<uint64_t, textAttributeTypes> activeTextAttributes;
+    };
+
+    /**
+     * @brief Contains all possible stylings of owner element
+     */
     class styling{
     public:
         position                      Position                        = position(IVector3(0, 0, 0), VALUE_STATE::INITIALIZED);
@@ -2316,6 +2377,7 @@ namespace GGUI{
         title                         Title                           = title(INTERNAL::compactString(nullptr, 0, true), VALUE_STATE::INITIALIZED);
 
         enableBorder                  Border_Enabled                  = enableBorder(false, VALUE_STATE::INITIALIZED);
+
         textColor                     Text_Color                      = textColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
         backgroundColor               Background_Color                = backgroundColor(COLOR::BLACK, VALUE_STATE::INITIALIZED);
         borderColor                   Border_Color                    = borderColor(COLOR::WHITE, VALUE_STATE::INITIALIZED);
@@ -2347,6 +2409,8 @@ namespace GGUI{
         anchor                        Align                           = anchor(ANCHOR::LEFT, VALUE_STATE::INITIALIZED);
 
         std::vector<element*>         Childs;
+
+        textAttribute                 TextAttributes                  = textAttribute(textAttributeTypes::DEFAULT, VALUE_STATE::INITIALIZED);
 
         /**
          * @brief Default constructor for the Styling class.
@@ -2469,7 +2533,9 @@ namespace GGUI{
 
         bool evaluateDynamicBorder(element* owner, styling* reference = nullptr);
     
-        bool evaluateDynamicColors(element* owner, styling* reference = nullptr);
+        bool evaluateDynamicGraphics(element* owner, styling* reference = nullptr);
+
+        std::vector<ActiveStyle> compile(const element* owner) const;
     protected:
     
         // The construction time given styles are first put here, before embedding them into this class.

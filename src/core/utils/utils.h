@@ -1,5 +1,5 @@
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef _CORE_UTILS_H_
+#define _CORE_UTILS_H_
 /**
  * This is an Utils file made for the Renderer.cpp to use internally, these are just removed to clean up the source code.
  */
@@ -429,6 +429,9 @@ namespace GGUI{
     // autoGen: Ignore end
 
     extern std::string toString(UTF coloredText, bool transparentBackground = false);
+
+    template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>> 
+    constexpr uint8_t alias(enumType value) { return static_cast<uint8_t>(value); }
 }
 
 #endif

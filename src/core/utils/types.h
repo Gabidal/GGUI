@@ -559,11 +559,11 @@ namespace GGUI{
 
     class rectangle {
     public:
-        IVector2 position;
+        IVector3 position;
         IVector2 size;
 
-        constexpr rectangle(IVector2 pos = {}, IVector2 Size = {}) : position(pos), size(Size) {}
-        constexpr rectangle(const IVector2& pos, const IVector2& sz) : position(pos), size(sz) {}
+        constexpr rectangle(IVector3 pos = {}, IVector2 Size = {}) : position(pos), size(Size) {}
+        // constexpr rectangle(const IVector2& pos, const IVector2& sz) : position(pos), size(sz) {}
     };
 
     class event{
@@ -664,7 +664,7 @@ namespace GGUI{
 
         enum class STAIN_TYPE{
             CLEAN = 0,              // No change
-            COLOR = 1 << 0,         // BG and other color related changes
+            GRAPHICS = 1 << 0,      // BG and other color related changes
             EDGE = 1 << 1,          // Title and border changes.
             DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
             STRETCH = 1 << 3,       // Width and or height changes.
@@ -715,7 +715,7 @@ namespace GGUI{
             return a | static_cast<unsigned int>(b);
         }
 
-        template<typename T, typename containerType = std::conditional_t<std::is_enum_v<T>, std::underlying_type_t<T>, T>>
+        template<typename T, typename containerType = std::enable_if_t<std::is_enum_v<T>>>
         class bitMask {
         private:
             T data;
@@ -774,6 +774,81 @@ namespace GGUI{
             bitMask<T, containerType>& operator=(P value) {
                 data = static_cast<T>(value);
                 return *this;
+            }
+        };
+
+        template<typename containerType, typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType>>>
+        class linearMask {
+        protected:
+            containerType data;
+
+            constexpr containerType toBitMask(enumType t) const {
+                if (t == enumType::DEFAULT) return 0;
+    
+                return static_cast<containerType>(1) << (static_cast<containerType>(t) - 1);
+            }
+        public:
+            linearMask(enumType initValue = enumType::DEFAULT) : data(toBitMask(initValue)) {}
+
+            void add(enumType t) {
+                containerType tAsBitMask = toBitMask(t);
+
+                if (tAsBitMask == 0) data = 0;   // If default, then reset all
+                else data |= tAsBitMask;
+            }
+            
+            void remove(enumType t) {
+                containerType tAsBitMask = toBitMask(t);
+
+                if (tAsBitMask != 0) data &= ~tAsBitMask;   // If not default, then remove the bit
+            }
+
+            bool has(enumType t) {
+                containerType tAsBitMask = toBitMask(t);
+
+                return  (tAsBitMask == data) ||     // Either they are identical, 0 == 0
+                        (data & tAsBitMask) != 0;   // Or atleast bits from t are present
+            }
+
+            std::vector<enumType> getAll() const {
+                std::vector<enumType> result;
+
+                for (containerType i = 1; i <= sizeof(containerType) * 8; ++i) {
+                    containerType bitMask = static_cast<containerType>(1) << (i - 1);
+                    if ((data & bitMask) != 0) {
+                        result.push_back(static_cast<enumType>(i));
+                    }
+                }
+
+                return result;
+            }
+
+            bool operator==(const linearMask& other) const {
+                return data == other.data;
+            }
+
+            linearMask operator|(const linearMask& other) const {
+                linearMask result;
+                result.data = data | other.data;
+                return result;
+            }
+
+            linearMask operator&(const linearMask& other) const {
+                linearMask result;
+                result.data = data & other.data;
+                return result;
+            }
+
+            linearMask operator|(const enumType value) const {
+                linearMask result;
+                result.data = data | toBitMask(value);
+                return result;
+            }
+
+            linearMask operator&(const enumType value) const {
+                linearMask result;
+                result.data = data & toBitMask(value);
+                return result;
             }
         };
 

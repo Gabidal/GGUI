@@ -30,12 +30,19 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
         "src/core/utils/color.h",
         "src/core/utils/types.h",
         "src/core/utils/utf.h",
+        "src/core/utils/utils.h",
+
+        "src/core/backend/utils.h",
+        "src/core/backend/ecma.h",
+        "src/core/backend/dec.h",
+        "src/core/backend/terminal.h",
+
         "src/core/utils/style.h",
         "src/core/utils/settings.h",
-        "src/core/utils/utils.h",
         "src/core/utils/logger.h",
         "src/core/utils/fileStreamer.h",
         "src/core/utils/drm.h",
+
         "src/elements/element.h",
         "src/elements/listView.h",
         "src/elements/textField.h",
@@ -43,6 +50,7 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
         "src/elements/HTML.h",
         "src/elements/progressBar.h",
         "src/elements/switch.h",
+
         "src/core/renderer.h",
         "src/core/addons/addons.h"
     };
@@ -122,6 +130,13 @@ std::vector<std::string> Get_Cpp_Files(){
         "src/core/utils/fileStreamer.cpp",
         "src/core/utils/settings.cpp",
         "src/core/utils/drm.cpp",
+
+        // New terminal backend
+        "src/core/backend/ecma.cpp",
+        "src/core/backend/dec.cpp",
+        "src/core/backend/terminal.cpp",
+        "src/core/backend/linux.cpp",
+        "src/core/backend/win.cpp",
         
         // Elements
         "src/elements/element.cpp",

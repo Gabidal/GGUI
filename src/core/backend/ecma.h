@@ -6,6 +6,8 @@
 #include "../utils/color.h"
 #include "../utils/utils.h"
 
+#include "utils.h"
+
 #include <bitset>
 #include <cassert>
 #include <variant>
@@ -1834,76 +1836,13 @@ namespace GGUI {
             };
 
             // Only used to store metadata, actual colors are found in the UTFs
-            class graphicAttributes {
+            class activeSGRStyle {
+            private:
+                INTERNAL::linearMask<uint64_t, graphicalTextAttributes> textAttributes;
             public:
-                enum class types : uint8_t {
-                    DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
-                    BOLD,                                           // bold or increased intensity
-                    FAINT,                                          // faint, decreased intensity or second colour
-                    ITALIC,                                         // italicized
-                    UNDERLINE,                                      // singly underlined
-                    SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
-                    RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
-                    REVERSE_VIDEO,                                  // negative image
-                    CONCEAL,                                        // concealed characters
-                    CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
-                    PRIMARY_FONT,                                   // primary (default) font
-                    ALT_FONT_1,                                     // first alternative font
-                    ALT_FONT_2,                                     // second alternative font
-                    ALT_FONT_3,                                     // third alternative font
-                    ALT_FONT_4,                                     // fourth alternative font
-                    ALT_FONT_5,                                     // fifth alternative font
-                    ALT_FONT_6,                                     // sixth alternative font
-                    ALT_FONT_7,                                     // seventh alternative font
-                    ALT_FONT_8,                                     // eighth alternative font
-                    ALT_FONT_9,                                     // ninth alternative font
-                    FRAKTUR,                                        // Fraktur (Gothic)
-                    DOUBLY_UNDERLINED,                              // doubly underlined
-                    NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
-                    NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
-                    NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
-                    NOT_BLINKING,                                   // steady (not blinking)
-                    RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
-                    POSITIVE_IMAGE,                                 // positive image
-                    REVEAL,                                         // revealed characters
-                    NOT_CROSSED_OUT,                                // not crossed out
-                    FG_BLACK,                                       // black display
-                    FG_RED,                                         // red display
-                    FG_GREEN,                                       // green display
-                    FG_YELLOW,                                      // yellow display
-                    FG_BLUE,                                        // blue display
-                    FG_MAGENTA,                                     // magenta display
-                    FG_CYAN,                                        // cyan display
-                    FG_WHITE,                                       // white display
-                    FOREGROUND_COLOR,                               // intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-                    FG_DEFAULT,                                     // default display colour (implementation-defined)
-                    BG_BLACK,                                       // black background
-                    BG_RED,                                         // red background
-                    BG_GREEN,                                       // green background
-                    BG_YELLOW,                                      // yellow background
-                    BG_BLUE,                                        // blue background
-                    BG_MAGENTA,                                     // magenta background
-                    BG_CYAN,                                        // cyan background
-                    BG_WHITE,                                       // white background
-                    BACKGROUND_COLOR,                               // intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-                    BG_DEFAULT,                                     // default background colour (implementation-defined)
-                    RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
-                    FRAMED,                                         // framed
-                    ENCIRCLED,                                      // encircled
-                    OVERLINED,                                      // overlined
-                    NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
-                    NOT_OVERLINED,                                  // not overlined
-                    RESERVED_56,                                    // (reserved for future standardization)
-                    RESERVED_57,                                    // (reserved for future standardization)
-                    RESERVED_58,                                    // (reserved for future standardization)
-                    RESERVED_59,                                    // (reserved for future standardization)
-                    IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
-                    IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
-                    IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
-                    IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
-                    IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
-                    IDEOGRAM_ATTRIBUTES_OFF                         // cancels the effect of the rendition aspects established by parameter values 60 to 64
-                };
+                IVector2 start;
+                RGB textColor;
+                RGB backgroundColor;
 
                 // These are given if types::Foreground or types::Background is used, directColorTypes are appended after these via the table::parameter::FRACTION
                 enum class directColorTypes : uint8_t {
@@ -1912,61 +1851,29 @@ namespace GGUI {
                     RGB,            //
                     CMY,            //
                     CMYK,           //
-                    INDEXED,        // Use this when selecting one of the predetermined colors from graphicAttributes::types::*
+                    INDEXED,        // Use this when selecting one of the predetermined colors from graphicalTextAttributes::*
                 };
-            private:
-                uint64_t bitMask = toBitMask(types::DEFAULT);
 
-                constexpr uint64_t toBitMask(types t) const {
-                    if (t == types::DEFAULT) return 0;
-
-                    return 1ULL << (static_cast<uint64_t>(t) - 1);  // This way default will stay at zero, and max is 63'th bit
-                }
-            public:
-                IVector2 start;     // The end of these attributes is at the start of the next attribute.
-                RGB directColor;    // TODO("remove this and unify styles::Base with this.")
-
-                graphicAttributes(IVector2 Start) : bitMask(0), start(Start) {}
+                activeSGRStyle(IVector2 Start) : textAttributes(graphicalTextAttributes::DEFAULT), start(Start) {}
 
                 // NOTE: Since this class only contains metadata, if there is colors in the params via RGB or other formats these will be written into the terminal::screen.cellBuffer!
-                void parseArguments(std::vector<sequence::parameter::selectable<graphicAttributes::types>>& params);
+                void parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params);
 
-                void add(types t) {
+                void add(graphicalTextAttributes t) {
                     // Special case:
-                    if (t == types::IDEOGRAM_ATTRIBUTES_OFF) {
-                        remove(types::IDEOGRAM_UNDERLINE);
-                        remove(types::IDEOGRAM_DOUBLE_UNDERLINE);
-                        remove(types::IDEOGRAM_DOUBLE_OVERLINE);
-                        remove(types::IDEOGRAM_STRESS_MARKING);
+                    if (t == graphicalTextAttributes::IDEOGRAM_ATTRIBUTES_OFF) {
+                        textAttributes.remove(graphicalTextAttributes::IDEOGRAM_UNDERLINE);
+                        textAttributes.remove(graphicalTextAttributes::IDEOGRAM_DOUBLE_UNDERLINE);
+                        textAttributes.remove(graphicalTextAttributes::IDEOGRAM_DOUBLE_OVERLINE);
+                        textAttributes.remove(graphicalTextAttributes::IDEOGRAM_STRESS_MARKING);
                         return;
                     }
 
-                    uint64_t tAsBitMask = toBitMask(t);
-
-                    if (tAsBitMask == 0) bitMask = 0;   // If default, then reset all
-                    else bitMask |= tAsBitMask;
+                    textAttributes.add(t);
                 }
 
-                void add(graphicAttributes& other) {
-                    bitMask |= other.bitMask;
-                }
-                
-                void remove(types t) {
-                    uint64_t tAsBitMask = toBitMask(t);
-
-                    if (tAsBitMask != 0) bitMask &= ~tAsBitMask;   // If not default, then remove the bit
-                }
-
-                // NOTE: This wont be able to return true for IDEOGRAM_ATTRIBUTES_OFF
-                bool has(types t) {
-                    uint64_t tAsBitMask = toBitMask(t);
-
-                    return  (tAsBitMask == bitMask) ||     // Either they are identical, 0 == 0
-                            (bitMask & tAsBitMask) != 0;   // Or atleast bits from t are present
-                }
-
-                bool operator==(const graphicAttributes& other) const {
-                    return bitMask == other.bitMask;
+                void add(activeSGRStyle& SGR_S) {
+                    textAttributes = textAttributes | SGR_S.textAttributes;
                 }
             };
 
@@ -2083,7 +1990,7 @@ namespace GGUI {
                 spacingFactor activeSpacingFactor;
 
                 // Metadata of the rendered graphical attributes.
-                std::vector<ecma::graphicAttributes> registeredGraphicAttributes;
+                std::vector<ecma::activeSGRStyle> registeredGraphicAttributes;
 
                 ancillaryStates powerStatus = ancillaryStates::UNKNOWN;
 
@@ -3044,7 +2951,7 @@ namespace GGUI {
                      * the GRAPHIC RENDITION COMBINATION MODE (GRCM).
                      * @example `01/11 05/11 Ps... 06/13` or `9/11 Ps... 06/13`
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<graphicAttributes::types>>, graphicAttributes::types, 1, specialTypes::HAS_INFINITE_PARAMETERS> SELECT_GRAPHIC_RENDITION(sequence::control<sequence::parameter::selectable<graphicAttributes::types>>(table::finalWithoutIntermediate::SGR), {graphicAttributes::types::DEFAULT}, {operate_SELECT_GRAPHIC_RENDITION});
+                    inline base<sequence::control<sequence::parameter::selectable<graphicalTextAttributes>>, graphicalTextAttributes, 1, specialTypes::HAS_INFINITE_PARAMETERS> SELECT_GRAPHIC_RENDITION(sequence::control<sequence::parameter::selectable<graphicalTextAttributes>>(table::finalWithoutIntermediate::SGR), {graphicalTextAttributes::DEFAULT}, {operate_SELECT_GRAPHIC_RENDITION});
 
                     /**
                      * @brief SHS is used to establish the character spacing for subsequent text. 

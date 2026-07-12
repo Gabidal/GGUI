@@ -104,6 +104,8 @@ namespace GGUI{
                                 // ENCODE for optimize
                                 // encodeBuffer(terminal::currentStates->screen.buffer);
 
+                                terminal::currentStates->screen.liquefyGraphicAreas();
+
                                 unsigned int Liquefied_Size = 0;
                                 // conveyorAllocator<compactString> CS_Buffer = liquifyUTFText(terminal::currentStates->screen.buffer, Liquefied_Size, main->getWidth(), main->getHeight());
 

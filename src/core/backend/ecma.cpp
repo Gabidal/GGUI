@@ -273,23 +273,23 @@ namespace GGUI {
             }
 
             // parses sequence coming from SGR
-            std::pair<size_t, RGB> parseColorFromSGR(graphicAttributes::directColorTypes dt, size_t start, std::vector<sequence::parameter::selectable<graphicAttributes::types>>& params) {
+            std::pair<size_t, RGB> parseColorFromSGR(activeSGRStyle::directColorTypes dt, size_t start, std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params) {
                 switch (dt) {
-                    case graphicAttributes::directColorTypes::INDEXED:
+                    case activeSGRStyle::directColorTypes::INDEXED:
                         return {1, currentStates->colorIndexMap[(uint8_t)params[start].getValueAsInteger()]};
-                    case graphicAttributes::directColorTypes::RGB:
+                    case activeSGRStyle::directColorTypes::RGB:
                         return {3, RGB(
                             (uint8_t)params[start].getValueAsInteger(),
                             (uint8_t)params[start + 1].getValueAsInteger(),
                             (uint8_t)params[start + 2].getValueAsInteger()
                         )};
-                    case graphicAttributes::directColorTypes::CMY:
+                    case activeSGRStyle::directColorTypes::CMY:
                         return {3, RGB(
                             (uint8_t)(UINT8_MAX - (uint8_t)params[start].getValueAsInteger()),
                             (uint8_t)(UINT8_MAX - (uint8_t)params[start + 1].getValueAsInteger()),
                             (uint8_t)(UINT8_MAX - (uint8_t)params[start + 2].getValueAsInteger())
                         )};
-                    case graphicAttributes::directColorTypes::CMYK: {
+                    case activeSGRStyle::directColorTypes::CMYK: {
                         uint8_t c = (uint8_t)params[start].getValueAsInteger();
                         uint8_t m = (uint8_t)params[start + 1].getValueAsInteger();
                         uint8_t y = (uint8_t)params[start + 2].getValueAsInteger();
@@ -300,29 +300,30 @@ namespace GGUI {
                             (uint8_t)(((UINT8_MAX - m) * (UINT8_MAX - k)) / UINT8_MAX),
                             (uint8_t)(((UINT8_MAX - y) * (UINT8_MAX - k)) / UINT8_MAX)
                         )};
-                    } case graphicAttributes::directColorTypes::TRANSPARENT:
+                    } case activeSGRStyle::directColorTypes::TRANSPARENT:
                         return {0, RGB(0, 0, 0)};
                     default:
                         throw std::runtime_error("Invalid color type.");
                 }
             }
 
-            void graphicAttributes::parseArguments(std::vector<sequence::parameter::selectable<graphicAttributes::types>>& params) {
+            void activeSGRStyle::parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params) {
                 for (size_t i = 0; i < params.size(); i++) {
                     // Check for special case attributes, which are via the fg and bg, given with the parameter::fraction
                     if (params[i].hasSecondaries()) {   // Highly likely to be a FG or BG sequence
-                        graphicAttributes::types currentType = params[i].getValueAsInteger();
+                        graphicalTextAttributes currentType = params[i].getValueAsInteger();
 
                         // sanity check that the fraction is used correctly and the primary value is truly Fg or BG
-                        if (currentType != graphicAttributes::types::FOREGROUND_COLOR && currentType != graphicAttributes::types::BACKGROUND_COLOR) {
+                        if (currentType != graphicalTextAttributes::FOREGROUND_COLOR && currentType != graphicalTextAttributes::BACKGROUND_COLOR) {
                             throw std::runtime_error("Invalid SGR parameter: fraction used with non-FG/BG primary value.");
                         }
 
-                        graphicAttributes::directColorTypes colorType = (graphicAttributes::directColorTypes)params[i].getPrimaryValueAndSecondaries().back();
+                        activeSGRStyle::directColorTypes colorType = (activeSGRStyle::directColorTypes)params[i].getPrimaryValueAndSecondaries().back();
 
                         std::pair<size_t, RGB> parsedColor = parseColorFromSGR(colorType, i + 1, params);
 
-                        directColor = parsedColor.second;
+                        if (currentType == graphicalTextAttributes::FOREGROUND_COLOR)   this->textColor = parsedColor.second;
+                        else if (currentType == graphicalTextAttributes::BACKGROUND_COLOR) this->backgroundColor = parsedColor.second;
 
                         i += parsedColor.first - 1; // -1, since we already +1 at the start of the loop
                     } else {
@@ -1015,13 +1016,13 @@ namespace GGUI {
                     }
 
                     void operate_SELECT_GRAPHIC_RENDITION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<graphicAttributes::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<graphicalTextAttributes>>*>(input);
 
                         auto params = controlSequence->getParameters();
 
                         assert(params.size() > 0);
 
-                        graphicAttributes newAttributes(currentStates->ecmaComponents.activePresentationPosition);
+                        activeSGRStyle newAttributes(currentStates->ecmaComponents.activePresentationPosition);
 
                         newAttributes.parseArguments(params);
 

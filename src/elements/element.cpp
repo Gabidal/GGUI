@@ -190,8 +190,8 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
     if (Style->evaluateDynamicPosition(this))
         Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
-    if (Style->evaluateDynamicColors(this))
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    if (Style->evaluateDynamicGraphics(this))
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
 
     if (Style->evaluateDynamicBorder(this))
         Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
@@ -205,7 +205,7 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
         bool tmp = childrenChanged();
 
         if (!tmp && Dirty.is(INTERNAL::STAIN_TYPE::CLEAN)){
-            return renderBuffer;
+            return cellBuffer;
         }
         else if (tmp || hasTransparentChildren()){
             Dirty.Dirty(INTERNAL::STAIN_TYPE::RESET);
@@ -218,7 +218,7 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
     }
 
     if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
-        return renderBuffer;
+        return cellBuffer;
 
     if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)){
         Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
@@ -229,18 +229,18 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
     if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
         Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
-        std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_COMPACT_STRING);
+        std::fill(cellBuffer.begin(), cellBuffer.end(), SYMBOLS::EMPTY_COMPACT_STRING);
         
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
     }
 
     if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)){
         Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
         
-        renderBuffer.clear();
-        renderBuffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_COMPACT_STRING);
+        cellBuffer.clear();
+        cellBuffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_COMPACT_STRING);
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
     }
 
     if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
@@ -250,12 +250,14 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
         Dirty.Clean(INTERNAL::STAIN_TYPE::NOT_RENDERED);
     }
 
-    // Apply the color system to the resized result list
-    if (Dirty.is(INTERNAL::STAIN_TYPE::COLOR)){
-        // Clean the color stain after applying the color system.
-        Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
+    // Resets baked graphics and reserves for child*2+2, for the incoming deep stains.
+    if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){
+        // Clean the graphics stain after applying the graphics system.
+        Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
 
-        applyColors();
+        compileActiveGraphics();
+
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);    // If childs have not changed, their render should return the pre-baked buffer.
     }
 
     bool Connect_Borders_With_Parent = hasBorder();
@@ -278,7 +280,10 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
 
             std::vector<INTERNAL::compactString>* tmp = &c->render();
 
-            nestElement(this, c, renderBuffer, *tmp);
+            // Insert the baked graphics from the current child.
+            bakedGraphics.insert(bakedGraphics.end(), c->bakedGraphics.begin(), c->bakedGraphics.end());
+
+            nestElement(this, c, cellBuffer, *tmp);
         }
     }
 
@@ -287,8 +292,8 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
 
     //This will add the borders if necessary and the title of the window.
     if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
-        renderBorders(renderBuffer);
-        renderTitle(renderBuffer);
+        renderBorders(cellBuffer);
+        renderTitle(cellBuffer);
     }
 
     // This will calculate the connecting borders.
@@ -301,14 +306,14 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
                 if (!A->isDisplayed() || !A->hasBorder() || !B->isDisplayed() || !B->hasBorder())
                     continue;
 
-                postProcessBorders(A, B, renderBuffer);
+                postProcessBorders(A, B, cellBuffer);
             }
 
-            postProcessBorders(this, A, renderBuffer);
+            postProcessBorders(this, A, cellBuffer);
         }
     }
 
-    return renderBuffer;
+    return cellBuffer;
 }
 
 /**
@@ -409,7 +414,7 @@ void GGUI::element::setParent(element* parent){
 void GGUI::element::setFocus(bool f){
     if (f != Focused){
         // If the focus state has changed, dirty the element and update the frame.
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE);
 
         Focused = f;
 
@@ -426,7 +431,7 @@ void GGUI::element::setFocus(bool f){
 void GGUI::element::setHoverState(bool h){
     if (h != Hovered){
         // If the hover state has changed, dirty the element and update the frame.
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE);
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE);
 
         Hovered = h;
 
@@ -632,7 +637,7 @@ bool GGUI::element::remove(element* handle){
 
             delete handle;
 
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::GRAPHICS);
 
             return true;
         }
@@ -738,7 +743,7 @@ bool GGUI::element::remove(size_t index){
     delete tmp;
 
     // Mark the element as dirty, so that it will be re-rendered on the next frame.
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::GRAPHICS);
 
     return true;
 }
@@ -1101,7 +1106,7 @@ void GGUI::element::setBackgroundColor(RGB color) {
     }
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1119,7 +1124,7 @@ void GGUI::element::setBorderColor(RGB color){
     Style->Border_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1138,7 +1143,7 @@ void GGUI::element::setBorderBackgroundColor(RGB color) {
     Style->Border_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1155,7 +1160,7 @@ void GGUI::element::setBorderBackgroundColor(RGB color) {
 void GGUI::element::setTextColor(RGB color){
     Style->Text_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1203,7 +1208,7 @@ void GGUI::element::allowOverflow(bool True) {
 void GGUI::element::setHoverBorderColor(RGB color){
     Style->Hover_Border_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1222,7 +1227,7 @@ void GGUI::element::setHoverBackgroundColor(RGB color) {
     Style->Hover_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1242,7 +1247,7 @@ void GGUI::element::setHoverTextColor(RGB color) {
     Style->Hover_Text_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1262,7 +1267,7 @@ void GGUI::element::setHoverBorderBackgroundColor(RGB color) {
     Style->Hover_Border_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1279,7 +1284,7 @@ void GGUI::element::setFocusBorderColor(RGB color){
     Style->Focus_Border_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1297,7 +1302,7 @@ void GGUI::element::setFocusBackgroundColor(RGB color){
     Style->Focus_Background_Color = color;
     
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     
     // Update the frame to reflect the new color
     updateFrame();
@@ -1313,7 +1318,7 @@ void GGUI::element::setFocusBackgroundColor(RGB color){
 void GGUI::element::setFocusTextColor(RGB color){
     Style->Focus_Text_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1329,7 +1334,7 @@ void GGUI::element::setFocusTextColor(RGB color){
 void GGUI::element::setFocusBorderBackgroundColor(RGB color){
     Style->Focus_Border_Background_Color = color;
     // Mark the element as dirty for color updates
-    Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+    Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
     // Update the frame to reflect the new color
     updateFrame();
 }
@@ -1431,25 +1436,10 @@ void GGUI::element::computeDynamicSize(){
     return;
 }
 
-/**
- * @brief Apply the color system to the rendered string.
- *
- * This function applies the color system set by the style to the rendered string.
- * It is called after the element has been rendered and the result is stored in the
- * Result vector.
- *
- * @param Result The vector containing the rendered string.
- */
-void GGUI::element::applyColors(){
-    // Loop over each UTF-8 character in the rendered string and set its color to the
-    // color specified in the style.
-    const auto composedRGB = composeAllTextRGBvalues();
-
-    TODO("pipe forward rectangle colored area for graphicAttributes")
-
-    // for (auto& utf : Result){
-    //     utf.setColor(composedRGB);
-    // }
+void GGUI::element::compileActiveGraphics(){
+    bakedGraphics.reserve(getChilds().size() * 2 + 2);      // x2 because the potential of each child having borders enabled, will introduce the border activeStylings.
+                                                            // +2 is for this current elements own active stylings
+    bakedGraphics = Style->compile(this);
 }
 
 /**
@@ -1463,7 +1453,6 @@ void GGUI::element::renderBorders(std::vector<INTERNAL::compactString>& Result){
 
     const unsigned int Width  = getWidth();
     const unsigned int Height = getHeight();
-    const auto composedRGB    = composeAllBorderRGBvalues();    TODO("pipe forward rectangle colored area for graphicAttributes")
     const auto& Border        = Style->Border_Style;
 
     // Corners
@@ -1517,7 +1506,7 @@ void GGUI::element::renderTitle(std::vector<INTERNAL::compactString>& Result){
     static constexpr INTERNAL::compactString Ellipsis = "...";
     bool Enable_Ellipsis = false;
 
-    std::pair<RGB, RGB> composedColor = composeAllTextRGBvalues();  TODO("pipe forward rectangle colored area for graphicAttributes")
+    std::pair<RGB, RGB> composedColor = getActiveTextColor();  TODO("pipe forward rectangle colored area for graphicAttributes")
 
     unsigned int Writable_Length = INTERNAL::Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.size - 1);
 

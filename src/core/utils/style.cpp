@@ -192,7 +192,7 @@ namespace GGUI{
         if (host->Border_Color.status < VALUE_STATE::VALUE)
             host->Border_Color.color = this->color;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE backgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
@@ -202,67 +202,67 @@ namespace GGUI{
         if (host->Border_Background_Color.status < VALUE_STATE::VALUE)
             host->Border_Background_Color.color = this->color;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE borderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE borderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Background_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE hoverBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE hoverTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Text_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE hoverBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Background_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE hoverBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Background_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE focusBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE focusTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Text_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE focusBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Background_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE focusBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Background_Color = *this;
 
-        return INTERNAL::STAIN_TYPE::COLOR;
+        return INTERNAL::STAIN_TYPE::GRAPHICS;
     }
 
     INTERNAL::STAIN_TYPE styledBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
@@ -442,6 +442,12 @@ namespace GGUI{
         return INTERNAL::STAIN_TYPE::CLEAN;
     }
 
+    INTERNAL::STAIN_TYPE textAttribute::embedValue(styling* host, [[maybe_unused]] element* owner) {
+        host->TextAttributes = *this;
+        
+        return INTERNAL::STAIN_TYPE::GRAPHICS;     // color manages all stylings, including textual styles.
+    }   
+
     const char* styledBorder::getBorder(const INTERNAL::borderConnection flags){
         // Corners
         if (flags == (INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::RIGHT))
@@ -554,7 +560,7 @@ namespace GGUI{
         Changed_Attributes |= evaluateDynamicDimensions(owner, reference_style);
         Changed_Attributes |= evaluateDynamicPosition(owner, reference_style);
         Changed_Attributes |= evaluateDynamicBorder(owner, reference_style);
-        Changed_Attributes |= evaluateDynamicColors(owner, reference_style);
+        Changed_Attributes |= evaluateDynamicGraphics(owner, reference_style);
 
         Margin.evaluate(owner->getDirectStyle(), reference_style);
         Opacity.evaluate(owner->getDirectStyle(), reference_style);
@@ -605,7 +611,7 @@ namespace GGUI{
         return previous_value != Border_Enabled.value;
     }
 
-    bool styling::evaluateDynamicColors(element* owner, styling* reference){
+    bool styling::evaluateDynamicGraphics(element* owner, styling* reference){
         if (!reference){
             reference = getReference(owner);
         }
@@ -649,6 +655,39 @@ namespace GGUI{
                previous_focus_text_color                != Focus_Text_Color.color.get<RGB>()                 ||
                previous_focus_background_color          != Focus_Background_Color.color.get<RGB>()           || 
                previous_focus_border_background_color   != Focus_Border_Background_Color.color.get<RGB>();
+    }
+
+    std::vector<ActiveStyle> styling::compile(const element* owner) const {
+        std::vector<ActiveStyle> result;
+        result.reserve(2);
+
+        const auto [textColor, backgroundColor] = owner->getActiveTextColor();
+
+        result.push_back({
+            {   // rectangle area
+                Position.get(),
+                {Width.get(), Height.get()}
+            },
+            textColor, backgroundColor,
+            Opacity.Get(),
+            TextAttributes.value
+        });
+
+        if (Border_Enabled.value) {     TODO("This seems very inefficient!")
+            const auto [borderColor, borderBackgroundColor] = owner->getActiveBorderColor();
+
+            result.push_back({
+                {   // rectangle area
+                    Position.get(),
+                    {Width.get(), Height.get()}
+                },
+                borderColor, borderBackgroundColor,
+                Opacity.Get(),
+                TextAttributes.value
+            });
+        }
+
+        return result;
     }
 
     /**

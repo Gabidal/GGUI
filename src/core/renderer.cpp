@@ -1559,7 +1559,7 @@ namespace GGUI{
          * @return A pointer to the resulting Super_String.
          */
         conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
-            static conveyorAllocator<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE(1000*1000);
+            static conveyorAllocator<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE(1000*1000);   TODO("replace with std::pmr::monotonic_buffer_resource");
             static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
 
             const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * constants::ANSI::maximumNeededPreAllocationForEncodedSuperString + !SETTINGS::wordWrapping * (Height - 1));

@@ -37,7 +37,7 @@ namespace GGUI{
             else
                 throw std::runtime_error("Progress Bar Head Style can only be used with a Bar element!");
         
-            return INTERNAL::STAIN_TYPE::COLOR;
+            return INTERNAL::STAIN_TYPE::GRAPHICS;
         }
 
         /**
@@ -84,7 +84,7 @@ namespace GGUI{
          * @return A vector of UTF objects representing the rendered progress bar.
          */
         std::vector<INTERNAL::compactString>& Bar::render() {
-            std::vector<INTERNAL::compactString>& Result = renderBuffer;
+            std::vector<INTERNAL::compactString>& Result = cellBuffer;
 
             // Check for Dynamic attributes
             if(Style->evaluateDynamicDimensions(this))
@@ -93,8 +93,8 @@ namespace GGUI{
             if (Style->evaluateDynamicPosition(this))
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
-            if (Style->evaluateDynamicColors(this))
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+            if (Style->evaluateDynamicGraphics(this))
+                Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
 
             if (Style->evaluateDynamicBorder(this))
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
@@ -106,9 +106,9 @@ namespace GGUI{
             if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
                 Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
-                std::fill(renderBuffer.begin(), renderBuffer.end(), SYMBOLS::EMPTY_UTF);
+                std::fill(cellBuffer.begin(), cellBuffer.end(), SYMBOLS::EMPTY_UTF);
                 
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
+                Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
             }
 
             // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
@@ -117,7 +117,7 @@ namespace GGUI{
                 Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
                 colorBar();
                 Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+                Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
             }
 
             if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
@@ -134,11 +134,11 @@ namespace GGUI{
             }
 
             // Apply the color system to the resized result list
-            if (Dirty.is(INTERNAL::STAIN_TYPE::COLOR)){        
+            if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){        
                 // Clean the color stain after applying the color system.
-                Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
+                Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
 
-                applyColors();
+                compileActiveGraphics();
             }
 
             // Add child windows to the Result buffer if the DEEP stain is detected.
@@ -224,7 +224,7 @@ namespace GGUI{
             colorBar();
 
             // Mark the render buffer as dirty to reflect changes
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::GRAPHICS);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();

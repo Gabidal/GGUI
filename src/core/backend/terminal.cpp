@@ -17,6 +17,12 @@ namespace GGUI {
             dom = DOM;
         }
 
+        void outputCapture::liquefyGraphicAreas() {
+            activeGraphicAreas = &dom->bakedGraphics;
+
+            
+        }
+
         void outputCapture::update() {
             buffer = dom->render();
         }

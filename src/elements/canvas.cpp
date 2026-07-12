@@ -61,7 +61,7 @@ namespace GGUI{
 
         Buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -88,7 +88,7 @@ namespace GGUI{
 
         Buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -114,7 +114,7 @@ namespace GGUI{
             Multi_Frame = true;
         }
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -128,7 +128,7 @@ namespace GGUI{
      */
     void canvas::flush(bool Force_Flush){
         if (Force_Flush){
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
         }
 
         updateFrame();
@@ -142,7 +142,7 @@ namespace GGUI{
      * @return A vector of UTF objects representing the rendered canvas.
      */
     std::vector<INTERNAL::compactString>& canvas::render() {
-        std::vector<INTERNAL::compactString>& Result = renderBuffer;
+        std::vector<INTERNAL::compactString>& Result = cellBuffer;
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
@@ -151,8 +151,8 @@ namespace GGUI{
         if (Style->evaluateDynamicPosition(this))
             Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
 
-        if (Style->evaluateDynamicColors(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR);
+        if (Style->evaluateDynamicGraphics(this))
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
 
         if (Style->evaluateDynamicBorder(this))
             Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
@@ -177,7 +177,7 @@ namespace GGUI{
 
             Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
 
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET | INTERNAL::STAIN_TYPE::NOT_RENDERED);
         }
 
         if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
@@ -208,9 +208,9 @@ namespace GGUI{
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.is(INTERNAL::STAIN_TYPE::COLOR)) {
+        if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)) {
 
-            Dirty.Clean(INTERNAL::STAIN_TYPE::COLOR);
+            Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
 
             unsigned int Start_X = hasBorder();
             unsigned int Start_Y = hasBorder();

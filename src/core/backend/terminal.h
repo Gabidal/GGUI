@@ -10,11 +10,14 @@
 
 #include "../utils/types.h"
 #include "../utils/superString.h"
+#include "../utils/style.h"
 
 namespace GGUI {
     namespace INTERNAL {
         void renderer();
     }
+
+    struct ActiveStyle;
 
     class element;
 
@@ -27,23 +30,25 @@ namespace GGUI {
         protected:
             IVector2& cursor;
             IVector2& dimensions;
-            std::vector<compactString>& buffer;  // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
-            std::string* liquefiedBuffer = nullptr;      // This is what send back into the output device to be rendered into the screen.       
-            std::vector<ecma::graphicAttributes>& registeredGraphicAttributes;   // This is the metadata of the presendted buffer.
+            std::vector<compactString>& buffer;                 // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
+            std::string* liquefiedBuffer = nullptr;             // This is what send back into the output device to be rendered into the screen.       
+            std::vector<ActiveStyle>* activeGraphicAreas;       // This is the metadata of the presendted buffer.
+            std::vector<ecma::activeSGRStyle>& activeGraphicAttributes;     // this is the liquefied graphic area metadata which is ecma-48 compatible.
             element* dom;       // the primary element tree to be rendered.
         public:
             outputCapture(
                 IVector2& presentationPosition,
                 IVector2& presentationDimension,
                 std::vector<compactString>& activeBuffer,
-                std::vector<ecma::graphicAttributes>& RGA
-            ) : cursor(presentationPosition), dimensions(presentationDimension), buffer(activeBuffer), registeredGraphicAttributes(RGA) {}
+                std::vector<ecma::activeSGRStyle>& RGA
+            ) : cursor(presentationPosition), dimensions(presentationDimension), buffer(activeBuffer), activeGraphicAttributes(RGA) {}
 
             size_t getActiveIndex() const;
 
             // === Render pipeline  ===
             void update();      // updates DOM
             void link(element* DOM);
+            void liquefyGraphicAreas();
             // ===                  ===
             
             friend void renderFrame();

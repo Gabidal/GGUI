@@ -9,6 +9,7 @@
 #include "../core/utils/superString.h"
 #include "../core/utils/color.h"
 #include "../core/utils/style.h"
+#include "../core/backend/terminal.h"
 
 namespace GGUI{
     namespace INTERNAL {
@@ -31,7 +32,8 @@ namespace GGUI{
         // Determines if the element is rendered or not.
         bool Show = true;
         
-        std::vector<INTERNAL::compactString> renderBuffer;
+        std::vector<INTERNAL::compactString> cellBuffer;
+        std::vector<ActiveStyle> bakedGraphics;
 
         // State machine for render pipeline only focus on changed aspects.
         INTERNAL::STAIN Dirty;
@@ -949,7 +951,7 @@ namespace GGUI{
          * 
          * @return A pair of RGB values representing the text color and background color of the element.
          */
-        constexpr std::pair<RGB, RGB>  composeAllTextRGBvalues() const {
+        constexpr std::pair<RGB, RGB>  getActiveTextColor() const {
             if (Focused){
                 return {Style->Focus_Text_Color.color.get<RGB>(), Style->Focus_Background_Color.color.get<RGB>()};
             }
@@ -969,7 +971,7 @@ namespace GGUI{
          * Otherwise, the function will return the RGB values of the normal border color and background color.
          * @return A pair of RGB values representing the border color and background color of the element.
          */
-        constexpr std::pair<RGB, RGB> composeAllBorderRGBvalues() const {
+        constexpr std::pair<RGB, RGB> getActiveBorderColor() const {
             if (Focused){
                 return {Style->Focus_Border_Color.color.get<RGB>(), Style->Focus_Border_Background_Color.color.get<RGB>()};
             }
@@ -1279,15 +1281,9 @@ namespace GGUI{
         void renderTitle(std::vector<INTERNAL::compactString>& Result);
 
         /**
-         * @brief Apply the color system to the rendered string.
-         *
-         * This function applies the color system set by the style to the rendered string.
-         * It is called after the element has been rendered and the result is stored in the
-         * Result vector.
-         *
-         * @param Result The vector containing the rendered string.
+         * @brief resets baked graphics and adds its own baked graphics
          */
-        void applyColors();
+        void compileActiveGraphics();
         
         /**
          * @brief Posts a process that handles the intersection of borders between two elements and their parent.
@@ -1370,7 +1366,7 @@ namespace GGUI{
             // complete re-evaluation and rendering.
             this->Dirty.Dirty(
                 INTERNAL::STAIN_TYPE::STRETCH | 
-                INTERNAL::STAIN_TYPE::COLOR | INTERNAL::STAIN_TYPE::DEEP | 
+                INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::DEEP | 
                 INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::MOVE
                 // INTERNAL::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
                 | INTERNAL::STAIN_TYPE::NOT_RENDERED
