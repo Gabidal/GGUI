@@ -33,7 +33,8 @@ namespace GGUI{
         bool Show = true;
         
         std::vector<INTERNAL::compactString> cellBuffer;
-        std::vector<ActiveStyle> bakedGraphics;
+        std::vector<ActiveStyle> graphicalIdentityPool;
+        std::vector<const ActiveStyle*> graphicalReflectionPool;
 
         // State machine for render pipeline only focus on changed aspects.
         INTERNAL::STAIN Dirty;
@@ -380,6 +381,10 @@ namespace GGUI{
          * @return A reference to the vector of child elements.
          */
         virtual std::vector<element*>& getChilds();
+
+        virtual std::vector<element*> getVisibleChilds();
+
+        virtual std::vector<IVector2> getVerticalFacesForAllIntersections();
 
         /**
          * @brief Removes a child element from the current element.

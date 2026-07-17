@@ -49,6 +49,7 @@ namespace GGUI {
             void update();      // updates DOM
             void link(element* DOM);
             void liquefyGraphicAreas();
+            std::pair<bool, ActiveStyle> trace(IVector2 point, element* currentContainer);
             // ===                  ===
             
             friend void renderFrame();

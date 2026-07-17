@@ -1837,9 +1837,8 @@ namespace GGUI {
 
             // Only used to store metadata, actual colors are found in the UTFs
             class activeSGRStyle {
-            private:
-                INTERNAL::linearMask<uint64_t, graphicalTextAttributes> textAttributes;
             public:
+                INTERNAL::linearMask<uint64_t, graphicalTextAttributes> textAttributes;
                 IVector2 start;
                 RGB textColor;
                 RGB backgroundColor;
@@ -1852,14 +1851,15 @@ namespace GGUI {
                     CMY,            //
                     CMYK,           //
                     INDEXED,        // Use this when selecting one of the predetermined colors from graphicalTextAttributes::*
-                };
+                } activeDirectColorType = directColorTypes::RGB;
 
-                activeSGRStyle(IVector2 Start) : textAttributes(graphicalTextAttributes::DEFAULT), start(Start) {}
+                constexpr activeSGRStyle(IVector2 Start) : textAttributes(graphicalTextAttributes::DEFAULT), start(Start) {}
+                constexpr activeSGRStyle() : textAttributes(graphicalTextAttributes::DEFAULT) {}
 
                 // NOTE: Since this class only contains metadata, if there is colors in the params via RGB or other formats these will be written into the terminal::screen.cellBuffer!
                 void parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params);
 
-                void add(graphicalTextAttributes t) {
+                constexpr void add(graphicalTextAttributes t) {
                     // Special case:
                     if (t == graphicalTextAttributes::IDEOGRAM_ATTRIBUTES_OFF) {
                         textAttributes.remove(graphicalTextAttributes::IDEOGRAM_UNDERLINE);
@@ -1872,8 +1872,16 @@ namespace GGUI {
                     textAttributes.add(t);
                 }
 
-                void add(activeSGRStyle& SGR_S) {
+                constexpr void add(activeSGRStyle& SGR_S) {
                     textAttributes = textAttributes | SGR_S.textAttributes;
+                }
+
+                std::vector<graphicalTextAttributes> getAllTextAttributes() const {
+                    return textAttributes.getAll();
+                }
+
+                constexpr bool operator==(const activeSGRStyle& other) const {
+                    return textAttributes == other.textAttributes && textColor == other.textColor && backgroundColor == other.backgroundColor;
                 }
             };
 

@@ -380,6 +380,10 @@ namespace GGUI{
             return x != other.x || y != other.y; // Check if the coordinates are not equal
         }
 
+        constexpr bool operator <(const IVector2& other) const noexcept {
+            return (y < other.y) || (y == other.y && x < other.x); // Compare y first, then x if y is equal
+        }
+
         /**
          * @brief Converts the IVector2 to a string
          *
@@ -561,9 +565,69 @@ namespace GGUI{
     public:
         IVector3 position;
         IVector2 size;
-
+        
         constexpr rectangle(IVector3 pos = {}, IVector2 Size = {}) : position(pos), size(Size) {}
-        // constexpr rectangle(const IVector2& pos, const IVector2& sz) : position(pos), size(sz) {}
+
+        constexpr bool empty() const { return size.x == 0 && size.y == 0; }
+
+        constexpr int left() const { return position.x; }
+        constexpr int right() const { return position.x + size.x; }
+        constexpr int top() const { return position.y; }
+        constexpr int bottom() const { return position.y + size.y; }
+
+        constexpr std::array<IVector2, 4> getCorners() const {
+            return {
+                IVector2(left(), top()),
+                IVector2(right(), top()),
+                IVector2(left(), bottom()),
+                IVector2(right(), bottom())
+            };
+        }
+
+        // returns the left and right sides for each row
+        std::vector<IVector2> getVerticalFaces() const {
+            int start = top();
+            int end = bottom();
+
+            std::vector<IVector2> result;
+
+            for (int y = start; y < end; ++y) {
+                result.push_back(IVector2(left(), y));
+                result.push_back(IVector2(right(), y));
+            }
+
+            return result;
+        }
+
+        constexpr bool intersects(const rectangle& other) const {
+            return !(
+                right() <= other.left()    ||
+                left()  >= other.right()   ||
+                bottom()<= other.top()     ||
+                top()   >= other.bottom()
+            );
+        }
+
+        constexpr bool hits(IVector2 point) const {
+            return point.x >= left() && point.x < right() &&
+                   point.y >= top()  && point.y < bottom();
+        }
+
+        constexpr rectangle intersection(rectangle other) const {
+            int x1 = std::max(left(), other.left());
+            int y1 = std::max(top(), other.top());
+
+            int x2 = std::min(right(), other.right());
+            int y2 = std::min(bottom(), other.bottom());
+
+            if (x1 >= x2 || y1 >= y2)
+                return {};
+
+            return rectangle(
+                IVector3(x1, y1, 0),
+                IVector2(x2 - x1, y2 - y1)
+            );
+        }
     };
 
     class event{
@@ -788,22 +852,24 @@ namespace GGUI{
                 return static_cast<containerType>(1) << (static_cast<containerType>(t) - 1);
             }
         public:
-            linearMask(enumType initValue = enumType::DEFAULT) : data(toBitMask(initValue)) {}
+            constexpr linearMask(enumType initValue = enumType::DEFAULT) : data(toBitMask(initValue)) {}
 
-            void add(enumType t) {
+            constexpr linearMask(containerType initValue) : data(initValue) {}
+
+            constexpr void add(enumType t) {
                 containerType tAsBitMask = toBitMask(t);
 
                 if (tAsBitMask == 0) data = 0;   // If default, then reset all
                 else data |= tAsBitMask;
             }
             
-            void remove(enumType t) {
+            constexpr void remove(enumType t) {
                 containerType tAsBitMask = toBitMask(t);
 
                 if (tAsBitMask != 0) data &= ~tAsBitMask;   // If not default, then remove the bit
             }
 
-            bool has(enumType t) {
+            constexpr bool has(enumType t) {
                 containerType tAsBitMask = toBitMask(t);
 
                 return  (tAsBitMask == data) ||     // Either they are identical, 0 == 0
@@ -823,33 +889,35 @@ namespace GGUI{
                 return result;
             }
 
-            bool operator==(const linearMask& other) const {
+            constexpr bool operator==(const linearMask& other) const {
                 return data == other.data;
             }
 
-            linearMask operator|(const linearMask& other) const {
+            constexpr linearMask operator|(const linearMask& other) const {
                 linearMask result;
                 result.data = data | other.data;
                 return result;
             }
 
-            linearMask operator&(const linearMask& other) const {
+            constexpr linearMask operator&(const linearMask& other) const {
                 linearMask result;
                 result.data = data & other.data;
                 return result;
             }
 
-            linearMask operator|(const enumType value) const {
+            constexpr linearMask operator|(const enumType value) const {
                 linearMask result;
                 result.data = data | toBitMask(value);
                 return result;
             }
 
-            linearMask operator&(const enumType value) const {
+            constexpr linearMask operator&(const enumType value) const {
                 linearMask result;
                 result.data = data & toBitMask(value);
                 return result;
             }
+
+            constexpr containerType getData() const { return data; }
         };
 
         class STAIN{

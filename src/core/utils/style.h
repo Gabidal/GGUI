@@ -2357,11 +2357,20 @@ namespace GGUI{
 
     // This is what styling compiles during element::render().
     struct ActiveStyle {
-        rectangle area;     // relative position
-        RGB activeTextColor;
-        RGB activeBackgroundColor;
-        unsigned char opacity;
-        INTERNAL::linearMask<uint64_t, textAttributeTypes> activeTextAttributes;
+        rectangle area              = {};    // absolute position
+        RGB activeTextColor         = {};
+        RGB activeBackgroundColor   = {};
+        unsigned char opacity       = UINT8_MAX;
+        INTERNAL::linearMask<uint64_t, textAttributeTypes> activeTextAttributes = textAttributeTypes::DEFAULT;
+        element* origin             = nullptr;
+
+        constexpr ActiveStyle computeColor(const ActiveStyle* other) const {
+            ActiveStyle result = *this;
+            result.activeTextColor.add(other->activeTextColor, other->opacity);
+            result.activeBackgroundColor.add(other->activeBackgroundColor, other->opacity);
+            result.opacity = (unsigned char)(result.opacity * (other->opacity / 255.0f));
+            return result;
+        }
     };
 
     /**
@@ -2535,7 +2544,7 @@ namespace GGUI{
     
         bool evaluateDynamicGraphics(element* owner, styling* reference = nullptr);
 
-        std::vector<ActiveStyle> compile(const element* owner) const;
+        void compile(element* owner) const;
     protected:
     
         // The construction time given styles are first put here, before embedding them into this class.

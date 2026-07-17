@@ -657,37 +657,43 @@ namespace GGUI{
                previous_focus_border_background_color   != Focus_Border_Background_Color.color.get<RGB>();
     }
 
-    std::vector<ActiveStyle> styling::compile(const element* owner) const {
-        std::vector<ActiveStyle> result;
-        result.reserve(2);
+    void styling::compile(element* owner) const {
+        owner->graphicalIdentityPool.reserve(2);
 
         const auto [textColor, backgroundColor] = owner->getActiveTextColor();
 
-        result.push_back({
+        int borderOffset = 0;
+
+        owner->graphicalIdentityPool.push_back({
             {   // rectangle area
-                Position.get(),
-                {Width.get(), Height.get()}
+                owner->getAbsolutePosition() + IVector3{borderOffset, borderOffset, 0},
+                {Width.get() - borderOffset*2, Height.get() - borderOffset*2}
             },
             textColor, backgroundColor,
             Opacity.Get(),
-            TextAttributes.value
+            TextAttributes.value,
+            owner
         });
 
+        // to keep z-priority, so largest view is last
         if (Border_Enabled.value) {     TODO("This seems very inefficient!")
             const auto [borderColor, borderBackgroundColor] = owner->getActiveBorderColor();
 
-            result.push_back({
+            TODO("Add here the border width into the offset calculation")
+
+            borderOffset = 1;
+
+            owner->graphicalIdentityPool.push_back({
                 {   // rectangle area
-                    Position.get(),
+                    owner->getAbsolutePosition(),
                     {Width.get(), Height.get()}
                 },
                 borderColor, borderBackgroundColor,
                 Opacity.Get(),
-                TextAttributes.value
+                TextAttributes.value,
+                owner
             });
         }
-
-        return result;
     }
 
     /**

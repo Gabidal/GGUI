@@ -250,22 +250,16 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
         Dirty.Clean(INTERNAL::STAIN_TYPE::NOT_RENDERED);
     }
 
-    // Resets baked graphics and reserves for child*2+2, for the incoming deep stains.
-    if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){
-        // Clean the graphics stain after applying the graphics system.
-        Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
-
-        compileActiveGraphics();
-
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);    // If childs have not changed, their render should return the pre-baked buffer.
-    }
-
     bool Connect_Borders_With_Parent = hasBorder();
     unsigned int Childs_With_Borders = 0;
 
     //This will add the child windows to the Result buffer
     if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)){
         Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
+
+        // clean reflection pool
+        graphicalReflectionPool.clear();
+        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
 
         for (auto c : this->Style->Childs){
             if (!c->isDisplayed())
@@ -280,11 +274,17 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
 
             std::vector<INTERNAL::compactString>* tmp = &c->render();
 
-            // Insert the baked graphics from the current child.
-            bakedGraphics.insert(bakedGraphics.end(), c->bakedGraphics.begin(), c->bakedGraphics.end());
+            // compile graphical reflection pool
+            graphicalReflectionPool.insert(graphicalReflectionPool.end(), c->graphicalReflectionPool.begin(), c->graphicalReflectionPool.end());
 
             nestElement(this, c, cellBuffer, *tmp);
         }
+    }
+
+    if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)) {     // Resets baked graphics and reserves for child*2+2, for the incoming deep stains.
+        Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
+
+        compileActiveGraphics();    // compiles identifying graphics pools
     }
 
     if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
@@ -617,6 +617,60 @@ std::vector<GGUI::element*>& GGUI::element::getChilds() {
     return Style->Childs;
 }
 
+std::vector<GGUI::IVector2> GGUI::element::getVerticalFacesForAllIntersections() {
+    std::vector<GGUI::IVector2> result;
+    // Rough heuristic to prevent constant reallocations
+    result.reserve(this->Style->Childs.size() * 16); 
+
+    // 1. Gather all base vertical faces (O(N))
+    for (auto* child : this->Style->Childs) {
+        if (!child->isDisplayed()) continue;
+        for (const auto& graphics : child->graphicalIdentityPool) {
+            auto faces = graphics.area.getVerticalFaces();
+            result.insert(result.end(), faces.begin(), faces.end());
+        }
+    }
+
+    for (const auto& graphicsThis : graphicalIdentityPool) {
+        auto faces = graphicsThis.area.getVerticalFaces();
+        result.insert(result.end(), faces.begin(), faces.end());
+    }
+
+    // 2. Gather only the intersections (O(N^2))
+    for (size_t i = 0; i < this->Style->Childs.size(); ++i) {
+        auto* childA = this->Style->Childs[i];
+        if (!childA->isDisplayed()) continue;
+
+        for (const auto& graphicsA : childA->graphicalIdentityPool) {
+            
+            // Check against other children (start at i + 1 to avoid redundant reverse checks A->B and B->A)
+            for (size_t j = i + 1; j < this->Style->Childs.size(); ++j) {
+                auto* childB = this->Style->Childs[j];
+                if (!childB->isDisplayed()) continue;
+
+                for (const auto& graphicsB : childB->graphicalIdentityPool) {
+                    rectangle intersectedArea = graphicsA.area.intersection(graphicsB.area);
+                    if (!intersectedArea.empty()) {
+                        auto faces = intersectedArea.getVerticalFaces();
+                        result.insert(result.end(), faces.begin(), faces.end());
+                    }
+                }
+            }
+
+            // Check against parent container
+            for (const auto& graphicsThis : graphicalIdentityPool) {
+                rectangle intersectedArea = graphicsA.area.intersection(graphicsThis.area);
+                if (!intersectedArea.empty()) {
+                    auto faces = intersectedArea.getVerticalFaces();
+                    result.insert(result.end(), faces.begin(), faces.end());
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
 /**
  * @brief Removes a child element from the current element.
  * @param handle The pointer to the child element to be removed.
@@ -877,6 +931,8 @@ void GGUI::element::updateAbsolutePositionCache(){
         absolutePositionCache = Parent->getAbsolutePosition();
 
         Border_Offset = (Parent->hasBorder() != hasBorder() && Parent->hasBorder()) ? 1 : 0;
+
+        absolutePositionCache.z += 1;   // mainly used for the compute of rectangle priority
     }
 
     // Add the position of the element to the position of its parent
@@ -1437,9 +1493,13 @@ void GGUI::element::computeDynamicSize(){
 }
 
 void GGUI::element::compileActiveGraphics(){
-    bakedGraphics.reserve(getChilds().size() * 2 + 2);      // x2 because the potential of each child having borders enabled, will introduce the border activeStylings.
-                                                            // +2 is for this current elements own active stylings
-    bakedGraphics = Style->compile(this);
+    Style->compile(this);
+
+    std::transform(
+        graphicalIdentityPool.begin(), graphicalIdentityPool.end(),
+        std::back_inserter(graphicalReflectionPool),
+        [](ActiveStyle& as) { return &as; }
+    );
 }
 
 /**
