@@ -5,9 +5,6 @@
 #include <cstdint>
 #include <ostream>
 
-#include "superString.h"
-#include "constants.h"
-
 namespace GGUI{
     class RGB{
     public:
@@ -18,66 +15,6 @@ namespace GGUI{
         constexpr RGB(unsigned char r, unsigned char g, unsigned char b) : red(r), green(g), blue(b) {}
 
         constexpr RGB() = default;
-
-        /**
-         * @brief Converts the RGB colour to a string.
-         *
-         * @param Result The result string.
-         */
-        // constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForColor>* Result) const {
-        constexpr void getColourAsSuperString(INTERNAL::superString<constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result) const {
-            // Add the red value to the string
-            Result->add(constants::ANSI::toCompactTable[red]);
-            
-            // Add the separator to the string
-            Result->add(constants::ANSI::SEPARATE);
-            
-            // Add the green value to the string
-            Result->add(constants::ANSI::toCompactTable[green]);
-            
-            // Add the separator to the string
-            Result->add(constants::ANSI::SEPARATE);
-            
-            // Add the blue value to the string
-            Result->add(constants::ANSI::toCompactTable[blue]);
-        }
-    
-        /**
-         * @brief Populates a Super_String with ANSI escape codes for text or background color.
-         * 
-         * This function adds the escape codes for either text or background color to the provided Super_String.
-         * Ensure that the Result has been initialized with at least Maximum_Needed_Pre_Allocation_For_Over_Head.
-         * 
-         * @param Result A pointer to the Super_String to populate with escape codes.
-         * @param Is_Text_Color A boolean to determine if the codes are for text color (true) or background color (false).
-         */
-        constexpr void getOverHeadAsSuperString(INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead>* Result, const bool Is_Text_Color = true) const {
-            Result->add(constants::ANSI::CSI_CODE);
-            
-            Is_Text_Color ? 
-                Result->add(constants::ANSI::TEXT_COLOR) :
-                Result->add(constants::ANSI::BACKGROUND_COLOR);
-
-            Result->add(constants::ANSI::SEPARATE);
-            Result->add(constants::ANSI::USE_RGB);
-            Result->add(constants::ANSI::SEPARATE);
-        }
-
-        constexpr INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> getOverHeadAsSuperString(const bool Is_Text_Color = true) const {
-            INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForOverHead> Result;
-
-            Result.add(constants::ANSI::CSI_CODE);
-            
-            Is_Text_Color ? 
-                Result.add(constants::ANSI::TEXT_COLOR) :
-                Result.add(constants::ANSI::BACKGROUND_COLOR);
-
-            Result.add(constants::ANSI::SEPARATE);
-            Result.add(constants::ANSI::USE_RGB);
-            Result.add(constants::ANSI::SEPARATE);
-
-            return Result;
-        }
     
         constexpr bool operator==(const RGB& Other) const{
             // only take the bits from the first 3 unsigned chars

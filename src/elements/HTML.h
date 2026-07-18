@@ -3,10 +3,6 @@
 
 #include "element.h"
 
-#include "../core/utils/superString.h"
-#include "../core/utils/constants.h"
-#include "../core/utils/color.h"
-#include "../core/utils/utf.h"
 #include "../core/utils/style.h"
 #include "../core/utils/fileStreamer.h"
 

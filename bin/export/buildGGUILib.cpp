@@ -29,7 +29,6 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
         "src/core/utils/constants.h",
         "src/core/utils/color.h",
         "src/core/utils/types.h",
-        "src/core/utils/utf.h",
         "src/core/utils/utils.h",
 
         "src/core/backend/utils.h",

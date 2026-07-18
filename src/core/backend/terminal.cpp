@@ -96,7 +96,7 @@ namespace GGUI {
             return handle;
         }
 
-        void outputCapture::liquefyGraphicAreas() {
+        void outputCapture::computeSGRAreas() {
             // Clear residue from previous render
             activeGraphicAttributes.clear();    TODO("Change this to a dif to only render changed areas.")
 
@@ -118,6 +118,34 @@ namespace GGUI {
                     activeGraphicAttributes.push_back(rasterizedCellStyle);
                 }
             }
+        }
+
+        void outputCapture::preparePresentationBuffer() {
+            static std::string result; // internal cache between renders
+
+            // Since we know how many SGR style attributes were gonna get
+
+            if (result.size() != Liquefied_Size){
+                // Resize a std::string to the total size.
+                result.resize(Liquefied_Size, '\0');
+            }
+
+            // Fast-path pointer access to avoid bounds checks and replace overhead
+            char* outputAddress = result.data();
+            unsigned int outputIndex = 0;
+
+            const compactString* dataAddress = Data.data();
+            const size_t cachedSize = Data.size();
+
+            for (size_t i = 0; i < cachedSize; i++) {
+                const compactString& data = dataAddress[i];
+
+                // Copy multi-byte unicode sequence directly
+                std::memcpy(outputAddress + outputIndex, data.text, data.size);
+                outputIndex += data.size;
+            }
+
+            liquefiedBuffer = &result;
         }
 
         void outputCapture::update() {

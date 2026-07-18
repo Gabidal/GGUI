@@ -3,7 +3,6 @@
 
 #include "element.h"
 
-#include "../core/utils/utf.h"
 #include "../core/utils/style.h"
 
 #include <vector>
@@ -11,7 +10,7 @@
 namespace GGUI{
     class sprite{
     protected:
-        std::vector<GGUI::UTF> Frames;
+        std::vector<GGUI::INTERNAL::compactString> Frames;
         
         int Offset = 0;     // This is for more beautiful mass animation systems
         int Speed = 1;      // Using decimals too slow hmmm...
@@ -23,33 +22,33 @@ namespace GGUI{
 
         /**
          * @brief Constructor for Sprite class.
-         * @details This constructor initializes a Sprite object with a vector of UTF objects representing the frames,
+         * @details This constructor initializes a Sprite object with a vector of INTERNAL::compactString objects representing the frames,
          * an offset to determine when to start playing the animation, and a speed to control the animation playback.
-         * @param frames A vector of UTF objects representing the frames of the animation.
+         * @param frames A vector of INTERNAL::compactString objects representing the frames of the animation.
          * @param offset The number of frames to skip before playing the animation.
          * @param speed The speed of the animation playback.
          */
-        sprite(std::vector<GGUI::UTF> frames, int offset = 0, int speed = 1);
+        sprite(std::vector<GGUI::INTERNAL::compactString> frames, int offset = 0, int speed = 1);
 
         /**
          * @brief Constructs a Sprite object with a single frame.
-         * @details This constructor initializes the Sprite with a single UTF frame, setting the offset and speed for animation.
-         * @param frame A UTF object representing the single frame of the sprite.
+         * @details This constructor initializes the Sprite with a single INTERNAL::compactString frame, setting the offset and speed for animation.
+         * @param frame A INTERNAL::compactString object representing the single frame of the sprite.
          * @param offset The number of frames to skip before playing the animation. Default is 0.
          * @param speed The speed of the animation playback. Default is 1.
          */
-        sprite(GGUI::UTF frame){
+        sprite(GGUI::INTERNAL::compactString frame){
             // Add the provided frame to the Frames vector.
             Frames.push_back(frame);
         }
 
         /**
          * @brief Constructs a Sprite object with default values.
-         * @details This constructor sets the Sprite to have a single UTF frame, which is a space character, and sets the offset and speed for animation.
+         * @details This constructor sets the Sprite to have a single INTERNAL::compactString frame, which is a space character, and sets the offset and speed for animation.
          */
         sprite() : Frame_Distance(1){
             // Set the default frame to a space character.
-            Frames.push_back(GGUI::UTF(' '));
+            Frames.push_back(GGUI::INTERNAL::compactString(' '));
             
             // Set the default offset and speed values.
             Offset = 0;

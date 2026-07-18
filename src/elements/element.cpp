@@ -10,75 +10,6 @@
 #undef max
 
 /**
- * @brief Converts the UTF character to a string.
- *
- * This function converts the UTF character to a string by combining the foreground and background colour
- * strings with the character itself.
- *
- * @param Result The result string.
- * @param Text_Overhead The foreground colour and style as a string.
- * @param Background_Overhead The background colour and style as a string.
- * @param Text_Colour The foreground colour as a string.
- * @param Background_Colour The background colour as a string.
- */
-void GGUI::UTF::toSuperString(
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* Result,
-    bool TransparentBackground
-) const{
-    Result->add(INTERNAL::textOverheadPrecompute);
-    foreground.getColourAsSuperString(Result);
-    Result->add(constants::ANSI::END_COMMAND);
-    
-    if (!TransparentBackground) {
-        Result->add(INTERNAL::backgroundOverheadPrecompute);
-        background.getColourAsSuperString(Result);
-        Result->add(constants::ANSI::END_COMMAND);
-    }
-
-    Result->add(text, size);
-
-    // Add the reset ANSI code to the end of the string
-    Result->add(constants::ANSI::RESET_COLOR);
-}
-
-/**
- * @brief Converts the UTF character to an encoded Super_String.
- *
- * This function converts the UTF character to an encoded Super_String by applying
- * encoding flags and combining the foreground and background colour strings
- * with the character itself.
- *
- * @param Result The Super_String to which the encoded string will be added.
- * @param Text_Overhead The Super_String where the foreground colour overhead will be stored.
- * @param Background_Overhead The Super_String where the background colour overhead will be stored.
- * @param Text_Colour The Super_String where the foreground colour will be stored.
- * @param Background_Colour The Super_String where the background colour will be stored.
- */
-void GGUI::UTF::toEncodedSuperString(
-    INTERNAL::superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>* /*Result*/
-) const{
-
-    // if (is(INTERNAL::ENCODING_FLAG::START)) {
-    //     Result->add(INTERNAL::textOverheadPrecompute);
-    //     foreground.getColourAsSuperString(Result);
-        
-    //     Result->add(constants::ANSI::END_COMMAND);
-    //     Result->add(INTERNAL::backgroundOverheadPrecompute);
-
-    //     background.getColourAsSuperString(Result);
-    //     Result->add(constants::ANSI::END_COMMAND);
-    // }
-
-    // // Append the Unicode character to the result
-    // Result->add(text, size);
-
-    // if (is(INTERNAL::ENCODING_FLAG::END)) {
-    //     // Add the reset ANSI code to the end of the string
-    //     Result->add(constants::ANSI::RESET_COLOR);
-    // }
-}
-
-/**
  * @brief Constructor for the GGUI::element class.
  * 
  * This constructor initializes an element with a given style and optionally embeds styles during construction.
@@ -229,7 +160,7 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
     if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
         Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
-        std::fill(cellBuffer.begin(), cellBuffer.end(), SYMBOLS::EMPTY_COMPACT_STRING);
+        std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
         
         Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
     }
@@ -238,7 +169,7 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
         Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
         
         cellBuffer.clear();
-        cellBuffer.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_COMPACT_STRING);
+        cellBuffer.resize(getWidth() * getHeight(), ' ');
 
         Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
     }

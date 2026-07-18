@@ -10,6 +10,7 @@
 #include <poll.h>
 
 #include "../utils/logger.h"
+#include "../utils/constants.h"
 #include "terminal.h"
 
 namespace GGUI {

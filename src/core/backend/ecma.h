@@ -1859,6 +1859,34 @@ namespace GGUI {
                 // NOTE: Since this class only contains metadata, if there is colors in the params via RGB or other formats these will be written into the terminal::screen.cellBuffer!
                 void parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params);
 
+                constexpr size_t getSize() const {
+                    size_t result = textAttributes.getBitCount();
+
+                    // Each text attribute is separated via a separator
+                    size_t textAttributeSeparatorCount = std::max((signed)textAttributes.getBitCount() - 1, 0);
+
+                    // Since our interpreter converts all incoming color types into RGB, we simply need to add the RGB as a direct active color type
+                    size_t directColorTypeByteCount = 0;
+                    size_t textColorAsCompactString = 0;
+                    size_t backgroundColorAsCompactString = 0;
+                    size_t colorSeparatorCount = 0;
+
+                    if (textAttributes.has(graphicalTextAttributes::FOREGROUND_COLOR)) {
+                        textColorAsCompactString = countBytes(toString(textColor));
+                        directColorTypeByteCount += 1;
+                        colorSeparatorCount += 2;   // ';' between each color type
+                    } 
+                    if (textAttributes.has(graphicalTextAttributes::BACKGROUND_COLOR)) {
+                        backgroundColorAsCompactString = countBytes(toString(backgroundColor));
+                        directColorTypeByteCount += 1;
+                        colorSeparatorCount += 2;   // ';' between each color type
+                    }
+
+                    result += textAttributeSeparatorCount + directColorTypeByteCount + textColorAsCompactString + backgroundColorAsCompactString + colorSeparatorCount;
+
+                    return result;
+                }
+
                 constexpr void add(graphicalTextAttributes t) {
                     // Special case:
                     if (t == graphicalTextAttributes::IDEOGRAM_ATTRIBUTES_OFF) {

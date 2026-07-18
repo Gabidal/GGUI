@@ -4,7 +4,6 @@
 #include "element.h"
 
 #include "../core/utils/superString.h"
-#include "../core/utils/utf.h"
 #include "../core/utils/style.h"
 
 namespace GGUI{

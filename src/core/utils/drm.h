@@ -2,7 +2,6 @@
 #define _DRM_H_
 
 #include "logger.h"
-#include "utf.h"
 
 #if _WIN32
 

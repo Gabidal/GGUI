@@ -869,7 +869,7 @@ namespace GGUI{
                 if (tAsBitMask != 0) data &= ~tAsBitMask;   // If not default, then remove the bit
             }
 
-            constexpr bool has(enumType t) {
+            constexpr bool has(enumType t) const {
                 containerType tAsBitMask = toBitMask(t);
 
                 return  (tAsBitMask == data) ||     // Either they are identical, 0 == 0
@@ -887,6 +887,18 @@ namespace GGUI{
                 }
 
                 return result;
+            }
+
+            constexpr size_t getBitCount() const {
+                size_t count = 0;
+                containerType tempData = data;
+
+                while (tempData) {
+                    count += tempData & 1;
+                    tempData >>= 1;
+                }
+
+                return count;
             }
 
             constexpr bool operator==(const linearMask& other) const {

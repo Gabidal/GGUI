@@ -102,15 +102,9 @@ namespace GGUI{
                                 TODO("Implement DRM::sendBuffer() to accept compactString instead of std::vector<UTF> for better performance and memory efficiency.")
                             }
                             else {
-                                // ENCODE for optimize
-                                // encodeBuffer(terminal::currentStates->screen.buffer);
+                                terminal::currentStates->screen.computeSGRAreas();
 
-                                terminal::currentStates->screen.liquefyGraphicAreas();
-
-                                unsigned int Liquefied_Size = 0;
-                                // conveyorAllocator<compactString> CS_Buffer = liquifyUTFText(terminal::currentStates->screen.buffer, Liquefied_Size, main->getWidth(), main->getHeight());
-
-                                terminal::currentStates->screen.liquefiedBuffer = toString(terminal::currentStates->screen.buffer, 100 * 100);
+                                terminal::currentStates->screen.preparePresentationBuffer();
                                 
                                 terminal::renderFrame();
                             }
