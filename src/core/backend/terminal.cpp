@@ -54,6 +54,8 @@ namespace GGUI {
                     if (localGraphicalPool.area.hits(point)) {
                         handle.second = localGraphicalPool;    // this is the closest hit.
                         handle.first = true;
+                        handle.second.activeTextAttributes.add(textAttributeTypes::FOREGROUND_COLOR);
+                        handle.second.activeTextAttributes.add(textAttributeTypes::BACKGROUND_COLOR);
                         break;
                     }
                 }
@@ -96,23 +98,25 @@ namespace GGUI {
             return handle;
         }
 
+        size_t outputCapture::getIndexOf(IVector2 val) const {
+            return (val.y * dom->getWidth()) + val.x;
+        }
+
         void outputCapture::computeSGRAreas() {
             // Clear residue from previous render
             activeGraphicAttributes.clear();    TODO("Change this to a dif to only render changed areas.")
 
-            // activeGraphicAttributes.back() will work as our current state.
-            activeGraphicAttributes.push_back(rasterize(dom->graphicalIdentityPool.back()));    // this is the lowest z-priority area
-
             IVector2 start = {0, 0};
-            IVector2 end = cursor + dimensions;
+            // IVector2 end = cursor + dimensions;
+            IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
 
-            for (int y = start.y; y < end.y; ++y) {
-                for (int x = start.x; x < end.x; ++x) {
+            for (int y = start.y; y < end.y; y++) {
+                for (int x = start.x; x < end.x; x++) {
 
                     auto currentCellStyle = trace({x, y}, dom).second;
                     auto rasterizedCellStyle = rasterize(currentCellStyle);
 
-                    if (rasterizedCellStyle == activeGraphicAttributes.back()) continue;
+                    if (!activeGraphicAttributes.empty() && rasterizedCellStyle == activeGraphicAttributes.back()) continue;
                     
                     rasterizedCellStyle.start = {x, y}; // SGR needs to know where this style begins
                     activeGraphicAttributes.push_back(rasterizedCellStyle);
@@ -123,26 +127,61 @@ namespace GGUI {
         void outputCapture::preparePresentationBuffer() {
             static std::string result; // internal cache between renders
 
-            // Since we know how many SGR style attributes were gonna get
+            size_t liquefiedSize = 0;
 
-            if (result.size() != Liquefied_Size){
+            TODO("Remove this when moving from compactString into std::u32string")
+            for (auto& cs : buffer) {
+                liquefiedSize += cs.size;
+            }
+
+            // Since we know how many SGR style attributes were gonna get
+            for (auto& activeSGR : activeGraphicAttributes) {
+                liquefiedSize += ecma::sequences::presentationControlFunctions::SELECT_GRAPHIC_RENDITION.compile(activeSGR.compile()).getSize();
+            }
+
+            if (result.size() != liquefiedSize){
                 // Resize a std::string to the total size.
-                result.resize(Liquefied_Size, '\0');
+                result.resize(liquefiedSize, '\0');
             }
 
             // Fast-path pointer access to avoid bounds checks and replace overhead
-            char* outputAddress = result.data();
             unsigned int outputIndex = 0;
 
-            const compactString* dataAddress = Data.data();
-            const size_t cachedSize = Data.size();
+            size_t currentSGRIndex = 0;
+            size_t nextSGRStartPositionAsIndex = UINT32_MAX;
 
-            for (size_t i = 0; i < cachedSize; i++) {
-                const compactString& data = dataAddress[i];
+            if (!activeGraphicAttributes.empty()) {
+                nextSGRStartPositionAsIndex = getIndexOf(activeGraphicAttributes[currentSGRIndex].start);
+            }
 
-                // Copy multi-byte unicode sequence directly
-                std::memcpy(outputAddress + outputIndex, data.text, data.size);
-                outputIndex += data.size;
+            IVector2 start = {0, 0};
+            // IVector2 end = cursor + dimensions;
+            IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
+
+            for (int y = start.y; y < end.y; y++) {
+                for (int x = start.x; x < end.x; x++) {
+                    const compactString& data = buffer[(y * dom->getWidth()) + x];
+
+                    if (getIndexOf({x, y}) == nextSGRStartPositionAsIndex) {
+                        // Insert the SGR sequence into the output buffer
+                        auto sgrSequence = ecma::sequences::presentationControlFunctions::SELECT_GRAPHIC_RENDITION.compile(activeGraphicAttributes[currentSGRIndex].compile()).toString();
+
+                        std::memcpy(result.data() + outputIndex, sgrSequence.data(), sgrSequence.size());
+                        outputIndex += sgrSequence.size();
+
+                        currentSGRIndex++;
+
+                        if (currentSGRIndex < activeGraphicAttributes.size()) {
+                            nextSGRStartPositionAsIndex = getIndexOf(activeGraphicAttributes[currentSGRIndex].start);
+                        } else {
+                            nextSGRStartPositionAsIndex = UINT32_MAX; // No more SGR sequences to insert
+                        }
+                    }
+
+                    // Copy multi-byte unicode sequence directly
+                    std::memcpy(result.data() + outputIndex, data.text, data.size);
+                    outputIndex += data.size;
+                }
             }
 
             liquefiedBuffer = &result;

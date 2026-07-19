@@ -2,6 +2,8 @@
 #define _DRM_H_
 
 #include "logger.h"
+#include "color.h"
+#include "constants.h"
 
 #if _WIN32
 
@@ -29,7 +31,7 @@ namespace GGUI {
                 RGB backgroundColor;
             };
 
-            extern void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer);
+            // extern void packAbstractBuffer(char* destinationBuffer, std::vector<compactString>& abstractBuffer);
 
             constexpr int failRetryWaitTime = TIME::SECOND * 5;
 
@@ -485,7 +487,7 @@ namespace GGUI {
 
             extern void connectDRMBackend();
             
-            extern void sendBuffer(std::vector<UTF>& abstractBuffer);
+            // extern void sendBuffer(std::vector<compactString>& abstractBuffer);
 
             extern void retryDRMConnect();
 

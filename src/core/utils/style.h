@@ -2321,6 +2321,8 @@ namespace GGUI{
         PRIMARY_FONT        = alias(terminal::graphicalTextAttributes::PRIMARY_FONT),
         ALTERNATIVE_FONT_1  = alias(terminal::graphicalTextAttributes::ALT_FONT_1),
         DOUBLE_UNDERLINE    = alias(terminal::graphicalTextAttributes::DOUBLY_UNDERLINED),
+        FOREGROUND_COLOR    = alias(terminal::graphicalTextAttributes::FOREGROUND_COLOR),
+        BACKGROUND_COLOR    = alias(terminal::graphicalTextAttributes::BACKGROUND_COLOR),
         FRAMED              = alias(terminal::graphicalTextAttributes::FRAMED),
         ENCIRCLED           = alias(terminal::graphicalTextAttributes::ENCIRCLED),
         OVERLINE            = alias(terminal::graphicalTextAttributes::OVERLINED)

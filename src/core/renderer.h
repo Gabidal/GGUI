@@ -63,9 +63,6 @@ namespace GGUI{
             buttonState(bool State = false) : state(State), captureTime(std::chrono::steady_clock::now()) {}
         };
 
-        extern std::vector<UTF>* abstractFrameBuffer;                 //2D clean vector without bold nor color
-        extern std::string* frameBuffer;                                //string with bold and color, this what gets drawn to console.
-
         extern std::vector<INTERNAL::bufferCapture*> globalBufferCaptures;
 
         extern unsigned int maxWidth;
@@ -122,10 +119,6 @@ namespace GGUI{
          *          handling specific ANSI features.
          */
         extern void initPlatformStuff();
-        
-        extern void initTerminalWithANSICodes();
-
-        extern void deinitTerminalANSICodes();
 
         extern void Cleanup();
 
@@ -202,7 +195,7 @@ namespace GGUI{
          * @param Height The height of the window.
          * @return A pointer to the resulting Super_String.
          */
-        extern conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
+        // extern conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
         
         /**
          * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
@@ -277,7 +270,7 @@ namespace GGUI{
          * @param Text The text buffer to be nested.
          * @param Parent_Buffer The parent buffer which the text is being nested into.
          */
-        extern void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
+        // extern void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer);
 
         /**
          * @brief Handles the pressing of the tab key.
@@ -303,7 +296,7 @@ namespace GGUI{
          *          It checks each UTF element's foreground and background colors with its adjacent elements
          *          to determine where encoding strips start and end.
          */
-        extern void encodeBuffer(std::vector<GGUI::UTF>* Buffer);
+        // extern void encodeBuffer(std::vector<GGUI::UTF>* Buffer);
 
         /**
          * @brief Notifies all global buffer capturers about the latest data to be captured.
@@ -337,7 +330,7 @@ namespace GGUI{
          * @param Dest The destination element to which the source element will be blended.
          * @param Source The source element which will be blended to the destination element.
          */
-        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, unsigned char childOpacity);
+        // void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, unsigned char childOpacity);
 
         /**
          * @brief Nests a child element into a parent element.

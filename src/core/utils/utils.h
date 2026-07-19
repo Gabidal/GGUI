@@ -16,7 +16,7 @@
 
 namespace GGUI{
     class element;
-    class UTF;
+    // class UTF;
     class RGB;
 
     // ===  TODO MACRO   ===
@@ -427,8 +427,6 @@ namespace GGUI{
         }
     }
     // autoGen: Ignore end
-
-    extern std::string toString(UTF coloredText, bool transparentBackground = false);
 
     template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>> 
     constexpr uint8_t alias(enumType value) { return static_cast<uint8_t>(value); }

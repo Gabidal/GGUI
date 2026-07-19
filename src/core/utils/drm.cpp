@@ -19,23 +19,23 @@ namespace GGUI {
         namespace DRM {
             const char* handshakePortLocation = "/tmp/GGDirect.gateway";
         
-            void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer) {
-                cell* result = (cell*)destinationBuffer; // Static container
+            // void packAbstractBuffer(char* destinationBuffer, std::vector<UTF>& abstractBuffer) {
+            //     // cell* result = (cell*)destinationBuffer; // Static container
 
-                for (unsigned int i = 0; i < abstractBuffer.size(); i++) {
+            //     for (unsigned int i = 0; i < abstractBuffer.size(); i++) {
 
-                    cell currentCell = {{}, abstractBuffer[i].foreground, abstractBuffer[i].background};
+            //         // cell currentCell = {{}, abstractBuffer[i].foreground, abstractBuffer[i].background};
 
-                    // now we need to unpack the UTF compactString
-                    if (abstractBuffer[i].size > sizeof(currentCell.utf)) {
-                        reportStack("UTF data: " + std::string(abstractBuffer[i].text) + " is too large for cell. Size: " + std::to_string(abstractBuffer[i].size) + ", max size: " + std::to_string(sizeof(currentCell.utf)));
-                    } else {
-                        memcpy(currentCell.utf, abstractBuffer[i].text, abstractBuffer[i].size);
-                    }
+            //         // // now we need to unpack the UTF compactString
+            //         // if (abstractBuffer[i].size > sizeof(currentCell.utf)) {
+            //         //     reportStack("UTF data: " + std::string(abstractBuffer[i].text) + " is too large for cell. Size: " + std::to_string(abstractBuffer[i].size) + ", max size: " + std::to_string(sizeof(currentCell.utf)));
+            //         // } else {
+            //         //     memcpy(currentCell.utf, abstractBuffer[i].text, abstractBuffer[i].size);
+            //         // }
 
-                    result[i] = currentCell;
-                }
-            }
+            //         // result[i] = currentCell;
+            //     }
+            // }
 
             void packet::input::translatePacketInputToGGUIInput(input::base* packetInput) {
                 if (!packetInput) {
@@ -340,42 +340,42 @@ namespace GGUI {
                 }
             }
             
-            void sendBuffer(std::vector<UTF>& abstractBuffer) {
-                // Check if DRM connection is valid
-                if (DRMConnection.getHandle() < 0) {
-                    GGUI::INTERNAL::LOGGER::log("DRM connection is not established");
-                    return;
-                }
+            // void sendBuffer(std::vector<UTF>& abstractBuffer) {
+            //     // Check if DRM connection is valid
+            //     if (DRMConnection.getHandle() < 0) {
+            //         GGUI::INTERNAL::LOGGER::log("DRM connection is not established");
+            //         return;
+            //     }
 
-                size_t maximumBufferSize = getRoot()->getWidth() * getRoot()->getHeight() * sizeof(cell);
+            //     size_t maximumBufferSize = getRoot()->getWidth() * getRoot()->getHeight() * sizeof(cell);
 
-                static std::vector<char> packetBuffer = std::vector<char>();
+            //     static std::vector<char> packetBuffer = std::vector<char>();
                 
-                if (packetBuffer.size() != packet::size + maximumBufferSize)
-                    packetBuffer.resize(packet::size + maximumBufferSize);
+            //     if (packetBuffer.size() != packet::size + maximumBufferSize)
+            //         packetBuffer.resize(packet::size + maximumBufferSize);
 
-                if (abstractBuffer.empty()) {
-                    packet::notify::base inform(packet::notify::type::EMPTY_BUFFER);
-                    // we write the inform into the packet buffer
-                    memcpy(packetBuffer.data(), &inform, sizeof(inform));
-                }
-                else {
-                    packet::base inform(packet::type::DRAW_BUFFER);
-                    // we write the inform into the packet buffer
-                    memcpy(packetBuffer.data(), &inform, sizeof(inform));
+            //     if (abstractBuffer.empty()) {
+            //         packet::notify::base inform(packet::notify::type::EMPTY_BUFFER);
+            //         // we write the inform into the packet buffer
+            //         memcpy(packetBuffer.data(), &inform, sizeof(inform));
+            //     }
+            //     else {
+            //         packet::base inform(packet::type::DRAW_BUFFER);
+            //         // we write the inform into the packet buffer
+            //         memcpy(packetBuffer.data(), &inform, sizeof(inform));
 
-                    // Now we need to pack the abstract buffer into a vector of cells
-                    packAbstractBuffer(packetBuffer.data() + packet::size, abstractBuffer);
-                }
+            //         // Now we need to pack the abstract buffer into a vector of cells
+            //         packAbstractBuffer(packetBuffer.data() + packet::size, abstractBuffer);
+            //     }
                 
-                if (!DRMConnection.Send(packetBuffer.data(), packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
-                    GGUI::INTERNAL::LOGGER::log("Failed to send draw buffer header");
+            //     if (!DRMConnection.Send(packetBuffer.data(), packet::size + maximumBufferSize)){    // Tell DRM to expect an draw buffer
+            //         GGUI::INTERNAL::LOGGER::log("Failed to send draw buffer header");
 
-                    std::this_thread::sleep_for(std::chrono::milliseconds(TIME::SECOND)); // Wait for the cleanup of tcp packages in the DRM backend
-                }
+            //         std::this_thread::sleep_for(std::chrono::milliseconds(TIME::SECOND)); // Wait for the cleanup of tcp packages in the DRM backend
+            //     }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(tcp::pollingRate));
-            }
+            //     std::this_thread::sleep_for(std::chrono::milliseconds(tcp::pollingRate));
+            // }
 
             void retryDRMConnect() {
                 while (DRMConnection.getHandle() < 0) {

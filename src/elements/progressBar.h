@@ -52,7 +52,6 @@ namespace GGUI{
             inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };
 
-
         class Bar : public element{
         protected:
             float Progress = 0; // 0.0 - 1.0
@@ -67,7 +66,7 @@ namespace GGUI{
             RGB Tail_Color = GGUI::COLOR::GRAY;
             RGB Empty_Color = GGUI::COLOR::DARK_GRAY;
 
-            std::vector<UTF> Content;
+            // std::vector<cell> Content;
         public:
 
             /**

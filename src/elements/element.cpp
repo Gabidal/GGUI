@@ -548,6 +548,25 @@ std::vector<GGUI::element*>& GGUI::element::getChilds() {
     return Style->Childs;
 }
 
+std::vector<GGUI::element*> GGUI::element::getVisibleChilds() {
+    std::vector<GGUI::element*> result;
+    result.reserve(getChilds().size());
+
+    for (auto* c : getChilds()) {
+        if (!c->isDisplayed() || !childIsShown(c))
+                continue;
+
+        result.push_back(c);
+    }
+
+    // sort result by z-priority, higher z is first
+    std::sort(result.begin(), result.end(), [](const GGUI::element* a, const GGUI::element* b) {
+        return a->getPosition().z > b->getPosition().z;
+    });
+
+    return result;
+}
+
 std::vector<GGUI::IVector2> GGUI::element::getVerticalFacesForAllIntersections() {
     std::vector<GGUI::IVector2> result;
     // Rough heuristic to prevent constant reallocations

@@ -115,8 +115,8 @@ namespace GGUI{
                         #endif
 
                             if (SETTINGS::enableDRM) {
-                                std::vector<UTF> empty;
-                                DRM::sendBuffer(empty);
+                                // std::vector<compactString> empty;
+                                // DRM::sendBuffer(empty);
                             }
                         }
                     }

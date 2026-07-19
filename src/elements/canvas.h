@@ -72,7 +72,7 @@ namespace GGUI{
          * @param Current_Frame The current frame of the animation.
          * @return The rendered UTF character.
          */
-        UTF render(unsigned char Current_Time);
+        INTERNAL::compactString render(unsigned char Current_Time);
 
         friend class canvas;
     };
@@ -157,7 +157,7 @@ namespace GGUI{
          * @param sprite The UTF sprite to be placed.
          * @param Flush Whether or not to call Update_Frame() after setting the sprite.
          */
-        void set(unsigned int x, unsigned int y, UTF& sprite, bool Flush = true);
+        void set(unsigned int x, unsigned int y, INTERNAL::compactString& sprite, bool Flush = true);
         
         /**
          * @brief Flush the canvas.

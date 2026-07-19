@@ -14,7 +14,7 @@ namespace GGUI{
      * @param offset The number of frames to skip before playing the animation.
      * @param speed The speed of the animation playback.
      */
-    sprite::sprite(std::vector<GGUI::UTF> frames, int offset, int speed)
+    sprite::sprite(std::vector<INTERNAL::compactString> frames, int offset, int speed)
         : Frames(frames), Offset(offset), Speed(speed) {
         // Check if the frames size is an power of twos compliment
         // This is done to make sure the animation can be looped without any issues
@@ -103,7 +103,7 @@ namespace GGUI{
      * @param sprite The UTF sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(unsigned int x, unsigned int y, UTF& sprite, bool Flush){
+    void canvas::set(unsigned int x, unsigned int y, INTERNAL::compactString& sprite, bool Flush){
         unsigned int innerWidth = getWidth() - hasBorder()*2;
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
         
@@ -169,7 +169,7 @@ namespace GGUI{
         
         if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
             Result.clear();
-            Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+            Result.resize(getWidth() * getHeight(), ' ');
 
             // Also clear and resize the sprite buffer.
             Buffer.clear();
@@ -240,7 +240,7 @@ namespace GGUI{
      * @param currentFrame The current frame of the animation.
      * @return The rendered UTF character.
      */
-    UTF sprite::render(unsigned char currentFrame){
+    INTERNAL::compactString sprite::render(unsigned char currentFrame){
         int frameCount = Frames.size();
 
         if (frameCount < 2){   // Check if current sprite has animation frames.
@@ -258,26 +258,26 @@ namespace GGUI{
         int Frame_Above = (frameBelow + 1) % frameCount;    // only +1, because the currentFrameIndex isn't a real index.
         
         // now interpolate the foreground color between the two points
-        GGUI::RGB foreground = INTERNAL::lerp(
-            Frames[frameBelow].foreground, 
-            Frames[Frame_Above].foreground, 
-            frameIndexRemainder,
-            Frame_Distance
-        );
+        // GGUI::RGB foreground = INTERNAL::lerp(
+        //     Frames[frameBelow].foreground, 
+        //     Frames[Frame_Above].foreground, 
+        //     frameIndexRemainder,
+        //     Frame_Distance
+        // );
 
-        // do same for background
-        GGUI::RGB background = INTERNAL::lerp(
-            Frames[frameBelow].background, 
-            Frames[Frame_Above].background, 
-            frameIndexRemainder,
-            Frame_Distance
-        );
+        // // do same for background
+        // GGUI::RGB background = INTERNAL::lerp(
+        //     Frames[frameBelow].background, 
+        //     Frames[Frame_Above].background, 
+        //     frameIndexRemainder,
+        //     Frame_Distance
+        // );
 
-        GGUI::UTF Result = Frames[frameBelow];
-        Result.setForeground(foreground);
-        Result.setBackground(background);
+        // GGUI::UTF Result = Frames[frameBelow];
+        // Result.setForeground(foreground);
+        // Result.setBackground(background);
 
-        return Result;
+        return ' ';
     }
 
     /**
@@ -327,9 +327,9 @@ namespace GGUI{
                     continue;
                 }
 
-                UTF tmp(currentBorder);
+                // UTF tmp(currentBorder);
 
-                set(X, Y, tmp, false);
+                // set(X, Y, tmp, false);
             }
         }
 

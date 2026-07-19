@@ -58,23 +58,23 @@ namespace GGUI{
          * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
          */
         void Bar::colorBar(){
-            if (Content.empty() || (signed)Content.size() != getWidth() - hasBorder() * 2){
-                // Resize the content to fit the width of the progress bar minus the borders
-                Content.clear();
-                Content.resize(getWidth() - hasBorder() * 2, UTF(Body, { Empty_Color, getBackgroundColor() }));
-            }
+            // if (Content.empty() || (signed)Content.size() != getWidth() - hasBorder() * 2){
+            //     // Resize the content to fit the width of the progress bar minus the borders
+            //     Content.clear();
+            //     Content.resize(getWidth() - hasBorder() * 2, UTF(Body, { Empty_Color, getBackgroundColor() }));
+            // }
 
-            // First color the progressed part of the bar
-            std::fill(Content.begin(), Content.begin() + getIndexofHead(), UTF(Body, { Body_Color , getBackgroundColor() }));
+            // // First color the progressed part of the bar
+            // std::fill(Content.begin(), Content.begin() + getIndexofHead(), UTF(Body, { Body_Color , getBackgroundColor() }));
 
-            // Now fill in the empty part
-            std::fill(Content.begin() + getIndexofHead(), Content.end(), UTF(Empty, { Empty_Color, getBackgroundColor() }));
+            // // Now fill in the empty part
+            // std::fill(Content.begin() + getIndexofHead(), Content.end(), UTF(Empty, { Empty_Color, getBackgroundColor() }));
 
-            // now replace the head part
-            Content[getIndexofHead()] = UTF(Head, { Head_Color, getBackgroundColor() });
+            // // now replace the head part
+            // Content[getIndexofHead()] = UTF(Head, { Head_Color, getBackgroundColor() });
 
-            // now replace the tail part
-            Content.front() = UTF(Tail, { Tail_Color, getBackgroundColor() });
+            // // now replace the tail part
+            // Content.front() = UTF(Tail, { Tail_Color, getBackgroundColor() });
         }
 
         /**
@@ -106,7 +106,7 @@ namespace GGUI{
             if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
                 Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
-                std::fill(cellBuffer.begin(), cellBuffer.end(), SYMBOLS::EMPTY_UTF);
+                std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
                 
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
             }
@@ -114,7 +114,7 @@ namespace GGUI{
             // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
             if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
                 Result.clear();
-                Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+                Result.resize(getWidth() * getHeight(), ' ');
                 colorBar();
                 Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
@@ -149,9 +149,9 @@ namespace GGUI{
                 int Ending_Y = getHeight() - hasBorder();
                 int Ending_X = getWidth() - hasBorder();
 
-                for (int y = Starting_Y; y < Ending_Y; y++)
-                    for (int x = Starting_X; x < Ending_X; x++)
-                        Result[y * getWidth() + x] = Content[x - Starting_X];
+                // for (int y = Starting_Y; y < Ending_Y; y++)
+                //     for (int x = Starting_X; x < Ending_X; x++)
+                //         Result[y * getWidth() + x] = Content[x - Starting_X];
             }
 
             // Add borders and titles if the EDGE stain is detected.

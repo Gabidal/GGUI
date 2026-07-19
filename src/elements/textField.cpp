@@ -162,7 +162,7 @@ namespace GGUI{
         if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
             Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
 
-            std::fill(cellBuffer.begin(), cellBuffer.end(), SYMBOLS::EMPTY_UTF);
+            std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             
             Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
         }
@@ -170,7 +170,7 @@ namespace GGUI{
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
         if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
             Result.clear();
-            Result.resize(getWidth() * getHeight(), SYMBOLS::EMPTY_UTF);
+            Result.resize(getWidth() * getHeight(), ' ');
             Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
             Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET | INTERNAL::STAIN_TYPE::NOT_RENDERED);
         }

@@ -853,7 +853,7 @@ namespace GGUI{
             }
         public:
             constexpr linearMask(enumType initValue = enumType::DEFAULT) : data(toBitMask(initValue)) {}
-
+            
             constexpr linearMask(containerType initValue) : data(initValue) {}
 
             constexpr void add(enumType t) {

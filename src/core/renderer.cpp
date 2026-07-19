@@ -6,7 +6,6 @@
 #include "addons/addons.h"
 #include "utils/settings.h"
 #include "utils/drm.h"
-#include "utils/conveyorAllocator.h"
 #include "backend/terminal.h"
 
 #include <string>
@@ -740,7 +739,6 @@ namespace GGUI{
             fileStreamerHandles.clear();
 
             if (!SETTINGS::enableDRM) {
-                deinitTerminalANSICodes();
 
                 if (STDIN_IS_TTY && platformState.rawModeEnabled) {
                     fcntl(STDIN_FILENO, F_SETFL, Previous_Flags);
@@ -1283,40 +1281,6 @@ namespace GGUI{
 
         #endif
 
-        void initTerminalWithANSICodes() {
-            // Initialize the console for mouse input.
-            std::cout << constants::ANSI::SAVE_CURSOR_POSITION.toString();
-            platformState.mousePositionSaved = true;
-            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::SCREEN_CAPTURE).toString();   // for on exit to restore
-            platformState.screenCaptureEnabled = true;
-            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::MOUSE_CURSOR, false).toString();
-            platformState.cursorHidden = true;
-            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS).toString();
-            platformState.mouseReportingEnabled = true;
-            std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::EXTEND_TO_SGR_MODE).toString();
-            platformState.extendedIntoSGRMode = true;
-            std::cout << std::flush;
-        }
-
-        void deinitTerminalANSICodes() {
-            if (platformState.extendedIntoSGRMode)
-                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::EXTEND_TO_SGR_MODE, false).toString();
-            if (platformState.mouseReportingEnabled)
-                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::REPORT_MOUSE_ALL_EVENTS, false).toString();
-            if (platformState.cursorHidden)
-                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::MOUSE_CURSOR).toString();
-            if (platformState.screenCaptureEnabled)
-                std::cout << constants::ANSI::enablePrivateDECFeature(constants::ANSI::SCREEN_CAPTURE, false).toString();
-
-            // This is here for scenarios where the rendering did not finish and there is some rogue coloring going on. This will reset all colors to default.
-            std::cout << constants::ANSI::enableSGRFeature(constants::ANSI::RESET_SGR).toString();
-
-            if (platformState.mousePositionSaved)
-                std::cout << constants::ANSI::RESTORE_CURSOR_POSITION.toString();
-
-            std::cout << std::flush;
-        }
-
         void Cleanup(){
             SignalThreadTermination();
 
@@ -1558,48 +1522,48 @@ namespace GGUI{
          * @param Height The height of the window.
          * @return A pointer to the resulting Super_String.
          */
-        conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
-            static conveyorAllocator<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE(1000*1000);   TODO("replace with std::pmr::monotonic_buffer_resource");
-            static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
+        // conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height){
+        //     static conveyorAllocator<compactString> LIQUIFY_UTF_TEXT_RESULT_CACHE(1000*1000);   TODO("replace with std::pmr::monotonic_buffer_resource");
+        //     static superString<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString> LIQUIFY_UTF_TEXT_TMP_CONTAINER;
 
-            const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * constants::ANSI::maximumNeededPreAllocationForEncodedSuperString + !SETTINGS::wordWrapping * (Height - 1));
+        //     const unsigned int Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer = (Width * Height * constants::ANSI::maximumNeededPreAllocationForEncodedSuperString + !SETTINGS::wordWrapping * (Height - 1));
 
-            // Since they are located as globals we need to remember to restart the starting offset.
-            Liquefied_Size = 0;
+        //     // Since they are located as globals we need to remember to restart the starting offset.
+        //     Liquefied_Size = 0;
 
-            // Ensure previous frame contents are not read again
-            LIQUIFY_UTF_TEXT_RESULT_CACHE.clear();
-            LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
+        //     // Ensure previous frame contents are not read again
+        //     LIQUIFY_UTF_TEXT_RESULT_CACHE.clear();
+        //     LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
             
-            // We need to dynamically resize this, since the window size will be potentially re-sized.
-            LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
+        //     // We need to dynamically resize this, since the window size will be potentially re-sized.
+        //     LIQUIFY_UTF_TEXT_RESULT_CACHE.resize(Maximum_Needed_Pre_Allocation_For_Whole_Cache_Buffer);
     
-            for (int y = 0; y < Height; y++){
-                for (int x = 0; x < Width; x++){
-                    LIQUIFY_UTF_TEXT_RESULT_CACHE.eatPlate<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>(LIQUIFY_UTF_TEXT_TMP_CONTAINER);
+        //     for (int y = 0; y < Height; y++){
+        //         for (int x = 0; x < Width; x++){
+        //             LIQUIFY_UTF_TEXT_RESULT_CACHE.eatPlate<GGUI::constants::ANSI::maximumNeededPreAllocationForEncodedSuperString>(LIQUIFY_UTF_TEXT_TMP_CONTAINER);
 
-                    Text->at(y * Width + x).toEncodedSuperString(
-                        &LIQUIFY_UTF_TEXT_TMP_CONTAINER
-                    );
+        //             Text->at(y * Width + x).toEncodedSuperString(
+        //                 &LIQUIFY_UTF_TEXT_TMP_CONTAINER
+        //             );
 
-                    // Tell the conveyorAllocator the actual used size of the window.
-                    LIQUIFY_UTF_TEXT_RESULT_CACHE.returnPlate(LIQUIFY_UTF_TEXT_TMP_CONTAINER.currentIndex);
+        //             // Tell the conveyorAllocator the actual used size of the window.
+        //             LIQUIFY_UTF_TEXT_RESULT_CACHE.returnPlate(LIQUIFY_UTF_TEXT_TMP_CONTAINER.currentIndex);
 
-                    Liquefied_Size += LIQUIFY_UTF_TEXT_TMP_CONTAINER.liquefiedSize;
+        //             Liquefied_Size += LIQUIFY_UTF_TEXT_TMP_CONTAINER.liquefiedSize;
 
-                    // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
-                    LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
-                }
+        //             // now instead of emptying the Super_String.vector, we can reset the current index into 0 again.
+        //             LIQUIFY_UTF_TEXT_TMP_CONTAINER.clear();
+        //         }
 
-                // the system doesn't have word wrapping enabled then, use newlines as replacement.
-                if (!SETTINGS::wordWrapping){
-                    LIQUIFY_UTF_TEXT_RESULT_CACHE.append(compactString('\n')); // the system is word wrapped.
-                    Liquefied_Size += 1;
-                }
-            }
+        //         // the system doesn't have word wrapping enabled then, use newlines as replacement.
+        //         if (!SETTINGS::wordWrapping){
+        //             LIQUIFY_UTF_TEXT_RESULT_CACHE.append(compactString('\n')); // the system is word wrapped.
+        //             Liquefied_Size += 1;
+        //         }
+        //     }
 
-            return LIQUIFY_UTF_TEXT_RESULT_CACHE;
-        }
+        //     return LIQUIFY_UTF_TEXT_RESULT_CACHE;
+        // }
 
         void SignalThreadTermination(){
             // Gracefully shutdown event and rendering threads.
@@ -2064,45 +2028,45 @@ namespace GGUI{
          * @param Text The text buffer to be nested.
          * @param Parent_Buffer The parent buffer which the text is being nested into.
          */
-        void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer)
-        {
-            if (Parent == child)
-            {
-                std::string R = 
-                    std::string("Cannot nest element to it self\n") +
-                    std::string("Element name: ") + Parent->getName();
+        // void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer)
+        // {
+        //     if (Parent == child)
+        //     {
+        //         std::string R = 
+        //             std::string("Cannot nest element to it self\n") +
+        //             std::string("Element name: ") + Parent->getName();
 
-                if (Parent->getParent())
-                {
-                    R += std::string("\n") + 
-                    std::string("Inside of: ") + Parent->getParent()->getName();
-                }
+        //         if (Parent->getParent())
+        //         {
+        //             R += std::string("\n") + 
+        //             std::string("Inside of: ") + Parent->getParent()->getName();
+        //         }
 
-                INTERNAL::reportStack(
-                    R
-                );
-            }
+        //         INTERNAL::reportStack(
+        //             R
+        //         );
+        //     }
 
-            // Get the position of the child element in the parent buffer.
-            GGUI::IVector3 C = child->getPosition();
+        //     // Get the position of the child element in the parent buffer.
+        //     GGUI::IVector3 C = child->getPosition();
 
-            int i = 0;
-            // Iterate over the parent buffer and copy the text buffer into the parent buffer at the correct position.
-            for (int Parent_Y = 0; Parent_Y < Parent->getHeight(); Parent_Y++)
-            {
-                for (int Parent_X = 0; Parent_X < Parent->getWidth(); Parent_X++)
-                {
-                    if (
-                        Parent_Y >= C.y && Parent_X >= C.x &&
-                        Parent_Y <= C.y + child->getHeight() &&
-                        Parent_X <= C.x + child->getWidth()
-                    )
-                    {
-                        Parent_Buffer[Parent_Y * Parent->getWidth() + Parent_X] = Text[i++];
-                    }
-                }
-            }
-        }
+        //     int i = 0;
+        //     // Iterate over the parent buffer and copy the text buffer into the parent buffer at the correct position.
+        //     for (int Parent_Y = 0; Parent_Y < Parent->getHeight(); Parent_Y++)
+        //     {
+        //         for (int Parent_X = 0; Parent_X < Parent->getWidth(); Parent_X++)
+        //         {
+        //             if (
+        //                 Parent_Y >= C.y && Parent_X >= C.x &&
+        //                 Parent_Y <= C.y + child->getHeight() &&
+        //                 Parent_X <= C.x + child->getWidth()
+        //             )
+        //             {
+        //                 Parent_Buffer[Parent_Y * Parent->getWidth() + Parent_X] = Text[i++];
+        //             }
+        //         }
+        //     }
+        // }
 
         /**
          * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
@@ -2114,74 +2078,74 @@ namespace GGUI{
          */
 
         // DECOMMISSIONED :)
-        void encodeBuffer(std::vector<GGUI::UTF>* Buffer) {
-            const size_t Count = Buffer->size();
-            if (Count == 0) return;
+        // void encodeBuffer(std::vector<GGUI::UTF>* Buffer) {
+        //     const size_t Count = Buffer->size();
+        //     if (Count == 0) return;
 
-            // Set START flag for the first element
-            // Buffer->front().setFlag(ENCODING_FLAG::START);
+        //     // Set START flag for the first element
+        //     // Buffer->front().setFlag(ENCODING_FLAG::START);
 
-            // If only one element, also mark as END
-            if (Count == 1) {
-                // Buffer->front().setFlag(ENCODING_FLAG::END);
-                return;
-            }
+        //     // If only one element, also mark as END
+        //     if (Count == 1) {
+        //         // Buffer->front().setFlag(ENCODING_FLAG::END);
+        //         return;
+        //     }
 
-            // Calculate the relative size difference between the non-encoded and the encoded buffers.
-            INTERNAL::BEFORE_ENCODE_BUFFER_SIZE = Buffer->size() *  constants::ANSI::maximumNeededPreAllocationForEncodedSuperString;
-            INTERNAL::AFTER_ENCODE_BUFFER_SIZE = 0;
+        //     // Calculate the relative size difference between the non-encoded and the encoded buffers.
+        //     INTERNAL::BEFORE_ENCODE_BUFFER_SIZE = Buffer->size() *  constants::ANSI::maximumNeededPreAllocationForEncodedSuperString;
+        //     INTERNAL::AFTER_ENCODE_BUFFER_SIZE = 0;
 
-            // Cache previous colors (start with the very first element)
-            auto PrevFg = Buffer->front().foreground;
-            auto PrevBg = Buffer->front().background;
+        //     // Cache previous colors (start with the very first element)
+        //     auto PrevFg = Buffer->front().foreground;
+        //     auto PrevBg = Buffer->front().background;
 
-            unsigned int StartOffset = 1;
+        //     unsigned int StartOffset = 1;
 
-            // Align pointers so Curr points to the current index i, and Next to i+1
-            auto* Curr = Buffer->data() + StartOffset;      // i = 1
-            auto* Next = Curr + 1;                          // i + 1
+        //     // Align pointers so Curr points to the current index i, and Next to i+1
+        //     auto* Curr = Buffer->data() + StartOffset;      // i = 1
+        //     auto* Next = Curr + 1;                          // i + 1
 
-            // Process interior elements [StartOffset, Count-2]
-            for (size_t i = StartOffset; i < Count - 1; i++) {
-                bool SameAsPrev = (Curr->foreground == PrevFg) && (Curr->background == PrevBg);
-                bool SameAsNext = (Curr->foreground == Next->foreground) && (Curr->background == Next->background);
+        //     // Process interior elements [StartOffset, Count-2]
+        //     for (size_t i = StartOffset; i < Count - 1; i++) {
+        //         bool SameAsPrev = (Curr->foreground == PrevFg) && (Curr->background == PrevBg);
+        //         bool SameAsNext = (Curr->foreground == Next->foreground) && (Curr->background == Next->background);
 
-                if (!SameAsPrev) {
-                    // Curr->setFlag(ENCODING_FLAG::START);
-                    // for logging:
-                    INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
-                }
+        //         if (!SameAsPrev) {
+        //             // Curr->setFlag(ENCODING_FLAG::START);
+        //             // for logging:
+        //             INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
+        //         }
 
-                if (!SameAsNext) {
-                    // Curr->setFlag(ENCODING_FLAG::END);
-                    // for logging:
-                    INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForReset;
-                }
+        //         if (!SameAsNext) {
+        //             // Curr->setFlag(ENCODING_FLAG::END);
+        //             // for logging:
+        //             INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForReset;
+        //         }
 
-                PrevFg = Curr->foreground;
-                PrevBg = Curr->background;
+        //         PrevFg = Curr->foreground;
+        //         PrevBg = Curr->background;
 
-                // for logging:
-                INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
+        //         // for logging:
+        //         INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
 
-                Curr++;
-                Next++;
-            }
+        //         Curr++;
+        //         Next++;
+        //     }
 
-            // Handle the last element
-            auto& Last = Buffer->back();
-            // Last.setFlag(ENCODING_FLAG::END);
-            // for logging:
-            INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
+        //     // Handle the last element
+        //     auto& Last = Buffer->back();
+        //     // Last.setFlag(ENCODING_FLAG::END);
+        //     // for logging:
+        //     INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
 
-            // Compare last with second-last for possible START flag
-            const auto& SecondLast = Buffer->at(Count - 2);
-            if (!(Last.foreground == SecondLast.foreground) || !(Last.background == SecondLast.background)) {
-                // Last.setFlag(ENCODING_FLAG::START);
-                // for logging:
-                INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
-            }
-        }
+        //     // Compare last with second-last for possible START flag
+        //     const auto& SecondLast = Buffer->at(Count - 2);
+        //     if (!(Last.foreground == SecondLast.foreground) || !(Last.background == SecondLast.background)) {
+        //         // Last.setFlag(ENCODING_FLAG::START);
+        //         // for logging:
+        //         INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
+        //     }
+        // }
 
         /**
          * @brief Notifies all global buffer capturers about the latest data to be captured.
@@ -2256,24 +2220,24 @@ namespace GGUI{
          * @param Dest The destination element to which the source element will be blended.
          * @param Source The source element which will be blended to the destination element.
          */
-        void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, unsigned char childOpacity){
-            // If the Source element has full opacity, then the destination gets fully rewritten over.
-            if (childOpacity == UINT8_MAX){
-                Dest = Source;
-                return;
-            }
-            else if (childOpacity == 0) return;         // Dont need to do anything.
+        // void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, unsigned char childOpacity){
+        //     // If the Source element has full opacity, then the destination gets fully rewritten over.
+        //     if (childOpacity == UINT8_MAX){
+        //         Dest = Source;
+        //         return;
+        //     }
+        //     else if (childOpacity == 0) return;         // Dont need to do anything.
 
-            // Color the Destination UTF by the Source UTF background color.
-            Dest.background.add(Source.background, childOpacity);
-            Dest.foreground.add(Source.background, childOpacity);
+        //     // Color the Destination UTF by the Source UTF background color.
+        //     Dest.background.add(Source.background, childOpacity);
+        //     Dest.foreground.add(Source.background, childOpacity);
 
-            // Check if source has text
-            if (!Source.hasDefaultText()){
-                Dest.setText(Source);
-                Dest.foreground.add(Source.foreground, childOpacity); 
-            }
-        }
+        //     // Check if source has text
+        //     if (!Source.hasDefaultText()){
+        //         Dest.setText(Source);
+        //         Dest.foreground.add(Source.foreground, childOpacity); 
+        //     }
+        // }
 
         /**
          * @brief Nests a child element into a parent element.

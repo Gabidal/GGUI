@@ -51,6 +51,7 @@ namespace GGUI {
             void preparePresentationBuffer();
         protected:
             std::pair<bool, ActiveStyle> trace(IVector2 point, element* currentContainer);
+            size_t getIndexOf(IVector2) const;
         public:
             // ===                  ===
             
