@@ -2367,11 +2367,22 @@ namespace GGUI{
         element* origin             = nullptr;
 
         constexpr ActiveStyle computeColor(const ActiveStyle* other) const {
-            ActiveStyle result = *this;
-            result.activeTextColor.add(other->activeTextColor, other->opacity);
-            result.activeBackgroundColor.add(other->activeBackgroundColor, other->opacity);
-            result.opacity = (unsigned char)(result.opacity * (other->opacity / 255.0f));
+            ActiveStyle result = *other;
+            result.activeTextColor.add(activeTextColor, opacity);
+            result.activeBackgroundColor.add(activeBackgroundColor, opacity);
+            result.activeTextAttributes.overwrite(activeTextAttributes.getData());
+            result.opacity = combineOpacity(opacity, other->opacity);
             return result;
+        }
+
+    protected:
+        // from: Porter-Duff
+        constexpr unsigned char combineOpacity(unsigned char top, unsigned char bottom) const {
+            if (top == 0) return bottom;
+            if (top == UINT8_MAX) return UINT8_MAX;
+
+            const unsigned int inv = UINT8_MAX - top;
+            return (unsigned char)(top + ((unsigned int)bottom * inv + (UINT8_MAX / 2)) / UINT8_MAX);
         }
     };
 

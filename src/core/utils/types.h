@@ -930,6 +930,7 @@ namespace GGUI{
             }
 
             constexpr containerType getData() const { return data; }
+            constexpr void overwrite(containerType bitmask) { data = bitmask; }
         };
 
         class STAIN{

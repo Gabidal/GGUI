@@ -189,17 +189,13 @@ namespace GGUI{
             updateAbsolutePositionCache();
         }
 
-        // Apply the color system to the resized result list
-        if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){        
-            // Clean the color stain after applying the color system.
-            Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
-
-            compileActiveGraphics();
-        }
-
         // Align text and add child windows to the Result buffer if the DEEP stain is detected
         if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)) {
             Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
+
+            // clean reflection pool
+            graphicalReflectionPool.clear();
+            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
 
             if (Style->Align.value == ANCHOR::LEFT)
                 alignTextLeft(Result);
@@ -207,6 +203,14 @@ namespace GGUI{
                 alignTextRight(Result);
             else if (Style->Align.value == ANCHOR::CENTER)
                 alignTextCenter(Result);
+        }
+
+        // Apply the color system to the resized result list
+        if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){        
+            // Clean the color stain after applying the color system.
+            Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
+
+            compileActiveGraphics();
         }
 
         // Add borders and titles if the EDGE stain is detected.

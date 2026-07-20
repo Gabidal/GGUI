@@ -82,12 +82,19 @@ namespace GGUI {
                 if (current->origin == handle.second.origin && current->area.hits(point)) break;    // we found the handle, now we can start processing from this index onwards.
             }
             
+            // skip styles from the same origin and find the layer below
+            for (; 
+                start < currentContainer->graphicalReflectionPool.size() && 
+                currentContainer->graphicalReflectionPool[start]->origin == handle.second.origin
+                ; start++
+            );
+
             // now that we have the start index, we can start iterating from that point onwards and every reflected style that hits should contribute to the color via the opacity compute.
             for (; start < currentContainer->graphicalReflectionPool.size(); start++) {
                 auto* reflectedStyle = currentContainer->graphicalReflectionPool[start];
 
                 if (reflectedStyle->area.hits(point)) {
-                    handle.second.computeColor(reflectedStyle);
+                    handle.second = handle.second.computeColor(reflectedStyle);
 
                     if (handle.second.opacity == UINT8_MAX) break;    // if we reach 100% opacity, we can stop processing further.
                 }
