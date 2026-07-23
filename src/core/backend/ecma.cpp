@@ -70,34 +70,12 @@ namespace GGUI {
                     return result;
                 }
 
-                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, superString& preAllocated) {
+                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) {
                     if (std::holds_alternative<table::finalWithoutIntermediate>(controlStringFinalByte)) {
                         preAllocated.add(static_cast<char>(std::get<table::finalWithoutIntermediate>(controlStringFinalByte)));
                     } else {
                         preAllocated.add(static_cast<char>(std::get<table::finalWithIntermediate>(controlStringFinalByte)));
                     }
-                }
-
-                /**
-                 * Converts the control string to its string representation.
-                 * 
-                 * Control strings follow the format:
-                 *   - 7-bit: ESC (01/11) + opening delimiter (C1) + characters + ESC + ST (05/12)
-                 *   - 8-bit: 8-bit opening delimiter + characters + 8-bit ST (09/12)
-                 * 
-                 * The opening delimiter can be one of: APC, DCS, OSC, PM, or SOS from the C1 table.
-                 */
-                std::string string::toString() const {
-                    std::string result = prefix::toString();
-
-                    // Output all character bytes
-                    for (uint8_t characterByte : characters) {
-                        result += static_cast<char>(characterByte);
-                    }
-
-                    result += terminator.toString();
-
-                    return result;
                 }
 
                 TODO("maybe for better compatibility try giving a custom default param value, so that it can be used instead of the hardcoded zero.")
@@ -263,13 +241,6 @@ namespace GGUI {
                     }
                     return result;
                 }
-
-                INTERNAL::compactString liquify(base&& parsed) {
-                    thread_local static ecma::sequence::superString preAllocatedCombinator;
-                    thread_local static char preAllocatedBuffer[ecma::sequence::MAX_SUPER_STRING_BUFFER_SIZE] = {0}; // Pre-allocated buffer for combinator sequences
-
-                    return parsed.toString(preAllocatedCombinator).toString(preAllocatedBuffer);
-                }
             }
 
             // parses sequence coming from SGR
@@ -309,19 +280,13 @@ namespace GGUI {
 
             void activeSGRStyle::parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params) {
                 for (size_t i = 0; i < params.size(); i++) {
-                    // Check for special case attributes, which are via the fg and bg, given with the parameter::fraction
-                    if (params[i].hasSecondaries()) {   // Highly likely to be a FG or BG sequence
-                        graphicalTextAttributes currentType = params[i].getValueAsInteger();
+                    graphicalTextAttributes currentType = params[i].getValueAsInteger();
 
-                        // sanity check that the fraction is used correctly and the primary value is truly Fg or BG
-                        if (currentType != graphicalTextAttributes::FOREGROUND_COLOR && currentType != graphicalTextAttributes::BACKGROUND_COLOR) {
-                            throw std::runtime_error("Invalid SGR parameter: fraction used with non-FG/BG primary value.");
-                        }
+                    if (currentType == graphicalTextAttributes::FOREGROUND_COLOR || currentType == graphicalTextAttributes::BACKGROUND_COLOR) {
+                        activeSGRStyle::directColorTypes colorType = (activeSGRStyle::directColorTypes)params[++i].getValueAsInteger();
 
-                        activeSGRStyle::directColorTypes colorType = (activeSGRStyle::directColorTypes)params[i].getPrimaryValueAndSecondaries().back();
-
-                        std::pair<size_t, RGB> parsedColor = parseColorFromSGR(colorType, i + 1, params);
-
+                        std::pair<size_t, RGB> parsedColor = parseColorFromSGR(colorType, ++i, params);
+                        
                         if (currentType == graphicalTextAttributes::FOREGROUND_COLOR)   this->textColor = parsedColor.second;
                         else if (currentType == graphicalTextAttributes::BACKGROUND_COLOR) this->backgroundColor = parsedColor.second;
 

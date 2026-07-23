@@ -48,8 +48,7 @@ namespace GGUI {
             }
         } 
             input,          // Used to read input from the incoming transmission
-            output,         // Used to write into the presentation buffer, which is shown
-            response;       // Used for protocol answers from requests coming from input transmission
+            output;         // Used to write into the presentation buffer, which is shown
 
         // Simple helper struct for packaging custom flags and device serial locations to be opened and routed into. 
         struct routable {
@@ -57,7 +56,7 @@ namespace GGUI {
             int32_t flags;
         };
 
-        void routeTo(routable in, routable out, routable res) {
+        void routeTo(routable in, routable out) {
             // Open the input and output files with the specified flags
             int32_t inHandle = open(in.AbsolutePath.data(), in.flags | O_RDONLY);
             if (inHandle == device::CLOSED_HANDLE) {
@@ -71,47 +70,24 @@ namespace GGUI {
                 return;
             }
 
-            int32_t responseHandle = open(res.AbsolutePath.data(), res.flags | O_WRONLY);
-            if (responseHandle == device::CLOSED_HANDLE) {
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to open response route: " + std::string(strerror(errno)));
-                return;
-            }
-
             // Update the input and output handles and states
             input.update(inHandle);
             output.update(outHandle);
-            response.update(responseHandle);
         }
 
         void platformInit() {
             // By default we route to the standard streams, but this can be changed by calling routeTo with custom paths and flags.
             routeTo(
                 { "/dev/stdin",  0 },   // Input route
-                { "/dev/stdout", 0 },   // Output route
-                { "/dev/stdout", 0 }    // Response route
-             );
-        }
-
-        void renderFrame() {
-            // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
-            static INTERNAL::compactString cursorReset = ecma::sequence::liquify(ecma::sequences::cursorControlFunctions::CURSOR_POSITION.compile({0, 0}));
-
-            iovec vec[2] = {
-                { (void*)cursorReset.text,                      cursorReset.size },
-                { (void*)currentStates->screen.liquefiedBuffer->data(),   currentStates->screen.liquefiedBuffer->size() }
-            };
-
-            ssize_t wrote = writev(output.handle, vec, 2);
-            if (wrote != (ssize_t)cursorReset.size + (ssize_t)currentStates->screen.liquefiedBuffer->size()) {
-                GGUI::INTERNAL::LOGGER::log("Failed to write to STDOUT (home): " + std::to_string((int)wrote));
-            }
+                { "/dev/stdout", 0 }    // Output route
+            );
         }
 
         // Default deinit (NOP)
         void platformDeinit() {}
 
         // Here we translate the linux specific termios and API it back via the terminal::transmission data
-        void queryInputs() {
+        void queryInput() {
             // If stdin isn't a TTY (e.g., piped/timeout), read() may return 0 (EOF) repeatedly; avoid spinning.
             if (!isatty(input.handle)) {
                 // Use poll to wait briefly for readability; if not readable, sleep a bit to avoid busy-loop.
@@ -140,17 +116,21 @@ namespace GGUI {
             }
         }
 
-        void queryResponse() {
-            if (currentStates->transmission.responseSize > 0) {  // Check if we have a response
-                ssize_t written = write(response.handle, currentStates->transmission.responseBuffer.data(), currentStates->transmission.responseSize);
-                if (written < 0) {
-                    GGUI::INTERNAL::LOGGER::log("ERROR: Failed to write output query response: " + std::string(strerror(errno)));
-                } else if (currentStates->transmission.responseSize != written) {   // Move the buffer
-                    // NOTE: this will be potentially really slow
-                    std::memmove(currentStates->transmission.responseBuffer.data(), currentStates->transmission.responseBuffer.data() + written, currentStates->transmission.responseSize - written);
+        void queryOutput(std::vector<std::string_view>&& queue) {
+            // transforms the incoming queued vector of strings into iovec
+            std::vector<iovec> vec;
+            vec.reserve(queue.size());
 
-                    currentStates->transmission.responseSize -= written;
-                }
+            ssize_t totalSize = 0;
+
+            for (const auto& str : queue) {
+                vec.push_back({ (void*)str.data(), str.size() });
+                totalSize += str.size();
+            }
+
+            ssize_t wrote = writev(output.handle, vec.data(), vec.size());
+            if (wrote != totalSize) {
+                GGUI::INTERNAL::LOGGER::log("Failed to fully write to: '" + std::to_string(output.handle) + "' (wrote " + std::to_string(wrote) + " of " + std::to_string(totalSize) + ")");
             }
         }
     }

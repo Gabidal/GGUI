@@ -106,7 +106,7 @@ namespace GGUI{
 
                                 terminal::currentStates->screen.preparePresentationBuffer();
                                 
-                                terminal::renderFrame();
+                                terminal::currentStates->screen.renderBuffer();
                             }
                         }
                         else{
@@ -258,11 +258,8 @@ namespace GGUI{
                     DRM::pollInputs();
                 }
                 else {
-                    // Send requested responses if need.
-                    terminal::queryResponse();
-
                     // Wait for user input.
-                    terminal::queryInputs();
+                    terminal::queryInput();
                 }
 
                 pauseGGUI([&](){

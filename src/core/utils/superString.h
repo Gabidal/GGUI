@@ -8,10 +8,35 @@
 
 namespace GGUI{
     namespace INTERNAL{
-        constexpr std::array<std::array<char, 2>, 256> asciiToString = [] {
-            std::array<std::array<char, 2>, 256> t{};
-            for (size_t i = 0; i < 256; ++i)
+        constexpr std::array<std::array<char, 2>, UINT8_MAX + 1> asciiToString = [] {
+            std::array<std::array<char, 2>, UINT8_MAX + 1> t{};
+            for (size_t i = 0; i < UINT8_MAX + 1; i++)
                 t[i] = { static_cast<char>(i), '\0' };
+            return t;
+        }();
+
+        constexpr std::array<std::array<char, 6>, UINT16_MAX + 1> numberToString = [] {
+            std::array<std::array<char, 6>, UINT16_MAX + 1> t{};
+            for (size_t i = 0; i <= UINT16_MAX; i++) {
+                size_t currentValue = i;
+
+                // find the length
+                int length = (
+                    (currentValue < 10)     ? 1 :
+                    (currentValue < 100)    ? 2 :
+                    (currentValue < 1000)   ? 3 :
+                    (currentValue < 10000)  ? 4 : 5
+                );
+
+                // add null termination
+                t[i][length] = '\0';
+
+                // fill the digits
+                for (int j = length - 1; j >= 0; j--) {
+                    t[i][j] = '0' + (currentValue % 10);
+                    currentValue /= 10;
+                }
+            }
             return t;
         }();
 
@@ -110,6 +135,8 @@ namespace GGUI{
              */
             constexpr compactString(char data) : text(asciiToString[static_cast<unsigned char>(data)].data()), size(1) {}
 
+            constexpr compactString(uint16_t longNumber) : text(numberToString[longNumber].data()), size(getLength(text)) {}
+
             /**
              * @brief Construct from a pointer and size.
              *
@@ -120,7 +147,7 @@ namespace GGUI{
              * @param forceUnicode If true, `size` is taken from `Size`; otherwise, `size` is computed by
              *        scanning for a null terminator.
              */
-            constexpr compactString(const char* data, const size_t Size, const bool forceUnicode = false){
+            constexpr compactString(const char* data, size_t Size, bool forceUnicode = false){
                 text = data;
                 
                 if (forceUnicode) size = Size;
@@ -327,7 +354,7 @@ namespace GGUI{
              * @param preAllocatedWindowLiquefiedSize Total byte length to restore.
              * @warning This does not copy fragments; it only repoints internal pointers.
              */
-            constexpr void remap(compactString* preAllocatedWindowHead, const size_t preAllocatedWindowCurrentIndex, const size_t preAllocatedWindowLiquefiedSize) {
+            constexpr void remap(compactString* preAllocatedWindowHead, size_t preAllocatedWindowCurrentIndex, size_t preAllocatedWindowLiquefiedSize) {
                 // Use external window memory; caller manages its lifetime.
                 data = preAllocatedWindowHead;
                 currentIndex = preAllocatedWindowCurrentIndex;
@@ -370,7 +397,7 @@ namespace GGUI{
              *
              * @warning No bounds checking is performed.
              */
-            constexpr void add(const char* Data, const int size){
+            constexpr void add(const char* Data, int size){
                 // Store the string in the Data vector.
                 // `size` is an explicit byte length (often for UTF-8 fragments) and may not be null-terminated.
                 compactString tmp = compactString(Data, size, true);
@@ -382,9 +409,13 @@ namespace GGUI{
              * @param Data Byte/character to append.
              * @warning No bounds checking is performed.
              */
-            constexpr void add(const char Data){
+            constexpr void add(char Data){
                 // Store the character in the data vector.
                 add(compactString(Data));
+            }
+
+            constexpr void add(uint16_t longNumber) {
+                add(compactString(longNumber));
             }
 
             /**

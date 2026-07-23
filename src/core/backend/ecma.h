@@ -440,7 +440,6 @@ namespace GGUI {
 
             namespace sequence {
                 inline constexpr size_t MAX_SUPER_STRING_BUFFER_SIZE = UINT8_MAX * 2;
-                using superString = INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>;
 
                 namespace parameter {
                     template<typename containerType>
@@ -516,12 +515,23 @@ namespace GGUI {
                                 
                                 // check if this isn't the last index, if so add the fraction
                                 if (i != subNumbers.size() - 1) {
-                                    // result += static_cast<char>(table::parameters::FRACTION);
-                                    result += static_cast<char>(table::parameters::SEPARATOR);
+                                    result += static_cast<char>(table::parameters::FRACTION);
                                 }
                             }
 
                             return result;
+                        }
+
+                        void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const {
+                            for (size_t i = 0; i < subNumbers.size(); i++) {
+                                // we need to convert the values to visible numbers
+                                preAllocated.add((uint16_t)subNumbers[i]);
+                                
+                                // check if this isn't the last index, if so add the fraction
+                                if (i != subNumbers.size() - 1) {
+                                    preAllocated.add(static_cast<char>(table::parameters::FRACTION));
+                                }
+                            }
                         }
 
                         void add(containerType val) {
@@ -532,20 +542,6 @@ namespace GGUI {
                         void add(std::array<containerType, s> values) {
                             for (const auto& i : values) {
                                 subNumbers.push_back(i);
-                            }
-                        }
-
-                        void toString(superString& preAllocated) const {
-                            for (size_t i = 0; i < subNumbers.size(); i++) {
-                                char convertedValue = static_cast<char>(subNumbers[i]) + (uint8_t)table::parameters::ZERO;
-
-                                // check if this isn't the last index, if so add the fraction
-                                if (i != subNumbers.size() - 1) {
-                                    // preAllocated.add(static_cast<char>(table::parameters::FRACTION));
-                                    preAllocated.add(static_cast<char>(table::parameters::SEPARATOR));
-                                }
-
-                                preAllocated.add(convertedValue);
                             }
                         }
 
@@ -595,7 +591,25 @@ namespace GGUI {
                 };
 
                 std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
-                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, superString& preAllocated);
+                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated);
+
+                inline std::string toString(uint8_t val) {
+                    return std::string(1, static_cast<char>(val));
+                }
+
+                inline void toString(uint8_t val, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) {
+                    preAllocated.add(static_cast<char>(val));
+                }
+
+                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>>
+                inline std::string toString(enumType val) {
+                    return std::string(1, static_cast<char>(static_cast<uint8_t>(val)));
+                }
+
+                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>>
+                inline void toString(enumType val, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) {
+                    preAllocated.add(static_cast<char>(static_cast<uint8_t>(val)));
+                }
 
                 template<typename enumType, typename = std::enable_if<std::is_enum_v<enumType> && (sizeof(uint8_t) == sizeof(enumType))>>
                 constexpr size_t getSize(enumType value) {
@@ -646,14 +660,12 @@ namespace GGUI {
                         return result;
                     }
 
-                    superString& toString(superString& preAllocated) const {
+                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const {
                         for (const auto& interm : intermediates) {
                             preAllocated.add(static_cast<char>(interm));
                         }
 
                         GGUI::terminal::ecma::sequence::toString(function, preAllocated);
-
-                        return preAllocated;
                     }
 
                     size_t getSize() const {
@@ -678,7 +690,8 @@ namespace GGUI {
                     virtual ~base() {}
 
                     virtual std::string toString() const { return ""; }
-                    virtual superString& toString(superString& fail) const { return fail; }
+
+                    virtual void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>&) const { return; }
 
                     virtual size_t getSize() const { return 0; }
                 };
@@ -699,6 +712,7 @@ namespace GGUI {
                     constexpr prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
 
                     virtual ~prefix() = default;
+
                     std::string toString() const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
                             return table::toString(table::C0::ESC) + table::toString(header);
@@ -708,15 +722,13 @@ namespace GGUI {
                     }
 
                     // This will break unless the buffer is correctly pre allocated and correct size.
-                    superString& toString(superString& preAllocated) const override {
+                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
                             preAllocated.add(static_cast<char>(table::C0::ESC));
                             preAllocated.add(static_cast<char>(header));
                         } else {
                             preAllocated.add(static_cast<char>(header));
                         }
-
-                        return preAllocated;
                     }
                     
                     bool contains(containerType enumValue) {
@@ -752,6 +764,11 @@ namespace GGUI {
 
                     postfix<> getPostfix() const override {
                         return postfix<>(tail.getIntermediates(), static_cast<uint8_t>(tail.getFinalByte()));
+                    }
+
+                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
+                        prefix::toString(preAllocated);
+                        tail.toString(preAllocated);
                     }
 
                     size_t getSize() const override { return prefix::getSize() + tail.getSize(); }
@@ -818,9 +835,10 @@ namespace GGUI {
                         return result;
                     }
 
-                    superString& toString(superString& preAllocated) const override {
+                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
                         prefix::toString(preAllocated);
 
+                        // Output all parameters, separated by the parameter delimiter (03/11 ';')
                         for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
                             if (parameterIndex > 0) {
                                 preAllocated.add(static_cast<char>(table::parameters::SEPARATOR));
@@ -829,8 +847,6 @@ namespace GGUI {
                         }
 
                         finalByte.toString(preAllocated);
-
-                        return preAllocated;
                     }
 
                     // Produces a new control sequence based on this template preset
@@ -884,7 +900,18 @@ namespace GGUI {
                         table::C1 delimeter
                     ) : prefix(delimeter, types::STRING), terminator(table::C1::ST) {}
 
-                    std::string toString() const override;
+                    std::string toString() const override {
+                        std::string result = prefix::toString();
+
+                        // Output all character bytes
+                        for (uint8_t characterByte : characters) {
+                            result += static_cast<char>(characterByte);
+                        }
+
+                        result += terminator.toString();
+
+                        return result;
+                    }
 
                     size_t getSize() const override {
                         return prefix::getSize() + characters.size() + terminator.getSize();
@@ -935,6 +962,25 @@ namespace GGUI {
                         return result;
                     }
 
+                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
+                        if (type == types::HEADER) preAllocated.add(static_cast<char>(table::C0::SOH));
+                        else                       preAllocated.add(static_cast<char>(table::C0::STX));
+
+                        for (const auto& c : primary) {
+                            preAllocated.add(c);
+                        }
+
+                        if (!secondary.empty()) {
+                            preAllocated.add(static_cast<char>(table::C0::STX));
+                            for (const auto& c : secondary) {
+                                preAllocated.add(c);
+                            }
+                        } else {
+                            if (type == types::HEADER)  preAllocated.add(static_cast<char>(table::C0::ETB));
+                            else                        preAllocated.add(static_cast<char>(table::C0::ETX));
+                        }
+                    }
+
                     size_t getSize() const override {
                         size_t result = prefix::getSize() + primary.size();
 
@@ -956,8 +1002,20 @@ namespace GGUI {
                 
                 std::vector<base*> parse(std::string_view input);
 
-                // Use this for simplifying prefix -> string process and fast
-                INTERNAL::compactString liquify(base&& parsed);
+                constexpr void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE> carrier, base&& parsed) {
+                    parsed.toString(carrier);
+                }
+
+                inline std::string toString(base&& parsed) {
+                    INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE> preAllocatedCombinator;
+                    char preAllocatedBuffer[ecma::sequence::MAX_SUPER_STRING_BUFFER_SIZE] = {0}; // Pre-allocated buffer for combinator sequences
+
+                    parsed.toString(preAllocatedCombinator);
+                    
+                    preAllocatedCombinator.toString(preAllocatedBuffer);
+
+                    return std::string(preAllocatedBuffer, preAllocatedCombinator.liquefiedSize);
+                }
             }
 
             /** 
@@ -1980,24 +2038,21 @@ namespace GGUI {
                     std::vector<sequence::parameter::selectable<graphicalTextAttributes>> result;
 
                     for (auto& attr : textAttributes.getAll()) {
-                        sequence::parameter::selectable<graphicalTextAttributes> currentParameter(attr);
+                        result.push_back(attr);
 
                         if (attr == graphicalTextAttributes::FOREGROUND_COLOR || attr == graphicalTextAttributes::BACKGROUND_COLOR) {
-                            // add direct color type
-                            currentParameter.add(static_cast<graphicalTextAttributes>(activeDirectColorType));
+                            if (activeDirectColorType == directColorTypes::RGB) {
+                                // add direct color type
+                                result.push_back(static_cast<graphicalTextAttributes>(activeDirectColorType));
 
-                            RGB use = textColor;
-                            if (attr == graphicalTextAttributes::BACKGROUND_COLOR) use = backgroundColor;
+                                RGB use = textColor;
+                                if (attr == graphicalTextAttributes::BACKGROUND_COLOR) use = backgroundColor;
 
-                            // add the used color
-                            currentParameter.add(std::array<graphicalTextAttributes, 3>{
-                                (graphicalTextAttributes)use.red,
-                                (graphicalTextAttributes)use.green,
-                                (graphicalTextAttributes)use.blue
-                            });
+                                result.push_back(static_cast<graphicalTextAttributes>(use.red));
+                                result.push_back(static_cast<graphicalTextAttributes>(use.green));
+                                result.push_back(static_cast<graphicalTextAttributes>(use.blue));
+                            }
                         }
-
-                        result.push_back(currentParameter);
                     }
 
                     return result;

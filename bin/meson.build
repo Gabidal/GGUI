@@ -135,8 +135,15 @@ endif
 
 # Try clang's own std library if it is the default one
 if cppc.get_id() == 'clang'
-  cpp_args += ['-stdlib=libc++']
-  link_args += ['-stdlib=libc++', '-fuse-ld=lld']
+  cpp_args += [
+    '-stdlib=libc++',
+    '-fconstexpr-steps=5000000'   # added for the numberToString constexpr table
+  ]
+  link_args += [
+    '-stdlib=libc++',
+    '-fuse-ld=lld',
+    '-lc++abi'    # some systems don't need this and some do.
+  ]
 endif
 
 # Apply computed flags project-wide so individual targets don't need to repeat them

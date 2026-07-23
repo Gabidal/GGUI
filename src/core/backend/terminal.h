@@ -23,6 +23,20 @@ namespace GGUI {
 
     // ggui::terminal's job is to be the bridge between the serial/device and platform specificity and the standard ecma/dec/xterm protocol
     namespace terminal {
+        extern void init();                 // non-Platform Specific
+
+        extern void platformInit();         // Platform Specific
+
+        extern void deinit();               // Terminal Specific
+
+        extern void queryInput();          // Platform Specific
+
+        extern void queryOutput(std::vector<std::string_view>&& queue);     // Platform Specific
+
+        extern void queryResponse();        // Platform Specific
+        
+        extern void parseInput();           // Terminal Specific
+
         using keyListing = std::array<key, (size_t)ecma::table::getSize<key::types>()>;
         using compactString = INTERNAL::compactString;
 
@@ -49,13 +63,13 @@ namespace GGUI {
             void link(element* DOM);
             void computeSGRAreas();
             void preparePresentationBuffer();
+            void renderBuffer();
         protected:
             std::pair<bool, ActiveStyle> trace(IVector2 point, element* currentContainer);
             size_t getIndexOf(IVector2) const;
         public:
             // ===                  ===
             
-            friend void renderFrame();
             friend void INTERNAL::renderer();
         };
 
@@ -65,19 +79,11 @@ namespace GGUI {
 
             std::array<char, capacity> inputBuffer;     // This is what we receive
             unsigned int inputSize = 0;
-            
-            std::array<char, capacity> responseBuffer;    // This is what we send (only for non-visual responses)
-            unsigned int responseSize = 0;
 
-            template<typename containerType>
-            void addToQueue(containerType& input) {
-                if (input.size() + responseSize > capacity) {
-                    GGUI::INTERNAL::LOGGER::log("ERROR: Output queue clogged!");
-                    return;
-                }
-
-                std::copy(input.begin(), input.end(), responseBuffer.begin() + responseSize);
-                responseSize += input.size();
+            /** @brief This is the normal interface to access the direct device output. 
+             */
+            void addToQueue(std::string_view input) { 
+                queryOutput({input});
             }
         };
 
@@ -104,20 +110,6 @@ namespace GGUI {
 
         // Read from this to get current device states of the terminal peripherals.
         extern base* currentStates;
-
-        extern void init();                 // non-Platform Specific
-
-        extern void platformInit();         // Platform Specific
-
-        extern void deinit();               // Terminal Specific
-
-        extern void queryInputs();          // Platform Specific
-
-        extern void queryResponse();        // Platform Specific
-
-        extern void renderFrame();          // Platform Specific
-        
-        extern void parseInput();           // Terminal Specific
     }
 }
 

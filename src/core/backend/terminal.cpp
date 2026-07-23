@@ -141,9 +141,20 @@ namespace GGUI {
                 liquefiedSize += cs.size;
             }
 
+            static std::vector<std::string> preBakedSGRSequences;
+            
+            if (preBakedSGRSequences.size() != activeGraphicAttributes.size()) {
+                preBakedSGRSequences.clear();
+                preBakedSGRSequences.resize(activeGraphicAttributes.size(), {});
+            }
+
             // Since we know how many SGR style attributes were gonna get
-            for (auto& activeSGR : activeGraphicAttributes) {
-                liquefiedSize += ecma::sequences::presentationControlFunctions::SELECT_GRAPHIC_RENDITION.compile(activeSGR.compile()).getSize();
+            for (size_t i = 0; i < activeGraphicAttributes.size(); i++) {
+                preBakedSGRSequences[i] = ecma::sequence::toString(
+                    ecma::sequences::presentationControlFunctions::SELECT_GRAPHIC_RENDITION.compile(activeGraphicAttributes[i].compile())
+                );
+
+                liquefiedSize += preBakedSGRSequences[i].size();
             }
 
             if (result.size() != liquefiedSize){
@@ -171,7 +182,7 @@ namespace GGUI {
 
                     if (getIndexOf({x, y}) == nextSGRStartPositionAsIndex) {
                         // Insert the SGR sequence into the output buffer
-                        auto sgrSequence = ecma::sequences::presentationControlFunctions::SELECT_GRAPHIC_RENDITION.compile(activeGraphicAttributes[currentSGRIndex].compile()).toString();
+                        auto sgrSequence = preBakedSGRSequences[currentSGRIndex];
 
                         std::memcpy(result.data() + outputIndex, sgrSequence.data(), sgrSequence.size());
                         outputIndex += sgrSequence.size();
@@ -192,6 +203,16 @@ namespace GGUI {
             }
 
             liquefiedBuffer = &result;
+        }
+
+        void outputCapture::renderBuffer() {
+            // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
+            static const std::string cursorReset = ecma::sequence::toString(ecma::sequences::cursorControlFunctions::CURSOR_POSITION.compile({0, 0}));
+
+            queryOutput({
+                cursorReset,
+                *currentStates->screen.liquefiedBuffer
+            });
         }
 
         void outputCapture::update() {
