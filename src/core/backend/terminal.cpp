@@ -113,10 +113,15 @@ namespace GGUI {
             // Clear residue from previous render
             activeGraphicAttributes.clear();    TODO("Change this to a dif to only render changed areas.")
 
-            for (const auto& pos : dom->getVerticalFaces()) {
+            // ask for points where the styling changes
+            for (const auto& pos : dom->getDeltaPoints()) {
+                // trace from top to bottom style
                 auto currentCellStyle = trace(pos, dom).second;
+
+                // transform GGUI style into SGR style
                 auto rasterizedCellStyle = rasterize(currentCellStyle);
 
+                // Only save changes, to minimize SGR sequences
                 if (!activeGraphicAttributes.empty() && rasterizedCellStyle == activeGraphicAttributes.back()) continue;
                 
                 rasterizedCellStyle.start = pos; // SGR needs to know where this style begins
@@ -136,10 +141,8 @@ namespace GGUI {
 
             static std::vector<std::string> preBakedSGRSequences;
             
-            if (preBakedSGRSequences.size() != activeGraphicAttributes.size()) {
-                preBakedSGRSequences.clear();
-                preBakedSGRSequences.resize(activeGraphicAttributes.size(), {});
-            }
+            // update the baked SGR container.
+            preBakedSGRSequences.resize(activeGraphicAttributes.size(), {});
 
             // Since we know how many SGR style attributes were gonna get
             for (size_t i = 0; i < activeGraphicAttributes.size(); i++) {
@@ -150,29 +153,28 @@ namespace GGUI {
                 liquefiedSize += preBakedSGRSequences[i].size();
             }
 
-            if (result.size() != liquefiedSize){
-                // Resize a std::string to the total size.
-                result.resize(liquefiedSize, '\0');
-            }
+            result.resize(liquefiedSize, '\0');
 
-            // Fast-path pointer access to avoid bounds checks and replace overhead
+            // real heading of the current output buffer index
             unsigned int outputIndex = 0;
 
-            size_t currentSGRIndex = 0;
-            size_t nextSGRStartPositionAsIndex = UINT32_MAX;
+            size_t currentSGRIndex = 0;             // pre baked SGR code accessor.
+            size_t nextSGRStartPositionAsIndex;     // this tells if the current cell index should take an SGR or not.
 
-            if (!activeGraphicAttributes.empty()) {
+            if (!activeGraphicAttributes.empty()) {     // Set the initial SGR index.
                 nextSGRStartPositionAsIndex = getIndexOf(activeGraphicAttributes[currentSGRIndex].start);
+            } else {
+                nextSGRStartPositionAsIndex = UINT32_MAX;   // never trigger SGR
             }
 
             IVector2 start = {0, 0};
             // IVector2 end = cursor + dimensions;
             IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
 
+            TODO("Since we know where SGR's are and delta of text, we could just jump between and write the small delta areas only!")
             for (int y = start.y; y < end.y; y++) {
                 for (int x = start.x; x < end.x; x++) {
-                    const compactString& data = buffer[(y * dom->getWidth()) + x];
-
+                    // Add styling
                     if (getIndexOf({x, y}) == nextSGRStartPositionAsIndex) {
                         // Insert the SGR sequence into the output buffer
                         auto sgrSequence = preBakedSGRSequences[currentSGRIndex];
@@ -189,7 +191,9 @@ namespace GGUI {
                         }
                     }
 
-                    // Copy multi-byte unicode sequence directly
+                    // Add text
+                    const compactString& data = buffer[(y * dom->getWidth()) + x];
+
                     std::memcpy(result.data() + outputIndex, data.text, data.size);
                     outputIndex += data.size;
                 }

@@ -382,9 +382,17 @@ namespace GGUI{
          */
         virtual std::vector<element*>& getChilds();
 
+        /**
+         * @brief Returns sorted listing of visible child elements.
+         * @details Sorting is done via z-priority, where higher z values are at the beginning.
+         */
         virtual std::vector<element*> getVisibleChilds();
 
-        virtual std::vector<IVector2> getVerticalFaces();
+        /**
+         * @brief Returns list of minimum points of the deltas.
+         * @details Delta point means where the reflected areas change appearance at.
+         */
+        virtual std::vector<IVector2> getDeltaPoints();
 
         /**
          * @brief Removes a child element from the current element.

@@ -193,11 +193,8 @@ std::vector<GGUI::INTERNAL::compactString>& GGUI::element::render(){
         Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
 
         for (auto c : this->Style->Childs){
-            if (!c->isDisplayed())
-                continue;
-
-            // check if the child is within the renderable borders.
-            if (!childIsShown(c))
+            // check if the child is within the rendering area.
+            if (!c->isDisplayed() || !childIsShown(c))
                 continue;
 
             if (c->hasBorder())
@@ -567,7 +564,7 @@ std::vector<GGUI::element*> GGUI::element::getVisibleChilds() {
     return result;
 }
 
-std::vector<GGUI::IVector2> GGUI::element::getVerticalFaces() {
+std::vector<GGUI::IVector2> GGUI::element::getDeltaPoints() {
     std::vector<GGUI::IVector2> result;
     // Rough heuristic to prevent constant reallocations
     result.reserve(graphicalReflectionPool.size() * 50);    // multiply by the probable vertical length
