@@ -39,7 +39,7 @@ namespace GGUI {
             // since overflow content inside a container only is allowed is the container is dynamic in size, otherwise overflow content is always hidden, so the lowest identity pool is always the largest. 
             if (!currentContainer->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
 
-            std::pair<bool, ActiveStyle> handle;
+            std::pair<bool, ActiveStyle> handle = {false, {} };
             
             // now check if any of the childs inside this area is closer via hit
             for (auto* child : currentContainer->getVisibleChilds()) {  // should return via z-priority
@@ -113,21 +113,14 @@ namespace GGUI {
             // Clear residue from previous render
             activeGraphicAttributes.clear();    TODO("Change this to a dif to only render changed areas.")
 
-            IVector2 start = {0, 0};
-            // IVector2 end = cursor + dimensions;
-            IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
+            for (const auto& pos : dom->getVerticalFaces()) {
+                auto currentCellStyle = trace(pos, dom).second;
+                auto rasterizedCellStyle = rasterize(currentCellStyle);
 
-            for (int y = start.y; y < end.y; y++) {
-                for (int x = start.x; x < end.x; x++) {
-
-                    auto currentCellStyle = trace({x, y}, dom).second;
-                    auto rasterizedCellStyle = rasterize(currentCellStyle);
-
-                    if (!activeGraphicAttributes.empty() && rasterizedCellStyle == activeGraphicAttributes.back()) continue;
-                    
-                    rasterizedCellStyle.start = {x, y}; // SGR needs to know where this style begins
-                    activeGraphicAttributes.push_back(rasterizedCellStyle);
-                }
+                if (!activeGraphicAttributes.empty() && rasterizedCellStyle == activeGraphicAttributes.back()) continue;
+                
+                rasterizedCellStyle.start = pos; // SGR needs to know where this style begins
+                activeGraphicAttributes.push_back(rasterizedCellStyle);
             }
         }
 

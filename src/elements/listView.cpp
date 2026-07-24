@@ -65,7 +65,7 @@ GGUI::IVector3 GGUI::listView::getDimensionLimit(){
 void GGUI::listView::addChild(element* e) {
     pauseGGUI([this, e]() {
         // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
-        INTERNAL::STAIN& dirty = e->getDirty();
+        const INTERNAL::STAIN& dirty = e->getDirty();
         if (dirty.is(INTERNAL::STAIN_TYPE::FINALIZE)){
             // Finalize flag is cleaned Style Embedding with On_Init Call.
             // Give an early access to the parent, so that parent dependant attributes work properly.

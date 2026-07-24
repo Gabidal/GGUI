@@ -154,7 +154,7 @@ namespace GGUI{
          *          Element when it is asked to render.
          * @return A reference to the Dirty object.
          */
-        constexpr INTERNAL::STAIN& getDirty(){
+        constexpr const INTERNAL::STAIN& getDirty() const {
             return Dirty;
         }
 
@@ -384,7 +384,7 @@ namespace GGUI{
 
         virtual std::vector<element*> getVisibleChilds();
 
-        virtual std::vector<IVector2> getVerticalFacesForAllIntersections();
+        virtual std::vector<IVector2> getVerticalFaces();
 
         /**
          * @brief Removes a child element from the current element.

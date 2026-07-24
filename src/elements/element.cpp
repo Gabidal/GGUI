@@ -567,56 +567,36 @@ std::vector<GGUI::element*> GGUI::element::getVisibleChilds() {
     return result;
 }
 
-std::vector<GGUI::IVector2> GGUI::element::getVerticalFacesForAllIntersections() {
+std::vector<GGUI::IVector2> GGUI::element::getVerticalFaces() {
     std::vector<GGUI::IVector2> result;
     // Rough heuristic to prevent constant reallocations
-    result.reserve(this->Style->Childs.size() * 16); 
+    result.reserve(graphicalReflectionPool.size() * 50);    // multiply by the probable vertical length
 
-    // 1. Gather all base vertical faces (O(N))
-    for (auto* child : this->Style->Childs) {
-        if (!child->isDisplayed()) continue;
-        for (const auto& graphics : child->graphicalIdentityPool) {
-            auto faces = graphics.area.getVerticalFaces();
-            result.insert(result.end(), faces.begin(), faces.end());
-        }
+    for (const auto* reflection : graphicalReflectionPool) {
+        // no need to skip hidden since the reflection pool already filters them out.
+
+        const std::vector<GGUI::IVector2>& tmp = reflection->area.getVerticalFaces();
+
+        // blind add
+        result.insert(result.end(), tmp.begin(), tmp.end());
     }
 
-    for (const auto& graphicsThis : graphicalIdentityPool) {
-        auto faces = graphicsThis.area.getVerticalFaces();
-        result.insert(result.end(), faces.begin(), faces.end());
-    }
+    // sort the points
+    std::sort(result.begin(), result.end());
 
-    // 2. Gather only the intersections (O(N^2))
-    for (size_t i = 0; i < this->Style->Childs.size(); ++i) {
-        auto* childA = this->Style->Childs[i];
-        if (!childA->isDisplayed()) continue;
+    // remove duplicates
+    result.erase(
+        std::unique(result.begin(), result.end()),
+        result.end()
+    );
 
-        for (const auto& graphicsA : childA->graphicalIdentityPool) {
-            
-            // Check against other children (start at i + 1 to avoid redundant reverse checks A->B and B->A)
-            for (size_t j = i + 1; j < this->Style->Childs.size(); ++j) {
-                auto* childB = this->Style->Childs[j];
-                if (!childB->isDisplayed()) continue;
-
-                for (const auto& graphicsB : childB->graphicalIdentityPool) {
-                    rectangle intersectedArea = graphicsA.area.intersection(graphicsB.area);
-                    if (!intersectedArea.empty()) {
-                        auto faces = intersectedArea.getVerticalFaces();
-                        result.insert(result.end(), faces.begin(), faces.end());
-                    }
-                }
-            }
-
-            // Check against parent container
-            for (const auto& graphicsThis : graphicalIdentityPool) {
-                rectangle intersectedArea = graphicsA.area.intersection(graphicsThis.area);
-                if (!intersectedArea.empty()) {
-                    auto faces = intersectedArea.getVerticalFaces();
-                    result.insert(result.end(), faces.begin(), faces.end());
-                }
-            }
-        }
-    }
+    // account only hits that are inside the dom area
+    result.erase(
+        std::remove_if(result.begin(), result.end(), [this](const GGUI::IVector2& point) {
+            return graphicalIdentityPool.back().area.hits(point) == false;
+        }),
+        result.end()
+    );
 
     return result;
 }
@@ -1772,7 +1752,7 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
  * @return true if any children have changed, false otherwise.
  */
 bool GGUI::element::childrenChanged() const {
-    for (auto* e : Style->Childs){
+    for (const auto* e : Style->Childs){
         if (e->getDirty().is(INTERNAL::STAIN_TYPE::FINALIZE)){
             GGUI::INTERNAL::reportStack("Child element passthrough Finalization stage!");
         }
@@ -1803,7 +1783,7 @@ bool GGUI::element::hasTransparentChildren() const {
         return false;
 
     // Recursively check each child element for transparency.
-    for (auto e : Style->Childs) {
+    for (const auto* e : Style->Childs) {
         if (e->isTransparent())
             return true;
 

@@ -26,6 +26,7 @@ build/
 build-win/
 build-linux/
 build-release/
+build-profile/
 
 # Custom output locations, since the headers can be easily re-generated or fetched from github releases.
 /bin/ggui.p/

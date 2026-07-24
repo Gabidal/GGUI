@@ -590,10 +590,11 @@ namespace GGUI{
             int end = bottom();
 
             std::vector<IVector2> result;
+            result.resize((end - start) * 2); // left + right
 
             for (int y = start; y < end; ++y) {
-                result.push_back(IVector2(left(), y));
-                result.push_back(IVector2(right(), y));
+                result[(y - start) * 2]     = IVector2(left(), y);
+                result[(y - start) * 2 + 1] = IVector2(right(), y);
             }
 
             return result;
