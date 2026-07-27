@@ -258,8 +258,8 @@ namespace GGUI{
                     DRM::pollInputs();
                 }
                 else {
-                    // Wait for user input.
-                    terminal::queryInput();
+                    // This is not skipped since it is used while booting sequence of the terminal state machine
+                    terminal::currentStates->transmission.pollInput();
                 }
 
                 pauseGGUI([&](){
@@ -270,7 +270,7 @@ namespace GGUI{
                     }
                     else {
                         // Translate the Queried inputs.
-                        terminal::parseInput();
+                        terminal::currentStates->parseInput();
                     }
 
                     // Translate the movements thingies to better usable for user.

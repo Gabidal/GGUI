@@ -786,19 +786,19 @@ namespace GGUI{
             T data;
         public:
 
-            bitMask() {
+            constexpr bitMask() {
                 clear();
             }
 
-            bitMask(T initialFlag) {
+            constexpr bitMask(T initialFlag) {
                 data = initialFlag;
             }
 
-            bool has(T flags) const {
+            constexpr bool has(T flags) const {
                 return (static_cast<containerType>(data) & static_cast<containerType>(flags)) != containerType(0);
             }
 
-            void set(T flags, bool value = true) {
+            constexpr void set(T flags, bool value = true) {
                 data = static_cast<T>(
                     value ? 
                     (static_cast<containerType>(data) | static_cast<containerType>(flags)) :
@@ -806,37 +806,37 @@ namespace GGUI{
                 );
             }
 
-            T get() const {
+            constexpr T get() const {
                 return data;
             }
 
-            void clear() {
+            constexpr void clear() {
                 data = static_cast<T>(0);
             }
 
-            bool operator==(const bitMask<T, containerType>& other) const {
+            constexpr bool operator==(const bitMask<T, containerType>& other) const {
                 return data == other.data;
             }
 
-            bool operator!=(const bitMask<T, containerType>& other) const {
+            constexpr bool operator!=(const bitMask<T, containerType>& other) const {
                 return data != other.data;
             }
 
-            bitMask<T, containerType> operator|(const bitMask<T, containerType>& other) const {
+            constexpr bitMask<T, containerType> operator|(const bitMask<T, containerType>& other) const {
                 return bitMask<T, containerType>(static_cast<T>(static_cast<containerType>(data) | static_cast<containerType>(other.data)));
             }
 
-            bitMask<T, containerType> operator&(const bitMask<T, containerType>& other) const {
+            constexpr bitMask<T, containerType> operator&(const bitMask<T, containerType>& other) const {
                 return bitMask<T, containerType>(static_cast<T>(static_cast<containerType>(data) & static_cast<containerType>(other.data)));
             }
 
-            bitMask<T, containerType>& operator|=(const bitMask<T, containerType>& other) {
+            constexpr bitMask<T, containerType>& operator|=(const bitMask<T, containerType>& other) {
                 data = static_cast<T>(static_cast<containerType>(data) | static_cast<containerType>(other.data));
                 return *this;
             }
 
             template<typename P, typename = std::enable_if_t<std::is_same_v<P, T> || std::is_same_v<P, containerType>>>
-            bitMask<T, containerType>& operator=(P value) {
+            constexpr bitMask<T, containerType>& operator=(P value) {
                 data = static_cast<T>(value);
                 return *this;
             }

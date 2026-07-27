@@ -1954,7 +1954,7 @@ namespace GGUI{
             INTERNAL::LOGGER::registerCurrentThread();
             INTERNAL::LOGGER::log("Starting GGUI Core initialization...");
 
-            terminal::init();
+            terminal::init();   // connects with hardware I/O and resets terminal state machine
 
             INTERNAL::updateMaxWidthAndHeight();
             
@@ -1999,6 +1999,8 @@ namespace GGUI{
                     INTERNAL::inputThread();
                 });
             }
+
+            terminal::enableExtensions();
 
             std::thread Logging_Scheduler([](){
                 INTERNAL::LOGGER::registerCurrentThread();

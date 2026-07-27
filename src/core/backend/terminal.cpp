@@ -9,6 +9,16 @@ namespace GGUI {
     namespace terminal {
         base* currentStates = nullptr;
 
+        extern void platformInit();         // Platform Specific
+
+        extern void queryInput();          // Platform Specific
+
+        extern void queryOutput(std::vector<std::string_view>&& queue);     // Platform Specific
+
+        extern void queryResponse();        // Platform Specific
+        
+        extern void parseInput();           // Terminal Specific
+
         size_t outputCapture::getActiveIndex() const {
             return (cursor.y * dimensions.x) + cursor.x;
         }
@@ -216,10 +226,64 @@ namespace GGUI {
             buffer = dom->render();
         }
 
+        void query::addToQueue(std::string_view input) {
+            {
+                std::unique_lock lock(mutex);
+                state = status::SENDING;
+                condition.notify_all();
+            }
+
+            queryOutput({input});
+        }
+
+        void query::pollInput() {
+            queryInput();
+
+            // Only notify
+            if (inputSize > 0) {
+                std::unique_lock lock(mutex);
+                state = status::RECEIVING;
+                condition.notify_all();
+            }
+        }
+
+        bool query::waitForInput() {
+            std::unique_lock lock(mutex);
+            // Only wait for some time and not stall
+            condition.wait_for(lock, std::chrono::seconds(1), [&](){ return state == status::RECEIVING; });
+
+            // check if timeout or successful
+            return state == status::RECEIVING;
+        }
+
+        void base::enableExtensions() {                
+            static std::string queryDeviceAttribute = ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile().toString();
+
+            std::vector<ecma::sequence::base*> unwantedSequences;
+
+            // Transmit the sequence
+            currentStates->transmission.addToQueue(queryDeviceAttribute);
+
+            // Wait for answer
+            currentStates->transmission.waitForInput();
+
+            auto sequences = ecma::sequence::parse(std::string_view(currentStates->transmission.inputBuffer.data(), currentStates->transmission.inputSize));
+
+            for (auto* sequence : sequences) {
+                if (decComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
+            }
+        }
+
         void init() {
             currentStates = new base();
 
+            // connect to I/O
             platformInit();
+        }
+        
+        void enableExtensions() {
+            // Start probing connection features
+            currentStates->enableExtensions();
         }
 
         extern void platformDeinit();
@@ -230,18 +294,17 @@ namespace GGUI {
             platformDeinit();
         }
 
-        void parseInput() {
+        void base::parseInput() {
             // Parses input based on modular features, each brought by their own respective flag.
 
             // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
-            for (auto sequence : ecma::sequence::parse(std::string_view(currentStates->transmission.inputBuffer.data(), currentStates->transmission.inputSize))) {
+            for (auto sequence : ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize))) {
 
                 // This is likely redundant, since all operations have their own handler to process the functionality of the specific operation
                 switch (sequence->getType()) {
                     default:
                         break;
                 }
-
             }
         }
     }

@@ -7,7 +7,6 @@
 #include "types.h"
 #include "superString.h"
 #include "color.h"
-#include "conveyorAllocator.h"
 
 #include <math.h>
 #include <cstring>

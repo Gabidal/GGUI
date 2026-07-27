@@ -25,17 +25,9 @@ namespace GGUI {
     namespace terminal {
         extern void init();                 // non-Platform Specific
 
-        extern void platformInit();         // Platform Specific
-
-        extern void deinit();               // Terminal Specific
-
-        extern void queryInput();          // Platform Specific
-
-        extern void queryOutput(std::vector<std::string_view>&& queue);     // Platform Specific
-
-        extern void queryResponse();        // Platform Specific
+        extern void enableExtensions();     // non-platform specific
         
-        extern void parseInput();           // Terminal Specific
+        extern void deinit();               // non-platform Specific
 
         using keyListing = std::array<key, (size_t)ecma::table::getSize<key::types>()>;
         using compactString = INTERNAL::compactString;
@@ -80,11 +72,23 @@ namespace GGUI {
             std::array<char, capacity> inputBuffer;     // This is what we receive
             unsigned int inputSize = 0;
 
-            /** @brief This is the normal interface to access the direct device output. 
+            // mutex for waiting input
+            std::mutex mutex;
+            std::condition_variable condition;
+            enum class status : uint8_t {
+                NONE,
+                SENDING,
+                RECEIVING
+            } state = status::NONE;
+
+            /** 
+             * @brief This is the normal interface to access the direct device output. 
              */
-            void addToQueue(std::string_view input) { 
-                queryOutput({input});
-            }
+            void addToQueue(std::string_view input);
+
+            void pollInput();
+
+            bool waitForInput();
         };
 
         class base {
@@ -106,6 +110,10 @@ namespace GGUI {
             query transmission;
 
             base() = default;
+
+            void parseInput();
+
+            void enableExtensions();
         };
 
         // Read from this to get current device states of the terminal peripherals.

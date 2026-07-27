@@ -311,7 +311,7 @@ namespace GGUI {
                 if (parsedArea.first == 0) return {0, nullptr};    // No progress, means no match, return null.
                 
                 // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
-                currentCell = currentPage.get(parsedArea.second, static_cast<sequence::prefix<>*>(parsedArea.second)->getPostfix());
+                currentCell = currentPage.get(parsedArea.second, parsedArea.second->getPostfix());
 
                 // Call the functionality given by the parser
                 currentCell.handler(parsedArea.second);

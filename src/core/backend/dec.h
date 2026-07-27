@@ -3,6 +3,7 @@
 
 #include "ecma.h"
 #include "utils.h"
+#include "../utils/utils.h"
 
 namespace GGUI {
     namespace terminal {
@@ -98,6 +99,8 @@ namespace GGUI {
                     GPO_STP_AND_AVO             = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,          // processor, advanced video and graphic processor options
                 };
 
+                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::ADVANCED_VIDEO_OPTIONS;
+
                 enum class testTypes : uint8_t {
                     NONE                                    = 0,
                     POWER_UP                                = 1 << 0,       // Power-up self test (ROM checksum, RAM, NVR, keyboard and AVO is installed)
@@ -126,6 +129,8 @@ namespace GGUI {
                 struct components {
                     ecma::mode::flags<modeTypes> modes;
                     INTERNAL::bitMask<deviceAttributeResponseTypes> activeDeviceAttributes;
+
+                    bool enabled = false;
                 };
 
                 namespace sequences {
@@ -226,8 +231,7 @@ namespace GGUI {
                         > DEVICE_ATTRIBUTES(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>(ecma::table::finalWithoutIntermediate::DA), 
                             {
-                                (deviceAttributeResponseTypes)1,
-                                deviceAttributeResponseTypes::NO_OPTIONS
+                                (deviceAttributeResponseTypes)0,
                             },
                             operate_DEVICE_ATTRIBUTES,
                             &csiPatch
@@ -276,14 +280,167 @@ namespace GGUI {
                 }
 
             }
+
+            namespace VT101 {
+                using deviceAttributeResponseTypes = VT100::deviceAttributeResponseTypes;
+
+                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::NO_OPTIONS;
+            }
+
+            namespace VT102 {
+                using deviceAttributeResponseTypes = VT100::deviceAttributeResponseTypes;
+
+                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::GPO_AND_AVO;
+            }
         
             namespace VT220 {
+                extern ecma::configuration::cellPatch csiPatch;
+
+                constexpr uint8_t deviceAttributeResponseID = 60 + 2;
+
+                // From 2'nd gen instead of bitmask DEC VT's use this list of enabled feature set.
+                enum class deviceAttributeResponseTable : uint8_t {
+                    COLUMN_COUNT                    = 1,    // By default value of 132
+                    PRINTER_PORT_EXTENSION          = 2,    // 
+                    SIXEL_EXTENSION                 = 4,    //
+
+                    SELECTIVE_ERASE                 = 6,    //
+                    DRCS_ENABLED                    = 7,    //
+                    UDK_ENABLED                     = 8,    //
+                    NRCS_ENABLED                    = 9,    // 
+
+                    SCS_EXTENSION                   = 12,   //
+                    TECHNICAL_CHARACTER_SET         = 15,   //
+                    WINDOWING_CAPABILITY            = 18,   //
+                    HORIZONTAL_CAPABILITY           = 21,   //
+
+                    GREEK_EXTENSION                 = 23,   //
+                    TURKISH_EXTENSION               = 24,   //
+
+                    ISO_LATIN_2_EXTENSION           = 42,   //
+                    PCTERM                          = 44,   //
+                    SOFT_KEY_MAP                    = 45,   //
+                    ASCII_EMULATION                 = 46,   //
+                };
+
+                struct components {
+                    std::vector<deviceAttributeResponseTable> activeDeviceAttributes;
+                    bool enabled = false;
+                };
+
+                namespace sequences {
+                    using namespace ecma::sequences;
+
+                    // Override of ecma miscellaneousControlFunctions
+                    namespace miscellaneousControlFunctions {
+                        extern void operate_DEVICE_ATTRIBUTES(ecma::sequence::base*);
+
+                        /**
+                         * @brief override of ecma DA function, by:
+                         * Invoked with: `01/11 05/11 0 06/03` or `01/11 05/11 06/03`
+                         * Responses with: `01/11 05/11 ? 62; Ps... 06/03`
+                         */
+                        inline base<
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>, 
+                            ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, 
+                            2
+                        > DEVICE_ATTRIBUTES(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>(ecma::table::finalWithoutIntermediate::DA), 
+                            {
+                                (deviceAttributeResponseTable)0,
+                            },
+                            operate_DEVICE_ATTRIBUTES,
+                            &csiPatch
+                        );
+                    }
+                }
+            }
+
+            namespace VT320 {
+                constexpr uint8_t deviceAttributeResponseID = 60 + 3;
+
+                using deviceAttributeResponseTable = VT220::deviceAttributeResponseTable;
+            }
+
+            namespace VT420 {
+                extern ecma::configuration::cellPatch csiPatch;
+
+                constexpr uint8_t deviceAttributeResponseID = 60 + 4;
+
+                // The 4'th gen extended 2'nd gen extension feature list
+                enum class deviceAttributeResponseTable : uint8_t {
+                    COLUMN_COUNT                    = alias(VT220::deviceAttributeResponseTable::COLUMN_COUNT),
+                    PRINTER_PORT_EXTENSION          = alias(VT220::deviceAttributeResponseTable::PRINTER_PORT_EXTENSION),
+                    SIXEL_EXTENSION                 = alias(VT220::deviceAttributeResponseTable::SIXEL_EXTENSION),
+
+                    SELECTIVE_ERASE                 = alias(VT220::deviceAttributeResponseTable::SELECTIVE_ERASE),
+                    DRCS_ENABLED                    = alias(VT220::deviceAttributeResponseTable::DRCS_ENABLED),
+                    UDK_ENABLED                     = alias(VT220::deviceAttributeResponseTable::UDK_ENABLED),
+                    NRCS_ENABLED                    = alias(VT220::deviceAttributeResponseTable::NRCS_ENABLED),
+
+                    SCS_EXTENSION                   = 12,   //
+                    TECHNICAL_CHARACTER_SET         = 15,   //
+                    WINDOWING_CAPABILITY            = 18,   //
+                    HORIZONTAL_CAPABILITY           = 21,   //
+
+                    GREEK_EXTENSION                 = 23,   //
+                    TURKISH_EXTENSION               = 24,   //
+
+                    ISO_LATIN_2_EXTENSION           = 42,   //
+                    PCTERM                          = 44,   //
+                    SOFT_KEY_MAP                    = 45,   //
+                    ASCII_EMULATION                 = 46,   //
+                };
+
+                struct components {
+                    std::vector<deviceAttributeResponseTable> activeDeviceAttributes;
+                    bool enabled = false;
+                };
                 
+                namespace sequences {
+                    using namespace ecma::sequences;
+
+                    // Override of ecma miscellaneousControlFunctions
+                    namespace miscellaneousControlFunctions {
+                        extern void operate_DEVICE_ATTRIBUTES(ecma::sequence::base*);
+
+                        /**
+                         * @brief override of ecma DA function, by:
+                         * Invoked with: `01/11 05/11 0 06/03` or `01/11 05/11 06/03`
+                         * Responses with: `01/11 05/11 ? 62; Ps... 06/03`
+                         */
+                        inline base<
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>, 
+                            ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, 
+                            2
+                        > DEVICE_ATTRIBUTES(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>(ecma::table::finalWithoutIntermediate::DA), 
+                            {
+                                (deviceAttributeResponseTable)0,
+                            },
+                            operate_DEVICE_ATTRIBUTES,
+                            &csiPatch
+                        );
+                    }
+                }
+            }
+
+            namespace VT510 {
+                using namespace VT420;  // the VT500 series apparently uses 4'th gen.
+
+                using deviceAttributeResponseTable = VT420::deviceAttributeResponseTable;
             }
 
             struct components {
                 VT100::components VT100Components;
+                VT220::components VT220Components;
+                VT420::components VT420Components;
+
+                bool isEnabled() const { return VT100Components.enabled || VT220Components.enabled || VT420Components.enabled; }
+
+                bool verifyExtensions(ecma::sequence::base* parsed);
             };
+
         }
     }
 }

@@ -91,10 +91,11 @@ namespace GGUI {
             // If stdin isn't a TTY (e.g., piped/timeout), read() may return 0 (EOF) repeatedly; avoid spinning.
             if (!isatty(input.handle)) {
                 // Use poll to wait briefly for readability; if not readable, sleep a bit to avoid busy-loop.
-                struct pollfd pollFileDescriptor;
-                pollFileDescriptor.fd = input.handle;
-                pollFileDescriptor.events = POLLIN;
-                pollFileDescriptor.revents = 0;
+                struct pollfd pollFileDescriptor = {
+                    input.handle,
+                    POLLIN,
+                    0
+                };
 
                 constexpr nfds_t  fileDescriptorCount = 1;
 

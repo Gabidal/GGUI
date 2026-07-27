@@ -694,6 +694,8 @@ namespace GGUI {
                     virtual void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>&) const { return; }
 
                     virtual size_t getSize() const { return 0; }
+
+                    virtual postfix<> getPostfix() const { return {{}, 0}; }
                 };
 
                 /** 
@@ -744,7 +746,7 @@ namespace GGUI {
                     }
 
 
-                    virtual postfix<> getPostfix() const { return {{}, 0}; }
+                    postfix<> getPostfix() const override { return {{}, 0}; }
 
                     size_t getSize() const override { return sizeof(containerType); }
                 };
@@ -2095,6 +2097,9 @@ namespace GGUI {
             };
 
             struct components {
+                // This is primarily adjusted by the terminal after noticing a correctly parsed sequence.
+                bool enabled = false;
+
                 /**
                  * Data component moves in the page space, presentation component is the window to this page space
                  * 
