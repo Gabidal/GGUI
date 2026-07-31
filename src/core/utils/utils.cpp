@@ -451,14 +451,14 @@ namespace GGUI{
             char Local_Stack_Variable = 0;
 
             // Calculate distance from ptr to the stack start address
-            uintptr_t ptr_distance_to_stack = Min(
+            uintptr_t ptr_distance_to_stack = std::min(
                 abs((signed long long)ptr - (signed long long)INTERNAL::Stack_Start_Address),
                 abs((signed long long)ptr - (signed long long)&Local_Stack_Variable)
             );
 
             // Calculate distance from ptr to the closest heap address, heap grows accumulatively
             // uintptr_t heap_max_address = Max((uintptr_t)new_heap, (uintptr_t)INTERNAL::Heap_Start_Address);
-            uintptr_t ptr_distance_to_heap = Min(
+            uintptr_t ptr_distance_to_heap = std::min(
                 abs((signed long long)ptr - (signed long long)new_heap),
                 abs((signed long long)ptr - (signed long long)INTERNAL::Heap_Start_Address)
             );

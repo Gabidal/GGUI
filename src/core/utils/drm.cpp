@@ -3,17 +3,9 @@
 
 #include <cstdio>
 #include <thread>
-#include <chrono>
 
 namespace GGUI {
     namespace INTERNAL {
-        
-        // Forward declarations for functions used from core.cpp
-        extern void handleEscape();
-        extern void handleTabulator();
-        extern std::vector<input*> inputs;
-        extern IVector3 mouse;
-        
         namespace DRM {
             const char* handshakePortLocation = "/tmp/GGDirect.gateway";
         
@@ -41,160 +33,119 @@ namespace GGUI {
                 }
 
                 // Clean the keyboard states - save previous state
-                INTERNAL::PREVIOUS_KEYBOARD_STATES = INTERNAL::KEYBOARD_STATES;
+                inputManager->previousKeyboardState = inputManager->currentKeyboardState;
 
                 // Update mouse position from packet
                 if (packetInput->mouse.x >= 0 && packetInput->mouse.y >= 0) {
-                    INTERNAL::mouse.x = packetInput->mouse.x;
-                    INTERNAL::mouse.y = packetInput->mouse.y;
+                    currentMouse.position.x = packetInput->mouse.x;
+                    currentMouse.position.y = packetInput->mouse.y;
                 }
 
                 // Handle control key modifiers
                 bool isPressed = (packetInput->modifiers & controlKey::PRESSED_DOWN) != controlKey::UNKNOWN;
                 
                 if ((packetInput->modifiers & controlKey::SHIFT) != controlKey::UNKNOWN) {
-                    INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::SHIFT));
-                    INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT] = INTERNAL::buttonState(isPressed);
+                    inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SHIFT] = converter::input::key(isPressed);
                 }
                 
                 if ((packetInput->modifiers & controlKey::CTRL) != controlKey::UNKNOWN) {
-                    INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::CONTROL));
-                    INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = INTERNAL::buttonState(isPressed);
+                    inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::CTRL] = converter::input::key(isPressed);
                 }
                 
                 if ((packetInput->modifiers & controlKey::ALT) != controlKey::UNKNOWN) {
-                    INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::ALT));
-                    INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ALT] = INTERNAL::buttonState(isPressed);
+                    inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ALT] = converter::input::key(isPressed);
                 }
                 
                 if ((packetInput->modifiers & controlKey::SUPER) != controlKey::UNKNOWN) {
-                    INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::SUPER));
-                    INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SUPER] = INTERNAL::buttonState(isPressed);
+                    inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SUPER] = converter::input::key(isPressed);
                 }
                 
                 if ((packetInput->modifiers & controlKey::ALTGR) != controlKey::UNKNOWN) {
-                    // Note: ALTGR is handled as ALT in GGUI
-                    INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::ALT));
-                    INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ALT] = INTERNAL::buttonState(isPressed);
+                    inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ALTGR] = converter::input::key(isPressed);
                 }
 
                 // Handle additional special keys
                 switch (packetInput->additional) {
                     case additionalKey::F1:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F1));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F1] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F1] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F2:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F2));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F2] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F2] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F3:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F3));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F3] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F3] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F4:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F4));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F4] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F4] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F5:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F5));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F5] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F5] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F6:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F6));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F6] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F6] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F7:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F7));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F7] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F7] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F8:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F8));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F8] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F8] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F9:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F9));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F9] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F9] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F10:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F10));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F10] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F10] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F11:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F11));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F11] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F11] = converter::input::key(isPressed);
                         break;
                     case additionalKey::F12:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::F12));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::F12] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F12] = converter::input::key(isPressed);
                         break;
                     case additionalKey::ARROW_UP:
-                        INTERNAL::inputs.push_back(new GGUI::input(0, GGUI::constants::UP));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::UP] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_UP] = converter::input::key(isPressed);
                         break;
                     case additionalKey::ARROW_DOWN:
-                        INTERNAL::inputs.push_back(new GGUI::input(0, GGUI::constants::DOWN));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::DOWN] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_DOWN] = converter::input::key(isPressed);
                         break;
                     case additionalKey::ARROW_LEFT:
-                        INTERNAL::inputs.push_back(new GGUI::input(0, GGUI::constants::LEFT));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::LEFT] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_LEFT] = converter::input::key(isPressed);
                         break;
                     case additionalKey::ARROW_RIGHT:
-                        INTERNAL::inputs.push_back(new GGUI::input(0, GGUI::constants::RIGHT));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::RIGHT] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_RIGHT] = converter::input::key(isPressed);
                         break;
                     case additionalKey::HOME:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::HOME));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::HOME] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::HOME] = converter::input::key(isPressed);
                         break;
                     case additionalKey::END:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::END));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::END] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::END] = converter::input::key(isPressed);
                         break;
                     case additionalKey::PAGE_UP:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::PAGE_UP));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::PAGE_UP] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::PAGE_UP] = converter::input::key(isPressed);
                         break;
                     case additionalKey::PAGE_DOWN:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::PAGE_DOWN));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::PAGE_DOWN] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::PAGE_DOWN] = converter::input::key(isPressed);
                         break;
                     case additionalKey::INSERT:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::INSERT));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::INSERT] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::INSERT] = converter::input::key(isPressed);
                         break;
                     case additionalKey::DEL:
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::DEL));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::DEL] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::DELETE] = converter::input::key(isPressed);
                         break;
                     case additionalKey::LEFT_CLICK:
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT] = INTERNAL::buttonState(isPressed);
-                        if (isPressed) {
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_LEFT].captureTime = std::chrono::steady_clock::now();
-                        }
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::LEFT_CLICK] = converter::input::key(isPressed);
                         break;
                     case additionalKey::MIDDLE_CLICK:
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE] = INTERNAL::buttonState(isPressed);
-                        if (isPressed) {
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_MIDDLE].captureTime = std::chrono::steady_clock::now();
-                        }
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::MIDDLE_CLICK] = converter::input::key(isPressed);
                         break;
                     case additionalKey::RIGHT_CLICK:
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT] = INTERNAL::buttonState(isPressed);
-                        if (isPressed) {
-                            INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_RIGHT].captureTime = std::chrono::steady_clock::now();
-                        }
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::RIGHT_CLICK] = converter::input::key(isPressed);
                         break;
                     case additionalKey::SCROLL_UP:
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP] = INTERNAL::buttonState(true);
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN] = INTERNAL::buttonState(false);
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP].captureTime = std::chrono::steady_clock::now();
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SCROLL_UP] = converter::input::key(isPressed);
                         break;
                     case additionalKey::SCROLL_DOWN:
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN] = INTERNAL::buttonState(true);
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_UP] = INTERNAL::buttonState(false);
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::MOUSE_SCROLL_DOWN].captureTime = std::chrono::steady_clock::now();
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SCROLL_DOWN] = converter::input::key(isPressed);
                         break;
                     case additionalKey::UNKNOWN:
                     default:
@@ -206,43 +157,27 @@ namespace GGUI {
                 if (packetInput->key != 0) {
                     // Check for special characters
                     if (packetInput->key == '\n' || packetInput->key == '\r') {
-                        INTERNAL::inputs.push_back(new GGUI::input('\n', GGUI::constants::ENTER));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER] = converter::input::key(isPressed);
                     }
                     else if (packetInput->key == '\t') {
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::TAB));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::TAB] = INTERNAL::buttonState(isPressed);
-                        handleTabulator();
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::TABULATOR] = converter::input::key(isPressed);
+                        // handleTabulator();
                     }
                     else if (packetInput->key == '\b' || packetInput->key == 127) { // Backspace or DEL
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::BACKSPACE));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::DELETE] = converter::input::key(isPressed);
                     }
                     else if (packetInput->key == 27) { // ESC
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::ESCAPE));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ESC] = INTERNAL::buttonState(isPressed);
-                        handleEscape();
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ESCAPE] = converter::input::key(isPressed);
+                        // handleEscape();
                     }
                     else if (packetInput->key == ' ') { // Space
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::SPACE));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SPACE] = INTERNAL::buttonState(isPressed);
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SPACE] = converter::input::key(isPressed);
                     }
-                    else if (packetInput->key >= 32 && packetInput->key <= 126) { // Printable ASCII characters
-                        // Only process key press events for regular characters
-                        if (isPressed) {
-                            INTERNAL::inputs.push_back(new GGUI::input(packetInput->key, GGUI::constants::KEY_PRESS));
-                        }
-                    }
-                    else if (packetInput->key >= 1 && packetInput->key <= 26) { // Ctrl+A to Ctrl+Z
-                        // Convert back to the corresponding letter
-                        char ctrlChar = packetInput->key + 'A' - 1;
-                        INTERNAL::inputs.push_back(new GGUI::input(' ', GGUI::constants::CONTROL));
-                        INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL] = INTERNAL::buttonState(isPressed);
-                        
-                        // Also add the character if it's a key press
-                        if (isPressed) {
-                            INTERNAL::inputs.push_back(new GGUI::input(ctrlChar, GGUI::constants::KEY_PRESS));
-                        }
+                    else if (packetInput->key > (uint8_t)converter::input::key::types::SPACE && packetInput->key < (uint8_t)converter::input::key::types::DELETE) { // Printable ASCII characters
+                        inputManager->currentKeyboardState[(uint8_t)packetInput->key] = converter::input::key(isPressed);
+
+                        // Notify all loose constraints on letter event handlers.
+                        inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ALL_LETTERS] = converter::input::key(isPressed);
                     }
                 }
             }

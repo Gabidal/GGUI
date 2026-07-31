@@ -691,12 +691,12 @@ namespace GGUI{
             }
 
             // Ensure UI constraints are initialized before printing
-            if (maxWidth == 0) {
-                updateMaxWidthAndHeight();
+            if (main->getWidth() == 0) {
+                assert(false);
             }
 
             std::string formattedTrace = "Stack Trace:\n";
-            bool useIndentation = static_cast<unsigned int>(capturedFrameCount) < (maxWidth / 2);
+            bool useIndentation = capturedFrameCount < (main->getWidth() / 2);
             int currentIndentLevel = 0;
 
             // Iterate backwards through the captured frames, omitting the frame that called reportStack
@@ -767,13 +767,13 @@ namespace GGUI{
                     INTERNAL::LOGGER::log(problem);
 
                     // reportStack is called when the height or width is zero at init, so we dont ned to compute further.
-                    if (INTERNAL::maxHeight == 0 || INTERNAL::maxWidth == 0){
+                    if (main->getWidth() == 0 || main->getHeight() == 0){
                         return;
                     }
 
                     std::string Problem = " " + problem + " ";
 
-                    if (INTERNAL::main && (INTERNAL::maxWidth != 0 && INTERNAL::maxHeight != 0)){
+                    if (INTERNAL::main && (main->getHeight() != 0 && main->getWidth() != 0)){
                         bool Create_New_Line = true;
 
                         // First check if there already is a report log.
@@ -872,7 +872,7 @@ namespace GGUI{
                             // check if the Current rows amount makes the list new rows un-visible because of the of-limits.
                             // We can assume that the singular error is at least one tall.
                             // -1, since the border takes one.
-                            if (GGUI::INTERNAL::Min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight() - 1){
+                            if (std::min(History->getContainer()->getHeight(), (int)History->getContainer()->getChilds().size()) >= Error_Logger->getHeight() - 1){
                                 History->scrollDown();
                             }
                         }
@@ -881,16 +881,16 @@ namespace GGUI{
                         if (Error_Logger->getParent() == INTERNAL::main){
                             Error_Logger->display(true);
 
-                            INTERNAL::remember([Error_Logger](std::vector<memory>& rememberable){
-                                rememberable.push_back(memory(
+                            INTERNAL::remember([Error_Logger](std::vector<converter::output::event::memory>& rememberable){
+                                rememberable.push_back(converter::output::event::memory(
                                     TIME::SECOND * 30,
-                                    [Error_Logger](GGUI::event*){
+                                    [Error_Logger](converter::output::event::base*){
                                         //delete tmp;
                                         Error_Logger->display(false);
                                         //job successfully done
                                         return true;
                                     },
-                                    MEMORY_FLAGS::PROLONG_MEMORY,
+                                    converter::output::event::memory::types::PROLONG_MEMORY,
                                     "Report Logger Clearer"
                                 ));
                             });
@@ -898,14 +898,8 @@ namespace GGUI{
 
                     }
                     else{
-                        if (!INTERNAL::platformState.initialized){
-                            INTERNAL::initPlatformStuff();
-                        }
-
-                        // This is for the non GGUI space errors.
-                        // UTF _error__tmp_ = UTF("ERROR: ", {COLOR::RED, {}});
-
-                        // std::cout << _error__tmp_.toSuperString(true)->toString() + Problem << std::endl;
+                        assert(false);
+                        TODO("Add some secondary backup logging here.")
                     }
 
                 });

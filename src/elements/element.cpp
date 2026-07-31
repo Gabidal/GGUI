@@ -84,18 +84,13 @@ GGUI::element::~element(){
     Style = nullptr;    // For safety, if in future some destruction system is going to need to know if this is no longer accessble
 
     //now also update the event handlers.
-    for (size_t i = 0; i < INTERNAL::eventHandlers.size();) {
-        if (INTERNAL::eventHandlers[i] == this) {
-            INTERNAL::eventHandlers.erase(INTERNAL::eventHandlers.begin() + i);
+    for (size_t i = 0; i < INTERNAL::inputConverter->handlers.size(); i++) {
+        if (INTERNAL::inputConverter->handlers[i] == this) {
+            INTERNAL::inputConverter->handlers.erase(INTERNAL::inputConverter->handlers.begin() + i);
             // don't increment i, since elements shifted left
 
             break;
         }
-        else ++i;   // Only increment if current index is not a match
-    }
-
-    for (size_t i = 0; i < handlers.size(); i++) {
-        delete handlers[i];
     }
 
     // Now make sure that if the Focused_On element points to this element, then set it to nullptr
@@ -482,8 +477,8 @@ void GGUI::element::addChild(element* Child){
     ){
         if (Style->Allow_Dynamic_Size.value){
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            unsigned int New_Width = GGUI::INTERNAL::Max(Child->Style->Position.get().x + Child->getWidth() + Border_Offset*2, getWidth());
-            unsigned int New_Height = GGUI::INTERNAL::Max(Child->Style->Position.get().y + Child->getHeight() + Border_Offset*2, getHeight());
+            unsigned int New_Width = std::max(Child->Style->Position.get().x + Child->getWidth() + Border_Offset*2, getWidth());
+            unsigned int New_Height = std::max(Child->Style->Position.get().y + Child->getHeight() + Border_Offset*2, getHeight());
 
             // Resize the parent element to fit the child element
             setHeight(New_Height);
@@ -613,7 +608,7 @@ bool GGUI::element::remove(element* handle){
         if (Style->Childs[i] == handle){
             // If the mouse is focused on this about to be deleted element, change mouse position into it's parent Position.
             if (INTERNAL::focusedOn == Style->Childs[i]){
-                INTERNAL::mouse = Style->Childs[i]->Parent->Style->Position.get();
+                currentMouse.position = Style->Childs[i]->Parent->Style->Position.get();
             }
 
             delete handle;
@@ -717,7 +712,7 @@ bool GGUI::element::remove(size_t index){
 
     // If the mouse is currently focused on the element that is about to be deleted, change the mouse position into the element's parent position.
     if (INTERNAL::focusedOn == tmp){
-        INTERNAL::mouse = tmp->Parent->Style->Position.get();
+        currentMouse.position = tmp->Parent->Style->Position.get();
     }
 
     // Delete the element at the specified index from the vector of child elements.
@@ -923,16 +918,12 @@ GGUI::element* GGUI::element::copy() const {
     // now also update the event handlers.
     // NOTE: We don't have enough power to update the lambda captures of the this ptr value, so please use the self->host ptr instead!
     for (auto& e : this->handlers){
-
-        //copy the event and make a new one
-        action* new_action = new action(*e);
-
         //add the new action to the event handlers list
-        new_element->handlers.push_back(new_action);
+        new_element->handlers.push_back(e);
     }
 
     if (!new_element->handlers.empty()) {
-        INTERNAL::eventHandlers.push_back(new_element);
+        INTERNAL::inputConverter->handlers.push_back(new_element);
     }
 
     // Clear the Focused on bool
@@ -954,14 +945,14 @@ void GGUI::element::addEventhandler(const converter::output::event::action& hand
 
     // Check if this element has been added to the INTERNAL::eventHandlers, if not, then append this into it.
     bool found = false;
-    for (const auto& h : GGUI::INTERNAL::eventHandlers){
+    for (const auto& h : INTERNAL::inputConverter->handlers){
         if (h == this){
             found = true;
             break;
         }
     }
 
-    if (!found) INTERNAL::eventHandlers.push_back(this);
+    if (!found) INTERNAL::inputConverter->handlers.push_back(this);
 }
 
 void GGUI::element::embedStyles(){
@@ -1397,12 +1388,12 @@ void GGUI::element::computeDynamicSize(){
             int Enable_Height_Modification = (c->getHeightType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE && getHeightType() != INTERNAL::EVALUATION_TYPE::PERCENTAGE) ? 1 : 0; // Enable checking height if the height attribute type is an relative one
 
             // Add the border offset to the width and the height to count for the border collision and evade it. 
-            int New_Width = GGUI::INTERNAL::Max(
+            int New_Width = std::max(
                 (c->Style->Position.get().x + c->getWidth() + Border_Offset) * Enable_Width_Modification,
                 getWidth()
             );
 
-            int New_Height = GGUI::INTERNAL::Max(
+            int New_Height = std::max(
                 (c->Style->Position.get().y + c->getHeight() + Border_Offset) * Enable_Height_Modification,
                 getHeight()
             );
@@ -1495,7 +1486,7 @@ void GGUI::element::renderTitle(std::vector<INTERNAL::compactString>& Result){
 
     std::pair<RGB, RGB> composedColor = getActiveTextColor();  TODO("pipe forward rectangle colored area for graphicAttributes")
 
-    unsigned int Writable_Length = INTERNAL::Min(Title_Length, getWidth() - Horizontal_Offset - Ellipsis.size - 1);
+    unsigned int Writable_Length = std::min(Title_Length, (unsigned int)(getWidth() - Horizontal_Offset - Ellipsis.size - 1));
 
     if (Writable_Length < Title_Length)
         Enable_Ellipsis = true;
@@ -1692,25 +1683,25 @@ void GGUI::element::postProcessBorders(element* A, element* B, std::vector<INTER
  *          The lambda is expected to return true if it was successful and false if it failed.
  * @param action The lambda to be called when the element is clicked.
  */
-void GGUI::element::onClick(std::function<bool(GGUI::event*)> job){
-    auto wrapper = [this, job](GGUI::event* e){
+void GGUI::element::onClick(std::function<bool(converter::output::event::base*)> job){
+    auto wrapper = [this, job](converter::output::event::base* e){
         // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
 
         // Construct an Action from the Event obj
-        GGUI::action* event2actionWrapper = new GGUI::action(e->criteria, job, getName() + "::onClick");
+        auto* event2actionWrapper = new converter::output::event::action(e->criteria, job, getName() + "::onClick");
 
         //action successfully executed.
         return job(event2actionWrapper);
     };
     
-    action* mouse = new action(
-        constants::MOUSE_LEFT_CLICKED,
+    auto mouse = converter::output::event::action(
+        {converter::input::key::types::LEFT_CLICK},
         wrapper,
         getName() + "::onClick::wrapper::mouse"
     );
 
-    action* enter = new action(
-        constants::ENTER,
+    auto enter = converter::output::event::action(
+        {converter::input::key::types::ENTER},
         wrapper,
         getName() + "::onClick::wrapper::enter"
     );
@@ -1727,10 +1718,10 @@ void GGUI::element::onClick(std::function<bool(GGUI::event*)> job){
  * @param action The lambda to be called when the element is interacted with.
  * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
  */
-void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::event*)> job, bool GLOBAL){
-    action* a = new action(
+void GGUI::element::on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL){
+    addEventhandler(converter::output::event::action(
         criteria,
-        [this, job, GLOBAL](GGUI::event* e){
+        [this, job, GLOBAL](converter::output::event::base* e){
             if (this->isFocused() || GLOBAL){
                 // action successfully executed.
                 return job(e);
@@ -1738,9 +1729,8 @@ void GGUI::element::on(unsigned long long criteria, std::function<bool(GGUI::eve
             // action failed.
             return false;
         },
-        getName() + "::on::" + std::to_string(criteria)
-    );
-    addEventhandler(a);
+        getName() + "::on::"
+    ));
 }
 
 /**
@@ -1899,7 +1889,7 @@ void GGUI::element::reOrderChilds() {
  */
 void GGUI::element::focus() {
     // Set the mouse position to the element's position.
-    GGUI::INTERNAL::mouse = this->Style->Position.get();
+    currentMouse.position = this->Style->Position.get();
     // Update the focused element.
     GGUI::INTERNAL::updateFocusedElement(this);
 }
@@ -1942,11 +1932,11 @@ std::vector<GGUI::IVector3> Get_Surrounding_Indicies(int Width, int Height, GGUI
     int Bigger_Square_End_X = start_offset.x + Width + 1;
     int Bigger_Square_End_Y = start_offset.y + Height + 1;
 
-    int Smaller_Square_Start_X = start_offset.x + (Offset.x * GGUI::INTERNAL::Min(0, (int)Offset.x));
-    int Smaller_Square_Start_Y = start_offset.y + (Offset.y * GGUI::INTERNAL::Min(0, (int)Offset.y));
+    int Smaller_Square_Start_X = start_offset.x + (Offset.x * std::min(0, (int)Offset.x));
+    int Smaller_Square_Start_Y = start_offset.y + (Offset.y * std::min(0, (int)Offset.y));
 
-    int Smaller_Square_End_X = start_offset.x + Width - (Offset.x * GGUI::INTERNAL::Max(0, (int)Offset.x));
-    int Smaller_Square_End_Y = start_offset.y + Height - (Offset.y * GGUI::INTERNAL::Max(0, (int)Offset.y));
+    int Smaller_Square_End_X = start_offset.x + Width - (Offset.x * std::max(0, (int)Offset.x));
+    int Smaller_Square_End_Y = start_offset.y + Height - (Offset.y * std::max(0, (int)Offset.y));
 
     for (int y = Bigger_Square_Start_Y; y < Bigger_Square_End_Y; y++){
         for (int x = Bigger_Square_Start_X; x < Bigger_Square_End_X; x++){

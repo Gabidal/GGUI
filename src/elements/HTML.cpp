@@ -803,9 +803,9 @@ namespace GGUI{
             else if (postfix == "%")
                 Result *= std::stod(parent->Attributes[attr_name]->Data);
             else if (postfix == "vmin")
-                Result *= GGUI::INTERNAL::Max(1.0, GGUI::INTERNAL::Min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
+                Result *= std::max(1.0, std::min(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data)));
             else if (postfix == "vmax")
-                Result *= GGUI::INTERNAL::Max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
+                Result *= std::max(std::stod(parent->Attributes["width"]->Data), std::stod(parent->Attributes["height"]->Data));
             else
                 report("Unknown relative type: " + postfix, parent->Position);
 

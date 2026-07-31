@@ -108,7 +108,7 @@ namespace GGUI{
                 Text_Cache.back().size += current_line.size;
             }
 
-            Longest_Line = INTERNAL::Max(Longest_Line, Text_Cache.back().size);
+            Longest_Line = std::max((size_t)Longest_Line, Text_Cache.back().size);
         }
 
         // now we need to go through each compact string and make sure that those that are enforced as unicode's but are still 1 long, need to be transformed into the char bearing.
@@ -122,8 +122,8 @@ namespace GGUI{
         // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
         if (isDynamicSizeAllowed()){
             // Set the new size
-            setWidth(INTERNAL::Max(Longest_Line + borderOffset, getWidth()));
-            setHeight(INTERNAL::Max(Text_Cache.size() + borderOffset, getHeight()));
+            setWidth(std::max((size_t)Longest_Line + borderOffset, (size_t)getWidth()));
+            setHeight(std::max(Text_Cache.size() + borderOffset, (size_t)getHeight()));
         }
     }
 
@@ -367,15 +367,27 @@ namespace GGUI{
      *          dirty and updates the frame.
      */
     void textField::input(std::function<void(textField*, char)> Then) {
-        action* key_press = new action(
-            constants::KEY_PRESS,
-            [this, Then](GGUI::event* e) {
+        addEventhandler(converter::output::event::action(
+            {converter::input::key::types::ALL_LETTERS},
+            [this, Then](converter::output::event::base* input) {
                 if (Focused) {
-                    //We know the event was gifted as Input*
-                    GGUI::input* input = (GGUI::input*)e;
+                    // go through all enabled keyboards between space and delete and check what letter was turned on
+                    char letter = '\0';
+
+                    for (char i = (char)converter::input::key::types::SPACE + 1; i < (char)converter::input::key::types::DELETE; i++) {
+                        if (INTERNAL::inputManager->currentKeyboardState[(uint8_t)i].state) {
+                            letter = i;
+                            break;
+                        }
+                    }
+
+                    if (letter == '\0') {
+                        assert(false && "No letter was pressed, but the event handler was called.");
+                        return false; // No letter was pressed
+                    }
 
                     //First call the function with the user's input
-                    Then(this, input->data);
+                    Then(this, letter);
                     updateFrame();
 
                     return true;
@@ -384,18 +396,14 @@ namespace GGUI{
                 return false;
             },
             getName() + "::input::keypress"
-        );
-        addEventhandler(key_press);
+        ));
 
-        action* enter = new action(
-            constants::ENTER,
-            [this, Then](GGUI::event* e) {
-                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::ENTER].state) {
-                    //We know the event was gifted as Input*
-                    GGUI::input* input = (GGUI::input*)e;
-
+        addEventhandler(converter::output::event::action(
+            {converter::input::key::types::ENTER},
+            [this, Then](converter::output::event::base*) {
+                if (Focused && INTERNAL::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
                     //First call the function with the user's input
-                    Then(this, input->data);
+                    Then(this, '\n');
                     updateFrame();
 
                     return true;
@@ -404,13 +412,12 @@ namespace GGUI{
                 return false;
             },
             getName() + "::input::enter"
-        );
-        addEventhandler(enter);
+        ));
 
-        action* back_space = new action(
-            constants::BACKSPACE,
-            [this](GGUI::event*) {
-                if (Focused && INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::BACKSPACE].state) {
+        addEventhandler(converter::output::event::action(
+            {converter::input::key::types::BACKSPACE},
+            [this](converter::output::event::base*) {
+                if (Focused && INTERNAL::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
                     //If the text field is empty, there is nothing to do
                     if (Text.size() > 0) {
                         Text.pop_back();
@@ -427,7 +434,6 @@ namespace GGUI{
                 return false;
             },
             getName() + "::input::backspace"
-        );
-        addEventhandler(back_space);
+        ));
     }
 }

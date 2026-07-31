@@ -5,7 +5,7 @@
 
 #include "backend/terminal.h"
 
-#include "utils/drm.h"
+#include "../elements/canvas.h"
 
 #include <thread>
 #include <memory>
@@ -31,7 +31,6 @@ namespace GGUI{
         std::chrono::steady_clock::time_point Previous_Time;
         std::chrono::steady_clock::time_point Current_Time;
 
-        concurrency::guard<carry> Carry_Flags;
         sig_atomic_t requestTermination = false;
 
         bool identicalFrame = true;
@@ -82,17 +81,6 @@ namespace GGUI{
                 }
 
                 if (main){
-
-                    // Process the previous carry flags
-                    Carry_Flags([](carry& previous_carry){
-                        if (previous_carry.resize){
-                            // Clear the previous carry flag
-                            previous_carry.resize = false;
-
-                            updateMaxWidthAndHeight();
-                        }
-                    });
-
                     identicalFrame = true; // Assume that the incoming frame will be identical.
 
                     // Main is zero size, before the DRM sends us the correct window size.

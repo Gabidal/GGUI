@@ -1059,7 +1059,7 @@ namespace GGUI{
          * @param action The lambda to be called when the element is interacted with.
          * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
          */
-        void on(unsigned long long criteria, std::function<bool(converter::output::event::base*)> action, bool GLOBAL = false);
+        void on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL = false);
 
         /**
          * @brief Retrieves an element by its name.

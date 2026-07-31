@@ -78,9 +78,9 @@ void GGUI::listView::addChild(element* e) {
         IVector3 limits = getDimensionLimit();
 
         // Calculate the border offset for the child element.
-        unsigned Offset = (hasBorder() - e->hasBorder()) * hasBorder();
-        unsigned int Child_Needs_Minimum_Height_Of = e->getHeight() + Offset * 2;
-        unsigned int Child_Needs_Minimum_Width_Of = e->getWidth() + Offset * 2;
+        int Offset = (hasBorder() - e->hasBorder()) * hasBorder();
+        int Child_Needs_Minimum_Height_Of = e->getHeight() + Offset * 2;
+        int Child_Needs_Minimum_Width_Of = e->getWidth() + Offset * 2;
 
         // Check if overflow wrapping is supported.
         if (Style->Wrap.value) {
@@ -93,12 +93,12 @@ void GGUI::listView::addChild(element* e) {
             // Adjust for minimum width needed when borders are present.
             signed int Width_Modifier = e->hasBorder() && Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
-                unsigned long long Proposed_Height = INTERNAL::Max(Child_Needs_Minimum_Height_Of, getHeight());
-                unsigned long long Proposed_Width = INTERNAL::Max(Last_Child->getPosition().x + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
+                int Proposed_Height = std::max(Child_Needs_Minimum_Height_Of, getHeight());
+                int Proposed_Width = std::max(Last_Child->getPosition().x + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
 
                 // Check if the parent allows stretching or overflow.
-                setHeight(INTERNAL::Min(limits.y, Proposed_Height));
-                setWidth(INTERNAL::Min(limits.x, Proposed_Width));
+                setHeight(std::min(limits.y, Proposed_Height));
+                setWidth(std::min(limits.x, Proposed_Width));
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
             }
 
@@ -110,12 +110,12 @@ void GGUI::listView::addChild(element* e) {
             // Adjust for minimum height needed when borders are present.
             signed int Height_Modifier = e->hasBorder() && Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
-                unsigned long long Proposed_Width = INTERNAL::Max(Child_Needs_Minimum_Width_Of, getWidth());
-                unsigned long long Proposed_Height = INTERNAL::Max(Last_Child->getPosition().y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
+                int Proposed_Width = std::max(Child_Needs_Minimum_Width_Of, getWidth());
+                int Proposed_Height = std::max(Last_Child->getPosition().y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
 
                 // Check if the parent allows stretching or overflow.
-                setWidth(INTERNAL::Min(limits.x, Proposed_Width));
-                setHeight(INTERNAL::Min(limits.y, Proposed_Height));
+                setWidth(std::min(limits.x, Proposed_Width));
+                setHeight(std::min(limits.y, Proposed_Height));
                 Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
             }
 
@@ -323,19 +323,19 @@ void GGUI::scrollView::allowScrolling(bool allow) {
     bool Scroll_Up_Event_Exists = false;
     bool Scroll_Down_Event_Exists = false;
 
-    const std::vector<action*>& localEventHandlers = getEventHandlers();
+    const std::vector<converter::output::event::action>& localEventHandlers = getEventHandlers();
 
     // Check if scrolling events already exist for this Scroll_View
     for (unsigned int i = 0; i < localEventHandlers.size(); i++) {
-        if (localEventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_UP)
+        if (localEventHandlers[i].has(converter::input::key::types::SCROLL_UP))
             Scroll_Up_Event_Exists = true;
-        else if (localEventHandlers[i]->criteria == constants::MOUSE_MIDDLE_SCROLL_DOWN)
+        else if (localEventHandlers[i].has(converter::input::key::types::SCROLL_DOWN))
             Scroll_Down_Event_Exists = true;
     }
 
     // Create a scroll up event if it doesn't exist
     if (!Scroll_Up_Event_Exists) {
-        this->on(constants::MOUSE_MIDDLE_SCROLL_UP, [this](GGUI::event*) {
+        this->on({converter::input::key::types::SCROLL_UP}, [this](converter::output::event::base*) {
             this->scrollUp();
             return true;
         });
@@ -343,7 +343,7 @@ void GGUI::scrollView::allowScrolling(bool allow) {
 
     // Create a scroll down event if it doesn't exist
     if (!Scroll_Down_Event_Exists) {
-        this->on(constants::MOUSE_MIDDLE_SCROLL_DOWN, [this](GGUI::event*) {
+        this->on({converter::input::key::types::SCROLL_DOWN}, [this](converter::output::event::base*) {
             this->scrollDown();
             return true;
         });

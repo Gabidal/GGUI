@@ -30,6 +30,8 @@ namespace GGUI {
 
                     DELETE                  = 127,
 
+                    ALL_LETTERS,     // Used when wanting to gather all visible characters.
+
                     INSERT,
 
                     SHIFT,
@@ -40,6 +42,8 @@ namespace GGUI {
                     FN,
                     ESCAPE,
                     TABULATOR,
+                    ENTER,
+                    BACKSPACE,
 
                     F1,
                     F2,
@@ -77,8 +81,10 @@ namespace GGUI {
                     __max,
                 };
 
-                bool state = false;
+                bool state;
                 std::chrono::steady_clock::time_point captureTime = std::chrono::steady_clock::now();
+
+                key(bool newState = false) : state(newState) {}
             };
 
             using allKeys = std::array<key, (size_t)terminal::ecma::table::getSize<key::types>()>;
@@ -109,6 +115,13 @@ namespace GGUI {
                     selectedKeys criteria;
 
                     base(std::initializer_list<input::key::types> keys = {}) : criteria(keys) {}
+
+                    bool has(input::key::types t) const {
+                        for (const auto& key : criteria){
+                            if (key == t) return true;
+                        }
+                        return false;
+                    }
                 };
     
                 struct action : base{
@@ -160,7 +173,7 @@ namespace GGUI {
                 input::base* in;   // helper to more easily reference the incoming data and transform it.
 
                 std::vector<element*> handlers;     // A simple registry of elements that have registered themselves as event handlers
-                std::vector<event::base> data;     // Converted data
+                std::vector<event::base*> data;     // Converted data
 
                 base() = default;
 

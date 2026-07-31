@@ -17,9 +17,21 @@
 
 #include "converter.h"
 
-//GGUI uses the ANSI escape code
-//https://en.wikipedia.org/wiki/ANSI_escape_code
 namespace GGUI{
+
+    static struct mouse {
+        enum class states : uint8_t {
+            DISABLE,
+            ENABLE
+        } state = states::DISABLE;
+        
+        IVector2 position = {};
+
+        bool collides(element* other) {
+            IVector3 tmp(position);
+            return INTERNAL::collides(other, tmp);
+        }
+    } currentMouse;
 
     // autoGen: Ignore start
     namespace INTERNAL{
@@ -49,6 +61,9 @@ namespace GGUI{
         inline constexpr time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 32;
         extern time_t CURRENT_UPDATE_SPEED; // dynamic depending on load
 
+        extern converter::input::base*  inputManager;
+        extern converter::output::base* inputConverter; 
+
         extern element* main;
 
         extern float eventThreadLoad;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
@@ -69,81 +84,8 @@ namespace GGUI{
 
         extern void Cleanup();
 
-        /**
-         * @brief Updates the maximum width and height of the console window.
-         * 
-         * This function retrieves the current console screen buffer information and updates
-         * the maximum width and height based on the console window dimensions. If the console
-         * information is not retrieved correctly, an error message is reported. Additionally,
-         * if the main window is active, its dimensions are set to the updated maximum width
-         * and height.
-         */
-        extern void updateMaxWidthAndHeight();
-
         extern void SignalThreadTermination();
 
-        /**
-         * @brief Processes mouse input events and updates the input list.
-         * @details This function checks the state of mouse buttons (left, right, and middle)
-         *          and determines if they have been pressed or clicked. It compares the current
-         *          state with the previous state and the duration the button has been pressed.
-         *          Based on these checks, it creates corresponding input objects and adds them
-         *          to the Inputs list.
-         */
-        extern void mouseAPI();
-
-        /**
-         * @brief Handles mouse scroll events.
-         * @details This function checks if the mouse scroll up or down button has been pressed and if the focused element is not null.
-         *          If the focused element is not null, it calls the scroll up or down function on the focused element.
-         */
-        extern void scrollAPI();
-
-        /**
-         * @brief Returns the length of a Unicode character based on the first byte.
-         * @details This function takes the first byte of a Unicode character and returns its length in bytes.
-         *          If the character is not a Unicode character, it returns 1.
-         * @param first_char The first byte of the character.
-         * @return The length of the character in bytes.
-         */
-        constexpr int getUnicodeLength(char first_char){
-            // ASCII (0xxxxxxx)
-            if (!INTERNAL::hasBitAt(first_char, 7)) return 1;
-            // 2-byte (110xxxxx)
-            if (INTERNAL::hasBitAt(first_char,7) && INTERNAL::hasBitAt(first_char,6) && !INTERNAL::hasBitAt(first_char,5)) return 2;
-            // 3-byte (1110xxxx)
-            if (INTERNAL::hasBitAt(first_char,7) && INTERNAL::hasBitAt(first_char,6) && INTERNAL::hasBitAt(first_char,5) && !INTERNAL::hasBitAt(first_char,4)) return 3;
-            // 4-byte (11110xxx)
-            if (INTERNAL::hasBitAt(first_char,7) && INTERNAL::hasBitAt(first_char,6) && INTERNAL::hasBitAt(first_char,5) && INTERNAL::hasBitAt(first_char,4) && !INTERNAL::hasBitAt(first_char,3)) return 4;
-            return 1;
-        }
-
-        /**
-         * @brief Gets the current maximum width of the terminal.
-         * @details This function returns the current maximum width of the terminal. If the width is 0, it will set the carry flag to indicate that a resize is needed to be performed.
-         *
-         * @return The current maximum width of the terminal.
-         */
-        extern int getMaxWidth();
-
-        /**
-         * @brief Gets the current maximum height of the terminal.
-         * @details This function returns the current maximum height of the terminal. If the height is 0, it will set the carry flag to indicate that a resize is needed to be performed.
-         *
-         * @return The current maximum height of the terminal.
-         */
-        extern int getMaxHeight();
-
-        /**
-         * @brief Converts a vector of UTFs into a Super_String.
-         * @details This function takes a vector of UTFs, and converts it into a Super_String. The resulting Super_String is stored in a cache, and the cache is resized if the window size has changed.
-         * @param Text The vector of UTFs to convert.
-         * @param Width The width of the window.
-         * @param Height The height of the window.
-         * @return A pointer to the resulting Super_String.
-         */
-        // extern conveyorAllocator<compactString> liquifyUTFText(const std::vector<GGUI::UTF>* Text, unsigned int& Liquefied_Size, int Width, int Height);
-        
         /**
          * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
          * @details This function is a lambda function that is used by the concurrency::Guard class to prolong or delete memories in the smart memory system.
@@ -236,16 +178,6 @@ namespace GGUI{
         extern void handleEscape();
 
         /**
-         * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
-         * 
-         * @param Buffer A vector of UTF elements to be encoded.
-         * @details The function marks the beginning and end of color strips within the buffer. 
-         *          It checks each UTF element's foreground and background colors with its adjacent elements
-         *          to determine where encoding strips start and end.
-         */
-        // extern void encodeBuffer(std::vector<GGUI::UTF>* Buffer);
-
-        /**
          * @brief Notifies all global buffer capturers about the latest data to be captured.
          *
          * This function is used to inform all global buffer capturers about the latest data to be captured.
@@ -266,18 +198,6 @@ namespace GGUI{
          * @return A pair of pairs containing the fitting area for the child element within the parent element.
          */
         fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
-
-        /**
-         * @brief Compute the alpha blending of the source element to the destination element.
-         * @details This function takes two UTF elements as arguments, the source element and the destination element.
-         *          It calculates the alpha blending of the source element to the destination element, by adding the
-         *          background color of the source element to the destination element, but only if the source element has
-         *          a non-zero alpha value. If the source element has full opacity, then the destination gets fully rewritten
-         *          over. If the source element has full transparency, then nothing is done.
-         * @param Dest The destination element to which the source element will be blended.
-         * @param Source The source element which will be blended to the destination element.
-         */
-        // void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, unsigned char childOpacity);
 
         /**
          * @brief Nests a child element into a parent element.

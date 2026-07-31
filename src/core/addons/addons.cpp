@@ -49,19 +49,21 @@ namespace GGUI{
      * @return A formatted string containing the collected statistics.
      */
     std::string getStatsText(){
-        std::string optimized = std::to_string((float)(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE - INTERNAL::AFTER_ENCODE_BUFFER_SIZE) / (float)INTERNAL::Max(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE, 1) * 100.0f);
+        std::string optimized = std::to_string((float)(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE - INTERNAL::AFTER_ENCODE_BUFFER_SIZE) / (float)std::max(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE, 1) * 100.0f);
 
         // cut from the decimal point
-        optimized = optimized.substr(0, optimized.find('.'));
+        // optimized = optimized.substr(0, optimized.find('.'));
 
-        return  "Optimized: " + optimized + "%\n" + 
-                "Elements: " + std::to_string(getRoot()->getAllNestedElements().size()) + "\n" +
-                "Render delay: " + std::to_string(INTERNAL::renderDelay) + "ms\n" +
-                "Event delay: " + std::to_string(INTERNAL::eventDelay) + "ms\n" + 
-                "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
-                "Resolution: " + std::to_string(INTERNAL::maxWidth) + "x" + std::to_string(INTERNAL::maxHeight) + "\n" +
-                "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n" + 
-                "Mouse: {" + std::to_string(INTERNAL::mouse.x) + ", " + std::to_string(INTERNAL::mouse.y) + "}";
+        // return  "Optimized: " + optimized + "%\n" + 
+        //         "Elements: " + std::to_string(getRoot()->getAllNestedElements().size()) + "\n" +
+        //         "Render delay: " + std::to_string(INTERNAL::renderDelay) + "ms\n" +
+        //         "Event delay: " + std::to_string(INTERNAL::eventDelay) + "ms\n" + 
+        //         "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
+        //         "Resolution: " + std::to_string(INTERNAL::maxWidth) + "x" + std::to_string(INTERNAL::maxHeight) + "\n" +
+        //         "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n" + 
+        //         "Mouse: {" + std::to_string(INTERNAL::mouse.x) + ", " + std::to_string(INTERNAL::mouse.y) + "}";
+
+        return "";  TODO("Re-write this section")
     }
     
     /**
@@ -70,7 +72,7 @@ namespace GGUI{
      * @return True if the update was successful, false otherwise.
      * @details This function should be called by the main event loop to update the stats panel.
      */
-    bool updateStats([[maybe_unused]] GGUI::event* Event){
+    bool updateStats([[maybe_unused]] converter::output::event::base* Event){
         // Check if the inspect tool is displayed
         element* Inspect_Tool = getRoot()->getElement("Inspect");
 
@@ -143,27 +145,28 @@ namespace GGUI{
 
             onInit([](element* self){
                 // Register an event handler to toggle the inspect tool on and off
-                GGUI::getRoot()->on(constants::SHIFT | constants::CONTROL | constants::KEY_PRESS, [self](GGUI::event* e){
-                    GGUI::input* input = (GGUI::input*)e;
+                GGUI::getRoot()->on(
+                    {
+                        converter::input::key::types::SHIFT, 
+                        converter::input::key::types::CTRL, 
+                        (converter::input::key::types)'i'
+                    }, 
+                    [self](converter::output::event::base*){
+                        // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
+                        self->display(!self->isDisplayed());
 
-                    // If the shift key or control key is pressed and the 'i' key is pressed, toggle the inspect tool
-                    if (!INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::SHIFT].state && !INTERNAL::KEYBOARD_STATES[KEYBOARD_BUTTONS::CONTROL].state && input->data != 'i' && input->data != 'I') 
-                        return false;
-
-                    // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
-                    self->display(!self->isDisplayed());
-
-                    // Return true to indicate that the event was handled
-                    return true;
-                }, true);
+                        // Return true to indicate that the event was handled
+                        return true;
+                    }, 
+                true);
 
                 // Remember the inspect tool, so it will be updated every second
-                INTERNAL::remember([](std::vector<memory>& rememberable){
+                INTERNAL::remember([](std::vector<converter::output::event::memory>& rememberable){
                     rememberable.push_back(
-                        GGUI::memory(
+                        converter::output::event::memory(
                             TIME::SECOND,
                             updateStats,
-                            MEMORY_FLAGS::RETRIGGER,
+                            converter::output::event::memory::types::RETRIGGER,
                             "Update Stats"
                         )
                     );

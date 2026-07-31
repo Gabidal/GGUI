@@ -7,6 +7,8 @@
 #include "utils/drm.h"
 #include "backend/terminal.h"
 
+#include "../elements/canvas.h"
+
 #include <string>
 #include <cassert>
 #include <math.h>
@@ -55,7 +57,9 @@ namespace GGUI{
 
         element* main = nullptr;
 
-        extern concurrency::guard<carry> Carry_Flags; 
+        converter::input::base*  inputManager;
+        converter::output::base* inputConverter; 
+
         extern sig_atomic_t requestTermination;
 
         /**
@@ -95,38 +99,6 @@ namespace GGUI{
             LOGGER::log("GGUI shutdown successful.");
         }
 
-        /**
-         * @brief Gets the current maximum width of the terminal.
-         * @details This function returns the current maximum width of the terminal. If the width is 0, it will set the carry flag to indicate that a resize is needed to be performed.
-         *
-         * @return The current maximum width of the terminal.
-         */
-        int getMaxWidth(){
-            if (maxWidth == 0 && maxHeight == 0){
-                Carry_Flags([](carry& current_carry){
-                    current_carry.resize = true;    // Tell the render thread that an resize is needed to be performed.
-                });
-            }
-            
-            return maxWidth;
-        }
-
-        /**
-         * @brief Gets the current maximum height of the terminal.
-         * @details This function returns the current maximum height of the terminal. If the height is 0, it will set the carry flag to indicate that a resize is needed to be performed.
-         *
-         * @return The current maximum height of the terminal.
-         */
-        int getMaxHeight(){
-            if (maxWidth == 0 && maxHeight == 0){
-                Carry_Flags([](carry& current_carry){
-                    current_carry.resize = true;    // Tell the render thread that an resize is needed to be performed.
-                });
-            }
-
-            return maxHeight;
-        }
-
         void SignalThreadTermination(){
             // Gracefully shutdown event and rendering threads.
             requestTermination = true;
@@ -140,7 +112,7 @@ namespace GGUI{
          *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
          */
         void recallMemories(){
-            INTERNAL::remember([](std::vector<memory>& rememberable){
+            INTERNAL::remember([](std::vector<converter::output::event::memory>& rememberable){
                 std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
 
                 // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
@@ -148,9 +120,9 @@ namespace GGUI{
                 // Prolong prolongable memories.
                 for (unsigned int i = 0; i < rememberable.size(); i++){
                     for (unsigned int j = i + 1; j < rememberable.size(); j++){
-                        if (rememberable.at(i).is(MEMORY_FLAGS::PROLONG_MEMORY) && rememberable.at(j).is(MEMORY_FLAGS::PROLONG_MEMORY) && i != j)
+                        if (rememberable.at(i).is(converter::output::event::memory::types::PROLONG_MEMORY) && rememberable.at(j).is(converter::output::event::memory::types::PROLONG_MEMORY) && i != j)
                             // Check if the Job at I is same as the one at J.
-                            if (rememberable.at(i).Job.target<bool(*)(GGUI::event*)>() == rememberable.at(j).Job.target<bool(*)(GGUI::event*)>()){
+                            if (rememberable.at(i).job.target<bool(*)(converter::output::event::base*)>() == rememberable.at(j).job.target<bool(*)(converter::output::event::base*)>()){
                                 // Since J will always be one later than I, J will contain the prolonging memory if there is one. 
                                 rememberable.at(i).startTime = rememberable.at(j).startTime;
 
@@ -172,10 +144,10 @@ namespace GGUI{
                     //if the time difference is greater than the time limit, then delete the memory
                     if (Time_Difference > rememberable.at(i).endTime){
                         try{
-                            bool Success = rememberable.at(i).Job((event*)&rememberable.at(i));
+                            bool Success = rememberable.at(i).job((converter::output::event::base*)&rememberable.at(i));
 
                             // If job is a re-trigger it will ignore whether the job was successful or not.
-                            if (rememberable.at(i).is(MEMORY_FLAGS::RETRIGGER)){
+                            if (rememberable.at(i).is(converter::output::event::memory::types::RETRIGGER)){
 
                                 // May need to change this into more accurate version of time capturing.
                                 rememberable.at(i).startTime = currentTime;
@@ -305,7 +277,7 @@ namespace GGUI{
             INTERNAL::focusedOn = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            mouse = INTERNAL::focusedOn->getAbsolutePosition();
+            currentMouse.position = INTERNAL::focusedOn->getAbsolutePosition();
 
             // Set the focus state on the new element to true
             INTERNAL::focusedOn->setFocus(true);
@@ -336,7 +308,7 @@ namespace GGUI{
             INTERNAL::hoveredOn = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            mouse = INTERNAL::hoveredOn->getAbsolutePosition();
+            currentMouse.position = INTERNAL::hoveredOn->getAbsolutePosition();
 
             // Set the hover state on the new element to true
             INTERNAL::hoveredOn->setHoverState(true);
@@ -357,26 +329,20 @@ namespace GGUI{
             INTERNAL::LOGGER::registerCurrentThread();
             INTERNAL::LOGGER::log("Starting GGUI Core initialization...");
 
-            terminal::init();   // connects with hardware I/O and resets terminal state machine
+            // Create the input poller pairs
+            inputManager   = new converter::input::base();
+            inputConverter = new converter::output::base(); 
 
-            INTERNAL::updateMaxWidthAndHeight();
-            
-            if (!SETTINGS::enableDRM){
-                if (INTERNAL::maxHeight == 0 || INTERNAL::maxWidth == 0){
-                    INTERNAL::LOGGER::log("Width/Height is zero!");
-                    return nullptr;
-                }
-            }
+            // link the input poller pairs
+            converter::link(inputManager, inputConverter);
 
-            // Save the state before the init
-            INTERNAL::Current_Time = std::chrono::steady_clock::now();
-            INTERNAL::Previous_Time = INTERNAL::Current_Time;
+            terminal::init(inputManager);   // connects with hardware I/O and resets terminal state machine
 
             INTERNAL::initPlatformStuff();
 
             INTERNAL::main = new element(
-                width(INTERNAL::maxWidth) |
-                height(INTERNAL::maxHeight) | 
+                width(100) |
+                height(100) | 
                 name("Main")
             , true);
 
@@ -393,24 +359,12 @@ namespace GGUI{
                 INTERNAL::eventThread();
             });
             eventThread.detach();  // Let the rendering thread able to std::exit.
-            
-            // Start input thread only if DRM is enabled or STDIN is a TTY (interactive).
-            std::unique_ptr<std::thread> Inquire_Scheduler_ptr;
-            if (SETTINGS::enableDRM || STDIN_IS_TTY){
-                Inquire_Scheduler_ptr = std::make_unique<std::thread>([](){
-                    INTERNAL::LOGGER::registerCurrentThread();
-                    INTERNAL::inputThread();
-                });
-            }
-
-            terminal::enableExtensions();
 
             std::thread Logging_Scheduler([](){
                 INTERNAL::LOGGER::registerCurrentThread();
                 INTERNAL::loggerThread();
             });
             
-            if (Inquire_Scheduler_ptr) Inquire_Scheduler_ptr->detach();
             Logging_Scheduler.detach();
 
             INTERNAL::LOGGER::log("GGUI Core initialization complete.");
@@ -426,133 +380,6 @@ namespace GGUI{
         }
 
         /**
-         * @brief Nests a text buffer into a parent buffer while considering the childs position and size.
-         * 
-         * @param Parent The parent element which the text is being nested into.
-         * @param child The child element which's text is being nested.
-         * @param Text The text buffer to be nested.
-         * @param Parent_Buffer The parent buffer which the text is being nested into.
-         */
-        // void nestUTFText(GGUI::element* Parent, GGUI::element* child, std::vector<GGUI::UTF> Text, std::vector<GGUI::UTF>& Parent_Buffer)
-        // {
-        //     if (Parent == child)
-        //     {
-        //         std::string R = 
-        //             std::string("Cannot nest element to it self\n") +
-        //             std::string("Element name: ") + Parent->getName();
-
-        //         if (Parent->getParent())
-        //         {
-        //             R += std::string("\n") + 
-        //             std::string("Inside of: ") + Parent->getParent()->getName();
-        //         }
-
-        //         INTERNAL::reportStack(
-        //             R
-        //         );
-        //     }
-
-        //     // Get the position of the child element in the parent buffer.
-        //     GGUI::IVector3 C = child->getPosition();
-
-        //     int i = 0;
-        //     // Iterate over the parent buffer and copy the text buffer into the parent buffer at the correct position.
-        //     for (int Parent_Y = 0; Parent_Y < Parent->getHeight(); Parent_Y++)
-        //     {
-        //         for (int Parent_X = 0; Parent_X < Parent->getWidth(); Parent_X++)
-        //         {
-        //             if (
-        //                 Parent_Y >= C.y && Parent_X >= C.x &&
-        //                 Parent_Y <= C.y + child->getHeight() &&
-        //                 Parent_X <= C.x + child->getWidth()
-        //             )
-        //             {
-        //                 Parent_Buffer[Parent_Y * Parent->getWidth() + Parent_X] = Text[i++];
-        //             }
-        //         }
-        //     }
-        // }
-
-        /**
-         * @brief Encodes a buffer of UTF elements by setting start and end flags based on color changes.
-         * 
-         * @param Buffer A vector of UTF elements to be encoded.
-         * @details The function marks the beginning and end of color strips within the buffer. 
-         *          It checks each UTF element's foreground and background colors with its adjacent elements
-         *          to determine where encoding strips start and end.
-         */
-
-        // DECOMMISSIONED :)
-        // void encodeBuffer(std::vector<GGUI::UTF>* Buffer) {
-        //     const size_t Count = Buffer->size();
-        //     if (Count == 0) return;
-
-        //     // Set START flag for the first element
-        //     // Buffer->front().setFlag(ENCODING_FLAG::START);
-
-        //     // If only one element, also mark as END
-        //     if (Count == 1) {
-        //         // Buffer->front().setFlag(ENCODING_FLAG::END);
-        //         return;
-        //     }
-
-        //     // Calculate the relative size difference between the non-encoded and the encoded buffers.
-        //     INTERNAL::BEFORE_ENCODE_BUFFER_SIZE = Buffer->size() *  constants::ANSI::maximumNeededPreAllocationForEncodedSuperString;
-        //     INTERNAL::AFTER_ENCODE_BUFFER_SIZE = 0;
-
-        //     // Cache previous colors (start with the very first element)
-        //     auto PrevFg = Buffer->front().foreground;
-        //     auto PrevBg = Buffer->front().background;
-
-        //     unsigned int StartOffset = 1;
-
-        //     // Align pointers so Curr points to the current index i, and Next to i+1
-        //     auto* Curr = Buffer->data() + StartOffset;      // i = 1
-        //     auto* Next = Curr + 1;                          // i + 1
-
-        //     // Process interior elements [StartOffset, Count-2]
-        //     for (size_t i = StartOffset; i < Count - 1; i++) {
-        //         bool SameAsPrev = (Curr->foreground == PrevFg) && (Curr->background == PrevBg);
-        //         bool SameAsNext = (Curr->foreground == Next->foreground) && (Curr->background == Next->background);
-
-        //         if (!SameAsPrev) {
-        //             // Curr->setFlag(ENCODING_FLAG::START);
-        //             // for logging:
-        //             INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
-        //         }
-
-        //         if (!SameAsNext) {
-        //             // Curr->setFlag(ENCODING_FLAG::END);
-        //             // for logging:
-        //             INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForReset;
-        //         }
-
-        //         PrevFg = Curr->foreground;
-        //         PrevBg = Curr->background;
-
-        //         // for logging:
-        //         INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
-
-        //         Curr++;
-        //         Next++;
-        //     }
-
-        //     // Handle the last element
-        //     auto& Last = Buffer->back();
-        //     // Last.setFlag(ENCODING_FLAG::END);
-        //     // for logging:
-        //     INTERNAL::AFTER_ENCODE_BUFFER_SIZE++;
-
-        //     // Compare last with second-last for possible START flag
-        //     const auto& SecondLast = Buffer->at(Count - 2);
-        //     if (!(Last.foreground == SecondLast.foreground) || !(Last.background == SecondLast.background)) {
-        //         // Last.setFlag(ENCODING_FLAG::START);
-        //         // for logging:
-        //         INTERNAL::AFTER_ENCODE_BUFFER_SIZE += constants::ANSI::maximumNeededPreAllocationForOverhead;
-        //     }
-        // }
-
-        /**
          * @brief Notifies all global buffer capturers about the latest data to be captured.
          *
          * This function is used to inform all global buffer capturers about the latest data to be captured.
@@ -561,7 +388,6 @@ namespace GGUI{
          * @param informer Pointer to the buffer capturer with the latest data.
          */
         void informAllGlobalBufferCaptures(bufferCapture* informer){
-
             // Iterate over all global buffer capturers
             for (auto* capturer : globalBufferCaptures){
                 if (!capturer->isGlobal)
@@ -574,9 +400,7 @@ namespace GGUI{
                 else{
                     // fail, maybe try merge?
                 }
-
             }
-
         }
     
         /**
@@ -602,14 +426,14 @@ namespace GGUI{
 
             // Drawable box start, within the bounding box.
             IVector2 childStart = IVector2{
-                GGUI::INTERNAL::Max(Child->getPosition().x, 0),
-                GGUI::INTERNAL::Max(Child->getPosition().y, 0)
+               std::max(Child->getPosition().x, 0),
+               std::max(Child->getPosition().y, 0)
             } + parentStart;
 
             // Drawable box end, within the bounding box.
             IVector2 childEnd = {
-                GGUI::INTERNAL::Min(childStart.x + Child->getWidth() - negativeOffset.x, parentEnd.x),
-                GGUI::INTERNAL::Min(childStart.y + Child->getHeight() - negativeOffset.y, parentEnd.y)
+                std::min(childStart.x + Child->getWidth() - negativeOffset.x, parentEnd.x),
+                std::min(childStart.y + Child->getHeight() - negativeOffset.y, parentEnd.y)
             };
 
             return {negativeOffset, childStart, childEnd };

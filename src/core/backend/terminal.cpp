@@ -276,14 +276,12 @@ namespace GGUI {
             }
         }
 
-        void init() {
-            currentStates = new base();
+        void init(converter::input::base* inputPoller) {
+            currentStates = new base(inputPoller);
 
             // connect to I/O
             platformInit();
-        }
-        
-        void enableExtensions() {
+
             // Start probing connection features
             currentStates->enableExtensions();
         }

@@ -411,6 +411,8 @@ namespace GGUI{
          */
         constexpr IVector3(int X = 0, int Y = 0, int Z = 0) noexcept : IVector2(X, Y), z(Z) {}
 
+        constexpr IVector3(IVector2 lower) : IVector2(lower), z(0) {}  // Initialize z to 0 by default
+
         /**
          * @brief Copy constructor
          *
@@ -1056,14 +1058,6 @@ namespace GGUI{
                 }
             };   
         }
-    
-        // This class contains carry flags from previous cycle cross-thread, if another thread had some un-finished things when another thread was already running.
-        class carry{
-        public:
-            bool resize = false;
-
-            ~carry() = default;
-        };
     }
 }
 

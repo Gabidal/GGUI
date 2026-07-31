@@ -1,10 +1,11 @@
 #include "converter.h"
+#include "core.h"
+
 #include "backend/terminal.h"
 
 #include "utils/settings.h"
 #include "utils/drm.h"
 #include "utils/logger.h"
-#include "core.h"
 
 namespace GGUI {
     namespace INTERNAL {
@@ -78,71 +79,68 @@ namespace GGUI {
                 for (unsigned int i = 0; i < handlers.size(); i++){
                     element* currentElement = handlers[i];
 
-                    const std::vector<event::action*>& currentEventhandlers = currentElement->getEventHandlers();
+                    const std::vector<event::action>& currentEventhandlers = currentElement->getEventHandlers();
 
                     for (unsigned int j = 0; j < currentElement->getEventHandlers().size(); j++) {
-                        event::action* currentEventHandler = currentEventhandlers[j];
+                        const event::action& currentEventHandler = currentEventhandlers[j];
 
                         // The reason these are held over multitude of inputs, is for scenario where this memory thread has not run in a long time and has a long query of inputs-
                         // and in this same listing of inputs at the start is the mouse click or enter and the user given inputs for that specifically activated event handler.
                         bool Has_Mouse_Left_Click_Event = false;
                         bool Has_Enter_Press_Event = false;
-                        
-                        // If the current event handler has an host element present
-                        if (currentEventHandler){
-                            if (!currentElement->isDisplayed())
-                                continue;   // Skip eventhandlers where their host is not active
+                    
+                        if (!currentElement->isDisplayed())
+                            continue;   // Skip eventhandlers where their host is not active
 
-                            bool overlapsWithMouse = INTERNAL::collides(currentElement, INTERNAL::mouse);
+                        bool overlapsWithMouse = currentMouse.collides(currentElement);
 
-                            // First let's go through all inputs and see if any selector inputs are present.
-                            for (size_t k = 0; k < data.size();){
-                                event::base& currentInput = data[k];      
-            
-                                Has_Mouse_Left_Click_Event = has(currentInput->criteria, constants::MOUSE_LEFT_CLICKED) && overlapsWithMouse;
-                                Has_Enter_Press_Event = has(currentInput->criteria, constants::ENTER) && in->currentKeyboardState[KEYBOARD_BUTTONS::ENTER].state == true;
-            
-                                // Check if the host is prime to be focused on
-                                if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && currentElement->isHovered()){
-                                    INTERNAL::updateFocusedElement(currentElement);
-                                    INTERNAL::unHoverElement();
+                        // First let's go through all inputs and see if any selector inputs are present.
+                        for (size_t k = 0; k < data.size();){
+                            event::base* currentInput = data[k];
+        
+                            Has_Mouse_Left_Click_Event = currentInput->has(input::key::types::LEFT_CLICK) && overlapsWithMouse;
+                            Has_Enter_Press_Event = currentInput->has(input::key::types::ENTER) && in->currentKeyboardState[(uint8_t)input::key::types::ENTER].state;
+        
+                            // Check if the host is prime to be focused on
+                            if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && currentElement->isHovered()){
+                                INTERNAL::updateFocusedElement(currentElement);
+                                INTERNAL::unHoverElement();
 
-                                    // Remove the input, since it's job is used here:
-                                    data.erase(data.begin() + k);
-                                    continue;
-                                }
-
-                                // Criteria must be identical for more accurate criteria listing.
-                                if (currentEventHandler->criteria == currentInput->criteria && currentElement->isFocused()){
-                                    try{
-                                        // Check if this job could be run successfully.
-                                        if (currentEventHandler->Job(currentInput)){
-                                            //dont let anyone else react to this event.
-                                            data.erase(data.begin() + k);
-                                            continue;
-                                        }
-                                        else{
-                                            INTERNAL::reportStack("Job '" + currentEventHandler->ID + "' failed!");
-                                        }
-                                    }
-                                    catch(std::exception& problem){
-                                        INTERNAL::reportStack("In event: '" + currentEventHandler->ID + "' Problem: " + std::string(problem.what()));
-                                    }
-                                }
-
-                                k++;
+                                // Remove the input, since it's job is used here:
+                                data.erase(data.begin() + k);
+                                continue;
                             }
 
-                            // If the current event handler is not focused, then we can check wether to set it on/off onHovering
-                            if (!currentElement->isFocused()) {
-                                if (!INTERNAL::Hover_Locked_To_Keyboard) {
-                                    if (overlapsWithMouse){
-                                        updateHoveredElement(currentElement);
+                            // Criteria must be identical for more accurate criteria listing.
+                            if (currentEventHandler.criteria == currentInput->criteria && currentElement->isFocused()){
+                                try{
+                                    // Check if this job could be run successfully.
+                                    if (currentEventHandler.job(currentInput)){
+                                        //dont let anyone else react to this event.
+                                        data.erase(data.begin() + k);
+                                        continue;
                                     }
-                                    else {
-                                        if (INTERNAL::hoveredOn == currentElement)
-                                            unHoverElement();
+                                    else{
+                                        INTERNAL::reportStack("Job '" + currentEventHandler.ID + "' failed!");
                                     }
+                                }
+                                catch(std::exception& problem){
+                                    INTERNAL::reportStack("In event: '" + currentEventHandler.ID + "' Problem: " + std::string(problem.what()));
+                                }
+                            }
+
+                            k++;
+                        }
+
+                        // If the current event handler is not focused, then we can check wether to set it on/off onHovering
+                        if (!currentElement->isFocused()) {
+                            if (currentMouse.state != mouse::states::ENABLE) {
+                                if (overlapsWithMouse){
+                                    INTERNAL::updateHoveredElement(currentElement);
+                                }
+                                else {
+                                    if (INTERNAL::hoveredOn == currentElement)
+                                        INTERNAL::unHoverElement();
                                 }
                             }
                         }
@@ -150,7 +148,7 @@ namespace GGUI {
                 }
                 
                 // If no event handler recognized these inputs, there is no need to keep them lingering for next time.
-                INTERNAL::inputs.clear();
+                data.clear();
             }
             
             /**
@@ -159,7 +157,7 @@ namespace GGUI {
             *          for keys that are held down and not already present in the inputs list. It skips mouse button keys.
             */
             void base::Populate_Inputs_For_Held_Down_Keys() {
-                event::base present;
+                event::base* present = new event::base();
 
                 for (size_t i = 0; i < in->currentKeyboardState.size(); i++) {
 
@@ -174,14 +172,14 @@ namespace GGUI {
                             continue;
 
                         // Add the currently enabled key into the present registry
-                        present.criteria.push_back(currentKeyType);
+                        present->criteria.push_back(currentKeyType);
                     }
                 }
 
                 // Check if the input already exists
                 bool Found = false;
-                for (const auto& input : data) {
-                    if (input.criteria == present.criteria) {
+                for (auto* input : data) {
+                    if (input->criteria == present->criteria) {
                         Found = true;
                         break;
                     }
@@ -209,11 +207,11 @@ namespace GGUI {
 
                 // Check if the left mouse button is pressed and for how long
                 if (in->currentKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state && mouseLeftClickPressedFor >= SETTINGS::mousePressDownCooldown) {
-                    data.push_back({input::key::types::LEFT_CLICK, input::key::types::DRAGGING});
+                    data.push_back(new event::base{input::key::types::LEFT_CLICK, input::key::types::DRAGGING});
                 }
                 // Check if the left mouse button was previously pressed and now released
                 else if (!in->currentKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state && in->previousKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state != in->currentKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state) {
-                    data.push_back({input::key::types::LEFT_CLICK});
+                    data.push_back(new event::base{input::key::types::LEFT_CLICK});
                 }
 
                 // Get the duration the right mouse button has been pressed
@@ -221,11 +219,11 @@ namespace GGUI {
 
                 // Check if the right mouse button is pressed and for how long
                 if (in->currentKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state && mouseRightClickPressedFor >= SETTINGS::mousePressDownCooldown) {
-                    data.push_back({input::key::types::RIGHT_CLICK, input::key::types::DRAGGING});
+                    data.push_back(new event::base{input::key::types::RIGHT_CLICK, input::key::types::DRAGGING});
                 }
                 // Check if the right mouse button was previously pressed and now released
                 else if (!in->currentKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state && in->previousKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state != in->currentKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state) {
-                    data.push_back({input::key::types::RIGHT_CLICK});
+                    data.push_back(new event::base{input::key::types::RIGHT_CLICK});
                 }
 
                 // Get the duration the middle mouse button has been pressed
@@ -233,11 +231,11 @@ namespace GGUI {
 
                 // Check if the middle mouse button is pressed and for how long
                 if (in->currentKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state && Mouse_Middle_Pressed_For >= SETTINGS::mousePressDownCooldown) {
-                    data.push_back({input::key::types::MIDDLE_CLICK, input::key::types::DRAGGING});
+                    data.push_back(new event::base{input::key::types::MIDDLE_CLICK, input::key::types::DRAGGING});
                 }
                 // Check if the middle mouse button was previously pressed and now released
                 else if (!in->currentKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state && in->previousKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state != in->currentKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state) {
-                    data.push_back({input::key::types::MIDDLE_CLICK});
+                    data.push_back(new event::base{input::key::types::MIDDLE_CLICK});
                 }
             }
 
@@ -339,7 +337,7 @@ namespace GGUI {
                 } while ((size_t)Current_Index < handlers.size() && handlers[(size_t)Current_Index] == INTERNAL::main);
 
                 // Now update the hovered element with the new index
-                Hover_Locked_To_Keyboard = true;
+                currentMouse.state = mouse::states::DISABLE;
                 INTERNAL::updateHoveredElement(handlers[(size_t)Current_Index]);
             }
 

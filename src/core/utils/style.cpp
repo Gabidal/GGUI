@@ -29,12 +29,12 @@ namespace GGUI{
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
     void position::evaluate(const styling* self, const styling* parent){
-        x.evaluate(INTERNAL::Max(
+        x.evaluate(std::max(
             parent->Width.get()                     // The base width of the parent
             - (parent->Border_Enabled.value * 2)    // Offset the width by 2 for both sides of border.
             - self->Width.get()                     // So that the relativity will take into count position - width. so that 1.0f doesn't put the element out of bound.
         , 1));
-        y.evaluate(INTERNAL::Max(
+        y.evaluate(std::max(
             parent->Height.get()                    // The base height of the parent 
             - (parent->Border_Enabled.value * 2)    // Offset the height by 2 for both sides of border.
             - self->Height.get()                    // So that the relativity will take into count position - height. so that 1.0f doesn't put the element out of bound.
@@ -43,11 +43,11 @@ namespace GGUI{
     }
 
     void width::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        number.evaluate(INTERNAL::Max(parent->Width.get() - (parent->Border_Enabled.value * 2), 1));
+        number.evaluate(std::max(parent->Width.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
     void height::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        number.evaluate(INTERNAL::Max(parent->Height.get() - (parent->Border_Enabled.value * 2), 1));
+        number.evaluate(std::max(parent->Height.get() - (parent->Border_Enabled.value * 2), 1));
     }
 
     void textColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
@@ -421,7 +421,7 @@ namespace GGUI{
     }
 
     INTERNAL::STAIN_TYPE onClick::embedValue([[maybe_unused]] styling* host, element* owner){
-        owner->onClick([this, owner](event*){
+        owner->onClick([this, owner](converter::output::event::base*){
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
             if (dynamic_cast<switchBox*>(owner))

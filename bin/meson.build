@@ -46,8 +46,8 @@ lib_sources = [
   # core functionalities
   '../src/core/core.cpp',
   '../src/core/thread.cpp',
+  '../src/core/converter.cpp',
   '../src/core/addons/addons.cpp',
-  '../src/core/backend/converter.cpp',
 
   # Terminal sources
   '../src/core/backend/ecma.cpp',

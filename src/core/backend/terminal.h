@@ -24,9 +24,7 @@ namespace GGUI {
 
     // ggui::terminal's job is to be the bridge between the serial/device and platform specificity and the standard ecma/dec/xterm protocol
     namespace terminal {
-        extern void init();                 // non-Platform Specific
-
-        extern void enableExtensions();     // non-platform specific
+        extern void init(converter::input::base* inputPoller);                 // non-Platform Specific
         
         extern void deinit();               // non-platform Specific
 
@@ -96,7 +94,7 @@ namespace GGUI {
             ecma::components ecmaComponents;
             dec::components decComponents;
 
-            converter::input::base& keyRegistry;    // This is where we will be outputting polled data into.
+            converter::input::base* keyRegistry;    // This is where we will be outputting polled data into.
 
             RGB colorIndexMap[UINT8_MAX] = {};  // Used for custom color indicies for SGR.
 
@@ -109,7 +107,7 @@ namespace GGUI {
 
             query transmission;
 
-            base(converter::input::base& reg) : keyRegistry(reg) {}
+            base(converter::input::base* reg) : keyRegistry(reg) {}
 
             void parseInput();
 

@@ -58,10 +58,6 @@ namespace GGUI{
      */
     extern bool hasStartedAsTTY();
 
-    namespace INTERNAL {
-        class bufferCapture;
-    }
-
     // autoGen: Ignore start
     namespace INTERNAL{
         // When ever creating a new Buffer Capture, the previous Buffer Capture will not get notified about new lines of text, after the new Buffer Capture had been constructed.

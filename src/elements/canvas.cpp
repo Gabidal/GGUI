@@ -1,11 +1,15 @@
 #include "canvas.h"
-#include "../core/utils/utils.h"
 
 #include "../core/core.h"
+
 #include <cmath>
 #include <bitset>
 
 namespace GGUI{
+    namespace INTERNAL {
+        extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
+    }
+
     /**
      * @brief Constructor for Sprite class.
      * @details This constructor initializes a Sprite object with a vector of UTF objects representing the frames,
