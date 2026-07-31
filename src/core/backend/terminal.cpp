@@ -270,7 +270,9 @@ namespace GGUI {
             auto sequences = ecma::sequence::parse(std::string_view(currentStates->transmission.inputBuffer.data(), currentStates->transmission.inputSize));
 
             for (auto* sequence : sequences) {
-                if (decComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
+                if (decComponents.verifyExtensions(sequence)) continue;          // skip going through with others.
+                // if (xtermComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
+                // if (kittyComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
             }
         }
 

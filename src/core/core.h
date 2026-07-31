@@ -1,5 +1,5 @@
-#ifndef _RENDERER_H_
-#define _RENDERER_H_
+#ifndef _CORE_H_
+#define _CORE_H_
 
 #undef min
 #undef max
@@ -8,13 +8,14 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "../elements/canvas.h"
-
-#include "../core/utils/superString.h"
-#include "../core/utils/constants.h"
-#include "../core/utils/style.h"
-#include "../core/utils/conveyorAllocator.h"
+#include "utils/superString.h"
+#include "utils/constants.h"
+#include "utils/style.h"
 #include "utils/utils.h"
+
+#include "../elements/element.h"
+
+#include "converter.h"
 
 //GGUI uses the ANSI escape code
 //https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -24,28 +25,7 @@ namespace GGUI{
     namespace INTERNAL{
         class bufferCapture;
 
-        static struct {
-            bool screenCaptureEnabled = false;
-            bool mouseReportingEnabled = false;
-            bool cursorHidden = false;
-            bool initialized = false;
-            bool extendedIntoSGRMode = false;
-            bool mousePositionSaved = false;
-        #if _WIN32
-            unsigned long previousWindowsCodepage = 0;
-        #endif
-            bool rawModeEnabled = false;
-            bool deInitialized = false;
-        } platformState;
-
-        namespace atomic{
-            enum class status{
-                PAUSED,
-                REQUESTING_RENDERING,
-                RENDERING,
-                NOT_INITIALIZED
-            };
-
+        namespace concurrency{
             extern int LOCKED;
 
             extern std::mutex mutex;
@@ -54,34 +34,14 @@ namespace GGUI{
             extern status pauseRenderThread;
         }
 
-        // Inits with 'NOW()' when created
-        class buttonState {
-        public:
-            bool state;
-            std::chrono::steady_clock::time_point captureTime;
-
-            buttonState(bool State = false) : state(State), captureTime(std::chrono::steady_clock::now()) {}
-        };
-
         extern std::vector<INTERNAL::bufferCapture*> globalBufferCaptures;
 
-        extern unsigned int maxWidth;
-        extern unsigned int maxHeight;
-
-        extern atomic::guard<std::vector<memory>> remember;
-
-        extern std::vector<element*> eventHandlers;
-        extern std::vector<input*> inputs;
+        extern concurrency::guard<std::vector<converter::output::event::memory>> remember;
         
         extern std::unordered_map<std::string, element*> elementNames;
 
         extern element* focusedOn;
         extern element* hoveredOn;
-
-        extern IVector3 mouse;    
-        extern bool mouseMovementEnabled;
-
-        extern std::unordered_map<std::string_view, buttonState> KEYBOARD_STATES;
 
         // Maximum allowed delay between passive event loop iterations.
         inline constexpr time_t MAX_UPDATE_SPEED = TIME::SECOND;
@@ -89,24 +49,11 @@ namespace GGUI{
         inline constexpr time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 32;
         extern time_t CURRENT_UPDATE_SPEED; // dynamic depending on load
 
-        extern int inputsPerSecond;
-        extern int inputsPerQuery;
-
-        extern unsigned long long renderDelay;    // describes how long previous render cycle took in ms
-        extern unsigned long long eventDelay;     // describes how long previous memory tasks took in ms
-
-        extern atomic::guard<std::unordered_map<int, styling>> classes;
-        extern std::unordered_map<std::string, int> classNames;
-
-        extern element* main;  
-
-        extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
+        extern element* main;
 
         extern float eventThreadLoad;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
-        extern unsigned long long renderDelay;    // describes how long previous render cycle took in ms
-        extern unsigned long long eventDelay;     // describes how long previous memory tasks took in ms
-        extern unsigned long long Input_Delay;     // describes how long previous input tasks took in ms
+        extern time_t renderDelay;    // describes how long previous render cycle took in ms
 
         extern std::string now();
 
@@ -199,7 +146,7 @@ namespace GGUI{
         
         /**
          * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
-         * @details This function is a lambda function that is used by the Atomic::Guard class to prolong or delete memories in the smart memory system.
+         * @details This function is a lambda function that is used by the concurrency::Guard class to prolong or delete memories in the smart memory system.
          *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
          */
         extern void recallMemories();

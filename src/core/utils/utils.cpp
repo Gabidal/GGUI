@@ -1,7 +1,7 @@
 #include "utils.h"
 #include "../../elements/element.h"
 #include "fileStreamer.h"
-#include "../renderer.h"
+#include "../core.h"
 #include "settings.h"
 
 #include <string>

@@ -1,7 +1,7 @@
 #ifndef _CORE_UTILS_H_
 #define _CORE_UTILS_H_
 /**
- * This is an Utils file made for the Renderer.cpp to use internally, these are just removed to clean up the source code.
+ * This is an Utils file made for the core.cpp to use internally, these are just removed to clean up the source code.
  */
 
 #include "types.h"
@@ -74,21 +74,6 @@ namespace GGUI{
          * @note If uncapped FPS is desired, the sleep code can be disabled.
          */
         extern void eventThread();
-
-        /**
-         * @brief Function that continuously handles user input in a separate thread.
-         *
-         * This function runs an infinite loop where it performs the following steps:
-         * 1. Waits for user input by calling INTERNAL::Query_Inputs().
-         * 2. Pauses the GGUI system and performs the following actions:
-         *    - Records the current time as INTERNAL::Previous_Time.
-         *    - Translates the queried inputs using INTERNAL::Translate_Inputs().
-         *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
-         *    - Calls the event handlers to react to the parsed input using Event_Handler().
-         *    - Records the current time as INTERNAL::Current_Time.
-         *    - Calculates the delta time (input delay) and stores it in INTERNAL::Input_Delay.
-         */
-        extern void inputThread();
 
         /**
          * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
@@ -167,28 +152,6 @@ namespace GGUI{
         extern element* getAccurateElementFrom(IVector3 c, element* Parent);
 
         /**
-         * @brief Returns the smaller of two signed long long integers.
-         * 
-         * This function compares two signed long long integers and returns the smaller of the two.
-         * 
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The smaller of the two signed long long integers.
-         */
-        constexpr signed long long Min(signed long long a, signed long long b) noexcept { return a < b ? a : b; }
-
-        /**
-         * @brief Returns the maximum of two signed long long integers.
-         *
-         * This function compares two signed long long integers and returns the greater of the two.
-         *
-         * @param a The first signed long long integer to compare.
-         * @param b The second signed long long integer to compare.
-         * @return The greater of the two signed long long integers.
-         */
-        constexpr signed long long Max(signed long long a, signed long long b) noexcept { return a > b ? a : b; }
-
-        /**
          * @brief Checks if a bit is set in a char.
          * @details This function takes a char and an index as input and checks if the bit at the specified index is set.
          *          It returns true if the bit is set and false if it is not.
@@ -209,7 +172,7 @@ namespace GGUI{
          */
         constexpr float lerp(int Min, int Max, int Position) noexcept {
             float Length_Of_Possible_values = static_cast<float>(Max - Min);
-            float Offset_Of_Our_Load = GGUI::INTERNAL::Max(static_cast<signed long long>(Position - Min), 0);
+            float Offset_Of_Our_Load = std::max(Position - Min, 0);
             return 1.0f - Offset_Of_Our_Load / Length_Of_Possible_values;
         }
 

@@ -73,7 +73,7 @@ namespace GGUI {
         };
 
         // Given as --mousePressCooldown = 123
-        extern unsigned long long mousePressDownCooldown;  // Milliseconds
+        extern std::chrono::steady_clock::duration mousePressDownCooldown;  // Milliseconds
 
         // Given as --enableWordWrapping
         extern bool wordWrapping;

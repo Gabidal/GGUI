@@ -11,7 +11,7 @@ namespace GGUI {
     namespace SETTINGS {
         
         // Define the actual storage for the settings variables with their default values
-        unsigned long long mousePressDownCooldown = 365;  // Milliseconds
+        std::chrono::steady_clock::duration mousePressDownCooldown = std::chrono::milliseconds(365);  // Default cooldown of 365 milliseconds
         bool wordWrapping = true;
         bool enableGammaCorrection = false;
         bool enableDRM = false;
@@ -115,7 +115,7 @@ namespace GGUI {
                     "Set mouse press cooldown in milliseconds (default: 365)",
                     [](const std::string& value) {
                         try {
-                            mousePressDownCooldown = std::stoull(value);
+                            mousePressDownCooldown = std::chrono::milliseconds(std::stoull(value));
                         } catch (const std::exception& e) {
                             INTERNAL::LOGGER::log("Error: Invalid value for mousePressCooldown: " + value);
                             INTERNAL::LOGGER::log("Expected an unsigned integer value.");

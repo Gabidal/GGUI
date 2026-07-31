@@ -11,6 +11,8 @@
 #include "../core/utils/style.h"
 #include "../core/backend/terminal.h"
 
+#include "../core/converter.h"
+
 namespace GGUI{
     namespace INTERNAL {
         extern void renderer();
@@ -27,7 +29,7 @@ namespace GGUI{
 
         class element* Parent = nullptr;
 
-        std::vector<action*> handlers;
+        std::vector<converter::output::event::action> handlers;
 
         // Determines if the element is rendered or not.
         bool Show = true;
@@ -159,11 +161,11 @@ namespace GGUI{
         }
 
 
-        const std::vector<action*>& getEventHandlers() const {
+        const std::vector<converter::output::event::action>& getEventHandlers() const {
             return handlers;
         }
 
-        void addEventhandler(action* handler);
+        void addEventhandler(const converter::output::event::action& handler);
 
         /**
          * @brief Returns true if the element is currently focused.
@@ -1047,7 +1049,7 @@ namespace GGUI{
          *          The lambda is expected to return true if it was successful and false if it failed.
          * @param action The lambda to be called when the element is clicked.
          */
-        void onClick(std::function<bool(GGUI::event*)> action);
+        void onClick(std::function<bool(converter::output::event::base*)> action);
 
         /**
          * @brief A function that registers a lambda to be executed when the element is interacted with in any way.
@@ -1057,7 +1059,7 @@ namespace GGUI{
          * @param action The lambda to be called when the element is interacted with.
          * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
          */
-        void on(unsigned long long criteria, std::function<bool(GGUI::event*)> action, bool GLOBAL = false);
+        void on(unsigned long long criteria, std::function<bool(converter::output::event::base*)> action, bool GLOBAL = false);
 
         /**
          * @brief Retrieves an element by its name.

@@ -8,6 +8,7 @@
 #include "dec.h"
 // -----
 
+#include "../converter.h"
 #include "../utils/types.h"
 #include "../utils/superString.h"
 #include "../utils/style.h"
@@ -29,7 +30,6 @@ namespace GGUI {
         
         extern void deinit();               // non-platform Specific
 
-        using keyListing = std::array<key, (size_t)ecma::table::getSize<key::types>()>;
         using compactString = INTERNAL::compactString;
 
         class outputCapture{
@@ -93,10 +93,10 @@ namespace GGUI {
 
         class base {
         public:
-            keyListing keys;
-            
             ecma::components ecmaComponents;
             dec::components decComponents;
+
+            converter::input::base& keyRegistry;    // This is where we will be outputting polled data into.
 
             RGB colorIndexMap[UINT8_MAX] = {};  // Used for custom color indicies for SGR.
 
@@ -109,7 +109,7 @@ namespace GGUI {
 
             query transmission;
 
-            base() = default;
+            base(converter::input::base& reg) : keyRegistry(reg) {}
 
             void parseInput();
 

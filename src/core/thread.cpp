@@ -1,5 +1,5 @@
 #include "utils/utils.h"
-#include "renderer.h"
+#include "core.h"
 #include "utils/fileStreamer.h"
 #include "utils/settings.h"
 
@@ -18,27 +18,35 @@ namespace GGUI{
 
         extern element* main;
 
-        namespace atomic{
+        namespace concurrency{
             enum class status;
 
-            extern std::mutex mutex;
-            extern std::condition_variable condition;
-
-            extern status pauseRenderThread;
+            std::mutex mutex;
+            std::condition_variable condition;
+            
+            int LOCKED = 0;
+            status pauseRenderThread = status::NOT_INITIALIZED;
         }
 
-        extern std::chrono::steady_clock::time_point Previous_Time;
-        extern std::chrono::steady_clock::time_point Current_Time;
+        std::chrono::steady_clock::time_point Previous_Time;
+        std::chrono::steady_clock::time_point Current_Time;
 
-        extern atomic::guard<carry> Carry_Flags;
-        extern sig_atomic_t requestTermination;
-
-        extern void Translate_Inputs();
+        concurrency::guard<carry> Carry_Flags;
+        sig_atomic_t requestTermination = false;
 
         bool identicalFrame = true;
 
         int BEFORE_ENCODE_BUFFER_SIZE = 0;
         int AFTER_ENCODE_BUFFER_SIZE = 0;
+
+        // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
+        time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
+        inline float eventThreadLoad = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
+
+        time_t renderDelay;    // describes how long previous render cycle took in ms
+        time_t eventDelay;    // describes how long previous memory tasks took in ms
+
+        extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
 
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.
@@ -59,10 +67,10 @@ namespace GGUI{
         void renderer(){
             while (true){
                 {
-                    std::unique_lock lock(atomic::mutex);
-                    atomic::condition.wait(lock, [&](){ return atomic::pauseRenderThread == atomic::status::REQUESTING_RENDERING || requestTermination; });
+                    std::unique_lock lock(concurrency::mutex);
+                    concurrency::condition.wait(lock, [&](){ return concurrency::pauseRenderThread == concurrency::status::REQUESTING_RENDERING || requestTermination; });
 
-                    atomic::pauseRenderThread = atomic::status::RENDERING;
+                    concurrency::pauseRenderThread = concurrency::status::RENDERING;
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
@@ -128,10 +136,10 @@ namespace GGUI{
                 renderDelay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
 
                 {
-                    std::unique_lock lock(atomic::mutex);
+                    std::unique_lock lock(concurrency::mutex);
                     // Now for itself set it to sleep.
-                    atomic::pauseRenderThread = atomic::status::PAUSED;
-                    atomic::condition.notify_all();
+                    concurrency::pauseRenderThread = concurrency::status::PAUSED;
+                    concurrency::condition.notify_all();
                 }
             }
 
@@ -193,10 +201,10 @@ namespace GGUI{
         void eventThread(){
             while (true){
                 {
-                    std::unique_lock lock(atomic::mutex);
+                    std::unique_lock lock(concurrency::mutex);
 
-                    atomic::condition.wait(lock, [&](){ 
-                        return atomic::pauseRenderThread == atomic::status::PAUSED || INTERNAL::requestTermination; 
+                    concurrency::condition.wait(lock, [&](){ 
+                        return concurrency::pauseRenderThread == concurrency::status::PAUSED || INTERNAL::requestTermination; 
                     });
 
                     if (INTERNAL::requestTermination){
@@ -229,7 +237,7 @@ namespace GGUI{
 
                 // If ya want uncapped FPS, disable this sleep code:
                 std::this_thread::sleep_for(std::chrono::milliseconds(
-                    Max(
+                    std::max(
                         CURRENT_UPDATE_SPEED - eventDelay, 
                         MIN_UPDATE_SPEED
                     )
@@ -237,57 +245,6 @@ namespace GGUI{
             }
         
             LOGGER::log("Event thread terminated!");
-        }
-    
-        /**
-         * @brief Function that continuously handles user input in a separate thread.
-         *
-         * This function runs an infinite loop where it performs the following steps:
-         * 1. Waits for user input by calling Query_Inputs().
-         * 2. Pauses the GGUI system and performs the following actions:
-         *    - Records the current time as Previous_Time.
-         *    - Translates the queried inputs using Translate_Inputs().
-         *    - Processes scroll and mouse inputs using SCROLL_API() and MOUSE_API().
-         *    - Calls the event handlers to react to the parsed input using Event_Handler().
-         *    - Records the current time as Current_Time.
-         *    - Calculates the delta time (input delay) and stores it in Input_Delay.
-         */
-        void inputThread(){
-            while (true){
-                if (SETTINGS::enableDRM) {
-                    DRM::pollInputs();
-                }
-                else {
-                    // This is not skipped since it is used while booting sequence of the terminal state machine
-                    terminal::currentStates->transmission.pollInput();
-                }
-
-                pauseGGUI([&](){
-                    Previous_Time = std::chrono::steady_clock::now();
-
-                    if (SETTINGS::enableDRM) {
-                        DRM::translateInputs();
-                    }
-                    else {
-                        // Translate the Queried inputs.
-                        terminal::currentStates->parseInput();
-                    }
-
-                    // Translate the movements thingies to better usable for user.
-                    scrollAPI();
-                    mouseAPI();
-
-                    // Now call upon event handlers which may react to the parsed input.
-                    eventHandler();
-
-                    Current_Time = std::chrono::steady_clock::now();
-
-                    // Calculate the delta time.
-                    Input_Delay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
-                });
-            }
-        
-            LOGGER::log("Input thread terminated!");
         }
     }
 }

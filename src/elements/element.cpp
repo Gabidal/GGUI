@@ -1,6 +1,6 @@
 #include "element.h"
 
-#include "../core/renderer.h"
+#include "../core/core.h"
 #include "../core/utils/utils.h"
 
 #include <algorithm>
@@ -949,12 +949,12 @@ GGUI::element* GGUI::element::copy() const {
     return new_element;
 }
 
-void GGUI::element::addEventhandler(action* handler) {
+void GGUI::element::addEventhandler(const converter::output::event::action& handler) {
     handlers.push_back(handler);
 
     // Check if this element has been added to the INTERNAL::eventHandlers, if not, then append this into it.
     bool found = false;
-    for (auto* h : GGUI::INTERNAL::eventHandlers){
+    for (const auto& h : GGUI::INTERNAL::eventHandlers){
         if (h == this){
             found = true;
             break;

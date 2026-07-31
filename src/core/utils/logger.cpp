@@ -1,5 +1,5 @@
 #include "logger.h"
-#include "../renderer.h"
+#include "../core.h"
 #include "../../elements/listView.h"
 #include "../../elements/textField.h"
 
@@ -43,7 +43,7 @@ namespace GGUI{
         namespace LOGGER{
 
             // File handle for logging to files for Atomic access across different threads.
-            INTERNAL::atomic::guard<fileStream> handle;
+            INTERNAL::concurrency::guard<fileStream> handle;
 
             // to enable default to nullptr for Guard
             class queue{
@@ -65,9 +65,9 @@ namespace GGUI{
                 }
             };
             
-            typedef INTERNAL::atomic::guard<queue> guardedQueue;    // for tidying
+            typedef INTERNAL::concurrency::guard<queue> guardedQueue;    // for tidying
             thread_local guardedQueue* localQueue = new guardedQueue();
-            INTERNAL::atomic::guard<std::vector<guardedQueue*>> AllQueues;
+            INTERNAL::concurrency::guard<std::vector<guardedQueue*>> AllQueues;
 
             /**
              * @brief Initializes the logger file stream if it is uninitialized.

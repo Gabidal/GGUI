@@ -1,5 +1,5 @@
 #include "drm.h"
-#include "../renderer.h"
+#include "../core.h"
 
 #include <cstdio>
 #include <thread>
@@ -8,11 +8,9 @@
 namespace GGUI {
     namespace INTERNAL {
         
-        // Forward declarations for functions used from renderer.cpp
+        // Forward declarations for functions used from core.cpp
         extern void handleEscape();
         extern void handleTabulator();
-        extern std::unordered_map<std::string_view, buttonState> PREVIOUS_KEYBOARD_STATES;
-        extern std::unordered_map<std::string_view, buttonState> KEYBOARD_STATES;
         extern std::vector<input*> inputs;
         extern IVector3 mouse;
         

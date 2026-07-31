@@ -50,7 +50,7 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
         "src/elements/progressBar.h",
         "src/elements/switch.h",
 
-        "src/core/renderer.h",
+        "src/core/core.h",
         "src/core/addons/addons.h"
     };
 
@@ -149,7 +149,7 @@ std::vector<std::string> Get_Cpp_Files(){
         "src/elements/HTML.cpp",
         
         // core functionalities
-        "src/core/renderer.cpp",
+        "src/core/core.cpp",
         "src/core/thread.cpp",
         "src/core/addons/addons.cpp"
     };

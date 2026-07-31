@@ -44,9 +44,10 @@ lib_sources = [
   '../src/elements/HTML.cpp',
 
   # core functionalities
-  '../src/core/renderer.cpp',
+  '../src/core/core.cpp',
   '../src/core/thread.cpp',
   '../src/core/addons/addons.cpp',
+  '../src/core/backend/converter.cpp',
 
   # Terminal sources
   '../src/core/backend/ecma.cpp',

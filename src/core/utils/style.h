@@ -2309,23 +2309,26 @@ namespace GGUI{
     };
 
     enum class textAttributeTypes : uint8_t {
-        DEFAULT             = alias(terminal::graphicalTextAttributes::DEFAULT),
-        BOLD                = alias(terminal::graphicalTextAttributes::BOLD),
-        FAINT               = alias(terminal::graphicalTextAttributes::FAINT),
-        ITALIC              = alias(terminal::graphicalTextAttributes::ITALIC),
-        UNDERLINE           = alias(terminal::graphicalTextAttributes::UNDERLINE),
-        SLOW_BLINK          = alias(terminal::graphicalTextAttributes::SLOW_BLINK),
-        RAPID_BLINK         = alias(terminal::graphicalTextAttributes::RAPID_BLINK),
-        REVERSE_VIDEO       = alias(terminal::graphicalTextAttributes::REVERSE_VIDEO),
-        CROSSED_OUT         = alias(terminal::graphicalTextAttributes::CROSSED_OUT),
-        PRIMARY_FONT        = alias(terminal::graphicalTextAttributes::PRIMARY_FONT),
-        ALTERNATIVE_FONT_1  = alias(terminal::graphicalTextAttributes::ALT_FONT_1),
-        DOUBLE_UNDERLINE    = alias(terminal::graphicalTextAttributes::DOUBLY_UNDERLINED),
-        FOREGROUND_COLOR    = alias(terminal::graphicalTextAttributes::FOREGROUND_COLOR),
-        BACKGROUND_COLOR    = alias(terminal::graphicalTextAttributes::BACKGROUND_COLOR),
-        FRAMED              = alias(terminal::graphicalTextAttributes::FRAMED),
-        ENCIRCLED           = alias(terminal::graphicalTextAttributes::ENCIRCLED),
-        OVERLINE            = alias(terminal::graphicalTextAttributes::OVERLINED)
+        DEFAULT             = alias(terminal::ecma::graphicalTextAttributes::DEFAULT),
+        __min               = DEFAULT,
+        BOLD                = alias(terminal::ecma::graphicalTextAttributes::BOLD),
+        FAINT               = alias(terminal::ecma::graphicalTextAttributes::FAINT),
+        ITALIC              = alias(terminal::ecma::graphicalTextAttributes::ITALIC),
+        UNDERLINE           = alias(terminal::ecma::graphicalTextAttributes::UNDERLINE),
+        SLOW_BLINK          = alias(terminal::ecma::graphicalTextAttributes::SLOW_BLINK),
+        RAPID_BLINK         = alias(terminal::ecma::graphicalTextAttributes::RAPID_BLINK),
+        REVERSE_VIDEO       = alias(terminal::ecma::graphicalTextAttributes::REVERSE_VIDEO),
+        CROSSED_OUT         = alias(terminal::ecma::graphicalTextAttributes::CROSSED_OUT),
+        PRIMARY_FONT        = alias(terminal::ecma::graphicalTextAttributes::PRIMARY_FONT),
+        ALTERNATIVE_FONT_1  = alias(terminal::ecma::graphicalTextAttributes::ALT_FONT_1),
+        DOUBLE_UNDERLINE    = alias(terminal::ecma::graphicalTextAttributes::DOUBLY_UNDERLINED),
+        FOREGROUND_COLOR    = alias(terminal::ecma::graphicalTextAttributes::FOREGROUND_COLOR),
+        BACKGROUND_COLOR    = alias(terminal::ecma::graphicalTextAttributes::BACKGROUND_COLOR),
+        FRAMED              = alias(terminal::ecma::graphicalTextAttributes::FRAMED),
+        ENCIRCLED           = alias(terminal::ecma::graphicalTextAttributes::ENCIRCLED),
+        OVERLINE            = alias(terminal::ecma::graphicalTextAttributes::OVERLINED),
+
+        __max               = OVERLINE
     };
 
     class textAttribute : public STYLING_INTERNAL::styleBase{

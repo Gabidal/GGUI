@@ -12,7 +12,7 @@ namespace GGUI{
         // Contains Logging utils.
         namespace LOGGER{
             // File handle for logging to files for Atomic access across different threads.
-            extern atomic::guard<fileStream> handle;
+            extern concurrency::guard<fileStream> handle;
 
             extern void init(fileStream* pre_pausedSelf = nullptr);
 

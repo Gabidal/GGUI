@@ -89,134 +89,78 @@ namespace GGUI {
             }
         };
 
-        // This is a simplification struct, made for the user to interface with.
-        struct key {
-            enum class types : uint8_t {
-                __min                   = 32,
-
-                SPACE                   = 32,
-
-                // Visible characters
-                // ...
-                // - END
-
-                DELETE                  = 127,
-
-                INSERT,
-
-                SHIFT,
-                CTRL,
-                SUPER,
-                ALT,
-                ALTGR,
-                FN,
-
-                F1,
-                F2,
-                F3,
-                F4,
-                F5,
-                F6,
-                F7,
-                F8,
-                F9,
-                F10,
-                F11,
-                F12,
-
-                ARROW_UP,
-                ARROW_DOWN,
-                ARROW_LEFT,
-                ARROW_RIGHT,
-
-                HOME,
-                END,
-
-                PAGE_UP,
-                PAGE_DOWN,
-
-                LEFT_CLICK,
-                MIDDLE_CLICK,
-                RIGHT_CLICK,
-
-                __max,  // Always +1, so that arrays count zero
+        namespace ecma {
+            enum class graphicalTextAttributes : uint8_t {
+                DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
+                __min = DEFAULT,
+                BOLD,                                           // bold or increased intensity
+                FAINT,                                          // faint, decreased intensity or second colour
+                ITALIC,                                         // italicized
+                UNDERLINE,                                      // singly underlined
+                SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
+                RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
+                REVERSE_VIDEO,                                  // negative image
+                CONCEAL,                                        // concealed characters
+                CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
+                PRIMARY_FONT,                                   // primary (default) font
+                ALT_FONT_1,                                     // first alternative font
+                ALT_FONT_2,                                     // second alternative font
+                ALT_FONT_3,                                     // third alternative font
+                ALT_FONT_4,                                     // fourth alternative font
+                ALT_FONT_5,                                     // fifth alternative font
+                ALT_FONT_6,                                     // sixth alternative font
+                ALT_FONT_7,                                     // seventh alternative font
+                ALT_FONT_8,                                     // eighth alternative font
+                ALT_FONT_9,                                     // ninth alternative font
+                FRAKTUR,                                        // Fraktur (Gothic)
+                DOUBLY_UNDERLINED,                              // doubly underlined
+                NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
+                NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
+                NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
+                NOT_BLINKING,                                   // steady (not blinking)
+                RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
+                POSITIVE_IMAGE,                                 // positive image
+                REVEAL,                                         // revealed characters
+                NOT_CROSSED_OUT,                                // not crossed out
+                FG_BLACK,                                       // black display
+                FG_RED,                                         // red display
+                FG_GREEN,                                       // green display
+                FG_YELLOW,                                      // yellow display
+                FG_BLUE,                                        // blue display
+                FG_MAGENTA,                                     // magenta display
+                FG_CYAN,                                        // cyan display
+                FG_WHITE,                                       // white display
+                FOREGROUND_COLOR,                               // intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                FG_DEFAULT,                                     // default display colour (implementation-defined)
+                BG_BLACK,                                       // black background
+                BG_RED,                                         // red background
+                BG_GREEN,                                       // green background
+                BG_YELLOW,                                      // yellow background
+                BG_BLUE,                                        // blue background
+                BG_MAGENTA,                                     // magenta background
+                BG_CYAN,                                        // cyan background
+                BG_WHITE,                                       // white background
+                BACKGROUND_COLOR,                               // intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+                BG_DEFAULT,                                     // default background colour (implementation-defined)
+                RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
+                FRAMED,                                         // framed
+                ENCIRCLED,                                      // encircled
+                OVERLINED,                                      // overlined
+                NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
+                NOT_OVERLINED,                                  // not overlined
+                RESERVED_56,                                    // (reserved for future standardization)
+                RESERVED_57,                                    // (reserved for future standardization)
+                RESERVED_58,                                    // (reserved for future standardization)
+                RESERVED_59,                                    // (reserved for future standardization)
+                IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
+                IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
+                IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
+                IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
+                IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
+                IDEOGRAM_ATTRIBUTES_OFF,                        // cancels the effect of the rendition aspects established by parameter values 60 to 64
+                __max
             };
-            
-            // Simple value + time snapshot
-            bool state; std::chrono::steady_clock::time_point captureTime;
-
-            // Capture time as creation
-            key(bool State = false) : state(State), captureTime(std::chrono::steady_clock::now()) {}
-        };
-
-        enum class graphicalTextAttributes : uint8_t {
-            DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
-            BOLD,                                           // bold or increased intensity
-            FAINT,                                          // faint, decreased intensity or second colour
-            ITALIC,                                         // italicized
-            UNDERLINE,                                      // singly underlined
-            SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
-            RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
-            REVERSE_VIDEO,                                  // negative image
-            CONCEAL,                                        // concealed characters
-            CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
-            PRIMARY_FONT,                                   // primary (default) font
-            ALT_FONT_1,                                     // first alternative font
-            ALT_FONT_2,                                     // second alternative font
-            ALT_FONT_3,                                     // third alternative font
-            ALT_FONT_4,                                     // fourth alternative font
-            ALT_FONT_5,                                     // fifth alternative font
-            ALT_FONT_6,                                     // sixth alternative font
-            ALT_FONT_7,                                     // seventh alternative font
-            ALT_FONT_8,                                     // eighth alternative font
-            ALT_FONT_9,                                     // ninth alternative font
-            FRAKTUR,                                        // Fraktur (Gothic)
-            DOUBLY_UNDERLINED,                              // doubly underlined
-            NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
-            NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
-            NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
-            NOT_BLINKING,                                   // steady (not blinking)
-            RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
-            POSITIVE_IMAGE,                                 // positive image
-            REVEAL,                                         // revealed characters
-            NOT_CROSSED_OUT,                                // not crossed out
-            FG_BLACK,                                       // black display
-            FG_RED,                                         // red display
-            FG_GREEN,                                       // green display
-            FG_YELLOW,                                      // yellow display
-            FG_BLUE,                                        // blue display
-            FG_MAGENTA,                                     // magenta display
-            FG_CYAN,                                        // cyan display
-            FG_WHITE,                                       // white display
-            FOREGROUND_COLOR,                               // intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-            FG_DEFAULT,                                     // default display colour (implementation-defined)
-            BG_BLACK,                                       // black background
-            BG_RED,                                         // red background
-            BG_GREEN,                                       // green background
-            BG_YELLOW,                                      // yellow background
-            BG_BLUE,                                        // blue background
-            BG_MAGENTA,                                     // magenta background
-            BG_CYAN,                                        // cyan background
-            BG_WHITE,                                       // white background
-            BACKGROUND_COLOR,                               // intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-            BG_DEFAULT,                                     // default background colour (implementation-defined)
-            RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
-            FRAMED,                                         // framed
-            ENCIRCLED,                                      // encircled
-            OVERLINED,                                      // overlined
-            NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
-            NOT_OVERLINED,                                  // not overlined
-            RESERVED_56,                                    // (reserved for future standardization)
-            RESERVED_57,                                    // (reserved for future standardization)
-            RESERVED_58,                                    // (reserved for future standardization)
-            RESERVED_59,                                    // (reserved for future standardization)
-            IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
-            IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
-            IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
-            IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
-            IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
-            IDEOGRAM_ATTRIBUTES_OFF                         // cancels the effect of the rendition aspects established by parameter values 60 to 64
-        };
+        }
 
         constexpr std::array<INTERNAL::compactString, 3> toString(RGB val) {
             return {

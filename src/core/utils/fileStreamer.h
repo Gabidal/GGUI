@@ -231,7 +231,7 @@ namespace GGUI{
         fileStream(std::string file_name, std::function<void()> on_change = [](){}, FILE_STREAM_TYPE type = FILE_STREAM_TYPE::READ);
 
         /**
-         * @brief Intended for Logger Atomic::Guard, do not use as User!
+         * @brief Intended for Logger concurrency::Guard, do not use as User!
          */
         fileStream() = default;
 

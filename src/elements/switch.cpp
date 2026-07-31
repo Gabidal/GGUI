@@ -1,6 +1,6 @@
 #include "switch.h"
 
-#include "../core/renderer.h"
+#include "../core/core.h"
 
 #include "../core/utils/utils.h"
 

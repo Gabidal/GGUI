@@ -631,75 +631,6 @@ namespace GGUI{
         }
     };
 
-    class event{
-    public:
-        unsigned long long criteria;
-    };
-
-    class input : public event{
-    public:
-        unsigned short x = 0;
-        unsigned short y = 0;
-        char data = 0;
-
-        // The input information like the character written.
-        input(char d, unsigned long long t){
-            data = d;
-            criteria = t;
-        }
-
-        input(IVector3 c, unsigned long long t){
-            x = (unsigned short )c.x;
-            y = (unsigned short )c.y;
-            criteria = t;
-        }
-    };
-
-    class action : public event{
-    public:
-        std::function<bool(GGUI::event*)> Job;
-        
-        std::string ID; 
-    
-        action() = default;
-        action(unsigned long long Criteria, std::function<bool(GGUI::event*)> job, std::string id){
-            criteria = Criteria;
-            Job = job;
-            ID = id;
-        }
-    };
-
-    namespace MEMORY_FLAGS{
-        inline unsigned char PROLONG_MEMORY     = 1 << 0;
-        inline unsigned char RETRIGGER          = 1 << 1;
-    }
-
-    class memory : public action{
-    public:
-        std::chrono::steady_clock::time_point startTime;
-        size_t endTime = 0;
-
-        // By default all memories automatically will not prolong each other similar memories.
-        unsigned char flags = 0x0;
-
-        // When the job starts, job, prolong previous similar job by this time.
-        memory(size_t end, std::function<bool(GGUI::event*)>job, unsigned char Flags = 0x0, std::string id = ""){
-            startTime = std::chrono::steady_clock::now();
-            endTime = end;
-            Job = job;
-            flags = Flags;
-            ID = id;
-        }
-
-        bool is(const unsigned char f) const{
-            return (flags & f) > 0;
-        }
-
-        void set(const unsigned char f){
-            flags |= f;
-        }
-    };
-
     namespace INTERNAL{
         struct fittingArea{
             IVector2 negativeOffset;
@@ -848,7 +779,7 @@ namespace GGUI{
             containerType data;
 
             constexpr containerType toBitMask(enumType t) const {
-                if (t == enumType::DEFAULT) return 0;
+                if (t == enumType::__min) return 0;
     
                 return static_cast<containerType>(1) << (static_cast<containerType>(t) - 1);
             }
@@ -1055,7 +986,15 @@ namespace GGUI{
             extern void log(std::string Text);
         }
 
-        namespace atomic{
+        
+        namespace concurrency{
+            enum class status{
+                PAUSED,
+                REQUESTING_RENDERING,
+                RENDERING,
+                NOT_INITIALIZED
+            };
+
             template<typename T>
             class guard {
             public:

@@ -3,7 +3,7 @@
 #include "../../elements/listView.h"
 #include "../../elements/textField.h"
 
-#include "../renderer.h"
+#include "../core.h"
 #include "../utils/utils.h"
 
 #include <vector>

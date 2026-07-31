@@ -1,5 +1,5 @@
 #include "progressBar.h"
-#include "../core/renderer.h"
+#include "../core/core.h"
 
 #include <string>
 #include <math.h>
