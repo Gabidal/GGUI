@@ -41,7 +41,7 @@ namespace GGUI{
 
         std::vector<std::thread> Sub_Threads;
 
-        std::vector<bufferCapture*> globalBufferCaptures;
+        std::vector<class bufferCapture*> globalBufferCaptures;
 
         concurrency::guard<std::vector<converter::output::event::memory>> remember;
 
@@ -93,8 +93,7 @@ namespace GGUI{
 
             LOGGER::log("Reverting to normal console mode...");
 
-            // Clean up platform-specific resources and settings (idempotent)
-            deInitialize();
+            terminal::deinit();
 
             LOGGER::log("GGUI shutdown successful.");
         }
@@ -338,10 +337,8 @@ namespace GGUI{
 
             terminal::init(inputManager);   // connects with hardware I/O and resets terminal state machine
 
-            INTERNAL::initPlatformStuff();
-
             INTERNAL::main = new element(
-                width(100) |
+                width(100) |    TODO("link this sizing to the backend")
                 height(100) | 
                 name("Main")
             , true);

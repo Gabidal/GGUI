@@ -19,6 +19,10 @@
 
 namespace GGUI{
 
+    namespace INTERNAL {
+        extern bool collides(GGUI::element* a, GGUI::IVector3 b);
+    }
+
     static struct mouse {
         enum class states : uint8_t {
             DISABLE,
@@ -73,14 +77,6 @@ namespace GGUI{
         extern std::string now();
 
         extern std::string constructLoggerFileName();
-
-        /**
-         * @brief Initializes platform-specific settings for console handling.
-         * @details This function sets up the console handles and modes required for input and output operations.
-         *          It enables mouse and window input, sets UTF-8 mode for output, and prepares the console for
-         *          handling specific ANSI features.
-         */
-        extern void initPlatformStuff();
 
         extern void Cleanup();
 

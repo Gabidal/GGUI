@@ -35,8 +35,6 @@ namespace GGUI{
 
         extern bool identicalFrame;
 
-        extern void deInitialize();
-
         extern int BEFORE_ENCODE_BUFFER_SIZE;
         extern int AFTER_ENCODE_BUFFER_SIZE;
         

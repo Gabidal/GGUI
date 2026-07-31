@@ -201,6 +201,10 @@ namespace GGUI{
         STD_CAPTURE     = 1 << 2
     };
 
+    namespace INTERNAL {
+        class bufferCapture;
+    }
+
     class fileStream{
     private:
         INTERNAL::bufferCapture* bufferCapture = nullptr;

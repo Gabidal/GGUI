@@ -33,6 +33,7 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
 
         "src/core/backend/utils.h",
         "src/core/backend/ecma.h",
+        "src/core/converter.h",
         "src/core/backend/dec.h",
         "src/core/backend/terminal.h",
 

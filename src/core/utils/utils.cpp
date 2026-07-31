@@ -170,9 +170,11 @@ namespace GGUI{
                     // If the stack area is not found, capture the nearest stack
                     int nearest_address = 0;
                     Stack_Start_Address = &nearest_address;
+
+                    TODO("This breaks")
                     
                     // Report an error
-                    reportStack("Failed to find the stack area in /proc/self/maps!");
+                    // reportStack("Failed to find the stack area in /proc/self/maps!");
                 }
             }
 
