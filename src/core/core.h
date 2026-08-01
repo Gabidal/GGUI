@@ -59,11 +59,7 @@ namespace GGUI{
         extern element* focusedOn;
         extern element* hoveredOn;
 
-        // Maximum allowed delay between passive event loop iterations.
-        inline constexpr time_t MAX_UPDATE_SPEED = TIME::SECOND;
-        // Close approximation to 60 FPS for minimum sleep (cannot be constexpr modified elsewhere).
-        inline constexpr time_t MIN_UPDATE_SPEED = TIME::MILLISECOND * 32;
-        extern time_t CURRENT_UPDATE_SPEED; // dynamic depending on load
+        extern std::chrono::steady_clock::duration CURRENT_UPDATE_SPEED; // dynamic depending on load
 
         extern converter::input::base*  inputManager;
         extern converter::output::base* inputConverter; 
@@ -72,7 +68,7 @@ namespace GGUI{
 
         extern float eventThreadLoad;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
-        extern time_t renderDelay;    // describes how long previous render cycle took in ms
+        extern std::chrono::steady_clock::duration renderDelay;    // describes how long previous render cycle took in ms
 
         extern std::string now();
 

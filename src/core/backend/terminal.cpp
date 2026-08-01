@@ -19,6 +19,9 @@ namespace GGUI {
         
         extern void parseInput();           // Terminal Specific
 
+        extern void updateScreenDimensions(); // Platform Specific
+
+
         size_t outputCapture::getActiveIndex() const {
             return (cursor.y * dimensions.x) + cursor.x;
         }
@@ -222,6 +225,14 @@ namespace GGUI {
             });
         }
 
+        IVector2 outputCapture::getDimensions() const {
+            return dimensions;
+        }
+
+        IVector2 outputCapture::getCursor() const {
+            return cursor;
+        }
+
         void outputCapture::update() {
             buffer = dom->render();
         }
@@ -284,6 +295,9 @@ namespace GGUI {
 
             // Start probing connection features
             currentStates->enableExtensions();
+
+            // Fetch the initial window size, the linux/win- cpp will automatically update it.
+            updateScreenDimensions();
         }
 
         extern void platformDeinit();

@@ -318,8 +318,8 @@ namespace GGUI {
                     connectDRMBackend();
 
                     if (DRMConnection.getHandle() < 0) {
-                        GGUI::INTERNAL::LOGGER::log("DRM connection failed, retrying in " + std::to_string(failRetryWaitTime/TIME::SECOND) + " seconds...");
-                        std::this_thread::sleep_for(std::chrono::milliseconds(failRetryWaitTime));
+                        GGUI::INTERNAL::LOGGER::log("DRM connection failed, retrying in " + std::to_string(failRetryWaitTime.count()) + " seconds...");
+                        std::this_thread::sleep_for(failRetryWaitTime);
                     } else {
                         GGUI::INTERNAL::LOGGER::log("DRM connection established successfully");
                     }
@@ -355,7 +355,7 @@ namespace GGUI {
             void pollInputs() {
                 // We wait here until the DRM connection has been established:
                 while (DRMConnection.getHandle() < 0) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(failRetryWaitTime));
+                    std::this_thread::sleep_for(failRetryWaitTime);
                 }
 
                 // First we will wait for incoming packets

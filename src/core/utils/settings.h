@@ -89,6 +89,9 @@ namespace GGUI {
         // Given as --enableDRM
         extern bool enableDRM;
 
+        extern std::chrono::steady_clock::duration MAX_UPDATE_SPEED;
+        extern std::chrono::steady_clock::duration MIN_UPDATE_SPEED;
+
         extern void parseCommandLineArguments(int argc, char** argv);
 
         /**

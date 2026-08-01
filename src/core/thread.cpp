@@ -1,8 +1,9 @@
 #include "utils/utils.h"
-#include "core.h"
 #include "utils/fileStreamer.h"
 #include "utils/settings.h"
+#include "utils/settings.h"
 
+#include "core.h"
 #include "backend/terminal.h"
 
 #include "../elements/canvas.h"
@@ -39,11 +40,11 @@ namespace GGUI{
         int AFTER_ENCODE_BUFFER_SIZE = 0;
 
         // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
-        time_t CURRENT_UPDATE_SPEED = MAX_UPDATE_SPEED;
+        std::chrono::steady_clock::duration CURRENT_UPDATE_SPEED = SETTINGS::MAX_UPDATE_SPEED;
         inline float eventThreadLoad = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
-        time_t renderDelay;    // describes how long previous render cycle took in ms
-        time_t eventDelay;    // describes how long previous memory tasks took in ms
+        std::chrono::steady_clock::duration renderDelay;    // describes how long previous render cycle took in ms
+        std::chrono::steady_clock::duration eventDelay;    // describes how long previous memory tasks took in ms
 
         extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
 
@@ -121,7 +122,7 @@ namespace GGUI{
                 // Check the difference of the time captured before render and now after render
                 Current_Time = std::chrono::steady_clock::now();
 
-                renderDelay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                renderDelay = Current_Time - Previous_Time;
 
                 {
                     std::unique_lock lock(concurrency::mutex);
@@ -167,7 +168,7 @@ namespace GGUI{
 
             // Adjust the event thread load if there are canvases to update
             if (multiFrameCanvas.size() > 0) {
-                eventThreadLoad = lerp(MIN_UPDATE_SPEED, MAX_UPDATE_SPEED, 0);
+                eventThreadLoad = std::min(1.0f, eventThreadLoad + 0.1f * multiFrameCanvas.size());
             }
         }
 
@@ -219,17 +220,19 @@ namespace GGUI{
                 Current_Time = std::chrono::steady_clock::now();
 
                 // Calculate the delta time.
-                eventDelay = std::chrono::duration_cast<std::chrono::milliseconds>(Current_Time - Previous_Time).count();
+                eventDelay = Current_Time - Previous_Time;
 
-                CURRENT_UPDATE_SPEED = MIN_UPDATE_SPEED + (MAX_UPDATE_SPEED - MIN_UPDATE_SPEED) * (1 - eventThreadLoad);
+                CURRENT_UPDATE_SPEED = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                    SETTINGS::MIN_UPDATE_SPEED + (SETTINGS::MAX_UPDATE_SPEED - SETTINGS::MIN_UPDATE_SPEED) * (1 - eventThreadLoad)
+                );
 
                 // If ya want uncapped FPS, disable this sleep code:
-                std::this_thread::sleep_for(std::chrono::milliseconds(
+                std::this_thread::sleep_for(
                     std::max(
                         CURRENT_UPDATE_SPEED - eventDelay, 
-                        MIN_UPDATE_SPEED
+                        SETTINGS::MIN_UPDATE_SPEED
                     )
-                ));
+                );
             }
         
             LOGGER::log("Event thread terminated!");

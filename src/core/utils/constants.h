@@ -4,13 +4,6 @@
 #include "superString.h"
 
 namespace GGUI{
-    namespace TIME{
-        constexpr  unsigned int MILLISECOND = 1; 
-        constexpr  unsigned int SECOND = MILLISECOND * 1000;
-        constexpr  unsigned int MINUTE = SECOND * 60;
-        constexpr  unsigned int HOUR = MINUTE * 60;
-    }
-
     namespace SYMBOLS{
         constexpr INTERNAL::compactString TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
         constexpr INTERNAL::compactString BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";

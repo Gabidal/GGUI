@@ -144,10 +144,10 @@ namespace GGUI {
                     } flags = types::NONE;
 
                     std::chrono::steady_clock::time_point startTime;
-                    size_t endTime = 0;
+                    std::chrono::steady_clock::duration endTime;
     
                     // When the job starts, job, prolong previous similar job by this time.
-                    memory(size_t end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string_view id = ""){
+                    memory(std::chrono::steady_clock::duration end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string_view id = ""){
                         startTime = std::chrono::steady_clock::now();
                         endTime = end;
                         job = Job;

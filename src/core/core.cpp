@@ -115,7 +115,7 @@ namespace GGUI{
                 std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
 
                 // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
-                size_t Shortest_Time = INTERNAL::MAX_UPDATE_SPEED;
+                std::chrono::steady_clock::duration Shortest_Time = SETTINGS::MAX_UPDATE_SPEED;
                 // Prolong prolongable memories.
                 for (unsigned int i = 0; i < rememberable.size(); i++){
                     for (unsigned int j = i + 1; j < rememberable.size(); j++){
@@ -133,9 +133,9 @@ namespace GGUI{
 
                 for (unsigned int i = 0; i < rememberable.size(); i++){
                     //first calculate the time difference between the start if the task and the end task
-                    size_t Time_Difference = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - rememberable.at(i).startTime).count();
+                    std::chrono::steady_clock::duration Time_Difference = currentTime - rememberable.at(i).startTime;
 
-                    size_t Time_Left = rememberable.at(i).endTime - Time_Difference;
+                    std::chrono::steady_clock::duration Time_Left = rememberable.at(i).endTime - Time_Difference;
 
                     if (Time_Left < Shortest_Time)
                         Shortest_Time = Time_Left;
@@ -165,7 +165,7 @@ namespace GGUI{
 
                 }
 
-                INTERNAL::eventThreadLoad = lerp(INTERNAL::MIN_UPDATE_SPEED, INTERNAL::MAX_UPDATE_SPEED, Shortest_Time);
+                INTERNAL::eventThreadLoad = lerp(SETTINGS::MIN_UPDATE_SPEED.count(), SETTINGS::MAX_UPDATE_SPEED.count(), Shortest_Time.count());
             });
         }
 
@@ -335,13 +335,12 @@ namespace GGUI{
             // link the input poller pairs
             converter::link(inputManager, inputConverter);
 
-            terminal::init(inputManager);   // connects with hardware I/O and resets terminal state machine
-
             INTERNAL::main = new element(
-                width(100) |    TODO("link this sizing to the backend")
-                height(100) | 
-                name("Main")
-            , true);
+                name("main"), 
+                true
+            );
+
+            terminal::init(inputManager);   // connects with hardware I/O and resets terminal state machine
 
             terminal::currentStates->screen.link(main);
 

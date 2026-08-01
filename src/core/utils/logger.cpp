@@ -883,7 +883,7 @@ namespace GGUI{
 
                             INTERNAL::remember([Error_Logger](std::vector<converter::output::event::memory>& rememberable){
                                 rememberable.push_back(converter::output::event::memory(
-                                    TIME::SECOND * 30,
+                                    std::chrono::seconds(30),
                                     [Error_Logger](converter::output::event::base*){
                                         //delete tmp;
                                         Error_Logger->display(false);
@@ -939,14 +939,16 @@ namespace GGUI{
                     renderLogger(CurrentProblem);
                 }
 
-                unsigned int SleepTime = GGUI::TIME::SECOND;
+                std::chrono::steady_clock::duration SleepTime = SETTINGS::MAX_UPDATE_SPEED;
 
                 if (LinearQueueSize != 0){
                     // If there was something to log, then we can sleep less.
-                    SleepTime = GGUI::TIME::MILLISECOND * 100;
+                    SleepTime = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                        std::chrono::milliseconds(static_cast<long long>(lerp(SETTINGS::MIN_UPDATE_SPEED.count(), SETTINGS::MAX_UPDATE_SPEED.count(), LinearQueueSize)))
+                    );
                 }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(SleepTime));
+                std::this_thread::sleep_for(SleepTime);
             }
         }
 

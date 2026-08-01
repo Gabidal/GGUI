@@ -3,7 +3,6 @@
 
 #include "logger.h"
 #include "color.h"
-#include "constants.h"
 
 #if _WIN32
 
@@ -33,7 +32,7 @@ namespace GGUI {
 
             // extern void packAbstractBuffer(char* destinationBuffer, std::vector<compactString>& abstractBuffer);
 
-            constexpr int failRetryWaitTime = TIME::SECOND * 5;
+            constexpr std::chrono::steady_clock::duration failRetryWaitTime = std::chrono::seconds(5);
 
             namespace packet {
                 enum class type {
@@ -149,7 +148,7 @@ namespace GGUI {
             #else
 
             namespace tcp {
-                constexpr size_t pollingRate = TIME::MILLISECOND * 32;
+                constexpr std::chrono::steady_clock::duration pollingRate = std::chrono::milliseconds(32);   // 30 FPS
 
                 /**
                  * @brief Represents a TCP connection for sending and receiving data.

@@ -164,7 +164,7 @@ namespace GGUI{
                 INTERNAL::remember([](std::vector<converter::output::event::memory>& rememberable){
                     rememberable.push_back(
                         converter::output::event::memory(
-                            TIME::SECOND,
+                            std::chrono::seconds(1),
                             updateStats,
                             converter::output::event::memory::types::RETRIGGER,
                             "Update Stats"

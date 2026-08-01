@@ -5,13 +5,17 @@
 #include <sys/uio.h> // Needed for writev
 #include <sys/fcntl.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <errno.h>
 #include <cstring>
 #include <poll.h>
 
 #include "../utils/logger.h"
-#include "../utils/constants.h"
+#include "../utils/settings.h"
+
 #include "terminal.h"
+
+#include "../core.h"
 
 namespace GGUI {
     namespace terminal {
@@ -75,12 +79,52 @@ namespace GGUI {
             output.update(outHandle);
         }
 
+        IVector2 getScreenDimensions() {
+            struct winsize w;
+            if (ioctl(output.handle, TIOCGWINSZ, &w) == -1) {
+                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to get window size: " + std::string(strerror(errno)));
+                return { 0, 0 }; // Return a default size on error
+            }
+            return { w.ws_col, w.ws_row };
+        }
+
+        // Updates main dom and terminal.screen.dimensions
+        void updateScreenDimensions() {
+            IVector2 newSize = getScreenDimensions();
+            
+            // Update terminal backend
+            currentStates->screen.dimensions = newSize;
+
+            // Notify the renderer of change
+            getRoot()->setDimensions(newSize.x, newSize.y);
+        }
+
+        void setAutomaticScreenResizeHandler() {
+            // Create a sigaction for window resize
+            struct sigaction resizeHandler;
+
+            resizeHandler.sa_handler = [](int) {
+                updateScreenDimensions();
+            };
+
+            sigemptyset(&resizeHandler.sa_mask);    // Clears any other handler which could potentially hinder this handler.
+
+            resizeHandler.sa_flags = 0;              // Since sigaction flags does not get auto constructed, we need to clean it.
+
+            if (sigaction(SIGWINCH, &resizeHandler, nullptr) == -1) {
+                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to set SIGWINCH handler: " + std::string(strerror(errno)));
+            }
+        }
+
         void platformInit() {
             // By default we route to the standard streams, but this can be changed by calling routeTo with custom paths and flags.
             routeTo(
                 { "/dev/stdin",  0 },   // Input route
                 { "/dev/stdout", 0 }    // Output route
             );
+
+            // Set up automatic screen resize handling
+            setAutomaticScreenResizeHandler();
         }
 
         // Default deinit (NOP)
@@ -102,7 +146,7 @@ namespace GGUI {
                 if (poll(
                     &pollFileDescriptor,
                     fileDescriptorCount,
-                    TIME::SECOND    // Max allowed wait time, could be replaced with -1, to wait as long as needed.
+                    SETTINGS::MAX_UPDATE_SPEED.count()
                 ) <= 0) {
                     // No data; avoid spinning
                     currentStates->transmission.inputSize = 0;

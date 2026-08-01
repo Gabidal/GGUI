@@ -16,6 +16,11 @@ namespace GGUI {
         bool enableGammaCorrection = false;
         bool enableDRM = false;
         
+        // Maximum allowed delay between passive event loop iterations.
+        std::chrono::steady_clock::duration MAX_UPDATE_SPEED = std::chrono::seconds(1);         // Default maximum delay of 1 second
+        // Close approximation to 60 FPS for minimum sleep (cannot be constexpr modified elsewhere).
+        std::chrono::steady_clock::duration MIN_UPDATE_SPEED = std::chrono::milliseconds(32);   // Default minimum delay of 32 milliseconds (approx. 60 FPS)
+        
         namespace LOGGER {
             std::string fileName = "";
         }

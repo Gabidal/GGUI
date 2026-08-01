@@ -54,6 +54,8 @@ namespace GGUI {
             void computeSGRAreas();
             void preparePresentationBuffer();
             void renderBuffer();
+            IVector2 getDimensions() const;
+            IVector2 getCursor() const;
         protected:
             std::pair<bool, ActiveStyle> trace(IVector2 point, element* currentContainer);
             size_t getIndexOf(IVector2) const;
@@ -61,6 +63,7 @@ namespace GGUI {
             // ===                  ===
             
             friend void INTERNAL::renderer();
+            friend void updateScreenDimensions();
         };
 
         struct query {
