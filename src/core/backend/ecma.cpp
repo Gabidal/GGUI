@@ -12,8 +12,6 @@ namespace GGUI {
             configuration::page C1(configuration::layout::functional::getRelativeFunctionalPageLayout(configuration::layout::functional::type::C1));
             configuration::page G0(configuration::layout::graphical::getRelativeGraphicalPageLayout(configuration::layout::graphical::type::B));
 
-            static configuration::manager pageState;
-
             std::pair<IVector2, IVector2> components::getPresentationDirectionAsVector() {
                 IVector2 linePath, characterPath;
 
@@ -208,10 +206,11 @@ namespace GGUI {
                         // We can skip ESC and set header to point into C1 if possible
                         if (table::is(input[i], table::C0::ESC)) {     // Now we can check if i+1 contains a C1 bytecode
                             i++;
-                        }
 
-                        result = parsePostfixForC0(input.substr(i));
-                        
+                            result = parsePostfixForC1(input.substr(i));
+                        } else {
+                            result = parsePostfixForC0(input.substr(i));
+                        }
                     } else if (table::contains<table::C1>(input[i])) { 
                         result = parsePostfixForC1(input.substr(i));
                     }
@@ -227,9 +226,9 @@ namespace GGUI {
 
                     for (size_t i = 0; i < input.size(); i++) {
                         // First check while temporary loads are active from previous loop
-                        auto pageCallReturn = pageState.interpret(input.substr(i));
+                        auto pageCallReturn = currentStates->ecmaComponents.pageManager.interpret(input.substr(i));
 
-                        pageState.update();     // refresh temporary pages
+                        currentStates->ecmaComponents.pageManager.update();     // refresh temporary pages
 
                         result.push_back(pageCallReturn.second);
 
@@ -310,6 +309,10 @@ namespace GGUI {
 
                 if (parsedArea.first == 0) return {0, nullptr};    // No progress, means no match, return null.
                 
+                // More complex sequences use multi stage sequencing. For an example: 7-bit CSI, which first starts with ESC which is from C0, but CSI is from C1
+                currentRepertoire = map[static_cast<uint8_t>(static_cast<sequence::prefix<>*>(parsedArea.second)->getValue())];
+                currentPage = pages[static_cast<size_t>(currentRepertoire)];
+
                 // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
                 currentCell = currentPage.get(parsedArea.second, parsedArea.second->getPostfix());
 
@@ -318,6 +321,16 @@ namespace GGUI {
 
                 // return the parsed area
                 return parsedArea;
+            }
+
+            // Loads the default pages, C0, C1 and G0
+            components::components() {
+                pageManager.add(C0, configuration::repertoire::C0);
+                pageManager.add(C1, configuration::repertoire::C1);
+                // pageManager.add(G0, configuration::repertoire::G0);
+
+                // Defaults to 7-bit mode of layout of pages
+                pageManager.flash(configuration::bitType::_7BIT);
             }
 
             namespace sequences {   TODO("add multi selectable types for parameters.")
@@ -329,7 +342,7 @@ namespace GGUI {
                     auto layoutType = configuration::layout::graphical::type::A;     TODO("Dynamically adjust this.")
 
                     void operateShift_LS0(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G0, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
                             configuration::lifetime::types::LOCKING
@@ -337,7 +350,7 @@ namespace GGUI {
                     }
 
                     void operateShift_LS1(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G1, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
                             configuration::lifetime::types::LOCKING
@@ -345,7 +358,7 @@ namespace GGUI {
                     }
 
                     void operateShift_SS2(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G2, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
                             configuration::lifetime::types::TEMPORARY
@@ -353,7 +366,7 @@ namespace GGUI {
                     }
 
                     void operateShift_SS3(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G3, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
                             configuration::lifetime::types::TEMPORARY
@@ -361,7 +374,7 @@ namespace GGUI {
                     }
 
                     void operateShift_LS1R(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G1, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
                             configuration::lifetime::types::LOCKING
@@ -369,7 +382,7 @@ namespace GGUI {
                     }
 
                     void operateShift_LS2(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G2, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
                             configuration::lifetime::types::LOCKING
@@ -377,7 +390,7 @@ namespace GGUI {
                     }
 
                     void operateShift_LS2R(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G2, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
                             configuration::lifetime::types::LOCKING
@@ -385,7 +398,7 @@ namespace GGUI {
                     }
 
                     void operateShift_LS3(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G3, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType), 
                             configuration::lifetime::types::LOCKING
@@ -393,7 +406,7 @@ namespace GGUI {
                     }
 
                     void operateShift_LS3R(sequence::base*) {
-                        pageState.load(
+                        currentStates->ecmaComponents.pageManager.load(
                             configuration::repertoire::G3, 
                             configuration::layout::graphical::getRelativeGraphicalPageLayout(layoutType).to8bit(), 
                             configuration::lifetime::types::LOCKING

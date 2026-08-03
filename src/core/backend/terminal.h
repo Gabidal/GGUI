@@ -78,9 +78,14 @@ namespace GGUI {
             std::condition_variable condition;
             enum class status : uint8_t {
                 NONE,
+                CONNECTED,      // Check if above this state for approved polling/writing to I/O
                 SENDING,
                 RECEIVING
             } state = status::NONE;
+
+            bool isConnected();
+
+            void acknowledgeConnection();
 
             /** 
              * @brief This is the normal interface to access the direct device output. 
@@ -110,7 +115,7 @@ namespace GGUI {
 
             query transmission;
 
-            base(converter::input::base* reg) : keyRegistry(reg) {}
+            base(converter::input::base* reg);
 
             void parseInput();
 

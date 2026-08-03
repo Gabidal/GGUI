@@ -21,6 +21,8 @@ namespace GGUI {
 
         extern void updateScreenDimensions(); // Platform Specific
 
+        extern bool isConnected();          // Platform Specific
+
 
         size_t outputCapture::getActiveIndex() const {
             return (cursor.y * dimensions.x) + cursor.x;
@@ -237,6 +239,18 @@ namespace GGUI {
             buffer = dom->render();
         }
 
+        bool query::isConnected() {
+            return state >= status::CONNECTED;
+        }
+
+        void query::acknowledgeConnection() {
+            if (terminal::isConnected()) {      // asks the linux/win .cpp if the handles are connected properly
+                std::unique_lock lock(mutex);
+                state = status::CONNECTED;
+                condition.notify_all();
+            }
+        }
+
         void query::addToQueue(std::string_view input) {
             {
                 std::unique_lock lock(mutex);
@@ -261,10 +275,15 @@ namespace GGUI {
         bool query::waitForInput() {
             std::unique_lock lock(mutex);
             // Only wait for some time and not stall
-            condition.wait_for(lock, std::chrono::seconds(1), [&](){ return state == status::RECEIVING; });
+            condition.wait(lock, [&](){ return state == status::RECEIVING; });
 
             // check if timeout or successful
             return state == status::RECEIVING;
+        }
+
+
+        base::base(converter::input::base* reg) : keyRegistry(reg) {
+            
         }
 
         void base::enableExtensions() {                
@@ -293,6 +312,9 @@ namespace GGUI {
             // connect to I/O
             platformInit();
 
+            // Check whether the platform specific connection was established correctly.
+            currentStates->transmission.acknowledgeConnection();
+
             // Start probing connection features
             currentStates->enableExtensions();
 
@@ -315,10 +337,10 @@ namespace GGUI {
             for (auto sequence : ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize))) {
 
                 // This is likely redundant, since all operations have their own handler to process the functionality of the specific operation
-                switch (sequence->getType()) {
-                    default:
-                        break;
-                }
+                // switch (sequence->getType()) {
+                //     default:
+                //         break;
+                // }
             }
         }
     }

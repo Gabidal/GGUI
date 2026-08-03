@@ -11,7 +11,6 @@
 #include <poll.h>
 
 #include "../utils/logger.h"
-#include "../utils/settings.h"
 
 #include "terminal.h"
 
@@ -46,8 +45,13 @@ namespace GGUI {
                         GGUI::INTERNAL::LOGGER::log("ERROR: Failed to get terminal attributes: " + std::string(strerror(errno)));
                     }
 
-                    // since we have our own control sequence parsing we need the line discipline to be raw
+                    // Since we have our own control sequence parsing we need the line discipline to be raw
                     cfmakeraw(&state);
+
+                    // Since cfmakeraw does not push the update, we need to push it manually:
+                    if (tcsetattr(handle, TCSANOW, &state) < 0) {
+                        GGUI::INTERNAL::LOGGER::log("ERROR: Failed to set terminal attributes: " + std::string(strerror(errno)));
+                    }
                 }
             }
         } 
@@ -127,34 +131,38 @@ namespace GGUI {
             setAutomaticScreenResizeHandler();
         }
 
+        // Used from outside linux.cpp to ask regardless of platform type, whether the connection was established correctly
+        bool isConnected() {
+            return input.handle != device::CLOSED_HANDLE && output.handle != device::CLOSED_HANDLE;
+        }
+
         // Default deinit (NOP)
         void platformDeinit() {}
 
         // Here we translate the linux specific termios and API it back via the terminal::transmission data
         void queryInput() {
-            // If stdin isn't a TTY (e.g., piped/timeout), read() may return 0 (EOF) repeatedly; avoid spinning.
-            if (!isatty(input.handle)) {
-                // Use poll to wait briefly for readability; if not readable, sleep a bit to avoid busy-loop.
-                struct pollfd pollFileDescriptor = {
-                    input.handle,
-                    POLLIN,
-                    0
-                };
+            // Use poll to wait briefly for readability; if not readable, sleep a bit to avoid busy-loop.
+            struct pollfd pollFileDescriptor = {
+                input.handle,
+                POLLIN,
+                0
+            };
 
-                constexpr nfds_t  fileDescriptorCount = 1;
+            constexpr nfds_t  fileDescriptorCount = 1;
 
-                if (poll(
-                    &pollFileDescriptor,
-                    fileDescriptorCount,
-                    SETTINGS::MAX_UPDATE_SPEED.count()
-                ) <= 0) {
-                    // No data; avoid spinning
-                    currentStates->transmission.inputSize = 0;
-                    return;
-                }
+            if (poll(
+                &pollFileDescriptor,
+                fileDescriptorCount,
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(10)).count()
+            ) <= 0) {
+                // No data; avoid spinning
+                currentStates->transmission.inputSize = 0;
+                
+                GGUI::INTERNAL::LOGGER::log("poll timeout!");
+                return;
             }
 
-            currentStates->transmission.inputSize = read(input.handle, currentStates->transmission.inputBuffer.begin(), currentStates->transmission.capacity);
+            currentStates->transmission.inputSize = read(input.handle, currentStates->transmission.inputBuffer.data(), currentStates->transmission.capacity);
             if (currentStates->transmission.inputSize <= 0) {
                 // EOF or error; normalize to 0 to signal no input
                 currentStates->transmission.inputSize = 0;
@@ -173,9 +181,15 @@ namespace GGUI {
                 totalSize += str.size();
             }
 
+            GGUI::INTERNAL::LOGGER::log("sending bytes...");
             ssize_t wrote = writev(output.handle, vec.data(), vec.size());
             if (wrote != totalSize) {
                 GGUI::INTERNAL::LOGGER::log("Failed to fully write to: '" + std::to_string(output.handle) + "' (wrote " + std::to_string(wrote) + " of " + std::to_string(totalSize) + ")");
+            }
+
+            // force the PTY to flush our bytes
+            if (tcdrain(output.handle) < 0) {
+                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to drain terminal output: " + std::string(strerror(errno)));
             }
         }
     }

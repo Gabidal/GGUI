@@ -84,27 +84,39 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
     // Concatenate headers
     // =========================================================================
     for (const std::string& rel_path : Header_Files_In_Order) {
-        std::string file_path = (std::filesystem::path(source_root) / rel_path).string();
-        std::ifstream File(file_path);
+        std::filesystem::path full_path = std::filesystem::path(source_root) / rel_path;
+        std::ifstream File(full_path);
+
+        // Use generic_string() to force '/' slashes. Backslashes in #line paths 
+        // cause compiler errors as they are treated as escape characters!
+        std::string safe_file_path = full_path.generic_string();
+
 
         if (!File.is_open()) {
-            std::cout << "Warning: Could not open file: " << file_path << std::endl;
+            std::cout << "Warning: Could not open file: " << safe_file_path << std::endl;
             continue;
         }
 
         std::string Line;
         bool in_ignored_block = false;
+        int original_line_number = 0;
+        bool needs_line_directive = true;
+
         while (std::getline(File, Line)) {
+            original_line_number++;
+
             // Ignore marked regions when configured to do so
             if (ignore_autogen) {
                 if (in_ignored_block) {
                     if (Line.find("autoGen: Ignore end") != std::string::npos) {
                         in_ignored_block = false;
                     }
+                    needs_line_directive = true; // We skipped a line, need to resync
                     continue;
                 } else {
                     if (Line.find("autoGen: Ignore start") != std::string::npos) {
                         in_ignored_block = true;
+                        needs_line_directive = true; // We skipped a line, need to resync
                         continue;
                     }
                 }
@@ -112,7 +124,15 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
 
             // Skip local includes of project headers
             if (Line.find("#include \"") != std::string::npos && Line.find(".h\"") != std::string::npos) {
+                needs_line_directive = true; // We skipped an include, need to resync
                 continue;
+            }
+
+            // If we are writing the first line of the file, OR we just skipped lines, 
+            // inject the #line directive to tell the compiler where we are.
+            if (needs_line_directive) {
+                Output << "#line " << original_line_number << " \"" << safe_file_path << "\"\n";
+                needs_line_directive = false; // Reset until the next time we skip a line
             }
 
             Output << Line << "\n";

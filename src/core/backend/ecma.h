@@ -1339,10 +1339,10 @@ namespace GGUI {
                         });
 
                         // Load G0
-                        pages[static_cast<size_t>(repertoire::G0)].load({
-                            layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A),
-                            lifetime::types::LOCKING
-                        });
+                        // pages[static_cast<size_t>(repertoire::G0)].load({
+                        //     layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A),
+                        //     lifetime::types::LOCKING
+                        // });
 
                         enableC1(mode); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
 
@@ -1366,8 +1366,6 @@ namespace GGUI {
                             location,
                             lifetime::types::LOCKING
                         });
-                        
-                        flush();
                     }
 
                     /**
@@ -2100,6 +2098,8 @@ namespace GGUI {
                 // This is primarily adjusted by the terminal after noticing a correctly parsed sequence.
                 bool enabled = false;
 
+                configuration::manager pageManager;
+
                 /**
                  * Data component moves in the page space, presentation component is the window to this page space
                  * 
@@ -2205,6 +2205,9 @@ namespace GGUI {
                 std::vector<ecma::activeSGRStyle> registeredGraphicAttributes;
 
                 ancillaryStates powerStatus = ancillaryStates::UNKNOWN;
+
+                // Loads the default pages, C0, C1 and G0
+                components();
 
                 void reset() {
                     activePageIndex = 0;

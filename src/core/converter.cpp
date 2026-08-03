@@ -36,8 +36,8 @@ namespace GGUI {
                     if (SETTINGS::enableDRM) {
                         INTERNAL::DRM::pollInputs();
                     }
-                    else if (!terminal::currentStates) {    // platform initialization is still in progress
-                        std::this_thread::sleep_for(SETTINGS::MIN_UPDATE_SPEED);
+                    else if (!terminal::currentStates || !terminal::currentStates->transmission.isConnected()) {    // platform initialization is still in progress
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
                         continue;
                     }
                     else {
