@@ -39,7 +39,9 @@ namespace GGUI {
 
                             if (params.size() == 1) {   // This is the request for identification, which is already implemented in the ecma.cpp, so we can just reroute into there.
                                 ecma::sequences::miscellaneousControlFunctions::operate_DEVICE_ATTRIBUTES(input);
-                            } else if (params.size() == 2) {
+                            } else if (params.size() == 2 && params.front().hasSecondaries()) {
+                                auto identifier = params.front().getPrimaryValueAndSecondaries();
+
                                 currentStates->decComponents.VT100Components.activeDeviceAttributes = params.back().getValueAsInteger();
 
                                 currentStates->decComponents.VT100Components.enabled = true;

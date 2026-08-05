@@ -173,6 +173,10 @@ namespace GGUI {
                     return val & 0x7F;
                 }
 
+                constexpr uint8_t enableHighestBit(uint8_t val) {
+                    return val | 0x80;
+                }
+
                 enum class finalWithoutIntermediate : uint8_t {   // Table 3 Final Bytes of control sequences without Intermediate Bytes 
                     __min = toInt(4, 0),  // For internal automation
 
@@ -358,7 +362,7 @@ namespace GGUI {
                         }
 
                         constexpr bool in(uint8_t val) const {
-                            return val >= lower.compute() && val <= upper.compute();    // Both have equals, because of single shift load pages.
+                            return val >= lower.compute() && val <= upper.compute();
                         }
 
                         constexpr bool contains(bounds&& other) const {
@@ -444,12 +448,17 @@ namespace GGUI {
                 namespace parameter {
                     template<typename containerType>
                     class base {
+                    public:
+                        enum class types : uint8_t {
+                            NUMBER,
+                            LETTER,
+                        };
                     protected:
-                        std::vector<containerType> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
+                        std::vector<std::pair<containerType, types>> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
                     public:
                         base() = default;
-                        base(std::vector<containerType> values) : subNumbers(values) {}
-                        base(containerType value) : subNumbers({value}) {}
+                        base(const std::vector<std::pair<containerType, types>>& values) : subNumbers(values) {}
+                        base(containerType value) : subNumbers({{value, types::NUMBER}}) {}
 
                         /**
                          * As stated by 5.4.2.b, f, g and h
@@ -473,12 +482,12 @@ namespace GGUI {
 
                                     if (currentChar == (uint8_t)table::parameters::FRACTION) { // 03/10 ':'
                                         if (has_digit) {
-                                            subNumbers.push_back(static_cast<containerType>(currentNumber - (uint8_t)table::parameters::ZERO));
+                                            subNumbers.push_back({static_cast<containerType>(currentNumber), types::NUMBER});
                                         } else {
-                                            subNumbers.push_back(static_cast<containerType>(0)); // empty sub-string -> default / zero
+                                            subNumbers.push_back({static_cast<containerType>(0), types::NUMBER}); // empty sub-string -> default / zero
                                         }
                                     } else {    // Special parameter values like '?'
-                                        subNumbers.push_back(currentChar - (uint8_t)table::parameters::ZERO);
+                                        subNumbers.push_back({currentChar, types::LETTER});
                                     }
 
                                     // Reset
@@ -496,11 +505,11 @@ namespace GGUI {
                             }
 
                             if (has_digit) {
-                                subNumbers.push_back(static_cast<containerType>(currentNumber));
+                                subNumbers.push_back({static_cast<containerType>(currentNumber), types::NUMBER});
                                 // length++;    <-- no need to increase it since the loop which gathered these numbers already accounts the length.
                                 return;
                             } else {    // Trailing 03/10 (':'), stated by section f, needs to have a trailing zero.
-                                subNumbers.push_back(static_cast<containerType>(0));
+                                subNumbers.push_back({static_cast<containerType>(0), types::NUMBER});
                                 length++;
                             }
                         }
@@ -511,7 +520,11 @@ namespace GGUI {
 
                             for (size_t i = 0; i < subNumbers.size(); i++) {
                                 // we need to convert the values to visible numbers
-                                result += std::to_string((int)subNumbers[i]);
+                                if (subNumbers[i].second == types::NUMBER) {
+                                    result += std::to_string((int)subNumbers[i].first);
+                                } else {
+                                    result += static_cast<char>(subNumbers[i].first);
+                                }
                                 
                                 // check if this isn't the last index, if so add the fraction
                                 if (i != subNumbers.size() - 1) {
@@ -524,8 +537,11 @@ namespace GGUI {
 
                         void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const {
                             for (size_t i = 0; i < subNumbers.size(); i++) {
-                                // we need to convert the values to visible numbers
-                                preAllocated.add((uint16_t)subNumbers[i]);
+                                if (subNumbers[i].second == types::NUMBER) {
+                                    preAllocated.add((uint16_t)subNumbers[i].first);
+                                } else {
+                                    preAllocated.add(static_cast<char>(subNumbers[i].first));
+                                }
                                 
                                 // check if this isn't the last index, if so add the fraction
                                 if (i != subNumbers.size() - 1) {
@@ -545,8 +561,8 @@ namespace GGUI {
                             }
                         }
 
-                        containerType getValueAsInteger() const { return subNumbers.front(); }
-                        std::vector<containerType> getPrimaryValueAndSecondaries() const { return subNumbers; }
+                        containerType getValueAsInteger() const { return subNumbers.front().first; }
+                        std::vector<std::pair<containerType, types>> getPrimaryValueAndSecondaries() const { return subNumbers; }
 
                         bool hasSecondaries() const { return subNumbers.size() > 1; }
 
@@ -554,11 +570,16 @@ namespace GGUI {
                             size_t result = 0;
 
                             for (const auto& i : subNumbers) {
-                                result += std::floor(
-                                    std::log10(
-                                        std::max( static_cast<int>(i), 1 )
-                                    ) + 1
-                                );
+
+                                if (i.second == types::NUMBER) {
+                                    result += std::floor(
+                                        std::log10(
+                                            std::max( static_cast<int>(i.first), 1 )
+                                        ) + 1
+                                    );
+                                } else {
+                                    result += 1;    // one character for one letter
+                                }
                             }
 
                             // now add the fraction separator
@@ -1165,8 +1186,18 @@ namespace GGUI {
 
                         assert(intermediateOffset.row < pageDepth);    // Check that the intermediate value is within the page depth
 
-                        const size_t headerByteRelativeLocationInPage = location(header.getAsInt()).getRelative().compute();
+                        size_t headerByteRelativeLocationInPage = header.getAsInt();
+
+                        if (!status.range.in(headerByteRelativeLocationInPage)) {
+                            headerByteRelativeLocationInPage = table::shiftColumns(
+                                static_cast<uint8_t>(headerByteRelativeLocationInPage),
+                                table::columns::FOUR
+                            );
+                        }
+
                         assert(status.range.in(headerByteRelativeLocationInPage));    // Check that the header byte is within the loaded area 
+
+                        headerByteRelativeLocationInPage -= status.range.getLower().compute();
 
                         const size_t finalFunctionOffset = body.getFinalByte();
                         assert(finalFunctionOffset < pageWidth);       // Check that the final function is within the page width
@@ -1339,10 +1370,10 @@ namespace GGUI {
                         });
 
                         // Load G0
-                        // pages[static_cast<size_t>(repertoire::G0)].load({
-                        //     layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A),
-                        //     lifetime::types::LOCKING
-                        // });
+                        pages[static_cast<size_t>(repertoire::G0)].load({
+                            layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A),
+                            lifetime::types::LOCKING
+                        });
 
                         enableC1(mode); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
 
@@ -1359,7 +1390,7 @@ namespace GGUI {
 
                         layout::bounds location = layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
 
-                        if (mode == bitType::_8BIT) location.to8bit();
+                        if (mode == bitType::_8BIT) location = location.to8bit();
 
                         // Load and override the columns where 8-bit C1 overlaps with the 8-bit graphical set
                         pages[static_cast<size_t>(repertoire::C1)].load({

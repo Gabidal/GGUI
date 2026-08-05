@@ -334,13 +334,10 @@ namespace GGUI {
             // Parses input based on modular features, each brought by their own respective flag.
 
             // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
-            for (auto sequence : ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize))) {
+            for (auto* sequence : ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize))) {
 
                 // This is likely redundant, since all operations have their own handler to process the functionality of the specific operation
-                // switch (sequence->getType()) {
-                //     default:
-                //         break;
-                // }
+                if (sequence) INTERNAL::LOGGER::log(sequence->toString());
             }
         }
     }

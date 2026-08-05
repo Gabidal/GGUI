@@ -84,12 +84,15 @@ namespace GGUI {
                     std::vector<size_t> delimeterIndicies;
 
                     // First fetch all delimeter indicies
-                    for (size_t i = 0; i < input.size(); i++) if ((table::parameters)input[i] == table::parameters::SEPARATOR) delimeterIndicies.push_back(i);
+                    for (size_t i = 0; i < input.size(); i++) if ((table::parameters)input[i] == table::parameters::SEPARATOR || i == 0) delimeterIndicies.push_back(i);
 
                     // now we can loop through the indicies and pair each [i, i+1], and create parameters
                     for (size_t i = 0; i < delimeterIndicies.size(); i++) {
                         size_t start = delimeterIndicies[i];
                         size_t end = i == delimeterIndicies.size() - 1 ? input.size() : delimeterIndicies[i + 1];
+
+                        // Some systems put '?' or other marks without the proper delimeter so we need to look out for those:
+                        if ((table::parameters)input[start] != table::parameters::SEPARATOR) start -= 1;
 
                         size_t tmp = 0;     // Useless in this case, since we already know the sizes.
                         result.push_back({
@@ -155,7 +158,7 @@ namespace GGUI {
 
                         // Check if there are any parameters present
                         if (earliestNonParametricIndex != 0) {
-                            params = parseParameterSequence(input.substr(earliestNonParametricIndex - 1));
+                            params = parseParameterSequence(input.substr(earliestNonParametricIndex));
                         }
 
                         return {
@@ -304,13 +307,19 @@ namespace GGUI {
                 configuration::cell currentCell = currentPage.get(input.front());
 
                 // Call the sequence parser
-                // auto parsedArea = currentCell.parser(input);
                 auto parsedArea = sequence::defaultSequenceParser(input);
 
                 if (parsedArea.first == 0) return {0, nullptr};    // No progress, means no match, return null.
                 
+                // Remove this sub-section when the correct memory layout with re-directs has been implemented:
+                auto newHeader = static_cast<sequence::prefix<>*>(parsedArea.second)->getValue();
+                if (newHeader != static_cast<uint8_t>(input.front())) {
+                    // enable the most significant bit to force re-direct toi 8-bit layout for C1
+                    newHeader = table::shiftColumns(newHeader, table::columns::FOUR);
+                }
+
                 // More complex sequences use multi stage sequencing. For an example: 7-bit CSI, which first starts with ESC which is from C0, but CSI is from C1
-                currentRepertoire = map[static_cast<uint8_t>(static_cast<sequence::prefix<>*>(parsedArea.second)->getValue())];
+                currentRepertoire = map[newHeader];
                 currentPage = pages[static_cast<size_t>(currentRepertoire)];
 
                 // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
@@ -327,10 +336,10 @@ namespace GGUI {
             components::components() {
                 pageManager.add(C0, configuration::repertoire::C0);
                 pageManager.add(C1, configuration::repertoire::C1);
-                // pageManager.add(G0, configuration::repertoire::G0);
+                pageManager.add(G0, configuration::repertoire::G0);
 
                 // Defaults to 7-bit mode of layout of pages
-                pageManager.flash(configuration::bitType::_7BIT);
+                pageManager.flash(configuration::bitType::_8BIT);   TODO("Fix the page memory layout to actually support re-directs instead of forcing C1 as 8-bit layout!")
             }
 
             namespace sequences {   TODO("add multi selectable types for parameters.")
@@ -1566,7 +1575,7 @@ namespace GGUI {
 
                         auto params = controlSequence->getParameters();
 
-                        assert(params.size() == 1);
+                        if (params.size() > 1) return;
 
                         auto deviceType = params.back().getValueAsInteger();
 
