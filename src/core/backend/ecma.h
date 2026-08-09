@@ -782,7 +782,7 @@ namespace GGUI {
                 public:
                     postfix<postfixType> tail;
 
-                    function(postfix<postfixType> Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail(Tail) {}
+                    function(postfix<postfixType> Tail) = delete;   // Independent functions don't have intermediates!
                     function(postfixType Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail({}, Tail) {}
 
                     postfix<> getPostfix() const override {
@@ -1108,15 +1108,16 @@ namespace GGUI {
                  * These repertoires define the different character sets that can be loaded
                  * and managed by the ECMA-35 terminal emulator. Each repertoire represents
                  * a distinct character coding namespace.
+                 * NOTE: C1 is temporarily loaded via C0::ESC, for flushing put G0 before C1 flushing. When custom G is loaded C1 wont be there to be in the way anyway.
                 */
                 enum class repertoire : uint8_t {
-                    C0,        // Contains C0 repertoires
-                    C1,        // Contains C1 repertoires
-
                     G0,         // LS0, Primary character set (typically ASCII)
                     G1,         // LS1, LS1R, Graphic set 1 (left-side)
                     G2,         // LS2, SS2, LS2R, Graphic set 2 (left-side)
                     G3,         // LS3, SS3, LS3R, Graphic set 3 (left-side)
+
+                    C0,        // Contains C0 repertoires
+                    C1,        // Contains C1 repertoires
 
                     __max,       // Sentinel value for array sizing
                 };
@@ -1132,7 +1133,8 @@ namespace GGUI {
                     enum class types : uint8_t {
                         UNLOADED,
                         LOCKING,
-                        TEMPORARY
+                        TEMPORARY,
+                        TO_UNLOAD   // Gives grace period for TEMPORARILY loaded pages one turn.
                     };
                     
                     struct base {
@@ -1187,13 +1189,6 @@ namespace GGUI {
                         assert(intermediateOffset.row < pageDepth);    // Check that the intermediate value is within the page depth
 
                         size_t headerByteRelativeLocationInPage = header.getAsInt();
-
-                        if (!status.range.in(headerByteRelativeLocationInPage)) {
-                            headerByteRelativeLocationInPage = table::shiftColumns(
-                                static_cast<uint8_t>(headerByteRelativeLocationInPage),
-                                table::columns::FOUR
-                            );
-                        }
 
                         assert(status.range.in(headerByteRelativeLocationInPage));    // Check that the header byte is within the loaded area 
 
@@ -1262,10 +1257,14 @@ namespace GGUI {
                         * The page will no longer be active for character operations.
                         */
                     constexpr void unload() {
-                        load({
-                            {0, 0},
-                            lifetime::types::UNLOADED
-                        });
+                        if (status.type == lifetime::types::TEMPORARY) {
+                            status.type = lifetime::types::TO_UNLOAD;   // Give a grace period for TEMPORARY pages to be unloaded on the next read cycle.
+                        } else if (status.type == lifetime::types::TO_UNLOAD) {
+                            load({
+                                {0, 0},
+                                lifetime::types::UNLOADED
+                            });
+                        }
                     }
 
                     /**
@@ -1408,9 +1407,7 @@ namespace GGUI {
                         flush();    // Flush current iteration of temporaries and other goodies, next iteration after interpretation temporary is unloaded fully.
 
                         for (auto& p : pages) {
-                            if (p.getLifetime().type == lifetime::types::TEMPORARY) {
-                                p.unload(); // When this is UNLOADED, the flush() will override this slot with the new value automatically.
-                            }
+                            p.unload(); // Affects temporary and to be unloaded pages only!
                         }
                     }
 
@@ -1421,13 +1418,13 @@ namespace GGUI {
                     constexpr void flush() {
                         // Go through the pages
                         for (size_t i = 0; i < static_cast<size_t>(repertoire::__max); i++) {
-                            auto& page = pages[i];
+                            auto* page = &pages[i];
                             
                             // Skip unloaded
-                            if (page.getLifetime().type == lifetime::types::UNLOADED) continue;
+                            if (page->getLifetime().type == lifetime::types::UNLOADED) continue;
 
                             // Fetch loaded section
-                            auto [lower, upper] = page.getLifetime().range.get();
+                            auto [lower, upper] = page->getLifetime().range.get();
 
                             // Write the loaded section to the map
                             for (size_t j = lower; j <= upper; j++) {
@@ -2440,6 +2437,8 @@ namespace GGUI {
                 };
 
                 namespace introducers {
+                    extern void operateEscapeToLoadC1(sequence::base*);
+
                     /**
                      * @brief CSI is used as the first character of a control sequence.
                      * @example `09/11` or `01/11 05/11`
@@ -2451,7 +2450,7 @@ namespace GGUI {
                      * following it in the data stream to be changed. 
                      * @example `01/11`
                      */
-                    inline auto ESCAPE = base<sequence::prefix<table::C0>>(table::C0::ESC);
+                    inline auto ESCAPE = base<sequence::prefix<table::C0>>(table::C0::ESC, {}, {operateEscapeToLoadC1});
 
                     /**
                      * @brief SCI and the bit combination following it are used to represent a control function or a graphic character.

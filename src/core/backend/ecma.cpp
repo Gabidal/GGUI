@@ -176,29 +176,27 @@ namespace GGUI {
                     }
                 }
 
+                std::pair<size_t, sequence::base*> parseIndependentFunctions(std::string_view input) {
+                    if (input.size() <= 1)  return {0, nullptr};
+                    else if (static_cast<table::C0>(input.front()) != table::C0::ESC) return {0, nullptr};
+                    else if (!table::contains<table::independentFunctions>(input[1])) return {0, nullptr};
+
+                    sequence::function<table::independentFunctions>* result = new sequence::function<table::independentFunctions>(static_cast<table::independentFunctions>(input[1]));
+
+                    return {1 + 1, result};
+                }
+
                 std::pair<size_t, sequence::base*> parsePostfixForC0(std::string_view input) {
-                    table::C0 header = static_cast<table::C0>(input.front());
+                    // First try independent function sequence matching
+                    auto [independentSize, independentSequence] = parseIndependentFunctions(input);
 
-                    if (header == table::C0::ESC) { // Proceeding bytes cannot be that of CSI, since it would have been captured at the previous parsing stage.
+                    if (independentSize != 0) return {independentSize, independentSequence};
 
-                        size_t startOfIntermediates = 1;
+                    if (!table::contains<table::C0>(input.front())) return {0, nullptr};
 
-                        // Parse intermediates
-                        std::vector<table::intermediate::identifiers> intermediates = parseintermediates(input.substr(startOfIntermediates));
-
-                        sequence::function<table::independentFunctions>* result = new sequence::function<table::independentFunctions>({
-                            intermediates,
-                            static_cast<table::independentFunctions>(input.at(startOfIntermediates + intermediates.size()))
-                        });
-
-                        return {
-                            startOfIntermediates + intermediates.size(),
-                            result
-                        };
-
-                    } else {    TODO("Implement parsing for other C0 sequences.");
-                        return {0, nullptr};
-                    }
+                    TODO("This could be wrong!")
+                    // Assume C0 to be single byte sequence.
+                    return {1, new sequence::prefix<table::C0>(static_cast<table::C0>(input.front()))};
                 }
 
                 std::pair<size_t, sequence::base*> defaultSequenceParser(std::string_view input) {
@@ -206,14 +204,8 @@ namespace GGUI {
                     size_t i = 0;
 
                     if (table::contains<table::C0>(input[i])) {
-                        // We can skip ESC and set header to point into C1 if possible
-                        if (table::is(input[i], table::C0::ESC)) {     // Now we can check if i+1 contains a C1 bytecode
-                            i++;
-
-                            result = parsePostfixForC1(input.substr(i));
-                        } else {
-                            result = parsePostfixForC0(input.substr(i));
-                        }
+                        // NOTE: for ESC + complex patterns GGUI sees them as two separate sequences, it uses ESC to load C1 layout for the following sequence to jump into.
+                        result = parsePostfixForC0(input.substr(i));
                     } else if (table::contains<table::C1>(input[i])) { 
                         result = parsePostfixForC1(input.substr(i));
                     }
@@ -227,17 +219,17 @@ namespace GGUI {
                 std::vector<sequence::base*> parse(std::string_view input) {
                     std::vector<sequence::base*> result;
 
-                    for (size_t i = 0; i < input.size(); i++) {
+                    for (size_t i = 0; i < input.size();) {
                         // First check while temporary loads are active from previous loop
-                        auto pageCallReturn = currentStates->ecmaComponents.pageManager.interpret(input.substr(i));
+                        auto [parsedLength, parsedSequence] = currentStates->ecmaComponents.pageManager.interpret(input.substr(i));
 
-                        currentStates->ecmaComponents.pageManager.update();     // refresh temporary pages
+                        currentStates->ecmaComponents.pageManager.update(); // refresh temporary pages
 
-                        result.push_back(pageCallReturn.second);
+                        result.push_back(parsedSequence);
 
-                        currentStates->ecmaComponents.currentParsingSequenceIndex++;     // Only for META operators
+                        currentStates->ecmaComponents.currentParsingSequenceIndex++;    // Only for META operators
 
-                        i += pageCallReturn.first;      TODO("check for maybe adding -1, since the loop increases 'i' either way.")
+                        i += std::max(parsedLength, (size_t)1); // Safe skip graphic characters
 
                         TODO("there is a possibility that we need to put the Active Data Position to be incremented here as the index does.")
                     }
@@ -302,34 +294,20 @@ namespace GGUI {
             std::pair<size_t, sequence::base*> configuration::manager::interpret(std::string_view input) {
                 auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
                 auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
-
-                // Jump through and fetch the page cell
-                configuration::cell currentCell = currentPage.get(input.front());
-
-                // Call the sequence parser
-                auto parsedArea = sequence::defaultSequenceParser(input);
-
-                if (parsedArea.first == 0) return {0, nullptr};    // No progress, means no match, return null.
                 
-                // Remove this sub-section when the correct memory layout with re-directs has been implemented:
-                auto newHeader = static_cast<sequence::prefix<>*>(parsedArea.second)->getValue();
-                if (newHeader != static_cast<uint8_t>(input.front())) {
-                    // enable the most significant bit to force re-direct toi 8-bit layout for C1
-                    newHeader = table::shiftColumns(newHeader, table::columns::FOUR);
-                }
-
-                // More complex sequences use multi stage sequencing. For an example: 7-bit CSI, which first starts with ESC which is from C0, but CSI is from C1
-                currentRepertoire = map[newHeader];
-                currentPage = pages[static_cast<size_t>(currentRepertoire)];
+                // Call the sequence parser
+                auto [parsedLength, parsedSequence] = sequence::defaultSequenceParser(input);
+                
+                if (parsedLength == 0) return {0, nullptr};    // No progress, means no match, return null.
 
                 // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
-                currentCell = currentPage.get(parsedArea.second, parsedArea.second->getPostfix());
+                configuration::cell currentCell = currentPage.get(parsedSequence, parsedSequence->getPostfix());
 
                 // Call the functionality given by the parser
-                currentCell.handler(parsedArea.second);
+                currentCell.handler(parsedSequence);
 
-                // return the parsed area
-                return parsedArea;
+                // return the parsed
+                return {parsedLength, parsedSequence};
             }
 
             // Loads the default pages, C0, C1 and G0
@@ -338,14 +316,23 @@ namespace GGUI {
                 pageManager.add(C1, configuration::repertoire::C1);
                 pageManager.add(G0, configuration::repertoire::G0);
 
-                // Defaults to 7-bit mode of layout of pages
-                pageManager.flash(configuration::bitType::_8BIT);   TODO("Fix the page memory layout to actually support re-directs instead of forcing C1 as 8-bit layout!")
+                // 7-bit layout is flashed during runtime with ESC as shift function.
+                pageManager.flash(configuration::bitType::_8BIT);
             }
 
             namespace sequences {   TODO("add multi selectable types for parameters.")
                 namespace delimiters {}
 
-                namespace introducers {}
+                namespace introducers {
+                    void operateEscapeToLoadC1(sequence::base*) {
+                        // Simplify memory loading where colliding cells with G0, by loading C1 page as temporary shifts
+                        currentStates->ecmaComponents.pageManager.load(
+                            configuration::repertoire::C1, 
+                            configuration::layout::functional::getRelativeFunctionalPageLayout(configuration::layout::functional::type::C1), 
+                            configuration::lifetime::types::TEMPORARY
+                        );
+                    }
+                }
 
                 namespace shiftFunctions {
                     auto layoutType = configuration::layout::graphical::type::A;     TODO("Dynamically adjust this.")
