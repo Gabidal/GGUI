@@ -157,8 +157,8 @@ namespace GGUI {
                         std::vector<sequence::parameter::numeric> params;
 
                         // Check if there are any parameters present
-                        if (earliestNonParametricIndex != 0) {
-                            params = parseParameterSequence(input.substr(earliestNonParametricIndex));
+                        if (earliestNonParametricIndex < finalFunctionAt) {
+                            params = parseParameterSequence(input.substr(earliestNonParametricIndex, finalFunctionAt - earliestNonParametricIndex));
                         }
 
                         return {
@@ -640,9 +640,9 @@ namespace GGUI {
                     }
 
                     void operate_TABULATION_CLEAR(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<sequences::formatEffectors::TABULATION_CLEAR::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence->convert<sequence::parameter::selectable<formatEffectors::TABULATION_CLEAR::types>>();
 
                         assert(params.size() == 1);
 
@@ -830,9 +830,9 @@ namespace GGUI {
                     }
 
                     void operate_FONT_SELECTION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<fontSlots>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence->convert<sequence::parameter::selectable<fontSlots>>();
 
                         assert(params.size() == 2);
 
@@ -843,9 +843,9 @@ namespace GGUI {
                     }
 
                     void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<GRAPHIC_CHARACTER_COMBINATION::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence->convert<sequence::parameter::selectable<GRAPHIC_CHARACTER_COMBINATION::types>>();
 
                         assert(params.size() == 1);
 
@@ -947,9 +947,9 @@ namespace GGUI {
                     }
 
                     void operate_JUSTIFY(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<justify::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence->convert<sequence::parameter::selectable<justify::types>>();
 
                         assert(params.size() > 0);
 
@@ -978,9 +978,9 @@ namespace GGUI {
                     }
 
                     void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<spacingFactor::types>>*>(input);
-                    
-                        auto params = controlSequence->getParameters();
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+
+                        auto params = controlSequence->convert<sequence::parameter::selectable<spacingFactor::types>>();
 
                         assert(params.size() == 1);
 
@@ -990,9 +990,9 @@ namespace GGUI {
                     }
 
                     void operate_SELECT_GRAPHIC_RENDITION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<graphicalTextAttributes>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence->convert<sequence::parameter::selectable<graphicalTextAttributes>>();
 
                         assert(params.size() > 0);
 
@@ -1384,9 +1384,9 @@ namespace GGUI {
 
                 namespace modeSettingFunctions {
                     void operate_RESET_MODE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<mode::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence->convert<sequence::parameter::selectable<mode::types>>();
 
                         assert(params.size() > 0);
 
@@ -1398,9 +1398,9 @@ namespace GGUI {
                     }
 
                     void operate_SET_MODE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::selectable<mode::types>>*>(input);
+                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence->convert<sequence::parameter::selectable<mode::types>>();
 
                         assert(params.size() > 0);
 

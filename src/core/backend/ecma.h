@@ -460,6 +460,17 @@ namespace GGUI {
                         base(const std::vector<std::pair<containerType, types>>& values) : subNumbers(values) {}
                         base(containerType value) : subNumbers({{value, types::NUMBER}}) {}
 
+                        // Used when converting between two different container typed parameters
+                        template<typename otherContainerType>
+                        base(const base<otherContainerType>& other) {
+                            for (const auto& i : other.getPrimaryValueAndSecondaries()) {
+                                subNumbers.push_back({
+                                    static_cast<containerType>(i.first),
+                                    static_cast<types>(i.second)
+                                });
+                            }
+                        }
+
                         /**
                          * As stated by 5.4.2.b, f, g and h
                          * 
@@ -589,13 +600,13 @@ namespace GGUI {
                         }
                     };
 
-                    using numeric = base<uint32_t>;
+                    using numeric = base<uint16_t>;
 
                     template<typename enumType>
                     class selectable : public base<enumType> {
                         // Check that selectable instances are only used with enums
                         static_assert(std::is_enum_v<enumType> == true, "Selectable parameters must be instantiated with an enum type.");
-
+                        
                         using base<enumType>::base;   // Inherit constructors
                     };
                 }
@@ -804,6 +815,10 @@ namespace GGUI {
 
                 template<typename containerType>
                 class control : public prefix<table::C1> {
+                    // give all specializations of same class access to its own counterpart members
+                    template<typename>
+                    friend class control;
+
                 protected:
                     std::vector<containerType> parameters;                          // Each range between: 03/00 - 03/15, delimited by 03/11 (';')
                     CSI_postfixType finalByte;
@@ -831,6 +846,27 @@ namespace GGUI {
                         std::vector<containerType> params,
                         CSI_postfixType tail
                     ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(tail) {}
+
+                    // safe copy constructor between two different parameter container types
+                    template<typename otherContainerType>
+                    control(const control<otherContainerType>& other) : prefix(other), finalByte(other.finalByte) {
+                        parameters = this->convert<containerType>(other.parameters);
+                    }
+
+                    template<typename exportAs>
+                    std::vector<exportAs> convert() {
+                        std::vector<exportAs> result;
+
+                        if constexpr (std::is_same<exportAs, containerType>::value) {
+                            result = parameters;
+                        } else {    // we need to copy data manually
+                            for (const auto& i : parameters) {
+                                result.push_back(i);
+                            }
+                        }
+
+                        return result;
+                    }
 
                     /**
                      * Converts the control sequence to its string representation.
@@ -1205,22 +1241,22 @@ namespace GGUI {
                     }
                 public:
                     /**
-                        * @brief Default constructor initializing an empty page.
-                        * 
-                        * Initializes all cells to null and sets status to UNLOADED.
-                        */
+                     * @brief Default constructor initializing an empty page.
+                     * 
+                     * Initializes all cells to null and sets status to UNLOADED.
+                     */
                     constexpr page(layout::bounds defaultLocation = {}) : cells{}, status{defaultLocation} {}
 
                     /**
-                        * @brief Adds a cell handler at the specified absolute position.
-                        */
+                     * @brief Adds a cell handler at the specified absolute position.
+                     */
                     void add(cell customFunctions, sequence::prefix<> header, sequence::postfix<> body = {}) {
                         cells[getActualLocation(header, body)] = customFunctions; 
                     }
 
                     /**
-                        * @brief Gets the cell handler at the specified position.
-                        */
+                     * @brief Gets the cell handler at the specified position.
+                     */
                     cell get(location primitive, sequence::postfix<> body = {}) {
                         return cells[getActualLocation(primitive.to7bit().compute(), body)];
                     }
@@ -1230,48 +1266,48 @@ namespace GGUI {
                     }
 
                     /**
-                        * @brief Gets the size of the page's active range.
-                        * 
-                        * @return uint16_t The number of positions in the current page range
-                        */
+                     * @brief Gets the size of the page's active range.
+                     * 
+                     * @return uint16_t The number of positions in the current page range
+                     */
                     constexpr uint16_t getSize() const {
                         return status.range.getSize();
                     }
 
                     /**
-                        * @brief Loads the page with the specified lifetime configuration.
-                        * 
-                        * @param into The lifetime configuration specifying the range and type
-                        * 
-                        * Sets the page's active range and lifetime type. The page becomes
-                        * active and can be used for character lookups and invocations.
-                        */
+                     * @brief Loads the page with the specified lifetime configuration.
+                     * 
+                     * @param into The lifetime configuration specifying the range and type
+                     * 
+                     * Sets the page's active range and lifetime type. The page becomes
+                     * active and can be used for character lookups and invocations.
+                     */
                     constexpr void load(lifetime::base into) {
                         status = into;
                     }
 
                     /**
-                        * @brief Unloads the page, setting it to an empty state.
-                        * 
-                        * Resets the page's range to {0,0} and sets lifetime type to UNLOADED.
-                        * The page will no longer be active for character operations.
-                        */
-                    constexpr void unload() {
-                        if (status.type == lifetime::types::TEMPORARY) {
-                            status.type = lifetime::types::TO_UNLOAD;   // Give a grace period for TEMPORARY pages to be unloaded on the next read cycle.
-                        } else if (status.type == lifetime::types::TO_UNLOAD) {
+                     * @brief Unloads the page, setting it to an empty state.
+                     * 
+                     * Resets the page's range to {0,0} and sets lifetime type to UNLOADED.
+                     * The page will no longer be active for character operations.
+                     */
+                    constexpr void maybeUnload(bool force = false) {
+                        if (status.type == lifetime::types::TO_UNLOAD || force) {
                             load({
                                 {0, 0},
                                 lifetime::types::UNLOADED
                             });
-                        }
+                        } else if (status.type == lifetime::types::TEMPORARY) {
+                            status.type = lifetime::types::TO_UNLOAD;   // Give a grace period for TEMPORARY pages to be unloaded on the next read cycle.
+                        } 
                     }
 
                     /**
-                        * @brief Gets the current lifetime configuration of this page.
-                        * 
-                        * @return lifetime::base The current lifetime status including range and type
-                        */
+                     * @brief Gets the current lifetime configuration of this page.
+                     * 
+                     * @return lifetime::base The current lifetime status including range and type
+                     */
                     constexpr lifetime::base getLifetime() const { return status; }
                 };
 
@@ -1315,8 +1351,8 @@ namespace GGUI {
                 };
 
                 /**
-                    * @brief Maintains a map of repertoire IDs that tracks which character set is active at each position in memory.
-                    */
+                 * @brief Maintains a map of repertoire IDs that tracks which character set is active at each position in memory.
+                 */
                 class manager {
                 protected:
                     // Contains all of the initialized pages with their usable jump blocks.
@@ -1329,17 +1365,17 @@ namespace GGUI {
                 public: 
 
                     /**
-                        * @brief Adds a page to the repertoire at the specified position.
-                        * @param p The page to add
-                        * @param position The repertoire position where the page should be loaded
-                        */
+                     * @brief Adds a page to the repertoire at the specified position.
+                     * @param p The page to add
+                     * @param position The repertoire position where the page should be loaded
+                     */
                     constexpr void add(page& p, repertoire position) {
                         pages[static_cast<size_t>(position)] = p;
                     }
 
                     /**
-                        * @brief Used for extensions to be able to patch in their own additions to the standard
-                        */
+                     * @brief Used for extensions to be able to patch in their own additions to the standard
+                     */
                     constexpr void patch(cellPatch& source, repertoire destination) {
                         page& dest = pages[static_cast<size_t>(destination)];
                         
@@ -1354,12 +1390,12 @@ namespace GGUI {
                     }
 
                     /**
-                        * @brief flashes the repertoire jump block map into the initial state.
-                        */
+                     * @brief flashes the repertoire jump block map into the initial state.
+                     */
                     constexpr void flash(bitType mode) {
                         // First unload all pages.
                         for (auto& p : pages) {
-                            p.unload();
+                            p.maybeUnload(true);
                         }
 
                         // Load C0
@@ -1381,10 +1417,10 @@ namespace GGUI {
                     }
 
                     /**
-                        * @brief Enables 7/8-bit C1 character set.
-                        * Loads and overrides the columns where 7/8-bit C1 overlaps with the 8-bit graphical set.
-                        * According to ecma-35, only one C1 layout can be loaded at a time.
-                        */
+                     * @brief Enables 7/8-bit C1 character set.
+                     * Loads and overrides the columns where 7/8-bit C1 overlaps with the 8-bit graphical set.
+                     * According to ecma-35, only one C1 layout can be loaded at a time.
+                     */
                     constexpr void enableC1(bitType mode) {
 
                         layout::bounds location = layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
@@ -1399,22 +1435,21 @@ namespace GGUI {
                     }
 
                     /**
-                        * @brief Updates the page states on each read-byte operation.
-                        * Unloads any pages that were loaded for temporary use (TEMPORARY lifetime type).
-                        * Should be called for each read-byte to maintain proper page state management.
-                        */
+                     * @brief Updates the page states on each read-byte operation.
+                     * Unloads any pages that were loaded for temporary use (TEMPORARY lifetime type).
+                     * Should be called for each read-byte to maintain proper page state management.
+                     */
                     constexpr void update() {
                         flush();    // Flush current iteration of temporaries and other goodies, next iteration after interpretation temporary is unloaded fully.
 
                         for (auto& p : pages) {
-                            p.unload(); // Affects temporary and to be unloaded pages only!
+                            p.maybeUnload(); // Affects temporary and to be unloaded pages only!
                         }
                     }
 
                     /**
-                        * @brief Flushes the loaded page states into the repertoire map.
-                        *
-                        */
+                     * @brief Flushes the loaded page states into the repertoire map.
+                     */
                     constexpr void flush() {
                         // Go through the pages
                         for (size_t i = 0; i < static_cast<size_t>(repertoire::__max); i++) {

@@ -33,7 +33,7 @@ namespace GGUI {
 
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>*>(input);
+                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
 
                             auto params = controlSequence->getParameters();
 
@@ -46,15 +46,13 @@ namespace GGUI {
                                     (ecma::table::parameters)questionMark == ecma::table::parameters::PRIVATE &&
                                     (uint8_t)modelNumber == 1
                                 ) {
-                                    currentStates->decComponents.VT100Components.activeDeviceAttributes = params.back().getValueAsInteger();
+                                    currentStates->decComponents.VT100Components.activeDeviceAttributes = (deviceAttributeResponseTypes)params.back().getValueAsInteger();
                                     currentStates->decComponents.VT100Components.enabled = true;
                                 }
                             } else {
                                 assert(false);
                             }
                         }
-
-                        TODO("add confidence test handler, whatever that means for an interpreter.")
                     }
 
                     namespace modeSettingFunctions {
@@ -112,7 +110,7 @@ namespace GGUI {
                     // Override of ecma miscellaneousControlFunctions
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>*>(input);
+                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
 
                             auto params = controlSequence->getParameters();
 
@@ -128,7 +126,7 @@ namespace GGUI {
                                     currentStates->decComponents.VT220Components.activeDeviceAttributes.resize(params.size());
 
                                     for (size_t i = 1; i < params.size(); i++) {    // i=1, to skip the deviceAttributeResponseID
-                                        currentStates->decComponents.VT220Components.activeDeviceAttributes[i] = params[i].getValueAsInteger();
+                                        currentStates->decComponents.VT220Components.activeDeviceAttributes[i] = (deviceAttributeResponseTable)params[i].getValueAsInteger();
                                     }
 
                                     currentStates->decComponents.VT220Components.enabled = true;
@@ -148,7 +146,7 @@ namespace GGUI {
                     // Override of ecma miscellaneousControlFunctions
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>*>(input);
+                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
 
                             auto params = controlSequence->getParameters();
 
@@ -160,7 +158,7 @@ namespace GGUI {
                                     currentStates->decComponents.VT420Components.activeDeviceAttributes.resize(params.size());
 
                                     for (size_t i = 1; i < params.size(); i++) {    // i=1, to skip the deviceAttributeResponseID
-                                        currentStates->decComponents.VT420Components.activeDeviceAttributes[i] = params[i].getValueAsInteger();
+                                        currentStates->decComponents.VT420Components.activeDeviceAttributes[i] = (deviceAttributeResponseTable)params[i].getValueAsInteger();
                                     }
 
                                     currentStates->decComponents.VT420Components.enabled = true;
