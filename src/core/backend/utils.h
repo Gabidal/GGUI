@@ -157,8 +157,8 @@ namespace GGUI {
                 IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
                 IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
                 IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
+                __max = IDEOGRAM_STRESS_MARKING,
                 IDEOGRAM_ATTRIBUTES_OFF,                        // cancels the effect of the rendition aspects established by parameter values 60 to 64
-                __max
             };
         }
 

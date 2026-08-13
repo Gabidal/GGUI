@@ -2333,9 +2333,9 @@ namespace GGUI{
 
     class textAttribute : public STYLING_INTERNAL::styleBase{
     public:
-        INTERNAL::linearMask<uint64_t, textAttributeTypes> value;
+        INTERNAL::linearMask<textAttributeTypes, uint64_t> value;
 
-        constexpr textAttribute(const INTERNAL::linearMask<uint64_t, textAttributeTypes>& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
+        constexpr textAttribute(const INTERNAL::linearMask<textAttributeTypes, uint64_t>& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
         
         constexpr textAttribute(const GGUI::textAttribute& other) : styleBase(other.status), value(other.value){}
 
@@ -2366,14 +2366,14 @@ namespace GGUI{
         RGB activeTextColor         = {};
         RGB activeBackgroundColor   = {};
         unsigned char opacity       = UINT8_MAX;
-        INTERNAL::linearMask<uint64_t, textAttributeTypes> activeTextAttributes = textAttributeTypes::DEFAULT;
+        INTERNAL::linearMask<textAttributeTypes, uint64_t> activeTextAttributes = textAttributeTypes::DEFAULT;
         element* origin             = nullptr;
 
         constexpr ActiveStyle computeColor(const ActiveStyle* other) const {
             ActiveStyle result = *other;
             result.activeTextColor.add(activeTextColor, opacity);
             result.activeBackgroundColor.add(activeBackgroundColor, opacity);
-            result.activeTextAttributes.overwrite(activeTextAttributes.getData());
+            result.activeTextAttributes = activeTextAttributes;
             result.opacity = combineOpacity(opacity, other->opacity);
             return result;
         }

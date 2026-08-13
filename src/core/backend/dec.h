@@ -14,7 +14,20 @@ namespace GGUI {
         namespace dec {
             namespace VT100 {
                 extern ecma::configuration::cellPatch csiPatch;
+
+                enum class deviceAttributeResponseTypes : uint8_t {
+                    NO_OPTIONS                  = 0,        // base option
+                    PROCESSOR_OPTIONS           = 1 << 0,   // STP
+                    ADVANCED_VIDEO_OPTIONS      = 1 << 1,   // AVO
+                    AVO_AND_STP                 = ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,           // processor and advanced video options
+                    GRAPHIC_PROCESSOR_OPTION    = 1 << 2,   // GPO
+                    GPO_AND_STP                 = GRAPHIC_PROCESSOR_OPTION | PROCESSOR_OPTIONS,         // processor and graphic processor options
+                    GPO_AND_AVO                 = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS,    // advanced video and graphic processor options
+                    GPO_STP_AND_AVO             = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,          // processor, advanced video and graphic processor options
+                };
                 
+                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::ADVANCED_VIDEO_OPTIONS;
+
                 extern ecma::configuration::page G1;
                 extern ecma::configuration::page G3;
 
@@ -87,19 +100,6 @@ namespace GGUI {
                         FORM_FEED      = toInt(8, 15),                                      UK_POUND_SIGN         = toInt(10, 15),
                     };
                 }
-
-                enum class deviceAttributeResponseTypes : uint8_t {
-                    NO_OPTIONS                  = 0,        // base option
-                    PROCESSOR_OPTIONS           = 1 << 0,   // STP
-                    ADVANCED_VIDEO_OPTIONS      = 1 << 1,   // AVO
-                    AVO_AND_STP                 = ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,           // processor and advanced video options
-                    GRAPHIC_PROCESSOR_OPTION    = 1 << 2,   // GPO
-                    GPO_AND_STP                 = GRAPHIC_PROCESSOR_OPTION | PROCESSOR_OPTIONS,         // processor and graphic processor options
-                    GPO_AND_AVO                 = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS,    // advanced video and graphic processor options
-                    GPO_STP_AND_AVO             = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,          // processor, advanced video and graphic processor options
-                };
-
-                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::ADVANCED_VIDEO_OPTIONS;
 
                 enum class testTypes : uint8_t {
                     NONE                                    = 0,
@@ -366,6 +366,9 @@ namespace GGUI {
                 extern ecma::configuration::cellPatch csiPatch;
 
                 constexpr uint8_t deviceAttributeResponseID = 60 + 4;
+                
+                // Not from original VT100, but later models especially emulators use this to present 
+                constexpr uint8_t emulatedVT100DeviceAttributeResponseID = 60 + 1;
 
                 // The 4'th gen extended 2'nd gen extension feature list
                 enum class deviceAttributeResponseTable : uint8_t {

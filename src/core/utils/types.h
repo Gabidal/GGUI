@@ -3,7 +3,7 @@
 
 #include <string>
 #include <functional>
-#include <chrono>
+#include <cassert>
 #include <mutex>
 #include <memory>
 
@@ -713,82 +713,108 @@ namespace GGUI{
             return a | static_cast<unsigned int>(b);
         }
 
-        template<typename T, typename containerType = std::enable_if_t<std::is_enum_v<T>>>
+        template<typename enumType, typename containerType = std::underlying_type_t<enumType>>
         class bitMask {
+            static_assert(std::is_enum_v<enumType>, "enumType must be an enum type for bitMask");
         private:
-            T data;
+            containerType data;
         public:
 
             constexpr bitMask() {
                 clear();
             }
 
+            template<typename T>
             constexpr bitMask(T initialFlag) {
-                data = initialFlag;
+                static_assert(std::is_same_v<T, enumType> || std::is_same_v<T, containerType>, "bitMask can only be initialized with enumType or containerType.");
+
+                data = static_cast<containerType>(initialFlag);
             }
 
-            constexpr bool has(T flags) const {
-                return (static_cast<containerType>(data) & static_cast<containerType>(flags)) != containerType(0);
+            constexpr bool has(enumType flags) const {
+                return (data & static_cast<containerType>(flags)) == static_cast<containerType>(flags);
             }
 
-            constexpr void set(T flags, bool value = true) {
-                data = static_cast<T>(
+            constexpr void set(enumType flags, bool value = true) {
+                data = (
                     value ? 
-                    (static_cast<containerType>(data) | static_cast<containerType>(flags)) :
-                    (static_cast<containerType>(data) & ~static_cast<containerType>(flags))
+                    (data | static_cast<containerType>(flags)) :
+                    (data & ~static_cast<containerType>(flags))
                 );
             }
 
-            constexpr T get() const {
-                return data;
+            // returns each activated enum
+            std::vector<enumType> getAll() const {
+                std::vector<enumType> result;
+
+                for (containerType i = 0; i < sizeof(containerType) * 8; ++i) {
+                    containerType bitMask = static_cast<containerType>(1) << i;
+                    if ((data & bitMask) != 0) {
+                        result.push_back(static_cast<enumType>(bitMask));
+                    }
+                }
+
+                return result;
             }
 
             constexpr void clear() {
-                data = static_cast<T>(0);
+                data = static_cast<containerType>(0);
             }
 
-            constexpr bool operator==(const bitMask<T, containerType>& other) const {
+            constexpr bool operator==(const bitMask<enumType, containerType>& other) const {
                 return data == other.data;
             }
 
-            constexpr bool operator!=(const bitMask<T, containerType>& other) const {
+            constexpr bool operator!=(const bitMask<enumType, containerType>& other) const {
                 return data != other.data;
             }
 
-            constexpr bitMask<T, containerType> operator|(const bitMask<T, containerType>& other) const {
-                return bitMask<T, containerType>(static_cast<T>(static_cast<containerType>(data) | static_cast<containerType>(other.data)));
+            constexpr bitMask<enumType, containerType> operator|(const bitMask<enumType, containerType>& other) const {
+                return data | other.data;
             }
 
-            constexpr bitMask<T, containerType> operator&(const bitMask<T, containerType>& other) const {
-                return bitMask<T, containerType>(static_cast<T>(static_cast<containerType>(data) & static_cast<containerType>(other.data)));
+            constexpr bitMask<enumType, containerType> operator&(const bitMask<enumType, containerType>& other) const {
+                return data & other.data;
             }
 
-            constexpr bitMask<T, containerType>& operator|=(const bitMask<T, containerType>& other) {
-                data = static_cast<T>(static_cast<containerType>(data) | static_cast<containerType>(other.data));
+            constexpr bitMask<enumType, containerType>& operator|=(const bitMask<enumType, containerType>& other) {
+                data |= other.data;
                 return *this;
             }
 
-            template<typename P, typename = std::enable_if_t<std::is_same_v<P, T> || std::is_same_v<P, containerType>>>
-            constexpr bitMask<T, containerType>& operator=(P value) {
-                data = static_cast<T>(value);
+            template<typename P>
+            constexpr bitMask<enumType, containerType>& operator=(P value) {
+                static_assert(std::is_same_v<P, enumType> || std::is_same_v<P, containerType>, "Assignment is only allowed for enumType or containerType.");
+
+                data = static_cast<containerType>(value);
                 return *this;
             }
         };
 
-        template<typename containerType, typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType>>>
+        template<typename enumType, typename containerType = std::underlying_type_t<enumType>>
         class linearMask {
+            static_assert(std::is_enum_v<enumType>, "enumType must be an enum type for bitMask!");
+            static_assert(
+                static_cast<containerType>(enumType::__min) < static_cast<containerType>(enumType::__max) &&
+                static_cast<containerType>(enumType::DEFAULT) >= static_cast<containerType>(enumType::__min) &&
+                static_cast<containerType>(enumType::DEFAULT) <= static_cast<containerType>(enumType::__max), 
+                "__min, __max and DEFAULT values must be defined!"
+            );
+            static_assert(std::is_unsigned_v<containerType>, "Underlying enum's container type must be unsigned!");
+            static_assert(
+                static_cast<containerType>(enumType::__max) <= std::numeric_limits<containerType>::digits, 
+                "__max overflows containerType max bit!"
+            );
         protected:
             containerType data;
 
             constexpr containerType toBitMask(enumType t) const {
-                if (t == enumType::__min) return 0;
+                if (t <= enumType::__min) return 0;
     
                 return static_cast<containerType>(1) << (static_cast<containerType>(t) - 1);
             }
         public:
             constexpr linearMask(enumType initValue = enumType::DEFAULT) : data(toBitMask(initValue)) {}
-            
-            constexpr linearMask(containerType initValue) : data(initValue) {}
 
             constexpr void add(enumType t) {
                 containerType tAsBitMask = toBitMask(t);
@@ -813,7 +839,7 @@ namespace GGUI{
             std::vector<enumType> getAll() const {
                 std::vector<enumType> result;
 
-                for (containerType i = 1; i <= sizeof(containerType) * 8; ++i) {
+                for (containerType i = static_cast<containerType>(enumType::__min); i <= static_cast<containerType>(enumType::__max); ++i) {
                     containerType bitMask = static_cast<containerType>(1) << (i - 1);
                     if ((data & bitMask) != 0) {
                         result.push_back(static_cast<enumType>(i));
@@ -864,7 +890,26 @@ namespace GGUI{
             }
 
             constexpr containerType getData() const { return data; }
-            constexpr void overwrite(containerType bitmask) { data = bitmask; }
+
+            template<typename otherEnumType, typename OtherContainerType = std::underlying_type_t<otherEnumType>>
+            constexpr linearMask operator=(const linearMask<otherEnumType, OtherContainerType>& other) {
+                static_assert(  // Make sure that the incoming type is same or atleast smaller
+                    (std::is_same_v<OtherContainerType, containerType>) ||
+                    (sizeof(OtherContainerType) <= sizeof(containerType)),
+                    "Only injection of container type is allowed!"
+                );
+
+                static_assert(  // Make sure that __min and __max are either aligned or injectable
+                    (static_cast<containerType>(otherEnumType::__min) >= static_cast<containerType>(enumType::__min)) &&
+                    (static_cast<containerType>(otherEnumType::__max) <= static_cast<containerType>(enumType::__max)),
+                    "Only injection of enum type is allowed!"
+                );
+
+                // DEFAULT values is not needed to be checked.
+
+                data = other.getData();
+                return *this;
+            }
         };
 
         class STAIN{

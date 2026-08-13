@@ -91,12 +91,12 @@ namespace GGUI {
                         size_t start = delimeterIndicies[i];
                         size_t end = i == delimeterIndicies.size() - 1 ? input.size() : delimeterIndicies[i + 1];
 
-                        // Some systems put '?' or other marks without the proper delimeter so we need to look out for those:
-                        if ((table::parameters)input[start] != table::parameters::SEPARATOR) start -= 1;
+                        // +1 to skip the delimeter itself. 
+                        if ((table::parameters)input[start] == table::parameters::SEPARATOR) start += 1;
 
                         size_t tmp = 0;     // Useless in this case, since we already know the sizes.
                         result.push_back({
-                            input.substr(start + 1, end),   // +1 to skip the delimeter itself. 
+                            input.substr(start, end - start),
                             tmp
                         });
                     }

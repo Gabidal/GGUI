@@ -17,7 +17,8 @@
       "program": "${workspaceFolder}/bin/build/ggui",
       "args": [],
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "Buildarna"
+      "preLaunchTask": "Buildarna",
+      "terminal": "external"    // Install xterm in wsl2 to test more complex vt100+ features
     },
     {
       "name": "unix-DRM",

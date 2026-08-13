@@ -118,6 +118,7 @@ namespace GGUI {
                                 // VT220 and VT320 both share same device feature list
                                 if (
                                     params.front().hasSecondaries() && 
+                                    params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE && 
                                     (
                                         (uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT220::deviceAttributeResponseID || 
                                         (uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT320::deviceAttributeResponseID
@@ -153,12 +154,21 @@ namespace GGUI {
                             if (!params.empty()) {
                                 if (
                                     params.front().hasSecondaries() &&
-                                    (uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT420::deviceAttributeResponseID
+                                    params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE && (
+                                        params.front().getPrimaryValueAndSecondaries().back().first == VT420::deviceAttributeResponseID ||
+                                        params.front().getPrimaryValueAndSecondaries().back().first == VT420::emulatedVT100DeviceAttributeResponseID
+                                    )
                                 ) {   // VT420 and VT510 both share same ID and feature list.
                                     currentStates->decComponents.VT420Components.activeDeviceAttributes.resize(params.size());
 
                                     for (size_t i = 1; i < params.size(); i++) {    // i=1, to skip the deviceAttributeResponseID
                                         currentStates->decComponents.VT420Components.activeDeviceAttributes[i] = (deviceAttributeResponseTable)params[i].getValueAsInteger();
+                                    }
+
+                                    // If the responder is an emulator pretending to be a VT100, we can enable VT100 module, but keep it with NO_OPTIONS
+                                    if (params.front().getPrimaryValueAndSecondaries().back().first == VT420::emulatedVT100DeviceAttributeResponseID) {
+                                        currentStates->decComponents.VT100Components.activeDeviceAttributes = VT100::deviceAttributeResponseTypes::NO_OPTIONS;
+                                        currentStates->decComponents.VT100Components.enabled = true;
                                     }
 
                                     currentStates->decComponents.VT420Components.enabled = true;

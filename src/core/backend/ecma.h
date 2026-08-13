@@ -2048,7 +2048,7 @@ namespace GGUI {
             // Only used to store metadata, actual colors are found in the UTFs
             class activeSGRStyle {
             public:
-                INTERNAL::linearMask<uint64_t, graphicalTextAttributes> textAttributes;
+                INTERNAL::linearMask<graphicalTextAttributes, uint64_t> textAttributes;
                 IVector2 start;
                 RGB textColor;
                 RGB backgroundColor;

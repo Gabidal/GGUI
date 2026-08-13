@@ -42,7 +42,7 @@ namespace GGUI {
             }
 
             // Since the activeTextAttributes are aliased from ecma::textAttributes this is ok.
-            result.textAttributes = point.activeTextAttributes.getData();
+            result.textAttributes = point.activeTextAttributes;
             result.textColor = point.activeTextColor;
             result.backgroundColor = point.activeBackgroundColor;
 
@@ -297,6 +297,7 @@ namespace GGUI {
             // Wait for answer
             currentStates->transmission.waitForInput();
 
+            
             auto sequences = ecma::sequence::parse(std::string_view(currentStates->transmission.inputBuffer.data(), currentStates->transmission.inputSize));
 
             for (auto* sequence : sequences) {
