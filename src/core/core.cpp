@@ -64,7 +64,7 @@ namespace GGUI{
 
         /**
          * @brief Temporary function to return the current date and time in a string.
-         * @return A string of the current date and time in the format "DD.MM.YYYY: SS.MM.HH"
+         * @return A string of the current date and time in the format "DD.MM.YYYY: HH.MM.SS"
          * @note This function will be replaced when the Date_Element is implemented.
          */
         std::string now(){
@@ -73,8 +73,8 @@ namespace GGUI{
             std::tm* tm_ptr = std::localtime(&now);
             
             std::ostringstream oss;
-            // Format: DD.MM.YYYY: SS.MM.HH
-            oss << std::put_time(tm_ptr, "%d.%m.%Y: %S.%M.%H");
+            // Format: DD.MM.YYYY: HH.MM.SS
+            oss << std::put_time(tm_ptr, "%d.%m.%Y: %H.%M.%S");
 
             return oss.str();
         }

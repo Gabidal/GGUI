@@ -92,7 +92,7 @@ namespace GGUI {
                  */
                 template<typename E, typename V>
                 bool contains(V val) {
-                    return val >= static_cast<uint8_t>(E::__min) && val <= static_cast<uint8_t>(E::__max);
+                    return static_cast<uint8_t>(val) >= static_cast<uint8_t>(E::__min) && static_cast<uint8_t>(val) <= static_cast<uint8_t>(E::__max);
                 }
 
                 template<typename V, typename E>
@@ -850,6 +850,8 @@ namespace GGUI {
                     // safe copy constructor between two different parameter container types
                     template<typename otherContainerType>
                     control(const control<otherContainerType>& other) : prefix(other), finalByte(other.finalByte) {
+                        static_assert(std::is_same_v<otherContainerType, containerType> == false, "Unnecessary conversion between two identical types!");
+
                         parameters = this->convert<containerType>(other.parameters);
                     }
 
@@ -908,17 +910,26 @@ namespace GGUI {
                         finalByte.toString(preAllocated);
                     }
 
-                    // Produces a new control sequence based on this template preset
-                    control<containerType> compile(const std::vector<containerType>& params) const {
-                        control<containerType> result = *this;              // Copy contents
-                        if (!params.empty()) result.parameters = params;    // Set default params is none given
-                        return result;
-                    }
-
                     template<std::size_t N>
                     control<containerType> compile(const std::array<containerType, N>& params) const {
                         std::vector<containerType> vec(params.begin(), params.end());
                         return compile(vec);
+                    }
+
+                    template<typename otherParameterContainerType>
+                    control<containerType> compile(const std::vector<otherParameterContainerType>& params) const {
+                        control<containerType> result = *this;                  // Copy contents
+                        std::vector<containerType> vec = result.parameters;     // Copy default parameters
+
+                        vec.resize(std::max(params.size(), parameters.size())); // Resize to fit the new parameters
+
+                        for (size_t i = 0; i < params.size(); i++) {
+                            vec[i] = static_cast<containerType>(params[i]);
+                        }
+
+                        result.parameters = vec;
+
+                        return result;
                     }
 
                     postfix<> getPostfix() const override {
@@ -943,6 +954,12 @@ namespace GGUI {
                         return result;
                     }
                 };
+
+                template<typename T>
+                struct is_control : std::false_type {};
+
+                template<typename T>
+                struct is_control<sequence::control<T>> : std::true_type {};
 
                 // APC, DCS, OSC, PM or SOS
                 class string : public prefix<table::C1> {
@@ -2401,6 +2418,19 @@ namespace GGUI {
                             );
                         } else {
                             return function.compile();
+                        }
+                    }
+
+                    template<typename rawParameterForm = sequence::parameter::numeric>
+                    codeType* getAsParsedFormWithDefaultParameters(sequence::base* input) {
+                        if constexpr (sequence::is_control<codeType>::value) { // all CSI sequences must go through the default parametrization!
+                            auto controlSequence = static_cast<sequence::control<rawParameterForm>*>(input);
+
+                            auto params = controlSequence->getParameters();
+
+                            return new codeType(function.compile(params));
+                        } else {
+                            return static_cast<codeType*>(input);
                         }
                     }
                 };

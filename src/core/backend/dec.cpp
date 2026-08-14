@@ -33,7 +33,7 @@ namespace GGUI {
 
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
+                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
 
                             auto params = controlSequence->getParameters();
 
@@ -57,14 +57,14 @@ namespace GGUI {
 
                     namespace modeSettingFunctions {
                         void operate_RESET_MODE(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
+                            auto controlSequence = modeSettingFunctions::RESET_MODE.getAsParsedFormWithDefaultParameters(input);
 
                             auto params = controlSequence->getParameters();
 
                             assert(params.size() > 0);
 
                             // We can now check if the first parameter is a '?' or not, if not, then we proceed to call the base ecma implementation of this function
-                            if (params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE) {
+                            if ((uint8_t)params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE) {
                                 for (size_t i = 1; i < params.size(); i++) {
                                     auto typed = params[i].getValueAsInteger();
 
@@ -79,14 +79,14 @@ namespace GGUI {
                         }
 
                         void operate_SET_MODE(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
+                            auto controlSequence = modeSettingFunctions::SET_MODE.getAsParsedFormWithDefaultParameters(input);
 
                             auto params = controlSequence->getParameters();
 
                             assert(params.size() > 0);
 
                             // We can now check if the first parameter is a '?' or not, if not, then we proceed to call the base ecma implementation of this function
-                            if (params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE) {
+                            if ((uint8_t)params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE) {
                                 for (size_t i = 1; i < params.size(); i++) {
                                     auto typed = params[i].getValueAsInteger();
 
@@ -110,7 +110,7 @@ namespace GGUI {
                     // Override of ecma miscellaneousControlFunctions
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
+                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
 
                             auto params = controlSequence->getParameters();
 
@@ -118,7 +118,7 @@ namespace GGUI {
                                 // VT220 and VT320 both share same device feature list
                                 if (
                                     params.front().hasSecondaries() && 
-                                    params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE && 
+                                    (uint8_t)params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE && 
                                     (
                                         (uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT220::deviceAttributeResponseID || 
                                         (uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT320::deviceAttributeResponseID
@@ -147,16 +147,16 @@ namespace GGUI {
                     // Override of ecma miscellaneousControlFunctions
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = static_cast<ecma::sequence::control<ecma::sequence::parameter::numeric>*>(input);
+                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
 
                             auto params = controlSequence->getParameters();
 
                             if (!params.empty()) {
                                 if (
                                     params.front().hasSecondaries() &&
-                                    params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE && (
-                                        params.front().getPrimaryValueAndSecondaries().back().first == VT420::deviceAttributeResponseID ||
-                                        params.front().getPrimaryValueAndSecondaries().back().first == VT420::emulatedVT100DeviceAttributeResponseID
+                                    (uint8_t)params.front().getValueAsInteger() == (uint8_t)ecma::table::parameters::PRIVATE && (
+                                        (uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT420::deviceAttributeResponseID ||
+                                        (uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT420::emulatedVT100DeviceAttributeResponseID
                                     )
                                 ) {   // VT420 and VT510 both share same ID and feature list.
                                     currentStates->decComponents.VT420Components.activeDeviceAttributes.resize(params.size());
@@ -166,7 +166,7 @@ namespace GGUI {
                                     }
 
                                     // If the responder is an emulator pretending to be a VT100, we can enable VT100 module, but keep it with NO_OPTIONS
-                                    if (params.front().getPrimaryValueAndSecondaries().back().first == VT420::emulatedVT100DeviceAttributeResponseID) {
+                                    if ((uint8_t)params.front().getPrimaryValueAndSecondaries().back().first == VT420::emulatedVT100DeviceAttributeResponseID) {
                                         currentStates->decComponents.VT100Components.activeDeviceAttributes = VT100::deviceAttributeResponseTypes::NO_OPTIONS;
                                         currentStates->decComponents.VT100Components.enabled = true;
                                     }

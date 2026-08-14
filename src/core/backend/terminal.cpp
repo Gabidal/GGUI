@@ -297,7 +297,6 @@ namespace GGUI {
             // Wait for answer
             currentStates->transmission.waitForInput();
 
-            
             auto sequences = ecma::sequence::parse(std::string_view(currentStates->transmission.inputBuffer.data(), currentStates->transmission.inputSize));
 
             for (auto* sequence : sequences) {

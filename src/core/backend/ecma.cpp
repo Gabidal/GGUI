@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "ecma.h"
 
 #include "../utils/utils.h"
 
@@ -412,14 +413,14 @@ namespace GGUI {
                 }
 
                 namespace formatEffectors {
-                    void operate_BACKSPACE(sequence::base* /*ignored*/) {
+                    void operate_BACKSPACE(sequence::base*) {
                         // First we get the direction and a base vector for the opposite direction
                         IVector2 oppositeDirection = currentStates->ecmaComponents.activeCharacterMovementDirection * -1;
                     
                         currentStates->ecmaComponents.activeDataPosition += oppositeDirection;
                     }
 
-                    void operate_CARRIAGE_RETURN(sequence::base* /*ignored*/) {
+                    void operate_CARRIAGE_RETURN(sequence::base*) {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             if (currentStates->ecmaComponents.toCharacterMovementDirection(currentStates->ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
                                 currentStates->ecmaComponents.activePresentationPosition.x = currentStates->ecmaComponents.homeLinePosition.x;
@@ -435,7 +436,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_FORM_FEED(sequence::base* /*ignored*/) {
+                    void operate_FORM_FEED(sequence::base*) {
                         // FF causes the active presentation position to be moved to the corresponding 
                         // character position of the line at the page home position of the next form or page.
                         // Move to the next page by advancing past the current active area
@@ -448,17 +449,21 @@ namespace GGUI {
                     }
 
                     void operate_CHARACTER_POSITION_ABSOLUTE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::CHARACTER_POSITION_ABSOLUTE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
 
                         currentStates->ecmaComponents.activeDataPosition.x = params.front().getValueAsInteger();
                     }
 
                     void operate_CHARACTER_POSITION_BACKWARD(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::CHARACTER_POSITION_BACKWARD.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
 
                         // Get the current direction vector and multiply it by the scalar of n via input and -1 to get the opposite vector.
                         auto directionVector = currentStates->ecmaComponents.activeCharacterMovementDirection * -static_cast<signed int>(params.front().getValueAsInteger());
@@ -467,9 +472,11 @@ namespace GGUI {
                     }
 
                     void operate_CHARACTER_POSITION_FORWARD(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::CHARACTER_POSITION_FORWARD.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
+
+                        assert(params.size() == 1);
 
                         // Get the current direction vector and multiply it by the scalar of n via input to get the movement vector.
                         auto directionVector = currentStates->ecmaComponents.activeCharacterMovementDirection * static_cast<signed int>(params.front().getValueAsInteger());
@@ -477,7 +484,7 @@ namespace GGUI {
                         currentStates->ecmaComponents.activeDataPosition += directionVector;
                     }
                     
-                    void operate_CHARACTER_TABULATION(sequence::base* /*ignored*/) {
+                    void operate_CHARACTER_TABULATION(sequence::base*) {
                         tabulationStop nextTabulation;
 
                         // Find next tabulation 
@@ -500,7 +507,7 @@ namespace GGUI {
                         TODO("add here the code for detecting multi-line tabulation support and if so, also move the activeLinePosition.")
                     }
 
-                    void operate_CHARACTER_TABULATION_SET(sequence::base* /*ignored*/) {
+                    void operate_CHARACTER_TABULATION_SET(sequence::base*) {
                         // This function sets a tabulation stop at the current active line position and presentation position, with the current tabulation alignment mode.
                         currentStates->ecmaComponents.tabulationStops.push_back(tabulationStop{
                             currentStates->ecmaComponents.activeTabulationAlignment,
@@ -510,7 +517,7 @@ namespace GGUI {
                     }
 
                     void operate_CHARACTER_AND_LINE_POSITION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::CHARACTER_AND_LINE_POSITION.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -522,7 +529,7 @@ namespace GGUI {
                         currentStates->ecmaComponents.activeDataPosition = {x, y};
                     }
 
-                    void operate_LINE_FEED(sequence::base* /*ignored*/) {
+                    void operate_LINE_FEED(sequence::base*) {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates->ecmaComponents.activePresentationPosition.y++;
                         } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
@@ -530,7 +537,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_NEXT_LINE(sequence::base* /*ignored*/) {
+                    void operate_NEXT_LINE(sequence::base*) {
                         bool has_presentation = currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION);
                         bool has_data = currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA);
                         auto movement_direction = currentStates->ecmaComponents.toCharacterMovementDirection(currentStates->ecmaComponents.activeCharacterMovementDirection);
@@ -550,7 +557,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_PARTIAL_LINE_FORWARD(sequence::base* /*ignored*/) {
+                    void operate_PARTIAL_LINE_FORWARD(sequence::base*) {
                         auto direction = imaginaryLine::types::SUBSCRIPT;
 
                         TODO("This part is going to be ugly, clean this up!")
@@ -591,12 +598,12 @@ namespace GGUI {
                         });
                     }
 
-                    void operate_PARTIAL_LINE_BACKWARD(sequence::base* /*ignored*/) {
+                    void operate_PARTIAL_LINE_BACKWARD(sequence::base*) {
                         currentStates->ecmaComponents.imaginaryLines.back().end = currentStates->ecmaComponents.activePresentationPosition;
                     }
 
                     void operate_PAGE_POSITION_ABSOLUTE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::PAGE_POSITION_ABSOLUTE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -608,7 +615,7 @@ namespace GGUI {
                     }
 
                     void operate_PAGE_POSITION_BACKWARD(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::PAGE_POSITION_BACKWARD.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -620,7 +627,7 @@ namespace GGUI {
                     }
 
                     void operate_PAGE_POSITION_FORWARD(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::PAGE_POSITION_FORWARD.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -631,7 +638,7 @@ namespace GGUI {
                         currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.dataPages[currentStates->ecmaComponents.activePageIndex + PageIndex].start.y;
                     }
 
-                    void operate_REVERSE_LINE_FEED(sequence::base* /*ignored*/) {
+                    void operate_REVERSE_LINE_FEED(sequence::base*) {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates->ecmaComponents.activePresentationPosition.y--;
                         } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
@@ -640,9 +647,9 @@ namespace GGUI {
                     }
 
                     void operate_TABULATION_CLEAR(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::TABULATION_CLEAR::code.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<formatEffectors::TABULATION_CLEAR::types>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() == 1);
 
@@ -721,7 +728,7 @@ namespace GGUI {
                     }
 
                     void operate_TABULATION_STOP_REMOVE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::TABULATION_STOP_REMOVE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -745,7 +752,7 @@ namespace GGUI {
                     }
 
                     void operate_LINE_POSITION_ABSOLUTE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::LINE_POSITION_ABSOLUTE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -759,7 +766,7 @@ namespace GGUI {
                     }
 
                     void operate_LINE_POSITION_BACKWARD(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::LINE_POSITION_BACKWARD.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -773,7 +780,7 @@ namespace GGUI {
                     }
 
                     void operate_LINE_POSITION_FORWARD(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = formatEffectors::LINE_POSITION_FORWARD.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -817,7 +824,7 @@ namespace GGUI {
                     }
 
                     void operate_DIMENSION_TEXT_AREA(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::DIMENSION_TEXT_AREA.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -830,9 +837,9 @@ namespace GGUI {
                     }
 
                     void operate_FONT_SELECTION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::FONT_SELECTION.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<fontSlots>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() == 2);
 
@@ -843,9 +850,9 @@ namespace GGUI {
                     }
 
                     void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::GRAPHIC_CHARACTER_COMBINATION::code.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<GRAPHIC_CHARACTER_COMBINATION::types>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() == 1);
 
@@ -887,7 +894,7 @@ namespace GGUI {
                     }
 
                     void operate_GRAPHIC_SIZE_MODIFICATION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::GRAPHIC_SIZE_MODIFICATION.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -924,7 +931,7 @@ namespace GGUI {
                     }
 
                     void operate_GRAPHIC_SIZE_SELECTION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::GRAPHIC_SIZE_SELECTION.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -947,9 +954,9 @@ namespace GGUI {
                     }
 
                     void operate_JUSTIFY(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::JUSTIFY.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<justify::types>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() > 0);
 
@@ -973,14 +980,14 @@ namespace GGUI {
                         currentStates->ecmaComponents.registeredJustifications.push_back(newJustification);
                     }
 
-                    void operate_NO_BREAK_HERE(sequence::base* /*ignored*/) {
+                    void operate_NO_BREAK_HERE(sequence::base*) {
                         currentStates->ecmaComponents.lineContinuations.push_back(currentStates->ecmaComponents.activePresentationPosition);
                     }
 
                     void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::PRESENTATION_EXPAND_OR_CONTRACT.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<spacingFactor::types>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() == 1);
 
@@ -990,9 +997,9 @@ namespace GGUI {
                     }
 
                     void operate_SELECT_GRAPHIC_RENDITION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::SELECT_GRAPHIC_RENDITION.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<graphicalTextAttributes>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() > 0);
 
@@ -1013,7 +1020,7 @@ namespace GGUI {
                     }
 
                     void operate_SET_LINE_HOME(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::SET_LINE_HOME.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1035,7 +1042,7 @@ namespace GGUI {
                     }
 
                     void operate_SET_LINE_LIMIT(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = presentationControlFunctions::SET_LINE_LIMIT.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1059,7 +1066,7 @@ namespace GGUI {
 
                 namespace editorFunctions {
                     void operate_DELETE_CHARACTER(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = editorFunctions::DELETE_CHARACTER.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1093,7 +1100,7 @@ namespace GGUI {
                     }
 
                     void operate_DELETE_LINE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = editorFunctions::DELETE_LINE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1122,7 +1129,7 @@ namespace GGUI {
                     }
 
                     void operate_INSERT_CHARACTER(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = editorFunctions::INSERT_CHARACTER.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1172,7 +1179,7 @@ namespace GGUI {
                     }
 
                     void operate_INSERT_LINE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = editorFunctions::INSERT_LINE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1226,7 +1233,7 @@ namespace GGUI {
 
                 namespace cursorControlFunctions {
                     void operate_CURSOR_NEXT_LINE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_NEXT_LINE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1239,7 +1246,7 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_PRECEDING_LINE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_PRECEDING_LINE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1252,7 +1259,7 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_LEFT(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_LEFT.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1264,7 +1271,7 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_DOWN(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_DOWN.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1288,7 +1295,7 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_POSITION(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_POSITION.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1302,7 +1309,7 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_UP(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_UP.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1316,7 +1323,7 @@ namespace GGUI {
 
                 namespace displayControlFunctions {
                     void operate_NEXT_PAGE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = displayControlFunctions::NEXT_PAGE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1328,7 +1335,7 @@ namespace GGUI {
                     }
 
                     void operate_PRECEDING_PAGE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = displayControlFunctions::PRECEDING_PAGE.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1340,7 +1347,7 @@ namespace GGUI {
                     }
 
                     void operate_SCROLL_DOWN(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = displayControlFunctions::SCROLL_DOWN.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1352,7 +1359,7 @@ namespace GGUI {
                     }
 
                     void operate_SCROLL_UP(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = displayControlFunctions::SCROLL_UP.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1365,28 +1372,28 @@ namespace GGUI {
                 }
 
                 namespace deviceControlFunctions {
-                    void operate_DEVICE_CONTROL_ONE(sequence::base* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_ONE(sequence::base*) {
                         currentStates->ecmaComponents.powerStatus = ancillaryStates::X_ON;
                     }
 
-                    void operate_DEVICE_CONTROL_TWO(sequence::base* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_TWO(sequence::base*) {
                         currentStates->ecmaComponents.powerStatus = ancillaryStates::BASIC_MODE;
                     }
 
-                    void operate_DEVICE_CONTROL_THREE(sequence::base* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_THREE(sequence::base*) {
                         currentStates->ecmaComponents.powerStatus = ancillaryStates::X_OFF;
                     }
 
-                    void operate_DEVICE_CONTROL_FOUR(sequence::base* /*ignored*/) {
+                    void operate_DEVICE_CONTROL_FOUR(sequence::base*) {
                         currentStates->ecmaComponents.powerStatus = ancillaryStates::INTERRUPT;
                     }
                 }
 
                 namespace modeSettingFunctions {
                     void operate_RESET_MODE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = modeSettingFunctions::RESET_MODE.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<mode::types>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() > 0);
 
@@ -1398,9 +1405,9 @@ namespace GGUI {
                     }
 
                     void operate_SET_MODE(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = modeSettingFunctions::SET_MODE.getAsParsedFormWithDefaultParameters(input);
 
-                        auto params = controlSequence->convert<sequence::parameter::selectable<mode::types>>();
+                        auto params = controlSequence->getParameters();
 
                         assert(params.size() > 0);
 
@@ -1538,8 +1545,7 @@ namespace GGUI {
 
                 namespace miscellaneousControlFunctions {
                     void operate_ACTIVE_POSITION_REPORT(sequence::base* input) {
-                        
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = miscellaneousControlFunctions::ACTIVE_POSITION_REPORT.getAsParsedFormWithDefaultParameters(input);
                         
                         auto params = controlSequence->getParameters();
                         
@@ -1558,7 +1564,7 @@ namespace GGUI {
                     }
 
                     void operate_DEVICE_ATTRIBUTES(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
 
                         auto params = controlSequence->getParameters();
 
@@ -1580,7 +1586,7 @@ namespace GGUI {
                         }
                     }
 
-                    void operate_RESET_TO_INITIAL_STATE(sequence::base* /*ignored*/) {
+                    void operate_RESET_TO_INITIAL_STATE(sequence::base*) {
                         currentStates->ecmaComponents.reset();
                     }
                 }
