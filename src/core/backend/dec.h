@@ -227,7 +227,8 @@ namespace GGUI {
                         inline base<
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>, 
                             ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>, 
-                            2
+                            2,
+                            specialTypes::HAS_INFINITE_PARAMETERS
                         > DEVICE_ATTRIBUTES(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>(ecma::table::finalWithoutIntermediate::DA), 
                             {
@@ -343,7 +344,8 @@ namespace GGUI {
                         inline base<
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>, 
                             ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, 
-                            2
+                            2,
+                            specialTypes::HAS_INFINITE_PARAMETERS
                         > DEVICE_ATTRIBUTES(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>(ecma::table::finalWithoutIntermediate::DA), 
                             {
@@ -415,7 +417,8 @@ namespace GGUI {
                         inline base<
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>, 
                             ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, 
-                            2
+                            2,
+                            specialTypes::HAS_INFINITE_PARAMETERS
                         > DEVICE_ATTRIBUTES(
                             ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>(ecma::table::finalWithoutIntermediate::DA), 
                             {
