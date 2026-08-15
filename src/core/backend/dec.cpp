@@ -33,9 +33,9 @@ namespace GGUI {
 
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
+                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.transform(input);
 
-                            auto params = controlSequence->getParameters();
+                            auto params = controlSequence.getParameters();
 
                             if (params.size() == 1) {   // This is the request for identification, which is already implemented in the ecma.cpp, so we can just reroute into there.
                                 ecma::sequences::miscellaneousControlFunctions::operate_DEVICE_ATTRIBUTES(input);
@@ -57,9 +57,9 @@ namespace GGUI {
 
                     namespace modeSettingFunctions {
                         void operate_RESET_MODE(ecma::sequence::base* input) {
-                            auto controlSequence = modeSettingFunctions::RESET_MODE.getAsParsedFormWithDefaultParameters(input);
+                            auto controlSequence = modeSettingFunctions::RESET_MODE.transform(input);
 
-                            auto params = controlSequence->getParameters();
+                            auto params = controlSequence.getParameters();
 
                             assert(params.size() > 0);
 
@@ -79,9 +79,9 @@ namespace GGUI {
                         }
 
                         void operate_SET_MODE(ecma::sequence::base* input) {
-                            auto controlSequence = modeSettingFunctions::SET_MODE.getAsParsedFormWithDefaultParameters(input);
+                            auto controlSequence = modeSettingFunctions::SET_MODE.transform(input);
 
-                            auto params = controlSequence->getParameters();
+                            auto params = controlSequence.getParameters();
 
                             assert(params.size() > 0);
 
@@ -110,9 +110,9 @@ namespace GGUI {
                     // Override of ecma miscellaneousControlFunctions
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
+                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.transform(input);
 
-                            auto params = controlSequence->getParameters();
+                            auto params = controlSequence.getParameters();
 
                             if (!params.empty()) {
                                 // VT220 and VT320 both share same device feature list
@@ -147,9 +147,9 @@ namespace GGUI {
                     // Override of ecma miscellaneousControlFunctions
                     namespace miscellaneousControlFunctions {
                         void operate_DEVICE_ATTRIBUTES(ecma::sequence::base* input) {
-                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
+                            auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.transform(input);
 
-                            auto params = controlSequence->getParameters();
+                            auto params = controlSequence.getParameters();
 
                             if (!params.empty()) {
                                 if (

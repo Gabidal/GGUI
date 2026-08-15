@@ -158,7 +158,7 @@ namespace GGUI {
                 // No data; avoid spinning
                 currentStates->transmission.inputSize = 0;
                 
-                GGUI::INTERNAL::LOGGER::log("poll timeout!");
+                // GGUI::INTERNAL::LOGGER::log("poll timeout!");
                 return;
             }
 
@@ -181,7 +181,7 @@ namespace GGUI {
                 totalSize += str.size();
             }
 
-            GGUI::INTERNAL::LOGGER::log("sending bytes...");
+            // GGUI::INTERNAL::LOGGER::log("sending bytes...");
             ssize_t wrote = writev(output.handle, vec.data(), vec.size());
             if (wrote != totalSize) {
                 GGUI::INTERNAL::LOGGER::log("Failed to fully write to: '" + std::to_string(output.handle) + "' (wrote " + std::to_string(wrote) + " of " + std::to_string(totalSize) + ")");

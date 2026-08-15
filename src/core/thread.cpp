@@ -108,7 +108,7 @@ namespace GGUI{
                         }
                         else{
                         #ifdef GGUI_DEBUG
-                            LOGGER::log("Saved frame");
+                            // LOGGER::log("Saved frame");
                         #endif
 
                             if (SETTINGS::enableDRM) {

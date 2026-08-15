@@ -287,7 +287,7 @@ namespace GGUI {
         }
 
         void base::enableExtensions() {                
-            static std::string queryDeviceAttribute = ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile().toString();
+            static std::string queryDeviceAttribute = ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({}).toString();
 
             std::vector<ecma::sequence::base*> unwantedSequences;
 

@@ -100,7 +100,7 @@ namespace GGUI {
                     return static_cast<uint8_t>(val) == static_cast<uint8_t>(selected);
                 }
 
-                template<typename enumType, typename = std::is_enum<enumType>>
+                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType>>>
                 constexpr size_t getSize() {
                     return (static_cast<uint8_t>(enumType::__max) - static_cast<uint8_t>(enumType::__min)) + 1;
                 }
@@ -643,7 +643,7 @@ namespace GGUI {
                     preAllocated.add(static_cast<char>(static_cast<uint8_t>(val)));
                 }
 
-                template<typename enumType, typename = std::enable_if<std::is_enum_v<enumType> && (sizeof(uint8_t) == sizeof(enumType))>>
+                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(uint8_t) == sizeof(enumType))>>
                 constexpr size_t getSize(enumType value) {
                     return sizeof(value); // should always be 1
                 }
@@ -735,14 +735,14 @@ namespace GGUI {
                  * NOTE: Can be used for private extensions for single byte non ESC sequences introduced by shift functions in graphic pages.
                  * NOTE: This class does not care for 7-bit or 8-bit, will convert all 8-bit functions into 7-bit ones!
                  */
-                template<typename containerType = uint8_t, typename = std::enable_if<(sizeof(containerType) == sizeof(uint8_t))>>
+                template<typename containerType = uint8_t, typename = std::enable_if_t<(sizeof(containerType) == sizeof(uint8_t))>>
                 class prefix : public base {  // Made for C0 and C1 functions 
                 protected:
                     containerType header;
                 public:
                     constexpr prefix(containerType val, types t = types::SINGLE_BYTE) : base(t), header(val) {}
 
-                    template<typename otherContainerType, typename = std::enable_if<(sizeof(otherContainerType) == sizeof(containerType))>>
+                    template<typename otherContainerType, typename = std::enable_if_t<(sizeof(otherContainerType) == sizeof(containerType))>>
                     constexpr prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
 
                     virtual ~prefix() = default;
@@ -855,15 +855,15 @@ namespace GGUI {
                         parameters = this->convert<containerType>(other.parameters);
                     }
 
-                    template<typename exportAs>
-                    std::vector<exportAs> convert() {
+                    template<typename exportAs, typename fromType>
+                    std::vector<exportAs> convert(const std::vector<fromType>& params) const {
                         std::vector<exportAs> result;
 
-                        if constexpr (std::is_same<exportAs, containerType>::value) {
-                            result = parameters;
+                        if constexpr (std::is_same<exportAs, fromType>::value) {
+                            result = params;
                         } else {    // we need to copy data manually
-                            for (const auto& i : parameters) {
-                                result.push_back(i);
+                            for (const auto& i : params) {
+                                result.push_back(i);    // This triggers parameter::base<A -> B> conversion 
                             }
                         }
 
@@ -918,16 +918,9 @@ namespace GGUI {
 
                     template<typename otherParameterContainerType>
                     control<containerType> compile(const std::vector<otherParameterContainerType>& params) const {
-                        control<containerType> result = *this;                  // Copy contents
-                        std::vector<containerType> vec = result.parameters;     // Copy default parameters
-
-                        vec.resize(std::max(params.size(), parameters.size())); // Resize to fit the new parameters
-
-                        for (size_t i = 0; i < params.size(); i++) {
-                            vec[i] = static_cast<containerType>(params[i]);
-                        }
-
-                        result.parameters = vec;
+                        control<containerType> result = *this;                      // Copy contents
+                        
+                        result.parameters = this->convert<containerType>(params);   // Convert parameters to the desired container type
 
                         return result;
                     }
@@ -954,12 +947,6 @@ namespace GGUI {
                         return result;
                     }
                 };
-
-                template<typename T>
-                struct is_control : std::false_type {};
-
-                template<typename T>
-                struct is_control<sequence::control<T>> : std::true_type {};
 
                 // APC, DCS, OSC, PM or SOS
                 class string : public prefix<table::C1> {
@@ -1359,7 +1346,7 @@ namespace GGUI {
 
                     cellPatch(uint8_t mainInstruction) : instructionSeries(mainInstruction), patch{} {}
 
-                    template<typename enumType, typename = std::enable_if<std::is_enum_v<enumType> == true>>
+                    template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> == true>>
                     constexpr cellPatch(enumType mainInstruction) : instructionSeries(static_cast<uint8_t>(mainInstruction)), patch{} {}
 
                     void add(cell customFunctions, sequence::postfix<> body = {}) {
@@ -1542,11 +1529,11 @@ namespace GGUI {
                     
                     base(enumType idx, definition val) : index(idx), value(val) {}
 
-                    template<typename rawValueType, typename = std::enable_if<(sizeof(enumType) == sizeof(rawValueType))>>
+                    template<typename rawValueType, typename = std::enable_if_t<(sizeof(enumType) == sizeof(rawValueType))>>
                     base(rawValueType idx, definition val) : index(static_cast<enumType>(idx)), value(val) {}
                     
                     flags<enumType> operator|(base other) const {
-                        return flags(*this) | flags(other);
+                        return flags<enumType>(*this) | flags<enumType>(other);
                     }
                 };
                 
@@ -2379,58 +2366,95 @@ namespace GGUI {
                         customCellFunctions->add(functionality, tail);
                     }
 
+                    template<typename T>
+                    std::vector<parameterType> convertParameters(const std::vector<T>& params) const {
+                        return function.template convert<parameterType>(params);
+                    }
+
                     template<
+                        size_t N,
                         auto T = parameterExtension,
                         std::enable_if_t<(T == specialTypes::NORMAL), bool> = true
                     >
-                    codeType compile(const std::array<parameterType, paramCount>& params) const {
-                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
-                            return function.compile(params);
+                    std::array<parameterType, paramCount> normalizeParameters(const std::array<parameterType, N>& params) const {
+                        static_assert(N <= paramCount, "Too many parameters provided for this sequence.");
+
+                        auto result = parameterDefaultValue;
+
+                        for (size_t i = 0; i < N; ++i)
+                            result[i] = params[i];
+
+                        return result;
+                    }
+
+                    template<
+                        typename rawParameterType,
+                        auto T = parameterExtension,
+                        std::enable_if_t<(T == specialTypes::NORMAL), bool> = true
+                    >
+                    std::array<parameterType, paramCount> normalizeParameters(const std::vector<rawParameterType>& params) const {
+                        auto result = parameterDefaultValue;
+                        const auto converted = convertParameters(params);
+
+                        for (size_t i = 0; i < std::min(converted.size(), result.size()); i++) result[i] = converted[i];
+
+                        return result;
+                    }
+                    
+                    template<
+                        auto T = parameterExtension,
+                        std::enable_if_t<(T == specialTypes::HAS_INFINITE_PARAMETERS), bool> = true,
+                        typename rawParameterType = parameterType
+                    >
+                    std::vector<parameterType> normalizeParameters(const std::vector<rawParameterType>& params) const {
+                        auto result = std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end());
+                        const auto converted = convertParameters(params);
+                        
+                        result.resize(std::max(result.size(), converted.size()));
+
+                        for (size_t i = 0; i < std::min(converted.size(), result.size()); i++) result[i] = converted[i];
+
+                        return result;
+                    }
+
+                    template<
+                        auto T = parameterExtension,
+                        std::enable_if_t<(T == specialTypes::NORMAL), bool> = true,
+                        size_t incomingParameterCount = paramCount
+                    >
+                    codeType compile(const std::array<parameterType, incomingParameterCount>& params) const {
+                        if constexpr (std::is_same_v<codeType, sequence::control<parameterType>>) {
+                            return function.compile(normalizeParameters(params));
                         } else {
                             return function.compile();
                         }
                     }
 
-                    template< 
-                        auto T = parameterExtension,
-                        std::enable_if_t<(T == specialTypes::NORMAL), bool> = true
-                    >
-                    codeType compile() const {
-                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
-                            return function.compile(
-                                std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end())
-                            );
-                        } else {
-                            return function.compile();
-                        }
-                    }
-
                     template<
                         auto T = parameterExtension,
-                        std::enable_if_t<(T == specialTypes::HAS_INFINITE_PARAMETERS), bool> = true
+                        std::enable_if_t<(T == specialTypes::HAS_INFINITE_PARAMETERS), bool> = true,
+                        typename otherParameterType = parameterType
                     >
                     codeType compile(
-                        const std::vector<parameterType>& params = {}
+                        const std::vector<otherParameterType>& params = {}
                     ) const {
-                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
-                            return function.compile(
-                                params.size() ? params : std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end())
-                            );
+                        if constexpr (std::is_same_v<codeType, sequence::control<parameterType>>) {
+                            return function.compile(normalizeParameters(params));
                         } else {
                             return function.compile();
                         }
                     }
 
-                    template<typename rawParameterForm = sequence::parameter::numeric>
-                    codeType* getAsParsedFormWithDefaultParameters(sequence::base* input) {
-                        if constexpr (sequence::is_control<codeType>::value) { // all CSI sequences must go through the default parametrization!
-                            auto controlSequence = static_cast<sequence::control<rawParameterForm>*>(input);
-
-                            auto params = controlSequence->getParameters();
-
-                            return new codeType(function.compile(params));
+                    // Takes in runtime numeric based sequence, and returns object based on this compile time type information.
+                    codeType transform(sequence::base* input) {
+                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
+                            // All runtime sequences use parameter::numeric type!
+                            auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                            
+                            // templates should disable the wrong overload so no check needed here.
+                            return function.compile(normalizeParameters(controlSequence->getParameters()));
                         } else {
-                            return static_cast<codeType*>(input);
+                            return static_cast<codeType>(*input);
                         }
                     }
                 };

@@ -449,9 +449,9 @@ namespace GGUI {
                     }
 
                     void operate_CHARACTER_POSITION_ABSOLUTE(sequence::base* input) {
-                        auto controlSequence = formatEffectors::CHARACTER_POSITION_ABSOLUTE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::CHARACTER_POSITION_ABSOLUTE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -459,9 +459,9 @@ namespace GGUI {
                     }
 
                     void operate_CHARACTER_POSITION_BACKWARD(sequence::base* input) {
-                        auto controlSequence = formatEffectors::CHARACTER_POSITION_BACKWARD.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::CHARACTER_POSITION_BACKWARD.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -472,9 +472,9 @@ namespace GGUI {
                     }
 
                     void operate_CHARACTER_POSITION_FORWARD(sequence::base* input) {
-                        auto controlSequence = formatEffectors::CHARACTER_POSITION_FORWARD.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::CHARACTER_POSITION_FORWARD.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -517,9 +517,9 @@ namespace GGUI {
                     }
 
                     void operate_CHARACTER_AND_LINE_POSITION(sequence::base* input) {
-                        auto controlSequence = formatEffectors::CHARACTER_AND_LINE_POSITION.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::CHARACTER_AND_LINE_POSITION.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 2);
 
@@ -603,9 +603,9 @@ namespace GGUI {
                     }
 
                     void operate_PAGE_POSITION_ABSOLUTE(sequence::base* input) {
-                        auto controlSequence = formatEffectors::PAGE_POSITION_ABSOLUTE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::PAGE_POSITION_ABSOLUTE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -615,9 +615,9 @@ namespace GGUI {
                     }
 
                     void operate_PAGE_POSITION_BACKWARD(sequence::base* input) {
-                        auto controlSequence = formatEffectors::PAGE_POSITION_BACKWARD.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::PAGE_POSITION_BACKWARD.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -627,9 +627,9 @@ namespace GGUI {
                     }
 
                     void operate_PAGE_POSITION_FORWARD(sequence::base* input) {
-                        auto controlSequence = formatEffectors::PAGE_POSITION_FORWARD.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::PAGE_POSITION_FORWARD.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -647,9 +647,9 @@ namespace GGUI {
                     }
 
                     void operate_TABULATION_CLEAR(sequence::base* input) {
-                        auto controlSequence = formatEffectors::TABULATION_CLEAR::code.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::TABULATION_CLEAR::code.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -728,9 +728,9 @@ namespace GGUI {
                     }
 
                     void operate_TABULATION_STOP_REMOVE(sequence::base* input) {
-                        auto controlSequence = formatEffectors::TABULATION_STOP_REMOVE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::TABULATION_STOP_REMOVE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -752,9 +752,9 @@ namespace GGUI {
                     }
 
                     void operate_LINE_POSITION_ABSOLUTE(sequence::base* input) {
-                        auto controlSequence = formatEffectors::LINE_POSITION_ABSOLUTE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::LINE_POSITION_ABSOLUTE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -766,9 +766,9 @@ namespace GGUI {
                     }
 
                     void operate_LINE_POSITION_BACKWARD(sequence::base* input) {
-                        auto controlSequence = formatEffectors::LINE_POSITION_BACKWARD.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::LINE_POSITION_BACKWARD.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -780,9 +780,9 @@ namespace GGUI {
                     }
 
                     void operate_LINE_POSITION_FORWARD(sequence::base* input) {
-                        auto controlSequence = formatEffectors::LINE_POSITION_FORWARD.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = formatEffectors::LINE_POSITION_FORWARD.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -824,9 +824,9 @@ namespace GGUI {
                     }
 
                     void operate_DIMENSION_TEXT_AREA(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::DIMENSION_TEXT_AREA.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::DIMENSION_TEXT_AREA.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 2);
 
@@ -837,9 +837,9 @@ namespace GGUI {
                     }
 
                     void operate_FONT_SELECTION(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::FONT_SELECTION.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::FONT_SELECTION.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 2);
 
@@ -850,9 +850,9 @@ namespace GGUI {
                     }
 
                     void operate_GRAPHIC_CHARACTER_COMBINATION(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::GRAPHIC_CHARACTER_COMBINATION::code.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::GRAPHIC_CHARACTER_COMBINATION::code.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -894,9 +894,9 @@ namespace GGUI {
                     }
 
                     void operate_GRAPHIC_SIZE_MODIFICATION(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::GRAPHIC_SIZE_MODIFICATION.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::GRAPHIC_SIZE_MODIFICATION.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 2);
 
@@ -931,9 +931,9 @@ namespace GGUI {
                     }
 
                     void operate_GRAPHIC_SIZE_SELECTION(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::GRAPHIC_SIZE_SELECTION.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::GRAPHIC_SIZE_SELECTION.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -954,9 +954,9 @@ namespace GGUI {
                     }
 
                     void operate_JUSTIFY(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::JUSTIFY.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::JUSTIFY.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() > 0);
 
@@ -985,9 +985,9 @@ namespace GGUI {
                     }
 
                     void operate_PRESENTATION_EXPAND_OR_CONTRACT(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::PRESENTATION_EXPAND_OR_CONTRACT.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::PRESENTATION_EXPAND_OR_CONTRACT.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -997,9 +997,9 @@ namespace GGUI {
                     }
 
                     void operate_SELECT_GRAPHIC_RENDITION(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::SELECT_GRAPHIC_RENDITION.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::SELECT_GRAPHIC_RENDITION.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() > 0);
 
@@ -1020,9 +1020,9 @@ namespace GGUI {
                     }
 
                     void operate_SET_LINE_HOME(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::SET_LINE_HOME.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::SET_LINE_HOME.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1042,9 +1042,9 @@ namespace GGUI {
                     }
 
                     void operate_SET_LINE_LIMIT(sequence::base* input) {
-                        auto controlSequence = presentationControlFunctions::SET_LINE_LIMIT.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = presentationControlFunctions::SET_LINE_LIMIT.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1066,9 +1066,9 @@ namespace GGUI {
 
                 namespace editorFunctions {
                     void operate_DELETE_CHARACTER(sequence::base* input) {
-                        auto controlSequence = editorFunctions::DELETE_CHARACTER.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = editorFunctions::DELETE_CHARACTER.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1100,9 +1100,9 @@ namespace GGUI {
                     }
 
                     void operate_DELETE_LINE(sequence::base* input) {
-                        auto controlSequence = editorFunctions::DELETE_LINE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = editorFunctions::DELETE_LINE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1129,9 +1129,9 @@ namespace GGUI {
                     }
 
                     void operate_INSERT_CHARACTER(sequence::base* input) {
-                        auto controlSequence = editorFunctions::INSERT_CHARACTER.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = editorFunctions::INSERT_CHARACTER.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1179,9 +1179,9 @@ namespace GGUI {
                     }
 
                     void operate_INSERT_LINE(sequence::base* input) {
-                        auto controlSequence = editorFunctions::INSERT_LINE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = editorFunctions::INSERT_LINE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1233,9 +1233,9 @@ namespace GGUI {
 
                 namespace cursorControlFunctions {
                     void operate_CURSOR_NEXT_LINE(sequence::base* input) {
-                        auto controlSequence = cursorControlFunctions::CURSOR_NEXT_LINE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_NEXT_LINE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1246,9 +1246,9 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_PRECEDING_LINE(sequence::base* input) {
-                        auto controlSequence = cursorControlFunctions::CURSOR_PRECEDING_LINE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_PRECEDING_LINE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1259,9 +1259,9 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_LEFT(sequence::base* input) {
-                        auto controlSequence = cursorControlFunctions::CURSOR_LEFT.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_LEFT.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1271,9 +1271,9 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_DOWN(sequence::base* input) {
-                        auto controlSequence = cursorControlFunctions::CURSOR_DOWN.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_DOWN.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1283,9 +1283,9 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_RIGHT(sequence::base* input) {
-                        auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_RIGHT.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1295,9 +1295,9 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_POSITION(sequence::base* input) {
-                        auto controlSequence = cursorControlFunctions::CURSOR_POSITION.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_POSITION.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 2);
 
@@ -1309,9 +1309,9 @@ namespace GGUI {
                     }
 
                     void operate_CURSOR_UP(sequence::base* input) {
-                        auto controlSequence = cursorControlFunctions::CURSOR_UP.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = cursorControlFunctions::CURSOR_UP.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1323,9 +1323,9 @@ namespace GGUI {
 
                 namespace displayControlFunctions {
                     void operate_NEXT_PAGE(sequence::base* input) {
-                        auto controlSequence = displayControlFunctions::NEXT_PAGE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = displayControlFunctions::NEXT_PAGE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1335,9 +1335,9 @@ namespace GGUI {
                     }
 
                     void operate_PRECEDING_PAGE(sequence::base* input) {
-                        auto controlSequence = displayControlFunctions::PRECEDING_PAGE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = displayControlFunctions::PRECEDING_PAGE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1347,9 +1347,9 @@ namespace GGUI {
                     }
 
                     void operate_SCROLL_DOWN(sequence::base* input) {
-                        auto controlSequence = displayControlFunctions::SCROLL_DOWN.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = displayControlFunctions::SCROLL_DOWN.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1359,9 +1359,9 @@ namespace GGUI {
                     }
 
                     void operate_SCROLL_UP(sequence::base* input) {
-                        auto controlSequence = displayControlFunctions::SCROLL_UP.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = displayControlFunctions::SCROLL_UP.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() == 1);
 
@@ -1391,9 +1391,9 @@ namespace GGUI {
 
                 namespace modeSettingFunctions {
                     void operate_RESET_MODE(sequence::base* input) {
-                        auto controlSequence = modeSettingFunctions::RESET_MODE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = modeSettingFunctions::RESET_MODE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() > 0);
 
@@ -1405,9 +1405,9 @@ namespace GGUI {
                     }
 
                     void operate_SET_MODE(sequence::base* input) {
-                        auto controlSequence = modeSettingFunctions::SET_MODE.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = modeSettingFunctions::SET_MODE.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         assert(params.size() > 0);
 
@@ -1545,9 +1545,9 @@ namespace GGUI {
 
                 namespace miscellaneousControlFunctions {
                     void operate_ACTIVE_POSITION_REPORT(sequence::base* input) {
-                        auto controlSequence = miscellaneousControlFunctions::ACTIVE_POSITION_REPORT.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = miscellaneousControlFunctions::ACTIVE_POSITION_REPORT.transform(input);
                         
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
                         
                         assert(params.size() == 2);
                         
@@ -1564,9 +1564,9 @@ namespace GGUI {
                     }
 
                     void operate_DEVICE_ATTRIBUTES(sequence::base* input) {
-                        auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.getAsParsedFormWithDefaultParameters(input);
+                        auto controlSequence = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.transform(input);
 
-                        auto params = controlSequence->getParameters();
+                        auto params = controlSequence.getParameters();
 
                         if (params.size() > 1) return;
 
