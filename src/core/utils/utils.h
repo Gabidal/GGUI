@@ -5,13 +5,13 @@
  */
 
 #include "types.h"
-#include "superString.h"
 #include "color.h"
 
 #include <math.h>
 #include <cstring>
 #include <algorithm> // std::clamp
 #include <cmath>     // std::pow, std::lround
+#include <charconv>
 
 namespace GGUI{
     class element;
@@ -324,72 +324,83 @@ namespace GGUI{
          * @return The interpolated RGB color.
          */
         extern GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, int frameIndexRemainder, int Frame_Distance);
-
-        /**
-         * @brief Convert a liquefied UTF conveyorAllocator into a cached std::string.
-         *
-         * Re-uses a static std::string buffer between calls to avoid heap churn. The
-         * function expects that Liquefied_Size equals the sum of the sizes of all
-         * compactString entries in Data and will resize the cached string if the size
-         * differs. Multi‑byte (unicode) entries are memcpy'd; single byte ASCII entries
-         * are written directly. Entries with size == 0 are skipped.
-         *
-         * @param Data Contiguous collection of compactString produced by liquifyUTFText().
-         * @param Liquefied_Size Pre-computed total number of bytes represented by Data.
-         * @return Pointer to an internally cached std::string containing the concatenated bytes.
-         * @warning The returned pointer becomes invalid after the next call to this function.
-         */
-        // inline std::string* toString(conveyorAllocator<compactString> Data, unsigned int Liquefied_Size) noexcept {  
-        inline std::string* toString(std::vector<compactString>& Data, unsigned int Liquefied_Size) noexcept {  // TODO("remember to switch mack to conveyor allocator!!!")
-            static std::string result; // internal cache between renders
-
-            if (result.size() != Liquefied_Size){
-                // Resize a std::string to the total size.
-                result.resize(Liquefied_Size, '\0');
-            }
-
-            // Fast-path pointer access to avoid bounds checks and replace overhead
-            char* outputAddress = result.data();
-            unsigned int outputIndex = 0;
-
-            const compactString* dataAddress = Data.data();
-            const size_t cachedSize = Data.size();
-
-            for (size_t i = 0; i < cachedSize; i++) {
-                const compactString& data = dataAddress[i];
-
-                // Copy multi-byte unicode sequence directly
-                std::memcpy(outputAddress + outputIndex, data.text, data.size);
-                outputIndex += data.size;
-            }
-
-            return &result;
-        }
-
-        /**
-         * @brief Create a std::string from a single compactString.
-         *
-         * Allocates a std::string sized to the compactString length and copies either the
-         * multi-byte unicode sequence or the single ASCII character.
-         *
-         * @param cstr Source compactString.
-         * @return Newly constructed std::string containing the character data (no caching).
-         */
-        inline std::string toString(compactString& cstr){
-            // Resize a std::string to the total size.
-            std::string result;
-            result.resize(cstr.size);
-
-            // Replace the current contents of the string with the contents of the Unicode data.
-            result.replace(0, cstr.size, cstr.text);
-
-            return result;
-        }
     }
     // autoGen: Ignore end
 
-    template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>> 
-    constexpr uint8_t alias(enumType value) { return static_cast<uint8_t>(value); }
+    // Contains useful all around utils for handling enums
+    namespace table {
+        template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>> 
+        constexpr uint8_t alias(enumType value) { return static_cast<uint8_t>(value); }
+
+        // If an enum is small enough, then it should be possible to be to stringed.
+        template<typename enumType, typename = std::enable_if_t<(sizeof(enumType) == sizeof(uint8_t))>>
+        constexpr uint8_t toString(enumType val) {
+            return static_cast<uint8_t>(val);
+        }
+
+        template<
+            typename cellType,
+            size_t bufferSize,
+            typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>
+        >
+        constexpr void toString(enumType val, std::array<cellType, bufferSize>& preAllocated) {
+            preAllocated.add(static_cast<cellType>(val));
+        }
+
+        /**
+         * @brief Checks if a value falls within the range defined by an enum's __min and __max members.
+         * 
+         * @tparam E The enum type that defines __min and __max bounds
+         * @param val The value to check against the enum's range
+         * @return true if val is within the inclusive range [E::__min, E::__max]
+         * @return false otherwise
+         */
+        template<typename E, typename V>
+        constexpr bool contains(V val) {
+            return static_cast<uint8_t>(val) >= static_cast<uint8_t>(E::__min) && static_cast<uint8_t>(val) <= static_cast<uint8_t>(E::__max);
+        }
+
+        template<typename V, typename E>
+        constexpr bool is(V val, E selected) {
+            return static_cast<uint8_t>(val) == static_cast<uint8_t>(selected);
+        }
+
+        template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType>>>
+        constexpr size_t getSize() {
+            return (static_cast<uint8_t>(enumType::__max) - static_cast<uint8_t>(enumType::__min)) + 1;
+        }
+    }
+
+    namespace number {
+        template<typename T, typename P>
+        requires eligibleForWriterViewType<T, P>
+        constexpr void toString(writerView<T>& preAllocated, P val) {
+            std::span<T> freeMemory = preAllocated.requestFree().getStorage();
+
+            long long intValue = static_cast<long long>(val);
+
+            auto [tail, errorCode] = std::to_chars(freeMemory.data(), freeMemory.data() + freeMemory.size(), intValue);
+
+            assert(errorCode == std::errc() && "Failed to convert number to string!");
+
+            size_t tailDistanceToBufferStart = static_cast<size_t>(tail - freeMemory.data());
+
+            preAllocated.commit(std::span<T>{freeMemory.data(), tailDistanceToBufferStart});
+        }
+
+        template<typename T>
+        requires eligibleForWriterViewType<char, T>
+        constexpr void toString(std::string& appendTo, T num) {
+            constexpr size_t basicLength = 32;  // longe enough for large numbers
+            char buffer[basicLength];
+            std::span<char> bufferSpan(buffer, basicLength);
+
+            writerView<char> writer(bufferSpan);
+            toString<char, T>(writer, num);
+
+            appendTo.append(bufferSpan.data(), bufferSpan.size());
+        }
+    }
 }
 
 #endif

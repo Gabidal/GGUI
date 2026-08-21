@@ -2,15 +2,14 @@
 #define _ECMA_H_
 
 #include "../utils/types.h"
-#include "../utils/superString.h"
 #include "../utils/color.h"
 #include "../utils/utils.h"
 
 #include "utils.h"
 
-#include <bitset>
 #include <cassert>
 #include <variant>
+#include <span>
 
 namespace GGUI {
     namespace terminal {
@@ -37,8 +36,6 @@ namespace GGUI {
          * Stated here: https://ecma-international.org/policies/by-ipr/ecma-text-copyright-policy/
         */
         namespace ecma {
-            using compactString = INTERNAL::compactString;
-
             namespace configuration {
                 class page;
             }
@@ -52,14 +49,8 @@ namespace GGUI {
             namespace table {
                 constexpr uint8_t tableRows = 16;
 
-                // If an enum is small enough, then it should be possible to be to stringed.
-                template<typename enumType, typename = std::enable_if_t<(sizeof(enumType) == sizeof(uint8_t))>>
-                std::string toString(enumType val) {
-                    return std::string(1, (char)val);
-                }
-
                 constexpr uint8_t toInt(uint8_t column, uint8_t row) {
-                    return (column * tableRows) + row;
+                    return static_cast<uint8_t>((column << 4) | row);
                 }
 
                 enum class columns : int8_t {
@@ -80,29 +71,6 @@ namespace GGUI {
                     return static_cast<uint8_t>(
                         static_cast<int16_t>(value) + (sign * static_cast<int16_t>(by) * static_cast<int16_t>(tableRows))
                     );
-                }
-
-                /**
-                 * @brief Checks if a value falls within the range defined by an enum's __min and __max members.
-                 * 
-                 * @tparam E The enum type that defines __min and __max bounds
-                 * @param val The value to check against the enum's range
-                 * @return true if val is within the inclusive range [E::__min, E::__max]
-                 * @return false otherwise
-                 */
-                template<typename E, typename V>
-                bool contains(V val) {
-                    return static_cast<uint8_t>(val) >= static_cast<uint8_t>(E::__min) && static_cast<uint8_t>(val) <= static_cast<uint8_t>(E::__max);
-                }
-
-                template<typename V, typename E>
-                bool is(V val, E selected) {
-                    return static_cast<uint8_t>(val) == static_cast<uint8_t>(selected);
-                }
-
-                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType>>>
-                constexpr size_t getSize() {
-                    return (static_cast<uint8_t>(enumType::__max) - static_cast<uint8_t>(enumType::__min)) + 1;
                 }
 
                 constexpr bool checkBit(uint8_t val, int i) {
@@ -309,14 +277,10 @@ namespace GGUI {
                     uint8_t column, row;
 
                     constexpr location(uint8_t c, uint8_t r) : column(c), row(r) {}
-                    constexpr location(table::C0 preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
-                    constexpr location(table::C1 preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
-                    constexpr location(table::finalWithoutIntermediate preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
-                    constexpr location(table::finalWithIntermediate preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
-                    constexpr location(table::independentFunctions preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
-                    constexpr location(table::intermediate::identifiers preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
-                    constexpr location(table::parameters preset) : column(static_cast<uint8_t>(preset) / table::tableRows), row(static_cast<uint8_t>(preset) % table::tableRows) {}
-                    constexpr location(uint8_t raw) : column(raw / table::tableRows), row(raw % table::tableRows) {}
+                    constexpr location(uint8_t raw) : column(raw >> 4), row(raw & (table::tableRows - 1)) {}    // TODO("in c++20, change the 4 -> static_cast<uint8_t>(std::floor(std::log2(table::tableRows)))")
+
+                    template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>>
+                    constexpr location(enumType preset) : column(location(static_cast<uint8_t>(preset)).column), row(location(static_cast<uint8_t>(preset)).row) {}
 
                     // Transforms the xx/yy coordinates into usable index
                     constexpr uint8_t compute() const {
@@ -443,10 +407,22 @@ namespace GGUI {
             }
 
             namespace sequence {
-                inline constexpr size_t MAX_SUPER_STRING_BUFFER_SIZE = UINT8_MAX * 2;
-
                 namespace parameter {
                     template<typename containerType>
+                    concept enumType = std::is_enum_v<containerType>;
+
+                    template<typename containerType>
+                    concept integralOrEnum = enumType<containerType> || std::is_integral_v<containerType>;
+
+                    template<integralOrEnum containerType>
+                    class base;
+
+                    using numeric = base<uint16_t>;
+
+                    template<enumType containerType>
+                    using selectable = base<containerType>;
+
+                    template<integralOrEnum containerType>
                     class base {
                     public:
                         enum class types : uint8_t {
@@ -456,13 +432,19 @@ namespace GGUI {
                     protected:
                         std::vector<std::pair<containerType, types>> subNumbers;       // For instances where 1:2, these can be used as decimals. Special parameters (03/10-03/15) are stored as char.
                     public:
-                        base() = default;
-                        base(const std::vector<std::pair<containerType, types>>& values) : subNumbers(values) {}
-                        base(containerType value) : subNumbers({{value, types::NUMBER}}) {}
+                        constexpr base() = default;
+                        constexpr base(const std::vector<std::pair<containerType, types>>& values) : subNumbers(values) {}
+                        constexpr base(containerType value) : subNumbers({{value, types::NUMBER}}) {}
 
                         // Used when converting between two different container typed parameters
                         template<typename otherContainerType>
-                        base(const base<otherContainerType>& other) {
+                        constexpr base(const base<otherContainerType>& other) {
+                            static_assert(
+                                (   // Special case when we transform raw uint16_t numeric types into uint8_t selectable types
+                                    std::is_same_v<base<otherContainerType>, numeric> && 
+                                    std::is_base_of_v<base<containerType>, selectable<containerType>>
+                                ) || sizeof(otherContainerType) <= sizeof(containerType), "Illegal surjection of otherContainerType!");
+
                             for (const auto& i : other.getPrimaryValueAndSecondaries()) {
                                 subNumbers.push_back({
                                     static_cast<containerType>(i.first),
@@ -477,7 +459,7 @@ namespace GGUI {
                          * We expect the input to already cut by the 03/11 (';') delimeter by the calling function.
                          * Per char, only be in range of 03/00 - 03/09 or special sub-string delimeter of 03/10 (':')
                          */
-                        base(std::string_view input, size_t& length) {
+                        constexpr base(std::string_view input, size_t& length) {
                             int32_t currentNumber = 0;
                             bool has_digit = true;          // Default true, so that ;;;; are possible.
 
@@ -525,59 +507,55 @@ namespace GGUI {
                             }
                         }
 
-                        std::string toString() const {
-                            std::string result;
-                            result.reserve(subNumbers.size());
-
+                        constexpr void toString(std::string& output) const {
                             for (size_t i = 0; i < subNumbers.size(); i++) {
                                 // we need to convert the values to visible numbers
                                 if (subNumbers[i].second == types::NUMBER) {
-                                    result += std::to_string((int)subNumbers[i].first);
+                                    number::toString(output, subNumbers[i].first);
                                 } else {
-                                    result += static_cast<char>(subNumbers[i].first);
+                                    output += static_cast<char>(subNumbers[i].first);
                                 }
                                 
                                 // check if this isn't the last index, if so add the fraction
                                 if (i != subNumbers.size() - 1) {
-                                    result += static_cast<char>(table::parameters::FRACTION);
+                                    output += static_cast<char>(table::parameters::FRACTION);
                                 }
                             }
-
-                            return result;
                         }
 
-                        void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const {
+                        constexpr void toString(writerView<char>& preAllocated) const {
                             for (size_t i = 0; i < subNumbers.size(); i++) {
+                                // we need to convert the values to visible numbers
                                 if (subNumbers[i].second == types::NUMBER) {
-                                    preAllocated.add((uint16_t)subNumbers[i].first);
+                                    number::toString(preAllocated, subNumbers[i].first);
                                 } else {
-                                    preAllocated.add(static_cast<char>(subNumbers[i].first));
+                                    preAllocated.write(subNumbers[i].first);
                                 }
                                 
-                                // check if this isn't the last index, if so add the fraction
+                                // check if this isn't the last index, if so write the fraction
                                 if (i != subNumbers.size() - 1) {
-                                    preAllocated.add(static_cast<char>(table::parameters::FRACTION));
+                                    preAllocated.write(table::parameters::FRACTION);
                                 }
                             }
                         }
 
-                        void add(containerType val) {
+                        constexpr void add(containerType val) {
                             subNumbers.push_back(val);
                         }
 
                         template<size_t s>
-                        void add(std::array<containerType, s> values) {
+                        constexpr void add(std::array<containerType, s> values) {
                             for (const auto& i : values) {
                                 subNumbers.push_back(i);
                             }
                         }
 
-                        containerType getValueAsInteger() const { return subNumbers.front().first; }
-                        std::vector<std::pair<containerType, types>> getPrimaryValueAndSecondaries() const { return subNumbers; }
+                        constexpr containerType getValueAsInteger() const { return subNumbers.front().first; }
+                        constexpr const std::vector<std::pair<containerType, types>>& getPrimaryValueAndSecondaries() const { return subNumbers; }
 
-                        bool hasSecondaries() const { return subNumbers.size() > 1; }
+                        constexpr bool hasSecondaries() const { return subNumbers.size() > 1; }
 
-                        size_t getSize() const {
+                        constexpr size_t getSize() const {
                             size_t result = 0;
 
                             for (const auto& i : subNumbers) {
@@ -599,16 +577,6 @@ namespace GGUI {
                             return result;
                         }
                     };
-
-                    using numeric = base<uint16_t>;
-
-                    template<typename enumType>
-                    class selectable : public base<enumType> {
-                        // Check that selectable instances are only used with enums
-                        static_assert(std::is_enum_v<enumType> == true, "Selectable parameters must be instantiated with an enum type.");
-                        
-                        using base<enumType>::base;   // Inherit constructors
-                    };
                 }
 
                 enum class types : uint8_t {
@@ -622,92 +590,42 @@ namespace GGUI {
                     PRIVATE // For custom sequences introduces by 3rd party manufacturers such as DEC.
                 };
 
-                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte);
-                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated);
-
-                inline std::string toString(uint8_t val) {
-                    return std::string(1, static_cast<char>(val));
-                }
-
-                inline void toString(uint8_t val, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) {
-                    preAllocated.add(static_cast<char>(val));
-                }
-
-                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>>
-                inline std::string toString(enumType val) {
-                    return std::string(1, static_cast<char>(static_cast<uint8_t>(val)));
-                }
-
-                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>>
-                inline void toString(enumType val, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) {
-                    preAllocated.add(static_cast<char>(static_cast<uint8_t>(val)));
-                }
-
-                template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(uint8_t) == sizeof(enumType))>>
-                constexpr size_t getSize(enumType value) {
-                    return sizeof(value); // should always be 1
-                }
-
-                using CSI_tailFunctionType = std::variant<
-                    table::finalWithoutIntermediate,
-                    table::finalWithIntermediate
-                >;
-
-                constexpr size_t getSize([[maybe_unused]] CSI_tailFunctionType value) {
-                    return std::max(
-                        sizeof(table::finalWithoutIntermediate),
-                        sizeof(table::finalWithIntermediate)
-                    );
-                }
-
                 // Represents the end of all possible sequences, *** I..I F
                 // NOTE: Only use indirectly via an inheritant class of prefix
                 template<typename functionType = uint8_t>
+                requires eligibleForWriterViewType<uint8_t, functionType>
                 class postfix {
                 protected:
                     std::vector<table::intermediate::identifiers> intermediates;
                     functionType function;
                 public:
-                    postfix(
+                    constexpr postfix(
                         std::vector<table::intermediate::identifiers> interms = {},
                         functionType Func = {}
                     ) : intermediates(interms), function(Func) {}
 
-                    std::vector<table::intermediate::identifiers> getIntermediates() const { return intermediates; }
+                    template<typename otherFunctionType>
+                    constexpr postfix(const postfix<otherFunctionType>& other) : intermediates(other.getIntermediates()), function(static_cast<functionType>(other.getFinalByte())) {}
+
+                    constexpr std::vector<table::intermediate::identifiers> getIntermediates() const { return intermediates; }
                     constexpr functionType getFinalByte() const { return function; }
 
-                    void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
+                    constexpr void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
                         intermediates = newInterms;
                     }
 
-                    std::string toString() const {
-                        std::string result = "";
-
+                    constexpr void toString(std::string& output) const {
                         for (const auto& interm : intermediates) {
-                            result += static_cast<char>(interm);
+                            output += static_cast<uint8_t>(interm);
                         }
 
-                        result += GGUI::terminal::ecma::sequence::toString(function);
-
-                        return result;
+                        number::toString(output, function);
                     }
 
-                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const {
-                        for (const auto& interm : intermediates) {
-                            preAllocated.add(static_cast<char>(interm));
-                        }
+                    constexpr void toString(writerView<char>& preAllocated) const {
+                        preAllocated.write(std::span<const table::intermediate::identifiers>(intermediates.data(), intermediates.size()));
 
-                        GGUI::terminal::ecma::sequence::toString(function, preAllocated);
-                    }
-
-                    size_t getSize() const {
-                        size_t result = 0;
-
-                        result += intermediates.size(); // since each intermediate is just a single digit ascii character, they all are just one character long.
-
-                        result += sequence::getSize(function);
-
-                        return result;
+                        number::toString(preAllocated, function);
                     }
                 };
 
@@ -719,15 +637,15 @@ namespace GGUI {
                     constexpr types getType() const { return type; }
 
                     constexpr base(types t) : type(t) {}
-                    virtual ~base() {}
+                    constexpr virtual ~base() {}
 
-                    virtual std::string toString() const { return ""; }
+                    // Appends to the storage
+                    constexpr virtual void toString(std::string&) const { return; }
 
-                    virtual void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>&) const { return; }
+                    // Writes into already existing storage
+                    constexpr virtual void toString(writerView<char>&) const { return; }
 
-                    virtual size_t getSize() const { return 0; }
-
-                    virtual postfix<> getPostfix() const { return {{}, 0}; }
+                    constexpr virtual postfix<> getPostfix() const { return {{}, 0}; }
                 };
 
                 /** 
@@ -735,7 +653,7 @@ namespace GGUI {
                  * NOTE: Can be used for private extensions for single byte non ESC sequences introduced by shift functions in graphic pages.
                  * NOTE: This class does not care for 7-bit or 8-bit, will convert all 8-bit functions into 7-bit ones!
                  */
-                template<typename containerType = uint8_t, typename = std::enable_if_t<(sizeof(containerType) == sizeof(uint8_t))>>
+                template<typename containerType = char, typename = std::enable_if_t<(sizeof(containerType) == sizeof(char))>>
                 class prefix : public base {  // Made for C0 and C1 functions 
                 protected:
                     containerType header;
@@ -745,27 +663,33 @@ namespace GGUI {
                     template<typename otherContainerType, typename = std::enable_if_t<(sizeof(otherContainerType) == sizeof(containerType))>>
                     constexpr prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
 
-                    virtual ~prefix() = default;
+                    constexpr virtual ~prefix() = default;
 
-                    std::string toString() const override {
+                    constexpr void toString(std::string& output) const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
-                            return table::toString(table::C0::ESC) + table::toString(header);
+                            number::toString(output, table::C0::ESC);
+                            number::toString(output, header);
                         } else {
-                            return table::toString(header);
+                            number::toString(output, header);
                         }
                     }
 
                     // This will break unless the buffer is correctly pre allocated and correct size.
-                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
+                    constexpr void toString(writerView<char>& preAllocated) const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
-                            preAllocated.add(static_cast<char>(table::C0::ESC));
-                            preAllocated.add(static_cast<char>(header));
+                            number::toString(preAllocated, table::C0::ESC);
+                            number::toString(preAllocated, header);
                         } else {
-                            preAllocated.add(static_cast<char>(header));
+                            number::toString(preAllocated, header);
                         }
                     }
+
+                    template<typename T>
+                    constexpr prefix<> compile(const std::vector<T>&) const {
+                        return *this;
+                    }
                     
-                    bool contains(containerType enumValue) {
+                    constexpr bool contains(containerType enumValue) {
                         return header == enumValue;
                     }
 
@@ -777,10 +701,7 @@ namespace GGUI {
                         return static_cast<uint8_t>(header);
                     }
 
-
-                    postfix<> getPostfix() const override { return {{}, 0}; }
-
-                    size_t getSize() const override { return sizeof(containerType); }
+                    constexpr postfix<> getPostfix() const override { return {{}, 0}; }
                 };
 
                 /**
@@ -793,70 +714,74 @@ namespace GGUI {
                 public:
                     postfix<postfixType> tail;
 
-                    function(postfix<postfixType> Tail) = delete;   // Independent functions don't have intermediates!
-                    function(postfixType Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail({}, Tail) {}
+                    constexpr function(postfix<postfixType> Tail) = delete;   // Independent functions don't have intermediates!
+                    constexpr function(postfixType Tail) : prefix(table::C0::ESC, types::INDEPENDENT_FUNCTION), tail({}, Tail) {}
 
-                    postfix<> getPostfix() const override {
+                    constexpr postfix<> getPostfix() const override {
                         return postfix<>(tail.getIntermediates(), static_cast<uint8_t>(tail.getFinalByte()));
                     }
 
-                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
+                    template<typename T>
+                    constexpr function compile(const std::vector<T>&) const {
+                        return *this;
+                    }
+
+                    constexpr void toString(std::string& output) const override {
+                        prefix::toString(output);
+                        tail.toString(output);
+                    }
+
+                    constexpr void toString(writerView<char>& preAllocated) const override {
                         prefix::toString(preAllocated);
                         tail.toString(preAllocated);
                     }
-
-                    size_t getSize() const override { return prefix::getSize() + tail.getSize(); }
                 };
 
-                // Simple helper to clean some code
-                using CSI_postfixType = postfix<
-                    CSI_tailFunctionType
-                >;
-
-                template<typename containerType>
+                template<typename parameterType, typename finalFunctionType = uint8_t>
                 class control : public prefix<table::C1> {
-                    // give all specializations of same class access to its own counterpart members
-                    template<typename>
-                    friend class control;
+                    std::vector<parameterType> parameters;                          // Each range between: 03/00 - 03/15, delimited by 03/11 (';')
+                    postfix<finalFunctionType> finalByte; 
 
-                protected:
-                    std::vector<containerType> parameters;                          // Each range between: 03/00 - 03/15, delimited by 03/11 (';')
-                    CSI_postfixType finalByte;
+                    // give all specializations of same class access to its own counterpart members
+                    template<typename, typename>
+                    friend class control;
                 public:
-                    control(
-                        std::vector<containerType> params,
-                        table::finalWithoutIntermediate tail
+                    constexpr control(
+                        std::vector<parameterType> params,
+                        const postfix<finalFunctionType>& finalBytes
+                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(finalBytes) {}
+
+                    constexpr control(
+                        std::vector<parameterType> params,
+                        finalFunctionType tail
                     ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte({}, tail) {}
 
-                    control(
-                        std::vector<containerType> params,
+                    constexpr control(
+                        finalFunctionType tail
+                    ) : prefix(table::C1::CSI, types::CSI), finalByte({}, tail) {}
+
+                    template<typename T = finalFunctionType>
+                    requires std::is_same_v<finalFunctionType, table::finalWithIntermediate>
+                    constexpr control(
+                        std::vector<parameterType> params,
                         std::vector<table::intermediate::identifiers> inters,
                         table::finalWithIntermediate tail
                     ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(inters, tail) {}
 
-                    control(
-                        table::finalWithoutIntermediate tail
-                    ) : prefix(table::C1::CSI, types::CSI), finalByte({}, tail) {}
-
-                    control(
+                    template<typename T = finalFunctionType>
+                    requires std::is_same_v<finalFunctionType, table::finalWithIntermediate>
+                    constexpr control(
                         table::finalWithIntermediate tail
                     ) : prefix(table::C1::CSI, types::CSI), finalByte({table::intermediate::identifiers::ANNOUNCER}, tail) {}
 
-                    control(
-                        std::vector<containerType> params,
-                        CSI_postfixType tail
-                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(tail) {}
-
                     // safe copy constructor between two different parameter container types
-                    template<typename otherContainerType>
-                    control(const control<otherContainerType>& other) : prefix(other), finalByte(other.finalByte) {
-                        static_assert(std::is_same_v<otherContainerType, containerType> == false, "Unnecessary conversion between two identical types!");
-
-                        parameters = this->convert<containerType>(other.parameters);
+                    template<typename otherparameterType, typename otherFinalFunctionType>
+                    constexpr control(const control<otherparameterType, otherFinalFunctionType>& other) : prefix(other), finalByte(other.finalByte) {
+                        parameters = this->convert<parameterType>(other.parameters);
                     }
 
                     template<typename exportAs, typename fromType>
-                    std::vector<exportAs> convert(const std::vector<fromType>& params) const {
+                    constexpr std::vector<exportAs> convert(const std::vector<fromType>& params) const {
                         std::vector<exportAs> result;
 
                         if constexpr (std::is_same<exportAs, fromType>::value) {
@@ -880,29 +805,27 @@ namespace GGUI {
                      * Parameters are separated by ';' (03/11) delimiter.
                      * The final byte determines if intermediates are required based on the variant held.
                      */
-                    std::string toString() const override {
-                        std::string result = prefix::toString();
+                    constexpr void toString(std::string& output) const override {
+                        prefix::toString(output);
 
                         // Output all parameters, separated by the parameter delimiter (03/11 ';')
                         for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
                             if (parameterIndex > 0) {
-                                result += static_cast<char>(table::parameters::SEPARATOR);
+                                output += static_cast<char>(table::parameters::SEPARATOR);
                             }
-                            result += parameters[parameterIndex].toString();
+                            parameters[parameterIndex].toString(output);
                         }
 
-                        result += finalByte.toString();
-
-                        return result;
+                        finalByte.toString(output);
                     }
 
-                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
+                    constexpr void toString(writerView<char>& preAllocated) const override {
                         prefix::toString(preAllocated);
 
                         // Output all parameters, separated by the parameter delimiter (03/11 ';')
                         for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
                             if (parameterIndex > 0) {
-                                preAllocated.add(static_cast<char>(table::parameters::SEPARATOR));
+                                number::toString(preAllocated, table::parameters::SEPARATOR);
                             }
                             parameters[parameterIndex].toString(preAllocated);
                         }
@@ -910,41 +833,23 @@ namespace GGUI {
                         finalByte.toString(preAllocated);
                     }
 
-                    template<std::size_t N>
-                    control<containerType> compile(const std::array<containerType, N>& params) const {
-                        std::vector<containerType> vec(params.begin(), params.end());
-                        return compile(vec);
-                    }
+                    template<typename otherParameterType, typename finalByteType = uint8_t>
+                    constexpr control<parameterType, finalByteType> compile(const std::vector<otherParameterType>& params) const {
+                        control<parameterType, finalByteType> result = *this; // Copy contents
 
-                    template<typename otherParameterContainerType>
-                    control<containerType> compile(const std::vector<otherParameterContainerType>& params) const {
-                        control<containerType> result = *this;                      // Copy contents
-                        
-                        result.parameters = this->convert<containerType>(params);   // Convert parameters to the desired container type
-
-                        return result;
-                    }
-
-                    postfix<> getPostfix() const override {
-                        return postfix<>(finalByte.getIntermediates(), static_cast<uint8_t>(std::visit([](auto&& arg) -> uint8_t {
-                            return static_cast<uint8_t>(arg);
-                        }, finalByte.getFinalByte())));
-                    }
-
-                    std::vector<containerType> getParameters() const {
-                        return parameters;
-                    }
-
-                    size_t getSize() const override {
-                        size_t result = prefix::getSize();
-
-                        for (const auto& param : parameters) {
-                            result += param.getSize();
+                        if constexpr (!std::is_same_v<otherParameterType, uint8_t>) {
+                            result.parameters = this->convert<parameterType>(params);   // Convert parameters to the desired container type
                         }
 
-                        result += finalByte.getSize();
-
                         return result;
+                    }
+
+                    constexpr postfix<> getPostfix() const override {
+                        return finalByte;
+                    }
+
+                    constexpr std::vector<parameterType> getParameters() const {
+                        return parameters;
                     }
                 };
 
@@ -954,30 +859,30 @@ namespace GGUI {
                     std::vector<char> characters;            // For when SOS is used in the opening delimeter, can contain in range of 00/00 to 07/15 or the command strings In the range 00/08 to 00/13 and 02/00 to 07/14
                     prefix terminator;
                 public:
-                    string(
+                    constexpr string(
                         table::C1 delimeter,
                         std::vector<char> chars
                     ) : prefix(delimeter, types::STRING), characters(chars), terminator(table::C1::ST) {}
 
-                    string(
+                    constexpr string(
                         table::C1 delimeter
                     ) : prefix(delimeter, types::STRING), terminator(table::C1::ST) {}
 
-                    std::string toString() const override {
-                        std::string result = prefix::toString();
-
-                        // Output all character bytes
-                        for (uint8_t characterByte : characters) {
-                            result += static_cast<char>(characterByte);
-                        }
-
-                        result += terminator.toString();
-
+                    constexpr string compile(const std::vector<char>& chars) const {
+                        string result = *this; // Copy contents
+                        result.characters = chars;
                         return result;
                     }
 
-                    size_t getSize() const override {
-                        return prefix::getSize() + characters.size() + terminator.getSize();
+                    constexpr void toString(std::string& output) const override {
+                        prefix::toString(output);
+
+                        // Output all character bytes
+                        for (uint8_t characterByte : characters) {
+                            output += static_cast<char>(characterByte);
+                        }
+
+                        terminator.toString(output);
                     }
                 };
 
@@ -992,7 +897,7 @@ namespace GGUI {
                     std::vector<char> primary;      // Given by STX --- HEADING --- STX/ETX/ETB
                     std::vector<char> secondary;    // Given by SOH ---  TEXT   --- ETX/ETB
 
-                    transmission(table::C0 t = table::C0::STX) : prefix(t, sequence::types::TRANSMISSION) {
+                    constexpr transmission(table::C0 t = table::C0::STX) : prefix(t, sequence::types::TRANSMISSION) {
                         if (t == table::C0::STX) {
                             type = types::TEXT;
                         } else if (t == table::C0::SOH) {
@@ -1000,84 +905,66 @@ namespace GGUI {
                         }
                     }
 
-                    transmission(std::string_view simpleText) : prefix(table::C0::STX, sequence::types::TRANSMISSION) {
+                    constexpr transmission(std::string_view simpleText) : prefix(table::C0::STX, sequence::types::TRANSMISSION) {
                         type = types::TEXT;
                         primary.reserve(simpleText.size());
                         for (char c : simpleText) primary.push_back(c);
                     }
 
-                    std::string toString() const override {
-                        std::string result;
-
-                        if (type == types::HEADER) result += table::toString(table::C0::SOH);
-                        else                       result += table::toString(table::C0::STX);
-
-                        result += std::string(primary.begin(), primary.end());
-
-                        if (!secondary.empty()) {
-                            result += table::toString(table::C0::STX);
-                            result += std::string(secondary.begin(), secondary.end());
-                        } else {
-                            if (type == types::HEADER)  result += table::toString(table::C0::ETB);
-                            else                        result += table::toString(table::C0::ETX);
-                        }
-
+                    constexpr transmission compile(const std::vector<char>& heading, const std::vector<char>& text = {}) const {
+                        transmission result = *this; // Copy contents
+                        result.primary = heading;
+                        result.secondary = text;
                         return result;
                     }
 
-                    void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) const override {
-                        if (type == types::HEADER) preAllocated.add(static_cast<char>(table::C0::SOH));
-                        else                       preAllocated.add(static_cast<char>(table::C0::STX));
+                    constexpr void toString(std::string& output) const override {
+                        if (type == types::HEADER) output += GGUI::table::toString(table::C0::SOH);
+                        else                       output += GGUI::table::toString(table::C0::STX);
+
+                        output += std::string(primary.begin(), primary.end());
+
+                        if (!secondary.empty()) {
+                            output += GGUI::table::toString(table::C0::STX);
+                            output += std::string(secondary.begin(), secondary.end());
+                        } else {
+                            if (type == types::HEADER)  output += GGUI::table::toString(table::C0::ETB);
+                            else                        output += GGUI::table::toString(table::C0::ETX);
+                        }
+                    }
+
+                    constexpr void toString(writerView<char>& preAllocated) const override {
+                        if (type == types::HEADER) number::toString(preAllocated, table::C0::SOH);
+                        else                       number::toString(preAllocated, table::C0::STX);
 
                         for (const auto& c : primary) {
-                            preAllocated.add(c);
+                            number::toString(preAllocated, c);
                         }
 
                         if (!secondary.empty()) {
-                            preAllocated.add(static_cast<char>(table::C0::STX));
+                            number::toString(preAllocated, table::C0::STX);
                             for (const auto& c : secondary) {
-                                preAllocated.add(c);
+                                number::toString(preAllocated, c);
                             }
                         } else {
-                            if (type == types::HEADER)  preAllocated.add(static_cast<char>(table::C0::ETB));
-                            else                        preAllocated.add(static_cast<char>(table::C0::ETX));
+                            if (type == types::HEADER)  number::toString(preAllocated, table::C0::ETB);
+                            else                        number::toString(preAllocated, table::C0::ETX);
                         }
-                    }
-
-                    size_t getSize() const override {
-                        size_t result = prefix::getSize() + primary.size();
-
-                        if (!secondary.empty()) {
-                            result += sequence::getSize(table::C0::STX);
-                            result += secondary.size();
-                        } else {
-                            if (type == types::HEADER)  result += sequence::getSize(table::C0::ETB);
-                            else                        result += sequence::getSize(table::C0::ETX);
-                        }
-
-                        return result;
                     }
                 };
 
-                using graphicalCharacter = prefix<uint8_t>;
+                using graphicalCharacter = prefix<char>;
 
                 std::pair<size_t, base*> defaultSequenceParser(std::string_view input);
                 
                 std::vector<base*> parse(std::string_view input);
 
-                constexpr void toString(INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE> carrier, base&& parsed) {
+                constexpr void toString(writerView<char> carrier, base&& parsed) {
                     parsed.toString(carrier);
                 }
 
-                inline std::string toString(base&& parsed) {
-                    INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE> preAllocatedCombinator;
-                    char preAllocatedBuffer[ecma::sequence::MAX_SUPER_STRING_BUFFER_SIZE] = {0}; // Pre-allocated buffer for combinator sequences
-
-                    parsed.toString(preAllocatedCombinator);
-                    
-                    preAllocatedCombinator.toString(preAllocatedBuffer);
-
-                    return std::string(preAllocatedBuffer, preAllocatedCombinator.liquefiedSize);
+                constexpr void toString(std::string& output, base&& parsed) {
+                    parsed.toString(output);
                 }
             }
 
@@ -1214,7 +1101,7 @@ namespace GGUI {
 
                     lifetime::base status;
 
-                    size_t getActualLocation(sequence::prefix<> header, sequence::postfix<> body) {
+                    constexpr size_t getActualLocation(sequence::prefix<> header, sequence::postfix<> body) {
                         location intermediateOffset = 0;
 
                         for (auto inter : body.getIntermediates()) {
@@ -1254,18 +1141,18 @@ namespace GGUI {
                     /**
                      * @brief Adds a cell handler at the specified absolute position.
                      */
-                    void add(cell customFunctions, sequence::prefix<> header, sequence::postfix<> body = {}) {
+                    constexpr void add(cell customFunctions, sequence::prefix<> header, sequence::postfix<> body = {}) {
                         cells[getActualLocation(header, body)] = customFunctions; 
                     }
 
                     /**
                      * @brief Gets the cell handler at the specified position.
                      */
-                    cell get(location primitive, sequence::postfix<> body = {}) {
+                    constexpr cell get(location primitive, sequence::postfix<> body = {}) {
                         return cells[getActualLocation(primitive.to7bit().compute(), body)];
                     }
 
-                    cell get(sequence::base* parsed, sequence::postfix<> body) {
+                    constexpr cell get(sequence::base* parsed, sequence::postfix<> body) {
                         return cells[getActualLocation(*static_cast<sequence::prefix<>*>(parsed), body)];
                     }
 
@@ -1317,7 +1204,7 @@ namespace GGUI {
 
                 class cellPatch {
                 protected:
-                    size_t getActualLocation(sequence::postfix<> body = {}) {
+                    constexpr size_t getActualLocation(sequence::postfix<> body = {}) {
                         location intermediateOffset = 0;
 
                         for (auto inter : body.getIntermediates()) {
@@ -1344,12 +1231,12 @@ namespace GGUI {
                     
                     std::array<std::pair<cell, sequence::postfix<>>, page::pageWidth * page::pageDepth> patch;
 
-                    cellPatch(uint8_t mainInstruction) : instructionSeries(mainInstruction), patch{} {}
+                    constexpr cellPatch(uint8_t mainInstruction) : instructionSeries(mainInstruction), patch{} {}
 
                     template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> == true>>
                     constexpr cellPatch(enumType mainInstruction) : instructionSeries(static_cast<uint8_t>(mainInstruction)), patch{} {}
 
-                    void add(cell customFunctions, sequence::postfix<> body = {}) {
+                    constexpr void add(cell customFunctions, sequence::postfix<> body = {}) {
                         patch[getActualLocation(body)] = { customFunctions, body }; 
                     }
                 };
@@ -1479,16 +1366,33 @@ namespace GGUI {
                         });
                     }
 
-                    std::pair<size_t, sequence::base*> interpret(std::string_view input);
+                    constexpr std::pair<size_t, sequence::base*> interpret(std::string_view input) {
+                        auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
+                        auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
+                        
+                        // Call the sequence parser
+                        auto [parsedLength, parsedSequence] = sequence::defaultSequenceParser(input);
+                        
+                        if (parsedLength == 0) return {0, nullptr};    // No progress, means no match, return null.
+
+                        // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
+                        configuration::cell currentCell = currentPage.get(parsedSequence, parsedSequence->getPostfix());
+
+                        // Call the functionality given by the parser
+                        currentCell.handler(parsedSequence);
+
+                        // return the parsed
+                        return {parsedLength, parsedSequence};
+                    }
                 };
 
             }
 
             namespace mode {
                 enum class types : uint8_t {
-                    NONE,       // Only for internal use
-
-                    __min = 1,      // For internal automation
+                    __min = 0,              // For internal automation
+                    
+                    DEFAULT = __min,        // Only for internal use
 
                     GUARDED_AREA_TRANSFER_MODE          = 1,                // (GATM)
                     KEYBOARD_ACTION_MODE,                                   // (KAM)
@@ -1514,52 +1418,19 @@ namespace GGUI {
                     __max = ZERO_DEFAULT_MODE     // For internal automation
                 };
 
-                enum class definition : bool {
+                enum class values : bool {
                     RESET       = false,    // (RM)
                     SET         = true      // (SM)
                 };
-
-                template<typename enumType = mode::types>
-                class flags;
                 
-                template<typename enumType>
-                struct base {
-                    enumType    index = enumType::NONE;         // Tells the bitmask where to set the value
-                    definition  value;                          // Is the data being set/reset on that index
-                    
-                    base(enumType idx, definition val) : index(idx), value(val) {}
+                template<typename enumType = types, typename = std::enable_if_t<std::is_enum_v<enumType> == true>>
+                struct base : public INTERNAL::linearMask<enumType, uint32_t> {
+                    using INTERNAL::linearMask<enumType, uint32_t>::linearMask;
 
-                    template<typename rawValueType, typename = std::enable_if_t<(sizeof(enumType) == sizeof(rawValueType))>>
-                    base(rawValueType idx, definition val) : index(static_cast<enumType>(idx)), value(val) {}
-                    
-                    flags<enumType> operator|(base other) const {
-                        return flags<enumType>(*this) | flags<enumType>(other);
-                    }
-                };
-                
-                template<typename enumType>
-                class flags {
-                protected:
-                    std::bitset<(size_t)enumType::__max> data = 0;
-                public:
-                    constexpr static flags empty() { return flags(); }
+                    constexpr base(const INTERNAL::linearMask<enumType, uint32_t>& other) : INTERNAL::linearMask<enumType, uint32_t>(other) {}
 
-                    // Simple setter
-                    void set(base<enumType> val) { data.set(static_cast<size_t>(val.index), (bool)val.value); }
-
-                    // Simple getter
-                    definition get(enumType index) const { return static_cast<definition>(data.test(static_cast<size_t>(index))); }
-
-                    // used for group detection
-                    bool has(flags others) const { return (data & others.data) == others.data; }
-
-                    flags(base<enumType> startingValue) { set(startingValue); }
-                    flags() = default;
-
-                    flags operator|(flags other) const {
-                        flags result(*this);
-                        result.data |= other.data;
-                        return result;
+                    constexpr base(enumType bit, values isSet) {
+                        this->set(bit, static_cast<bool>(isSet));
                     }
                 };
 
@@ -1568,12 +1439,12 @@ namespace GGUI {
                         * @brief Control functions are performed in the data component or in the presentation component, 
                         * depending on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).
                         */
-                    inline const base BDSM_EXPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::RESET   };
+                    constexpr base BDSM_EXPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         values::RESET   };
 
                     /**
                         * @brief Control functions are performed in the data component. All bi-directional aspects of data are handled by the device itself. 
                         */
-                    inline const base BDSM_IMPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         definition::SET     };
+                    constexpr base BDSM_IMPLICIT             = {    types::BI_DIRECTIONAL_SUPPORT_MODE,         values::SET     };
 
                     /**
                         * @brief All control functions are performed as defined; 
@@ -1581,40 +1452,40 @@ namespace GGUI {
                         * A device may choose to image the graphical representations of control functions in addition to performing them. 
                         * NOTE: All control functions, except RM, are affected. 
                         */
-                    inline const base CRM_CONTROL               = {     types::CONTROL_REPRESENTATION_MODE,         definition::RESET   };
+                    constexpr base CRM_CONTROL               = {     types::CONTROL_REPRESENTATION_MODE,         values::RESET   };
 
                     /**
                         * @brief All control functions, except RESET MODE (RM), are treated as graphic characters. 
                         * A device may choose to perform some control functions in addition to storing them and imaging their graphical representations. 
                         * NOTE: All control functions, except RM, are affected. 
                         */
-                    inline const base CRM_GRAPHIC               = {     types::CONTROL_REPRESENTATION_MODE,         definition::SET     };
+                    constexpr base CRM_GRAPHIC               = {     types::CONTROL_REPRESENTATION_MODE,         values::SET     };
 
                     /**
                         * @brief Certain control functions are performed in the presentation component. 
                         The active presentation position (or the active line, where applicable) in the presentation component is the reference position against which the relevant control functions are performed. 
                         * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
                         */
-                    inline const base DCSM_PRESENTATION         = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::RESET   };
+                    constexpr base DCSM_PRESENTATION         = {     types::DEVICE_COMPONENT_SELECT_MODE,         values::RESET   };
 
                     /**
                         * @brief Certain control functions are performed in the data component. 
                         * The active data position (or the active line, where applicable) in the data component is the reference position against which the relevant control functions are performed. 
                         * NOTE: Control functions affected are: CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL, LF, NEL, RI, SLH, SLL, SPH, SPL. 
                         */
-                    inline const base DCSM_DATA                 = {     types::DEVICE_COMPONENT_SELECT_MODE,         definition::SET     };
+                    constexpr base DCSM_DATA                 = {     types::DEVICE_COMPONENT_SELECT_MODE,         values::SET     };
 
                     /**
                         * @brief Only the contents of unprotected areas are affected by an erasure control function. 
                         * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
                         */
-                    inline const base ERM_PROTECT               = {     types::ERASURE_MODE,                         definition::RESET   };
+                    constexpr base ERM_PROTECT               = {     types::ERASURE_MODE,                         values::RESET   };
                     
                     /**
                         * @brief The contents of protected as well as of unprotected areas are affected by an erasure control function. 
                         * NOTE: Control functions affected are: EA, ECH, ED, EF, EL. 
                         */
-                    inline const base ERM_ALL                   = {     types::ERASURE_MODE,                         definition::SET     };
+                    constexpr base ERM_ALL                   = {     types::ERASURE_MODE,                         values::SET     };
 
                     /**
                         * @brief Formator functions are performed immediately and may be stored in addition to being performed.
@@ -1623,7 +1494,7 @@ namespace GGUI {
                         * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
                         * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
                         */
-                    inline const base FEAM_EXECUTE              = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::RESET   };
+                    constexpr base FEAM_EXECUTE              = {     types::FORMAT_EFFECTOR_ACTION_MODE,          values::RESET   };
 
                     /**
                         * @brief Formator functions are stored but not performed. 
@@ -1633,45 +1504,45 @@ namespace GGUI {
                         * SCO, SCS, SGR, SHS, SLH, SLL, SLS, SPD, SPI, SPQR, SRCS, SRS, SSU, SSW, STAB, SVS, TAC, TALE, 
                         * TATE, TBC, TCC, TSS, VPA, VPB, VPR, VTS. 
                         */
-                    inline const base FEAM_STORE                = {     types::FORMAT_EFFECTOR_ACTION_MODE,          definition::SET     };
+                    constexpr base FEAM_STORE                = {     types::FORMAT_EFFECTOR_ACTION_MODE,          values::SET     };
 
                     /**
                         * @brief Formator functions may be inserted in a data stream to be transmitted or in data to be transferred to an auxiliary input/output device.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base FETM_INSERT               = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::RESET   };
+                    constexpr base FETM_INSERT               = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        values::RESET   };
 
                     /**
                         * @brief No formator functions other than those received while the FORMAT EFFECTOR ACTION MODE (FEAM) is set to STORE are included in a transmitted data stream or in data transferred to an auxiliary input/output device.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base FETM_EXCLUDE              = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        definition::SET     };
+                    constexpr base FETM_EXCLUDE              = {     types::FORMAT_EFFECTOR_TRANSFER_MODE,        values::SET     };
 
                     /**
                         * @brief Only the contents of unguarded areas in an eligible area are transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base GATM_GUARD                = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::RESET   };
+                    constexpr base GATM_GUARD                = {     types::GUARDED_AREA_TRANSFER_MODE,           values::RESET   };
 
                     /**
                         * @brief The contents of guarded as well as of unguarded areas in an eligible area are transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base GATM_ALL                  = {     types::GUARDED_AREA_TRANSFER_MODE,           definition::SET     };
+                    constexpr base GATM_ALL                  = {     types::GUARDED_AREA_TRANSFER_MODE,           values::SET     };
 
                     /**
                         * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) cancels the effect of any preceding occurrence. 
                         * Any graphic rendition aspects that are to remain unchanged after an occurrence of SGR have to be re-specified by that SGR.
                         * NOTE: Control function affected is SGR.
                         */
-                    inline const base GRCM_REPLACING            = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::RESET   };
+                    constexpr base GRCM_REPLACING            = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   values::RESET   };
 
                     /**
                         * @brief Each occurrence of the control function SELECT GRAPHIC RENDITION (SGR) causes only those graphic rendition aspects to be changed that are specified by that SGR. 
                         * All other graphic rendition aspects remain unchanged.
                         * NOTE: Control function affected is SGR.
                         */
-                    inline const base GRCM_CUMULATIVE           = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   definition::SET     };
+                    constexpr base GRCM_CUMULATIVE           = {     types::GRAPHIC_RENDITION_COMBINATION_MODE,   values::SET     };
 
                     /**
                         * @brief This mode is dependant of the following conditions:
@@ -1679,7 +1550,7 @@ namespace GGUI {
                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of the following character positions in the data component to be shifted in the direction of the character progression; a character deletion causes the contents of the character positions following the active data position to be shifted in the direction opposite to that of the character progression.
                         * NOTE: Control functions affected are: DCH, ICH.
                         */
-                    inline const base HEM_FOLLOWING             = {     types::CHARACTER_EDITING_MODE,               definition::RESET   };
+                    constexpr base HEM_FOLLOWING             = {     types::CHARACTER_EDITING_MODE,               values::RESET   };
 
                     /**
                         * @brief This mode is dependant of the following conditions:
@@ -1687,43 +1558,43 @@ namespace GGUI {
                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a character insertion causes the contents of the active data position and of preceding character positions in the data component to be shifted in the direction opposite to that of the character progression; a character deletion causes the contents of the character positions preceding the active data position to be shifted in the direction of the character progression.
                         * NOTE: Control functions affected are: DCH, ICH.
                         */
-                    inline const base HEM_PRECEDING             = {     types::CHARACTER_EDITING_MODE,               definition::SET     };
+                    constexpr base HEM_PRECEDING             = {     types::CHARACTER_EDITING_MODE,               values::SET     };
 
                     /**
                         * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, replaces (or, depending upon the implementation, is combined with) the graphic symbol imaged at the active presentation position.
                         * NOTE: Only control functions for which a graphical representation is required are affected.
                         */
-                    inline const base IRM_REPLACE               = {     types::INSERTION_REPLACEMENT_MODE,           definition::RESET   };
+                    constexpr base IRM_REPLACE               = {     types::INSERTION_REPLACEMENT_MODE,           values::RESET   };
 
                     /**
                         * @brief The graphic symbol of a graphic character or of a control function, for which a graphical representation is required, is inserted at the active presentation position.
                         * NOTE: Only control functions for which a graphical representation is required are affected.
                         */
-                    inline const base IRM_INSERT                = {     types::INSERTION_REPLACEMENT_MODE,           definition::SET     };
+                    constexpr base IRM_INSERT                = {     types::INSERTION_REPLACEMENT_MODE,           values::SET     };
 
                     /**
                         * @brief All or part of the manual input facilities are enabled to be used.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base KAM_ENABLED               = {     types::KEYBOARD_ACTION_MODE,                 definition::RESET   };
+                    constexpr base KAM_ENABLED               = {     types::KEYBOARD_ACTION_MODE,                 values::RESET   };
 
                     /**
                         * @brief All or part of the manual input facilities are disabled.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base KAM_DISABLED              = {     types::KEYBOARD_ACTION_MODE,                 definition::SET     };
+                    constexpr base KAM_DISABLED              = {     types::KEYBOARD_ACTION_MODE,                 values::SET     };
 
                     /**
                         * @brief Only the contents of the selected area which contains the active presentation position are eligible to be transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base MATM_SINGLE               = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::RESET   };
+                    constexpr base MATM_SINGLE               = {     types::MULTIPLE_AREA_TRANSFER_MODE,          values::RESET   };
 
                     /**
                         * @brief The contents of all selected areas are eligible to be transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base MATM_MULTIPLE             = {     types::MULTIPLE_AREA_TRANSFER_MODE,          definition::SET     };
+                    constexpr base MATM_MULTIPLE             = {     types::MULTIPLE_AREA_TRANSFER_MODE,          values::SET     };
 
                     // skip PUM - POSITIONING UNIT MODE, since Annex F.4.1
                     
@@ -1731,61 +1602,61 @@ namespace GGUI {
                         * @brief Only the contents of selected areas are eligible to be transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base SATM_SELECT               = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::RESET   };
+                    constexpr base SATM_SELECT               = {     types::SELECTED_AREA_TRANSFER_MODE,          values::RESET   };
 
                     /**
                         * @brief The contents of all character positions, irrespective of any explicitly defined selected areas, are eligible to be transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base SATM_ALL                  = {     types::SELECTED_AREA_TRANSFER_MODE,          definition::SET     };
+                    constexpr base SATM_ALL                  = {     types::SELECTED_AREA_TRANSFER_MODE,          values::SET     };
 
                     /**
                         * @brief Data which are locally entered are immediately imaged.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base SRM_MONITOR               = {     types::SEND_RECEIVE_MODE,                    definition::RESET   };
+                    constexpr base SRM_MONITOR               = {     types::SEND_RECEIVE_MODE,                    values::RESET   };
 
                     /**
                         * @brief Local input facilities are logically disconnected from the output mechanism; only data which are sent to the device are imaged.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base SRM_SIMULTANEOUS          = {     types::SEND_RECEIVE_MODE,                    definition::SET     };
+                    constexpr base SRM_SIMULTANEOUS          = {     types::SEND_RECEIVE_MODE,                    values::SET     };
 
                     /**
                         * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are not generated automatically.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base SRTM_NORMAL               = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::RESET   };
+                    constexpr base SRTM_NORMAL               = {     types::STATUS_REPORT_TRANSFER_MODE,          values::RESET   };
 
                     /**
                         * @brief Status reports in the form of DEVICE CONTROL STRINGs (DCS) are included in every data stream transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base SRTM_DIAGNOSTIC           = {     types::STATUS_REPORT_TRANSFER_MODE,          definition::SET     };
+                    constexpr base SRTM_DIAGNOSTIC           = {     types::STATUS_REPORT_TRANSFER_MODE,          values::SET     };
 
                     /**
                         * @brief Character tabulation stops in the presentation component are set or cleared in the active line (the line that contains the active presentation position) and in the corresponding character positions of the preceding lines and of the following lines.
                         * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
                         */
-                    inline const base TSM_MULTIPLE              = {     types::TABULATION_STOP_MODE,                 definition::RESET   };
+                    constexpr base TSM_MULTIPLE              = {     types::TABULATION_STOP_MODE,                 values::RESET   };
 
                     /**
                         * @brief Character tabulation stops in the presentation component are set or cleared in the active line only.
                         * NOTE: Control functions affected are: CTC, DL, HTS, IL, TBC.
                         */
-                    inline const base TSM_SINGLE                = {     types::TABULATION_STOP_MODE,                 definition::SET     };
+                    constexpr base TSM_SINGLE                = {     types::TABULATION_STOP_MODE,                 values::SET     };
 
                     /**
                         * @brief Only the contents of the character positions preceding the active presentation position in the presentation component are eligible to be transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base TTM_CURSOR                = {     types::TRANSFER_TERMINATION_MODE,            definition::RESET   };
+                    constexpr base TTM_CURSOR                = {     types::TRANSFER_TERMINATION_MODE,            values::RESET   };
 
                     /**
                         * @brief The contents of character positions preceding, following, and at the active presentation position are eligible to be transmitted or transferred.
                         * NOTE: No control functions are affected.
                         */
-                    inline const base TTM_ALL                   = {     types::TRANSFER_TERMINATION_MODE,            definition::SET     };
+                    constexpr base TTM_ALL                   = {     types::TRANSFER_TERMINATION_MODE,            values::SET     };
 
                     /**
                         * @brief This mode is dependant of the following conditions:
@@ -1793,7 +1664,7 @@ namespace GGUI {
                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the following lines in the data component to be shifted in the direction of the line progression; a line deletion causes the contents of the lines following the active line to be shifted in the direction opposite to that of the line progression.
                         * NOTE: Control functions affected are: DL, IL.
                         */
-                    inline const base VEM_FOLLOWING             = {     types::LINE_EDITING_MODE,                    definition::RESET   };
+                    constexpr base VEM_FOLLOWING             = {     types::LINE_EDITING_MODE,                    values::RESET   };
 
                     /**
                         * @brief This mode is dependant of the following conditions: 
@@ -1801,50 +1672,50 @@ namespace GGUI {
                         * b) If the DEVICE COMPONENT SELECT MODE (DCSM) is set to DATA, a line insertion causes the contents of the active line (the line that contains the active data position) and of the preceding lines to be shifted in the direction opposite to that of the line progression; a line deletion causes the contents of the lines preceding the active line to be shifted in the direction of the line progression.
                         * NOTE: Control functions affected are: DL, IL.
                         */
-                    inline const base VEM_PRECEDING             = {     types::LINE_EDITING_MODE,                    definition::SET     };
+                    constexpr base VEM_PRECEDING             = {     types::LINE_EDITING_MODE,                    values::SET     };
 
                     // skip ZDM - ZERO DEFAULT MODE, since Annex F.4.2
                 }
 
                 namespace group {
                     /**
-                        * @brief GUARDED AREA TRANSFER MODE (GATM), MULTIPLE AREA TRANSFER MODE (MATM), 
-                        * SELECTED AREA TRANSFER MODE (SATM), and TRANSFER TERMINATION MODE (TTM)
-                        * These modes have a combined effect on the format of a transmitted data stream or of a data stream transferred to an auxiliary input/output device, as described hereafter.
-                        * The term "active selected area" is used to denote the selected area in the presentation component containing the active presentation position.
-                        * The term "eligible" is used for denoting any area which may be considered for transmitting or transferring. 
-                        * If the active presentation position is not within a selected area, the format of the data stream in the first and fourth case above is not defined by this Standard. 
-                        */
+                     * @brief GUARDED AREA TRANSFER MODE (GATM), MULTIPLE AREA TRANSFER MODE (MATM), 
+                     * SELECTED AREA TRANSFER MODE (SATM), and TRANSFER TERMINATION MODE (TTM)
+                     * These modes have a combined effect on the format of a transmitted data stream or of a data stream transferred to an auxiliary input/output device, as described hereafter.
+                     * The term "active selected area" is used to denote the selected area in the presentation component containing the active presentation position.
+                     * The term "eligible" is used for denoting any area which may be considered for transmitting or transferring. 
+                     * If the active presentation position is not within a selected area, the format of the data stream in the first and fourth case above is not defined by this Standard. 
+                     */
                     namespace guardedTransfer {
                         /**
                             * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to SINGLE, then the contents of the active selected area, up to but excluding the active presentation position, are eligible.  
                             */
-                        inline const flags TTM_CURSOR_SATM_SELECT_MATM_SINGLE                   = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_SINGLE;
+                        constexpr base TTM_CURSOR_SATM_SELECT_MATM_SINGLE                   = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_SINGLE;
                     
                         /**
                             * @brief If the TTM is set to CURSOR, the SATM to SELECT, and the MATM to MULTIPLE, then the contents of any selected area, up to but excluding the active presentation position, are eligible.  
                             */
-                        inline const flags TTM_CURSOR_SATM_SELECT_MATM_MULTIPLE                 = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_MULTIPLE;
+                        constexpr base TTM_CURSOR_SATM_SELECT_MATM_MULTIPLE                 = presets::TTM_CURSOR | presets::SATM_SELECT | presets::MATM_MULTIPLE;
 
                         /**
                             * @brief If the TTM is set to CURSOR and the SATM to ALL, then the contents of the buffer up to but excluding the active presentation position, are eligible. 
                             */
-                        inline const flags TTM_CURSOR_SATM_ALL                                  = presets::TTM_CURSOR | presets::SATM_ALL;
+                        constexpr base TTM_CURSOR_SATM_ALL                                  = presets::TTM_CURSOR | presets::SATM_ALL;
 
                         /**
                             * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to SINGLE, then the complete contents of the active selected area are eligible. 
                             */
-                        inline const flags TTM_ALL_SATM_SELECT_MATM_SINGLE                      = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_SINGLE;
+                        constexpr base TTM_ALL_SATM_SELECT_MATM_SINGLE                      = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_SINGLE;
 
                         /**
                             * @brief If the TTM is set to ALL, the SATM to SELECT, and the MATM to MULTIPLE, then the complete contents of all selected areas are eligible. 
                             */
-                        inline const flags TTM_ALL_SATM_SELECT_MATM_MULTIPLE                    = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_MULTIPLE;
+                        constexpr base TTM_ALL_SATM_SELECT_MATM_MULTIPLE                    = presets::TTM_ALL | presets::SATM_SELECT | presets::MATM_MULTIPLE;
 
                         /**
                             * @brief If the TTM and the SATM are both set to ALL, then the complete contents of the buffer are eligible. 
                             */
-                        inline const flags TTM_ALL_SATM_ALL                                     = presets::TTM_ALL | presets::SATM_ALL;
+                        constexpr base TTM_ALL_SATM_ALL                                     = presets::TTM_ALL | presets::SATM_ALL;
 
                         /**
                             * @brief If the GATM is set to GUARD, the contents of the eligible area or areas are transmitted or transferred, 
@@ -1852,44 +1723,44 @@ namespace GGUI {
                             * In the case where a guarded area is only partly contained within an eligible area, 
                             * the contents of the part contained in the eligible area may be transmitted or not, depending on the implementation. 
                             */
-                        inline const base GATM_GUARD                                            = presets::GATM_GUARD;
+                        constexpr base GATM_GUARD                                            = presets::GATM_GUARD;
 
                         /**
                             * @brief If the GATM is set to ALL, guarded as well as unguarded data in an eligible area are transmitted or transferred. 
                             */
-                        inline const base GATM_ALL                                              = presets::GATM_ALL;
+                        constexpr base GATM_ALL                                              = presets::GATM_ALL;
                     }
 
                     /**
-                        * @brief CONTROL REPRESENTATION MODE (CRM) and FORMAT EFFECTOR ACTION MODE (FEAM)
-                        */
+                     * @brief CONTROL REPRESENTATION MODE (CRM) and FORMAT EFFECTOR ACTION MODE (FEAM)
+                     */
                     namespace representationFormat {
                         /**
                             * @brief If the CRM is set to CONTROL, and the FEAM is set to EXECUTE, all control functions are performed as defined. 
                             */
-                        inline const flags CRM_CONTROL_FEAM_EXECUTE                             = presets::CRM_CONTROL | presets::FEAM_EXECUTE;
+                        constexpr base CRM_CONTROL_FEAM_EXECUTE                             = presets::CRM_CONTROL | presets::FEAM_EXECUTE;
 
                         /**
                             * @brief If the CRM is set to CONTROL, and the FEAM is set to STORE, formator functions are treated as graphic characters. 
                             */
-                        inline const flags CRM_CONTROL_FEAM_STORE                               = presets::CRM_CONTROL | presets::FEAM_STORE;
+                        constexpr base CRM_CONTROL_FEAM_STORE                               = presets::CRM_CONTROL | presets::FEAM_STORE;
 
                         /**
                             * @brief If the CRM is set to GRAPHIC, all control functions except RM are treated as graphic characters. 
                             */
-                        inline const base CRM_GRAPHIC                                           = presets::CRM_GRAPHIC;
+                        constexpr base CRM_GRAPHIC                                           = presets::CRM_GRAPHIC;
                     }
 
                     /**
-                        * @brief CHARACTER EDITING MODE (HEM) and INSERTION REPLACEMENT MODE (IRM) 
-                        * Whether the active position referred to above is the active data position in the data component or the
-                        * active presentation position in the presentation component, depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).  
-                        */
+                     * @brief CHARACTER EDITING MODE (HEM) and INSERTION REPLACEMENT MODE (IRM) 
+                     * Whether the active position referred to above is the active data position in the data component or the
+                     * active presentation position in the presentation component, depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM).  
+                     */
                     namespace characterReplacement {
                         /**
                             * @brief If the IRM is set to REPLACE, the HEM influences the control functions DELETE CHARACTER (DCH) and INSERT CHARACTER (ICH) only. 
                             */
-                        inline const base IRM_REPLACE                                           = presets::IRM_REPLACE;
+                        constexpr base IRM_REPLACE                                           = presets::IRM_REPLACE;
 
                         /**
                             * @brief If the IRM is set to INSERT, then, in addition, the effect of the receipt of a graphic character or a
@@ -1897,32 +1768,32 @@ namespace GGUI {
                             * If the HEM is set to FOLLOWING, the implicit movement of the active position is performed normally;
                             * if it is set to PRECEDING, the active position does not move. 
                             */
-                        inline const flags IRM_INSERT_HEM_FOLLOWING                             = presets::IRM_INSERT | presets::HEM_FOLLOWING;
-                        inline const flags IRM_INSERT_HEM_PRECEDING                             = presets::IRM_INSERT | presets::HEM_PRECEDING;
+                        constexpr base IRM_INSERT_HEM_FOLLOWING                             = presets::IRM_INSERT | presets::HEM_FOLLOWING;
+                        constexpr base IRM_INSERT_HEM_PRECEDING                             = presets::IRM_INSERT | presets::HEM_PRECEDING;
                     }
 
                     /**
-                        * @brief BI-DIRECTIONAL SUPPORT MODE (BDSM) and DEVICE COMPONENT SELECT MODE (DCSM)
-                        * NOTE: Control functions affected are: 
-                        * CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL , LF, NEL, RI, SLH, SLL, SPH, SPL.
-                        */
+                     * @brief BI-DIRECTIONAL SUPPORT MODE (BDSM) and DEVICE COMPONENT SELECT MODE (DCSM)
+                     * NOTE: Control functions affected are: 
+                     * CPR, CR, DCH, DL, EA, ECH, ED, EF, EL, ICH, IL , LF, NEL, RI, SLH, SLL, SPH, SPL.
+                     */
                     namespace biDirectionalDevice {
                         /**
                             * @brief If the BDSM is set to EXPLICIT and the DCSM is set to DATA, certain control functions are performed in the data component. 
                             */
-                        inline const flags BDSM_EXPLICIT_DCSM_DATA                              = presets::BDSM_EXPLICIT | presets::DCSM_DATA;
+                        constexpr base BDSM_EXPLICIT_DCSM_DATA                              = presets::BDSM_EXPLICIT | presets::DCSM_DATA;
 
                         /**
                             * @brief If the BDSM is set to EXPLICIT and the DCSM is set to PRESENTATION, certain control functions are performed in the presentation component.
                             */
-                        inline const flags BDSM_EXPLICIT_DCSM_PRESENTATION                      = presets::BDSM_EXPLICIT | presets::DCSM_PRESENTATION;
+                        constexpr base BDSM_EXPLICIT_DCSM_PRESENTATION                      = presets::BDSM_EXPLICIT | presets::DCSM_PRESENTATION;
 
                         /**
                             * @brief If the BDSM is set to IMPLICIT, all relevant control functions are performed in the data component; 
                             * all bi-directional aspects of the data are handled by the device itself. 
                             * The setting of the DCSM has no effect; it is considered to be set to DATA (the reset state). 
                             */
-                        inline const base BDSM_IMPLICIT                                         = presets::BDSM_IMPLICIT;
+                        constexpr base BDSM_IMPLICIT                                         = presets::BDSM_IMPLICIT;
                     }
                 }
             }
@@ -1986,7 +1857,7 @@ namespace GGUI {
             private:
                 uint8_t activeJustifications = 0;
 
-                uint8_t toBitMask(types t) const {
+                constexpr uint8_t toBitMask(types t) const {
                     if (t == types::NO_JUSTIFICATION) return 0;
     
                     return 1 << (static_cast<uint8_t>(t) - 1);  // This way no_justification will stay at zero, and max is 7'th bit
@@ -1994,16 +1865,16 @@ namespace GGUI {
             public:
                 IVector2 start, end = 0;
 
-                justify(IVector2 Start) : activeJustifications(0), start(Start), end(0) {}
+                constexpr justify(IVector2 Start) : activeJustifications(0), start(Start), end(0) {}
 
-                void add(types t) {
+                constexpr void add(types t) {
                     uint8_t tAsBitMask = toBitMask(t);
 
                     if (tAsBitMask == 0) activeJustifications = 0;   // If no justification, then reset all
                     else activeJustifications |= tAsBitMask;
                 }
 
-                bool has(types t) const {
+                constexpr bool has(types t) const {
                     uint8_t tAsBitMask = toBitMask(t);
 
                     return  (tAsBitMask == activeJustifications) ||     // Either they are identical, 0 == 0
@@ -2039,14 +1910,14 @@ namespace GGUI {
                     CONDENSED           // multiplied by a factor not less than 0,5
                 } type;
 
-                float getAsScalar() const {
+                constexpr float getAsScalar() const {
                     float x = static_cast<float>(type);
 
                     // Funny polynomial that goes through the points.
                     return -1.25f * (x * x) + 2.25f * x + 1;
                 }
 
-                spacingFactor(types t = types::NORMAL) : type(t) {}
+                constexpr spacingFactor(types t = types::NORMAL) : type(t) {}
             };
 
             // Only used to store metadata, actual colors are found in the UTFs
@@ -2073,35 +1944,7 @@ namespace GGUI {
                 // NOTE: Since this class only contains metadata, if there is colors in the params via RGB or other formats these will be written into the terminal::screen.cellBuffer!
                 void parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params);
 
-                constexpr size_t getSize() const {
-                    size_t result = textAttributes.getBitCount();
-
-                    // Each text attribute is separated via a separator
-                    size_t textAttributeSeparatorCount = std::max((signed)textAttributes.getBitCount() - 1, 0);
-
-                    // Since our interpreter converts all incoming color types into RGB, we simply need to add the RGB as a direct active color type
-                    size_t directColorTypeByteCount = 0;
-                    size_t textColorAsCompactString = 0;
-                    size_t backgroundColorAsCompactString = 0;
-                    size_t colorSeparatorCount = 0;
-
-                    if (textAttributes.has(graphicalTextAttributes::FOREGROUND_COLOR)) {
-                        textColorAsCompactString = countBytes(toString(textColor));
-                        directColorTypeByteCount += 1;
-                        colorSeparatorCount += 2;   // ';' between each color type
-                    } 
-                    if (textAttributes.has(graphicalTextAttributes::BACKGROUND_COLOR)) {
-                        backgroundColorAsCompactString = countBytes(toString(backgroundColor));
-                        directColorTypeByteCount += 1;
-                        colorSeparatorCount += 2;   // ';' between each color type
-                    }
-
-                    result += textAttributeSeparatorCount + directColorTypeByteCount + textColorAsCompactString + backgroundColorAsCompactString + colorSeparatorCount;
-
-                    return result;
-                }
-
-                std::vector<sequence::parameter::selectable<graphicalTextAttributes>> compile() const {
+                constexpr std::vector<sequence::parameter::selectable<graphicalTextAttributes>> compile() const {
                     std::vector<sequence::parameter::selectable<graphicalTextAttributes>> result;
 
                     for (auto& attr : textAttributes.getAll()) {
@@ -2142,7 +1985,7 @@ namespace GGUI {
                     textAttributes = textAttributes | SGR_S.textAttributes;
                 }
 
-                std::vector<graphicalTextAttributes> getAllTextAttributes() const {
+                constexpr std::vector<graphicalTextAttributes> getAllTextAttributes() const {
                     return textAttributes.getAll();
                 }
 
@@ -2194,7 +2037,7 @@ namespace GGUI {
                 IVector2 activePresentationPosition;
                 IVector2 activeScreenDimensions;
 
-                std::vector<compactString> activePresentationBuffer;
+                std::vector<char32_t> activePresentationBuffer;
 
                 constexpr auto getPresentationPositionAsBufferAddress() {
                     return activePresentationBuffer.begin() + activePresentationPosition.y * activeScreenDimensions.x + activePresentationPosition.x;
@@ -2222,7 +2065,7 @@ namespace GGUI {
                     }
                 }
 
-                mode::flags<> activeModes;
+                mode::base<> activeModes;
 
                 /**
                  * @brief A reference position on a line in the data component ahead of which the active data position can normally not be moved. 
@@ -2276,7 +2119,7 @@ namespace GGUI {
                 // Loads the default pages, C0, C1 and G0
                 components();
 
-                void reset() {
+                constexpr void reset() {
                     activePageIndex = 0;
                     establishedCurrentDefaultPage = dataPage();
                     dataPages.clear();
@@ -2287,7 +2130,7 @@ namespace GGUI {
                     activePresentationPosition = {0, 0};
                     activeCharacterMovementDirection = {0, 0};
 
-                    activeModes = mode::flags<>();
+                    activeModes = mode::base(mode::types::DEFAULT, mode::values::SET);
 
                     homeLinePosition = {0, 0};
                     lineLimitPosition = {0, 0};
@@ -2312,23 +2155,40 @@ namespace GGUI {
             };
 
             namespace sequences {
+                template<typename T>
+                struct templateUnpacker {
+                    using parameter_type = sequence::parameter::numeric;
+                };
+
+                template<typename P, typename F>
+                struct templateUnpacker<sequence::control<P, F>> {
+                    using parameter_type = P;
+                    using final_function_type = F;
+                };
+
+                template<typename T>
+                struct isControlSequence : std::false_type {};
+
+                template<typename P, typename F>
+                struct isControlSequence<sequence::control<P, F>> : std::true_type {};
 
                 template<
                     typename codeType                   = sequence::prefix<>,
-                    typename parameterType              = sequence::parameter::numeric,
                     std::size_t paramCount              = 0,
                     specialTypes parameterExtension     = specialTypes::NORMAL
                 >
                 class base {
                 public:
+                    using parameterType = typename templateUnpacker<codeType>::parameter_type;
+                    
                     codeType function;
-                    std::array<parameterType, paramCount> parameterDefaultValue;
+                    std::vector<parameterType> parameterDefaultValue;
                     const specialTypes parameterExtensionType = parameterExtension;
 
                     template<typename U>
-                    base(
+                    constexpr base(
                         U code,
-                        std::array<parameterType, paramCount> defaultParamValues = {},
+                        std::vector<parameterType> defaultParamValues = {},
                         configuration::cell functionality = {},
                         configuration::page* page = nullptr     // Give empty for automatic page detection
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
@@ -2353,9 +2213,9 @@ namespace GGUI {
                     }
 
                     template<typename U>
-                    base(
+                    constexpr base(
                         U code,
-                        std::array<parameterType, paramCount> defaultParamValues,
+                        std::vector<parameterType> defaultParamValues,
                         configuration::cell functionality,
                         configuration::cellPatch* customCellFunctions
                     ) : function(code), parameterDefaultValue(defaultParamValues) {
@@ -2370,43 +2230,11 @@ namespace GGUI {
                     std::vector<parameterType> convertParameters(const std::vector<T>& params) const {
                         return function.template convert<parameterType>(params);
                     }
-
-                    template<
-                        size_t N,
-                        auto T = parameterExtension,
-                        std::enable_if_t<(T == specialTypes::NORMAL), bool> = true
-                    >
-                    std::array<parameterType, paramCount> normalizeParameters(const std::array<parameterType, N>& params) const {
-                        static_assert(N <= paramCount, "Too many parameters provided for this sequence.");
-
-                        auto result = parameterDefaultValue;
-
-                        for (size_t i = 0; i < N; ++i)
-                            result[i] = params[i];
-
-                        return result;
-                    }
-
-                    template<
-                        typename rawParameterType,
-                        auto T = parameterExtension,
-                        std::enable_if_t<(T == specialTypes::NORMAL), bool> = true
-                    >
-                    std::array<parameterType, paramCount> normalizeParameters(const std::vector<rawParameterType>& params) const {
-                        auto result = parameterDefaultValue;
-                        const auto converted = convertParameters(params);
-
-                        for (size_t i = 0; i < std::min(converted.size(), result.size()); i++) result[i] = converted[i];
-
-                        return result;
-                    }
                     
-                    template<
-                        auto T = parameterExtension,
-                        std::enable_if_t<(T == specialTypes::HAS_INFINITE_PARAMETERS), bool> = true,
-                        typename rawParameterType = parameterType
-                    >
-                    std::vector<parameterType> normalizeParameters(const std::vector<rawParameterType>& params) const {
+                    template<typename rawParameterType = parameterType>
+                    constexpr std::vector<parameterType> normalizeParameters(const std::vector<rawParameterType>& params) const {
+                        assert(parameterExtension == specialTypes::HAS_INFINITE_PARAMETERS && params.size() > paramCount && "Too many parameters were given!");
+
                         auto result = std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end());
                         const auto converted = convertParameters(params);
                         
@@ -2417,47 +2245,46 @@ namespace GGUI {
                         return result;
                     }
 
-                    template<
-                        auto T = parameterExtension,
-                        std::enable_if_t<(T == specialTypes::NORMAL), bool> = true,
-                        size_t incomingParameterCount = paramCount
-                    >
-                    codeType compile(const std::array<parameterType, incomingParameterCount>& params) const {
-                        if constexpr (std::is_same_v<codeType, sequence::control<parameterType>>) {
-                            return function.compile(normalizeParameters(params));
-                        } else {
-                            return function.compile();
-                        }
-                    }
-
-                    template<
-                        auto T = parameterExtension,
-                        std::enable_if_t<(T == specialTypes::HAS_INFINITE_PARAMETERS), bool> = true,
-                        typename otherParameterType = parameterType
-                    >
-                    codeType compile(
+                    template<typename otherParameterType = parameterType>
+                    constexpr codeType compile(
                         const std::vector<otherParameterType>& params = {}
                     ) const {
-                        if constexpr (std::is_same_v<codeType, sequence::control<parameterType>>) {
-                            return function.compile(normalizeParameters(params));
-                        } else {
-                            return function.compile();
-                        }
+                        assert(parameterExtension == specialTypes::HAS_INFINITE_PARAMETERS && params.size() > paramCount && "Too many parameters were given!");
+
+                        return function.compile(normalizeParameters(params));
                     }
 
                     // Takes in runtime numeric based sequence, and returns object based on this compile time type information.
-                    codeType transform(sequence::base* input) {
-                        if constexpr (std::is_same<codeType, sequence::control<parameterType>>::value) {
-                            // All runtime sequences use parameter::numeric type!
-                            auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric>*>(input);
-                            
-                            // templates should disable the wrong overload so no check needed here.
-                            return function.compile(normalizeParameters(controlSequence->getParameters()));
-                        } else {
+                    constexpr codeType transform(sequence::base* input) const {
+                        if constexpr (!isControlSequence<codeType>::value) {
                             return static_cast<codeType>(*input);
+                        } else {    // This activates only on control sequences, since those only introduce deviating parameter types
+                            // All runtime sequences use parameter::numeric type!
+                            auto controlSequence = static_cast<sequence::control<sequence::parameter::numeric, uint8_t>*>(input);
+                            return function.compile(normalizeParameters(controlSequence->getParameters()));
                         }
                     }
                 };
+
+                template<
+                    typename U,
+                    specialTypes parameterExtension = specialTypes::NORMAL,
+                    typename... listedArgs
+                >
+                requires (std::is_convertible_v<listedArgs, typename templateUnpacker<U>::parameter_type> && ...)
+                constexpr auto makeSequencePreset(
+                    U code,
+                    configuration::cell functionality = {},
+                    listedArgs... defaultParams
+                ) {
+                    using P = typename templateUnpacker<U>::parameter_type;
+
+                    return base<U, sizeof...(listedArgs), parameterExtension>(
+                        code, 
+                        std::vector<P>{ static_cast<P>(defaultParams)... }, 
+                        functionality
+                    );
+                }
 
                 namespace delimiters {
                     /**
@@ -2467,7 +2294,7 @@ namespace GGUI {
                      * the command string depends on the relevant application program. 
                      * @example `09/15` or `01/11 05/15`
                     */
-                    inline auto APPLICATION_PROGRAM_COMMAND = base<sequence::prefix<table::C1>>(table::C1::APC);
+                    const inline auto APPLICATION_PROGRAM_COMMAND = base<sequence::prefix<table::C1>>(table::C1::APC);
 
                     /**
                      * @brief CMD is used as the delimiter of a string of data coded according to Standard ECMA-35 and to switch to
@@ -2475,7 +2302,7 @@ namespace GGUI {
                      * for instance, by specifying the length of the string. 
                      * @example `01/11 06/04`
                      */
-                    inline auto CODING_METHOD_DELIMITER = base<sequence::function<table::independentFunctions>>(table::independentFunctions::CMD);
+                    const inline auto CODING_METHOD_DELIMITER = base<sequence::function<table::independentFunctions>>(table::independentFunctions::CMD);
 
                     /**
                      * @brief DCS is used as the opening delimiter of a control string for device control use. The command string
@@ -2487,7 +2314,7 @@ namespace GGUI {
                      * the sending and/or the receiving device. 
                      * @example `09/00` or `01/11 05/00` 
                      */
-                    inline auto DEVICE_CONTROL_STRING = base<sequence::prefix<table::C1>>(table::C1::DCS);
+                    const inline auto DEVICE_CONTROL_STRING = base<sequence::prefix<table::C1>>(table::C1::DCS);
 
                     /**
                      * @brief OSC is used as the opening delimiter of a control string for operating system use. The command string
@@ -2496,7 +2323,7 @@ namespace GGUI {
                      * interpretation of the command string depends on the relevant operating system. 
                      * @example `09/13` or `01/11 05/13` 
                      */
-                    inline auto OPERATING_SYSTEM_COMMAND = base<sequence::prefix<table::C1>>(table::C1::OSC);
+                    const inline auto OPERATING_SYSTEM_COMMAND = base<sequence::prefix<table::C1>>(table::C1::OSC);
 
                     /**
                      * @brief PM is used as the opening delimiter of a control string for privacy message use. The command string
@@ -2505,7 +2332,7 @@ namespace GGUI {
                      * interpretation of the command string depends on the relevant privacy discipline.
                      * @example `09/14` or `01/11 05/14` 
                      */
-                    inline auto PRIVACY_MESSAGE = base<sequence::prefix<table::C1>>(table::C1::PM);
+                    const inline auto PRIVACY_MESSAGE = base<sequence::prefix<table::C1>>(table::C1::PM);
 
                     /**
                      * @brief SOS is used as the opening delimiter of a control string. The character string following may consist of
@@ -2514,7 +2341,7 @@ namespace GGUI {
                      * string depends on the application.
                      * @example `09/08` or `01/11 05/08`
                      */
-                    inline auto START_OF_STRING = base<sequence::prefix<table::C1>>(table::C1::SOS);
+                    const inline auto START_OF_STRING = base<sequence::prefix<table::C1>>(table::C1::SOS);
 
                     /**
                      * @brief ST is used as the closing delimiter of a control string opened by APPLICATION PROGRAM
@@ -2522,7 +2349,7 @@ namespace GGUI {
                      * (OSC), PRIVACY MESSAGE (PM), or START OF STRING (SOS).
                      * @example `09/12` or `01/11 05/12` 
                      */
-                    inline auto STRING_TERMINATOR = base<sequence::prefix<table::C1>>(table::C1::ST);
+                    const inline auto STRING_TERMINATOR = base<sequence::prefix<table::C1>>(table::C1::ST);
                 };
 
                 namespace introducers {
@@ -2532,14 +2359,14 @@ namespace GGUI {
                      * @brief CSI is used as the first character of a control sequence.
                      * @example `09/11` or `01/11 05/11`
                      */
-                    inline auto CONTROL_SEQUENCE_INTRODUCER = base<sequence::prefix<table::C1>>(table::C1::CSI);
+                    const inline auto CONTROL_SEQUENCE_INTRODUCER = base<sequence::prefix<table::C1>>(table::C1::CSI);
 
                     /**
                      * @brief ESC is used for code extension purposes. It causes the meanings of a limited number of bit combinations
                      * following it in the data stream to be changed. 
                      * @example `01/11`
                      */
-                    inline auto ESCAPE = base<sequence::prefix<table::C0>>(table::C0::ESC, {}, {operateEscapeToLoadC1});
+                    const inline auto ESCAPE = base<sequence::prefix<table::C0>>(table::C0::ESC, {}, {operateEscapeToLoadC1});
 
                     /**
                      * @brief SCI and the bit combination following it are used to represent a control function or a graphic character.
@@ -2547,7 +2374,7 @@ namespace GGUI {
                      * reserved for future standardization.
                      * @example `09/10` or `01/11 05/10`
                      */
-                    inline auto SINGLE_CHARACTER_INTRODUCER = base<sequence::prefix<table::C1>>(table::C1::SCI);
+                    const inline auto SINGLE_CHARACTER_INTRODUCER = base<sequence::prefix<table::C1>>(table::C1::SCI);
                 }
 
                 namespace shiftFunctions {
@@ -2566,77 +2393,77 @@ namespace GGUI {
                      * the data stream to be changed.
                      * @example `00/15`
                      */
-                    inline auto LOCKING_SHIFT_ZERO = base<sequence::prefix<table::C0>>(table::C0::LS0, {}, {sequences::shiftFunctions::operateShift_LS0});
+                    const inline auto LOCKING_SHIFT_ZERO = base<sequence::prefix<table::C0>>(table::C0::LS0, {}, {sequences::shiftFunctions::operateShift_LS0});
 
                     /**
                      * @brief LS1 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed.
                      * @example `00/14`
                      */
-                    inline auto LOCKING_SHIFT_ONE = base<sequence::prefix<table::C0>>(table::C0::LS1, {}, {sequences::shiftFunctions::operateShift_LS1});
+                    const inline auto LOCKING_SHIFT_ONE = base<sequence::prefix<table::C0>>(table::C0::LS1, {}, {sequences::shiftFunctions::operateShift_LS1});
 
                     /**
                      * @brief LS1R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `07/14`
                      */
-                    inline auto LOCKING_SHIFT_ONE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS1R, {}, {sequences::shiftFunctions::operateShift_LS1R});
+                    const inline auto LOCKING_SHIFT_ONE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS1R, {}, {sequences::shiftFunctions::operateShift_LS1R});
 
                     /**
                      * @brief LS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `01/11 06/14`
                      */
-                    inline auto LOCKING_SHIFT_TWO = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2, {}, {sequences::shiftFunctions::operateShift_LS2});
+                    const inline auto LOCKING_SHIFT_TWO = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2, {}, {sequences::shiftFunctions::operateShift_LS2});
 
                     /**
                      * @brief LS2R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed.
                      * @example `01/11 07/13`
                      */
-                    inline auto LOCKING_SHIFT_TWO_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2R, {}, {sequences::shiftFunctions::operateShift_LS2R});
+                    const inline auto LOCKING_SHIFT_TWO_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS2R, {}, {sequences::shiftFunctions::operateShift_LS2R});
 
                     /**
                      * @brief LS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `01/11 06/15`
                      */
-                    inline auto LOCKING_SHIFT_THREE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3, {}, {sequences::shiftFunctions::operateShift_LS3});
+                    const inline auto LOCKING_SHIFT_THREE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3, {}, {sequences::shiftFunctions::operateShift_LS3});
 
                     /**
                      * @brief LS3R is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `01/11 07/12`
                      */
-                    inline auto LOCKING_SHIFT_THREE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3R, {}, {sequences::shiftFunctions::operateShift_LS3R});
+                    const inline auto LOCKING_SHIFT_THREE_RIGHT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::LS3R, {}, {sequences::shiftFunctions::operateShift_LS3R});
 
                     /**
                      * @brief SI is used for code extension purposes. It causes the meanings of the bit combinations following it in the
                      * data stream to be changed. 
                      * @example `00/15`
                      */
-                    inline auto SHIFT_IN = base<sequence::prefix<table::C0>>(table::C0::SI);
+                    const inline auto SHIFT_IN = base<sequence::prefix<table::C0>>(table::C0::SI);
 
                     /**
                      * @brief SO is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `00/14`
                      */
-                    inline auto SHIFT_OUT = base<sequence::prefix<table::C0>>(table::C0::SO);
+                    const inline auto SHIFT_OUT = base<sequence::prefix<table::C0>>(table::C0::SO);
 
                     /**
                      * @brief SS2 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `08/14` or `01/11 04/14`
                      */
-                    inline auto SS2 = base<sequence::prefix<table::C1>>(table::C1::SS2, {}, {sequences::shiftFunctions::operateShift_SS2});
+                    const inline auto SS2 = base<sequence::prefix<table::C1>>(table::C1::SS2, {}, {sequences::shiftFunctions::operateShift_SS2});
 
                     /**
                      * @brief SS3 is used for code extension purposes. It causes the meanings of the bit combinations following it in
                      * the data stream to be changed. 
                      * @example `08/15` or `01/11 04/15` 
                      */
-                    inline auto SS3 = base<sequence::prefix<table::C1>>(table::C1::SS3, {}, {sequences::shiftFunctions::operateShift_SS3});
+                    const inline auto SS3 = base<sequence::prefix<table::C1>>(table::C1::SS3, {}, {sequences::shiftFunctions::operateShift_SS3});
 
                 }
 
@@ -2673,7 +2500,7 @@ namespace GGUI {
                      * MOVEMENT DIRECTION (SIMD). 
                      * @example `00/08`
                      */
-                    inline auto BACKSPACE = base<sequence::prefix<table::C0>>(table::C0::BS, {}, {operate_BACKSPACE});
+                    const inline auto BACKSPACE = base<sequence::prefix<table::C0>>(table::C0::BS, {}, {operate_BACKSPACE});
 
                     /**
                      * @brief The effect of CR depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
@@ -2693,7 +2520,7 @@ namespace GGUI {
                      * parameter value of SET LINE LIMIT (SLL).
                      * @example `00/13`
                      */
-                    inline auto CARRIAGE_RETURN = base<sequence::prefix<table::C0>>(table::C0::CR, {}, {operate_CARRIAGE_RETURN});
+                    const inline auto CARRIAGE_RETURN = base<sequence::prefix<table::C0>>(table::C0::CR, {}, {operate_CARRIAGE_RETURN});
 
                     /**
                      * @brief FF causes the active presentation position to be moved to the corresponding character position of the
@@ -2701,7 +2528,7 @@ namespace GGUI {
                      * position is established by the parameter value of SET PAGE HOME (SPH). 
                      * @example `00/12`
                      */
-                    inline auto FORM_FEED = base<sequence::prefix<table::C0>>(table::C0::FF, {}, {operate_FORM_FEED});
+                    const inline auto FORM_FEED = base<sequence::prefix<table::C0>>(table::C0::FF, {}, {operate_FORM_FEED});
 
                     /**
                      * @brief HPA causes the active data position to be moved to character position n in the active line (the line in the
@@ -2709,7 +2536,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/00` or `9/11 Pn 06/00`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPA), {1}, {operate_CHARACTER_POSITION_ABSOLUTE});
+                    const inline auto CHARACTER_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPA), {operate_CHARACTER_POSITION_ABSOLUTE}, 1);
 
                     /**
                      * @brief HPB causes the active data position to be moved by n character positions in the data component in the
@@ -2717,7 +2544,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/10` or `9/11 Pn 06/10`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPB), {1}, {operate_CHARACTER_POSITION_BACKWARD});
+                    const inline auto CHARACTER_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPB), {operate_CHARACTER_POSITION_BACKWARD}, 1);
 
                     /**
                      * @brief HPR causes the active data position to be moved by n character positions in the data component in the
@@ -2725,7 +2552,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/01` or `9/11 Pn 06/01`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CHARACTER_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HPR), {1}, {operate_CHARACTER_POSITION_FORWARD});
+                    const inline auto CHARACTER_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPR), {operate_CHARACTER_POSITION_FORWARD}, 1);
 
                     /**
                      * @brief HT causes the active presentation position to be moved to the following character tabulation stop in the presentation component.
@@ -2737,7 +2564,7 @@ namespace GGUI {
                      * (NEL) in the data stream
                      * @example `00/09`
                      */
-                    inline auto CHARACTER_TABULATION = base<sequence::prefix<table::C0>>(table::C0::HT, {}, {operate_CHARACTER_TABULATION});
+                    const inline auto CHARACTER_TABULATION = base<sequence::prefix<table::C0>>(table::C0::HT, {}, {operate_CHARACTER_TABULATION});
 
                     /**
                      * @brief HTJ causes the contents of the active field (the field in the presentation component that contains the
@@ -2747,7 +2574,7 @@ namespace GGUI {
                      * erased state. 
                      * @example `08/09` or `01/11 04/09` 
                      */
-                    inline auto CHARACTER_TABULATION_WITH_JUSTIFICATION = base<sequence::prefix<table::C1>>(table::C1::HTJ);
+                    const inline auto CHARACTER_TABULATION_WITH_JUSTIFICATION = base<sequence::prefix<table::C1>>(table::C1::HTJ);
 
                     /**
                      * @brief HTS causes a character tabulation stop to be set at the active presentation position in the presentation
@@ -2755,7 +2582,7 @@ namespace GGUI {
                      * The number of lines affected depends on the setting of the TABULATION STOP MODE (TSM). 
                      * @example `08/08` or `01/11 04/08`
                      */
-                    inline auto CHARACTER_TABULATION_SET = base<sequence::prefix<table::C1>>(table::C1::HTS, {}, {operate_CHARACTER_TABULATION_SET});
+                    const inline auto CHARACTER_TABULATION_SET = base<sequence::prefix<table::C1>>(table::C1::HTS, {}, {operate_CHARACTER_TABULATION_SET});
 
                     /**
                      * @brief HVP causes the active data position to be moved in the data component to the n-th line position
@@ -2763,7 +2590,7 @@ namespace GGUI {
                      * progression, where n equals the value of Pn1 and m equals the value of Pn2. 
                      * @example `01/11 05/11 Pn1;Pn2 06/06` or `9/11 Pn1;Pn2 06/06`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CHARACTER_AND_LINE_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::HVP), {1}, {operate_CHARACTER_AND_LINE_POSITION});
+                    const inline auto CHARACTER_AND_LINE_POSITION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HVP), {operate_CHARACTER_AND_LINE_POSITION}, 1, 1);
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, LF causes the
@@ -2774,7 +2601,7 @@ namespace GGUI {
                      * component. 
                      * @example `00/10`
                      */
-                    inline auto LINE_FEED = base<sequence::prefix<table::C0>>(table::C0::LF, {}, {operate_LINE_FEED});
+                    const inline auto LINE_FEED = base<sequence::prefix<table::C0>>(table::C0::LF, {}, {operate_LINE_FEED});
 
                     /**
                      * @brief The effect of NEL depends on the setting of the DEVICE COMPONENT SELECT MODE (DCSM) and
@@ -2795,7 +2622,7 @@ namespace GGUI {
                      * parameter value of SET LINE LIMIT (SLL). 
                      * @example `08/05` or `01/11 04/05`
                      */
-                    inline auto NEXT_LINE = base<sequence::prefix<table::C1>>(table::C1::NEL, {}, {operate_NEXT_LINE});
+                    const inline auto NEXT_LINE = base<sequence::prefix<table::C1>>(table::C1::NEL, {}, {operate_NEXT_LINE});
 
                     /**
                      * @brief PLD causes the active presentation position to be moved in the presentation component to the
@@ -2806,7 +2633,7 @@ namespace GGUI {
                      * line that contains the active presentation position).
                      * @example `08/11` or `01/11 04/11`
                      */
-                    inline auto PARTIAL_LINE_FORWARD = base<sequence::prefix<table::C1>>(table::C1::PLD, {}, {operate_PARTIAL_LINE_FORWARD});
+                    const inline auto PARTIAL_LINE_FORWARD = base<sequence::prefix<table::C1>>(table::C1::PLD, {}, {operate_PARTIAL_LINE_FORWARD});
 
                     /**
                      * @brief PLU causes the active presentation position to be moved in the presentation component to the
@@ -2817,28 +2644,28 @@ namespace GGUI {
                      * line (the line that contains the active presentation position). 
                      * @example `08/12` or `01/11 04/12` 
                      */
-                    inline auto PARTIAL_LINE_BACKWARD = base<sequence::prefix<table::C1>>(table::C1::PLU, {}, {operate_PARTIAL_LINE_BACKWARD});
+                    const inline auto PARTIAL_LINE_BACKWARD = base<sequence::prefix<table::C1>>(table::C1::PLU, {}, {operate_PARTIAL_LINE_BACKWARD});
 
                     /**
                      * @brief PPA causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/00` or `9/11 Pn 02/00 05/00`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPA), {1}, {operate_PAGE_POSITION_ABSOLUTE});
+                    const inline auto PAGE_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPA), {operate_PAGE_POSITION_ABSOLUTE}, 1);
 
                     /**
                      * @brief PPB causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th preceding page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/02` or `9/11 Pn 02/00 05/02`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPB), {1}, {operate_PAGE_POSITION_BACKWARD});
+                    const inline auto PAGE_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPB), {operate_PAGE_POSITION_BACKWARD}, 1);
                     
                     /**
                      * @brief PPR causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th following page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/01` or `9/11 Pn 02/00 05/01`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PAGE_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::PPR), {1}, {operate_PAGE_POSITION_FORWARD});
+                    const inline auto PAGE_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPR), {operate_PAGE_POSITION_FORWARD}, 1);
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, RI causes the
@@ -2848,7 +2675,7 @@ namespace GGUI {
                      * position to be moved in the data component to the corresponding character position of the preceding line.
                      @example `08/13` or `ESC 04/13`
                      */
-                    inline auto REVERSE_LINE_FEED = base<sequence::prefix<table::C1>>(table::C1::RI, {}, {operate_REVERSE_LINE_FEED});
+                    const inline auto REVERSE_LINE_FEED = base<sequence::prefix<table::C1>>(table::C1::RI, {}, {operate_REVERSE_LINE_FEED});
 
                     /**
                      * @brief TBC causes one or more tabulation stops in the presentation component to be cleared, depending on the
@@ -2866,7 +2693,7 @@ namespace GGUI {
                             ALL_LINE_AND_CHARACTER_TABULATORS
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::TBC), {types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION}, {operate_TABULATION_CLEAR});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::TBC), {operate_TABULATION_CLEAR}, types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION);
                     }
 
                     /**
@@ -2876,7 +2703,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/04` or `9/11 Pn 02/00 06/04`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> TABULATION_STOP_REMOVE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TSR), {-1}, {operate_TABULATION_STOP_REMOVE});
+                    const inline auto TABULATION_STOP_REMOVE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TSR), {operate_TABULATION_STOP_REMOVE}, -1);
                     
                     /**
                      * @brief VPA causes the active data position to be moved to line position n in the data component in a direction
@@ -2884,7 +2711,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/04` or `9/11 Pn 06/04`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPA), {1}, {operate_LINE_POSITION_ABSOLUTE});
+                    const inline auto LINE_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPA), {operate_LINE_POSITION_ABSOLUTE}, 1);
 
                     /**
                      * @brief VPB causes the active data position to be moved by n line positions in the data component in a direction
@@ -2892,27 +2719,27 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/11` or `9/11 Pn 06/11`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_BACKWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPB), {1}, {operate_LINE_POSITION_BACKWARD});
+                    const inline auto LINE_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPB), {operate_LINE_POSITION_BACKWARD}, 1);
 
                     /**
                      * @brief VPR causes the active data position to be moved by n line positions in the data component in a direction
                      * parallel to the line progression, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 06/05` or `9/11 Pn 06/05`
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> LINE_POSITION_FORWARD(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::VPR), {1}, {operate_LINE_POSITION_FORWARD});
+                    const inline auto LINE_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPR), {operate_LINE_POSITION_FORWARD}, 1);
 
                     /**
                      * @brief VT causes the active presentation position to be moved in the presentation component to the
                      * corresponding character position on the line at which the following line tabulation stop is set. 
                      * @example `00/11`
                      */
-                    inline auto LINE_TABULATION = base<sequence::prefix<table::C0>>(table::C0::VT, {}, {operate_LINE_TABULATION});
+                    const inline auto LINE_TABULATION = base<sequence::prefix<table::C0>>(table::C0::VT, {}, {operate_LINE_TABULATION});
 
                     /**
                      * @brief VTS causes a line tabulation stop to be set at the active line (the line that contains the active presentation position). 
                      * @example `08/10` or `01/11 04/10`
                      */
-                    inline auto LINE_TABULATION_SET = base<sequence::prefix<table::C1>>(table::C1::VTS, {}, {operate_LINE_TABULATION_SET});
+                    const inline auto LINE_TABULATION_SET = base<sequence::prefix<table::C1>>(table::C1::VTS, {}, {operate_LINE_TABULATION_SET});
                 }
 
                 namespace presentationControlFunctions {
@@ -2936,7 +2763,7 @@ namespace GGUI {
                      * between two graphic characters, either or both of which may be SPACE. 
                      * @example `08/02` or `01/11 04/02`
                      */
-                    inline auto BREAK_PERMITTED_HERE = base<sequence::prefix<table::C1>>(table::C1::BPH, {}, {operate_BREAK_PERMITTED_HERE});
+                    const inline auto BREAK_PERMITTED_HERE = base<sequence::prefix<table::C1>>(table::C1::BPH, {}, {operate_BREAK_PERMITTED_HERE});
 
                     /**
                      * @brief DTA is used to establish the dimensions of the text area for subsequent pages.
@@ -2945,7 +2772,7 @@ namespace GGUI {
                      * @param Pn1 default(none)
                      * @param Pn2 default(none)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> DIMENSION_TEXT_AREA(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::DTA), {-1, -1}, {operate_DIMENSION_TEXT_AREA});
+                    const inline auto DIMENSION_TEXT_AREA = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::DTA), {operate_DIMENSION_TEXT_AREA}, -1, -1);
 
                     /**
                      * @brief FNT is used to identify the character font to be selected as primary or alternative font by subsequent
@@ -2954,7 +2781,7 @@ namespace GGUI {
                      * @param Ps1 default(0)    <-- font slot to load
                      * @param Ps2 default(0)    <-- font ID
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<fontSlots>>, sequence::parameter::selectable<fontSlots>, 2> FONT_SELECTION(sequence::control<sequence::parameter::selectable<fontSlots>>(table::finalWithIntermediate::FNT), {fontSlots::PRIMARY, (fontSlots)0 /* Due to limitations, this secondary is also used as an selectable, stated in ecma-48 8.3.53 */}, {operate_FONT_SELECTION});
+                    const inline auto FONT_SELECTION = makeSequencePreset(sequence::control<sequence::parameter::selectable<fontSlots>, table::finalWithIntermediate>(table::finalWithIntermediate::FNT), {operate_FONT_SELECTION}, fontSlots::PRIMARY, (fontSlots)0 /* Due to limitations, this secondary is also used as an selectable, stated in ecma-48 8.3.53 */);
 
                     /**
                      * @brief GCC is used to indicate that two or more graphic characters are to be imaged as one single graphic
@@ -2975,7 +2802,7 @@ namespace GGUI {
                             END             //                     end of string characters to be images as a single graphic symbol.
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::GCC), {types::DOUBLE_WIDE}, {operate_GRAPHIC_CHARACTER_COMBINATION});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::GCC), {operate_GRAPHIC_CHARACTER_COMBINATION}, types::DOUBLE_WIDE);
                     }
 
                     /**
@@ -2986,7 +2813,7 @@ namespace GGUI {
                      * @param Pn1 default(100) specifies the height as a percentage of the height established by GSS
                      * @param Pn2 default(100) specifies the width as a percentage of the width established by GSS 
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> GRAPHIC_SIZE_MODIFICATION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::GSM), {100,100}, {operate_GRAPHIC_SIZE_MODIFICATION});
+                    const inline auto GRAPHIC_SIZE_MODIFICATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::GSM), {operate_GRAPHIC_SIZE_MODIFICATION}, 100, 100);
 
                     /**
                      * @brief GSS is used to establish for subsequent text the height and the width of all primary and alternative fonts
@@ -2998,7 +2825,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/03` or `9/11 Pn 02/00 04/03`
                      * @param Pn default(none) specifies the height, the width is implicitly defined by the height.
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> GRAPHIC_SIZE_SELECTION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::GSS), {-1}, {operate_GRAPHIC_SIZE_SELECTION});
+                    const inline auto GRAPHIC_SIZE_SELECTION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::GSS), {operate_GRAPHIC_SIZE_SELECTION}, -1);
                     
                     /**
                      * @brief JFY is used to indicate the beginning of a string of graphic characters in the presentation component that
@@ -3009,14 +2836,14 @@ namespace GGUI {
                      * @param Ps default(0)
                      * @param ... 
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<justify::types>>, sequence::parameter::selectable<justify::types>, 1, specialTypes::HAS_INFINITE_PARAMETERS> JUSTIFY(sequence::control<sequence::parameter::selectable<justify::types>>(table::finalWithIntermediate::JFY), {justify::types::NO_JUSTIFICATION}, {operate_JUSTIFY});
+                    const inline auto JUSTIFY = makeSequencePreset<sequence::control<sequence::parameter::selectable<justify::types>, table::finalWithIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<justify::types>, table::finalWithIntermediate>(table::finalWithIntermediate::JFY), {operate_JUSTIFY}, justify::types::NO_JUSTIFICATION);
 
                     /**
                      * @brief NBH is used to indicate a point where a line break shall not occur when text is formatted. 
                      * NBH may occur between two graphic characters either or both of which may be SPACE. 
                      * @example `08/03` or `01/11 04/03`
                      */
-                    inline auto NO_BREAK_HERE = base<sequence::prefix<table::C1>>(table::C1::NBH, {}, {operate_NO_BREAK_HERE});
+                    const inline auto NO_BREAK_HERE = base<sequence::prefix<table::C1>>(table::C1::NBH, {}, {operate_NO_BREAK_HERE});
 
                     /**
                      * @brief PEC is used to establish the spacing and the extent of the graphic characters for subsequent text. 
@@ -3028,7 +2855,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 02/00 05/10` or `9/11 Ps 02/00 05/10`
                      * @param Ps default(0)
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<spacingFactor::types>>, sequence::parameter::selectable<spacingFactor::types>, 1> PRESENTATION_EXPAND_OR_CONTRACT(sequence::control<sequence::parameter::selectable<spacingFactor::types>>(table::finalWithIntermediate::PEC), {spacingFactor::types::NORMAL}, {operate_PRESENTATION_EXPAND_OR_CONTRACT});
+                    const inline auto PRESENTATION_EXPAND_OR_CONTRACT = makeSequencePreset(sequence::control<sequence::parameter::selectable<spacingFactor::types>, table::finalWithIntermediate>(table::finalWithIntermediate::PEC), {operate_PRESENTATION_EXPAND_OR_CONTRACT}, spacingFactor::types::NORMAL);
 
                     /**
                      * @brief PFS is used to establish the available area for the imaging of pages of text based on paper size. 
@@ -3059,7 +2886,7 @@ namespace GGUI {
                             B4_LONG_LINES
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<format>>, sequence::parameter::selectable<format>, 1> code(sequence::control<sequence::parameter::selectable<format>>(table::finalWithIntermediate::PFS), {format::TALL_BASIC_COMMUNICATION});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<format>, table::finalWithIntermediate>(table::finalWithIntermediate::PFS), {}, format::TALL_BASIC_COMMUNICATION);
                     }
 
                     /**
@@ -3105,7 +2932,7 @@ namespace GGUI {
                             BEGINNING_OF_SUPPLEMENTARY_CHINESE_PHONETIC_ANNOTATION
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::PTX), {types::END});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::PTX), {}, types::END);
                     }
 
                     /**
@@ -3134,7 +2961,7 @@ namespace GGUI {
                             FLUSH_TO_BOTH_MARGINS
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::QUAD), {types::FLUSH_TO_LINE_HOME_POSITION_MARGIN});
+                        const inline auto code = makeSequencePreset<sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::QUAD), {}, types::FLUSH_TO_LINE_HOME_POSITION_MARGIN);
                     }
 
                     /**
@@ -3146,7 +2973,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 05/12` or `9/11 Pn 02/00 05/12`
                      * @param Pn default(0)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_ADDITIONAL_CHARACTER_SEPARATION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SACS), {0});
+                    const inline auto SET_ADDITIONAL_CHARACTER_SEPARATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SACS), {}, 0);
                     
                     /**
                      * @brief SAPV is used to specify one or more variants for the presentation of subsequent text.
@@ -3181,7 +3008,7 @@ namespace GGUI {
                             CANCEL_PERSISTENT_FORM_MODE                     // cancels the effect of parameter value 21, i.e. re-establishes the effect of parameter values 5, 6, 7, and 8 for the next single graphic character only
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SAPV), {types::DEFAULT});
+                        const inline auto code = makeSequencePreset<sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SAPV), {}, types::DEFAULT);
                     }
 
                     /**
@@ -3204,7 +3031,7 @@ namespace GGUI {
                             ROTATE_315                                      // 315 degrees.
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SCO), {types::DEFAULT});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SCO), {}, types::DEFAULT);
                     }
 
                     /**
@@ -3239,7 +3066,7 @@ namespace GGUI {
                                                                     the active data position in the data component is updated accordingly.  */
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 2> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SCP), {types::LEFT_TO_RIGHT, types::BUFFER_TO_DISPLAY});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SCP), {}, types::LEFT_TO_RIGHT, types::BUFFER_TO_DISPLAY);
                     }
 
                     /**
@@ -3248,7 +3075,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/07` or `9/11 Pn 02/00 06/07`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_CHARACTER_SPACING(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SCS), {});
+                    const inline auto SET_CHARACTER_SPACING = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SCS));
                     
                     /**
                      * @brief SDS is used to establish in the data component the beginning and the end of a string of characters as
@@ -3276,7 +3103,7 @@ namespace GGUI {
                             START_OF_A_DIRECTED_RIGHT_TO_LEFT_STRING,   // Establish the direction right-to-left
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SDS), {types::END_OF_DIRECTED_STRING});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SDS), {}, types::END_OF_DIRECTED_STRING);
                     }
 
                     /**
@@ -3285,7 +3112,7 @@ namespace GGUI {
                      * the GRAPHIC RENDITION COMBINATION MODE (GRCM).
                      * @example `01/11 05/11 Ps... 06/13` or `9/11 Ps... 06/13`
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<graphicalTextAttributes>>, sequence::parameter::selectable<graphicalTextAttributes>, 1, specialTypes::HAS_INFINITE_PARAMETERS> SELECT_GRAPHIC_RENDITION(sequence::control<sequence::parameter::selectable<graphicalTextAttributes>>(table::finalWithoutIntermediate::SGR), {graphicalTextAttributes::DEFAULT}, {operate_SELECT_GRAPHIC_RENDITION});
+                    const inline auto SELECT_GRAPHIC_RENDITION = makeSequencePreset<sequence::control<sequence::parameter::selectable<graphicalTextAttributes>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<graphicalTextAttributes>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SGR), {operate_SELECT_GRAPHIC_RENDITION}, graphicalTextAttributes::DEFAULT);
 
                     /**
                      * @brief SHS is used to establish the character spacing for subsequent text. 
@@ -3304,7 +3131,7 @@ namespace GGUI {
                             FIT_4_CHARACTERS_PER_24_4_MM
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SHS), {types::FIT_10_CHARACTERS_PER_25_4_MM});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SHS), {}, types::FIT_10_CHARACTERS_PER_25_4_MM);
                     }
 
                     /**
@@ -3313,7 +3140,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 05/14` or `9/11 Ps 05/14`
                      * @param Ps default(0)
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<components::characterMovementDirection>>, sequence::parameter::selectable<components::characterMovementDirection>, 1> SELECT_IMPLICIT_MOVEMENT_DIRECTION(sequence::control<sequence::parameter::selectable<components::characterMovementDirection>>(table::finalWithoutIntermediate::SIMD), {components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION});
+                    const inline auto SELECT_IMPLICIT_MOVEMENT_DIRECTION = makeSequencePreset(sequence::control<sequence::parameter::selectable<components::characterMovementDirection>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SIMD), {}, components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION);
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE is set to PRESENTATION, 
@@ -3330,7 +3157,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 05/05` or `9/11 Pn 02/00 05/05`
                      * @param Pn default(None)
                     */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_LINE_HOME(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SHL), {}, {operate_SET_LINE_HOME});
+                    const inline auto SET_LINE_HOME = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SHL), {operate_SET_LINE_HOME});
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE is set to PRESENTATION, SLL is used to establish at character position n in the active line (the line that contains the active presentation position) 
@@ -3345,7 +3172,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 05/06` or `9/11 Pn 02/00 05/06`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_LINE_LIMIT(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SLL), {}, {operate_SET_LINE_LIMIT});
+                    const inline auto SET_LINE_LIMIT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SLL), {operate_SET_LINE_LIMIT});
                     
                     /**
                      * @brief SLS is used to establish the line spacing for subsequent text. 
@@ -3355,7 +3182,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/08` or `9/11 Pn 02/00 06/08`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_LINE_SPACING(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SLS), {});
+                    const inline auto SET_LINE_SPACING = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SLS));
                     
                     /**
                      * @brief SPD is used to select the line orientation, the line progression, and the character path in the presentation component.
@@ -3368,9 +3195,9 @@ namespace GGUI {
                      * @param Ps1 default(0)
                      * @param Ps2 default(0)
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<presentationDirections>>, sequence::parameter::selectable<presentationDirections>, 2> SELECT_PRESENTATION_DIRECTIONS(sequence::control<sequence::parameter::selectable<presentationDirections>>(table::finalWithIntermediate::SPD), {presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT, presentationDirections::STALL});
+                    const inline auto SELECT_PRESENTATION_DIRECTIONS = makeSequencePreset(sequence::control<sequence::parameter::selectable<presentationDirections>, table::finalWithIntermediate>(table::finalWithIntermediate::SPD), {}, presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT, presentationDirections::STALL);
 
-                    // inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_PAGE_HOME                                 =       sequence::controlSequence<sequence::parameter::numeric>(1, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
+                    // inline base<sequence::controlSequence<sequence::parameter::numeric>, 1> SET_PAGE_HOME                                 =       sequence::controlSequence<sequence::parameter::numeric>(1, table::finalWithIntermediate, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
                     
                     /**
                      * @brief SPI is used to establish the line spacing and the character spacing for subsequent text. 
@@ -3381,9 +3208,9 @@ namespace GGUI {
                      * @param Pn1 default(None)
                      * @param Pn2 default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> SPACING_INCREMENT(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SPI), {});
+                    const inline auto SPACING_INCREMENT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SPI));
                     
-                    // inline base<sequence::controlSequence<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_PAGE_LIMIT                                =       sequence::controlSequence<sequence::parameter::numeric>(1, table::finalWithIntermediate::SPL); // Ecma lists these, but there are no mentions in the tables.
+                    // inline base<sequence::controlSequence<sequence::parameter::numeric>, 1> SET_PAGE_LIMIT                                =       sequence::controlSequence<sequence::parameter::numeric>(1, table::finalWithIntermediate, table::finalWithIntermediate::SPL); // Ecma lists these, but there are no mentions in the tables.
                     
                     /**
                      * @brief SPQR is used to select the relative print quality and the print speed for devices the output quality and speed of which are inversely related.
@@ -3398,7 +3225,7 @@ namespace GGUI {
                             FAST_SPEED              // Draft quality
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1>code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SPQR), {types::SLOW_SPEED});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SPQR), {}, types::SLOW_SPEED);
                     }
 
                     /**
@@ -3410,7 +3237,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/06` or `9/11 Pn 02/00 06/06`
                      * @param Pn default(0)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_REDUCED_CHARACTER_SEPARATION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SRCS), {0});
+                    const inline auto SET_REDUCED_CHARACTER_SEPARATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SRCS), {}, 0);
                     
                     /**
                      * @brief SRS is used to establish in the data component the beginning and the end of a string of characters as well
@@ -3437,7 +3264,7 @@ namespace GGUI {
                             START_OF_REVERSED_STRING                    // beginning of a reversed string; reverse the direction
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SRS), {types::END_OF_REVERSED_STRING});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SRS), {}, types::END_OF_REVERSED_STRING);
                     }
 
                     /**
@@ -3459,7 +3286,7 @@ namespace GGUI {
                             DECIPOINT                           // 0,035 14 mm (35/996 mm)
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SSU), {types::CHARACTER});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SSU), {}, types::CHARACTER);
                     }
 
                     /**
@@ -3474,7 +3301,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 05/11` or `9/11 Pn 02/00 05/11`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SET_SPACE_WIDTH(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SSW), {});
+                    const inline auto SET_SPACE_WIDTH = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SSW));
 
                     /**
                      * @brief STAB causes subsequent text in the presentation component to be aligned according to the position and
@@ -3484,7 +3311,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 02/00 05/14` or `9/11 Ps 02/00 05/14`
                      * @param Ps default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SELECTIVE_TABULATION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::STAB), {});
+                    const inline auto SELECTIVE_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::STAB));
 
                     /**
                      * @brief SVS is used to establish the line spacing for subsequent text. The established spacing remains in effect
@@ -3506,7 +3333,7 @@ namespace GGUI {
                             TWO_LINES_PER_25_4_MM       // 2 lines per 25,4 mm
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::SVS), {types::SIX_LINES_PER_25_4_MM});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SVS), {}, types::SIX_LINES_PER_25_4_MM);
                     }
 
                     /**
@@ -3516,7 +3343,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/02` or `9/11 Pn 02/00 06/02`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> TABULATION_ALIGNED_CENTRED(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TAC), {});
+                    const inline auto TABULATION_ALIGNED_CENTRED = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TAC));
                     
                     /**
                      * @brief TALE causes a character tabulation stop calling for leading edge alignment to be set at character position n in the active line (the line that contains the active presentation position) and lines of subsequent text in the presentation component, where n equals the value of Pn.
@@ -3525,7 +3352,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/01` or `9/11 Pn 02/00 06/01`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> TABULATION_ALIGNED_LEADING_EDGE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TALE), {});
+                    const inline auto TABULATION_ALIGNED_LEADING_EDGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TALE));
                     
                     /**
                      * @brief TATE causes a character tabulation stop calling for trailing edge alignment to be set at character
@@ -3536,7 +3363,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/00` or `9/11 Pn 02/00 06/00`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> TABULATION_ALIGNED_TRAILING_EDGE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TATE), {});
+                    const inline auto TABULATION_ALIGNED_TRAILING_EDGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TATE));
                     
                     /**
                      * @brief TCC causes a character tabulation stop calling for alignment of a target graphic character to be set at
@@ -3555,7 +3382,7 @@ namespace GGUI {
                      * @param Pn1 default(None)
                      * @param Pn2 default(32)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> TABULATION_CENTRED_ON_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TCC), {0, 32});
+                    const inline auto TABULATION_CENTRED_ON_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TCC), {}, 0, 32);
                     
                     /**
                      * @brief TSS is used to establish the width of a thin space for subsequent text. 
@@ -3565,7 +3392,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/05` or `9/11 Pn 02/00 04/05`
                      * @param Pn default(None) 
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> THIN_SPACE_SPECIFICATION(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::TSS), {});
+                    const inline auto THIN_SPACE_SPECIFICATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TSS));
                 }
 
                 namespace editorFunctions {
@@ -3593,7 +3420,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/00` or `9/11 Pn 05/00`
                      * @param Pn default(1) 
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DELETE_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DCH), {1}, {operate_DELETE_CHARACTER});
+                    const inline auto DELETE_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DCH), {operate_DELETE_CHARACTER}, 1);
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, DL causes the
@@ -3618,7 +3445,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/13` or `9/11 Pn 04/13`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DELETE_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DL), {1}, {operate_DELETE_LINE});
+                    const inline auto DELETE_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DL), {operate_DELETE_LINE}, 1);
 
                     /**
                      * @brief This sequence means two different things based on previous sequence.
@@ -3645,7 +3472,7 @@ namespace GGUI {
                                                                                        2) All character positions in the qualified area are put into the erased state  */
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::EA), {types::FROM_ACTIVE_POSITION_UNTIL_QUALIFIED_AREA_END});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EA), {}, types::FROM_ACTIVE_POSITION_UNTIL_QUALIFIED_AREA_END);
                     }
 
                     /**
@@ -3660,7 +3487,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/08` or `9/11 Pn 05/08`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> ERASE_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::ECH), {1});
+                    const inline auto ERASE_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ECH), {}, 1);
                     
                     /**
                      * @brief This sequence means two different things based on previous sequence.
@@ -3687,7 +3514,7 @@ namespace GGUI {
                                                                                        2) All character positions of the page are put into the erased state  */
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::ED), {types::FROM_ACTIVE_POSITION_UNTIL_END_OF_PAGE});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ED), {}, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_PAGE);
                     }
 
                     /**
@@ -3714,7 +3541,7 @@ namespace GGUI {
                                                                                         2) All character positions of the field are put into the erased state  */
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::EF), {types::FROM_ACTIVE_POSITION_UNTIL_END_OF_FIELD});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EF), {}, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_FIELD);
                     }
 
                     /**
@@ -3741,7 +3568,7 @@ namespace GGUI {
                                                                                     2) All character positions of the line are put into the erased state  */
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::EL), {types::FROM_ACTIVE_POSITION_UNTIL_END_OF_LINE});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EL), {}, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_LINE);
                     }
 
                     /**
@@ -3767,7 +3594,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/00` or `9/11 Pn 04/00`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> INSERT_CHARACTER(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::ICH), {1}, {operate_INSERT_CHARACTER});
+                    const inline auto INSERT_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ICH), {operate_INSERT_CHARACTER}, 1);
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, IL is used to
@@ -3794,7 +3621,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/12` or `9/11 Pn 04/12`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> INSERT_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::IL), {1}, {operate_INSERT_LINE});
+                    const inline auto INSERT_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::IL), {operate_INSERT_LINE}, 1);
                 }
 
                 namespace cursorControlFunctions {
@@ -3813,7 +3640,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/10` or `9/11 Pn 05/10`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_BACKWARD_TABULATION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CBT), {1});
+                    const inline auto CURSOR_BACKWARD_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CBT), {}, 1);
                     
                     /**
                      * @brief CHA causes the active presentation position to be moved to character position n in the active line in the
@@ -3821,7 +3648,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/07` or `9/11 Pn 04/07`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_CHARACTER_ABSOLUTE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CHA), {1});
+                    const inline auto CURSOR_CHARACTER_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CHA), {}, 1);
                     
                     /**
                      * @brief CHT causes the active presentation position to be moved to the character position corresponding to the
@@ -3830,7 +3657,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/09` or `9/11 Pn 04/09`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_FORWARD_TABULATION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CHT), {1});
+                    const inline auto CURSOR_FORWARD_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CHT), {}, 1);
                     
                     /**
                      * @brief CNL causes the active presentation position to be moved to the first character position of the n-th
@@ -3838,7 +3665,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/05` or `9/11 Pn 04/05`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_NEXT_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CNL), {1}, {operate_CURSOR_NEXT_LINE});
+                    const inline auto CURSOR_NEXT_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CNL), {operate_CURSOR_NEXT_LINE}, 1);
                     
                     /**
                      * @brief CPL causes the active presentation position to be moved to the first character position of the n-th
@@ -3846,7 +3673,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/06` or `9/11 Pn 04/06`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_PRECEDING_LINE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CPL), {1}, {operate_CURSOR_PRECEDING_LINE});
+                    const inline auto CURSOR_PRECEDING_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CPL), {operate_CURSOR_PRECEDING_LINE}, 1);
                     
                     /**
                      * @brief CTC causes one or more tabulation stops to be set or cleared in the presentation component, depending on the parameter values.
@@ -3864,7 +3691,7 @@ namespace GGUI {
                             CLEAR_ALL_LINE_STOPS,                                           // All line tabulation stops are cleared
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1, specialTypes::HAS_INFINITE_PARAMETERS> code(sequence::control<sequence::parameter::selectable<types>>( table::finalWithoutIntermediate::CTC), {types::INSERT_CHARACTER_STOP_AT_ACTIVE_POSITION});
+                        const inline auto code = makeSequencePreset<sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CTC), {}, types::INSERT_CHARACTER_STOP_AT_ACTIVE_POSITION);
                     }
 
                     /**
@@ -3874,7 +3701,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/04` or `9/11 Pn 04/04`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_LEFT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUB), {1}, {operate_CURSOR_LEFT});
+                    const inline auto CURSOR_LEFT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUB), {operate_CURSOR_LEFT}, 1);
                     
                     /**
                      * @brief CUD causes the active presentation position to be moved downwards in the presentation component by n
@@ -3883,7 +3710,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/02` or `9/11 Pn 04/02`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_DOWN(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUD), {1}, {operate_CURSOR_DOWN});
+                    const inline auto CURSOR_DOWN = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUD), {operate_CURSOR_DOWN}, 1);
                     
                     /**
                      * @brief CUF causes the active presentation position to be moved rightwards in the presentation component by n
@@ -3892,7 +3719,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/03` or `9/11 Pn 04/03`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_RIGHT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUF), {1}, {operate_CURSOR_RIGHT});
+                    const inline auto CURSOR_RIGHT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUF), {operate_CURSOR_RIGHT}, 1);
                     
                     /**
                      * @brief CUP causes the active presentation position to be moved in the presentation component to the n-th line
@@ -3902,7 +3729,7 @@ namespace GGUI {
                      * @param Pn1 default(1)
                      * @param Pn2 default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> CURSOR_POSITION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUP), {1, 1}, {operate_CURSOR_POSITION});
+                    const inline auto CURSOR_POSITION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUP), {operate_CURSOR_POSITION}, 1, 1);
                     
                     /**
                      * @brief CUU causes the active presentation position to be moved upwards in the presentation component by n
@@ -3911,7 +3738,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/01` or `9/11 Pn 04/01`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_UP(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CUU), {1}, {operate_CURSOR_UP});
+                    const inline auto CURSOR_UP = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUU), {operate_CURSOR_UP}, 1);
                     
                     /**
                      * @brief CVT causes the active presentation position to be moved to the corresponding character position of the
@@ -3920,7 +3747,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/09` or `9/11 Pn 05/09`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> CURSOR_LINE_TABULATION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CVT), {1});
+                    const inline auto CURSOR_LINE_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CVT), {}, 1);
                 }
 
                 namespace displayControlFunctions {
@@ -3935,7 +3762,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/05` or `9/11 Pn 05/05`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> NEXT_PAGE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::NP), {1}, {operate_NEXT_PAGE});
+                    const inline auto NEXT_PAGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::NP), {operate_NEXT_PAGE}, 1);
                     
                     /**
                      * @brief PP causes the n-th preceding page in the presentation component to be displayed, where n equals the value of Pn. 
@@ -3943,7 +3770,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/06` or `9/11 Pn 05/06`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> PRECEDING_PAGE(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::PP), {1}, {operate_PRECEDING_PAGE});
+                    const inline auto PRECEDING_PAGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::PP), {operate_PRECEDING_PAGE}, 1);
                     
                     /**
                      * @brief SD causes the data in the presentation component to be moved by n line positions if the line orientation
@@ -3953,7 +3780,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/04` or `9/11 Pn 05/04`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_DOWN(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::SD), {1}, {operate_SCROLL_DOWN});
+                    const inline auto SCROLL_DOWN = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SD), {operate_SCROLL_DOWN}, 1);
                     
                     /**
                      * @brief SL causes the data in the presentation component to be moved by n character positions if the line
@@ -3962,7 +3789,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/00` or `9/11 Pn 02/00 04/00`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_LEFT(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SL), {1});
+                    const inline auto SCROLL_LEFT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SL), {}, 1);
                     
                     /**
                      * @brief SR causes the data in the presentation component to be moved by n character positions if the line
@@ -3971,7 +3798,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/01` or `9/11 Pn 02/00 04/01`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_RIGHT(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SR), {1});
+                    const inline auto SCROLL_RIGHT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SR), {}, 1);
                     
                     /**
                      * @brief SU causes the data in the presentation component to be moved by n line positions if the line orientation
@@ -3980,7 +3807,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/03` or `9/11 Pn 05/03`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> SCROLL_UP(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::SU), {1}, {operate_SCROLL_UP});
+                    const inline auto SCROLL_UP = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SU), {operate_SCROLL_UP}, 1);
                 }
 
                 namespace deviceControlFunctions {
@@ -3996,7 +3823,7 @@ namespace GGUI {
                      * NOTE: When used for data flow control, DC1 is sometimes called "X-ON". 
                      * @example `01/01`
                      */
-                    inline auto DEVICE_CONTROL_ONE             = base<sequence::prefix<table::C0>>(table::C0::DC1, {}, {operate_DEVICE_CONTROL_ONE});
+                    const inline auto DEVICE_CONTROL_ONE             = base<sequence::prefix<table::C0>>(table::C0::DC1, {}, {operate_DEVICE_CONTROL_ONE});
                     
                     /**
                      * @brief DC2 is primarily intended for turning on or starting an ancillary device. 
@@ -4004,7 +3831,7 @@ namespace GGUI {
                      * or for any other device control function not provided by other DCs.
                      * @example `01/02`
                      */
-                    inline auto DEVICE_CONTROL_TWO             = base<sequence::prefix<table::C0>>(table::C0::DC2, {}, {operate_DEVICE_CONTROL_TWO});
+                    const inline auto DEVICE_CONTROL_TWO             = base<sequence::prefix<table::C0>>(table::C0::DC2, {}, {operate_DEVICE_CONTROL_TWO});
                     
                     /**
                      * @brief DC3 is primarily intended for turning off or stopping an ancillary device. 
@@ -4013,14 +3840,14 @@ namespace GGUI {
                      * NOTE: When used for data flow control, DC3 is sometimes called "X-OFF". 
                      * @example `01/03`
                      */
-                    inline auto DEVICE_CONTROL_THREE           = base<sequence::prefix<table::C0>>(table::C0::DC3, {}, {operate_DEVICE_CONTROL_THREE});
+                    const inline auto DEVICE_CONTROL_THREE           = base<sequence::prefix<table::C0>>(table::C0::DC3, {}, {operate_DEVICE_CONTROL_THREE});
                     
                     /**
                      * @brief DC4 is primarily intended for turning off, stopping or interrupting an ancillary device. 
                      * If it is not required for this purpose, it may be used for any other device control function not provided by other DCs. 
                      * @example `01/04`
                      */
-                    inline auto DEVICE_CONTROL_FOUR            = base<sequence::prefix<table::C0>>(table::C0::DC4, {}, {operate_DEVICE_CONTROL_FOUR});
+                    const inline auto DEVICE_CONTROL_FOUR            = base<sequence::prefix<table::C0>>(table::C0::DC4, {}, {operate_DEVICE_CONTROL_FOUR});
                 }
 
                 namespace informationSeparators {
@@ -4030,32 +3857,32 @@ namespace GGUI {
                      * If this control function is used in hierarchical order, it may delimit a data item called a unit, see 8.2.10. 
                      * @example `01/15`
                      */
-                    inline auto INFORMATION_SEPARATOR_ONE      = base<sequence::prefix<table::C0>>(table::C0::IS1);
+                    const inline auto INFORMATION_SEPARATOR_ONE      = base<sequence::prefix<table::C0>>(table::C0::IS1);
                     
                     /**
                      * @brief IS2 is used to separate and qualify data logically; its specific meaning has to be defined for each application. 
                      * If this control function is used in hierarchical order, it may delimit a data item called a record, see 8.2.10. 
                      * @example `01/14`
                      */
-                    inline auto INFORMATION_SEPARATOR_TWO      = base<sequence::prefix<table::C0>>(table::C0::IS2);
+                    const inline auto INFORMATION_SEPARATOR_TWO      = base<sequence::prefix<table::C0>>(table::C0::IS2);
                     
                     /**
                      * @brief IS3 is used to separate and qualify data logically; its specific meaning has to be defined for each application. 
                      * If this control function is used in hierarchical order, it may delimit a data item called a group, see 8.2.10. 
                      * @example `01/13`
                      */
-                    inline auto INFORMATION_SEPARATOR_THREE    = base<sequence::prefix<table::C0>>(table::C0::IS3);
+                    const inline auto INFORMATION_SEPARATOR_THREE    = base<sequence::prefix<table::C0>>(table::C0::IS3);
                     
                     /**
                      * @brief IS4 is used to separate and qualify data logically; its specific meaning has to be defined for each application. 
                      * If this control function is used in hierarchical order, it may delimit a data item called a file, see 8.2.10. 
                      * @example `01/12`
                      */
-                    inline auto INFORMATION_SEPARATOR_FOUR     = base<sequence::prefix<table::C0>>(table::C0::IS4);
+                    const inline auto INFORMATION_SEPARATOR_FOUR     = base<sequence::prefix<table::C0>>(table::C0::IS4);
                 }
 
                 namespace areaDefinitions {
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DEFINE_AREA_QUALIFICATION(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DAQ), {});
+                    const inline auto DEFINE_AREA_QUALIFICATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DAQ));
                     
                     /**
                      * @brief EPA is used to indicate that the active presentation position is the last of a string of character positions
@@ -4066,7 +3893,7 @@ namespace GGUI {
                      * NOTE: The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string. 
                      * @example `09/07` or `01/11 05/07` 
                      */
-                    inline auto END_OF_GUARDED_AREA            = base<sequence::prefix<table::C1>>(table::C1::EPA);
+                    const inline auto END_OF_GUARDED_AREA            = base<sequence::prefix<table::C1>>(table::C1::EPA);
                     
                     /**
                      * @brief ESA is used to indicate that the active presentation position is the last of a string of character positions
@@ -4076,7 +3903,7 @@ namespace GGUI {
                      * NOTE: The control function for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string. 
                      * @example `08/07` or `01/11 04/07` 
                      */
-                    inline auto END_OF_SELECTED_AREA           = base<sequence::prefix<table::C1>>(table::C1::ESA);
+                    const inline auto END_OF_SELECTED_AREA           = base<sequence::prefix<table::C1>>(table::C1::ESA);
                     
                     /**
                      * @brief SPA is used to indicate that the active presentation position is the first of a string of character positions
@@ -4087,7 +3914,7 @@ namespace GGUI {
                      * NOTE: The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string.
                      * @example `09/06` or `01/11 05/06` 
                      */
-                    inline auto START_OF_GUARDED_AREA          = base<sequence::prefix<table::C1>>(table::C1::SPA);
+                    const inline auto START_OF_GUARDED_AREA          = base<sequence::prefix<table::C1>>(table::C1::SPA);
                     
                     /**
                      * @brief SSA is used to indicate that the active presentation position is the first of a string of character positions
@@ -4100,7 +3927,7 @@ namespace GGUI {
                      * NOTE: The control functions for area definition (DAQ, EPA, ESA, SPA, SSA) should not be used within an SRS string or an SDS string. 
                      * @example `08/06` or `01/11 04/06` 
                      */
-                    inline auto START_OF_SELECTED_AREA         = base<sequence::prefix<table::C1>>(table::C1::SSA);
+                    const inline auto START_OF_SELECTED_AREA         = base<sequence::prefix<table::C1>>(table::C1::SSA);
                 }
 
                 namespace modeSettingFunctions {
@@ -4114,7 +3941,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<mode::types>>, sequence::parameter::selectable<mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> RESET_MODE(sequence::control<sequence::parameter::selectable<mode::types>>(table::finalWithoutIntermediate::RM), {}, {operate_RESET_MODE});
+                    const inline auto RESET_MODE = makeSequencePreset<sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::RM), {operate_RESET_MODE});
 
                     /**
                      * @brief SM causes the modes of the receiving device to be set as specified by the parameter values.
@@ -4123,7 +3950,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    inline base<sequence::control<sequence::parameter::selectable<mode::types>>, sequence::parameter::selectable<mode::types>, 0, specialTypes::HAS_INFINITE_PARAMETERS> SET_MODE(sequence::control<sequence::parameter::selectable<mode::types>>(table::finalWithoutIntermediate::SM), {}, {operate_SET_MODE});
+                    const inline auto SET_MODE = makeSequencePreset<sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SM), {operate_SET_MODE});
                 }
 
                 namespace transmissionControlFunctions {
@@ -4138,63 +3965,63 @@ namespace GGUI {
                      * The use of ACK is defined in ISO 1745. 
                      * @example `00/06`
                      */
-                    inline auto ACKNOWLEDGE                    = base<sequence::prefix<table::C0>>(table::C0::ACK, {}, {operate_ACKNOWLEDGE});
+                    const inline auto ACKNOWLEDGE                    = base<sequence::prefix<table::C0>>(table::C0::ACK, {}, {operate_ACKNOWLEDGE});
                     
                     /**
                      * @brief DLE is used exclusively to provide supplementary transmission control functions.
                      * The use of DLE is defined in ISO 1745. 
                      * @example `01/00`
                      */
-                    inline auto DATA_LINK_ESCAPE               = base<sequence::prefix<table::C0>>(table::C0::DLE, {}, {operate_DATA_LINK_ESCAPE});
+                    const inline auto DATA_LINK_ESCAPE               = base<sequence::prefix<table::C0>>(table::C0::DLE, {}, {operate_DATA_LINK_ESCAPE});
                     
                     /**
                      * @brief ENQ is transmitted by a sender as a request for a response from a receiver.
                      * The use of ENQ is defined in ISO 1745. 
                      * @example `00/05`
                      */
-                    inline auto ENQUIRY                        = base<sequence::prefix<table::C0>>(table::C0::ENQ, {}, {operate_ENQUIRY});
+                    const inline auto ENQUIRY                        = base<sequence::prefix<table::C0>>(table::C0::ENQ, {}, {operate_ENQUIRY});
                     
                     /**
                      * @brief EOT is used to indicate the conclusion of the transmission of one or more texts.
                      * The use of EOT is defined in ISO 1745. 
                      * @example `00/04`
                      */
-                    inline auto END_OF_TRANSMISSION            = base<sequence::prefix<table::C0>>(table::C0::EOT, {}, {operate_END_OF_TRANSMISSION});
+                    const inline auto END_OF_TRANSMISSION            = base<sequence::prefix<table::C0>>(table::C0::EOT, {}, {operate_END_OF_TRANSMISSION});
                     
                     /**
                      * @brief ETB is used to indicate the end of a block of data where the data are divided into such blocks for transmission purposes.
                      * The use of ETB is defined in ISO 1745. 
                      * @example `01/07`
                      */
-                    inline auto END_OF_TRANSMISSION_BLOCK      = base<sequence::prefix<table::C0>>(table::C0::ETB, {}, {operate_END_OF_TRANSMISSION});
+                    const inline auto END_OF_TRANSMISSION_BLOCK      = base<sequence::prefix<table::C0>>(table::C0::ETB, {}, {operate_END_OF_TRANSMISSION});
                     
                     /**
                      * @brief ETX is used to indicate the end of a text.
                      * The use of ETX is defined in ISO 1745.
                      * @example `00/03`
                      */
-                    inline auto END_OF_TEXT                    = base<sequence::prefix<table::C0>>(table::C0::ETX, {}, {operate_END_OF_TRANSMISSION});
+                    const inline auto END_OF_TEXT                    = base<sequence::prefix<table::C0>>(table::C0::ETX, {}, {operate_END_OF_TRANSMISSION});
                     
                     /**
                      * @brief NAK is transmitted by a receiver as a negative response to the sender.
                      * The use of NAK is defined in ISO 1745.
                      * @example `01/05`
                      */
-                    inline auto NEGATIVE_ACKNOWLEDGE           = base<sequence::prefix<table::C0>>(table::C0::NAK);
+                    const inline auto NEGATIVE_ACKNOWLEDGE           = base<sequence::prefix<table::C0>>(table::C0::NAK);
                     
                     /**
                      * @brief SOH is used to indicate the beginning of a heading.
                      * The use of SOH is defined in ISO 1745. 
                      * @example `00/01`
                      */
-                    inline auto START_OF_HEADING               = base<sequence::prefix<table::C0>>(table::C0::SOH, {}, {operate_START_OF_TRANSMISSION});
+                    const inline auto START_OF_HEADING               = base<sequence::prefix<table::C0>>(table::C0::SOH, {}, {operate_START_OF_TRANSMISSION});
                     
                     /**
                      * @brief STX is used to indicate the beginning of a text and the end of a heading.
                      * The use of STX is defined in ISO 1745. 
                      * @example `00/02`
                      */
-                    inline auto START_OF_TEXT                  = base<sequence::prefix<table::C0>>(table::C0::STX, {}, {operate_START_OF_TRANSMISSION});
+                    const inline auto START_OF_TEXT                  = base<sequence::prefix<table::C0>>(table::C0::STX, {}, {operate_START_OF_TRANSMISSION});
                     
                     /**
                      * @brief SYN is used by a synchronous transmission system in the absence of any other character (idle condition) to
@@ -4202,7 +4029,7 @@ namespace GGUI {
                      * The use of SYN is defined in ISO 1745. 
                      * @example `01/06`
                      */
-                    inline auto SYNCHRONOUS_IDLE               = base<sequence::prefix<table::C0>>(table::C0::SYN);
+                    const inline auto SYNCHRONOUS_IDLE               = base<sequence::prefix<table::C0>>(table::C0::SYN);
                 }
 
                 namespace miscellaneousControlFunctions {
@@ -4214,7 +4041,7 @@ namespace GGUI {
                      * @brief BEL is used when there is a need to call for attention; it may control alarm or attention devices.
                      * @example `00/07`
                      */
-                    inline auto BELL                           = base<sequence::prefix<table::C0>>(table::C0::BEL);
+                    const inline auto BELL                           = base<sequence::prefix<table::C0>>(table::C0::BEL);
                     
                     /**
                      * @brief CAN is used to indicate that the data preceding it in the data stream is in error. 
@@ -4222,7 +4049,7 @@ namespace GGUI {
                      * The specific meaning of this control function shall be defined for each application and/or between sender and recipient.
                      * @example `01/08`
                      */
-                    inline auto CANCEL                         = base<sequence::prefix<table::C0>>(table::C0::CAN);
+                    const inline auto CANCEL                         = base<sequence::prefix<table::C0>>(table::C0::CAN);
                     
                     /**
                      * @brief CCH is used to indicate that both the preceding graphic character in the data stream, 
@@ -4230,7 +4057,7 @@ namespace GGUI {
                      * If the character preceding CCH in the data stream is a control function (represented by one or more bit combinations), the effect of CCH is not defined by this Standard
                      * @example `09/04` or `01/11 05/04` 
                      */
-                    inline auto CANCEL_CHARACTER               = base<sequence::prefix<table::C1>>(table::C1::CCH);
+                    const inline auto CANCEL_CHARACTER               = base<sequence::prefix<table::C1>>(table::C1::CCH);
                     
                     /**
                      * @brief This sequence means two different things based on previous sequence.
@@ -4247,7 +4074,7 @@ namespace GGUI {
                      * @param Pn1 default(1)
                      * @param Pn2 default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> ACTIVE_POSITION_REPORT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::CPR), {1, 1});
+                    const inline auto ACTIVE_POSITION_REPORT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CPR), {}, 1, 1);
                     
                     /**
                      * @brief With a parameter value not equal to 0, DA is used to identify the device which sends the DA. 
@@ -4256,13 +4083,13 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 06/03` or `9/11 Ps 06/03`
                      * @param Ps default(0)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> DEVICE_ATTRIBUTES(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::DA), {0}, {operate_DEVICE_ATTRIBUTES});
+                    const inline auto DEVICE_ATTRIBUTES = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DA), {operate_DEVICE_ATTRIBUTES}, 0);
                     
                     /**
                      * @brief DMI causes the manual input facilities of a device to be disabled.
                      * @example `01/11 06/00` 
                      */
-                    inline auto DISABLE_MANUAL_INPUT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::DMI);
+                    const inline auto DISABLE_MANUAL_INPUT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::DMI);
                     
                     /**
                      * @brief DSR is used either to report the status of the sending device or to request a status report from the receiving device, depending on the parameter values.
@@ -4281,27 +4108,27 @@ namespace GGUI {
                             ACTIVE_POSITION_REQUESTED,              // A report of the active presentation position or of the active data position in the form of ACTIVE POSITION REPORT (CPR) is requested 
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::DSR), {types::READY});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DSR), {}, types::READY);
                     }
 
                     /**
                      * @brief EM is used to identify the physical end of a medium, or the end of the used portion of a medium, or the end of the wanted portion of data recorded on a medium.
                      * @example `01/09`
                      */
-                    inline auto END_OF_MEDIUM                  = base<sequence::prefix<table::C0>>(table::C0::EM);
+                    const inline auto END_OF_MEDIUM                  = base<sequence::prefix<table::C0>>(table::C0::EM);
                     
                     /**
                      * @brief EMI is used to enable the manual input facilities of a device.
                      * @example `01/11 06/02`
                      */
-                    inline auto ENABLE_MANUAL_INPUT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::EMI);
+                    const inline auto ENABLE_MANUAL_INPUT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::EMI);
                     
                     /**
                      * @brief FNK is a control function in which the parameter value identifies the function key which has been operated. 
                      * @example `01/11 05/11 Pn 02/00 05/07` or `9/11 Pn 02/00 05/07`
                      * @param Pn default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> FUNCTION_KEY(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::FNK), {});
+                    const inline auto FUNCTION_KEY = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::FNK));
                     
                     /**
                      * @brief IDCS is used to specify the purpose and format of the command string of subsequent DEVICE CONTROL STRINGs (DCS). 
@@ -4317,7 +4144,7 @@ namespace GGUI {
                             DYNAMICALLY_REDEFINE_CHARACTER_SETS                         // Reserved for Dynamically Redefinable Character Sets (DRCS) according to Standard ECMA-35. 
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithIntermediate::IDCS), {});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::IDCS));
                     }
 
                     /**
@@ -4326,14 +4153,14 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 02/00 04/13` or `9/11 Ps 02/00 04/13`
                      * @param Ps default(None)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> IDENTIFY_GRAPHIC_SUBREPERTOIRE(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::IGS), {});
+                    const inline auto IDENTIFY_GRAPHIC_SUBREPERTOIRE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::IGS));
 
                     /**
                      * @brief INT is used to indicate to the receiving device that the current process is to be interrupted and an agreed procedure is to be initiated. 
                      * This control function is applicable to either direction of currentStates->transmission. 
                      * @example `01/11 06/01`
                      */
-                    inline auto INTERRUPT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::INT);
+                    const inline auto INTERRUPT = base<sequence::function<table::independentFunctions>>(table::independentFunctions::INT);
 
                     /**
                      * @brief MC is used either to initiate a transfer of data from or to an auxiliary input/output device or to enable or disable the relay of the received data stream to an auxiliary input/output device, depending on the parameter value.
@@ -4353,7 +4180,7 @@ namespace GGUI {
                             START_RELAY_TO_SECONDARY_AUXILIARY_DEVICE,      //start relay to a secondary auxiliary device 
                         };  
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::MC), {types::TRANSFER_TO_PRIMARY_AUXILIARY_DEVICE});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::MC), {}, types::TRANSFER_TO_PRIMARY_AUXILIARY_DEVICE);
                     }
 
                     /**
@@ -4361,26 +4188,26 @@ namespace GGUI {
                      * An appropriate acknowledgement to the receipt of MW may be given by using DEVICE STATUS REPORT (DSR).
                      * @example `09/05` or `01/11 05/05` 
                      */
-                    inline auto MESSAGE_WAITING                = base<sequence::prefix<table::C1>>(table::C1::MW);
+                    const inline auto MESSAGE_WAITING                = base<sequence::prefix<table::C1>>(table::C1::MW);
 
                     /**
                      * @brief NUL is used for media-fill or time-fill. NUL characters may be inserted into, or removed from, a data
                      * stream without affecting the information content of that stream, but such action may affect the information layout and/or the control of equipment. 
                      * @example `00/00`
                      */
-                    inline auto NULL_CHARACTER                 = base<sequence::prefix<table::C0>>(table::C0::NUL);
+                    const inline auto NULL_CHARACTER                 = base<sequence::prefix<table::C0>>(table::C0::NUL);
 
                     /**
                      * @brief PU1 is reserved for a function without standardized meaning for private use as required, subject to the prior agreement between the sender and the recipient of the data. 
                      * @example `09/01` or `01/11 05/01`
                      */
-                    inline auto PRIVATE_USE_ONE                = base<sequence::prefix<table::C1>>(table::C1::PU1);
+                    const inline auto PRIVATE_USE_ONE                = base<sequence::prefix<table::C1>>(table::C1::PU1);
 
                     /**
                      * @brief PU2 is reserved for a function without standardized meaning for private use as required, subject to the prior agreement between the sender and the recipient of the data
                      * @example `09/02` or `01/11 05/02`
                      */
-                    inline auto PRIVATE_USE_TWO                = base<sequence::prefix<table::C1>>(table::C1::PU2);
+                    const inline auto PRIVATE_USE_TWO                = base<sequence::prefix<table::C1>>(table::C1::PU2);
 
                     /**
                      * @brief REP is used to indicate that the preceding character in the data stream, if it is a graphic character
@@ -4390,7 +4217,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/02` or `9/11 Pn 06/02`
                      * @param Pn default(1)
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 1> REPEAT(sequence::control<sequence::parameter::numeric>(table::finalWithoutIntermediate::REP), {1});
+                    const inline auto REPEAT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::REP), {}, 1);
 
                     /**
                      * @brief RIS causes a device to be reset to its initial state, i.e. the state it has after it is made operational. 
@@ -4400,7 +4227,7 @@ namespace GGUI {
                      * the first line in the data component, set the modes into the reset state, etc. 
                      * @example `01/11 06/03`
                      */
-                    inline auto RESET_TO_INITIAL_STATE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::RIS, {}, {operate_RESET_TO_INITIAL_STATE});
+                    const inline auto RESET_TO_INITIAL_STATE = base<sequence::function<table::independentFunctions>>(table::independentFunctions::RIS, {}, {operate_RESET_TO_INITIAL_STATE});
 
                     /**
                      * @brief SEE is used to establish the editing extent for subsequent character or line insertion or deletion. 
@@ -4418,7 +4245,7 @@ namespace GGUI {
                             ENTIRE_PRESENTATION_COMPONENT   // the shifted part consists of the relevant part of the entire presentation component
                         };
 
-                        inline base<sequence::control<sequence::parameter::selectable<types>>, sequence::parameter::selectable<types>, 1> code(sequence::control<sequence::parameter::selectable<types>>(table::finalWithoutIntermediate::SSE), {types::ACTIVE_PAGE});
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SSE), {}, types::ACTIVE_PAGE);
                     }
 
                     /**
@@ -4429,7 +4256,7 @@ namespace GGUI {
                      * @param Pn1 default(0) - 0: eject sheet, no new sheet loaded; 1-n: eject sheet and load another from bin n
                      * @param Pn2 default(0) - 0: eject sheet, no stacker specified; 1-n: eject sheet into stacker n
                      */
-                    inline base<sequence::control<sequence::parameter::numeric>, sequence::parameter::numeric, 2> SHEET_EJECT_AND_FEED(sequence::control<sequence::parameter::numeric>(table::finalWithIntermediate::SEF), {0, 0});
+                    const inline auto SHEET_EJECT_AND_FEED = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SEF), {}, 0, 0);
 
                     /**
                      * @brief STS is used to establish the transmit state in the receiving device. 
@@ -4439,14 +4266,14 @@ namespace GGUI {
                      * The transmit state is established either by STS appearing in the received data stream or by the operation of an appropriate key on a keyboard. 
                      * @example `09/03` or `01/11 05/03`
                      */
-                    inline auto SET_TRANSMIT_STATE             = base<sequence::prefix<table::C1>>(table::C1::STS);
+                    const inline auto SET_TRANSMIT_STATE             = base<sequence::prefix<table::C1>>(table::C1::STS);
 
                     /**
                      * @brief SUB is used in the place of a character that has been found to be invalid or in error. 
                      * SUB is intended to be introduced by automatic means.
                      * @example `01/10`
                      */
-                    inline auto SUBSTITUTE                     = base<sequence::prefix<table::C0>>(table::C0::SUB);
+                    const inline auto SUBSTITUTE                     = base<sequence::prefix<table::C0>>(table::C0::SUB);
                 }
             }
         }

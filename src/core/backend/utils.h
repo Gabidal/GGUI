@@ -3,13 +3,11 @@
 
 #include <cstdint>
 #include <algorithm>
-#include <chrono>
-
-#include "../utils/superString.h"
-#include "../utils/color.h"
 
 namespace GGUI {
     namespace terminal {
+        
+        using cell = char32_t;
 
         // How many bytes/second
         enum class baudRate : int32_t {
@@ -160,25 +158,6 @@ namespace GGUI {
                 __max = IDEOGRAM_STRESS_MARKING,
                 IDEOGRAM_ATTRIBUTES_OFF,                        // cancels the effect of the rendition aspects established by parameter values 60 to 64
             };
-        }
-
-        constexpr std::array<INTERNAL::compactString, 3> toString(RGB val) {
-            return {
-                toCompactTable[val.red],
-                toCompactTable[val.green],
-                toCompactTable[val.blue]
-            };
-        }
-
-        template<size_t S>
-        constexpr size_t countBytes(std::array<INTERNAL::compactString, S> countable) {
-            size_t result = 0;
-
-            for (const auto& item : countable) {
-                result += item.size;
-            }
-
-            return result;
         }
     }
 }

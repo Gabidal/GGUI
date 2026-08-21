@@ -55,28 +55,6 @@ namespace GGUI {
             }
 
             namespace sequence {
-                TODO("converge transmission with string later on.")
-
-                std::string toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte) {
-                    std::string result = "";
-
-                    if (std::holds_alternative<table::finalWithoutIntermediate>(controlStringFinalByte)) {
-                        result += static_cast<char>(std::get<table::finalWithoutIntermediate>(controlStringFinalByte));
-                    } else {
-                        result += static_cast<char>(std::get<table::finalWithIntermediate>(controlStringFinalByte));
-                    }
-
-                    return result;
-                }
-
-                void toString(std::variant<table::finalWithoutIntermediate, table::finalWithIntermediate> controlStringFinalByte, INTERNAL::superString<MAX_SUPER_STRING_BUFFER_SIZE>& preAllocated) {
-                    if (std::holds_alternative<table::finalWithoutIntermediate>(controlStringFinalByte)) {
-                        preAllocated.add(static_cast<char>(std::get<table::finalWithoutIntermediate>(controlStringFinalByte)));
-                    } else {
-                        preAllocated.add(static_cast<char>(std::get<table::finalWithIntermediate>(controlStringFinalByte)));
-                    }
-                }
-
                 TODO("maybe for better compatibility try giving a custom default param value, so that it can be used instead of the hardcoded zero.")
 
                 // Slices the input by the sequence::parameter::delimeter character
@@ -109,7 +87,7 @@ namespace GGUI {
                     std::vector<table::intermediate::identifiers> result;
 
                     // Find all intermediates:
-                    for (size_t i = 0; i < input.size() && table::contains<table::intermediate::identifiers>(input[i]); i++) {
+                    for (size_t i = 0; i < input.size() && GGUI::table::contains<table::intermediate::identifiers>(input[i]); i++) {
                         result.push_back(static_cast<table::intermediate::identifiers>(input[i]));
                     }
 
@@ -125,32 +103,21 @@ namespace GGUI {
                         size_t intermediateAt = 0;
 
                         for (size_t i = 1; i < input.size(); i++) {
-                            if (table::contains<table::finalWithoutIntermediate>(input[i]) || table::contains<table::finalWithIntermediate>(input[i])) {
+                            if (GGUI::table::contains<table::finalWithoutIntermediate>(input[i]) || GGUI::table::contains<table::finalWithIntermediate>(input[i])) {
                                 finalFunctionAt = i;
                                 break;
-                            } else if (table::contains<table::intermediate::identifiers>(input[i]) && intermediateAt == 0) {    // Only set intermediate once at the first occurrence
+                            } else if (GGUI::table::contains<table::intermediate::identifiers>(input[i]) && intermediateAt == 0) {    // Only set intermediate once at the first occurrence
                                 intermediateAt = i;
                             }
                         }
 
                         // The final function has to be at a different location than the intermediate
                         bool hasIntermediate = finalFunctionAt > intermediateAt && intermediateAt != 0;
-                        std::variant<
-                            table::finalWithoutIntermediate,
-                            table::finalWithIntermediate
-                        > finalFunction;
-                        
-                        if (hasIntermediate) {
-                            finalFunction = static_cast<table::finalWithIntermediate>(input[finalFunctionAt]);
-                        } else {
-                            finalFunction = static_cast<table::finalWithoutIntermediate>(input[finalFunctionAt]);
-                        }
+
+                        uint8_t finalFunction = input[finalFunctionAt];
 
                         // Now we can create a postfix
-                        postfix<std::variant<
-                            table::finalWithoutIntermediate,
-                            table::finalWithIntermediate
-                        >> tail(parseintermediates(input.substr(intermediateAt)), finalFunction);
+                        postfix<uint8_t> tail(parseintermediates(input.substr(intermediateAt)), finalFunction);
 
                         // std::max(intermediateAt, 1) is done, because the actual code CSI is at index 0, and intermediateAt == 0, means no intermediate present, thus minimum offset +1
                         size_t earliestNonParametricIndex = std::min(finalFunctionAt, std::max(intermediateAt, (size_t)1));
@@ -164,7 +131,7 @@ namespace GGUI {
 
                         return {
                             finalFunctionAt + 1,
-                            new sequence::control<sequence::parameter::numeric>(params, tail)
+                            new sequence::control<sequence::parameter::numeric, uint8_t>(params, tail)
                         };
 
                     } else if (header == table::C1::APC || header == table::C1::DCS || header == table::C1::OSC || header == table::C1::PM || header == table::C1::SOS) {
@@ -180,7 +147,7 @@ namespace GGUI {
                 std::pair<size_t, sequence::base*> parseIndependentFunctions(std::string_view input) {
                     if (input.size() <= 1)  return {0, nullptr};
                     else if (static_cast<table::C0>(input.front()) != table::C0::ESC) return {0, nullptr};
-                    else if (!table::contains<table::independentFunctions>(input[1])) return {0, nullptr};
+                    else if (!GGUI::table::contains<table::independentFunctions>(input[1])) return {0, nullptr};
 
                     sequence::function<table::independentFunctions>* result = new sequence::function<table::independentFunctions>(static_cast<table::independentFunctions>(input[1]));
 
@@ -193,7 +160,7 @@ namespace GGUI {
 
                     if (independentSize != 0) return {independentSize, independentSequence};
 
-                    if (!table::contains<table::C0>(input.front())) return {0, nullptr};
+                    if (!GGUI::table::contains<table::C0>(input.front())) return {0, nullptr};
 
                     TODO("This could be wrong!")
                     // Assume C0 to be single byte sequence.
@@ -204,10 +171,10 @@ namespace GGUI {
                     std::pair<size_t, sequence::base*> result;
                     size_t i = 0;
 
-                    if (table::contains<table::C0>(input[i])) {
+                    if (GGUI::table::contains<table::C0>(input[i])) {
                         // NOTE: for ESC + complex patterns GGUI sees them as two separate sequences, it uses ESC to load C1 layout for the following sequence to jump into.
                         result = parsePostfixForC0(input.substr(i));
-                    } else if (table::contains<table::C1>(input[i])) { 
+                    } else if (GGUI::table::contains<table::C1>(input[i])) { 
                         result = parsePostfixForC1(input.substr(i));
                     }
                     else {  // header == nullptr => means this is a graphical character
@@ -292,27 +259,8 @@ namespace GGUI {
                 }
             }
 
-            std::pair<size_t, sequence::base*> configuration::manager::interpret(std::string_view input) {
-                auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
-                auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
-                
-                // Call the sequence parser
-                auto [parsedLength, parsedSequence] = sequence::defaultSequenceParser(input);
-                
-                if (parsedLength == 0) return {0, nullptr};    // No progress, means no match, return null.
-
-                // Now that we have parsed the full sequence we know the header and the postfix e.g final function + intermediates
-                configuration::cell currentCell = currentPage.get(parsedSequence, parsedSequence->getPostfix());
-
-                // Call the functionality given by the parser
-                currentCell.handler(parsedSequence);
-
-                // return the parsed
-                return {parsedLength, parsedSequence};
-            }
-
             // Loads the default pages, C0, C1 and G0
-            components::components() {
+            components::components() : activeModes(mode::types::DEFAULT, mode::values::SET) {
                 pageManager.add(C0, configuration::repertoire::C0);
                 pageManager.add(C1, configuration::repertoire::C1);
                 pageManager.add(G0, configuration::repertoire::G0);
@@ -1400,7 +1348,7 @@ namespace GGUI {
                         for (auto& p : params) {
                             auto typed = p.getValueAsInteger();
 
-                            currentStates->ecmaComponents.activeModes.set({typed, mode::definition::RESET});
+                            currentStates->ecmaComponents.activeModes.set(typed, static_cast<bool>(mode::values::RESET));
                         }
                     }
 
@@ -1414,7 +1362,7 @@ namespace GGUI {
                         for (auto& p : params) {
                             auto typed = p.getValueAsInteger();
 
-                            currentStates->ecmaComponents.activeModes.set({typed, mode::definition::SET});
+                            currentStates->ecmaComponents.activeModes.set(typed, static_cast<bool>(mode::values::SET));
                         }
                     }
                 }

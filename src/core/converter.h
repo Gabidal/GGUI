@@ -6,7 +6,7 @@
 #include <array>
 #include <thread>
 
-#include "backend/ecma.h"   TODO("Move some of the table functions into backend/utils.h so that we wount need to include ecma here.")
+#include "utils/utils.h"
 
 namespace GGUI {
     /**
@@ -87,7 +87,7 @@ namespace GGUI {
                 key(bool newState = false) : state(newState) {}
             };
 
-            using allKeys = std::array<key, (size_t)terminal::ecma::table::getSize<key::types>()>;
+            using allKeys = std::array<key, (size_t)table::getSize<key::types>()>;
 
             /**
              * @brief Contains the incoming key information

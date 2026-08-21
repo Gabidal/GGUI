@@ -2,6 +2,7 @@
 #define _COLOR_H_
 
 #include <math.h>
+#include <array>
 #include <cstdint>
 #include <ostream>
 
@@ -53,7 +54,27 @@ namespace GGUI{
             blue = computeAlpha(blue, other.blue, opacity);
         }
 
+        
+        constexpr std::array<std::array<uint8_t, 4>, 3> toString() const {
+            return {
+                toNumber(red),
+                toNumber(green),
+                toNumber(blue)
+            };
+        }
+        
     private:
+        static constexpr std::array<std::array<uint8_t, 4>, UINT8_MAX + 1> numberToAscii = [] {
+            std::array<std::array<uint8_t, 4>, UINT8_MAX + 1> t{};
+            for (size_t i = 0; i < UINT8_MAX + 1; i++)
+                t[i] = { static_cast<uint8_t>(i / 100 + '0'), static_cast<uint8_t>((i / 10) % 10 + '0'), static_cast<uint8_t>(i % 10 + '0'), '\0' };
+            return t;
+        }();
+
+        constexpr std::array<uint8_t, 4> toNumber(uint8_t val) const {
+            return numberToAscii[val];
+        }
+
         constexpr inline unsigned char computeAlpha(unsigned char A, unsigned char B, unsigned char opacity) {
             constexpr unsigned int UINT8_MAX_AS_256 = UINT8_MAX + 1;            // 256
             constexpr unsigned int UINT8_HALF = UINT8_MAX_AS_256 / 2;           // 128

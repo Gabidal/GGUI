@@ -112,6 +112,8 @@ namespace GGUI {
                 enum class modeTypes : uint8_t {
                     __min = 0,
 
+                    DEFAULT = __min,
+
                     NONE,                               // Error (ignored)
                     CURSOR_KEY_MODE,                    // Cursor key       (DECCKM)
                     ANSI_MODE,                          // ANSI/VT52        (DECANM)
@@ -127,7 +129,7 @@ namespace GGUI {
                 };
 
                 struct components {
-                    ecma::mode::flags<modeTypes> modes;
+                    ecma::mode::base<modeTypes> modes;
                     INTERNAL::bitMask<deviceAttributeResponseTypes> activeDeviceAttributes;
 
                     bool enabled = false;
@@ -374,14 +376,14 @@ namespace GGUI {
 
                 // The 4'th gen extended 2'nd gen extension feature list
                 enum class deviceAttributeResponseTable : uint8_t {
-                    COLUMN_COUNT                    = alias(VT220::deviceAttributeResponseTable::COLUMN_COUNT),
-                    PRINTER_PORT_EXTENSION          = alias(VT220::deviceAttributeResponseTable::PRINTER_PORT_EXTENSION),
-                    SIXEL_EXTENSION                 = alias(VT220::deviceAttributeResponseTable::SIXEL_EXTENSION),
+                    COLUMN_COUNT                    = table::alias(VT220::deviceAttributeResponseTable::COLUMN_COUNT),
+                    PRINTER_PORT_EXTENSION          = table::alias(VT220::deviceAttributeResponseTable::PRINTER_PORT_EXTENSION),
+                    SIXEL_EXTENSION                 = table::alias(VT220::deviceAttributeResponseTable::SIXEL_EXTENSION),
 
-                    SELECTIVE_ERASE                 = alias(VT220::deviceAttributeResponseTable::SELECTIVE_ERASE),
-                    DRCS_ENABLED                    = alias(VT220::deviceAttributeResponseTable::DRCS_ENABLED),
-                    UDK_ENABLED                     = alias(VT220::deviceAttributeResponseTable::UDK_ENABLED),
-                    NRCS_ENABLED                    = alias(VT220::deviceAttributeResponseTable::NRCS_ENABLED),
+                    SELECTIVE_ERASE                 = table::alias(VT220::deviceAttributeResponseTable::SELECTIVE_ERASE),
+                    DRCS_ENABLED                    = table::alias(VT220::deviceAttributeResponseTable::DRCS_ENABLED),
+                    UDK_ENABLED                     = table::alias(VT220::deviceAttributeResponseTable::UDK_ENABLED),
+                    NRCS_ENABLED                    = table::alias(VT220::deviceAttributeResponseTable::NRCS_ENABLED),
 
                     SCS_EXTENSION                   = 12,   //
                     TECHNICAL_CHARACTER_SET         = 15,   //

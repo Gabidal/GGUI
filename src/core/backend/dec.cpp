@@ -40,7 +40,7 @@ namespace GGUI {
                             if (params.size() == 1) {   // This is the request for identification, which is already implemented in the ecma.cpp, so we can just reroute into there.
                                 ecma::sequences::miscellaneousControlFunctions::operate_DEVICE_ATTRIBUTES(input);
                             } else if (params.size() == 2 && params.front().hasSecondaries()) {
-                                auto [questionMark, modelNumber] = params.front().getPrimaryValueAndSecondaries().front();
+                                const auto& [questionMark, modelNumber] = params.front().getPrimaryValueAndSecondaries().front();
 
                                 if (
                                     (ecma::table::parameters)questionMark == ecma::table::parameters::PRIVATE &&
@@ -68,8 +68,8 @@ namespace GGUI {
                                 for (size_t i = 1; i < params.size(); i++) {
                                     auto typed = params[i].getValueAsInteger();
 
-                                    if (ecma::table::contains<modeTypes>(typed)) {
-                                        currentStates->decComponents.VT100Components.modes.set({typed, ecma::mode::definition::RESET});
+                                    if (GGUI::table::contains<modeTypes>(typed)) {
+                                        currentStates->decComponents.VT100Components.modes.set(typed, static_cast<bool>(ecma::mode::values::RESET));
                                     }
 
                                 }
@@ -90,8 +90,8 @@ namespace GGUI {
                                 for (size_t i = 1; i < params.size(); i++) {
                                     auto typed = params[i].getValueAsInteger();
 
-                                    if (ecma::table::contains<modeTypes>(typed)) {
-                                        currentStates->decComponents.VT100Components.modes.set({typed, ecma::mode::definition::SET});
+                                    if (GGUI::table::contains<modeTypes>(typed)) {
+                                        currentStates->decComponents.VT100Components.modes.set(typed, static_cast<bool>(ecma::mode::values::SET));
                                     }
 
                                 }

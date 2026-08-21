@@ -6,10 +6,10 @@
 #include <cassert>
 #include <mutex>
 #include <memory>
+#include <span>
 
 namespace GGUI{
     
-    // Literal type
     class FVector2{
     public:
         float x = 0;
@@ -87,7 +87,6 @@ namespace GGUI{
             return FVector2(x - num, y - num);
         }
 
-
         /**
          * @brief * operator with a float
          *
@@ -101,7 +100,6 @@ namespace GGUI{
         }
     };
     
-    // Literal type
     class FVector3 : public FVector2 {
     public:
         float z = 0;
@@ -391,7 +389,7 @@ namespace GGUI{
          *
          * @return A string representation of the IVector2.
          */
-        std::string toString() const {
+        constexpr std::string toString() const {
             return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
         }
     };
@@ -536,18 +534,6 @@ namespace GGUI{
          */
         constexpr bool operator!=(const IVector3& other) const noexcept {
             return x != other.x || y != other.y || z != other.z; // Check if the coordinates are not equal
-        }
-
-        /**
-         * @brief Converts the IVector3 to a string.
-         * 
-         * This function returns a string in the format "X, Y, Z" where X, Y, and Z are the coordinates of the IVector3.
-         * The output string is designed to be human-readable, and is not designed to be efficient for serialization or other purposes.
-         * 
-         * @return A string representation of the IVector3.
-         */
-        std::string To_String(){
-            return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
         }
     
         /**
@@ -744,7 +730,7 @@ namespace GGUI{
             }
 
             // returns each activated enum
-            std::vector<enumType> getAll() const {
+            constexpr std::vector<enumType> getAll() const {
                 std::vector<enumType> result;
 
                 for (containerType i = 0; i < sizeof(containerType) * 8; ++i) {
@@ -829,6 +815,11 @@ namespace GGUI{
                 if (tAsBitMask != 0) data &= ~tAsBitMask;   // If not default, then remove the bit
             }
 
+            constexpr void set(enumType t, bool val) {
+                if (val) add(t);
+                else remove(t);
+            }
+
             constexpr bool has(enumType t) const {
                 containerType tAsBitMask = toBitMask(t);
 
@@ -836,7 +827,11 @@ namespace GGUI{
                         (data & tAsBitMask) != 0;   // Or atleast bits from t are present
             }
 
-            std::vector<enumType> getAll() const {
+            constexpr bool has(const linearMask& other) const {
+                return (data & other.data) == other.data;
+            }
+
+            constexpr std::vector<enumType> getAll() const {
                 std::vector<enumType> result;
 
                 for (containerType i = static_cast<containerType>(enumType::__min); i <= static_cast<containerType>(enumType::__max); ++i) {
@@ -1104,6 +1099,112 @@ namespace GGUI{
             };   
         }
     }
+
+    template<typename T, typename P>
+    concept eligibleForWriterViewType = (
+        std::is_convertible_v<P, T> ||
+        (
+            std::is_enum_v<P> &&
+            std::is_convertible_v<std::underlying_type_t<P>, T>
+        )
+    );
+
+    template<typename T>
+    class writerView {
+        T* data;
+        size_t capacity;
+        size_t size;
+    public:
+        /**
+         * @brief Constructs a writer view over a pre-allocated buffer.
+         *
+         * @param preAllocated A span representing the available storage for writing.
+         */
+        constexpr writerView(const std::span<T>& preAllocated) : data(preAllocated.data()), capacity(preAllocated.size()), size(0) {
+            assert(data != nullptr && "Data pointer cannot be null!");
+            assert(capacity > 0 && "Preallocated area is empty!");
+        }
+
+        /**
+         * @brief Writes a single value to the buffer.
+         *
+         * @param value The value to write.
+         */
+        template<typename P>
+        requires eligibleForWriterViewType<T, P>
+        constexpr void write(const P& value) {
+            assert(size < capacity && "Cannot write value beyond allocated capacity!");
+
+            data[size++] = static_cast<T>(value);
+        }
+
+        /**
+         * @brief Writes a sequence of values to the buffer.
+         *
+         * @param values A span of values to write.
+         */
+        template<typename P> 
+        requires eligibleForWriterViewType<T, P>
+        constexpr void write(std::span<P> values) {
+            assert(size + values.size() <= capacity && "Cannot write values beyond allocated capacity!");
+
+            for (const auto& value : values) {
+                data[size++] = static_cast<T>(value);
+            }
+        }
+
+        /**
+         * @brief Requests the remaining free space in the buffer.
+         *
+         * @return A writer view over the unfilled portion of the underlying storage.
+         */
+        [[nodiscard]] constexpr writerView<T> requestFree() const {
+            return std::span<T>(data + size, capacity - size);
+        }
+
+        /**
+         * @brief Commits a previously requested write region.
+         *
+         * @param requested The requested region to finalize.
+         */
+        constexpr void commit(const std::span<T>& requested) {
+            // First we need to check for validity
+            assert(requested.data() >= data && requested.data() + requested.size() <= data + capacity && "Requested span is out of bounds!");
+            assert(requested.data() == data + size && "Requested span is out of order!");
+
+            size += requested.size();
+        }
+
+        /**
+         * @brief Clears all written data from the view.
+         */
+        constexpr void clear() {
+            size = 0;
+        }
+
+        /**
+         * @brief Returns the number of elements currently written.
+         *
+         * @return The current element count.
+         */
+        constexpr size_t getSize() const { return size; }
+
+        /**
+         * @brief Returns the total capacity of the underlying buffer.
+         *
+         * @return The maximum number of elements that can be written.
+         */
+        constexpr size_t getCapacity() const { return capacity; }
+
+        /**
+         * @brief Returns the written data as a span.
+         *
+         * @return A span covering the current valid data range.
+         */
+        [[nodiscard]] constexpr std::span<T> getWritten() const { return std::span<T>(data, size); }
+
+        [[nodiscard]] constexpr std::span<T> getStorage() const { return std::span<T>(data, capacity); } 
+    };
 }
 
 #endif
