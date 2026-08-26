@@ -133,6 +133,8 @@ namespace GGUI {
                     INTERNAL::bitMask<deviceAttributeResponseTypes> activeDeviceAttributes;
 
                     bool enabled = false;
+
+                    constexpr components() = default;
                 };
 
                 namespace sequences {
@@ -308,6 +310,8 @@ namespace GGUI {
                 struct components {
                     std::vector<deviceAttributeResponseTable> activeDeviceAttributes;
                     bool enabled = false;
+                    
+                    constexpr components() = default;
                 };
 
                 namespace sequences {
@@ -369,6 +373,8 @@ namespace GGUI {
                 struct components {
                     std::vector<deviceAttributeResponseTable> activeDeviceAttributes;
                     bool enabled = false;
+                    
+                    constexpr components() = default;
                 };
                 
                 namespace sequences {
@@ -403,6 +409,8 @@ namespace GGUI {
                 VT100::components VT100Components;
                 VT220::components VT220Components;
                 VT420::components VT420Components;
+
+                constexpr components() = default;
 
                 bool isEnabled() const { return VT100Components.enabled || VT220Components.enabled || VT420Components.enabled; }
 

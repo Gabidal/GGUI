@@ -43,18 +43,18 @@ namespace GGUI{
         }
         // autoGen: Ignore end
     
-        enum class EMBED_ORDER{
+        enum class EMBED_ORDER : uint8_t {
             INSTANT,
             DELAYED
         };
 
-        enum class EVALUATION_TYPE{
+        enum class EVALUATION_TYPE : uint8_t {
             DEFAULT,        // no further evaluation needed, just return the value
             PERCENTAGE     // the value is a percentage of the parent attribute
         };
     }
 
-    enum class ANCHOR{
+    enum class ANCHOR : uint8_t {
         UP,
         DOWN,
         LEFT,
@@ -62,13 +62,13 @@ namespace GGUI{
         CENTER
     };
 
-    enum class VALUE_STATE{
+    enum class VALUE_STATE : uint8_t {
         UNINITIALIZED,
         INITIALIZED,
         VALUE
     };
 
-    enum class DIRECTION{
+    enum class DIRECTION : uint8_t {
         ROW,
         COLUMN
     };

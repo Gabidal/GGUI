@@ -94,10 +94,10 @@ namespace GGUI {
              * NOTE: this information is shared, so fetch this information from the correct backend interface!
              */
             struct base {
-                output::base* out;
+                output::base* out = nullptr;
 
-                allKeys currentKeyboardState;
-                allKeys previousKeyboardState;     // used to compare changed states.
+                allKeys currentKeyboardState = {};
+                allKeys previousKeyboardState = {};     // used to compare changed states.
 
                 std::thread pollingThread;
 

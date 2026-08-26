@@ -22,7 +22,7 @@ namespace GGUI{
      * After all addons are loaded, it iterates through the list of addons
      * and adds each one to the main internal structure.
      */
-    void initAddons(){
+    void initAddons() {
         // Call addon initializers.
         initInspectTool();
 
@@ -30,6 +30,13 @@ namespace GGUI{
         for (auto* a : addons){
             getRoot()->addChild(a);
         }
+    }
+
+    void deinitAddons() {
+        for (auto* a : addons){
+            delete a;
+        }
+        addons.clear();
     }
 
     /**

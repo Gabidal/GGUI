@@ -281,11 +281,6 @@ namespace GGUI {
             return state == status::RECEIVING;
         }
 
-
-        base::base(converter::input::base* reg) : keyRegistry(reg) {
-            
-        }
-
         void base::enableExtensions() {
             static std::string queryDeviceAttribute = ecma::sequence::toString(ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({}));
 

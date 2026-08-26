@@ -1254,13 +1254,15 @@ namespace GGUI {
                 class manager {
                 protected:
                     // Contains all of the initialized pages with their usable jump blocks.
-                    std::array<page, static_cast<size_t>(repertoire::__max)> pages;
+                    std::array<page, static_cast<size_t>(repertoire::__max)> pages = {};
 
                     std::array<
                         repertoire,
                         layout::MAXIMUM_SIZE
-                    > map;   // The loaded memory, containing the cell::repertoire jump block ID's
+                    > map = {repertoire::__max};   // The loaded memory, containing the cell::repertoire jump block ID's
                 public: 
+
+                    constexpr manager() = default;
 
                     /**
                      * @brief Adds a page to the repertoire at the specified position.
@@ -1375,6 +1377,9 @@ namespace GGUI {
 
                     constexpr std::pair<size_t, sequence::base*> interpret(std::string_view input) {
                         auto currentRepertoire = map[static_cast<uint8_t>(input.front())];
+
+                        assert(currentRepertoire != repertoire::__max && "Repertoire not loaded for the given input byte!");
+
                         auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
                         
                         // Call the sequence parser
@@ -1930,10 +1935,10 @@ namespace GGUI {
             // Only used to store metadata, actual colors are found in the UTFs
             class activeSGRStyle {
             public:
-                INTERNAL::linearMask<graphicalTextAttributes, uint64_t> textAttributes;
-                IVector2 start;
-                RGB textColor;
-                RGB backgroundColor;
+                INTERNAL::linearMask<graphicalTextAttributes, uint64_t> textAttributes = graphicalTextAttributes::DEFAULT;
+                IVector2 start = {};
+                RGB textColor = {};
+                RGB backgroundColor = {};
 
                 // These are given if types::Foreground or types::Background is used, directColorTypes are appended after these via the table::parameter::FRACTION
                 enum class directColorTypes : uint8_t {
@@ -1945,8 +1950,8 @@ namespace GGUI {
                     INDEXED,        // Use this when selecting one of the predetermined colors from graphicalTextAttributes::*
                 } activeDirectColorType = directColorTypes::RGB;
 
-                constexpr activeSGRStyle(IVector2 Start) : textAttributes(graphicalTextAttributes::DEFAULT), start(Start) {}
-                constexpr activeSGRStyle() : textAttributes(graphicalTextAttributes::DEFAULT) {}
+                constexpr activeSGRStyle(IVector2 Start) : start(Start) {}
+                constexpr activeSGRStyle() = default;
 
                 // NOTE: Since this class only contains metadata, if there is colors in the params via RGB or other formats these will be written into the terminal::screen.cellBuffer!
                 void parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params);

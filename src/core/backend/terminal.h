@@ -36,7 +36,7 @@ namespace GGUI {
             std::vector<terminal::cell>& buffer;                 // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
             std::string* liquefiedBuffer = nullptr;             // This is what send back into the output device to be rendered into the screen.       
             std::vector<ecma::activeSGRStyle>& activeGraphicAttributes;     // this is the liquefied graphic area metadata which is ecma-48 compatible.
-            element* dom;       // the primary element tree to be rendered.
+            element* dom = nullptr;       // the primary element tree to be rendered.
         public:
             outputCapture(
                 IVector2& presentationPosition,
@@ -82,6 +82,8 @@ namespace GGUI {
                 RECEIVING
             } state = status::NONE;
 
+            constexpr query() = default;
+
             bool isConnected();
 
             void acknowledgeConnection();
@@ -101,7 +103,7 @@ namespace GGUI {
             ecma::components ecmaComponents;
             dec::components decComponents;
 
-            converter::input::base* keyRegistry;    // This is where we will be outputting polled data into.
+            converter::input::base* keyRegistry = nullptr;    // This is where we will be outputting polled data into.
 
             RGB colorIndexMap[UINT8_MAX] = {};  // Used for custom color indicies for SGR.
 
@@ -114,7 +116,7 @@ namespace GGUI {
 
             query transmission;
 
-            base(converter::input::base* reg);
+            base(converter::input::base* reg) : keyRegistry(reg) {}
 
             void parseInput();
 

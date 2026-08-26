@@ -4,11 +4,17 @@
 #include <vector>
 #include <string>
 
-#include "../core/utils/constants.h"
 #include "../core/utils/style.h"
 #include "textField.h"
 
 namespace GGUI{
+    namespace SYMBOLS {
+        constexpr std::string_view RADIOBUTTON_OFF = "○";
+        constexpr std::string_view RADIOBUTTON_ON = "◉";
+    
+        constexpr std::string_view EMPTY_CHECK_BOX = "☐";
+        constexpr std::string_view CHECKED_CHECK_BOX = "☒";
+    }
 
     class visualState : public STYLING_INTERNAL::styleBase {
     protected:
