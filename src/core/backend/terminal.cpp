@@ -151,7 +151,7 @@ namespace GGUI {
 
             TODO("Remove this when moving from compactString into std::u32string")
             for (auto& cs : buffer) {
-                liquefiedSize += cs.getWidth();
+                liquefiedSize += cs.getLength();
             }
 
             static std::vector<std::string> preBakedSGRSequences;
@@ -209,7 +209,7 @@ namespace GGUI {
                     // Add text
                     terminal::cell data = buffer[(y * dom->getWidth()) + x];
 
-                    std::memcpy(result.data() + outputIndex, data.getGlyphs().data(), data.getGlyphs().size());
+                    std::memcpy(result.data() + outputIndex, data.getGlyphs().data(), data.getLength());
                     outputIndex += data.getGlyphs().size();
                 }
             }

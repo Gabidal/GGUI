@@ -1432,8 +1432,8 @@ namespace GGUI {
     void element::renderBorders(std::vector<terminal::cell>& Result){
         if (!hasBorder()) return;
 
-        const unsigned int Width  = getWidth();
-        const unsigned int Height = getHeight();
+        unsigned int Width  = getWidth();
+        unsigned int Height = getHeight();
         const auto& Border        = Style->Border_Style;
 
         // Corners
@@ -1482,28 +1482,26 @@ namespace GGUI {
         if (Style->Title.empty())
             return;
 
-        unsigned int Title_Length = Style->Title.value.size(); // +1 for trailing, since Compact_Strings do not include trailing characters in their size.
-        unsigned int Horizontal_Offset = hasBorder();
+        size_t Title_Length = Style->Title.value.size(); // +1 for trailing, since Compact_Strings do not include trailing characters in their size.
+        size_t Horizontal_Offset = (int)hasBorder();
         static constexpr std::string Ellipsis = "...";
         bool Enable_Ellipsis = false;
 
-        std::pair<RGB, RGB> composedColor = getActiveTextColor();  TODO("pipe forward rectangle colored area for graphicAttributes")
-
-        unsigned int Writable_Length = std::min(Title_Length, (unsigned int)(getWidth() - Horizontal_Offset - Ellipsis.size() - 1));
+        size_t Writable_Length = std::min(Title_Length, (size_t)(getWidth() - Horizontal_Offset - (int)Ellipsis.size() - 1));
 
         if (Writable_Length < Title_Length)
             Enable_Ellipsis = true;
 
         // Now we'll write what we can
-        for (unsigned int x = Horizontal_Offset; x < Writable_Length + Horizontal_Offset; x++){
+        for (size_t x = Horizontal_Offset; x < Writable_Length + Horizontal_Offset; x++){
             Result[x] = Style->Title.value[x - Horizontal_Offset];
         }
 
         // And then we'll add the ellipsis
         if (Enable_Ellipsis){
-            unsigned int Ellipsis_Offset = Writable_Length + Horizontal_Offset;
-            for (unsigned int x = 0; x < Ellipsis.size(); x++){
-                if ((int64_t)(Ellipsis_Offset + x) < (int64_t)getWidth()){
+            size_t Ellipsis_Offset = Writable_Length + Horizontal_Offset;
+            for (size_t x = 0; x < Ellipsis.size(); x++){
+                if (Ellipsis_Offset + x < (size_t)(getWidth() - Horizontal_Offset)){
                     Result[Ellipsis_Offset + x] = Ellipsis[x];
                 }
             }

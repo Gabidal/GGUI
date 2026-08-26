@@ -13,6 +13,7 @@ namespace GGUI {
             uint32_t glyphs = 0;                    // Holds 1-4 UTF-8 code points, highest 5 bit, represents on/off switch for indexing from a string table.
             [[maybe_unused]] uint8_t backstop = 0;  // Null terminates the inlined 4-bytes string inside glyphs.
             uint8_t width = 1;                      // asked from wcwidth (linux) or ??? (windows)
+            uint8_t length = 0;
         public:
             constexpr cell() = default;
 
@@ -25,9 +26,11 @@ namespace GGUI {
                 } else {
                     assert(false && "String table not implemented!");
                 }
+
+                length = utf.size();
             }
 
-            constexpr cell(char character) : glyphs(static_cast<uint8_t>(character)), width(1) {}
+            constexpr cell(char character) : glyphs(static_cast<uint8_t>(character)), length(1) {}
 
             // Checks wether the highest bit is set or not.
             constexpr bool isIndex() const {
@@ -48,8 +51,13 @@ namespace GGUI {
             constexpr uint8_t getWidth() const { return width; }
 
             inline std::string_view getGlyphs() const {
-                return std::string_view(reinterpret_cast<const char*>(&glyphs), 4);
+                return std::string_view(
+                    reinterpret_cast<const char*>(&glyphs),
+                    length
+                );
             }
+
+            constexpr uint8_t getLength() const { return length; }
         protected:
             // First five bytes are set, since largest UTF-8 uses four bytes set and fifth unset, we can use that as an fingerprint.
             static constexpr char32_t indexFingerPrint = (
@@ -62,8 +70,6 @@ namespace GGUI {
 
             friend void setGlyphWidth(cell& data);
         };
-
-        constexpr cell foo = std::string_view("┌");
 
         // How many bytes/second
         enum class baudRate : int32_t {

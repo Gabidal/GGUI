@@ -435,35 +435,6 @@ namespace GGUI{
         }
 
         /**
-         * @brief Compute the alpha blending of the source element to the destination element.
-         * @details This function takes two UTF elements as arguments, the source element and the destination element.
-         *          It calculates the alpha blending of the source element to the destination element, by adding the
-         *          background color of the source element to the destination element, but only if the source element has
-         *          a non-zero alpha value. If the source element has full opacity, then the destination gets fully rewritten
-         *          over. If the source element has full transparency, then nothing is done.
-         * @param Dest The destination element to which the source element will be blended.
-         * @param Source The source element which will be blended to the destination element.
-         */
-        // void computeAlphaToNesting(GGUI::UTF& Dest, const GGUI::UTF& Source, unsigned char childOpacity){
-        //     // If the Source element has full opacity, then the destination gets fully rewritten over.
-        //     if (childOpacity == UINT8_MAX){
-        //         Dest = Source;
-        //         return;
-        //     }
-        //     else if (childOpacity == 0) return;         // Dont need to do anything.
-
-        //     // Color the Destination UTF by the Source UTF background color.
-        //     Dest.background.add(Source.background, childOpacity);
-        //     Dest.foreground.add(Source.background, childOpacity);
-
-        //     // Check if source has text
-        //     if (!Source.hasDefaultText()){
-        //         Dest.setText(Source);
-        //         Dest.foreground.add(Source.foreground, childOpacity); 
-        //     }
-        // }
-
-        /**
          * @brief Nests a child element into a parent element.
          * @details This function calculates the area where the child element should be rendered within the parent element.
          *          It takes into account the border offsets of both the parent and the child element as well as their positions.
@@ -481,7 +452,6 @@ namespace GGUI{
                     // Calculate the position of the child element in its own buffer.
                     int Child_Buffer_Y = (y - Limits.start.y + Limits.negativeOffset.y) * child->getWidth();
                     int Child_Buffer_X = (x - Limits.start.x + Limits.negativeOffset.x); 
-                    // computeAlphaToNesting(Parent_Buffer[y * parent->getWidth() + x], Child_Buffer[Child_Buffer_Y + Child_Buffer_X], child->getOpacityByte());
                     Parent_Buffer[y * parent->getWidth() + x] = Child_Buffer[Child_Buffer_Y + Child_Buffer_X];
                 }
             }
