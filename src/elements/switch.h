@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 
-#include "../core/utils/superString.h"
 #include "../core/utils/constants.h"
 #include "../core/utils/style.h"
 #include "textField.h"
@@ -13,7 +12,7 @@ namespace GGUI{
 
     class visualState : public STYLING_INTERNAL::styleBase {
     protected:
-        const INTERNAL::compactString *Off, *On;
+        terminal::cell Off, On;
     public:
 
         /**
@@ -23,7 +22,7 @@ namespace GGUI{
          * @param on A compact string representing the "on" visual state.
          * @param Default The default value state, which is of type VALUE_STATE. Defaults to VALUE_STATE::VALUE.
          */
-        constexpr visualState(const INTERNAL::compactString& off, const INTERNAL::compactString& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Off(&off), On(&on) {}
+        constexpr visualState(const terminal::cell& off, const terminal::cell& on, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), Off(off), On(on) {}
 
         /**
          * @brief Constructs a `visualState` object as a constexpr by copying the values from another `GGUI::visualState` object.
@@ -157,7 +156,7 @@ namespace GGUI{
         bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
 
         //Contains the unchecked version of the symbol and the checked version.
-        const INTERNAL::compactString *Off = nullptr, *On = nullptr;
+        terminal::cell Off = ' ', On = ' ';
 
         textField Text;
     public:
@@ -232,7 +231,7 @@ namespace GGUI{
          * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
          * @param text The new text for the switch element.
          */
-        void setText(INTERNAL::compactString text);
+        void setText(std::string_view text);
 
         /**
          * @brief Toggles the visibility of the border for the switchBox element.
@@ -267,10 +266,10 @@ namespace GGUI{
          * state of the switch. If the state is `true`, it returns the string
          * pointed to by `On`. Otherwise, it returns the string pointed to by `Off`.
          * 
-         * @return INTERNAL::compactString The string representation of the current state.
+         * @return terminal::cell The string representation of the current state.
          */
-        constexpr INTERNAL::compactString getStateString() const {
-            return State ? *On : *Off;
+        constexpr terminal::cell getStateString() const {
+            return State ? On : Off;
         }
 
         /**
@@ -283,7 +282,7 @@ namespace GGUI{
          * @param off Pointer to a compactString representing the "off" state.
          * @param on Pointer to a compactString representing the "on" state.
          */
-        void setStateString(const INTERNAL::compactString* off, const INTERNAL::compactString* on);
+        void setStateString(terminal::cell off, terminal::cell on);
 
     protected:
         /**
@@ -292,7 +291,7 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the switch element is rendered correctly.
          * @return A vector of UTF objects representing the rendered switch element.
          */
-        std::vector<INTERNAL::compactString>& render() override;
+        std::vector<terminal::cell>& render() override;
         
         /**
          * @brief Creates a deep copy of the Switch object.

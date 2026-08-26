@@ -20,7 +20,7 @@ int main() {
                 for (int y = 0; y < actualSelf->getHeight(); y++) {
                     for (int x = 0; x < actualSelf->getWidth(); x++) {
                         // Set an initial sprite at each position
-                        GGUI::sprite initialSprite(
+                        GGUI::animationSprite initialSprite(
                             {
                                 // UTF A
                                 {' ', {GGUI::COLOR::RED /*text color*/, GGUI::COLOR::RED /*background color*/}}, 

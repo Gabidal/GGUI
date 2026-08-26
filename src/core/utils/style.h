@@ -1560,17 +1560,17 @@ namespace GGUI{
 
     class styledBorder : public STYLING_INTERNAL::styleBase{
     public:
-        const char* topLeftCorner             = "┌";//"\e(0\x6c\e(B";
-        const char* bottomLeftCorner          = "└";//"\e(0\x6d\e(B";
-        const char* topRightCorner            = "┐";//"\e(0\x6b\e(B";
-        const char* bottomRightCorner         = "┘";//"\e(0\x6a\e(B";
-        const char* verticalLine               = "│";//"\e(0\x78\e(B";
-        const char* horizontalLine             = "─";//"\e(0\x71\e(B";
-        const char* verticalRightConnector    = "├";//"\e(0\x74\e(B";
-        const char* verticalLeftConnector     = "┤";//"\e(0\x75\e(B";
-        const char* horizontalBottomConnector = "┬";//"\e(0\x76\e(B";
-        const char* horizontalTopConnector    = "┴";//"\e(0\x77\e(B";
-        const char* crossConnector             = "┼";//"\e(0\x6e\e(B";
+        std::string_view topLeftCorner             = "┌";//"\e(0\x6c\e(B";
+        std::string_view bottomLeftCorner          = "└";//"\e(0\x6d\e(B";
+        std::string_view topRightCorner            = "┐";//"\e(0\x6b\e(B";
+        std::string_view bottomRightCorner         = "┘";//"\e(0\x6a\e(B";
+        std::string_view verticalLine               = "│";//"\e(0\x78\e(B";
+        std::string_view horizontalLine             = "─";//"\e(0\x71\e(B";
+        std::string_view verticalRightConnector    = "├";//"\e(0\x74\e(B";
+        std::string_view verticalLeftConnector     = "┤";//"\e(0\x75\e(B";
+        std::string_view horizontalBottomConnector = "┬";//"\e(0\x76\e(B";
+        std::string_view horizontalTopConnector    = "┴";//"\e(0\x77\e(B";
+        std::string_view crossConnector             = "┼";//"\e(0\x6e\e(B";
     
         /**
          * @brief A structure to hold the border style of a widget.
@@ -1590,7 +1590,7 @@ namespace GGUI{
          * - 9: Horizontal top connector
          * - 10: Cross connector
          */
-        constexpr styledBorder(const std::array<const char*, 11> values, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default){
+        constexpr styledBorder(const std::array<std::string_view, 11> values, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default){
             topLeftCorner = values[0];
             bottomLeftCorner = values[1];
             topRightCorner = values[2];
@@ -1649,9 +1649,9 @@ namespace GGUI{
         
         INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        const char* getBorder(const INTERNAL::borderConnection flags);
+        std::string_view getBorder(const INTERNAL::borderConnection flags);
 
-        INTERNAL::borderConnection getBorderType(const char* border);
+        INTERNAL::borderConnection getBorderType(std::string_view border);
     };
 
     class flowPriority : public STYLING_INTERNAL::enumValue<DIRECTION>{
@@ -2106,9 +2106,9 @@ namespace GGUI{
 
     class name : public STYLING_INTERNAL::styleBase{
     public:
-        INTERNAL::compactString value;
+        std::string value;
 
-        constexpr name(INTERNAL::compactString Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
+        constexpr name(std::string Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
 
         constexpr name(const GGUI::name& other) : styleBase(other.status), value(other.value){}
 
@@ -2135,7 +2135,7 @@ namespace GGUI{
 
     class title : public name{
     public:
-        constexpr title(const INTERNAL::compactString&& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : name(Value, Default){}
+        constexpr title(const std::string&& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : name(Value, Default){}
 
         inline ~title() override { styleBase::~styleBase(); }
 
@@ -2189,12 +2189,12 @@ namespace GGUI{
         INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
-    class sprite;
+    struct animationSprite;
     class onDraw : public STYLING_INTERNAL::styleBase{
     public:
-        GGUI::sprite (*value)(unsigned int x, unsigned int y);
+        GGUI::animationSprite (*value)(unsigned int x, unsigned int y);
 
-        constexpr onDraw(GGUI::sprite (*Value)(unsigned int x, unsigned int y), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
+        constexpr onDraw(GGUI::animationSprite (*Value)(unsigned int x, unsigned int y), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
         
         constexpr onDraw(const GGUI::onDraw& other) : styleBase(other.status), value(other.value){}
 
@@ -2399,7 +2399,7 @@ namespace GGUI{
         width                         Width                           = width(1, VALUE_STATE::INITIALIZED);
         height                        Height                          = height(1, VALUE_STATE::INITIALIZED);
 
-        title                         Title                           = title(INTERNAL::compactString(nullptr, 0, true), VALUE_STATE::INITIALIZED);
+        title                         Title                           = title("", VALUE_STATE::INITIALIZED);
 
         enableBorder                  Border_Enabled                  = enableBorder(false, VALUE_STATE::INITIALIZED);
 
@@ -2569,23 +2569,23 @@ namespace GGUI{
 
     namespace STYLES{
         namespace BORDER{
-            inline styledBorder Double = std::array<const char*, 11>{
+            inline styledBorder Double = std::array<std::string_view, 11>{
                 "╔", "╚", "╗", "╝", "║", "═", "╠", "╣", "╦", "╩", "╬"
             };
 
-            inline styledBorder Round = std::array<const char*, 11>{
+            inline styledBorder Round = std::array<std::string_view, 11>{
                 "╭", "╰", "╮", "╯", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            inline styledBorder Single = std::array<const char*, 11>{
+            inline styledBorder Single = std::array<std::string_view, 11>{
                 "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
             };
 
-            inline styledBorder Bold = std::array<const char*, 11>{
+            inline styledBorder Bold = std::array<std::string_view, 11>{
                 "▛", "▙", "▜", "▟", "█", "▅", "▉", "▉", "▉", "▉", "▉"
             };
 
-            inline styledBorder Modern = std::array<const char*, 11>{
+            inline styledBorder Modern = std::array<std::string_view, 11>{
                 "/", "\\", "\\", "/", "|", "-", "|", "|", "-", "-", "+"
             };
         }

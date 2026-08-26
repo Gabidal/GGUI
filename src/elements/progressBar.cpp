@@ -83,8 +83,8 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
          * @return A vector of UTF objects representing the rendered progress bar.
          */
-        std::vector<INTERNAL::compactString>& Bar::render() {
-            std::vector<INTERNAL::compactString>& Result = cellBuffer;
+        std::vector<terminal::cell>& Bar::render() {
+            std::vector<terminal::cell>& Result = cellBuffer;
 
             // Check for Dynamic attributes
             if(Style->evaluateDynamicDimensions(this))
@@ -133,14 +133,6 @@ namespace GGUI{
                 updateAbsolutePositionCache();
             }
 
-            // Apply the color system to the resized result list
-            if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){        
-                // Clean the color stain after applying the color system.
-                Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
-
-                compileActiveGraphics();
-            }
-
             // Add child windows to the Result buffer if the DEEP stain is detected.
             if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)) {
                 Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
@@ -154,8 +146,18 @@ namespace GGUI{
                 //         Result[y * getWidth() + x] = Content[x - Starting_X];
             }
 
+            // Apply the color system to the resized result list
+            if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){        
+                // Clean the color stain after applying the color system.
+                Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
+
+                compileActiveGraphics();
+            }
+
             // Add borders and titles if the EDGE stain is detected.
             if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
+                Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
+
                 renderBorders(Result);
                 renderTitle(Result);
             }

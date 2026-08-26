@@ -373,10 +373,7 @@ namespace GGUI{
     }
 
     INTERNAL::STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
-        TODO("Remove this with 0.1.9, with de-standardization of std::string.")
-        std::string tmp = std::string(value.text, value.size);
-
-        owner->setName(tmp);
+        owner->setName(value);
 
         return INTERNAL::STAIN_TYPE::CLEAN;
     }
@@ -386,7 +383,7 @@ namespace GGUI{
 
         if (owner->hasEmptyName()){
             // If the name is empty, then set the name to the title.
-            owner->setName(INTERNAL::toString(value));
+            owner->setName(value);
         }
 
         return INTERNAL::STAIN_TYPE::CLEAN;
@@ -448,7 +445,7 @@ namespace GGUI{
         return INTERNAL::STAIN_TYPE::GRAPHICS;     // color manages all stylings, including textual styles.
     }   
 
-    const char* styledBorder::getBorder(const INTERNAL::borderConnection flags){
+    std::string_view styledBorder::getBorder(const INTERNAL::borderConnection flags){
         // Corners
         if (flags == (INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::RIGHT))
             return topLeftCorner;
@@ -483,7 +480,7 @@ namespace GGUI{
             return nullptr;
     }
 
-    INTERNAL::borderConnection styledBorder::getBorderType(const char* border){
+    INTERNAL::borderConnection styledBorder::getBorderType(std::string_view border){
         if (border == topLeftCorner)
             return INTERNAL::borderConnection::DOWN | INTERNAL::borderConnection::RIGHT;
         else if (border == topRightCorner)

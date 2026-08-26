@@ -226,29 +226,18 @@ namespace GGUI {
                          * Invoked with: `01/11 05/11 0 06/03` or `01/11 05/11 06/03`
                          * Responses with: `01/11 05/11 ? 03/01 ; Ps 06/03`
                          */
-                        inline base<
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>, 
-                            ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>, 
-                            2,
-                            specialTypes::HAS_INFINITE_PARAMETERS
-                        > DEVICE_ATTRIBUTES(
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>>(ecma::table::finalWithoutIntermediate::DA), 
-                            {
-                                (deviceAttributeResponseTypes)0,
-                            },
+                        inline auto DEVICE_ATTRIBUTES = makeSequencePatch<specialTypes::HAS_INFINITE_PARAMETERS>(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTypes>, ecma::table::finalWithoutIntermediate>(ecma::table::finalWithoutIntermediate::DA),
                             operate_DEVICE_ATTRIBUTES,
-                            &csiPatch
+                            &csiPatch,
+                            (deviceAttributeResponseTypes)0
                         );
 
-                        inline base<
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<testTypes>>,
-                            ecma::sequence::parameter::selectable<testTypes>,
-                            2
-                        > CONFIDENCE_TEST(
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<testTypes>>((ecma::table::finalWithoutIntermediate)table::privateFunctions::TEST),
-                            {testTypes::DATA_LOOP_BACK, testTypes::NONE},
-                            {},
-                            &csiPatch
+                        inline auto CONFIDENCE_TEST = makeSequencePatch(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<testTypes>, ecma::table::finalWithoutIntermediate>((ecma::table::finalWithoutIntermediate)table::privateFunctions::TEST),
+                            operate_CONFIDENCE_TEST,
+                            &csiPatch,
+                            testTypes::DATA_LOOP_BACK, testTypes::NONE
                         );
                     }
 
@@ -256,28 +245,18 @@ namespace GGUI {
                         extern void operate_RESET_MODE(ecma::sequence::base*);
                         extern void operate_SET_MODE(ecma::sequence::base*);
 
-                        inline base<
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>,
-                            ecma::sequence::parameter::selectable<modeTypes>,
-                            0, 
-                            specialTypes::HAS_INFINITE_PARAMETERS
-                        > RESET_MODE(
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>(ecma::table::finalWithoutIntermediate::RM),
-                            {},
+                        inline auto RESET_MODE = makeSequencePatch<specialTypes::HAS_INFINITE_PARAMETERS>(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>, ecma::table::finalWithoutIntermediate>(ecma::table::finalWithoutIntermediate::RM),
                             operate_RESET_MODE,
-                            &csiPatch
+                            &csiPatch,
+                            (modeTypes)0
                         );
 
-                        inline base<
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>,
-                            ecma::sequence::parameter::selectable<modeTypes>,
-                            0, 
-                            specialTypes::HAS_INFINITE_PARAMETERS
-                        > SET_MODE(
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>>(ecma::table::finalWithoutIntermediate::SM),
-                            {},
+                        inline auto SET_MODE = makeSequencePatch<specialTypes::HAS_INFINITE_PARAMETERS>(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<modeTypes>, ecma::table::finalWithoutIntermediate>(ecma::table::finalWithoutIntermediate::SM),
                             operate_SET_MODE,
-                            &csiPatch
+                            &csiPatch,
+                            (modeTypes)0
                         );
                     }
                 }
@@ -338,23 +317,11 @@ namespace GGUI {
                     namespace miscellaneousControlFunctions {
                         extern void operate_DEVICE_ATTRIBUTES(ecma::sequence::base*);
 
-                        /**
-                         * @brief override of ecma DA function, by:
-                         * Invoked with: `01/11 05/11 0 06/03` or `01/11 05/11 06/03`
-                         * Responses with: `01/11 05/11 ? 62; Ps... 06/03`
-                         */
-                        inline base<
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>, 
-                            ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, 
-                            2,
-                            specialTypes::HAS_INFINITE_PARAMETERS
-                        > DEVICE_ATTRIBUTES(
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>(ecma::table::finalWithoutIntermediate::DA), 
-                            {
-                                (deviceAttributeResponseTable)0,
-                            },
+                        inline auto DEVICE_ATTRIBUTES = makeSequencePatch<specialTypes::HAS_INFINITE_PARAMETERS>(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, ecma::table::finalWithoutIntermediate>(ecma::table::finalWithoutIntermediate::DA),
                             operate_DEVICE_ATTRIBUTES,
-                            &csiPatch
+                            &csiPatch,
+                            (deviceAttributeResponseTable)0
                         );
                     }
                 }
@@ -416,18 +383,11 @@ namespace GGUI {
                          * Invoked with: `01/11 05/11 0 06/03` or `01/11 05/11 06/03`
                          * Responses with: `01/11 05/11 ? 62; Ps... 06/03`
                          */
-                        inline base<
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>, 
-                            ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, 
-                            2,
-                            specialTypes::HAS_INFINITE_PARAMETERS
-                        > DEVICE_ATTRIBUTES(
-                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>>(ecma::table::finalWithoutIntermediate::DA), 
-                            {
-                                (deviceAttributeResponseTable)0,
-                            },
+                        inline auto DEVICE_ATTRIBUTES = makeSequencePatch<specialTypes::HAS_INFINITE_PARAMETERS>(
+                            ecma::sequence::control<ecma::sequence::parameter::selectable<deviceAttributeResponseTable>, ecma::table::finalWithoutIntermediate>(ecma::table::finalWithoutIntermediate::DA),
                             operate_DEVICE_ATTRIBUTES,
-                            &csiPatch
+                            &csiPatch,
+                            (deviceAttributeResponseTable)0
                         );
                     }
                 }

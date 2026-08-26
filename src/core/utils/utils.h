@@ -334,17 +334,14 @@ namespace GGUI{
 
         // If an enum is small enough, then it should be possible to be to stringed.
         template<typename enumType, typename = std::enable_if_t<(sizeof(enumType) == sizeof(uint8_t))>>
-        constexpr uint8_t toString(enumType val) {
-            return static_cast<uint8_t>(val);
+        constexpr char toString(enumType val) {
+            return static_cast<char>(val);
         }
 
-        template<
-            typename cellType,
-            size_t bufferSize,
-            typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> && (sizeof(enumType) == sizeof(uint8_t))>
-        >
-        constexpr void toString(enumType val, std::array<cellType, bufferSize>& preAllocated) {
-            preAllocated.add(static_cast<cellType>(val));
+        template<typename T, typename P>
+        requires eligibleForWriterViewType<T, P>
+        constexpr void toString(writerView<T>& preAllocated, P val) {
+            preAllocated.write(val);
         }
 
         /**
@@ -391,14 +388,14 @@ namespace GGUI{
         template<typename T>
         requires eligibleForWriterViewType<char, T>
         constexpr void toString(std::string& appendTo, T num) {
-            constexpr size_t basicLength = 32;  // longe enough for large numbers
-            char buffer[basicLength];
+            constexpr size_t basicLength = 32;  // long enough for large numbers
+            char buffer[basicLength] = {0};
             std::span<char> bufferSpan(buffer, basicLength);
 
             writerView<char> writer(bufferSpan);
             toString<char, T>(writer, num);
 
-            appendTo.append(bufferSpan.data(), bufferSpan.size());
+            appendTo.append(bufferSpan.data(), writer.getSize());
         }
     }
 }

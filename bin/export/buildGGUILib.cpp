@@ -24,8 +24,6 @@ std::vector<std::string> get_all_files(const std::string& directory) {
 void Compile_Headers(const std::string& destination, const std::string& source_root, bool ignore_autogen) {
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
-        "src/core/utils/superString.h",
-        "src/core/utils/conveyorAllocator.h",
         "src/core/utils/constants.h",
         "src/core/utils/color.h",
         "src/core/utils/types.h",

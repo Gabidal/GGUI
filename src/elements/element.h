@@ -6,7 +6,6 @@
 #include <vector>
 #include <functional>
 
-#include "../core/utils/superString.h"
 #include "../core/utils/color.h"
 #include "../core/utils/style.h"
 #include "../core/backend/terminal.h"
@@ -34,7 +33,7 @@ namespace GGUI{
         // Determines if the element is rendered or not.
         bool Show = true;
         
-        std::vector<INTERNAL::compactString> cellBuffer;
+        std::vector<terminal::cell> cellBuffer;
         std::vector<ActiveStyle> graphicalIdentityPool;
         std::vector<const ActiveStyle*> graphicalReflectionPool;
 
@@ -529,14 +528,14 @@ namespace GGUI{
          * 
          * @param t The new title for the window.
          */
-        void setTitle(INTERNAL::compactString t);
+        void setTitle(const std::string& t);
 
         /**
          * @brief Returns the title of the window.
          * 
          * @return The title of the window as a string.
          */
-        INTERNAL::compactString getTitle() const;
+        std::string_view getTitle() const;
 
         /**
          * @brief Set the margin of the element.
@@ -1006,7 +1005,7 @@ namespace GGUI{
          * @return The name of the element.
          */
         virtual std::string getName() const {
-            return "element<" + getNameAsRaw() + ">";
+            return "element<" + std::string(getNameAsRaw()) + ">";
         }
 
         /**
@@ -1016,9 +1015,9 @@ namespace GGUI{
          * this function returns the memory address of the element as a string.
          * Otherwise, it returns the Name string.
          * 
-         * @return A std::string containing either the element's name or its memory address.
+         * @return A std::string_view containing either the element's name or its memory address.
          */
-        std::string getNameAsRaw() const;
+        std::string_view getNameAsRaw() const;
 
         /**
          * @brief Checks if the element's name is empty.
@@ -1032,7 +1031,7 @@ namespace GGUI{
          * @details This function sets the name of the element and stores it in the global Element_Names map.
          * @param name The name of the element.
          */
-        void setName(std::string name);
+        void setName(const std::string& name);
 
         /**
          * @brief Removes the element from the parent element.
@@ -1071,7 +1070,7 @@ namespace GGUI{
          * @param name The name of the element to search for.
          * @return A pointer to the element with the specified name, or nullptr if no such element is found.
          */
-        element* getElement(std::string name);
+        element* getElement(std::string_view name);
 
         // TEMPLATES
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -1269,7 +1268,7 @@ namespace GGUI{
          *
          * @param Result The string to add the border to.
          */
-        void renderBorders(std::vector<INTERNAL::compactString>& Result);
+        void renderBorders(std::vector<terminal::cell>& Result);
 
         /**
          * @brief Renders the title of the element into the provided result buffer.
@@ -1293,7 +1292,7 @@ namespace GGUI{
          * @note The function assumes that the `Result` vector is pre-allocated and large enough
          *       to hold the rendered title and ellipsis.
          */
-        void renderTitle(std::vector<INTERNAL::compactString>& Result);
+        void renderTitle(std::vector<terminal::cell>& Result);
 
         /**
          * @brief resets baked graphics and adds its own baked graphics
@@ -1309,7 +1308,7 @@ namespace GGUI{
          * @param B The second element.
          * @param Parent_Buffer The buffer of the parent element.
          */
-        void postProcessBorders(element* A, element* B, std::vector<INTERNAL::compactString>& Parent_Buffer);
+        void postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer);
 
         /**
          * @brief Update the absolute position cache of the element.
@@ -1416,7 +1415,7 @@ namespace GGUI{
          * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
          * @return A vector of UTF objects representing the rendered element and its children.
          */
-        virtual std::vector<INTERNAL::compactString>& render();
+        virtual std::vector<terminal::cell>& render();
 
         // Give thread::renderer() access to our private render method.
         friend void INTERNAL::renderer();

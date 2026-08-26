@@ -13,7 +13,6 @@
 #include <cassert>
 #include <math.h>
 #include <sstream>
-#include <cstdio>
 #include <exception>
 #include <csignal>
 #include <iomanip>
@@ -45,7 +44,7 @@ namespace GGUI{
 
         concurrency::guard<std::vector<converter::output::event::memory>> remember;
 
-        std::unordered_map<std::string, element*> elementNames;
+        std::unordered_map<std::string_view, element*> elementNames;
 
         element* focusedOn = nullptr;
         element* hoveredOn = nullptr;
@@ -474,7 +473,7 @@ namespace GGUI{
          * @param Parent_Buffer The parent element's buffer.
          * @param Child_Buffer The child element's buffer.
          */
-        void nestElement(GGUI::element* parent, GGUI::element* child, std::vector<compactString>& Parent_Buffer, std::vector<compactString>& Child_Buffer){
+        void nestElement(GGUI::element* parent, GGUI::element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer){
             INTERNAL::fittingArea Limits = getFittingArea(parent, child);
 
             for (int y = Limits.start.y; y < Limits.end.y; y++){

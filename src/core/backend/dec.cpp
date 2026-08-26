@@ -53,6 +53,10 @@ namespace GGUI {
                                 assert(false);
                             }
                         }
+
+                        void operate_CONFIDENCE_TEST(ecma::sequence::base*) {
+                            TODO("Not finished!");
+                        }
                     }
 
                     namespace modeSettingFunctions {

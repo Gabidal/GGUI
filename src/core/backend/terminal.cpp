@@ -151,7 +151,7 @@ namespace GGUI {
 
             TODO("Remove this when moving from compactString into std::u32string")
             for (auto& cs : buffer) {
-                liquefiedSize += cs.size;
+                liquefiedSize += cs.getWidth();
             }
 
             static std::vector<std::string> preBakedSGRSequences;
@@ -207,10 +207,10 @@ namespace GGUI {
                     }
 
                     // Add text
-                    const compactString& data = buffer[(y * dom->getWidth()) + x];
+                    terminal::cell data = buffer[(y * dom->getWidth()) + x];
 
-                    std::memcpy(result.data() + outputIndex, data.text, data.size);
-                    outputIndex += data.size;
+                    std::memcpy(result.data() + outputIndex, data.getGlyphs().data(), data.getGlyphs().size());
+                    outputIndex += data.getGlyphs().size();
                 }
             }
 
@@ -286,8 +286,8 @@ namespace GGUI {
             
         }
 
-        void base::enableExtensions() {                
-            static std::string queryDeviceAttribute = ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({}).toString();
+        void base::enableExtensions() {
+            static std::string queryDeviceAttribute = ecma::sequence::toString(ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({}));
 
             std::vector<ecma::sequence::base*> unwantedSequences;
 
@@ -337,7 +337,11 @@ namespace GGUI {
             for (auto* sequence : ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize))) {
 
                 // This is likely redundant, since all operations have their own handler to process the functionality of the specific operation
-                if (sequence) INTERNAL::LOGGER::log(sequence->toString());
+                if (sequence) {
+                    std::string tmp;
+                    sequence->toString(tmp);
+                    INTERNAL::LOGGER::log(tmp);
+                }
             }
         }
     }

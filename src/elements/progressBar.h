@@ -3,7 +3,6 @@
 
 #include "element.h"
 
-#include "../core/utils/superString.h"
 #include "../core/utils/color.h"
 #include "../core/utils/style.h"
 
@@ -19,11 +18,11 @@ namespace GGUI{
 
         class part : public STYLING_INTERNAL::styleBase{
         public:
-            INTERNAL::compactString character = INTERNAL::compactString(' ');
+            terminal::cell character = terminal::cell(' ');
             RGB color = COLOR::GRAY;
             partType type = partType::EMPTY;
 
-            constexpr part(partType t, RGB fillColor = COLOR::GREEN, INTERNAL::compactString cs = INTERNAL::compactString(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
+            constexpr part(partType t, RGB fillColor = COLOR::GREEN, terminal::cell cs = terminal::cell(' '), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) { type = t; color = fillColor; character = cs; }
 
             constexpr part() = default;
 
@@ -56,10 +55,10 @@ namespace GGUI{
         protected:
             float Progress = 0; // 0.0 - 1.0
 
-            INTERNAL::compactString Head = INTERNAL::compactString('>');
-            INTERNAL::compactString Body = INTERNAL::compactString('-');
-            INTERNAL::compactString Tail = INTERNAL::compactString('|');
-            INTERNAL::compactString Empty = INTERNAL::compactString(' ');
+            terminal::cell Head = terminal::cell('>');
+            terminal::cell Body = terminal::cell('-');
+            terminal::cell Tail = terminal::cell('|');
+            terminal::cell Empty = terminal::cell(' ');
 
             RGB Head_Color = GGUI::COLOR::LIGHT_GRAY;
             RGB Body_Color = GGUI::COLOR::GRAY;
@@ -99,10 +98,10 @@ namespace GGUI{
              */
             Bar() = default;
 
-            void setHeadCharacter(INTERNAL::compactString cs) { Head = cs; }
-            void setBodyCharacter(INTERNAL::compactString cs) { Body = cs; }
-            void setTailCharacter(INTERNAL::compactString cs) { Tail = cs; }
-            void setEmptyCharacter(INTERNAL::compactString cs) { Empty = cs; }
+            void setHeadCharacter(terminal::cell cs) { Head = cs; }
+            void setBodyCharacter(terminal::cell cs) { Body = cs; }
+            void setTailCharacter(terminal::cell cs) { Tail = cs; }
+            void setEmptyCharacter(terminal::cell cs) { Empty = cs; }
 
             void setHeadColor(RGB color) { Head_Color = color; }
             void setBodyColor(RGB color) { Body_Color = color; }
@@ -193,7 +192,7 @@ namespace GGUI{
              * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the progress bar is rendered correctly.
              * @return A vector of UTF objects representing the rendered progress bar.
              */
-            std::vector<INTERNAL::compactString>& render() override;
+            std::vector<terminal::cell>& render() override;
             
             /**
              * @brief Creates a deep copy of the Progress_Bar object.

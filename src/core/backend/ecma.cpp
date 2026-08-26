@@ -1031,16 +1031,16 @@ namespace GGUI {
 
                         auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
                         if (activeModes.has(mode::group::characterReplacement::IRM_INSERT_HEM_FOLLOWING)) {
-                            std::fill(
+                            std::fill(  TODO("These maybe need to be transformed into just deletes instead of filling with spaces!")
                                 cursorPositionAtBuffer,
                                 cursorPositionAtBuffer + amountToRemove,
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '     // Represents empty cell
                             );
                         } else if (activeModes.has(mode::group::characterReplacement::IRM_INSERT_HEM_PRECEDING)) {
                             std::fill(
                                 cursorPositionAtBuffer - amountToRemove,
                                 cursorPositionAtBuffer,
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '     // Represents empty cell
                             );
                         } else {
                             GGUI::INTERNAL::LOGGER::log("Unknown delete mode at: " + currentStates->ecmaComponents.activePresentationPosition.toString());
@@ -1065,13 +1065,13 @@ namespace GGUI {
                             std::fill(
                                 cursorPositionAtBuffer,
                                 cursorPositionAtBuffer + (amountToRemove * screenWidth),
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '     // Represents empty cell
                             );
                         } else {
                             std::fill(
                                 cursorPositionAtBuffer - (amountToRemove * screenWidth),
                                 cursorPositionAtBuffer,
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '     // Represents empty cell
                             );
                         }
                     }
@@ -1107,7 +1107,7 @@ namespace GGUI {
                             std::fill(
                                 cursorPositionAtBuffer,
                                 cursorPositionAtBuffer + amountToInsert,
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '       // Represents empty cell
                             );
                         } else {
                             auto startOfAffectedArea = cursorPositionAtBuffer - amountToInsert + 1;
@@ -1121,7 +1121,7 @@ namespace GGUI {
                             std::fill(
                                 startOfAffectedArea,
                                 cursorPositionAtBuffer + 1,
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '       // Represents empty cell
                             );
                         }
                     }
@@ -1159,7 +1159,7 @@ namespace GGUI {
                             std::fill(
                                 activeLineBegin,
                                 activeLineBegin + insertedCellCount,
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '       // Represents empty cell
                             );
                         } else {
                             auto startOfAffectedArea = activeLineBegin - insertedCellCount + screenWidth;
@@ -1173,7 +1173,7 @@ namespace GGUI {
                             std::fill(
                                 startOfAffectedArea,
                                 activeLineBegin + screenWidth,
-                                INTERNAL::compactString()   // These will be literally empty, and is by design!
+                                ' '       // Represents empty cell
                             );
                         }
                     }
@@ -1387,7 +1387,7 @@ namespace GGUI {
                         if (!hiddenState_isFirstEnquiry) {
                             static const sequence::transmission response("GGUI"); 
 
-                            answer = response.toString();
+                            response.toString(answer);
                         } else {
                             TODO("Implement response for subsequent ENQUIRY signals. This could include system status, version info, etc.");
                         }
@@ -1525,7 +1525,8 @@ namespace GGUI {
 
                             constexpr uint32_t GGUI_SINGLE_VALUE_IDENTIFIER = 733;
 
-                            auto response = miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({GGUI_SINGLE_VALUE_IDENTIFIER}).toString();
+                            std::string response;
+                            miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({GGUI_SINGLE_VALUE_IDENTIFIER}).toString(response);
 
                             currentStates->transmission.addToQueue(response);
                         } else {

@@ -2,32 +2,9 @@
 
 #include "../core/core.h"
 
-#include <cmath>
-#include <bitset>
-
 namespace GGUI{
     namespace INTERNAL {
         extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
-    }
-
-    /**
-     * @brief Constructor for Sprite class.
-     * @details This constructor initializes a Sprite object with a vector of UTF objects representing the frames,
-     * an offset to determine when to start playing the animation, and a speed to control the animation playback.
-     * @param frames A vector of UTF objects representing the frames of the animation.
-     * @param offset The number of frames to skip before playing the animation.
-     * @param speed The speed of the animation playback.
-     */
-    sprite::sprite(std::vector<INTERNAL::compactString> frames, int offset, int speed)
-        : Frames(frames), Offset(offset), Speed(speed) {
-        // Check if the frames size is an power of twos compliment
-        // This is done to make sure the animation can be looped without any issues
-        if (std::bitset<sizeof(unsigned char)>(Frames.size()).count() == 1)
-            Is_Power_Of_Two = true;
-
-        // Calculate the frame distance to determine how much to increment the frame index
-        // This is done by dividing the maximum value of an unsigned char (255) by the number of frames
-        Frame_Distance = ((float)UINT8_MAX + 1) / (float)Frames.size();
     }
 
     /**
@@ -53,17 +30,17 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(unsigned int x, unsigned int y, sprite& sprite, bool Flush){
+    void canvas::set(unsigned int x, unsigned int y, animationSprite& sprite, bool Flush){
         unsigned int innerWidth = getWidth() - hasBorder()*2;
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
-        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
+        if (!isMultiFrame() && sprite.frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
             INTERNAL::multiFrameCanvas[this] = true;
-            Multi_Frame = true;
+            multiFrame = true;
         }
 
-        Buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
+        buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
         Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
@@ -80,17 +57,17 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush){
+    void canvas::set(unsigned int x, unsigned int y, animationSprite&& sprite, bool Flush){
         unsigned int innerWidth = getWidth() - hasBorder()*2;
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
-        if (!isMultiFrame() && sprite.Frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
+        if (!isMultiFrame() && sprite.frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
             INTERNAL::multiFrameCanvas[this] = true;
-            Multi_Frame = true;
+            multiFrame = true;
         }
 
-        Buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
+        buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
         Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
@@ -107,15 +84,15 @@ namespace GGUI{
      * @param sprite The UTF sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(unsigned int x, unsigned int y, INTERNAL::compactString& sprite, bool Flush){
+    void canvas::set(unsigned int x, unsigned int y, const sprite& sprite, bool Flush){
         unsigned int innerWidth = getWidth() - hasBorder()*2;
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
         
-        Buffer[Location].Frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
+        buffer[Location].frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
 
-        if (!isMultiFrame() && Buffer[Location].Frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
+        if (!isMultiFrame() && buffer[Location].frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
             INTERNAL::multiFrameCanvas[this] = true;
-            Multi_Frame = true;
+            multiFrame = true;
         }
 
         Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
@@ -145,8 +122,8 @@ namespace GGUI{
      *          It also handles the multi-frame list and sprite animations.
      * @return A vector of UTF objects representing the rendered canvas.
      */
-    std::vector<INTERNAL::compactString>& canvas::render() {
-        std::vector<INTERNAL::compactString>& Result = cellBuffer;
+    std::vector<terminal::cell>& canvas::render() {
+        std::vector<terminal::cell>& Result = cellBuffer;
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
@@ -176,8 +153,8 @@ namespace GGUI{
             Result.resize(getWidth() * getHeight(), ' ');
 
             // Also clear and resize the sprite buffer.
-            Buffer.clear();
-            Buffer.resize(fittingWidth * fittingHeight);
+            buffer.clear();
+            buffer.resize(fittingWidth * fittingHeight);
 
             Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
 
@@ -192,6 +169,8 @@ namespace GGUI{
         }
 
         if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
+            Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
+
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
                 for (unsigned int y = 0; y < fittingHeight; y++) {
@@ -200,9 +179,6 @@ namespace GGUI{
                     }
                 }
             }
-            else // report(getName() + " is missing On_Draw call!"); // No error's, since the canvas could use onInit simple draw. 
-
-            Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
         }
 
         if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)) {
@@ -213,25 +189,37 @@ namespace GGUI{
 
         // Apply the color system to the resized result list
         if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)) {
-
             Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
+            
+            graphicalIdentityPool.clear();
 
-            unsigned int Start_X = hasBorder();
-            unsigned int Start_Y = hasBorder();
+            unsigned int startX = hasBorder();
+            unsigned int startY = hasBorder();
 
-            unsigned int End_X = getWidth() - hasBorder();
-            unsigned int End_Y = getHeight() - hasBorder();
+            unsigned int endX = getWidth() - hasBorder();
+            unsigned int endY = getHeight() - hasBorder();
 
-            unsigned int Pixel_Index = 0;
-            for (unsigned int y = Start_Y; y < End_Y; y++) {
-                for (unsigned int x = Start_X; x < End_X; x++) {
-                    Result[x + y * getWidth()] = Buffer[Pixel_Index++].render(Current_Animation_Frame);
+            unsigned int pixelIndex = 0;
+            for (unsigned int y = startY; y < endY; y++) {
+                for (unsigned int x = startX; x < endX; x++) {
+                    auto [glyph, styling] = buffer[pixelIndex++].render(currentAnimationFrame).render();
+                    Result[x + y * getWidth()] = glyph;
+
+                    // before we can add the styling to the identity pool
+                    styling.area.position = getAbsolutePosition() + IVector2{x, y};
+                    styling.origin = this;
+
+                    graphicalIdentityPool.push_back(styling);
                 }
             }
+
+            compileActiveGraphics();    // compiles identifying graphics pools
         }
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
+            Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
+
             renderBorders(Result);
             renderTitle(Result);
         }
@@ -244,295 +232,41 @@ namespace GGUI{
      * @param currentFrame The current frame of the animation.
      * @return The rendered UTF character.
      */
-    INTERNAL::compactString sprite::render(unsigned char currentFrame){
-        int frameCount = Frames.size();
+    sprite animationSprite::render(unsigned char currentFrame){
+        int frameCount = frames.size();
 
         if (frameCount < 2){   // Check if current sprite has animation frames.
-            return Frames.back();
+            return frames.back();
         }
 
-        unsigned char animationFrame = (currentFrame + Offset) * Speed;     // This is our current animation frame
+        unsigned char animationFrame = (currentFrame + offset) * speed;     // This is our current animation frame
 
-        int currentFrameIndex = animationFrame / Frame_Distance;            // This gives us the closest frame to the current animation frame.
+        int currentFrameIndex = animationFrame / frameDistance;            // This gives us the closest frame to the current animation frame.
 
         int frameBelow = currentFrameIndex % frameCount;      // This gives us the how many animations we have passed
 
-        int frameIndexRemainder = animationFrame - frameBelow * Frame_Distance;  // This first transforms the frame below index back into non index based and then tells you how far are you from an "checkpoint" of a actual frame index.
+        int frameIndexRemainder = animationFrame - frameBelow * frameDistance;  // This first transforms the frame below index back into non index based and then tells you how far are you from an "checkpoint" of a actual frame index.
 
         int Frame_Above = (frameBelow + 1) % frameCount;    // only +1, because the currentFrameIndex isn't a real index.
         
-        // now interpolate the foreground color between the two points
-        // GGUI::RGB foreground = INTERNAL::lerp(
-        //     Frames[frameBelow].foreground, 
-        //     Frames[Frame_Above].foreground, 
-        //     frameIndexRemainder,
-        //     Frame_Distance
-        // );
+        sprite result = frames[frameBelow];
 
-        // // do same for background
-        // GGUI::RGB background = INTERNAL::lerp(
-        //     Frames[frameBelow].background, 
-        //     Frames[Frame_Above].background, 
-        //     frameIndexRemainder,
-        //     Frame_Distance
-        // );
+        // now interpolate the glyph color color between the two points
+        result.glyphColor = INTERNAL::lerp(
+            frames[frameBelow].glyphColor, 
+            frames[Frame_Above].glyphColor, 
+            frameIndexRemainder,
+            frameDistance
+        );
 
-        // GGUI::UTF Result = Frames[frameBelow];
-        // Result.setForeground(foreground);
-        // Result.setBackground(background);
+        // do same for background
+        result.backgroundColor = INTERNAL::lerp(
+            frames[frameBelow].backgroundColor, 
+            frames[Frame_Above].backgroundColor, 
+            frameIndexRemainder,
+            frameDistance
+        );
 
-        return ' ';
-    }
-
-    /**
-     * @brief Embeds a vector of points into the canvas.
-     * @param pixels A vector of points where the x and y coordinates are embedded in the vector by row major order.
-     * @param border_style The style of border to use for constructing the bit masks.
-     * @param flush Whether to flush the buffer after embedding the vector.
-     * @return void
-     * @details
-     * This function takes a vector of points and embeds them into the canvas. The points are expected to be in row major order
-     * and the vector should have a size equal to the usable area of the canvas. The function will then construct the bit masks
-     * by analyzing the ways the points connect to each other. The bit masks are then used to construct the symbols on the canvas.
-     * The symbols are looked up in the custom_border map based on the bit mask. If the symbol is not found in the map, the point is skipped.
-     * The function will then set the points in the canvas to the corresponding symbol. If flush is true, the buffer is flushed after
-     * the points are set.
-     */
-    void GGUI::canvas::embedPoints(std::vector<bool> pixels, styledBorder border_style, bool forceFlush){
-
-        unsigned int Usable_Width = getWidth() - 2 * hasBorder();
-        unsigned int Usable_Height = getHeight() - 2 * hasBorder();
-
-        // first check that the embed-able vector is within the usable area.
-        if (pixels.size() != Usable_Width * Usable_Height){
-            INTERNAL::reportStack("The size of the embed-able vector is not the same as the size of the usable area. Expected: " + std::to_string((getWidth() - 2 * hasBorder()) * (getHeight() - 2 * hasBorder())) + " Got: " + std::to_string(pixels.size()));
-        }
-
-        // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
-        for (unsigned int Y = 0; Y < Usable_Height; Y++){
-            for (unsigned int X = 0; X < Usable_Width; X++){
-                INTERNAL::borderConnection Current_Masks = INTERNAL::borderConnection::NONE;
-
-                if ((signed)Y - 1 < 0 && pixels[X + ((signed)Y - 1) * Usable_Width])
-                    Current_Masks |= INTERNAL::borderConnection::UP;
-
-                if (Y >= Usable_Height && pixels[X + (Y + 1) * Usable_Width])
-                    Current_Masks |= INTERNAL::borderConnection::DOWN;
-
-                if ((signed)X - 1 < 0 && pixels[(signed)X - 1 + Y * Usable_Width])
-                    Current_Masks |= INTERNAL::borderConnection::LEFT;
-
-                if (X >= Usable_Width && pixels[(X + 1) + Y * Usable_Width])
-                    Current_Masks |= INTERNAL::borderConnection::RIGHT;
-
-                const char* currentBorder = border_style.getBorder(Current_Masks);
-
-                if (!currentBorder) {
-                    continue;
-                }
-
-                // UTF tmp(currentBorder);
-
-                // set(X, Y, tmp, false);
-            }
-        }
-
-        if (forceFlush)
-            flush();
-
-        return;
-    }
-
-    namespace DRAW{
-
-        /**
-         * @brief Draws a line on the canvas.
-         * @param x1 The x-coordinate of the first point.
-         * @param y1 The y-coordinate of the first point.
-         * @param x2 The x-coordinate of the second point.
-         * @param y2 The y-coordinate of the second point.
-         * @param pixels The vector of pixels of the canvas.
-         * @param width The width of the canvas.
-         * @details
-         * This function draws a line on the canvas by setting the pixels to true.
-         * It uses the Bresenham line drawing algorithm to determine which pixels to set.
-         */
-        void line(int x1, int y1, int x2, int y2, std::vector<bool>& pixels, int width) {
-            int dx = abs(x2 - x1);
-            int dy = abs(y2 - y1);
-            int sx = (x1 < x2) ? 1 : -1;
-            int sy = (y1 < y2) ? 1 : -1;
-            int err = dx - dy;
-
-            while(true) {
-                // Set the pixel at this position to true
-                pixels[y1 * width + x1] = true;
-
-                if (x1 == x2 && y1 == y2) break;
-                int e2 = 2 * err;
-                if (e2 > -dy) {
-                    err -= dy;
-                    x1 += sx;
-                }
-                if (e2 < dx) {
-                    err += dx;
-                    y1 += sy;
-                }
-            }
-        }
-
-        /**
-         * @brief Helper function for the above, creates a line on a given buffer.
-         * @param Start The starting point of the line.
-         * @param End The ending point of the line.
-         * @param Buffer_Width The width of the buffer.
-         * @return A vector of booleans representing the line on the buffer.
-         * @details
-         * This function creates a line on a given buffer by setting the pixels to true.
-         * It uses the Bresenham line drawing algorithm to determine which pixels to set.
-         */
-        std::vector<bool> line(FVector2 Start, FVector2 End, int Buffer_Width){
-            std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
-
-            line(Start.x, Start.y, End.x, End.y, Result, Buffer_Width);
-
-            return Result;
-        }
-
-        /**
-         * @brief Fills a circle in a given buffer with true values.
-         * @param x_center The x position of the center of the circle.
-         * @param y_center The y position of the center of the circle.
-         * @param x The current x position of the circle.
-         * @param y The current y position of the circle.
-         * @param pixels The buffer to fill.
-         * @param width The width of the buffer.
-         */
-        void symmetryFillerForCircle(int x_center, int y_center, int x, int y, std::vector<bool>& pixels, int width){
-            // Fill in the circle symmetrically
-            // 8 points for each circle
-            pixels[(y_center+y)*width + (x_center+x)] = true;
-            pixels[(y_center-y)*width + (x_center+x)] = true;
-            pixels[(y_center+y)*width + (x_center-x)] = true;
-            pixels[(y_center-y)*width + (x_center-x)] = true;
-            pixels[(y_center+x)*width + (x_center+y)] = true;
-            pixels[(y_center-x)*width + (x_center+y)] = true;
-            pixels[(y_center+x)*width + (x_center-y)] = true;
-            pixels[(y_center-x)*width + (x_center-y)] = true;
-        }
-
-        /**
-         * @brief Fills a circle in a given buffer with true values.
-         * @param x_center The x position of the center of the circle.
-         * @param y_center The y position of the center of the circle.
-         * @param r The radius of the circle.
-         * @param pixels The buffer to fill.
-         * @param width The width of the buffer.
-         * @details
-         * This function fills a circle in a given buffer with true values by
-         * using the Bresenham circle drawing algorithm to determine which pixels
-         * to set.
-         */
-        void circle(int x_center, int y_center, int r, std::vector<bool>& pixels, int width){
-            int x = 0, y = r;
-            int d = 3 - 2 * r;
-            // Fill in the circle symmetrically
-            // 8 points for each circle
-            symmetryFillerForCircle(x_center, y_center, x, y, pixels, width);
-            while (y >= x) {
-                x++;
-                if (d > 0) {
-                    // Move to the next point in the circle
-                    y--;
-                    // Update the error term
-                    d = d + 4 * (x - y) + 10;
-                } else {
-                    // Move to the next point in the circle
-                    // Update the error term
-                    d = d + 4 * x + 6;
-                }
-                // Fill in the circle symmetrically
-                // 8 points for each circle
-                symmetryFillerForCircle(x_center, y_center, x, y, pixels, width);
-            }
-        }
-
-        /**
-         * @brief Fills a circle in a given buffer with true values.
-         * @param Center The center of the circle.
-         * @param Radius The radius of the circle.
-         * @param Buffer_Width The width of the buffer.
-         * @return A boolean vector representing the circle.
-         * @details
-         * This function fills a circle in a given buffer with true values by
-         * using the Bresenham circle drawing algorithm to determine which pixels
-         * to set.
-         */
-        std::vector<bool> circle(FVector2 Center, int Radius, int Buffer_Width){
-            std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
-
-            circle(Center.x, Center.y, Radius, Result, Buffer_Width);
-
-            return Result;
-        }
-
-        /**
-         * @brief Draws a cubic Bezier curve in a given buffer with true values.
-         * @param P0 The first control point of the curve.
-         * @param P1 The second control point of the curve.
-         * @param P2 The third control point of the curve.
-         * @param P3 The fourth control point of the curve.
-         * @param Buffer_Width The width of the buffer.
-         * @param pixels The boolean vector representing the buffer.
-         * @details
-         * This function draws a cubic Bezier curve in a given buffer with true values by
-         * using the parametric equation of the Bezier curve to determine which pixels
-         * to set.
-         */
-        void cubicBezierCurve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, std::vector<bool>& pixels, int width){
-            for (float t = 0.0f; t <= 1.0f; t += 0.001f) {
-                float u = 1 - t;
-                float tt = t*t, uu = u*u;
-                float uuu = uu * u, ttt = tt * t;
-
-                FVector2 P;
-                P.x = uuu * P0.x; //influence of P0
-                P.y = uuu * P0.y; 
-
-                P.x += 3 * uu * t * P1.x; //influence of P1
-                P.y += 3 * uu * t * P1.y; 
-
-                P.x += 3 * u * tt * P2.x; //influence of P2
-                P.y += 3 * u * tt * P2.y; 
-
-                P.x += ttt * P3.x; //influence of P3
-                P.y += ttt * P3.y; 
-
-                pixels[P.y * width + P.x] = true;
-            }
-        }
-
-        /**
-         * @brief Draws a cubic Bezier curve in a given buffer with true values.
-         * @param P0 The first control point of the curve.
-         * @param P1 The second control point of the curve.
-         * @param P2 The third control point of the curve.
-         * @param P3 The fourth control point of the curve.
-         * @param Buffer_Width The width of the buffer.
-         * @return A boolean vector representing the buffer with true values where the curve is drawn.
-         * @details
-         * This function draws a cubic Bezier curve in a given buffer with true values by
-         * using the parametric equation of the Bezier curve to determine which pixels
-         * to set.
-         */
-        std::vector<bool> cubicBezierCurve(FVector2 P0, FVector2 P1, FVector2 P2, FVector2 P3, int Buffer_Width){
-            std::vector<bool> Result = std::vector<bool>(Buffer_Width * Buffer_Width, false);
-
-            cubicBezierCurve(P0, P1, P2, P3, Result, Buffer_Width);
-
-            return Result;
-        }
-
-
+        return result;
     }
 }

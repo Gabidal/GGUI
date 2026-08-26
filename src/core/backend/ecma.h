@@ -518,7 +518,7 @@ namespace GGUI {
                                 
                                 // check if this isn't the last index, if so add the fraction
                                 if (i != subNumbers.size() - 1) {
-                                    output += static_cast<char>(table::parameters::FRACTION);
+                                    output += GGUI::table::toString(table::parameters::FRACTION);
                                 }
                             }
                         }
@@ -616,16 +616,16 @@ namespace GGUI {
 
                     constexpr void toString(std::string& output) const {
                         for (const auto& interm : intermediates) {
-                            output += static_cast<uint8_t>(interm);
+                            output += GGUI::table::toString(interm);
                         }
 
-                        number::toString(output, function);
+                        output += GGUI::table::toString(function);
                     }
 
                     constexpr void toString(writerView<char>& preAllocated) const {
                         preAllocated.write(std::span<const table::intermediate::identifiers>(intermediates.data(), intermediates.size()));
 
-                        number::toString(preAllocated, function);
+                        GGUI::table::toString(preAllocated, function);
                     }
                 };
 
@@ -667,20 +667,20 @@ namespace GGUI {
 
                     constexpr void toString(std::string& output) const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
-                            number::toString(output, table::C0::ESC);
-                            number::toString(output, header);
+                            output += GGUI::table::toString(table::C0::ESC);
+                            output += GGUI::table::toString(header);
                         } else {
-                            number::toString(output, header);
+                            output += GGUI::table::toString(header);
                         }
                     }
 
                     // This will break unless the buffer is correctly pre allocated and correct size.
                     constexpr void toString(writerView<char>& preAllocated) const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
-                            number::toString(preAllocated, table::C0::ESC);
-                            number::toString(preAllocated, header);
+                            GGUI::table::toString(preAllocated, table::C0::ESC);
+                            GGUI::table::toString(preAllocated, header);
                         } else {
-                            number::toString(preAllocated, header);
+                            GGUI::table::toString(preAllocated, header);
                         }
                     }
 
@@ -811,7 +811,7 @@ namespace GGUI {
                         // Output all parameters, separated by the parameter delimiter (03/11 ';')
                         for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
                             if (parameterIndex > 0) {
-                                output += static_cast<char>(table::parameters::SEPARATOR);
+                                output += GGUI::table::toString(table::parameters::SEPARATOR);
                             }
                             parameters[parameterIndex].toString(output);
                         }
@@ -825,7 +825,7 @@ namespace GGUI {
                         // Output all parameters, separated by the parameter delimiter (03/11 ';')
                         for (size_t parameterIndex = 0; parameterIndex < parameters.size(); parameterIndex++) {
                             if (parameterIndex > 0) {
-                                number::toString(preAllocated, table::parameters::SEPARATOR);
+                                GGUI::table::toString(preAllocated, table::parameters::SEPARATOR);
                             }
                             parameters[parameterIndex].toString(preAllocated);
                         }
@@ -934,21 +934,21 @@ namespace GGUI {
                     }
 
                     constexpr void toString(writerView<char>& preAllocated) const override {
-                        if (type == types::HEADER) number::toString(preAllocated, table::C0::SOH);
-                        else                       number::toString(preAllocated, table::C0::STX);
+                        if (type == types::HEADER) GGUI::table::toString(preAllocated, table::C0::SOH);
+                        else                       GGUI::table::toString(preAllocated, table::C0::STX);
 
                         for (const auto& c : primary) {
-                            number::toString(preAllocated, c);
+                            GGUI::table::toString(preAllocated, c);
                         }
 
                         if (!secondary.empty()) {
-                            number::toString(preAllocated, table::C0::STX);
+                            GGUI::table::toString(preAllocated, table::C0::STX);
                             for (const auto& c : secondary) {
-                                number::toString(preAllocated, c);
+                                GGUI::table::toString(preAllocated, c);
                             }
                         } else {
-                            if (type == types::HEADER)  number::toString(preAllocated, table::C0::ETB);
-                            else                        number::toString(preAllocated, table::C0::ETX);
+                            if (type == types::HEADER)  GGUI::table::toString(preAllocated, table::C0::ETB);
+                            else                        GGUI::table::toString(preAllocated, table::C0::ETX);
                         }
                     }
                 };
@@ -965,6 +965,13 @@ namespace GGUI {
 
                 constexpr void toString(std::string& output, base&& parsed) {
                     parsed.toString(output);
+                }
+
+                // Prefer not to use this unless for compile time constants!
+                constexpr std::string toString(base&& parsed) {
+                    std::string output;
+                    parsed.toString(output);
+                    return output;
                 }
             }
 
@@ -2037,7 +2044,7 @@ namespace GGUI {
                 IVector2 activePresentationPosition;
                 IVector2 activeScreenDimensions;
 
-                std::vector<char32_t> activePresentationBuffer;
+                std::vector<terminal::cell> activePresentationBuffer;
 
                 constexpr auto getPresentationPositionAsBufferAddress() {
                     return activePresentationBuffer.begin() + activePresentationPosition.y * activeScreenDimensions.x + activePresentationPosition.x;
@@ -2233,7 +2240,7 @@ namespace GGUI {
                     
                     template<typename rawParameterType = parameterType>
                     constexpr std::vector<parameterType> normalizeParameters(const std::vector<rawParameterType>& params) const {
-                        assert(parameterExtension == specialTypes::HAS_INFINITE_PARAMETERS && params.size() > paramCount && "Too many parameters were given!");
+                        assert(parameterExtension == specialTypes::HAS_INFINITE_PARAMETERS || params.size() <= paramCount && "Too many parameters were given!");
 
                         auto result = std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end());
                         const auto converted = convertParameters(params);
@@ -2249,7 +2256,7 @@ namespace GGUI {
                     constexpr codeType compile(
                         const std::vector<otherParameterType>& params = {}
                     ) const {
-                        assert(parameterExtension == specialTypes::HAS_INFINITE_PARAMETERS && params.size() > paramCount && "Too many parameters were given!");
+                        assert(parameterExtension == specialTypes::HAS_INFINITE_PARAMETERS || params.size() <= paramCount && "Too many parameters were given!");
 
                         return function.compile(normalizeParameters(params));
                     }
@@ -2267,14 +2274,19 @@ namespace GGUI {
                 };
 
                 template<
-                    typename U,
                     specialTypes parameterExtension = specialTypes::NORMAL,
+                    typename U = sequence::prefix<>,
                     typename... listedArgs
                 >
-                requires (std::is_convertible_v<listedArgs, typename templateUnpacker<U>::parameter_type> && ...)
+                requires (
+                    (std::is_convertible_v<listedArgs, typename templateUnpacker<U>::parameter_type> && ...) &&
+                    (!std::is_same_v<std::remove_cvref_t<listedArgs>, configuration::page*> && ...) &&
+                    (!std::is_same_v<std::remove_cvref_t<listedArgs>, std::nullptr_t> && ...)
+                )
                 constexpr auto makeSequencePreset(
                     U code,
                     configuration::cell functionality = {},
+                    configuration::page* page = nullptr,
                     listedArgs... defaultParams
                 ) {
                     using P = typename templateUnpacker<U>::parameter_type;
@@ -2282,9 +2294,37 @@ namespace GGUI {
                     return base<U, sizeof...(listedArgs), parameterExtension>(
                         code, 
                         std::vector<P>{ static_cast<P>(defaultParams)... }, 
-                        functionality
+                        functionality,
+                        page
                     );
                 }
+
+                template<
+                    specialTypes parameterExtension = specialTypes::NORMAL,
+                    typename U = sequence::prefix<>,
+                    typename... listedArgs
+                >
+                requires (
+                    (std::is_convertible_v<listedArgs, typename templateUnpacker<U>::parameter_type> && ...) &&
+                    (!std::is_same_v<std::remove_cvref_t<listedArgs>, configuration::page*> && ...) &&
+                    (!std::is_same_v<std::remove_cvref_t<listedArgs>, std::nullptr_t> && ...)
+                )
+                constexpr auto makeSequencePatch(
+                    U code,
+                    configuration::cell functionality = {},
+                    configuration::cellPatch* patch = nullptr,
+                    listedArgs... defaultParams
+                ) {
+                    using P = typename templateUnpacker<U>::parameter_type;
+
+                    return base<U, sizeof...(listedArgs), parameterExtension>(
+                        code, 
+                        std::vector<P>{ static_cast<P>(defaultParams)... }, 
+                        functionality,
+                        patch
+                    );
+                }
+
 
                 namespace delimiters {
                     /**
@@ -2536,7 +2576,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/00` or `9/11 Pn 06/00`
                      * @param Pn default(1)
                      */
-                    const inline auto CHARACTER_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPA), {operate_CHARACTER_POSITION_ABSOLUTE}, 1);
+                    const inline auto CHARACTER_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPA), {operate_CHARACTER_POSITION_ABSOLUTE}, nullptr, 1);
 
                     /**
                      * @brief HPB causes the active data position to be moved by n character positions in the data component in the
@@ -2544,7 +2584,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/10` or `9/11 Pn 06/10`
                      * @param Pn default(1)
                      */
-                    const inline auto CHARACTER_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPB), {operate_CHARACTER_POSITION_BACKWARD}, 1);
+                    const inline auto CHARACTER_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPB), {operate_CHARACTER_POSITION_BACKWARD}, nullptr, 1);
 
                     /**
                      * @brief HPR causes the active data position to be moved by n character positions in the data component in the
@@ -2552,7 +2592,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/01` or `9/11 Pn 06/01`
                      * @param Pn default(1)
                      */
-                    const inline auto CHARACTER_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPR), {operate_CHARACTER_POSITION_FORWARD}, 1);
+                    const inline auto CHARACTER_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HPR), {operate_CHARACTER_POSITION_FORWARD}, nullptr, 1);
 
                     /**
                      * @brief HT causes the active presentation position to be moved to the following character tabulation stop in the presentation component.
@@ -2590,7 +2630,7 @@ namespace GGUI {
                      * progression, where n equals the value of Pn1 and m equals the value of Pn2. 
                      * @example `01/11 05/11 Pn1;Pn2 06/06` or `9/11 Pn1;Pn2 06/06`
                      */
-                    const inline auto CHARACTER_AND_LINE_POSITION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HVP), {operate_CHARACTER_AND_LINE_POSITION}, 1, 1);
+                    const inline auto CHARACTER_AND_LINE_POSITION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::HVP), {operate_CHARACTER_AND_LINE_POSITION}, nullptr, 1, 1);
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, LF causes the
@@ -2651,21 +2691,21 @@ namespace GGUI {
                      * position on the n-th page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/00` or `9/11 Pn 02/00 05/00`
                      */
-                    const inline auto PAGE_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPA), {operate_PAGE_POSITION_ABSOLUTE}, 1);
+                    const inline auto PAGE_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPA), {operate_PAGE_POSITION_ABSOLUTE}, nullptr, 1);
 
                     /**
                      * @brief PPB causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th preceding page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/02` or `9/11 Pn 02/00 05/02`
                      */
-                    const inline auto PAGE_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPB), {operate_PAGE_POSITION_BACKWARD}, 1);
+                    const inline auto PAGE_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPB), {operate_PAGE_POSITION_BACKWARD}, nullptr, 1);
                     
                     /**
                      * @brief PPR causes the active data position to be moved in the data component to the corresponding character
                      * position on the n-th following page, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 02/00 05/01` or `9/11 Pn 02/00 05/01`
                      */
-                    const inline auto PAGE_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPR), {operate_PAGE_POSITION_FORWARD}, 1);
+                    const inline auto PAGE_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::PPR), {operate_PAGE_POSITION_FORWARD}, nullptr, 1);
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, RI causes the
@@ -2693,7 +2733,7 @@ namespace GGUI {
                             ALL_LINE_AND_CHARACTER_TABULATORS
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::TBC), {operate_TABULATION_CLEAR}, types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::TBC), {operate_TABULATION_CLEAR}, nullptr, types::CHARACTER_TABULATOR_IN_ACTIVE_POSITION);
                     }
 
                     /**
@@ -2703,7 +2743,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/04` or `9/11 Pn 02/00 06/04`
                      * @param Pn default(None)
                      */
-                    const inline auto TABULATION_STOP_REMOVE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TSR), {operate_TABULATION_STOP_REMOVE}, -1);
+                    const inline auto TABULATION_STOP_REMOVE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TSR), {operate_TABULATION_STOP_REMOVE}, nullptr, -1);
                     
                     /**
                      * @brief VPA causes the active data position to be moved to line position n in the data component in a direction
@@ -2711,7 +2751,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/04` or `9/11 Pn 06/04`
                      * @param Pn default(1)
                      */
-                    const inline auto LINE_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPA), {operate_LINE_POSITION_ABSOLUTE}, 1);
+                    const inline auto LINE_POSITION_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPA), {operate_LINE_POSITION_ABSOLUTE}, nullptr, 1);
 
                     /**
                      * @brief VPB causes the active data position to be moved by n line positions in the data component in a direction
@@ -2719,14 +2759,14 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/11` or `9/11 Pn 06/11`
                      * @param Pn default(1)
                      */
-                    const inline auto LINE_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPB), {operate_LINE_POSITION_BACKWARD}, 1);
+                    const inline auto LINE_POSITION_BACKWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPB), {operate_LINE_POSITION_BACKWARD}, nullptr, 1);
 
                     /**
                      * @brief VPR causes the active data position to be moved by n line positions in the data component in a direction
                      * parallel to the line progression, where n equals the value of Pn. 
                      * @example `01/11 05/11 Pn 06/05` or `9/11 Pn 06/05`
                      */
-                    const inline auto LINE_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPR), {operate_LINE_POSITION_FORWARD}, 1);
+                    const inline auto LINE_POSITION_FORWARD = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::VPR), {operate_LINE_POSITION_FORWARD}, nullptr, 1);
 
                     /**
                      * @brief VT causes the active presentation position to be moved in the presentation component to the
@@ -2772,7 +2812,7 @@ namespace GGUI {
                      * @param Pn1 default(none)
                      * @param Pn2 default(none)
                      */
-                    const inline auto DIMENSION_TEXT_AREA = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::DTA), {operate_DIMENSION_TEXT_AREA}, -1, -1);
+                    const inline auto DIMENSION_TEXT_AREA = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::DTA), {operate_DIMENSION_TEXT_AREA}, nullptr, -1, -1);
 
                     /**
                      * @brief FNT is used to identify the character font to be selected as primary or alternative font by subsequent
@@ -2781,7 +2821,7 @@ namespace GGUI {
                      * @param Ps1 default(0)    <-- font slot to load
                      * @param Ps2 default(0)    <-- font ID
                      */
-                    const inline auto FONT_SELECTION = makeSequencePreset(sequence::control<sequence::parameter::selectable<fontSlots>, table::finalWithIntermediate>(table::finalWithIntermediate::FNT), {operate_FONT_SELECTION}, fontSlots::PRIMARY, (fontSlots)0 /* Due to limitations, this secondary is also used as an selectable, stated in ecma-48 8.3.53 */);
+                    const inline auto FONT_SELECTION = makeSequencePreset(sequence::control<sequence::parameter::selectable<fontSlots>, table::finalWithIntermediate>(table::finalWithIntermediate::FNT), {operate_FONT_SELECTION}, nullptr, fontSlots::PRIMARY, (fontSlots)0 /* Due to limitations, this secondary is also used as an selectable, stated in ecma-48 8.3.53 */);
 
                     /**
                      * @brief GCC is used to indicate that two or more graphic characters are to be imaged as one single graphic
@@ -2802,7 +2842,7 @@ namespace GGUI {
                             END             //                     end of string characters to be images as a single graphic symbol.
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::GCC), {operate_GRAPHIC_CHARACTER_COMBINATION}, types::DOUBLE_WIDE);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::GCC), {operate_GRAPHIC_CHARACTER_COMBINATION}, nullptr, types::DOUBLE_WIDE);
                     }
 
                     /**
@@ -2813,7 +2853,7 @@ namespace GGUI {
                      * @param Pn1 default(100) specifies the height as a percentage of the height established by GSS
                      * @param Pn2 default(100) specifies the width as a percentage of the width established by GSS 
                      */
-                    const inline auto GRAPHIC_SIZE_MODIFICATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::GSM), {operate_GRAPHIC_SIZE_MODIFICATION}, 100, 100);
+                    const inline auto GRAPHIC_SIZE_MODIFICATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::GSM), {operate_GRAPHIC_SIZE_MODIFICATION}, nullptr, 100, 100);
 
                     /**
                      * @brief GSS is used to establish for subsequent text the height and the width of all primary and alternative fonts
@@ -2825,7 +2865,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/03` or `9/11 Pn 02/00 04/03`
                      * @param Pn default(none) specifies the height, the width is implicitly defined by the height.
                      */
-                    const inline auto GRAPHIC_SIZE_SELECTION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::GSS), {operate_GRAPHIC_SIZE_SELECTION}, -1);
+                    const inline auto GRAPHIC_SIZE_SELECTION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::GSS), {operate_GRAPHIC_SIZE_SELECTION}, nullptr, -1);
                     
                     /**
                      * @brief JFY is used to indicate the beginning of a string of graphic characters in the presentation component that
@@ -2836,7 +2876,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      * @param ... 
                      */
-                    const inline auto JUSTIFY = makeSequencePreset<sequence::control<sequence::parameter::selectable<justify::types>, table::finalWithIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<justify::types>, table::finalWithIntermediate>(table::finalWithIntermediate::JFY), {operate_JUSTIFY}, justify::types::NO_JUSTIFICATION);
+                    const inline auto JUSTIFY = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<justify::types>, table::finalWithIntermediate>(table::finalWithIntermediate::JFY), {operate_JUSTIFY}, nullptr, justify::types::NO_JUSTIFICATION);
 
                     /**
                      * @brief NBH is used to indicate a point where a line break shall not occur when text is formatted. 
@@ -2855,7 +2895,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 02/00 05/10` or `9/11 Ps 02/00 05/10`
                      * @param Ps default(0)
                      */
-                    const inline auto PRESENTATION_EXPAND_OR_CONTRACT = makeSequencePreset(sequence::control<sequence::parameter::selectable<spacingFactor::types>, table::finalWithIntermediate>(table::finalWithIntermediate::PEC), {operate_PRESENTATION_EXPAND_OR_CONTRACT}, spacingFactor::types::NORMAL);
+                    const inline auto PRESENTATION_EXPAND_OR_CONTRACT = makeSequencePreset(sequence::control<sequence::parameter::selectable<spacingFactor::types>, table::finalWithIntermediate>(table::finalWithIntermediate::PEC), {operate_PRESENTATION_EXPAND_OR_CONTRACT}, nullptr, spacingFactor::types::NORMAL);
 
                     /**
                      * @brief PFS is used to establish the available area for the imaging of pages of text based on paper size. 
@@ -2886,7 +2926,7 @@ namespace GGUI {
                             B4_LONG_LINES
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<format>, table::finalWithIntermediate>(table::finalWithIntermediate::PFS), {}, format::TALL_BASIC_COMMUNICATION);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<format>, table::finalWithIntermediate>(table::finalWithIntermediate::PFS), {}, nullptr, format::TALL_BASIC_COMMUNICATION);
                     }
 
                     /**
@@ -2932,7 +2972,7 @@ namespace GGUI {
                             BEGINNING_OF_SUPPLEMENTARY_CHINESE_PHONETIC_ANNOTATION
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::PTX), {}, types::END);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::PTX), {}, nullptr, types::END);
                     }
 
                     /**
@@ -2961,7 +3001,7 @@ namespace GGUI {
                             FLUSH_TO_BOTH_MARGINS
                         };
 
-                        const inline auto code = makeSequencePreset<sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::QUAD), {}, types::FLUSH_TO_LINE_HOME_POSITION_MARGIN);
+                        const inline auto code = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::QUAD), {}, nullptr, types::FLUSH_TO_LINE_HOME_POSITION_MARGIN);
                     }
 
                     /**
@@ -2973,7 +3013,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 05/12` or `9/11 Pn 02/00 05/12`
                      * @param Pn default(0)
                      */
-                    const inline auto SET_ADDITIONAL_CHARACTER_SEPARATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SACS), {}, 0);
+                    const inline auto SET_ADDITIONAL_CHARACTER_SEPARATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SACS), {}, nullptr, 0);
                     
                     /**
                      * @brief SAPV is used to specify one or more variants for the presentation of subsequent text.
@@ -3008,7 +3048,7 @@ namespace GGUI {
                             CANCEL_PERSISTENT_FORM_MODE                     // cancels the effect of parameter value 21, i.e. re-establishes the effect of parameter values 5, 6, 7, and 8 for the next single graphic character only
                         };
 
-                        const inline auto code = makeSequencePreset<sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SAPV), {}, types::DEFAULT);
+                        const inline auto code = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SAPV), {}, nullptr, types::DEFAULT);
                     }
 
                     /**
@@ -3031,7 +3071,7 @@ namespace GGUI {
                             ROTATE_315                                      // 315 degrees.
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SCO), {}, types::DEFAULT);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SCO), {}, nullptr, types::DEFAULT);
                     }
 
                     /**
@@ -3066,7 +3106,7 @@ namespace GGUI {
                                                                     the active data position in the data component is updated accordingly.  */
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SCP), {}, types::LEFT_TO_RIGHT, types::BUFFER_TO_DISPLAY);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SCP), {}, nullptr, types::LEFT_TO_RIGHT, types::BUFFER_TO_DISPLAY);
                     }
 
                     /**
@@ -3103,7 +3143,7 @@ namespace GGUI {
                             START_OF_A_DIRECTED_RIGHT_TO_LEFT_STRING,   // Establish the direction right-to-left
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SDS), {}, types::END_OF_DIRECTED_STRING);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SDS), {}, nullptr, types::END_OF_DIRECTED_STRING);
                     }
 
                     /**
@@ -3112,7 +3152,7 @@ namespace GGUI {
                      * the GRAPHIC RENDITION COMBINATION MODE (GRCM).
                      * @example `01/11 05/11 Ps... 06/13` or `9/11 Ps... 06/13`
                      */
-                    const inline auto SELECT_GRAPHIC_RENDITION = makeSequencePreset<sequence::control<sequence::parameter::selectable<graphicalTextAttributes>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<graphicalTextAttributes>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SGR), {operate_SELECT_GRAPHIC_RENDITION}, graphicalTextAttributes::DEFAULT);
+                    const inline auto SELECT_GRAPHIC_RENDITION = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<graphicalTextAttributes>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SGR), {operate_SELECT_GRAPHIC_RENDITION}, nullptr, graphicalTextAttributes::DEFAULT);
 
                     /**
                      * @brief SHS is used to establish the character spacing for subsequent text. 
@@ -3131,7 +3171,7 @@ namespace GGUI {
                             FIT_4_CHARACTERS_PER_24_4_MM
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SHS), {}, types::FIT_10_CHARACTERS_PER_25_4_MM);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SHS), {}, nullptr, types::FIT_10_CHARACTERS_PER_25_4_MM);
                     }
 
                     /**
@@ -3140,7 +3180,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 05/14` or `9/11 Ps 05/14`
                      * @param Ps default(0)
                      */
-                    const inline auto SELECT_IMPLICIT_MOVEMENT_DIRECTION = makeSequencePreset(sequence::control<sequence::parameter::selectable<components::characterMovementDirection>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SIMD), {}, components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION);
+                    const inline auto SELECT_IMPLICIT_MOVEMENT_DIRECTION = makeSequencePreset(sequence::control<sequence::parameter::selectable<components::characterMovementDirection>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SIMD), {}, nullptr, components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION);
 
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE is set to PRESENTATION, 
@@ -3195,7 +3235,7 @@ namespace GGUI {
                      * @param Ps1 default(0)
                      * @param Ps2 default(0)
                      */
-                    const inline auto SELECT_PRESENTATION_DIRECTIONS = makeSequencePreset(sequence::control<sequence::parameter::selectable<presentationDirections>, table::finalWithIntermediate>(table::finalWithIntermediate::SPD), {}, presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT, presentationDirections::STALL);
+                    const inline auto SELECT_PRESENTATION_DIRECTIONS = makeSequencePreset(sequence::control<sequence::parameter::selectable<presentationDirections>, table::finalWithIntermediate>(table::finalWithIntermediate::SPD), {}, nullptr, presentationDirections::HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT, presentationDirections::STALL);
 
                     // inline base<sequence::controlSequence<sequence::parameter::numeric>, 1> SET_PAGE_HOME                                 =       sequence::controlSequence<sequence::parameter::numeric>(1, table::finalWithIntermediate, table::finalWithIntermediate::SPH); // Ecma lists these, but there are no mentions in the tables.
                     
@@ -3225,7 +3265,7 @@ namespace GGUI {
                             FAST_SPEED              // Draft quality
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SPQR), {}, types::SLOW_SPEED);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SPQR), {}, nullptr, types::SLOW_SPEED);
                     }
 
                     /**
@@ -3237,7 +3277,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 06/06` or `9/11 Pn 02/00 06/06`
                      * @param Pn default(0)
                      */
-                    const inline auto SET_REDUCED_CHARACTER_SEPARATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SRCS), {}, 0);
+                    const inline auto SET_REDUCED_CHARACTER_SEPARATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SRCS), {}, nullptr, 0);
                     
                     /**
                      * @brief SRS is used to establish in the data component the beginning and the end of a string of characters as well
@@ -3264,7 +3304,7 @@ namespace GGUI {
                             START_OF_REVERSED_STRING                    // beginning of a reversed string; reverse the direction
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SRS), {}, types::END_OF_REVERSED_STRING);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SRS), {}, nullptr, types::END_OF_REVERSED_STRING);
                     }
 
                     /**
@@ -3286,7 +3326,7 @@ namespace GGUI {
                             DECIPOINT                           // 0,035 14 mm (35/996 mm)
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SSU), {}, types::CHARACTER);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SSU), {}, nullptr, types::CHARACTER);
                     }
 
                     /**
@@ -3333,7 +3373,7 @@ namespace GGUI {
                             TWO_LINES_PER_25_4_MM       // 2 lines per 25,4 mm
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SVS), {}, types::SIX_LINES_PER_25_4_MM);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithIntermediate>(table::finalWithIntermediate::SVS), {}, nullptr, types::SIX_LINES_PER_25_4_MM);
                     }
 
                     /**
@@ -3382,7 +3422,7 @@ namespace GGUI {
                      * @param Pn1 default(None)
                      * @param Pn2 default(32)
                      */
-                    const inline auto TABULATION_CENTRED_ON_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TCC), {}, 0, 32);
+                    const inline auto TABULATION_CENTRED_ON_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::TCC), {}, nullptr, 0, 32);
                     
                     /**
                      * @brief TSS is used to establish the width of a thin space for subsequent text. 
@@ -3420,7 +3460,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/00` or `9/11 Pn 05/00`
                      * @param Pn default(1) 
                      */
-                    const inline auto DELETE_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DCH), {operate_DELETE_CHARACTER}, 1);
+                    const inline auto DELETE_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DCH), {operate_DELETE_CHARACTER}, nullptr, 1);
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, DL causes the
@@ -3445,7 +3485,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/13` or `9/11 Pn 04/13`
                      * @param Pn default(1)
                      */
-                    const inline auto DELETE_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DL), {operate_DELETE_LINE}, 1);
+                    const inline auto DELETE_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DL), {operate_DELETE_LINE}, nullptr, 1);
 
                     /**
                      * @brief This sequence means two different things based on previous sequence.
@@ -3472,7 +3512,7 @@ namespace GGUI {
                                                                                        2) All character positions in the qualified area are put into the erased state  */
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EA), {}, types::FROM_ACTIVE_POSITION_UNTIL_QUALIFIED_AREA_END);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EA), {}, nullptr, types::FROM_ACTIVE_POSITION_UNTIL_QUALIFIED_AREA_END);
                     }
 
                     /**
@@ -3487,7 +3527,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/08` or `9/11 Pn 05/08`
                      * @param Pn default(1)
                      */
-                    const inline auto ERASE_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ECH), {}, 1);
+                    const inline auto ERASE_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ECH), {}, nullptr, 1);
                     
                     /**
                      * @brief This sequence means two different things based on previous sequence.
@@ -3514,7 +3554,7 @@ namespace GGUI {
                                                                                        2) All character positions of the page are put into the erased state  */
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ED), {}, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_PAGE);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ED), {}, nullptr, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_PAGE);
                     }
 
                     /**
@@ -3541,7 +3581,7 @@ namespace GGUI {
                                                                                         2) All character positions of the field are put into the erased state  */
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EF), {}, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_FIELD);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EF), {}, nullptr, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_FIELD);
                     }
 
                     /**
@@ -3568,7 +3608,7 @@ namespace GGUI {
                                                                                     2) All character positions of the line are put into the erased state  */
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EL), {}, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_LINE);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::EL), {}, nullptr, types::FROM_ACTIVE_POSITION_UNTIL_END_OF_LINE);
                     }
 
                     /**
@@ -3594,7 +3634,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/00` or `9/11 Pn 04/00`
                      * @param Pn default(1)
                      */
-                    const inline auto INSERT_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ICH), {operate_INSERT_CHARACTER}, 1);
+                    const inline auto INSERT_CHARACTER = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::ICH), {operate_INSERT_CHARACTER}, nullptr, 1);
                     
                     /**
                      * @brief If the DEVICE COMPONENT SELECT MODE (DCSM) is set to PRESENTATION, IL is used to
@@ -3621,7 +3661,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/12` or `9/11 Pn 04/12`
                      * @param Pn default(1)
                      */
-                    const inline auto INSERT_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::IL), {operate_INSERT_LINE}, 1);
+                    const inline auto INSERT_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::IL), {operate_INSERT_LINE}, nullptr, 1);
                 }
 
                 namespace cursorControlFunctions {
@@ -3640,7 +3680,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/10` or `9/11 Pn 05/10`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_BACKWARD_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CBT), {}, 1);
+                    const inline auto CURSOR_BACKWARD_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CBT), {}, nullptr, 1);
                     
                     /**
                      * @brief CHA causes the active presentation position to be moved to character position n in the active line in the
@@ -3648,7 +3688,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/07` or `9/11 Pn 04/07`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_CHARACTER_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CHA), {}, 1);
+                    const inline auto CURSOR_CHARACTER_ABSOLUTE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CHA), {}, nullptr, 1);
                     
                     /**
                      * @brief CHT causes the active presentation position to be moved to the character position corresponding to the
@@ -3657,7 +3697,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/09` or `9/11 Pn 04/09`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_FORWARD_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CHT), {}, 1);
+                    const inline auto CURSOR_FORWARD_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CHT), {}, nullptr, 1);
                     
                     /**
                      * @brief CNL causes the active presentation position to be moved to the first character position of the n-th
@@ -3665,7 +3705,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/05` or `9/11 Pn 04/05`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_NEXT_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CNL), {operate_CURSOR_NEXT_LINE}, 1);
+                    const inline auto CURSOR_NEXT_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CNL), {operate_CURSOR_NEXT_LINE}, nullptr, 1);
                     
                     /**
                      * @brief CPL causes the active presentation position to be moved to the first character position of the n-th
@@ -3673,7 +3713,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/06` or `9/11 Pn 04/06`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_PRECEDING_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CPL), {operate_CURSOR_PRECEDING_LINE}, 1);
+                    const inline auto CURSOR_PRECEDING_LINE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CPL), {operate_CURSOR_PRECEDING_LINE}, nullptr, 1);
                     
                     /**
                      * @brief CTC causes one or more tabulation stops to be set or cleared in the presentation component, depending on the parameter values.
@@ -3691,7 +3731,7 @@ namespace GGUI {
                             CLEAR_ALL_LINE_STOPS,                                           // All line tabulation stops are cleared
                         };
 
-                        const inline auto code = makeSequencePreset<sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CTC), {}, types::INSERT_CHARACTER_STOP_AT_ACTIVE_POSITION);
+                        const inline auto code = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CTC), {}, nullptr, types::INSERT_CHARACTER_STOP_AT_ACTIVE_POSITION);
                     }
 
                     /**
@@ -3701,7 +3741,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/04` or `9/11 Pn 04/04`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_LEFT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUB), {operate_CURSOR_LEFT}, 1);
+                    const inline auto CURSOR_LEFT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUB), {operate_CURSOR_LEFT}, nullptr, 1);
                     
                     /**
                      * @brief CUD causes the active presentation position to be moved downwards in the presentation component by n
@@ -3710,7 +3750,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/02` or `9/11 Pn 04/02`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_DOWN = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUD), {operate_CURSOR_DOWN}, 1);
+                    const inline auto CURSOR_DOWN = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUD), {operate_CURSOR_DOWN}, nullptr, 1);
                     
                     /**
                      * @brief CUF causes the active presentation position to be moved rightwards in the presentation component by n
@@ -3719,7 +3759,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/03` or `9/11 Pn 04/03`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_RIGHT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUF), {operate_CURSOR_RIGHT}, 1);
+                    const inline auto CURSOR_RIGHT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUF), {operate_CURSOR_RIGHT}, nullptr, 1);
                     
                     /**
                      * @brief CUP causes the active presentation position to be moved in the presentation component to the n-th line
@@ -3729,7 +3769,7 @@ namespace GGUI {
                      * @param Pn1 default(1)
                      * @param Pn2 default(1)
                      */
-                    const inline auto CURSOR_POSITION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUP), {operate_CURSOR_POSITION}, 1, 1);
+                    const inline auto CURSOR_POSITION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUP), {operate_CURSOR_POSITION}, nullptr, 1, 1);
                     
                     /**
                      * @brief CUU causes the active presentation position to be moved upwards in the presentation component by n
@@ -3738,7 +3778,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 04/01` or `9/11 Pn 04/01`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_UP = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUU), {operate_CURSOR_UP}, 1);
+                    const inline auto CURSOR_UP = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CUU), {operate_CURSOR_UP}, nullptr, 1);
                     
                     /**
                      * @brief CVT causes the active presentation position to be moved to the corresponding character position of the
@@ -3747,7 +3787,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/09` or `9/11 Pn 05/09`
                      * @param Pn default(1)
                      */
-                    const inline auto CURSOR_LINE_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CVT), {}, 1);
+                    const inline auto CURSOR_LINE_TABULATION = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CVT), {}, nullptr, 1);
                 }
 
                 namespace displayControlFunctions {
@@ -3762,7 +3802,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/05` or `9/11 Pn 05/05`
                      * @param Pn default(1)
                      */
-                    const inline auto NEXT_PAGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::NP), {operate_NEXT_PAGE}, 1);
+                    const inline auto NEXT_PAGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::NP), {operate_NEXT_PAGE}, nullptr, 1);
                     
                     /**
                      * @brief PP causes the n-th preceding page in the presentation component to be displayed, where n equals the value of Pn. 
@@ -3770,7 +3810,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/06` or `9/11 Pn 05/06`
                      * @param Pn default(1)
                      */
-                    const inline auto PRECEDING_PAGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::PP), {operate_PRECEDING_PAGE}, 1);
+                    const inline auto PRECEDING_PAGE = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::PP), {operate_PRECEDING_PAGE}, nullptr, 1);
                     
                     /**
                      * @brief SD causes the data in the presentation component to be moved by n line positions if the line orientation
@@ -3780,7 +3820,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/04` or `9/11 Pn 05/04`
                      * @param Pn default(1)
                      */
-                    const inline auto SCROLL_DOWN = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SD), {operate_SCROLL_DOWN}, 1);
+                    const inline auto SCROLL_DOWN = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SD), {operate_SCROLL_DOWN}, nullptr, 1);
                     
                     /**
                      * @brief SL causes the data in the presentation component to be moved by n character positions if the line
@@ -3789,7 +3829,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/00` or `9/11 Pn 02/00 04/00`
                      * @param Pn default(1)
                      */
-                    const inline auto SCROLL_LEFT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SL), {}, 1);
+                    const inline auto SCROLL_LEFT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SL), {}, nullptr, 1);
                     
                     /**
                      * @brief SR causes the data in the presentation component to be moved by n character positions if the line
@@ -3798,7 +3838,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 02/00 04/01` or `9/11 Pn 02/00 04/01`
                      * @param Pn default(1)
                      */
-                    const inline auto SCROLL_RIGHT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SR), {}, 1);
+                    const inline auto SCROLL_RIGHT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SR), {}, nullptr, 1);
                     
                     /**
                      * @brief SU causes the data in the presentation component to be moved by n line positions if the line orientation
@@ -3807,7 +3847,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 05/03` or `9/11 Pn 05/03`
                      * @param Pn default(1)
                      */
-                    const inline auto SCROLL_UP = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SU), {operate_SCROLL_UP}, 1);
+                    const inline auto SCROLL_UP = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SU), {operate_SCROLL_UP}, nullptr, 1);
                 }
 
                 namespace deviceControlFunctions {
@@ -3941,7 +3981,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    const inline auto RESET_MODE = makeSequencePreset<sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::RM), {operate_RESET_MODE});
+                    const inline auto RESET_MODE = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::RM), {operate_RESET_MODE});
 
                     /**
                      * @brief SM causes the modes of the receiving device to be set as specified by the parameter values.
@@ -3950,7 +3990,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      * @param ...
                      */
-                    const inline auto SET_MODE = makeSequencePreset<sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>, specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SM), {operate_SET_MODE});
+                    const inline auto SET_MODE = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::selectable<mode::types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SM), {operate_SET_MODE});
                 }
 
                 namespace transmissionControlFunctions {
@@ -4074,7 +4114,7 @@ namespace GGUI {
                      * @param Pn1 default(1)
                      * @param Pn2 default(1)
                      */
-                    const inline auto ACTIVE_POSITION_REPORT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CPR), {}, 1, 1);
+                    const inline auto ACTIVE_POSITION_REPORT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::CPR), {}, nullptr, 1, 1);
                     
                     /**
                      * @brief With a parameter value not equal to 0, DA is used to identify the device which sends the DA. 
@@ -4083,7 +4123,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 06/03` or `9/11 Ps 06/03`
                      * @param Ps default(0)
                      */
-                    const inline auto DEVICE_ATTRIBUTES = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DA), {operate_DEVICE_ATTRIBUTES}, 0);
+                    const inline auto DEVICE_ATTRIBUTES = makeSequencePreset<specialTypes::HAS_INFINITE_PARAMETERS>(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DA), {operate_DEVICE_ATTRIBUTES}, nullptr, 0);
                     
                     /**
                      * @brief DMI causes the manual input facilities of a device to be disabled.
@@ -4108,7 +4148,7 @@ namespace GGUI {
                             ACTIVE_POSITION_REQUESTED,              // A report of the active presentation position or of the active data position in the form of ACTIVE POSITION REPORT (CPR) is requested 
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DSR), {}, types::READY);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::DSR), {}, nullptr, types::READY);
                     }
 
                     /**
@@ -4180,7 +4220,7 @@ namespace GGUI {
                             START_RELAY_TO_SECONDARY_AUXILIARY_DEVICE,      //start relay to a secondary auxiliary device 
                         };  
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::MC), {}, types::TRANSFER_TO_PRIMARY_AUXILIARY_DEVICE);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::MC), {}, nullptr, types::TRANSFER_TO_PRIMARY_AUXILIARY_DEVICE);
                     }
 
                     /**
@@ -4217,7 +4257,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Pn 06/02` or `9/11 Pn 06/02`
                      * @param Pn default(1)
                      */
-                    const inline auto REPEAT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::REP), {}, 1);
+                    const inline auto REPEAT = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::REP), {}, nullptr, 1);
 
                     /**
                      * @brief RIS causes a device to be reset to its initial state, i.e. the state it has after it is made operational. 
@@ -4245,7 +4285,7 @@ namespace GGUI {
                             ENTIRE_PRESENTATION_COMPONENT   // the shifted part consists of the relevant part of the entire presentation component
                         };
 
-                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SSE), {}, types::ACTIVE_PAGE);
+                        const inline auto code = makeSequencePreset(sequence::control<sequence::parameter::selectable<types>, table::finalWithoutIntermediate>(table::finalWithoutIntermediate::SSE), {}, nullptr, types::ACTIVE_PAGE);
                     }
 
                     /**
@@ -4256,7 +4296,7 @@ namespace GGUI {
                      * @param Pn1 default(0) - 0: eject sheet, no new sheet loaded; 1-n: eject sheet and load another from bin n
                      * @param Pn2 default(0) - 0: eject sheet, no stacker specified; 1-n: eject sheet into stacker n
                      */
-                    const inline auto SHEET_EJECT_AND_FEED = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SEF), {}, 0, 0);
+                    const inline auto SHEET_EJECT_AND_FEED = makeSequencePreset(sequence::control<sequence::parameter::numeric, table::finalWithIntermediate>(table::finalWithIntermediate::SEF), {}, nullptr, 0, 0);
 
                     /**
                      * @brief STS is used to establish the transmit state in the receiving device. 

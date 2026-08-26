@@ -42,6 +42,8 @@ namespace GGUI{
         setWidth(Text.getWidth());
         setHeight(Text.getHeight());
 
+        Text.updatePosition({2, 0});    // 1 + 1, symbol + space
+
         // Mark the element as needing a deep state update
         Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::STATE);
     }
@@ -56,7 +58,7 @@ namespace GGUI{
      * @param off Pointer to a compactString representing the "off" state.
      * @param on Pointer to a compactString representing the "on" state.
      */
-    void switchBox::setStateString(const INTERNAL::compactString* off, const INTERNAL::compactString* on) {
+    void switchBox::setStateString(terminal::cell off, terminal::cell on) {
         Off = off;
         On = on;
 
@@ -71,20 +73,13 @@ namespace GGUI{
      * @details This function sets the text of the switch element by first pausing the GGUI engine, then setting the text with a space character added to the beginning, and finally updating the switch element's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the switch element.
      */
-    void switchBox::setText(INTERNAL::compactString text) { 
-        
+    void switchBox::setText(std::string_view text) { 
         pauseGGUI([this, &text](){
-            INTERNAL::compactString Symbol = " ";   // This is where the switchbox symbol will replace to.
-            INTERNAL::compactString Space = ' ';
-            
-            INTERNAL::superString<3> container{Symbol, Space, text};
-            
             // Mark the element as needing a deep state update
             Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
             
             // Set the text with a space character added to the beginning
-            Text.setText(container.toString());
-            setName(INTERNAL::toString(text));
+            Text.setText(text);
 
             // Update the switch element's dimensions to fit the new text
             setWidth(Text.getWidth() + hasBorder() * 2);
@@ -132,8 +127,8 @@ namespace GGUI{
      * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the switch element is rendered correctly.
      * @return A vector of UTF objects representing the rendered switch element.
      */
-    std::vector<INTERNAL::compactString>& switchBox::render(){
-        std::vector<INTERNAL::compactString>& Result = cellBuffer;
+    std::vector<terminal::cell>& switchBox::render(){
+        std::vector<terminal::cell>& Result = cellBuffer;
         
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
@@ -184,7 +179,7 @@ namespace GGUI{
 
         // Check if the text has been changed.
         if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)){
-            nestElement(this, &Text, Result, Text.render());
+            INTERNAL::nestElement(this, &Text, Result, Text.render());
 
             // Clean text update notice and state change notice.
             // NOTE: Cleaning STATE flag without checking it's existence might lead to unexpected results.
@@ -198,10 +193,7 @@ namespace GGUI{
             int State_Location_X = hasBorder();
             int State_Location_Y = hasBorder();
             
-            if (Off && On)
-                Result[State_Location_Y * getWidth() + State_Location_X] = getStateString();
-            else
-                INTERNAL::reportStack(getName() + " Missing visual state strings!");
+            Result[State_Location_Y * getWidth() + State_Location_X] = getStateString();
 
             Dirty.Clean(INTERNAL::STAIN_TYPE::STATE);
             Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
@@ -217,6 +209,8 @@ namespace GGUI{
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
+            Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
+
             renderBorders(Result);
             renderTitle(Result);
         }

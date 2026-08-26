@@ -3,11 +3,67 @@
 
 #include <cstdint>
 #include <algorithm>
+#include <string_view>
+#include <cassert>
 
 namespace GGUI {
     namespace terminal {
-        
-        using cell = char32_t;
+        // Inspired from https://notcurses.com/html/notcurses_8h_source.html
+        class cell {
+            uint32_t glyphs = 0;                    // Holds 1-4 UTF-8 code points, highest 5 bit, represents on/off switch for indexing from a string table.
+            [[maybe_unused]] uint8_t backstop = 0;  // Null terminates the inlined 4-bytes string inside glyphs.
+            uint8_t width = 1;                      // asked from wcwidth (linux) or ??? (windows)
+        public:
+            constexpr cell() = default;
+
+            constexpr cell(std::string_view utf) {
+                if (utf.size() <= sizeof(glyphs)) {
+                    for (size_t i = 0; i < utf.size(); ++i) {
+                        // (little endian layout)
+                        glyphs |= (static_cast<uint32_t>(static_cast<uint8_t>(utf[i])) << (i * 8));
+                    }
+                } else {
+                    assert(false && "String table not implemented!");
+                }
+            }
+
+            constexpr cell(char character) : glyphs(static_cast<uint8_t>(character)), width(1) {}
+
+            // Checks wether the highest bit is set or not.
+            constexpr bool isIndex() const {
+                return (glyphs & indexFingerPrint) == indexFingerPrint;
+            }
+
+            constexpr bool setIndexFingerPrint() {
+                glyphs |= indexFingerPrint;
+                return true;
+            }
+
+            constexpr uint32_t getIndex() const {
+                assert(isIndex() && "This cell is not an index!");
+
+                return glyphs & ~indexFingerPrint;
+            }
+
+            constexpr uint8_t getWidth() const { return width; }
+
+            inline std::string_view getGlyphs() const {
+                return std::string_view(reinterpret_cast<const char*>(&glyphs), 4);
+            }
+        protected:
+            // First five bytes are set, since largest UTF-8 uses four bytes set and fifth unset, we can use that as an fingerprint.
+            static constexpr char32_t indexFingerPrint = (
+                (static_cast<uint32_t>(1) << 31) |
+                (static_cast<uint32_t>(1) << 30) |
+                (static_cast<uint32_t>(1) << 29) |
+                (static_cast<uint32_t>(1) << 28) |
+                (static_cast<uint32_t>(1) << 27)
+            );
+
+            friend void setGlyphWidth(cell& data);
+        };
+
+        constexpr cell foo = std::string_view("┌");
 
         // How many bytes/second
         enum class baudRate : int32_t {

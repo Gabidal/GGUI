@@ -8,7 +8,7 @@ namespace GGUI{
     textField::textField(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct){
 
         // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
-        Text_Cache.reserve(getHeight());
+        textLineCache.reserve(getHeight());
 
         if (getWidth() == 1 && getHeight() == 1){
             allowDynamicSize(true);
@@ -24,7 +24,7 @@ namespace GGUI{
      * @details This function is called when the text field has a deep stain, and it will update the text cache of the text field. The text cache is a list of compact strings, where each compact string is a line of text. The text cache is used to store the text of the text field, and it is used to determine the size of the text field. The text cache is updated by splitting the text into lines based on the newline character, and then adding each line to the text cache. The text cache is also updated to remove any empty lines at the end of the text cache.
      */
     void textField::updateTextCache(){
-        Text_Cache.clear();
+        textLineCache.clear();
         unsigned int borderOffset = hasBorder() ? 2 : 0;
         unsigned int innerWidth = getWidth() - borderOffset;
 
@@ -36,94 +36,86 @@ namespace GGUI{
         }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
-        INTERNAL::compactString current_line(Text.data(), 0, true);
-        unsigned int Longest_Line = 0;
+        line currentLine(0, 0);
+        unsigned int longestLine = 0;
 
         // This is for the remaining liners to determine if they can append into the previous line or not.
-        enum class Line_Reason {
+        enum class lineReason {
             NONE,
             NEWLINE,
             WORDWRAP
-        } Previous_Line_Reason = Line_Reason::NONE;
+        } previousLineReason = lineReason::NONE;
 
-        for (unsigned int i = 0; i < Text.size(); i++){
-            bool flush_row = false;
+        for (size_t i = 0; i < text.size(); i++){
+            bool flushRow = false;
 
-            if (Text[i] == '\n'){
+            if (text[i] == '\n'){
                 // Newlines are not counted as line lengths
-                flush_row = true;
-                Previous_Line_Reason = Line_Reason::NEWLINE;
+                flushRow = true;
+                previousLineReason = lineReason::NEWLINE;
             }
             else{   // NOTE: If there is a newline character we need to TOTALLY skip it!!!
                 // Since in all situations the delimeter is also wanted to be part of the current line, we need to increase the current line length before deciding if we want to add it.
-                current_line.size++;
+                currentLine.end++;
             }
             
             // This is for the word wrapping to beautifully end at when word end and not abruptly
-            if (Text[i] == ' ' && !isOverflowAllowed()){    
+            if (text[i] == ' ' && !isOverflowAllowed()){
                 // Check if the current line length added one more word would go over the Width
                 // For this we first need to know how long is this next word if there is any
-                size_t next_space = Text.find_first_of(' ', i + 1);
-                size_t word_end = (next_space == std::string::npos) ? Text.size() : next_space;
-                int New_Word_Length = word_end - i;
+                size_t nextSpace = text.find_first_of(' ', i + 1);
+                size_t wordEnd = (nextSpace == std::string::npos) ? text.size() : nextSpace;
+                int newWordLength = wordEnd - i;
 
-                if (New_Word_Length + current_line.size >= innerWidth){
-                    flush_row = true;
-                    Previous_Line_Reason = Line_Reason::WORDWRAP;
+                if (newWordLength + currentLine.getSize() >= innerWidth){
+                    flushRow = true;
+                    previousLineReason = lineReason::WORDWRAP;
                 }
             }
 
-            if (flush_row){
+            if (flushRow){
                 // If the next word would go over the Width then add the current line to the Text_Cache
-                Text_Cache.push_back(current_line);
+                textLineCache.push_back(currentLine);
 
                 // check if the current line is longer than the longest line
-                if (current_line.size > Longest_Line)
-                    Longest_Line = current_line.size;
+                if (currentLine.getSize() > longestLine)
+                    longestLine = currentLine.getSize();
 
                 // reset current
-                current_line = INTERNAL::compactString(Text.data() + i + 1, 0, true);
+                currentLine = line(i + 1, i + 1);
             }
         }
 
         // Make sure the last line is added
-        if (current_line.size > 0){
+        if (currentLine.getSize() > 0){
 
-            bool Last_Line_Exceeds_Width_With_Current_Line = Text_Cache.size() > 0 && Text_Cache.back().size >= innerWidth;
+            bool Last_Line_Exceeds_Width_With_Current_Line = textLineCache.size() > 0 && textLineCache.back().getSize() >= innerWidth;
 
             // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
             if (
-                Text_Cache.size() == 0 ||
+                textLineCache.size() == 0 ||
                 (
                     Last_Line_Exceeds_Width_With_Current_Line &&
                     !Style->Allow_Dynamic_Size.value
                 ) ||
-                Previous_Line_Reason == Line_Reason::NEWLINE
+                previousLineReason == lineReason::NEWLINE
             ){
                 // If not then add the current line to the Text_Cache
-                Text_Cache.push_back(current_line);
+                textLineCache.push_back(currentLine);
             }
             else{
                 // If it can be added then add it to the last line
-                Text_Cache.back().size += current_line.size;
+                textLineCache.back().end += currentLine.getSize();
             }
 
-            Longest_Line = std::max((size_t)Longest_Line, Text_Cache.back().size);
+            longestLine = std::max(longestLine, currentLine.getSize());
         }
 
-        // now we need to go through each compact string and make sure that those that are enforced as unicode's but are still 1 long, need to be transformed into the char bearing.
-        for (INTERNAL::compactString& line : Text_Cache){
-            // We need to take care of the "Force Unicode" shenanigans before we add it to this list.
-            if (line.size == 1){
-                line.set(line.text[0]);
-            }
-        }
-
-        // Now we can check if Dynamic size is enabled, if so then resize Text_Field by the new sizes
+        // Now we can check if Dynamic size is enabled, if so then resize textField by the new sizes
         if (isDynamicSizeAllowed()){
             // Set the new size
-            setWidth(std::max((size_t)Longest_Line + borderOffset, (size_t)getWidth()));
-            setHeight(std::max(Text_Cache.size() + borderOffset, (size_t)getHeight()));
+            setWidth(std::max((size_t)longestLine + borderOffset, (size_t)getWidth()));
+            setHeight(std::max(textLineCache.size() + borderOffset, (size_t)getHeight()));
         }
     }
 
@@ -133,9 +125,9 @@ namespace GGUI{
      * It handles different stains such as CLASS, STRETCH, COLOR, EDGE, and DEEP to ensure the text field is rendered correctly.
      * @return A vector of UTF objects representing the rendered text field.
      */
-    std::vector<INTERNAL::compactString>& textField::render() {
+    std::vector<terminal::cell>& textField::render() {
         // Get reference to the render buffer
-        std::vector<INTERNAL::compactString>& Result = cellBuffer;
+        std::vector<terminal::cell>& Result = cellBuffer;
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
@@ -195,6 +187,7 @@ namespace GGUI{
 
             // clean reflection pool
             graphicalReflectionPool.clear();
+            graphicalIdentityPool.clear();
             Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
 
             if (Style->Align.value == ANCHOR::LEFT)
@@ -215,6 +208,8 @@ namespace GGUI{
 
         // Add borders and titles if the EDGE stain is detected.
         if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
+            Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
+
             renderBorders(Result);
             renderTitle(Result);
         }
@@ -227,8 +222,8 @@ namespace GGUI{
      * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the text field.
      */
-    void textField::setText(std::string text){
-        Text = text;
+    void textField::setText(std::string_view newText){
+        text = newText;
         // We don't want to accidentally start re-writing into the name when streaming input text.
         if (hasEmptyName())
             setName(text);
@@ -247,35 +242,24 @@ namespace GGUI{
      *          of the text field. The function respects the maximum height and width of the text field 
      *          and handles overflow according to the Style settings.
      */
-    void textField::alignTextLeft(std::vector<INTERNAL::compactString>& Result) {
-        unsigned int Line_Index = 0;  // To keep track of the inter-line positioning.
-        unsigned int writableWidth = getWidth() - hasBorder();
-        unsigned int writableHeight = getHeight() - hasBorder();
+    void textField::alignTextLeft(std::vector<terminal::cell>& Result) {
+        size_t startY = (int)hasBorder();
+        size_t startX = (int)hasBorder();
+        size_t endY   = getHeight() - (int)hasBorder();
+        size_t endX   = getWidth() -  (int)hasBorder();
 
-        for (INTERNAL::compactString line : Text_Cache) {
-            unsigned int Row_Index = 0;  // To track characters within the line.
+        for (size_t lineIndex = 0; lineIndex < textLineCache.size(); lineIndex++) {
+            for (size_t characterIndex = 0; characterIndex < textLineCache[lineIndex].getSize(); characterIndex++) {
+                size_t outputX = startX + characterIndex;
+                size_t outputY = startY + lineIndex;
 
-            if (Line_Index >= writableHeight)
-                break;  // Stop if all available lines are filled.
-
-            for (unsigned int Y = hasBorder(); Y < writableHeight; Y++) {
-                for (unsigned int X = hasBorder(); X < writableWidth; X++) {
-
-                    // Stop if the end of the current line is reached.
-                    if (Row_Index >= line.size)
-                        goto Next_Line;
-
-                    // Write the current character to the Result buffer.
-                    Result[(Y + Line_Index) * getWidth() + X] = line[Row_Index++];
+                // Ensure we don't write outside the bounds of the Result buffer
+                if (outputX >= endX || outputY >= endY) {
+                    break;  // Stop if we reach the end of the writable area
                 }
 
-                // Handle line overflow based on the style settings.
-                if (Style->Allow_Overflow.value)
-                    goto Next_Line;
+                Result[outputY * getWidth() + outputX] = text[textLineCache[lineIndex].start + characterIndex];
             }
-
-            Next_Line:;
-            Line_Index++;  // Move to the next line.
         }
     }
 
@@ -286,34 +270,28 @@ namespace GGUI{
      *          of the text field. The function respects the maximum height and width of the text field
      *          and handles overflow according to the Style settings.
      */
-    void textField::alignTextRight(std::vector<INTERNAL::compactString>& Result) {
-        unsigned int Line_Index = 0;    // To keep track of the inter-line positioning.
-        unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
-        unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
+    void textField::alignTextRight(std::vector<terminal::cell>& Result) {
+        size_t startY = (int)hasBorder();
+        size_t endY   = getHeight() - (int)hasBorder();
+        size_t endX   = getWidth() -  (int)hasBorder();
 
-        for (INTERNAL::compactString line : Text_Cache) {
-            int Row_Index = line.size - 1;  // Start from the end of the line
+        for (size_t lineIndex = 0; lineIndex < textLineCache.size(); lineIndex++) {
+            size_t lineLength = textLineCache[lineIndex].getSize();
+            size_t outputY = startY + lineIndex;
 
-            if (Line_Index >= writableHeight)
-                break;  // All possible usable lines filled.
+            // Calculate the starting X position for right alignment
+            size_t outputXStart = endX - lineLength;
 
-            for (unsigned int Y = hasBorder(); Y < writableHeight; Y++) {
-                for (int X = (signed)writableWidth - 1; X >= hasBorder(); X--) {
+            for (size_t characterIndex = 0; characterIndex < lineLength; characterIndex++) {
+                size_t outputX = outputXStart + characterIndex;
 
-                    if (Row_Index < 0)  // If there are no more characters in the line
-                        goto Next_Line;
-
-                    // write to the Result
-                    Result[(Y + Line_Index) * getWidth() + (unsigned)X] = line[Row_Index--];  // Decrement Line_Index
+                // Ensure we don't write outside the bounds of the Result buffer
+                if (outputX >= endX || outputY >= endY) {
+                    break;  // Stop if we reach the end of the writable area
                 }
 
-                // If current line has ended and the text is not word wrapped
-                if (Style->Allow_Overflow.value)
-                    goto Next_Line; // An break would suffice but use goto for more readability
+                Result[outputY * getWidth() + outputX] = text[textLineCache[lineIndex].start + characterIndex];
             }
-
-            Next_Line:;
-            Line_Index++;
         }
     }
 
@@ -323,39 +301,29 @@ namespace GGUI{
      * @details This function iterates over each line in the Text_Cache and aligns them to the center of the text field. The function respects the maximum height and width of the text field
      *          and handles overflow according to the Style settings.
      */
-    void textField::alignTextCenter(std::vector<INTERNAL::compactString>& Result) {
-        unsigned int Line_Index = 0;    // To keep track of the inter-line positioning.
-        unsigned int writableWidth = getWidth() - hasBorder();  // Inner width excluding borders.
-        unsigned int writableHeight = getHeight() - hasBorder();  // Inner height excluding borders.
+    void textField::alignTextCenter(std::vector<terminal::cell>& Result) {
+        size_t startY = (int)hasBorder();
+        size_t startX = (int)hasBorder();
+        size_t endY   = getHeight() - (int)hasBorder();
+        size_t endX   = getWidth() -  (int)hasBorder();
 
-        for (INTERNAL::compactString line : Text_Cache) {
-            unsigned int Row_Index = 0;  // Start from the beginning of the line
-            unsigned int Start_Pos = (getWidth()- hasBorder()*2 - line.size) / 2;  // Calculate the starting position
+        for (size_t lineIndex = 0; lineIndex < textLineCache.size(); lineIndex++) {
+            size_t lineLength = textLineCache[lineIndex].getSize();
+            size_t outputY = startY + lineIndex;
 
-            if (Line_Index >= writableHeight)
-                break;  // All possible usable lines filled.
+            // Calculate the starting X position for center alignment
+            size_t outputXStart = startX + (endX - startX - lineLength) / 2;
 
-            for (unsigned int Y = hasBorder(); Y < writableHeight; Y++) {
-                for (unsigned int X = hasBorder(); X < writableWidth; X++) {
+            for (size_t characterIndex = 0; characterIndex < lineLength; characterIndex++) {
+                size_t outputX = outputXStart + characterIndex;
 
-                    // If the current character is outside the line's range, skip it
-                    if (X < Start_Pos || X > Start_Pos + line.size)
-                        continue;
-
-                    if (Row_Index >= line.size)
-                        goto Next_Line;
-
-                    // write to the Result
-                    Result[(Y + Line_Index) * getWidth() + X] = line[Row_Index++];
+                // Ensure we don't write outside the bounds of the Result buffer
+                if (outputX >= endX || outputY >= endY) {
+                    break;  // Stop if we reach the end of the writable area
                 }
 
-                // If current line has ended and the text is not word wrapped
-                if (Style->Allow_Overflow.value)
-                    goto Next_Line; // An break would suffice but use goto for more readability
+                Result[outputY * getWidth() + outputX] = text[textLineCache[lineIndex].start + characterIndex];
             }
-
-            Next_Line:;
-            Line_Index++;
         }
     }
 
@@ -419,8 +387,8 @@ namespace GGUI{
             [this](converter::output::event::base*) {
                 if (Focused && INTERNAL::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
                     //If the text field is empty, there is nothing to do
-                    if (Text.size() > 0) {
-                        Text.pop_back();
+                    if (text.size() > 0) {
+                        text.pop_back();
 
                         updateTextCache();
 

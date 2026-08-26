@@ -10,7 +10,6 @@
 
 #include "../converter.h"
 #include "../utils/types.h"
-#include "../utils/superString.h"
 #include "../utils/style.h"
 
 namespace GGUI {
@@ -28,13 +27,13 @@ namespace GGUI {
         
         extern void deinit();               // non-platform Specific
 
-        using compactString = INTERNAL::compactString;
+        extern void setGlyphWidth(cell&);
 
         class outputCapture{
         protected:
             IVector2& cursor;
             IVector2& dimensions;
-            std::vector<compactString>& buffer;                 // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
+            std::vector<terminal::cell>& buffer;                 // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
             std::string* liquefiedBuffer = nullptr;             // This is what send back into the output device to be rendered into the screen.       
             std::vector<ecma::activeSGRStyle>& activeGraphicAttributes;     // this is the liquefied graphic area metadata which is ecma-48 compatible.
             element* dom;       // the primary element tree to be rendered.
@@ -42,7 +41,7 @@ namespace GGUI {
             outputCapture(
                 IVector2& presentationPosition,
                 IVector2& presentationDimension,
-                std::vector<compactString>& activeBuffer,
+                std::vector<terminal::cell>& activeBuffer,
                 std::vector<ecma::activeSGRStyle>& RGA
             ) : cursor(presentationPosition), dimensions(presentationDimension), buffer(activeBuffer), activeGraphicAttributes(RGA) {}
 

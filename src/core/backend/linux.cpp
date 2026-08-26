@@ -192,6 +192,40 @@ namespace GGUI {
                 GGUI::INTERNAL::LOGGER::log("ERROR: Failed to drain terminal output: " + std::string(strerror(errno)));
             }
         }
+
+        void setGlyphWidth(cell& data) {
+            std::string_view glyphs = data.getGlyphs();
+
+            if (glyphs.empty()) {
+                data.width = 0;
+                return;
+            }
+
+            // Check if it's single-byte ASCII
+            if (static_cast<unsigned char>(glyphs[0]) < 0x80) {
+                data.width = (glyphs[0] >= 0x20 && glyphs[0] != 0x7F) ? 1 : 0;
+                return;
+            }
+
+            // Check decode UTF-8 string_view to a single wchar_t code point
+            wchar_t wc = 0;
+            
+            // std::mbtowc parses single multibyte characters using the system locale
+            // Ensure setlocale(LC_CTYPE, "") has been called elsewhere in app initialization
+            int bytes_read = std::mbtowc(&wc, glyphs.data(), glyphs.size());
+
+            if (bytes_read <= 0) {
+                // Invalid UTF-8 sequence or null byte
+                data.width = 0;
+                return;
+            }
+
+            // Check query system terminal width
+            int width = wcwidth(wc);
+
+            // wcwidth returns -1 for unprintable characters (e.g. control chars, formatting marks)
+            data.width = static_cast<uint8_t>(std::max(0, width));
+        }
     }
 }
 

@@ -811,7 +811,7 @@ namespace GGUI{
                                     }
                                     else{
                                         // translate the string to int
-                                        int Repetition = std::stoi(Previous_Repetitions->getText()) + 1;
+                                        int Repetition = std::stoi(std::string(Previous_Repetitions->getText())) + 1;
                                         Previous_Repetitions->setText(std::to_string(Repetition));
                                     }
 

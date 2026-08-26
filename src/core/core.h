@@ -8,8 +8,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "utils/superString.h"
-#include "utils/constants.h"
 #include "utils/style.h"
 #include "utils/utils.h"
 
@@ -54,7 +52,7 @@ namespace GGUI{
 
         extern concurrency::guard<std::vector<converter::output::event::memory>> remember;
         
-        extern std::unordered_map<std::string, element*> elementNames;
+        extern std::unordered_map<std::string_view, element*> elementNames;
 
         extern element* focusedOn;
         extern element* hoveredOn;
@@ -201,7 +199,7 @@ namespace GGUI{
          * @param Parent_Buffer The parent element's buffer.
          * @param Child_Buffer The child element's buffer.
          */
-        void nestElement(element* parent, element* child, std::vector<compactString>& Parent_Buffer, std::vector<compactString>& Child_Buffer);
+        void nestElement(element* parent, element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer);
     }
     // autoGen: Ignore end
     

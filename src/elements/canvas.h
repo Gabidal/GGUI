@@ -8,71 +8,53 @@
 #include <vector>
 
 namespace GGUI{
-    class sprite{
+    struct sprite {
+        terminal::cell glyph  = ' ';           // terminal::cell for unicode characters
+        unsigned char opacity = UINT8_MAX;
+        RGB glyphColor        = {};
+        RGB backgroundColor   = {};
+        INTERNAL::linearMask<textAttributeTypes, uint64_t> textAttributes = textAttributeTypes::DEFAULT;
     protected:
-        std::vector<GGUI::INTERNAL::compactString> Frames;
-        
-        int Offset = 0;     // This is for more beautiful mass animation systems
-        int Speed = 1;      // Using decimals too slow hmmm...
-        
-        int Frame_Distance = 1; // This represents the distance between each frame
-        
-        bool Is_Power_Of_Two = false;
+        constexpr std::pair<terminal::cell, ActiveStyle> render() {
+            ActiveStyle styling;
+            styling.area = {
+                {}, {1, 1}
+            };
+            styling.activeTextColor = glyphColor;
+            styling.activeBackgroundColor = backgroundColor;
+            styling.opacity = opacity;
+            styling.activeTextAttributes = textAttributes;
+
+            return {glyph, styling};
+        }
+
+        friend class canvas;
+    };
+
+    struct animationSprite{
+    protected:
+        bool isPowerOfTwo = false;
     public:
+        std::vector<sprite> frames;     
+        
+        int offset;     // This is for more beautiful mass animation systems, like wildfires and ocean waves.
+        int speed;      // Animation speed scalar, 1x, 2x, 3x, ...
+        
+        int frameDistance = 1; // Interpolation steps between two frames
 
-        /**
-         * @brief Constructor for Sprite class.
-         * @details This constructor initializes a Sprite object with a vector of INTERNAL::compactString objects representing the frames,
-         * an offset to determine when to start playing the animation, and a speed to control the animation playback.
-         * @param frames A vector of INTERNAL::compactString objects representing the frames of the animation.
-         * @param offset The number of frames to skip before playing the animation.
-         * @param speed The speed of the animation playback.
-         */
-        sprite(std::vector<GGUI::INTERNAL::compactString> frames, int offset = 0, int speed = 1);
+        constexpr animationSprite(std::vector<sprite> Frames = {}, int Offset = 0, int Speed = 1) : frames(Frames), offset(Offset), speed(Speed) {
+            // Check if the frames size is an power of twos compliment
+            // This is done to make sure the animation can be looped without any issues
+            if (std::bitset<sizeof(unsigned char)>(Frames.size()).count() == 1)
+                isPowerOfTwo = true;
 
-        /**
-         * @brief Constructs a Sprite object with a single frame.
-         * @details This constructor initializes the Sprite with a single INTERNAL::compactString frame, setting the offset and speed for animation.
-         * @param frame A INTERNAL::compactString object representing the single frame of the sprite.
-         * @param offset The number of frames to skip before playing the animation. Default is 0.
-         * @param speed The speed of the animation playback. Default is 1.
-         */
-        sprite(GGUI::INTERNAL::compactString frame){
-            // Add the provided frame to the Frames vector.
-            Frames.push_back(frame);
-        }
-
-        /**
-         * @brief Constructs a Sprite object with default values.
-         * @details This constructor sets the Sprite to have a single INTERNAL::compactString frame, which is a space character, and sets the offset and speed for animation.
-         */
-        sprite() : Frame_Distance(1){
-            // Set the default frame to a space character.
-            Frames.push_back(GGUI::INTERNAL::compactString(' '));
-            
-            // Set the default offset and speed values.
-            Offset = 0;
-            Speed = 1;
-            
-            // Set the Is_Power_Of_Two flag to false, indicating the sprite does not have a power of two size.
-            Is_Power_Of_Two = false;
-        }
-
-        void setAnimationSpeed(int speed){
-            Speed = speed;
-        }
-
-        void setOffset(int offset){
-            Offset = offset;
+            // Calculate the frame distance to determine how much to increment the frame index
+            // This is done by dividing the maximum value of an unsigned char (255) by the number of frames
+            frameDistance = ((float)UINT8_MAX + 1) / (float)Frames.size();
         }
 
     protected:
-        /**
-         * @brief Renders a UTF character based on the sprite's current frame and speed.
-         * @param Current_Frame The current frame of the animation.
-         * @return The rendered UTF character.
-         */
-        INTERNAL::compactString render(unsigned char Current_Time);
+        sprite render(unsigned char Current_Time);
 
         friend class canvas;
     };
@@ -82,15 +64,15 @@ namespace GGUI{
         // DONT GIVE THIS TO USER!!!
         canvas(){}
     protected:
-        std::vector<sprite> Buffer;
+        std::vector<animationSprite> buffer;
 
-        unsigned char Current_Animation_Frame = 0;
+        unsigned char currentAnimationFrame = 0;
 
         // For speeding up sprite sets, to avoid redundant checks in unordered_maps.
-        bool Multi_Frame = false;
+        bool multiFrame = false;
 
         // Per-frame, use On_Render for an single pass use.
-        GGUI::sprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
+        GGUI::animationSprite (*On_Draw)(unsigned int x, unsigned int y) = 0;
     public:
         /**
          * @brief Constructs a canvas element with the specified style and optional embedding of styles.
@@ -124,7 +106,7 @@ namespace GGUI{
          * This function increments the current animation frame counter,
          * allowing the animation to progress to the next frame in the sequence.
          */
-        void setNextAnimationFrame() { Current_Animation_Frame++; }
+        void setNextAnimationFrame() { currentAnimationFrame++; }
 
         /**
          * @brief Set the sprite at the specified location on the terminal canvas.
@@ -135,7 +117,7 @@ namespace GGUI{
          * @param sprite The sprite to be placed.
          * @param Flush Whether or not to call Update_Frame() after setting the sprite.
          */
-        void set(unsigned int x, unsigned int y, sprite& sprite, bool Flush = true);
+        void set(unsigned int x, unsigned int y, animationSprite& sprite, bool Flush = true);
 
         /**
          * @brief Set the sprite at the specified location on the terminal canvas.
@@ -146,7 +128,7 @@ namespace GGUI{
          * @param sprite The sprite to be placed.
          * @param Flush Whether or not to call Update_Frame() after setting the sprite.
          */
-        void set(unsigned int x, unsigned int y, sprite&& sprite, bool Flush = true);
+        void set(unsigned int x, unsigned int y, animationSprite&& sprite, bool Flush = true);
 
         /**
          * @brief Set the UTF sprite at the specified location on the terminal canvas.
@@ -157,7 +139,7 @@ namespace GGUI{
          * @param sprite The UTF sprite to be placed.
          * @param Flush Whether or not to call Update_Frame() after setting the sprite.
          */
-        void set(unsigned int x, unsigned int y, INTERNAL::compactString& sprite, bool Flush = true);
+        void set(unsigned int x, unsigned int y, const sprite& sprite, bool Flush = true);
         
         /**
          * @brief Flush the canvas.
@@ -172,7 +154,7 @@ namespace GGUI{
          * 
          * @return true if the canvas is in a multi-frame state, false otherwise.
          */
-        bool isMultiFrame(){ return Multi_Frame; }
+        bool isMultiFrame(){ return multiFrame; }
 
         /**
          * @brief Returns the name of the Terminal_Canvas as a string.
@@ -210,7 +192,7 @@ namespace GGUI{
          * @param on_draw A pointer to a function that takes two unsigned integers 
          *                (x and y coordinates) as input and returns a GGUI::sprite object.
          */
-        void setOnDraw(GGUI::sprite (*on_draw)(unsigned int x, unsigned int y)){
+        void setOnDraw(GGUI::animationSprite (*on_draw)(unsigned int x, unsigned int y)){
             this->On_Draw = on_draw;
         }
 
@@ -229,7 +211,7 @@ namespace GGUI{
          *          It also handles the multi-frame list and sprite animations.
          * @return A vector of UTF objects representing the rendered canvas.
          */
-        std::vector<INTERNAL::compactString>&  render() override;
+        std::vector<terminal::cell>& render() override;
     };
 
     namespace DRAW{
