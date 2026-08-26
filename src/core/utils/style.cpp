@@ -477,7 +477,7 @@ namespace GGUI{
         else if (flags == (INTERNAL::borderConnection::LEFT | INTERNAL::borderConnection::RIGHT | INTERNAL::borderConnection::UP | INTERNAL::borderConnection::DOWN))
             return crossConnector;
         else
-            return nullptr;
+            return "";
     }
 
     INTERNAL::borderConnection styledBorder::getBorderType(std::string_view border){

@@ -1668,7 +1668,7 @@ namespace GGUI {
 
             std::string_view finalBorder = A->getBorderStyle().getBorder(Current_Masks);
 
-            if (!finalBorder.data()){
+            if (finalBorder.empty()){
                 continue;
             }
 
