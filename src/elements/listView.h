@@ -310,7 +310,7 @@ namespace GGUI{
         }
 
         // This is only needed until auto scrolling has been implemented.
-        friend void INTERNAL::renderLogger(const std::string&);
+        friend void logger::renderLogger(const std::string&);
     };
 }
 

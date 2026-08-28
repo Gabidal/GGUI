@@ -56,19 +56,7 @@ namespace GGUI{
      * @return A formatted string containing the collected statistics.
      */
     std::string getStatsText(){
-        std::string optimized = std::to_string((float)(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE - INTERNAL::AFTER_ENCODE_BUFFER_SIZE) / (float)std::max(INTERNAL::BEFORE_ENCODE_BUFFER_SIZE, 1) * 100.0f);
 
-        // cut from the decimal point
-        // optimized = optimized.substr(0, optimized.find('.'));
-
-        // return  "Optimized: " + optimized + "%\n" + 
-        //         "Elements: " + std::to_string(getRoot()->getAllNestedElements().size()) + "\n" +
-        //         "Render delay: " + std::to_string(INTERNAL::renderDelay) + "ms\n" +
-        //         "Event delay: " + std::to_string(INTERNAL::eventDelay) + "ms\n" + 
-        //         "Input delay: " + std::to_string(INTERNAL::Input_Delay) + "ms\n" + 
-        //         "Resolution: " + std::to_string(INTERNAL::maxWidth) + "x" + std::to_string(INTERNAL::maxHeight) + "\n" +
-        //         "Task scheduler: " + std::to_string(INTERNAL::CURRENT_UPDATE_SPEED) + "ms\n" + 
-        //         "Mouse: {" + std::to_string(INTERNAL::mouse.x) + ", " + std::to_string(INTERNAL::mouse.y) + "}";
 
         return "";  TODO("Re-write this section")
     }
@@ -108,7 +96,7 @@ namespace GGUI{
      * @see GGUI::updateStats
      */
     void initInspectTool(){
-        const char* ERROR_LOGGER = "_ERROR_LOGGER_";
+        const char* ERROR_logger = "_ERROR_logger_";
 
         addons.push_back(new GGUI::listView(
             width(0.5f) | height(1.0f) | 
@@ -132,7 +120,7 @@ namespace GGUI{
                 enableBorder(true) | 
                 title("LOG: ") | 
                 // Set the name of the window to "LOG"
-                name(ERROR_LOGGER) | 
+                name(ERROR_logger) | 
                 // Allow the window to overflow, so that the text can be seen even if it is longer than the window
                 allowOverflow(true)
             )) | 
@@ -168,7 +156,7 @@ namespace GGUI{
                 true);
 
                 // Remember the inspect tool, so it will be updated every second
-                INTERNAL::remember([](std::vector<converter::output::event::memory>& rememberable){
+                core::remember([](std::vector<converter::output::event::memory>& rememberable){
                     rememberable.push_back(
                         converter::output::event::memory(
                             std::chrono::seconds(1),

@@ -4,8 +4,10 @@
 #include "element.h"
 
 #include "../core/utils/style.h"
+#include "../core/backend/utils.h"
 
 #include <vector>
+#include <bitset>
 
 namespace GGUI{
     struct sprite {
@@ -13,7 +15,7 @@ namespace GGUI{
         unsigned char opacity = UINT8_MAX;
         RGB glyphColor        = {};
         RGB backgroundColor   = {};
-        INTERNAL::linearMask<textAttributeTypes, uint64_t> textAttributes = textAttributeTypes::DEFAULT;
+        types::linearMask<textAttributeTypes, uint64_t> textAttributes = textAttributeTypes::DEFAULT;
     protected:
         constexpr std::pair<terminal::cell, ActiveStyle> render() {
             ActiveStyle styling;

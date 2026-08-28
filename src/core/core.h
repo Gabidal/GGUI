@@ -11,16 +11,13 @@
 #include "utils/style.h"
 #include "utils/utils.h"
 
+#include "thread.h"
+
 #include "../elements/element.h"
 
 #include "converter.h"
 
 namespace GGUI{
-
-    namespace INTERNAL {
-        extern bool collides(GGUI::element* a, GGUI::IVector3 b);
-    }
-
     static struct mouse {
         enum class states : uint8_t {
             DISABLE,
@@ -29,28 +26,16 @@ namespace GGUI{
         
         IVector2 position = {};
 
-        bool collides(element* other) {
+        constexpr bool collides(element* other) {
             IVector3 tmp(position);
-            return INTERNAL::collides(other, tmp);
+            return utils::collides(other, tmp);
         }
     } currentMouse;
 
-    // autoGen: Ignore start
-    namespace INTERNAL{
+    namespace core{
         class bufferCapture;
 
-        namespace concurrency{
-            extern int LOCKED;
-
-            extern std::mutex mutex;
-            extern std::condition_variable condition;
-
-            extern status pauseRenderThread;
-        }
-
-        extern std::vector<INTERNAL::bufferCapture*> globalBufferCaptures;
-
-        extern concurrency::guard<std::vector<converter::output::event::memory>> remember;
+        extern thread::guard<std::vector<converter::output::event::memory>> remember;
         
         extern std::unordered_map<std::string_view, element*> elementNames;
 
@@ -63,8 +48,6 @@ namespace GGUI{
         extern converter::output::base* inputConverter; 
 
         extern element* main;
-
-        extern float eventThreadLoad;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
         extern std::chrono::steady_clock::duration renderDelay;    // describes how long previous render cycle took in ms
 
@@ -168,16 +151,6 @@ namespace GGUI{
         extern void handleEscape();
 
         /**
-         * @brief Notifies all global buffer capturers about the latest data to be captured.
-         *
-         * This function is used to inform all global buffer capturers about the latest data to be captured.
-         * It iterates over all global buffer capturers and calls their Sync() method to update their data.
-         *
-         * @param informer Pointer to the buffer capturer with the latest data.
-         */
-        extern void informAllGlobalBufferCaptures(bufferCapture* informer);
-
-        /**
          * @brief Gets the fitting area for a child element in its parent.
          * @details This function calculates the area where the child element should be rendered within the parent element.
          *          It takes into account the border offsets of both the parent and the child element as well as their positions.
@@ -187,7 +160,7 @@ namespace GGUI{
          * @param Child The child element.
          * @return A pair of pairs containing the fitting area for the child element within the parent element.
          */
-        fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
+        types::fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
 
         /**
          * @brief Nests a child element into a parent element.
@@ -201,7 +174,6 @@ namespace GGUI{
          */
         void nestElement(element* parent, element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer);
     }
-    // autoGen: Ignore end
     
     /**
      * @brief Register a user defined cleanup callback to be invoked during de-initialization.

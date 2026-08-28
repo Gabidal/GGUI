@@ -46,7 +46,7 @@ namespace GGUI{
 
             constexpr part(const part& other) : styleBase(other.status), character(other.character), color(other.color), type(other.type) {}
 
-            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
+            types::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
 
             inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         };

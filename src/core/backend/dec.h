@@ -26,7 +26,7 @@ namespace GGUI {
                     GPO_STP_AND_AVO             = GRAPHIC_PROCESSOR_OPTION | ADVANCED_VIDEO_OPTIONS | PROCESSOR_OPTIONS,          // processor, advanced video and graphic processor options
                 };
                 
-                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::ADVANCED_VIDEO_OPTIONS;
+                constexpr GGUI::types::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::ADVANCED_VIDEO_OPTIONS;
 
                 extern ecma::configuration::page G1;
                 extern ecma::configuration::page G3;
@@ -130,7 +130,7 @@ namespace GGUI {
 
                 struct components {
                     ecma::mode::base<modeTypes> modes;
-                    INTERNAL::bitMask<deviceAttributeResponseTypes> activeDeviceAttributes;
+                    GGUI::types::bitMask<deviceAttributeResponseTypes> activeDeviceAttributes;
 
                     bool enabled = false;
 
@@ -268,13 +268,13 @@ namespace GGUI {
             namespace VT101 {
                 using deviceAttributeResponseTypes = VT100::deviceAttributeResponseTypes;
 
-                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::NO_OPTIONS;
+                constexpr GGUI::types::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::NO_OPTIONS;
             }
 
             namespace VT102 {
                 using deviceAttributeResponseTypes = VT100::deviceAttributeResponseTypes;
 
-                constexpr INTERNAL::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::GPO_AND_AVO;
+                constexpr GGUI::types::bitMask<deviceAttributeResponseTypes> deviceAttributeResponseID = deviceAttributeResponseTypes::GPO_AND_AVO;
             }
         
             namespace VT220 {

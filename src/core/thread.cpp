@@ -1,7 +1,8 @@
 #include "utils/utils.h"
-#include "utils/fileStreamer.h"
 #include "utils/settings.h"
 #include "utils/settings.h"
+
+#include "thread.h"
 
 #include "core.h"
 #include "backend/terminal.h"
@@ -9,19 +10,18 @@
 #include "../elements/canvas.h"
 
 #include <thread>
-#include <memory>
 #include <mutex>
 #include <csignal>
 
 namespace GGUI{
     class element;
-    namespace INTERNAL{
 
-        extern element* main;
+    namespace core {
+        extern std::unordered_map<canvas*, bool> multiFrameCanvas;
+    }
 
-        namespace concurrency{
-            enum class status;
-
+    namespace thread {
+        namespace concurrency {
             std::mutex mutex;
             std::condition_variable condition;
             
@@ -36,17 +36,12 @@ namespace GGUI{
 
         bool identicalFrame = true;
 
-        int BEFORE_ENCODE_BUFFER_SIZE = 0;
-        int AFTER_ENCODE_BUFFER_SIZE = 0;
-
         // Represents the update speed of each elapsed loop of passive events, which do NOT need user as an input.
         std::chrono::steady_clock::duration CURRENT_UPDATE_SPEED = SETTINGS::MAX_UPDATE_SPEED;
         inline float eventThreadLoad = 0.0f;  // Describes the load of animation and events from 0.0 to 1.0. Will reduce the event thread pause.
 
         std::chrono::steady_clock::duration renderDelay;    // describes how long previous render cycle took in ms
         std::chrono::steady_clock::duration eventDelay;    // describes how long previous memory tasks took in ms
-
-        extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
 
         /**
          * @brief The Renderer function is responsible for managing the rendering loop.
@@ -68,9 +63,9 @@ namespace GGUI{
             while (true){
                 {
                     std::unique_lock lock(concurrency::mutex);
-                    concurrency::condition.wait(lock, [&](){ return concurrency::pauseRenderThread == concurrency::status::REQUESTING_RENDERING || requestTermination; });
+                    concurrency::condition.wait(lock, [&](){ return concurrency::pauseRenderThread == status::REQUESTING_RENDERING || requestTermination; });
 
-                    concurrency::pauseRenderThread = concurrency::status::RENDERING;
+                    concurrency::pauseRenderThread = status::RENDERING;
                 }
 
                 // Save current time, we have the right to overwrite unto the other thread, since they always run after each other and not at same time.
@@ -81,11 +76,11 @@ namespace GGUI{
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
-                if (main){
+                if (getRoot()){
                     identicalFrame = true; // Assume that the incoming frame will be identical.
 
                     // Main is zero size, before the DRM sends us the correct window size.
-                    bool FirstDRMRender = GGUI::SETTINGS::enableDRM && (main->getWidth() == 0 && main->getHeight() == 0);
+                    bool FirstDRMRender = GGUI::SETTINGS::enableDRM && (getRoot()->getWidth() == 0 && getRoot()->getHeight() == 0);
 
                     // Skip rendering until DRM sends us the window size.
                     if (!FirstDRMRender) {
@@ -108,7 +103,7 @@ namespace GGUI{
                         }
                         else{
                         #ifdef GGUI_DEBUG
-                            // LOGGER::log("Saved frame");
+                            // logger::log("Saved frame");
                         #endif
 
                             if (SETTINGS::enableDRM) {
@@ -127,27 +122,12 @@ namespace GGUI{
                 {
                     std::unique_lock lock(concurrency::mutex);
                     // Now for itself set it to sleep.
-                    concurrency::pauseRenderThread = concurrency::status::PAUSED;
+                    concurrency::pauseRenderThread = status::PAUSED;
                     concurrency::condition.notify_all();
                 }
             }
 
-            LOGGER::log("Render thread terminated!");
-        }
-
-        /**
-         * @brief Iterates through all file stream handles and triggers change events.
-         * @details This function goes through each file stream handle in the `fileStreamerHandles` map.
-         *          It checks if the handle is not a standard output stream, and if so, calls the `Changed` method
-         *          on the file stream to trigger any associated change events.
-         */
-        void Go_Through_File_Streams(){
-            for (auto& pair : fileStreamerHandles){
-                auto& handle = pair.second;
-                if (handle && handle->getType() == FILE_STREAM_TYPE::READ){
-                    handle->changed();
-                }
-            }
+            logger::log("Render thread terminated!");
         }
 
         /**
@@ -158,7 +138,7 @@ namespace GGUI{
          */
         void Refresh_Multi_Frame_Canvas() {
             // Iterate over each multi-frame canvas
-            for (auto i : multiFrameCanvas) {
+            for (auto i : core::multiFrameCanvas) {
                 // Advance the animation to the next frame
                 i.first->setNextAnimationFrame();
 
@@ -167,8 +147,8 @@ namespace GGUI{
             }
 
             // Adjust the event thread load if there are canvases to update
-            if (multiFrameCanvas.size() > 0) {
-                eventThreadLoad = std::min(1.0f, eventThreadLoad + 0.1f * multiFrameCanvas.size());
+            if (core::multiFrameCanvas.size() > 0) {
+                eventThreadLoad = std::min(1.0f, eventThreadLoad + 0.1f * core::multiFrameCanvas.size());
             }
         }
 
@@ -193,10 +173,10 @@ namespace GGUI{
                     std::unique_lock lock(concurrency::mutex);
 
                     concurrency::condition.wait(lock, [&](){ 
-                        return concurrency::pauseRenderThread == concurrency::status::PAUSED || INTERNAL::requestTermination; 
+                        return concurrency::pauseRenderThread == status::PAUSED || requestTermination; 
                     });
 
-                    if (INTERNAL::requestTermination){
+                    if (requestTermination){
                         break;
                     }
                 }
@@ -206,8 +186,7 @@ namespace GGUI{
                 Previous_Time = std::chrono::steady_clock::now();
 
                 // Order independent --------------
-                recallMemories();
-                Go_Through_File_Streams();
+                core::recallMemories();
                 Refresh_Multi_Frame_Canvas();
 
                 /* 
@@ -235,7 +214,7 @@ namespace GGUI{
                 );
             }
         
-            LOGGER::log("Event thread terminated!");
+            logger::log("Event thread terminated!");
         }
     }
 }

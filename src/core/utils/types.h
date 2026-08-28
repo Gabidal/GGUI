@@ -2,10 +2,7 @@
 #define _TYPES_H_
 
 #include <string>
-#include <functional>
 #include <cassert>
-#include <mutex>
-#include <memory>
 #include <span>
 
 namespace GGUI{
@@ -619,14 +616,14 @@ namespace GGUI{
         }
     };
 
-    namespace INTERNAL{
+    namespace types{
         struct fittingArea{
             IVector2 negativeOffset;
             IVector2 start;
             IVector2 end;
         };
 
-        enum class borderConnection{
+        enum class borderConnection : uint8_t {
             NONE    = 0 << 0,
             UP      = 1 << 0,
             DOWN    = 1 << 1,
@@ -646,7 +643,7 @@ namespace GGUI{
             lhs = static_cast<borderConnection>(static_cast<int>(lhs) | static_cast<int>(rhs));
         }
 
-        enum class STAIN_TYPE{
+        enum class STAIN_TYPE : uint16_t {
             CLEAN = 0,              // No change
             GRAPHICS = 1 << 0,      // BG and other color related changes
             EDGE = 1 << 1,          // Title and border changes.
@@ -734,9 +731,9 @@ namespace GGUI{
                 std::vector<enumType> result;
 
                 for (containerType i = 0; i < sizeof(containerType) * 8; ++i) {
-                    containerType bitMask = static_cast<containerType>(1) << i;
-                    if ((data & bitMask) != 0) {
-                        result.push_back(static_cast<enumType>(bitMask));
+                    containerType _bitMask = static_cast<containerType>(1) << i;
+                    if ((data & _bitMask) != 0) {
+                        result.push_back(static_cast<enumType>(_bitMask));
                     }
                 }
 
@@ -985,119 +982,14 @@ namespace GGUI{
 
         };
 
-        enum class ENCODING_FLAG{
-            NONE        = 0 << 0,
-            START       = 1 << 0,
-            END         = 1 << 1
-        };
-
-        constexpr bool operator== (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            return static_cast<unsigned char>(a) == static_cast<unsigned char>(b);
-        }
-
-        constexpr void operator|= (ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            a = static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
-        }
-
-        constexpr ENCODING_FLAG operator&(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) & static_cast<unsigned char>(b));
-        }
-
-        constexpr ENCODING_FLAG operator|(const ENCODING_FLAG& a, const ENCODING_FLAG& b) {
-            return static_cast<ENCODING_FLAG>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
-        }
-
-        enum class STATE{
+        enum class STATE : uint8_t {
             UNKNOWN,
 
             INIT,
             DESTROYED,
             HIDDEN,
             SHOWN
-
         };
-
-        enum class ALLOCATION_TYPE{
-            UNKNOWN         = 0 << 0,
-            STACK           = 1 << 0,
-            HEAP            = 1 << 1,
-            DATA            = 1 << 2
-        };
-
-        namespace LOGGER{
-            extern void log(std::string Text);
-        }
-
-        
-        namespace concurrency{
-            enum class status{
-                PAUSED,
-                REQUESTING_RENDERING,
-                RENDERING,
-                NOT_INITIALIZED
-            };
-
-            template<typename T>
-            class guard {
-            public:
-                std::mutex shared; // Mutex to guard shared data
-                std::unique_ptr<T> data;
-
-                /**
-                 * @brief Constructs a Guard object and initializes its Data member.
-                 * 
-                 * This constructor creates a unique pointer to an instance of type T
-                 * and assigns it to the Data member of the Guard object.
-                 */
-                guard() : data(std::make_unique<T>()) {}
-
-                /**
-                 * @brief Functor to execute a job with thread safety.
-                 * 
-                 * This operator() function takes a std::function that operates on a reference to a T object.
-                 * It ensures that the job is executed with mutual exclusion by using a std::lock_guard to lock
-                 * the mutex. If the job throws an exception, it catches it and reports the failure.
-                 * 
-                 * @param job A std::function that takes a reference to a T object and performs some operation.
-                 * 
-                 * @throws Any exception thrown by the job function will be caught and reported.
-                 */
-                void operator()(std::function<void(T&)> job) {
-                    std::lock_guard<std::mutex> lock(shared); // Automatically manages mutex locking and unlocking
-                    try {
-                        job(*data);
-                    } catch (...) {
-                        INTERNAL::LOGGER::log("Failed to execute the function!");
-                    }
-                }
-
-                /**
-                 * @brief Reads the data in a thread-safe manner.
-                 * 
-                 * This function acquires a lock on the shared mutex to ensure that the data
-                 * is read in a thread-safe manner. It returns a copy of the data.
-                 * 
-                 * @return T A copy of the data.
-                 */
-                T read() {
-                    std::lock_guard<std::mutex> lock(shared);
-                    return *data;
-                }
-
-                /**
-                 * @brief Destructor for the Guard class.
-                 *
-                 * This destructor ensures that the Data object is properly destroyed
-                 * by acquiring a lock on the Shared mutex before resetting the Data.
-                 * The use of std::lock_guard ensures that the mutex is automatically
-                 * released when the destructor exits, preventing potential deadlocks.
-                 */
-                ~guard() {
-                    std::lock_guard<std::mutex> lock(shared);
-                    data.reset(); // Ensures proper destruction
-                }
-            };   
-        }
     }
 
     template<typename T, typename P>

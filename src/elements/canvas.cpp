@@ -3,7 +3,7 @@
 #include "../core/core.h"
 
 namespace GGUI{
-    namespace INTERNAL {
+    namespace core {
         extern std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
     }
 
@@ -15,9 +15,9 @@ namespace GGUI{
      */
     canvas::~canvas() {
         // Check if this Terminal_Canvas is in the multi-frame list
-        if (INTERNAL::multiFrameCanvas.find(this) != INTERNAL::multiFrameCanvas.end()) {
+        if (core::multiFrameCanvas.find(this) != core::multiFrameCanvas.end()) {
             // Remove the canvas from the multi-frame list
-            INTERNAL::multiFrameCanvas.erase(this);
+            core::multiFrameCanvas.erase(this);
         }
     }
 
@@ -35,14 +35,14 @@ namespace GGUI{
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
-        if (!isMultiFrame() && sprite.frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
-            INTERNAL::multiFrameCanvas[this] = true;
+        if (!isMultiFrame() && sprite.frames.size() > 1 && core::multiFrameCanvas.find(this) == core::multiFrameCanvas.end()){
+            core::multiFrameCanvas[this] = true;
             multiFrame = true;
         }
 
         buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -62,14 +62,14 @@ namespace GGUI{
         unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
 
         // Check for multi-frame support and update the management map if needed.
-        if (!isMultiFrame() && sprite.frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
-            INTERNAL::multiFrameCanvas[this] = true;
+        if (!isMultiFrame() && sprite.frames.size() > 1 && core::multiFrameCanvas.find(this) == core::multiFrameCanvas.end()){
+            core::multiFrameCanvas[this] = true;
             multiFrame = true;
         }
 
         buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -90,12 +90,12 @@ namespace GGUI{
         
         buffer[Location].frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
 
-        if (!isMultiFrame() && buffer[Location].frames.size() > 1 && INTERNAL::multiFrameCanvas.find(this) == INTERNAL::multiFrameCanvas.end()){
-            INTERNAL::multiFrameCanvas[this] = true;
+        if (!isMultiFrame() && buffer[Location].frames.size() > 1 && core::multiFrameCanvas.find(this) == core::multiFrameCanvas.end()){
+            core::multiFrameCanvas[this] = true;
             multiFrame = true;
         }
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
+        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -109,7 +109,7 @@ namespace GGUI{
      */
     void canvas::flush(bool Force_Flush){
         if (Force_Flush){
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
+            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
         }
 
         updateFrame();
@@ -127,28 +127,28 @@ namespace GGUI{
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
+            Dirty.Dirty(types::STAIN_TYPE::STRETCH);
 
         if (Style->evaluateDynamicPosition(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
+            Dirty.Dirty(types::STAIN_TYPE::MOVE);
 
         if (Style->evaluateDynamicGraphics(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
+            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
 
         if (Style->evaluateDynamicBorder(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
+            Dirty.Dirty(types::STAIN_TYPE::EDGE);
 
         // Since canvas does not utilize DEEP flag, we can just clean it away
-        if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP))
-            Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
+        if (Dirty.is(types::STAIN_TYPE::DEEP))
+            Dirty.Clean(types::STAIN_TYPE::DEEP);
 
-        if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
+        if (Dirty.is(types::STAIN_TYPE::CLEAN))
             return Result;
 
         unsigned int fittingWidth = getWidth() - hasBorder()*2;
         unsigned int fittingHeight = getHeight() - hasBorder()*2;
         
-        if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
+        if (Dirty.is(types::STAIN_TYPE::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
 
@@ -156,20 +156,20 @@ namespace GGUI{
             buffer.clear();
             buffer.resize(fittingWidth * fittingHeight);
 
-            Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
+            Dirty.Clean(types::STAIN_TYPE::STRETCH);
 
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::RESET | types::STAIN_TYPE::NOT_RENDERED);
         }
 
-        if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
+        if (Dirty.is(types::STAIN_TYPE::NOT_RENDERED)) {
             if (On_Render) On_Render(this);
 
             // Clean regardless of On_Render existing or not.
-            Dirty.Clean(INTERNAL::STAIN_TYPE::NOT_RENDERED);
+            Dirty.Clean(types::STAIN_TYPE::NOT_RENDERED);
         }
 
-        if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
-            Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
+        if (Dirty.is(types::STAIN_TYPE::RESET)){
+            Dirty.Clean(types::STAIN_TYPE::RESET);
 
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
@@ -181,15 +181,15 @@ namespace GGUI{
             }
         }
 
-        if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)) {
-            Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
+        if (Dirty.is(types::STAIN_TYPE::MOVE)) {
+            Dirty.Clean(types::STAIN_TYPE::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)) {
-            Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
+        if (Dirty.is(types::STAIN_TYPE::GRAPHICS)) {
+            Dirty.Clean(types::STAIN_TYPE::GRAPHICS);
             
             graphicalIdentityPool.clear();
 
@@ -217,8 +217,8 @@ namespace GGUI{
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
-            Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
+        if (Dirty.is(types::STAIN_TYPE::EDGE)){
+            Dirty.Clean(types::STAIN_TYPE::EDGE);
 
             renderBorders(Result);
             renderTitle(Result);
@@ -252,7 +252,7 @@ namespace GGUI{
         sprite result = frames[frameBelow];
 
         // now interpolate the glyph color color between the two points
-        result.glyphColor = INTERNAL::lerp(
+        result.glyphColor = utils::lerp(
             frames[frameBelow].glyphColor, 
             frames[Frame_Above].glyphColor, 
             frameIndexRemainder,
@@ -260,7 +260,7 @@ namespace GGUI{
         );
 
         // do same for background
-        result.backgroundColor = INTERNAL::lerp(
+        result.backgroundColor = utils::lerp(
             frames[frameBelow].backgroundColor, 
             frames[Frame_Above].backgroundColor, 
             frameIndexRemainder,

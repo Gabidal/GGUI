@@ -8,7 +8,6 @@
 #include "utils.h"
 
 #include <cassert>
-#include <variant>
 #include <span>
 
 namespace GGUI {
@@ -1436,10 +1435,10 @@ namespace GGUI {
                 };
                 
                 template<typename enumType = types, typename = std::enable_if_t<std::is_enum_v<enumType> == true>>
-                struct base : public INTERNAL::linearMask<enumType, uint32_t> {
-                    using INTERNAL::linearMask<enumType, uint32_t>::linearMask;
+                struct base : public GGUI::types::linearMask<enumType, uint32_t> {
+                    using GGUI::types::linearMask<enumType, uint32_t>::linearMask;
 
-                    constexpr base(const INTERNAL::linearMask<enumType, uint32_t>& other) : INTERNAL::linearMask<enumType, uint32_t>(other) {}
+                    constexpr base(const GGUI::types::linearMask<enumType, uint32_t>& other) : GGUI::types::linearMask<enumType, uint32_t>(other) {}
 
                     constexpr base(enumType bit, values isSet) {
                         this->set(bit, static_cast<bool>(isSet));
@@ -1935,7 +1934,7 @@ namespace GGUI {
             // Only used to store metadata, actual colors are found in the UTFs
             class activeSGRStyle {
             public:
-                INTERNAL::linearMask<graphicalTextAttributes, uint64_t> textAttributes = graphicalTextAttributes::DEFAULT;
+                GGUI::types::linearMask<graphicalTextAttributes, uint64_t> textAttributes = graphicalTextAttributes::DEFAULT;
                 IVector2 start = {};
                 RGB textColor = {};
                 RGB backgroundColor = {};

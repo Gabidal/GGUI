@@ -28,8 +28,6 @@ lib_sources = [
   # Core utilities
   '../src/core/utils/style.cpp',
   '../src/core/utils/logger.cpp',
-  '../src/core/utils/utils.cpp',
-  '../src/core/utils/fileStreamer.cpp',
   '../src/core/utils/settings.cpp',
   '../src/core/utils/drm.cpp',
   
@@ -40,9 +38,6 @@ lib_sources = [
   '../src/elements/switch.cpp',
   '../src/elements/canvas.cpp',
   '../src/elements/progressBar.cpp',
-
-  # Specialized elements
-  '../src/elements/HTML.cpp',
 
   # core functionalities
   '../src/core/core.cpp',

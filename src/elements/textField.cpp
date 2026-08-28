@@ -31,7 +31,7 @@ namespace GGUI{
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
         // The textField::render() will take care of this if percentage is used.
-        if (innerWidth == 0 && Style->Width.number.getType() == INTERNAL::EVALUATION_TYPE::PERCENTAGE){
+        if (innerWidth == 0 && Style->Width.number.getType() == types::EVALUATION_TYPE::PERCENTAGE){
             return;
         }
 
@@ -131,64 +131,64 @@ namespace GGUI{
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
+            Dirty.Dirty(types::STAIN_TYPE::STRETCH);
 
         if (Style->evaluateDynamicPosition(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
+            Dirty.Dirty(types::STAIN_TYPE::MOVE);
 
         if (Style->evaluateDynamicGraphics(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
+            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
 
         if (Style->evaluateDynamicBorder(this))
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
+            Dirty.Dirty(types::STAIN_TYPE::EDGE);
 
         // If the text field is clean, return the current render buffer
-        if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
+        if (Dirty.is(types::STAIN_TYPE::CLEAN))
             return Result;
 
         // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
-        if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)){
+        if (Dirty.is(types::STAIN_TYPE::DEEP)){
             updateTextCache();
         }
 
-        if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
-            Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
+        if (Dirty.is(types::STAIN_TYPE::RESET)){
+            Dirty.Clean(types::STAIN_TYPE::RESET);
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
+            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::DEEP);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
-        if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
+        if (Dirty.is(types::STAIN_TYPE::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
-            Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::RESET | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+            Dirty.Clean(types::STAIN_TYPE::STRETCH);
+            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::RESET | types::STAIN_TYPE::NOT_RENDERED);
         }
 
-        if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
+        if (Dirty.is(types::STAIN_TYPE::NOT_RENDERED)) {
             if (On_Render) On_Render(this);
 
             // Clean regardless of On_Render existing or not.
-            Dirty.Clean(INTERNAL::STAIN_TYPE::NOT_RENDERED);
+            Dirty.Clean(types::STAIN_TYPE::NOT_RENDERED);
         }
 
         // Update the absolute position cache if the MOVE stain is detected.
-        if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)) {
-            Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
+        if (Dirty.is(types::STAIN_TYPE::MOVE)) {
+            Dirty.Clean(types::STAIN_TYPE::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Align text and add child windows to the Result buffer if the DEEP stain is detected
-        if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)) {
-            Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
+        if (Dirty.is(types::STAIN_TYPE::DEEP)) {
+            Dirty.Clean(types::STAIN_TYPE::DEEP);
 
             // clean reflection pool
             graphicalReflectionPool.clear();
             graphicalIdentityPool.clear();
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
+            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
 
             if (Style->Align.value == ANCHOR::LEFT)
                 alignTextLeft(Result);
@@ -199,16 +199,16 @@ namespace GGUI{
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){        
+        if (Dirty.is(types::STAIN_TYPE::GRAPHICS)){        
             // Clean the color stain after applying the color system.
-            Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
+            Dirty.Clean(types::STAIN_TYPE::GRAPHICS);
 
             compileActiveGraphics();
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
-            Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
+        if (Dirty.is(types::STAIN_TYPE::EDGE)){
+            Dirty.Clean(types::STAIN_TYPE::EDGE);
 
             renderBorders(Result);
             renderTitle(Result);
@@ -228,7 +228,7 @@ namespace GGUI{
         if (hasEmptyName())
             setName(text);
 
-        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::RESET);
+        Dirty.Dirty(types::STAIN_TYPE::DEEP | types::STAIN_TYPE::RESET);
 
         updateTextCache();
 
@@ -343,7 +343,7 @@ namespace GGUI{
                     char letter = '\0';
 
                     for (char i = (char)converter::input::key::types::SPACE + 1; i < (char)converter::input::key::types::DELETE; i++) {
-                        if (INTERNAL::inputManager->currentKeyboardState[(uint8_t)i].state) {
+                        if (core::inputManager->currentKeyboardState[(uint8_t)i].state) {
                             letter = i;
                             break;
                         }
@@ -369,7 +369,7 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ENTER},
             [this, Then](converter::output::event::base*) {
-                if (Focused && INTERNAL::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
+                if (Focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
                     //First call the function with the user's input
                     Then(this, '\n');
                     updateFrame();
@@ -385,14 +385,14 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::BACKSPACE},
             [this](converter::output::event::base*) {
-                if (Focused && INTERNAL::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
+                if (Focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
                     //If the text field is empty, there is nothing to do
                     if (text.size() > 0) {
                         text.pop_back();
 
                         updateTextCache();
 
-                        Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::RESET);
+                        Dirty.Dirty(types::STAIN_TYPE::DEEP | types::STAIN_TYPE::RESET);
                         updateFrame();
                     }
 

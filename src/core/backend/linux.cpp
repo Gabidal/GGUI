@@ -42,7 +42,7 @@ namespace GGUI {
                 // Only do termios checks and binds if the given route is a tty valid, if not we dont need termios and are probably buffering into a file or a pipe.
                 if (isatty(handle)) {
                     if (tcgetattr(handle, &state) < 0) {    // fetch tty attributes from kernel
-                        GGUI::INTERNAL::LOGGER::log("ERROR: Failed to get terminal attributes: " + std::string(strerror(errno)));
+                        GGUI::logger::log("ERROR: Failed to get terminal attributes: " + std::string(strerror(errno)));
                     }
 
                     // Since we have our own control sequence parsing we need the line discipline to be raw
@@ -50,7 +50,7 @@ namespace GGUI {
 
                     // Since cfmakeraw does not push the update, we need to push it manually:
                     if (tcsetattr(handle, TCSANOW, &state) < 0) {
-                        GGUI::INTERNAL::LOGGER::log("ERROR: Failed to set terminal attributes: " + std::string(strerror(errno)));
+                        GGUI::logger::log("ERROR: Failed to set terminal attributes: " + std::string(strerror(errno)));
                     }
                 }
             }
@@ -68,13 +68,13 @@ namespace GGUI {
             // Open the input and output files with the specified flags
             int32_t inHandle = open(in.AbsolutePath.data(), in.flags | O_RDONLY);
             if (inHandle == device::CLOSED_HANDLE) {
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to open input route: " + std::string(strerror(errno)));
+                GGUI::logger::log("ERROR: Failed to open input route: " + std::string(strerror(errno)));
                 return;
             }
 
             int32_t outHandle = open(out.AbsolutePath.data(), out.flags | O_WRONLY);
             if (outHandle == device::CLOSED_HANDLE) {
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to open output route: " + std::string(strerror(errno)));
+                GGUI::logger::log("ERROR: Failed to open output route: " + std::string(strerror(errno)));
                 return;
             }
 
@@ -86,7 +86,7 @@ namespace GGUI {
         IVector2 getScreenDimensions() {
             struct winsize w;
             if (ioctl(output.handle, TIOCGWINSZ, &w) == -1) {
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to get window size: " + std::string(strerror(errno)));
+                GGUI::logger::log("ERROR: Failed to get window size: " + std::string(strerror(errno)));
                 return { 0, 0 }; // Return a default size on error
             }
             return { w.ws_col, w.ws_row };
@@ -116,7 +116,7 @@ namespace GGUI {
             resizeHandler.sa_flags = 0;              // Since sigaction flags does not get auto constructed, we need to clean it.
 
             if (sigaction(SIGWINCH, &resizeHandler, nullptr) == -1) {
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to set SIGWINCH handler: " + std::string(strerror(errno)));
+                GGUI::logger::log("ERROR: Failed to set SIGWINCH handler: " + std::string(strerror(errno)));
             }
         }
 
@@ -158,7 +158,7 @@ namespace GGUI {
                 // No data; avoid spinning
                 currentStates->transmission.inputSize = 0;
                 
-                // GGUI::INTERNAL::LOGGER::log("poll timeout!");
+                // GGUI::logger::log("poll timeout!");
                 return;
             }
 
@@ -181,15 +181,15 @@ namespace GGUI {
                 totalSize += str.size();
             }
 
-            // GGUI::INTERNAL::LOGGER::log("sending bytes...");
+            // GGUI::logger::log("sending bytes...");
             ssize_t wrote = writev(output.handle, vec.data(), vec.size());
             if (wrote != totalSize) {
-                GGUI::INTERNAL::LOGGER::log("Failed to fully write to: '" + std::to_string(output.handle) + "' (wrote " + std::to_string(wrote) + " of " + std::to_string(totalSize) + ")");
+                GGUI::logger::log("Failed to fully write to: '" + std::to_string(output.handle) + "' (wrote " + std::to_string(wrote) + " of " + std::to_string(totalSize) + ")");
             }
 
             // force the PTY to flush our bytes
             if (tcdrain(output.handle) < 0) {
-                GGUI::INTERNAL::LOGGER::log("ERROR: Failed to drain terminal output: " + std::string(strerror(errno)));
+                GGUI::logger::log("ERROR: Failed to drain terminal output: " + std::string(strerror(errno)));
             }
         }
 

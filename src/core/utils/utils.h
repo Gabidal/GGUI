@@ -9,8 +9,7 @@
 
 #include <math.h>
 #include <cstring>
-#include <algorithm> // std::clamp
-#include <cmath>     // std::pow, std::lround
+#include <algorithm>
 #include <charconv>
 
 namespace GGUI{
@@ -29,76 +28,22 @@ namespace GGUI{
     #endif
     // ===               ===, this is probably useless weight, but im gonna try this regardless hehe :)
 
-    // autoGen: Ignore start
-    namespace INTERNAL{
-        extern std::string constructLoggerFileName();
-
-        extern bool identicalFrame;
-
-        extern int BEFORE_ENCODE_BUFFER_SIZE;
-        extern int AFTER_ENCODE_BUFFER_SIZE;
-        
-        /**
-         * @brief The Renderer function is responsible for managing the rendering loop.
-         * It waits for a condition to resume rendering, processes rendering tasks, and
-         * then pauses itself until the condition is met again.
-         * 
-         * The function performs the following steps:
-         * 1. Waits for the render thread to be resumed.
-         * 2. Saves the current time.
-         * 3. Checks if the rendering scheduler needs to be terminated.
-         * 4. Processes carry flags and updates the maximum width and height if needed.
-         * 5. Renders the main frame buffer.
-         * 6. Encodes the buffer for optimization.
-         * 7. Converts the abstract frame buffer to a string and renders the frame.
-         * 8. Calculates the render delay.
-         * 9. Pauses the render thread and notifies all waiting threads.
-         */
-        extern void renderer();
-
-        /**
-         * @brief Event_Thread is a function that runs an infinite loop to handle various events and tasks.
-         * 
-         * This function performs the following tasks in each iteration of the loop:
-         * - Resets the thread load counter and updates the previous time.
-         * - Calls functions to recall memories, go through file streams, and refresh the multi-frame canvas.
-         * - Checks for termination signals and breaks out of the loop if the terminate flag is set.
-         * - Updates the current time and calculates the delta time.
-         * - Adjusts the current update speed based on the event thread load.
-         * - Sleeps for a calculated duration to control the update speed.
-         * 
-         * The function is designed to be used in a multi-threaded environment where it can be paused and resumed as needed.
-         * 
-         * @note If uncapped FPS is desired, the sleep code can be disabled.
-         */
-        extern void eventThread();
-
-        /**
-         * @brief Converts an unsigned long long integer to its uppercase hexadecimal string representation.
-         * 
-         * This function takes an unsigned long long integer and formats it as a hexadecimal string
-         * in uppercase. The resulting string does not include a "0x" prefix.
-         * 
-         * @param value The unsigned long long integer to be converted to a hexadecimal string.
-         * @return A std::string containing the uppercase hexadecimal representation of the input value.
-         */
-        extern std::string hex(unsigned long long value);
-
+    namespace utils{
         /**
          * @brief Checks if two rectangles collide.
          *
          * This function determines whether two rectangles, defined by their top-left
          * corners and dimensions, overlap in a 2D space.
          *
-         * @param A The top-left corner of the first rectangle as a GGUI::IVector3.
-         * @param B The top-left corner of the second rectangle as a GGUI::IVector3.
+         * @param A The top-left corner of the first rectangle as a IVector3.
+         * @param B The top-left corner of the second rectangle as a IVector3.
          * @param A_Width The width of the first rectangle.
          * @param A_Height The height of the first rectangle.
          * @param B_Width The width of the second rectangle.
          * @param B_Height The height of the second rectangle.
          * @return true if the rectangles overlap, false otherwise.
          */
-        constexpr bool collides(GGUI::IVector3 A, GGUI::IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1) noexcept {
+        constexpr bool collides(IVector3 A, IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1) noexcept {
             return (
                 A.x < B.x + B_Width &&
                 A.x + A_Width > B.x &&
@@ -106,48 +51,6 @@ namespace GGUI{
                 A.y + A_Height > B.y
             );
         }
-
-        /**
-         * @brief Checks if two GGUI elements collide.
-         * 
-         * This function determines whether two GGUI elements, `a` and `b`, collide with each other.
-         * If the elements are the same (i.e., `a` is equal to `b`), the function returns the value of `Identity`.
-         * Otherwise, it checks for collision based on the absolute positions and dimensions of the elements.
-         * 
-         * @param a Pointer to the first GGUI element.
-         * @param b Pointer to the second GGUI element.
-         * @param Identity Boolean value to return if the elements are the same.
-         * @return true if the elements collide, false otherwise.
-         */
-        extern bool collides(GGUI::element* a, GGUI::element* b, bool Identity = true);
-
-        /**
-         * @brief Checks if a given point collides with a specified element.
-         * 
-         * This function determines if the point `b` collides with the element `a` by 
-         * calling another `Collides` function with the element's absolute position, 
-         * width, height, and the point's assumed dimensions of 1x1.
-         * 
-         * @param a Pointer to the GGUI::Element to check for collision.
-         * @param b The point (as GGUI::IVector3) to check for collision with the element.
-         * @return true if the point collides with the element, false otherwise.
-         */
-        extern bool collides(GGUI::element* a, GGUI::IVector3 b);
-
-        /**
-         * @brief Recursively finds the most accurate element that contains the given position.
-         * 
-         * This function checks if the given position is within the bounds of the parent element.
-         * If it is, it then checks all the child elements of the parent to see if any of them
-         * contain the position. If a child element contains the position, the function is called
-         * recursively on that child element. If no child element contains the position, the parent
-         * element is returned.
-         * 
-         * @param c The position to check, represented as an IVector3.
-         * @param Parent The parent element to start the search from.
-         * @return Element* The most accurate element that contains the given position, or nullptr if the position is not within the bounds of the parent element.
-         */
-        extern element* getAccurateElementFrom(IVector3 c, element* Parent);
 
         /**
          * @brief Checks if a bit is set in a char.
@@ -160,19 +63,6 @@ namespace GGUI{
          * @return True if the bit is set, false if it is not.
          */
         constexpr bool hasBitAt(char val, int i) noexcept { return (val & (1 << i)) != 0; }
-
-        /**
-         * @brief Calculates the current load of the GGUI thread based on the given current position.
-         * @param Min The minimum value the load can have.
-         * @param Max The maximum value the load can have.
-         * @param Position The current position of the load.
-         * @return The current load of the GGUI thread from 0 to 1.
-         */
-        constexpr float lerp(int Min, int Max, int Position) noexcept {
-            float Length_Of_Possible_values = static_cast<float>(Max - Min);
-            float Offset_Of_Our_Load = std::max(Position - Min, 0);
-            return 1.0f - Offset_Of_Our_Load / Length_Of_Possible_values;
-        }
 
         /**
          * @brief Checks if the given flag is set in the given flags.
@@ -194,8 +84,6 @@ namespace GGUI{
          */
         constexpr bool has(unsigned long long f, unsigned long long flag) noexcept { return (f & flag) != 0ULL; }
 
-        extern bool has(ALLOCATION_TYPE f, ALLOCATION_TYPE flag);
-
         /**
          * @brief Checks if all flags in small are set in big.
          * @details This function takes two unsigned long long parameters, one for the flags to check and one for the flags to check against. It returns true if all flags in small are set in big, otherwise it returns false.
@@ -206,126 +94,40 @@ namespace GGUI{
          */
         constexpr bool contains(unsigned long long big, unsigned long long Small) noexcept { return (Small & big) == Small; }
 
-        extern bool contains(ALLOCATION_TYPE big, ALLOCATION_TYPE small);
-
-        /**
-         * @brief Determines if a given pointer is likely deletable (heap-allocated).
-         *
-         * This function assesses whether a pointer may belong to the heap by comparing its
-         * position relative to known memory sections such as the stack, heap, and data segments.
-         *
-         * @param ptr Pointer to be evaluated.
-         * @return True if the pointer is likely deletable (heap-allocated), false otherwise.
-         */
-        extern ALLOCATION_TYPE getAllocationType(const void* ptr);
-
-        template <typename T, std::size_t N>
-        constexpr void constexprFill(std::array<T, N>& arr, const T& value) {
-            for (std::size_t i = 0; i < N; ++i) {
-                arr[i] = value;
-            }
-        }
-
         /**
          * Linear interpolation function
          * @param a The start value
          * @param b The end value
-         * @param t The interpolation value, between 0 and 1
+         * @param t The interpolation value:
+         *   - decltype(t) == float, values are from [0, 1]
+         *   - decltype(t) == decltype(a), values are from a to b.
          * @return The interpolated value
          */
-        template<typename T>
-        constexpr T lerp(T a, T b, T t) {
-            // Clamp t between a and b
-            return a + t * (b - a);
-        }
-
-        /**
-         * @brief Performs gamma-corrected linear interpolation between two values.
-         * 
-         * @tparam T The type of the input values.
-         * @tparam P The type of the interpolation factor.
-         * @param a The start value.
-         * @param b The end value.
-         * @param t The interpolation factor, typically between 0 and 1.
-         * @return The interpolated value, gamma-corrected and cast back to type T.
-         */
         template<typename T, typename P>
-        constexpr T interpolate(T a, T b, P t) {
-            // Define gamma value for correction
-            constexpr float gamma = 2.2F;
-
-            // Apply gamma correction to input values and perform linear interpolation
-            const float c_f = lerp<float>(std::pow(static_cast<float>(a), gamma), std::pow(static_cast<float>(b), gamma), t);
-
-            // Reverse gamma correction and cast back to original type
-            return static_cast<T>(std::pow(c_f, 1.F / gamma));
+        constexpr auto lerp(T a, T b, P t) {
+            // This method is to determine where t is in relation to a and b
+            if constexpr (std::is_same_v<P, T>) {
+                float valueRange = static_cast<float>(b - a);
+                float index = std::max(static_cast<T>(t - a), static_cast<T>(0));
+                return 1.0f - index / valueRange;
+            } else {    // This method is to determine where t is in relation to 0 and 1
+                return a + t * (b - a);
+            }
         }
 
-        namespace fast {
-            // Initialize LUTs once (thread-safe in C++11+ for function statics)
-            constexpr std::array<float, 256> make_s2l() {
-                std::array<float, 256> arr{};
-                for (int i = 0; i < 256; ++i) {
-                    float s = static_cast<float>(i) / 255.0f;
-                    // precomputed offline! Here just fill linear as placeholder
-                    arr[i] = s * s; 
-                }
-                return arr;
-            }
-
-            constexpr std::array<unsigned char, 256> make_l2s() {
-                std::array<unsigned char, 256> arr{};
-                for (int i = 0; i < 256; ++i) {
-                    float l = static_cast<float>(i) / 255.0f;
-                    float s = l; // again: replace with offline precomputed pow(l,1/2.2)
-                    int v = static_cast<int>(s * 255.0f + 0.5f);
-                    arr[i] = static_cast<unsigned char>(v < 0 ? 0 : v > 255 ? 255 : v);
-                }
-                return arr;
-            }
-
-            struct gammaLUT {
-                std::array<float, 256> s2l;
-                std::array<unsigned char, 256> l2s_u8;
-
-                constexpr gammaLUT() : s2l(make_s2l()), l2s_u8(make_l2s()) {}
+        constexpr RGB lerp(RGB A, RGB B, int frameIndexRemainder, int frameDistance) {
+            RGB result;
+            auto extendedLerp = [frameIndexRemainder, frameDistance](int a, int b) {
+                return (a * (frameDistance - frameIndexRemainder) + b * frameIndexRemainder) / frameDistance;
             };
 
-            constexpr gammaLUT LUT{};
+            result.red = static_cast<unsigned char>(extendedLerp(A.red, B.red));
+            result.green = static_cast<unsigned char>(extendedLerp(A.green, B.green));
+            result.blue = static_cast<unsigned char>(extendedLerp(A.blue, B.blue));
 
-            inline unsigned char interpolate(unsigned char a, unsigned char b, float t) {
-                float la = LUT.s2l[a];
-                float lb = LUT.s2l[b];
-                float lc = la + (lb - la) * t; // linear blend in linear space
-                // Map back via LUT: index by 0..255
-                int idx = static_cast<int>(std::lround(std::clamp(lc, 0.0f, 1.0f) * 255.0f));
-                return LUT.l2s_u8[idx];
-            }
-
-            // Fast linear interpolate for 8-bit channels without gamma correction.
-            // Uses fixed-point weights to avoid divisions and minimize float work.
-            constexpr unsigned char interpolateLinearU8(unsigned char a, unsigned char b, int clampedDistance) {
-                // Clamp t and convert to 0..256 fixed-point weight with rounding
-                int inv = UINT8_MAX - clampedDistance;                       // 256..0
-
-                // Weighted sum with rounding, then >> 8 instead of /255
-                int sum = a * inv + b * clampedDistance;                     // <= 255*256 + 255*256 = 130560
-                return static_cast<unsigned char>((sum + UINT8_MAX/2) >> 8);
-            }
+            return result;
         }
-
-        /**
-         * @brief Interpolates between two RGB colors using linear interpolation.
-         * If SETTINGS::enableGammaCorrection is enabled, the interpolation is done in a gamma-corrected space.
-         * @param A The start RGB color.
-         * @param B The end RGB color.
-         * @param frameIndexRemainder The remainder of the current frame index.
-         * @param Frame_Distance The total distance between frames.
-         * @return The interpolated RGB color.
-         */
-        extern GGUI::RGB lerp(GGUI::RGB A, GGUI::RGB B, int frameIndexRemainder, int Frame_Distance);
     }
-    // autoGen: Ignore end
 
     // Contains useful all around utils for handling enums
     namespace table {

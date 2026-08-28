@@ -1025,7 +1025,7 @@ namespace GGUI {
                         const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
                         if (activeModes.has(mode::presets::DCSM_DATA)) {
-                            GGUI::INTERNAL::LOGGER::log("GGUI Does not support input data stream manipulation!");
+                            GGUI::logger::log("GGUI Does not support input data stream manipulation!");
                             return;
                         }
 
@@ -1043,7 +1043,7 @@ namespace GGUI {
                                 ' '     // Represents empty cell
                             );
                         } else {
-                            GGUI::INTERNAL::LOGGER::log("Unknown delete mode at: " + currentStates->ecmaComponents.activePresentationPosition.toString());
+                            GGUI::logger::log("Unknown delete mode at: " + currentStates->ecmaComponents.activePresentationPosition.toString());
                         }
                     }
 
@@ -1426,7 +1426,7 @@ namespace GGUI {
                                 auto& s = parsed[i];
 
                                 if (s->getType() != sequence::types::GRAPHICAL_CHARACTER) {
-                                    GGUI::INTERNAL::LOGGER::log("Non-graphical transmission block found!");
+                                    GGUI::logger::log("Non-graphical transmission block found!");
                                     continue;
                                 }
 
@@ -1447,7 +1447,7 @@ namespace GGUI {
                                     auto& s = parsed[i];
 
                                     if (s->getType() != sequence::types::GRAPHICAL_CHARACTER) {
-                                        GGUI::INTERNAL::LOGGER::log("Non-graphical transmission block found!");
+                                        GGUI::logger::log("Non-graphical transmission block found!");
                                         continue;
                                     }
 
@@ -1483,7 +1483,7 @@ namespace GGUI {
                     void operate_END_OF_TRANSMISSION(sequence::base*) {
                         // Check that a open-ended transmission exists.
                         if (currentStates->ecmaComponents.callBacks.empty() || currentStates->ecmaComponents.callBacks.back().end != 0) {
-                            GGUI::INTERNAL::LOGGER::log("Unexpected EOT/ETX/ETB!");
+                            GGUI::logger::log("Unexpected EOT/ETX/ETB!");
                             return;
                         }
 
@@ -1531,7 +1531,7 @@ namespace GGUI {
                             currentStates->transmission.addToQueue(response);
                         } else {
                             // This needs to be already overridden via the DEC page re-route, something went wrong here...
-                            GGUI::INTERNAL::LOGGER::log("ERROR: Unjustified device identification: " + std::to_string(deviceType));
+                            GGUI::logger::log("ERROR: Unjustified device identification: " + std::to_string(deviceType));
                         }
                     }
 

@@ -2,6 +2,11 @@
 #define _TERMINAL_H_
 
 #include <cstdint>
+#include <condition_variable>
+#include <mutex>
+#include <array>
+#include <vector>
+#include <string>
 
 // Modules:
 #include "ecma.h"
@@ -13,7 +18,7 @@
 #include "../utils/style.h"
 
 namespace GGUI {
-    namespace INTERNAL {
+    namespace thread {
         void renderer();
     }
 
@@ -61,7 +66,7 @@ namespace GGUI {
         public:
             // ===                  ===
             
-            friend void INTERNAL::renderer();
+            friend void thread::renderer();
             friend void updateScreenDimensions();
         };
 
@@ -82,7 +87,7 @@ namespace GGUI {
                 RECEIVING
             } state = status::NONE;
 
-            constexpr query() = default;
+            query() = default;
 
             bool isConnected();
 

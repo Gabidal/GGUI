@@ -13,7 +13,6 @@ namespace GGUI {
         // Define the actual storage for the settings variables with their default values
         std::chrono::steady_clock::duration mousePressDownCooldown = std::chrono::milliseconds(365);  // Default cooldown of 365 milliseconds
         bool wordWrapping = true;
-        bool enableGammaCorrection = false;
         bool enableDRM = false;
         
         // Maximum allowed delay between passive event loop iterations.
@@ -21,10 +20,6 @@ namespace GGUI {
         // Close approximation to 60 FPS for minimum sleep (cannot be constexpr modified elsewhere).
         std::chrono::steady_clock::duration MIN_UPDATE_SPEED = std::chrono::milliseconds(32);   // Default minimum delay of 32 milliseconds (approx. 60 FPS)
         
-        namespace LOGGER {
-            std::string fileName = "";
-        }
-
         static std::string toLower(const std::string& in) {
             std::string out = in;
             std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -87,28 +82,28 @@ namespace GGUI {
          * @param descriptors Vector of argument descriptors to display help for
          */
         static void displayHelp(const std::vector<argumentDescriptor>& descriptors) {
-            INTERNAL::LOGGER::log("GGUI - Professional Command Line Interface\n");
-            INTERNAL::LOGGER::log("==========================================\n\n");
-            INTERNAL::LOGGER::log("Usage: GGUI [OPTIONS]\n\n");
-            INTERNAL::LOGGER::log("Available Options:\n");
+            logger::log("Usage: GGUI [OPTIONS]\n\n");
+            logger::log("Available Options:\n");
+            logger::log("==========================================\n");
             
             for (const auto& desc : descriptors) {
-                INTERNAL::LOGGER::log("  --" + desc.name);
+                logger::log("  --" + desc.name);
                 
                 if (desc.requiresvalue()) {
-                    INTERNAL::LOGGER::log("=<" + desc.getTypeName() + ">");
+                    logger::log("=<" + desc.getTypeName() + ">");
                 }
                 
                 // Align descriptions
                 std::string spacing(std::max(1, 30 - static_cast<int>(desc.name.length() + 
-                    (desc.requiresvalue() ? desc.getTypeName().length() + 3 : 0))), ' ');
-                INTERNAL::LOGGER::log(spacing + desc.description + "\n");
+                (desc.requiresvalue() ? desc.getTypeName().length() + 3 : 0))), ' ');
+                logger::log(spacing + desc.description + "\n");
             }
             
-            INTERNAL::LOGGER::log("\nExamples:\n");
-            INTERNAL::LOGGER::log("  GGUI --enableDRM --mousePressCooldown=500\n");
-            INTERNAL::LOGGER::log("  GGUI -enableGammaCorrection --loggerFileName=\"debug.log\"\n");
-            INTERNAL::LOGGER::log("  GGUI enableWordWrapping mousePressCooldown=1000\n\n");
+            logger::log("==========================================\n");
+            logger::log("Examples:\n");
+            logger::log("  GGUI --enableDRM --mousePressCooldown=500\n");
+            logger::log("  GGUI --loggerFileName=\"debug.log\"\n");
+            logger::log("  GGUI enableWordWrapping mousePressCooldown=1000\n\n");
         }
 
         void parseCommandLineArguments(int argc, char** argv) {
@@ -122,8 +117,8 @@ namespace GGUI {
                         try {
                             mousePressDownCooldown = std::chrono::milliseconds(std::stoull(value));
                         } catch (const std::exception& e) {
-                            INTERNAL::LOGGER::log("Error: Invalid value for mousePressCooldown: " + value);
-                            INTERNAL::LOGGER::log("Expected an unsigned integer value.");
+                            logger::log("Error: Invalid value for mousePressCooldown: " + value);
+                            logger::log("Expected an unsigned integer value.");
                         }
                     }
                 ),
@@ -138,15 +133,6 @@ namespace GGUI {
                 ),
                 
                 argumentDescriptor(
-                    "enableGammaCorrection",
-                    argumentType::FLAG,
-                    "Enable gamma correction (default: false)",
-                    [](const std::string&) {
-                        enableGammaCorrection = true;
-                    }
-                ),
-                
-                argumentDescriptor(
                     "loggerFileName",
                     argumentType::STRING,
                     "Set logger file name (default: auto-generated)",
@@ -156,7 +142,7 @@ namespace GGUI {
                         if (cleanvalue.length() >= 2 && cleanvalue.front() == '"' && cleanvalue.back() == '"') {
                             cleanvalue = cleanvalue.substr(1, cleanvalue.length() - 2);
                         }
-                        LOGGER::fileName = cleanvalue;
+                        logger::logFile = cleanvalue;
                     }
                 ),
                 
@@ -225,13 +211,13 @@ namespace GGUI {
                             std::string nextToken = tokens[++i];
                             // Don't consume if next token looks like another argument
                             if (!nextToken.empty() && nextToken[0] == '-' && nextToken.length() > 1) {
-                                INTERNAL::LOGGER::log("Error: Argument --" + argName + " requires a value.");
+                                logger::log("Error: Argument --" + argName + " requires a value.");
                                 i--; // Back up so this token gets processed
                             } else {
                                 descriptorIt->handler(nextToken);
                             }
                         } else {
-                            INTERNAL::LOGGER::log("Error: Argument --" + argName + " requires a value.");
+                            logger::log("Error: Argument --" + argName + " requires a value.");
                         }
                     } else {
                         // Flag argument
@@ -240,22 +226,10 @@ namespace GGUI {
                 } else {
                     // Unknown argument
                     if (!argName.empty()) {
-                        INTERNAL::LOGGER::log("Warning: Unknown argument '" + argName + "'. Use --help for available options.");
+                        logger::log("Warning: Unknown argument '" + argName + "'. Use --help for available options.");
                     }
                 }
             }
-        }
-
-        /**
-         * @brief Initializes the settings for the application.
-         *
-         * This function sets up the necessary configurations for the application
-         * by initializing the logger file name using the internal logger file name
-         * construction method.
-         */
-        void initSettings(){
-            if (LOGGER::fileName.empty())
-                LOGGER::fileName = INTERNAL::constructLoggerFileName();
         }
     }
 }

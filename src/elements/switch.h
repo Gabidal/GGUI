@@ -85,7 +85,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class singleSelect : public STYLING_INTERNAL::styleBase {
@@ -153,7 +153,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class switchBox : public element{
@@ -290,6 +290,20 @@ namespace GGUI{
          */
         void setStateString(terminal::cell off, terminal::cell on);
 
+        /**
+         * @brief Disables other switches in the same group, keeping only the specified switch active.
+         * 
+         * This function ensures that if the provided switchBox (`keepOn`) is part of a group
+         * and is marked as single-select, it will remain active while all other single-select
+         * switches in the same group are disabled. If the switch is not part of a group or is
+         * not single-select, it toggles the state of the provided switchBox.
+         * 
+         * @param keepOn Pointer to the switchBox that should remain active or be toggled.
+         * 
+         * @note If the `keepOn` switchBox does not have a parent or is not part of a group,
+         *       the function will simply toggle its state.
+         */
+        void DisableOthers();
     protected:
         /**
          * @brief Renders the switch element and its children into the Render_Buffer nested buffer of the window.
@@ -411,23 +425,6 @@ namespace GGUI{
         //     return new checkBox();
         // }
     };
-
-    namespace INTERNAL{
-        /**
-         * @brief Disables other switches in the same group, keeping only the specified switch active.
-         * 
-         * This function ensures that if the provided switchBox (`keepOn`) is part of a group
-         * and is marked as single-select, it will remain active while all other single-select
-         * switches in the same group are disabled. If the switch is not part of a group or is
-         * not single-select, it toggles the state of the provided switchBox.
-         * 
-         * @param keepOn Pointer to the switchBox that should remain active or be toggled.
-         * 
-         * @note If the `keepOn` switchBox does not have a parent or is not part of a group,
-         *       the function will simply toggle its state.
-         */
-        void DisableOthers(switchBox* keepOn);
-    }
 }
 
 #endif

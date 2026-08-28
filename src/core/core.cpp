@@ -1,5 +1,4 @@
 #include "core.h"
-#include "utils/fileStreamer.h"
 #include "utils/logger.h"
 #include "utils/utils.h"
 #include "addons/addons.h"
@@ -8,6 +7,8 @@
 #include "backend/terminal.h"
 
 #include "../elements/canvas.h"
+
+#include "thread.h"
 
 #include <string>
 #include <cassert>
@@ -35,21 +36,21 @@
 #endif
 
 namespace GGUI{
-    namespace INTERNAL{
+    namespace core{
         std::vector<std::function<void()>> userCleanupCallbacks;        // User defined functions to be called on cleanup
 
         std::vector<std::thread> Sub_Threads;
 
         std::vector<class bufferCapture*> globalBufferCaptures;
 
-        concurrency::guard<std::vector<converter::output::event::memory>> remember;
+        thread::guard<std::vector<converter::output::event::memory>> remember;
 
         std::unordered_map<std::string_view, element*> elementNames;
 
         element* focusedOn = nullptr;
         element* hoveredOn = nullptr;
 
-        std::unordered_map<GGUI::canvas*, bool> multiFrameCanvas;
+        std::unordered_map<canvas*, bool> multiFrameCanvas;
 
         void* Stack_Start_Address = 0;
         void* Heap_Start_Address = 0;
@@ -59,7 +60,7 @@ namespace GGUI{
         converter::input::base*  inputManager;
         converter::output::base* inputConverter; 
 
-        extern sig_atomic_t requestTermination;
+        sig_atomic_t requestTermination;
 
         /**
          * @brief Temporary function to return the current date and time in a string.
@@ -77,40 +78,31 @@ namespace GGUI{
 
             return oss.str();
         }
-        
-        /**
-         * @brief Initializes the start addresses for stack and heap.
-         * 
-         * This function is made extern to prevent inlining. It is responsible
-         * for capturing and initializing the nearest stack and heap addresses 
-         * and assigning them to the respective global variables.
-         */
-        extern void Read_Start_Addresses();
 
         void Cleanup(){
             SignalThreadTermination();
 
-            LOGGER::log("Reverting to normal console mode...");
+            logger::log("Reverting to normal console mode...");
 
             terminal::deinit();
 
-            LOGGER::log("GGUI shutdown successful.");
+            logger::log("GGUI shutdown successful.");
         }
 
         void SignalThreadTermination(){
             // Gracefully shutdown event and rendering threads.
             requestTermination = true;
 
-            concurrency::condition.notify_all();
+            thread::concurrency::condition.notify_all();
         }
 
         /**
          * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
-         * @details This function is a lambda function that is used by the concurrency::Guard class to prolong or delete memories in the smart memory system.
+         * @details This function is a lambda function that is used by the thread::concurrency::Guard class to prolong or delete memories in the smart memory system.
          *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
          */
         void recallMemories(){
-            INTERNAL::remember([](std::vector<converter::output::event::memory>& rememberable){
+            remember([](std::vector<converter::output::event::memory>& rememberable){
                 std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
 
                 // For smart memory system to shorten the next sleep time to arrive at the perfect time for the nearest memory.
@@ -158,13 +150,13 @@ namespace GGUI{
                             }
                         }
                         catch (std::exception& e){
-                            INTERNAL::reportStack("In memory: '" + rememberable.at(i).ID + "' Problem: " + std::string(e.what()));
+                            logger::reportStack("In memory: '" + rememberable.at(i).ID + "' Problem: " + std::string(e.what()));
                         }
                     }
 
                 }
 
-                INTERNAL::eventThreadLoad = lerp(SETTINGS::MIN_UPDATE_SPEED.count(), SETTINGS::MAX_UPDATE_SPEED.count(), Shortest_Time.count());
+                thread::eventThreadLoad = utils::lerp(SETTINGS::MIN_UPDATE_SPEED.count(), SETTINGS::MAX_UPDATE_SPEED.count(), Shortest_Time.count());
             });
         }
 
@@ -222,15 +214,15 @@ namespace GGUI{
          *          Focus is only removed if the element's current focus state differs from the desired state.
          */
         void unFocusElement(){
-            if (!INTERNAL::focusedOn)
+            if (!focusedOn)
                 return;
 
-            INTERNAL::focusedOn->setFocus(false);
+            focusedOn->setFocus(false);
 
             // Recursively remove focus from all child elements
-            Recursively_Apply_Focus(INTERNAL::focusedOn, false);
+            Recursively_Apply_Focus(focusedOn, false);
 
-            INTERNAL::focusedOn = nullptr;
+            focusedOn = nullptr;
         }
 
         /**
@@ -240,17 +232,17 @@ namespace GGUI{
          *          Hover is only removed if the element's current hover state differs from the desired state.
          */
         void unHoverElement(){
-            if (!INTERNAL::hoveredOn)
+            if (!hoveredOn)
                 return;
 
             // Set the hover state to false on the currently hovered element
-            INTERNAL::hoveredOn->setHoverState(false);
+            hoveredOn->setHoverState(false);
 
             // Recursively remove the hover state from all child elements
-            Recursively_Apply_Hover(INTERNAL::hoveredOn, false);
+            Recursively_Apply_Hover(hoveredOn, false);
 
             // Set the hovered element to nullptr to indicate there is no currently hovered element
-            INTERNAL::hoveredOn = nullptr;
+            hoveredOn = nullptr;
         }
 
         /**
@@ -260,28 +252,28 @@ namespace GGUI{
          *          Then, it sets the focus on the new candidate element and all its children.
          * @param new_candidate The new element to focus on.
          */
-        void updateFocusedElement(GGUI::element* new_candidate){
-            if (INTERNAL::focusedOn == new_candidate || new_candidate == INTERNAL::main)
+        void updateFocusedElement(element* new_candidate){
+            if (focusedOn == new_candidate || new_candidate == main)
                 return;
 
             if (!new_candidate) return; // For total unselection, use unFocusElement()
 
             // Unfocus the previous focused element and its children
-            if (INTERNAL::focusedOn){
+            if (focusedOn){
                 unFocusElement();
             }
 
             // Set the focus on the new element and all its children
-            INTERNAL::focusedOn = new_candidate;
+            focusedOn = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            currentMouse.position = INTERNAL::focusedOn->getAbsolutePosition();
+            currentMouse.position = focusedOn->getAbsolutePosition();
 
             // Set the focus state on the new element to true
-            INTERNAL::focusedOn->setFocus(true);
+            focusedOn->setFocus(true);
             
             // Recursively set the focus state on all child elements to true
-            Recursively_Apply_Focus(INTERNAL::focusedOn, true);
+            Recursively_Apply_Focus(focusedOn, true);
         }
 
         /**
@@ -291,28 +283,28 @@ namespace GGUI{
          *          Then, it sets the hover state on the new candidate element and all its children.
          * @param new_candidate The new element to hover on.
          */
-        void updateHoveredElement(GGUI::element* new_candidate){
-            if (INTERNAL::hoveredOn == new_candidate || new_candidate == INTERNAL::main)
+        void updateHoveredElement(element* new_candidate){
+            if (hoveredOn == new_candidate || new_candidate == main)
                 return;
 
             if (!new_candidate) return; // For total unselection, use unHoverElement()
 
             // Remove the hover state from the previous hovered element and its children
-            if (INTERNAL::hoveredOn){
+            if (hoveredOn){
                 unHoverElement();
             }
 
             // Set the hover state on the new element and all its children
-            INTERNAL::hoveredOn = new_candidate;
+            hoveredOn = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            currentMouse.position = INTERNAL::hoveredOn->getAbsolutePosition();
+            currentMouse.position = hoveredOn->getAbsolutePosition();
 
             // Set the hover state on the new element to true
-            INTERNAL::hoveredOn->setHoverState(true);
+            hoveredOn->setHoverState(true);
 
             // Recursively set the hover state on all child elements to true
-            Recursively_Apply_Hover(INTERNAL::hoveredOn, true);
+            Recursively_Apply_Hover(hoveredOn, true);
         }
 
         /**
@@ -320,12 +312,8 @@ namespace GGUI{
          * 
          * @return The main window of the GGUI system.
          */
-        GGUI::element* initGGUI(){
-            INTERNAL::Read_Start_Addresses();
-            SETTINGS::initSettings();
-            INTERNAL::LOGGER::init();
-            INTERNAL::LOGGER::registerCurrentThread();
-            INTERNAL::LOGGER::log("Starting GGUI Core initialization...");
+        element* initGGUI(){
+            logger::log("Starting GGUI Core initialization...");
 
             // Create the input poller pairs
             inputManager   = new converter::input::base();
@@ -334,7 +322,7 @@ namespace GGUI{
             // link the input poller pairs
             converter::link(inputManager, inputConverter);
 
-            INTERNAL::main = new element(
+            main = new element(
                 name("main"), 
                 true
             );
@@ -344,58 +332,31 @@ namespace GGUI{
             terminal::currentStates->screen.link(main);
 
             std::thread renderingThread([](){
-                INTERNAL::LOGGER::registerCurrentThread();
-                INTERNAL::renderer();
+                thread::renderer();
             });
             renderingThread.detach();  // Let the rendering thread able to std::exit.
             
             std::thread eventThread([](){
-                INTERNAL::LOGGER::registerCurrentThread();
-                INTERNAL::eventThread();
+                thread::eventThread();
             });
             eventThread.detach();  // Let the rendering thread able to std::exit.
 
             std::thread Logging_Scheduler([](){
-                INTERNAL::LOGGER::registerCurrentThread();
-                INTERNAL::loggerThread();
+                logger::loggerThread();
             });
             
             Logging_Scheduler.detach();
 
-            INTERNAL::LOGGER::log("GGUI Core initialization complete.");
+            logger::log("GGUI Core initialization complete.");
 
             {
-                std::unique_lock lock(INTERNAL::concurrency::mutex);
+                std::unique_lock lock(thread::concurrency::mutex);
 
                 // Remove NOT_INITALIZED from the render thread flag.
-                INTERNAL::concurrency::pauseRenderThread = INTERNAL::concurrency::status::PAUSED;
+                thread::concurrency::pauseRenderThread = thread::status::PAUSED;
             }
 
-            return INTERNAL::main;
-        }
-
-        /**
-         * @brief Notifies all global buffer capturers about the latest data to be captured.
-         *
-         * This function is used to inform all global buffer capturers about the latest data to be captured.
-         * It iterates over all global buffer capturers and calls their Sync() method to update their data.
-         *
-         * @param informer Pointer to the buffer capturer with the latest data.
-         */
-        void informAllGlobalBufferCaptures(bufferCapture* informer){
-            // Iterate over all global buffer capturers
-            for (auto* capturer : globalBufferCaptures){
-                if (!capturer->isGlobal)
-                    continue;
-
-                // Give the capturers the latest row of captured buffer data
-                if (capturer->sync(informer)){
-                    // success
-                }
-                else{
-                    // fail, maybe try merge?
-                }
-            }
+            return main;
         }
     
         /**
@@ -405,7 +366,7 @@ namespace GGUI{
          * @param Parent The parent element.
          * @param Child The child element.
          */
-        GGUI::INTERNAL::fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child){
+        types::fittingArea getFittingArea(element* Parent, element* Child){
             // If both dont have same border setup and parent has a border, then the child needs to be offsetted by one in every direction.
             int Border_Offset = Parent->hasBorder() != Child->hasBorder() && Parent->hasBorder() ? 1 : 0;
             
@@ -444,8 +405,8 @@ namespace GGUI{
          * @param Parent_Buffer The parent element's buffer.
          * @param Child_Buffer The child element's buffer.
          */
-        void nestElement(GGUI::element* parent, GGUI::element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer){
-            INTERNAL::fittingArea Limits = getFittingArea(parent, child);
+        void nestElement(element* parent, element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer){
+            types::fittingArea Limits = getFittingArea(parent, child);
 
             for (int y = Limits.start.y; y < Limits.end.y; y++){
                 for (int x = Limits.start.x; x < Limits.end.x; x++){
@@ -465,7 +426,7 @@ namespace GGUI{
      * @param signum The exit code for the application.
      */
     void EXIT(int signum){
-        INTERNAL::SignalThreadTermination();
+        core::SignalThreadTermination();
 
         // Exit the application with the specified exit code
         exit(signum);
@@ -478,19 +439,19 @@ namespace GGUI{
      * requested to terminate (e.g., via signal or internal shutdown logic).
      */
     void waitForTermination() {
-        std::unique_lock lock(INTERNAL::concurrency::mutex);
-        INTERNAL::concurrency::condition.wait(lock, [&](){ return INTERNAL::requestTermination; });
+        std::unique_lock lock(thread::concurrency::mutex);
+        thread::concurrency::condition.wait(lock, [&](){ return core::requestTermination; });
     }
 
     element* getRoot() {
-        return INTERNAL::main;
+        return core::main;
     }
     
     /**
      * @brief Register cleanup functions to be called on SIGINT, SIGTERM, std::exit(), std::quick_exit(), std::termination
      */
     void registerCleanupCallback(std::function<void()> Callback) {
-        INTERNAL::userCleanupCallbacks.push_back(Callback);
+        core::userCleanupCallbacks.push_back(Callback);
     }
 
     /**
@@ -499,17 +460,17 @@ namespace GGUI{
      * @note This function will return immediately if the rendering thread is paused.
      */
     void updateFrame(){
-        std::unique_lock lock(INTERNAL::concurrency::mutex);
+        std::unique_lock lock(thread::concurrency::mutex);
 
         // The rendering thread is either locked, already rendering or already requested to render.
-        if (INTERNAL::concurrency::LOCKED > 0 || INTERNAL::concurrency::pauseRenderThread == INTERNAL::concurrency::status::NOT_INITIALIZED)
+        if (thread::concurrency::LOCKED > 0 || thread::concurrency::pauseRenderThread == thread::status::NOT_INITIALIZED)
             return;
 
         // Give the rendering thread one ticket.
-        INTERNAL::concurrency::pauseRenderThread = INTERNAL::concurrency::status::REQUESTING_RENDERING;
+        thread::concurrency::pauseRenderThread = thread::status::REQUESTING_RENDERING;
 
         // Notify all waiting threads that the frame has been updated.
-        INTERNAL::concurrency::condition.notify_all();
+        thread::concurrency::condition.notify_all();
     }
 
     /**
@@ -517,15 +478,15 @@ namespace GGUI{
      * @details This function pauses the rendering thread. The thread will wait until the rendering thread is resumed.
      */
     void pauseGGUI(){
-        std::unique_lock lock(INTERNAL::concurrency::mutex);
+        std::unique_lock lock(thread::concurrency::mutex);
         
         // Already paused via upper scope or if the rendering system hasn't been initialized yet, just no-op.
-        if (INTERNAL::concurrency::LOCKED++ > 0 || INTERNAL::concurrency::pauseRenderThread == INTERNAL::concurrency::status::NOT_INITIALIZED)
+        if (thread::concurrency::LOCKED++ > 0 || thread::concurrency::pauseRenderThread == thread::status::NOT_INITIALIZED)
             return;
 
         // await until the rendering thread has used it's rendering ticket.
-        INTERNAL::concurrency::condition.wait(lock, []{
-            return INTERNAL::concurrency::pauseRenderThread == INTERNAL::concurrency::status::PAUSED;
+        thread::concurrency::condition.wait(lock, []{
+            return thread::concurrency::pauseRenderThread == thread::status::PAUSED;
         });
     }
 
@@ -536,20 +497,20 @@ namespace GGUI{
      */
     void resumeGGUI(){
         // If not initialized, simply reset LOCKED counter (if needed) and no-op.
-        if (INTERNAL::concurrency::pauseRenderThread == INTERNAL::concurrency::status::NOT_INITIALIZED){
-            INTERNAL::concurrency::LOCKED = 0; // Safety: ensure clean state for unit tests.
+        if (thread::concurrency::pauseRenderThread == thread::status::NOT_INITIALIZED){
+            thread::concurrency::LOCKED = 0; // Safety: ensure clean state for unit tests.
             return;
         }
 
         {
-            std::unique_lock lock(INTERNAL::concurrency::mutex);
+            std::unique_lock lock(thread::concurrency::mutex);
 
-            if (--INTERNAL::concurrency::LOCKED > 0)
+            if (--thread::concurrency::LOCKED > 0)
                 return;
 
-            INTERNAL::concurrency::condition.wait(lock, []{
+            thread::concurrency::condition.wait(lock, []{
                 // If the rendering thread is not locked, then the wait is over.
-                return INTERNAL::concurrency::pauseRenderThread == INTERNAL::concurrency::status::PAUSED;
+                return thread::concurrency::pauseRenderThread == thread::status::PAUSED;
             });
         }
 
@@ -563,7 +524,7 @@ namespace GGUI{
      */
     void pauseGGUI(std::function<void()> f){
         // Fast path: if rendering thread not initialized (e.g. unit tests constructing elements only), just execute.
-        if (INTERNAL::concurrency::pauseRenderThread == INTERNAL::concurrency::status::NOT_INITIALIZED){
+        if (thread::concurrency::pauseRenderThread == thread::status::NOT_INITIALIZED){
             f();
             return;
         }
@@ -575,11 +536,17 @@ namespace GGUI{
             f();
         }
         catch(std::exception& e){
+            
+            auto hex = [](unsigned long long value) {
+                char buffer[17]; // Enough to hold the largest 64-bit hexadecimal value + null terminator
+                std::snprintf(buffer, sizeof(buffer), "%llX", value); // Formats the value as uppercase hex
+                return std::string(buffer);
+            };
 
-            std::string Given_Function_Label_Location = INTERNAL::hex(reinterpret_cast<unsigned long long>(&f));
+            std::string Given_Function_Label_Location = hex(reinterpret_cast<unsigned long long>(&f));
 
             // If an exception is thrown, report the stack trace and the exception message.
-            INTERNAL::reportStack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: \n" + std::string(e.what()));
+            logger::reportStack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: \n" + std::string(e.what()));
         }
 
         // Resume the render thread with the previous render status.
@@ -593,10 +560,8 @@ namespace GGUI{
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
     void GGUI(STYLING_INTERNAL::styleBase& App, unsigned long long Sleep_For){
-        INTERNAL::Read_Start_Addresses();
-
         pauseGGUI([&App](){
-            INTERNAL::initGGUI();
+            core::initGGUI();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
             getRoot()->addStyling(App);
@@ -605,12 +570,12 @@ namespace GGUI{
             initAddons();
 
             if (SETTINGS::enableDRM) {
-                INTERNAL::DRM::retryDRMConnect();
+                DRM::retryDRMConnect();
             }
         });
         
         // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
-        getRoot()->check(INTERNAL::STATE::INIT);
+        getRoot()->check(types::STATE::INIT);
 
         // Sleep for the given amount of milliseconds.
         std::this_thread::sleep_for(std::chrono::milliseconds(Sleep_For));
@@ -623,7 +588,7 @@ namespace GGUI{
      * overload of the GGUI function. It is typically used to initialize or update
      * the graphical user interface with specific styling and timing parameters.
      *
-     * @param App An rvalue reference to a STYLING_INTERNAL::style_base object representing the application's style.
+     * @param App An rvalue reference to a style_base object representing the application's style.
      * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
      */
     void GGUI(STYLING_INTERNAL::styleBase&& App, unsigned long long Sleep_For) { GGUI(App, Sleep_For); }
@@ -639,9 +604,9 @@ namespace GGUI{
         element* Result = nullptr;
 
         // Check if the element is in the global Element_Names map.
-        if (INTERNAL::elementNames.find(name) != INTERNAL::elementNames.end()){
+        if (core::elementNames.find(name) != core::elementNames.end()){
             // If the element exists, assign it to the result.
-            Result = INTERNAL::elementNames[name];
+            Result = core::elementNames[name];
         }
 
         // Return the result.

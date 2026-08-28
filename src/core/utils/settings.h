@@ -5,10 +5,6 @@
 #include <functional>
 
 namespace GGUI {
-    namespace INTERNAL {
-        extern std::string constructLoggerFileName();
-    }
-
     namespace SETTINGS{
         /**
          * @brief Enumeration of supported argument types for command line parsing.
@@ -78,14 +74,6 @@ namespace GGUI {
         // Given as --enableWordWrapping
         extern bool wordWrapping;
 
-        // Given as --enableGammaCorrection
-        extern bool enableGammaCorrection;
-
-        namespace LOGGER{
-            // Given as --loggerFileName = "GGUI.log"
-            extern std::string fileName;
-        }
-
         // Given as --enableDRM
         extern bool enableDRM;
 
@@ -93,15 +81,6 @@ namespace GGUI {
         extern std::chrono::steady_clock::duration MIN_UPDATE_SPEED;
 
         extern void parseCommandLineArguments(int argc, char** argv);
-
-        /**
-         * @brief Initializes the settings for the application.
-         *
-         * This function sets up the necessary configurations for the application
-         * by initializing the logger file name using the internal logger file name
-         * construction method.
-         */
-        extern void initSettings();
     }
 }
 

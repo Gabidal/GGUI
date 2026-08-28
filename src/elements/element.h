@@ -13,7 +13,7 @@
 #include "../core/converter.h"
 
 namespace GGUI{
-    namespace INTERNAL {
+    namespace thread {
         extern void renderer();
     }
 
@@ -38,7 +38,7 @@ namespace GGUI{
         std::vector<const ActiveStyle*> graphicalReflectionPool;
 
         // State machine for render pipeline only focus on changed aspects.
-        INTERNAL::STAIN Dirty;
+        types::STAIN Dirty;
 
         bool Focused = false;
         bool Hovered = false;
@@ -155,7 +155,7 @@ namespace GGUI{
          *          Element when it is asked to render.
          * @return A reference to the Dirty object.
          */
-        constexpr const INTERNAL::STAIN& getDirty() const {
+        constexpr const types::STAIN& getDirty() const {
             return Dirty;
         }
 
@@ -204,18 +204,18 @@ namespace GGUI{
          *          If a handler exists, it invokes the handler function.
          * @param s The state for which the handler should be executed.
          */
-        constexpr void check(INTERNAL::STATE s){
-            if (s == INTERNAL::STATE::INIT && On_Init){
+        constexpr void check(types::STATE s){
+            if (s == types::STATE::INIT && On_Init){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
                 Style->evaluateDynamicAttributevalues(this);
 
                 On_Init(this);
             }
-            else if (s == INTERNAL::STATE::DESTROYED && On_Destroy)
+            else if (s == types::STATE::DESTROYED && On_Destroy)
                 On_Destroy(this);
-            else if (s == INTERNAL::STATE::HIDDEN && On_Hide)
+            else if (s == types::STATE::HIDDEN && On_Hide)
                 On_Hide(this);
-            else if (s == INTERNAL::STATE::SHOWN && On_Show)
+            else if (s == types::STATE::SHOWN && On_Show)
                 On_Show(this);
         }
 
@@ -467,7 +467,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        constexpr INTERNAL::EVALUATION_TYPE getWidthType() const { return Style->Width.number.getType(); }
+        constexpr types::EVALUATION_TYPE getWidthType() const { return Style->Width.number.getType(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -476,7 +476,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        constexpr INTERNAL::EVALUATION_TYPE getHeightType() const { return Style->Height.number.getType(); }
+        constexpr types::EVALUATION_TYPE getHeightType() const { return Style->Height.number.getType(); }
 
         /**
          * @brief Set the position of the element.
@@ -917,7 +917,7 @@ namespace GGUI{
          *
          * @note If the parent element does not have a valid render buffer (i.e., its
          *       `Is_Displayed()` function returns false), this function marks the parent
-         *       element as dirty with the `INTERNAL::STAIN_TYPE::DEEP` and `INTERNAL::STAIN_TYPE::COLOR` stains.
+         *       element as dirty with the `types::STAIN_TYPE::DEEP` and `types::STAIN_TYPE::COLOR` stains.
          *       This ensures that the parent element is re-rendered from scratch when the
          *       rendering thread is updated.
          */
@@ -1153,7 +1153,7 @@ namespace GGUI{
          * @param s The state for which the handler should be executed.
          * @param job The handler function to be executed
          */
-        void onState(INTERNAL::STATE s, void (*job)(element* self));
+        void onState(types::STATE s, void (*job)(element* self));
 
         // Customization helper function
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -1165,7 +1165,7 @@ namespace GGUI{
          *          The function takes a STAIN_TYPE as a parameter and adds it to the list of stains.
          * @param s The stain to be added.
          */
-        void addStain(INTERNAL::STAIN_TYPE s){
+        void addStain(types::STAIN_TYPE s){
             Dirty.Dirty(s);
         }
 
@@ -1379,11 +1379,11 @@ namespace GGUI{
             // Mark the element as dirty for all possible stain types to ensure
             // complete re-evaluation and rendering.
             this->Dirty.Dirty(
-                INTERNAL::STAIN_TYPE::STRETCH | 
-                INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::DEEP | 
-                INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::MOVE
-                // INTERNAL::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
-                | INTERNAL::STAIN_TYPE::NOT_RENDERED
+                types::STAIN_TYPE::STRETCH | 
+                types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::DEEP | 
+                types::STAIN_TYPE::EDGE | types::STAIN_TYPE::MOVE
+                // types::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
+                | types::STAIN_TYPE::NOT_RENDERED
             );
         }
         
@@ -1418,7 +1418,7 @@ namespace GGUI{
         virtual std::vector<terminal::cell>& render();
 
         // Give thread::renderer() access to our private render method.
-        friend void INTERNAL::renderer();
+        friend void thread::renderer();
         
         // Give styling class access to some private methods.
         friend class styling;
@@ -1443,6 +1443,25 @@ namespace GGUI{
         void compile() { embedStyles(); }
         
     };
+
+    namespace utils {
+        /**
+         * @brief Checks if a given point collides with a specified element.
+         * 
+         * This function determines if the point `b` collides with the element `a` by 
+         * calling another `Collides` function with the element's absolute position, 
+         * width, height, and the point's assumed dimensions of 1x1.
+         * 
+         * @param a Pointer to the Element to check for collision.
+         * @param b The point (as IVector3) to check for collision with the element.
+         * @return true if the point collides with the element, false otherwise.
+         */
+        constexpr bool collides(const element* a, IVector3 b) {
+            if (!a) return false;   // Safe guard
+            // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
+            return utils::collides(a->getAbsolutePosition(), b, a->getWidth(), a->getHeight(), 1, 1);
+        }
+    }
 }
 
 #endif

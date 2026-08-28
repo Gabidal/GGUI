@@ -10,7 +10,7 @@ using namespace std;
 namespace GGUI{
 
     namespace progress{
-        INTERNAL::STAIN_TYPE part::embedValue([[maybe_unused]] styling* host, element* owner){
+        types::STAIN_TYPE part::embedValue([[maybe_unused]] styling* host, element* owner){
             if (dynamic_cast<Bar*>(owner)){
                 Bar* castedOwner = ((Bar*)owner);
 
@@ -37,7 +37,7 @@ namespace GGUI{
             else
                 throw std::runtime_error("Progress Bar Head Style can only be used with a Bar element!");
         
-            return INTERNAL::STAIN_TYPE::GRAPHICS;
+            return types::STAIN_TYPE::GRAPHICS;
         }
 
         /**
@@ -88,54 +88,54 @@ namespace GGUI{
 
             // Check for Dynamic attributes
             if(Style->evaluateDynamicDimensions(this))
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::STRETCH);
+                Dirty.Dirty(types::STAIN_TYPE::STRETCH);
 
             if (Style->evaluateDynamicPosition(this))
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::MOVE);
+                Dirty.Dirty(types::STAIN_TYPE::MOVE);
 
             if (Style->evaluateDynamicGraphics(this))
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS);
+                Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
 
             if (Style->evaluateDynamicBorder(this))
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
+                Dirty.Dirty(types::STAIN_TYPE::EDGE);
 
             // If the progress bar is clean, return the current render buffer.
-            if (Dirty.is(INTERNAL::STAIN_TYPE::CLEAN))
+            if (Dirty.is(types::STAIN_TYPE::CLEAN))
                 return Result;
 
-            if (Dirty.is(INTERNAL::STAIN_TYPE::RESET)){
-                Dirty.Clean(INTERNAL::STAIN_TYPE::RESET);
+            if (Dirty.is(types::STAIN_TYPE::RESET)){
+                Dirty.Clean(types::STAIN_TYPE::RESET);
 
                 std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
                 
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP);
+                Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::DEEP);
             }
 
             // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
-            if (Dirty.is(INTERNAL::STAIN_TYPE::STRETCH)) {
+            if (Dirty.is(types::STAIN_TYPE::STRETCH)) {
                 Result.clear();
                 Result.resize(getWidth() * getHeight(), ' ');
                 colorBar();
-                Dirty.Clean(INTERNAL::STAIN_TYPE::STRETCH);
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::GRAPHICS | INTERNAL::STAIN_TYPE::EDGE | INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::NOT_RENDERED);
+                Dirty.Clean(types::STAIN_TYPE::STRETCH);
+                Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::DEEP | types::STAIN_TYPE::NOT_RENDERED);
             }
 
-            if (Dirty.is(INTERNAL::STAIN_TYPE::NOT_RENDERED)) {
+            if (Dirty.is(types::STAIN_TYPE::NOT_RENDERED)) {
                 if (On_Render) On_Render(this);
 
                 // Clean regardless of On_Render existing or not.
-                Dirty.Clean(INTERNAL::STAIN_TYPE::NOT_RENDERED);
+                Dirty.Clean(types::STAIN_TYPE::NOT_RENDERED);
             }
 
-            if (Dirty.is(INTERNAL::STAIN_TYPE::MOVE)) {
-                Dirty.Clean(INTERNAL::STAIN_TYPE::MOVE);
+            if (Dirty.is(types::STAIN_TYPE::MOVE)) {
+                Dirty.Clean(types::STAIN_TYPE::MOVE);
 
                 updateAbsolutePositionCache();
             }
 
             // Add child windows to the Result buffer if the DEEP stain is detected.
-            if (Dirty.is(INTERNAL::STAIN_TYPE::DEEP)) {
-                Dirty.Clean(INTERNAL::STAIN_TYPE::DEEP);
+            if (Dirty.is(types::STAIN_TYPE::DEEP)) {
+                Dirty.Clean(types::STAIN_TYPE::DEEP);
                 int Starting_Y = hasBorder();
                 int Starting_X = hasBorder();
                 int Ending_Y = getHeight() - hasBorder();
@@ -147,16 +147,16 @@ namespace GGUI{
             }
 
             // Apply the color system to the resized result list
-            if (Dirty.is(INTERNAL::STAIN_TYPE::GRAPHICS)){        
+            if (Dirty.is(types::STAIN_TYPE::GRAPHICS)){        
                 // Clean the color stain after applying the color system.
-                Dirty.Clean(INTERNAL::STAIN_TYPE::GRAPHICS);
+                Dirty.Clean(types::STAIN_TYPE::GRAPHICS);
 
                 compileActiveGraphics();
             }
 
             // Add borders and titles if the EDGE stain is detected.
-            if (Dirty.is(INTERNAL::STAIN_TYPE::EDGE)){
-                Dirty.Clean(INTERNAL::STAIN_TYPE::EDGE);
+            if (Dirty.is(types::STAIN_TYPE::EDGE)){
+                Dirty.Clean(types::STAIN_TYPE::EDGE);
 
                 renderBorders(Result);
                 renderTitle(Result);
@@ -176,7 +176,7 @@ namespace GGUI{
             // Check if the new progress value exceeds the maximum limit
             if (New_Progress > 1.0f) {
                 // Report a percentage overflow warning
-                report(getName() + " got a percentage overflow!");
+                logger::log(getName() + " got a percentage overflow!");
                 return;
             }
 
@@ -187,7 +187,7 @@ namespace GGUI{
             colorBar();
 
             // Mark the render buffer as dirty to reflect changes
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP);
+            Dirty.Dirty(types::STAIN_TYPE::DEEP);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
@@ -226,7 +226,7 @@ namespace GGUI{
             colorBar();
 
             // Mark the render buffer as dirty to reflect changes
-            Dirty.Dirty(INTERNAL::STAIN_TYPE::DEEP | INTERNAL::STAIN_TYPE::GRAPHICS);
+            Dirty.Dirty(types::STAIN_TYPE::DEEP | types::STAIN_TYPE::GRAPHICS);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
@@ -247,7 +247,7 @@ namespace GGUI{
                 else Style->Height.direct() -= 2;
 
                 // Mark the element as dirty for border changes
-                Dirty.Dirty(INTERNAL::STAIN_TYPE::EDGE);
+                Dirty.Dirty(types::STAIN_TYPE::EDGE);
 
                 // Trigger a frame update to re-render the progress bar
                 updateFrame();

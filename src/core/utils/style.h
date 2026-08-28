@@ -19,11 +19,9 @@ namespace GGUI{
     class textField;
     class styling;
     extern void EXIT(int signum);
-    namespace INTERNAL{
-        enum class STAIN_TYPE;
+    namespace types {
         extern void reportStack(const std::string& problemDescription);
 
-        // autoGen: Ignore start
         template <typename T>
         std::string getTypeName() {
         #if defined(__clang__) || defined(__GNUC__)
@@ -41,7 +39,6 @@ namespace GGUI{
 
             return std::string(start, length);            // Construct and return a std::string
         }
-        // autoGen: Ignore end
     
         enum class EMBED_ORDER : uint8_t {
             INSTANT,
@@ -87,7 +84,7 @@ namespace GGUI{
         protected:
             T data;
             float percentage;   // This will be changed later on into an std::variant holding different scaling types.
-            INTERNAL::EVALUATION_TYPE evaluationType = INTERNAL::EVALUATION_TYPE::DEFAULT;
+            types::EVALUATION_TYPE evaluationType = types::EVALUATION_TYPE::DEFAULT;
 
         public:
             /**
@@ -96,7 +93,7 @@ namespace GGUI{
              * @param type The type of the value
              * @param use_constexpr Whether to use constexpr or not
              */
-            constexpr value(const T d, const INTERNAL::EVALUATION_TYPE type = INTERNAL::EVALUATION_TYPE::DEFAULT)
+            constexpr value(const T d, const types::EVALUATION_TYPE type = types::EVALUATION_TYPE::DEFAULT)
                 : data(d), percentage(0.0f), evaluationType(type) {}
 
             /**
@@ -109,7 +106,7 @@ namespace GGUI{
              * specified. The constexpr parameter is used to determine whether to
              * use a constexpr constructor or not.
              */
-            constexpr value(const float f, const INTERNAL::EVALUATION_TYPE type = INTERNAL::EVALUATION_TYPE::PERCENTAGE)
+            constexpr value(const float f, const types::EVALUATION_TYPE type = types::EVALUATION_TYPE::PERCENTAGE)
                 : data{}, percentage(f), evaluationType(type) {}
 
             /**
@@ -152,7 +149,7 @@ namespace GGUI{
                 // Set the data to the value passed in
                 data = initialization_data;
                 // Set the evaluation type to DEFAULT
-                evaluationType = INTERNAL::EVALUATION_TYPE::DEFAULT;
+                evaluationType = types::EVALUATION_TYPE::DEFAULT;
                 // Return the object itself, for chaining
                 return *this;
             }
@@ -169,47 +166,30 @@ namespace GGUI{
                 // Set the data to the float value passed in
                 percentage = initialization_data;
                 // Set the evaluation type to PERCENTAGE
-                evaluationType = INTERNAL::EVALUATION_TYPE::PERCENTAGE;
+                evaluationType = types::EVALUATION_TYPE::PERCENTAGE;
                 // Return the object itself, for chaining
                 return *this;
             }
 
             constexpr bool operator==(const value<T>& other) const {
-                // if (evaluationType != other.evaluationType){
-                //     INTERNAL::reportStack("Cannot compare two different eval type values!");
-                //     EXIT(1);
-                //     return false;   // for warnings.
-                // }
-                // else{
-                //     switch (evaluationType)
-                //     {
-                //     case INTERNAL::EVALUATION_TYPE::DEFAULT:
-                        return data == other.data;
-                //     case INTERNAL::EVALUATION_TYPE::PERCENTAGE:
-                //         return percentage == other.percentage;
-                //     default:
-                //         INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
-                //         EXIT(1);
-                //         return false;   // for warnings.
-                //     }
-                // }
+                return data == other.data;
             }
 
             constexpr value<T> operator+(const value<T>& other){
                 if (evaluationType != other.evaluationType){
-                    INTERNAL::reportStack("Cannot add two different eval type values!");
+                    logger::reportStack("Cannot add two different eval type values!");
                     EXIT(1);
                     return false;   // for warnings.
                 }
                 else{
                     switch (evaluationType)
                     {
-                    case INTERNAL::EVALUATION_TYPE::DEFAULT:
+                    case types::EVALUATION_TYPE::DEFAULT:
                         return value<T>(data + other.data);
-                    case INTERNAL::EVALUATION_TYPE::PERCENTAGE:
+                    case types::EVALUATION_TYPE::PERCENTAGE:
                         return value<T>(percentage + other.percentage);
                     default:
-                        INTERNAL::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
+                        logger::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
                         EXIT(1);
                         return value<T>(0);
                     }
@@ -218,19 +198,19 @@ namespace GGUI{
 
             constexpr value<T> operator-(const value<T>& other){
                 if (evaluationType != other.evaluationType){
-                    INTERNAL::LOGGER::log("Cannot substract two different eval type values!");
+                    logger::log("Cannot substract two different eval type values!");
                     EXIT(1);
                     return false;   // for warnings.
                 }
                 else{
                     switch (evaluationType)
                     {
-                    case INTERNAL::EVALUATION_TYPE::DEFAULT:
+                    case types::EVALUATION_TYPE::DEFAULT:
                         return value<T>(data - other.data);
-                    case INTERNAL::EVALUATION_TYPE::PERCENTAGE:
+                    case types::EVALUATION_TYPE::PERCENTAGE:
                         return value<T>(percentage - other.percentage);
                     default:
-                        INTERNAL::LOGGER::log("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
+                        logger::log("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
                         EXIT(1);
                         return value<T>(0);
                     }
@@ -248,22 +228,22 @@ namespace GGUI{
              */
             constexpr void evaluate(const T parental_value) {
                 switch (evaluationType) {
-                    case INTERNAL::EVALUATION_TYPE::DEFAULT:
+                    case types::EVALUATION_TYPE::DEFAULT:
                         // If the evaluation type is DEFAULT then just return the data without any modification
                         return;
-                    case INTERNAL::EVALUATION_TYPE::PERCENTAGE:
+                    case types::EVALUATION_TYPE::PERCENTAGE:
                         // If the evaluation type is PERCENTAGE then multiply the parental value by the data and return the result
                         data = static_cast<T>(static_cast<T>(parental_value) * percentage);
 
                         #if GGUI_DEBUG
                         if (isNonDiscriminantScalar<T>(parental_value, percentage)){
-                            INTERNAL::LOGGER::log("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + toString(parental_value) + "'.");
+                            logger::log("Percentage value of: '" + std::to_string(percentage) + "' causes non-discriminant results with: '" + toString(parental_value) + "'.");
                         }
                         #endif
 
                         return;
                     default:
-                        INTERNAL::LOGGER::log("Evaluation type not supported!");
+                        logger::log("Evaluation type not supported!");
                         // If the evaluation type is not supported then just return the data without any modification
                         return;
                 }
@@ -295,13 +275,13 @@ namespace GGUI{
              * Get the evaluation type of the variant.
              * @return The evaluation type of the variant.
              */
-            constexpr INTERNAL::EVALUATION_TYPE getType() { return evaluationType; }
+            constexpr types::EVALUATION_TYPE getType() { return evaluationType; }
 
             /**
              * Get the evaluation type of the variant.
              * @return The evaluation type of the variant.
              */
-            constexpr INTERNAL::EVALUATION_TYPE getType() const { return evaluationType; }
+            constexpr types::EVALUATION_TYPE getType() const { return evaluationType; }
 
             /**
              * @brief Direct access to the underlying data of the variant.
@@ -319,31 +299,31 @@ namespace GGUI{
              * @brief Set the value of the variant.
              * @param value The value to set the variant to.
              * @details This sets the value of the variant to the provided value.
-             *          The evaluation type is set to INTERNAL::EVALUATION_TYPE::DEFAULT.
+             *          The evaluation type is set to types::EVALUATION_TYPE::DEFAULT.
              */
             constexpr void set(const T d) {
                 data = d;
-                evaluationType = INTERNAL::EVALUATION_TYPE::DEFAULT;
+                evaluationType = types::EVALUATION_TYPE::DEFAULT;
             }
 
             /**
              * @brief Set the value of the variant to a percentage.
              * @param value The value to set the variant to.
-             * @details This sets the value of the variant to the provided value, and sets the evaluation type to INTERNAL::EVALUATION_TYPE::PERCENTAGE.
+             * @details This sets the value of the variant to the provided value, and sets the evaluation type to types::EVALUATION_TYPE::PERCENTAGE.
              */
             constexpr void set(const float f){
                 percentage = f;
-                evaluationType = INTERNAL::EVALUATION_TYPE::PERCENTAGE;
+                evaluationType = types::EVALUATION_TYPE::PERCENTAGE;
             }
         };
 
-        class styleBase{
+        class styleBase {
         public:
             // This is used to prevent accidental overwrites.
             VALUE_STATE status;
 
             // Represents when the value is embedded.
-            INTERNAL::EMBED_ORDER order;
+            types::EMBED_ORDER order;
 
             // This is used to store all appended style_bases through the operator|.
             styleBase* next;
@@ -353,16 +333,9 @@ namespace GGUI{
              * @param status The status to initialize the style_base with.
              * @param use_constexpr A flag indicating whether to use constexpr. This parameter is not used.
              */
-            constexpr styleBase(VALUE_STATE Status = VALUE_STATE::UNINITIALIZED, INTERNAL::EMBED_ORDER Order = INTERNAL::EMBED_ORDER::INSTANT) : status(Status), order(Order), next(nullptr) {}
+            constexpr styleBase(VALUE_STATE Status = VALUE_STATE::UNINITIALIZED, types::EMBED_ORDER Order = types::EMBED_ORDER::INSTANT) : status(Status), order(Order), next(nullptr) {}
 
-            /**
-             * @brief Destructor of the style_base class.
-             *
-             * This destructor takes care of deleting the "Other" pointer if it is a heap-allocated object.
-             * It does this by calling the Is_Deletable() function to check if the pointer is likely to be
-             * a heap-allocated object. If it is, it deletes the object using the delete keyword.
-             */
-            virtual ~styleBase();
+            virtual ~styleBase() = default;
 
             virtual styleBase* copy() const = 0;
 
@@ -426,7 +399,7 @@ namespace GGUI{
              * @details This function allows single style classes to incorporate their unique characteristics into a Styling object. 
              *          It should be implemented by derived classes to define how the style affects the Styling and Element objects.
              */
-            virtual INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return INTERNAL::STAIN_TYPE::CLEAN; };
+            virtual types::STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return types::STAIN_TYPE::CLEAN; };
         };
 
         class RGBValue : public styleBase{
@@ -442,7 +415,7 @@ namespace GGUI{
              *          using constexpr for compile-time evaluation.
              */
             constexpr RGBValue(const GGUI::RGB Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
-                : styleBase(Default), color(Value, INTERNAL::EVALUATION_TYPE::DEFAULT) {}
+                : styleBase(Default), color(Value, types::EVALUATION_TYPE::DEFAULT) {}
 
             /**
              * @brief Construct a new RGB_VALUE object using constexpr.
@@ -453,7 +426,7 @@ namespace GGUI{
              *          using constexpr for compile-time evaluation.
              */
             constexpr RGBValue(const float Value, const VALUE_STATE Default = VALUE_STATE::VALUE) 
-                : styleBase(Default), color(Value, INTERNAL::EVALUATION_TYPE::PERCENTAGE) {}
+                : styleBase(Default), color(Value, types::EVALUATION_TYPE::PERCENTAGE) {}
             
             constexpr RGBValue() : styleBase(), color(RGB(0,0,0)) {}
 
@@ -529,10 +502,10 @@ namespace GGUI{
              * @brief Embeds the value of an RGB_VALUE object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
+             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
              */
-            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
+            types::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
 
             /**
              * @brief evaluate the RGB_VALUE.
@@ -618,10 +591,10 @@ namespace GGUI{
              * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
+             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
              */
-            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
+            types::STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
         };
         
         class numberValue : public styleBase{
@@ -635,7 +608,7 @@ namespace GGUI{
              * @details This constructor initializes the NUMBER_VALUE with the provided float value and default state.
              *          The value is converted to a percentage (multiplying by 0.01) and stored as a float in the value member.
              */
-            constexpr numberValue(float Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number(Value, INTERNAL::EVALUATION_TYPE::PERCENTAGE){}
+            constexpr numberValue(float Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number(Value, types::EVALUATION_TYPE::PERCENTAGE){}
 
             /**
              * @brief Construct a new NUMBER_VALUE object from an integer using constexpr.
@@ -645,9 +618,9 @@ namespace GGUI{
              * @details This constructor initializes a NUMBER_VALUE object with the provided integer value and default state,
              *          using constexpr for compile-time evaluation.
              */
-            constexpr numberValue(int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number(Value, INTERNAL::EVALUATION_TYPE::DEFAULT){}
+            constexpr numberValue(int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number(Value, types::EVALUATION_TYPE::DEFAULT){}
             
-            constexpr numberValue(unsigned int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number((signed int)Value, INTERNAL::EVALUATION_TYPE::DEFAULT){}
+            constexpr numberValue(unsigned int Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), number((signed int)Value, types::EVALUATION_TYPE::DEFAULT){}
 
             constexpr numberValue() : styleBase(), number(0) {}
 
@@ -723,10 +696,10 @@ namespace GGUI{
              * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
+             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
              */
-            INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+            types::STAIN_TYPE embedValue(styling* host, element* owner) override;
             
             /**
              * @brief evaluate the RGB_VALUE.
@@ -829,7 +802,7 @@ namespace GGUI{
              *          It is used to support dynamic values like percentage depended values.
              *          The function does not do anything as of now.
              */
-            inline INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) override { return INTERNAL::STAIN_TYPE::CLEAN; };
+            inline types::STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) override { return types::STAIN_TYPE::CLEAN; };
         };
         
         class vectorValue : public styleBase{
@@ -847,7 +820,7 @@ namespace GGUI{
              *          using constexpr for compile-time evaluation.
              */
             constexpr vectorValue(const GGUI::IVector3 Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), 
-                x(Value.x, INTERNAL::EVALUATION_TYPE::DEFAULT), y(Value.y, INTERNAL::EVALUATION_TYPE::DEFAULT), z(Value.z, INTERNAL::EVALUATION_TYPE::DEFAULT){}
+                x(Value.x, types::EVALUATION_TYPE::DEFAULT), y(Value.y, types::EVALUATION_TYPE::DEFAULT), z(Value.z, types::EVALUATION_TYPE::DEFAULT){}
             
             constexpr vectorValue(const value<int> X, const value<int> Y, const value<int> Z = 0, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), x(X), y(Y), z(Z){}
 
@@ -981,9 +954,9 @@ namespace GGUI{
             inline void operator+=(const IVector3 v){
                 // check if debug mode is on
                 #ifdef GGUI_DEBUG
-                assert(x.getType() == INTERNAL::EVALUATION_TYPE::DEFAULT && "X is not a default evaluation type");
-                assert(y.getType() == INTERNAL::EVALUATION_TYPE::DEFAULT && "Y is not a default evaluation type");
-                assert(z.getType() == INTERNAL::EVALUATION_TYPE::DEFAULT && "Z is not a default evaluation type");
+                assert(x.getType() == types::EVALUATION_TYPE::DEFAULT && "X is not a default evaluation type");
+                assert(y.getType() == types::EVALUATION_TYPE::DEFAULT && "Y is not a default evaluation type");
+                assert(z.getType() == types::EVALUATION_TYPE::DEFAULT && "Z is not a default evaluation type");
                 #endif
 
                 x.direct<int>() += v.x;
@@ -1005,10 +978,10 @@ namespace GGUI{
              * @brief Embeds the value of a Vector object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A INTERNAL::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns INTERNAL::STAIN_TYPE::CLEAN.
+             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
              */
-            INTERNAL::STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
+            types::STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
         };
     
         /**
@@ -1156,7 +1129,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     protected:
         /**
          * @brief Transforms the position from center origin to top-left origin.
@@ -1169,9 +1142,9 @@ namespace GGUI{
          */
         constexpr void transformCenterToTopLeftOrigin(){
             // Add 0.5f offset to the vectors
-            if (x.getType() == INTERNAL::EVALUATION_TYPE::PERCENTAGE)
+            if (x.getType() == types::EVALUATION_TYPE::PERCENTAGE)
                 x = x + 0.5f;
-            if (y.getType() == INTERNAL::EVALUATION_TYPE::PERCENTAGE)
+            if (y.getType() == types::EVALUATION_TYPE::PERCENTAGE)
                 y = y + 0.5f;
             // no need to affect Z.
         }
@@ -1197,7 +1170,7 @@ namespace GGUI{
 
         void evaluate(const styling* self, const styling* owner) override;
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         constexpr int get() const { return number.get<int>(); }
 
@@ -1230,7 +1203,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         constexpr int get() const { return number.get<int>(); }
 
@@ -1267,7 +1240,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class textColor : public STYLING_INTERNAL::RGBValue{
@@ -1291,7 +1264,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class backgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1315,7 +1288,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class borderColor : public STYLING_INTERNAL::RGBValue{
@@ -1339,7 +1312,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class borderBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1363,7 +1336,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class hoverBorderColor : public STYLING_INTERNAL::RGBValue{
@@ -1387,7 +1360,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class hoverTextColor : public STYLING_INTERNAL::RGBValue{
@@ -1411,7 +1384,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class hoverBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1435,7 +1408,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class hoverBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1459,7 +1432,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class focusBorderColor : public STYLING_INTERNAL::RGBValue{
@@ -1483,7 +1456,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class focusTextColor : public STYLING_INTERNAL::RGBValue{
@@ -1507,7 +1480,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class focusBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1531,7 +1504,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class focusBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1555,7 +1528,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class styledBorder : public STYLING_INTERNAL::styleBase{
@@ -1647,11 +1620,11 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
-        std::string_view getBorder(const INTERNAL::borderConnection flags);
+        std::string_view getBorder(const types::borderConnection flags);
 
-        INTERNAL::borderConnection getBorderType(std::string_view border);
+        types::borderConnection getBorderType(std::string_view border);
     };
 
     class flowPriority : public STYLING_INTERNAL::enumValue<DIRECTION>{
@@ -1673,7 +1646,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class wrap : public STYLING_INTERNAL::boolValue{
@@ -1695,7 +1668,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class allowOverflow : public STYLING_INTERNAL::boolValue{
@@ -1717,7 +1690,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class allowDynamicSize : public STYLING_INTERNAL::boolValue{
@@ -1739,7 +1712,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class margin : public STYLING_INTERNAL::styleBase{
@@ -1780,7 +1753,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class opacity : public STYLING_INTERNAL::styleBase{
@@ -1821,7 +1794,7 @@ namespace GGUI{
         // Since opacity always represents an percentile of its self being displayed on top of its parent.
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         constexpr unsigned char Get() const { return value; }
 
@@ -1855,7 +1828,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class anchor : public STYLING_INTERNAL::enumValue<ANCHOR>{
@@ -1877,16 +1850,16 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class node : public STYLING_INTERNAL::styleBase{
     public:
         element* value;
 
-        constexpr node(element* Value = nullptr, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, INTERNAL::EMBED_ORDER::DELAYED), value(Value){}
+        constexpr node(element* Value = nullptr, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, types::EMBED_ORDER::DELAYED), value(Value){}
         
-        constexpr node(const GGUI::node& other) : styleBase(other.status, INTERNAL::EMBED_ORDER::DELAYED), value(other.value){}
+        constexpr node(const GGUI::node& other) : styleBase(other.status, types::EMBED_ORDER::DELAYED), value(other.value){}
 
         inline ~node() override { styleBase::~styleBase(); }
 
@@ -1906,21 +1879,21 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class childs : public STYLING_INTERNAL::styleBase{
     protected:
         std::array<element*, INT8_MAX> value;
     public:
-        constexpr childs(const std::initializer_list<element*> Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, INTERNAL::EMBED_ORDER::DELAYED), value{}{
+        constexpr childs(const std::initializer_list<element*> Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, types::EMBED_ORDER::DELAYED), value{}{
             assert(Value.size() <= INT8_MAX);
             for (size_t i = 0; i < Value.size(); i++){
                 value[i] = *(Value.begin() + i);
             }
         }
 
-        constexpr childs(const GGUI::childs& other) : styleBase(other.status, INTERNAL::EMBED_ORDER::DELAYED), value(other.value){}
+        constexpr childs(const GGUI::childs& other) : styleBase(other.status, types::EMBED_ORDER::DELAYED), value(other.value){}
 
         inline ~childs() override { styleBase::~styleBase(); }
 
@@ -1940,7 +1913,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         // -----< UTILS >-----
 
@@ -1985,7 +1958,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class onDestroy : public STYLING_INTERNAL::styleBase{
@@ -2014,7 +1987,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class onHide : public STYLING_INTERNAL::styleBase{
@@ -2043,7 +2016,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class onShow : public STYLING_INTERNAL::styleBase{
@@ -2072,7 +2045,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class onRender : public STYLING_INTERNAL::styleBase{
@@ -2101,7 +2074,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class name : public STYLING_INTERNAL::styleBase{
@@ -2130,7 +2103,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class title : public name{
@@ -2155,7 +2128,7 @@ namespace GGUI{
             return *this;
         }
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
 
         constexpr bool empty(){
             return value.empty();
@@ -2186,7 +2159,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     struct animationSprite;
@@ -2216,7 +2189,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class text : public STYLING_INTERNAL::styleBase{
@@ -2245,16 +2218,16 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class onClick : public STYLING_INTERNAL::styleBase{
     public:
         bool (*value)(element* self);
 
-        constexpr onClick(bool (*Value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, INTERNAL::EMBED_ORDER::DELAYED), value(Value){}
+        constexpr onClick(bool (*Value)(element* self), const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, types::EMBED_ORDER::DELAYED), value(Value){}
 
-        constexpr onClick(const GGUI::onClick& other) : styleBase(other.status, INTERNAL::EMBED_ORDER::DELAYED), value(other.value){}
+        constexpr onClick(const GGUI::onClick& other) : styleBase(other.status, types::EMBED_ORDER::DELAYED), value(other.value){}
 
         inline ~onClick() override { styleBase::~styleBase(); }
 
@@ -2276,7 +2249,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     class onInput : public STYLING_INTERNAL::styleBase{
@@ -2305,7 +2278,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     enum class textAttributeTypes : uint8_t {
@@ -2333,9 +2306,9 @@ namespace GGUI{
 
     class textAttribute : public STYLING_INTERNAL::styleBase{
     public:
-        INTERNAL::linearMask<textAttributeTypes, uint64_t> value;
+        types::linearMask<textAttributeTypes, uint64_t> value;
 
-        constexpr textAttribute(const INTERNAL::linearMask<textAttributeTypes, uint64_t>& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
+        constexpr textAttribute(const types::linearMask<textAttributeTypes, uint64_t>& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
         
         constexpr textAttribute(const GGUI::textAttribute& other) : styleBase(other.status), value(other.value){}
 
@@ -2357,7 +2330,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        INTERNAL::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
     };
 
     // This is what styling compiles during element::render().
@@ -2366,7 +2339,7 @@ namespace GGUI{
         RGB activeTextColor         = {};
         RGB activeBackgroundColor   = {};
         unsigned char opacity       = UINT8_MAX;
-        INTERNAL::linearMask<textAttributeTypes, uint64_t> activeTextAttributes = textAttributeTypes::DEFAULT;
+        types::linearMask<textAttributeTypes, uint64_t> activeTextAttributes = textAttributeTypes::DEFAULT;
         element* origin             = nullptr;
 
         constexpr ActiveStyle computeColor(const ActiveStyle* other) const {

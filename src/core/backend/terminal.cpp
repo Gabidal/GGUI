@@ -335,7 +335,7 @@ namespace GGUI {
                 if (sequence) {
                     std::string tmp;
                     sequence->toString(tmp);
-                    INTERNAL::LOGGER::log(tmp);
+                    logger::log(tmp);
                 }
             }
         }

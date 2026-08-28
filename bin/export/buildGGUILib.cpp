@@ -24,9 +24,14 @@ std::vector<std::string> get_all_files(const std::string& directory) {
 void Compile_Headers(const std::string& destination, const std::string& source_root, bool ignore_autogen) {
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
+        "src/core/thread.h",
+        "src/core/utils/logger.h",
+
         "src/core/utils/color.h",
         "src/core/utils/types.h",
         "src/core/utils/utils.h",
+        
+        "src/core/converter.h",
 
         "src/core/backend/utils.h",
         "src/core/backend/ecma.h",
@@ -36,15 +41,12 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
 
         "src/core/utils/style.h",
         "src/core/utils/settings.h",
-        "src/core/utils/logger.h",
-        "src/core/utils/fileStreamer.h",
         "src/core/utils/drm.h",
 
         "src/elements/element.h",
         "src/elements/listView.h",
         "src/elements/textField.h",
         "src/elements/canvas.h",
-        "src/elements/HTML.h",
         "src/elements/progressBar.h",
         "src/elements/switch.h",
 

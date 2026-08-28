@@ -8,7 +8,7 @@
 #include "utils/logger.h"
 
 namespace GGUI {
-    namespace INTERNAL {
+    namespace core {
         extern element* focusedOn;
         extern element* hoveredOn;
 
@@ -23,7 +23,6 @@ namespace GGUI {
         namespace input {
             base::base() {
                 pollingThread = std::thread([this](){
-                    INTERNAL::LOGGER::registerCurrentThread();
                     this->inputThread();
                 });
             }
@@ -34,7 +33,7 @@ namespace GGUI {
             void base::inputThread(){
                 while (true){
                     if (SETTINGS::enableDRM) {
-                        INTERNAL::DRM::pollInputs();
+                        DRM::pollInputs();
                     }
                     else if (!terminal::currentStates || !terminal::currentStates->transmission.isConnected()) {    // platform initialization is still in progress
                         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -46,7 +45,7 @@ namespace GGUI {
     
                     pauseGGUI([&](){
                         if (SETTINGS::enableDRM) {
-                            INTERNAL::DRM::translateInputs();
+                            DRM::translateInputs();
                         }
                         else {
                             // Translate the Queried inputs.
@@ -58,7 +57,7 @@ namespace GGUI {
                     });
                 }
             
-                INTERNAL::LOGGER::log("Input thread terminated!");
+                logger::log("Input thread terminated!");
             }
         }
 
@@ -107,8 +106,8 @@ namespace GGUI {
         
                             // Check if the host is prime to be focused on
                             if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && currentElement->isHovered()){
-                                INTERNAL::updateFocusedElement(currentElement);
-                                INTERNAL::unHoverElement();
+                                core::updateFocusedElement(currentElement);
+                                core::unHoverElement();
 
                                 // Remove the input, since it's job is used here:
                                 data.erase(data.begin() + k);
@@ -125,11 +124,11 @@ namespace GGUI {
                                         continue;
                                     }
                                     else{
-                                        INTERNAL::reportStack("Job '" + currentEventHandler.ID + "' failed!");
+                                        logger::reportStack("Job '" + currentEventHandler.ID + "' failed!");
                                     }
                                 }
                                 catch(std::exception& problem){
-                                    INTERNAL::reportStack("In event: '" + currentEventHandler.ID + "' Problem: " + std::string(problem.what()));
+                                    logger::reportStack("In event: '" + currentEventHandler.ID + "' Problem: " + std::string(problem.what()));
                                 }
                             }
 
@@ -140,11 +139,11 @@ namespace GGUI {
                         if (!currentElement->isFocused()) {
                             if (currentMouse.state != mouse::states::ENABLE) {
                                 if (overlapsWithMouse){
-                                    INTERNAL::updateHoveredElement(currentElement);
+                                    core::updateHoveredElement(currentElement);
                                 }
                                 else {
-                                    if (INTERNAL::hoveredOn == currentElement)
-                                        INTERNAL::unHoverElement();
+                                    if (core::hoveredOn == currentElement)
+                                        core::unHoverElement();
                                 }
                             }
                         }
@@ -251,11 +250,11 @@ namespace GGUI {
             void base::scrollAPI() {
                 // Check if the mouse scroll up button has been pressed
                 if (in->currentKeyboardState[(uint8_t)input::key::types::SCROLL_UP].state){
-                    if (INTERNAL::focusedOn)    // If the focused element is not null, call the scroll up function
-                        INTERNAL::focusedOn->scrollUp();
+                    if (core::focusedOn)    // If the focused element is not null, call the scroll up function
+                        core::focusedOn->scrollUp();
                 } else if (in->currentKeyboardState[(uint8_t)input::key::types::SCROLL_DOWN].state){  // Check if the mouse scroll down button has been pressed
-                    if (INTERNAL::focusedOn)    // If the focused element is not null, call the scroll down function
-                        INTERNAL::focusedOn->scrollDown();
+                    if (core::focusedOn)    // If the focused element is not null, call the scroll down function
+                        core::focusedOn->scrollDown();
                 }
             }
 
@@ -272,13 +271,13 @@ namespace GGUI {
                     return;
 
                 // If the focused element is not null, remove the focus
-                if (INTERNAL::focusedOn){
-                    INTERNAL::updateHoveredElement(INTERNAL::focusedOn); // Update the hovered element to be the focused element before un-focusing it.
-                    INTERNAL::unFocusElement();
+                if (core::focusedOn){
+                    core::updateHoveredElement(core::focusedOn); // Update the hovered element to be the focused element before un-focusing it.
+                    core::unFocusElement();
                 }
-                else if (INTERNAL::hoveredOn){
+                else if (core::hoveredOn){
                     // If nothing is focused, ESC clears hover.
-                    INTERNAL::unHoverElement();
+                    core::unHoverElement();
                 }
             }
 
@@ -292,15 +291,15 @@ namespace GGUI {
                 if (!in->currentKeyboardState[(uint8_t)input::key::types::TABULATOR].state)
                     return;
 
-                if (INTERNAL::focusedOn) return;   // Tabulator is disabled from switching if an element is focused on, this gives us the ability to insert tabs into textFields.
+                if (core::focusedOn) return;   // Tabulator is disabled from switching if an element is focused on, this gives us the ability to insert tabs into textFields.
 
                 if (handlers.empty())
                     return;
                 
-                // return if there are only INTERNAL::main handlers
+                // return if there are only core::main handlers
                 bool Only_Main_Handlers = true;
                 for (const auto* Handler : handlers){  // yes this is kinda dumb way of doing this but it works well...
-                    if (Handler != INTERNAL::main){
+                    if (Handler != core::main){
                         Only_Main_Handlers = false;
                         break;
                     }
@@ -313,7 +312,7 @@ namespace GGUI {
                 bool Shift_Is_Pressed = in->currentKeyboardState[(uint8_t)input::key::types::SHIFT].state;
 
                 // Get the current element from the selected element
-                element* Current = INTERNAL::hoveredOn;
+                element* Current = core::hoveredOn;
                 
                 int Current_Index = 0;
 
@@ -338,11 +337,11 @@ namespace GGUI {
                     else if ((size_t)Current_Index >= handlers.size()){
                         Current_Index = 0;
                     }
-                } while ((size_t)Current_Index < handlers.size() && handlers[(size_t)Current_Index] == INTERNAL::main);
+                } while ((size_t)Current_Index < handlers.size() && handlers[(size_t)Current_Index] == core::main);
 
                 // Now update the hovered element with the new index
                 currentMouse.state = mouse::states::DISABLE;
-                INTERNAL::updateHoveredElement(handlers[(size_t)Current_Index]);
+                core::updateHoveredElement(handlers[(size_t)Current_Index]);
             }
 
             void base::transformInput() {

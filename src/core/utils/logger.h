@@ -1,39 +1,28 @@
-#ifndef _LOGGER_H_
-#define _LOGGER_H_
+#ifndef _logger_H_
+#define _logger_H_
 
-#include "types.h"
+#include "../thread.h"
+
+#include <fstream>
+#include <filesystem>
 
 namespace GGUI{
 
-    class fileStream;
+    // Contains Logging utils.
+    namespace logger{
+        extern std::filesystem::path logFile;
 
-    // autoGen: Ignore start
-    namespace INTERNAL{
-        // Contains Logging utils.
-        namespace LOGGER{
-            // File handle for logging to files for Atomic access across different threads.
-            extern concurrency::guard<fileStream> handle;
+        // File handle for logging to files for Atomic access across different threads.
+        extern thread::guard<std::basic_ofstream<char>> handle;
 
-            extern void init(fileStream* pre_pausedSelf = nullptr);
+        extern void log(const std::string& Text);
 
-            extern void log(std::string Text);
-
-            extern void registerCurrentThread();
-        }
-        
         extern void reportStack(const std::string& problemDescription);
-
-        extern void loggerThread();
-    }
-    // autoGen: Ignore end
     
-    /**
-     * @brief Reports an error to the user.
-     * @param Problem The error message to display.
-     * @note If the main window is not created yet, the error will be printed to the console.
-     * @note This function is thread safe.
-     */
-    extern void report(const std::string& problem);
+        extern void loggerThread();
+
+        extern void renderLogger(const std::string& problem);
+    }
 }
 
 #endif
