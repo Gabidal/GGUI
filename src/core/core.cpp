@@ -15,7 +15,6 @@
 #include <math.h>
 #include <sstream>
 #include <exception>
-#include <csignal>
 #include <iomanip>
 #include <thread>
 
@@ -27,7 +26,6 @@
     #undef small
 #else
     #include <sys/ioctl.h>
-    #include <signal.h>
     #include <termios.h>
     #include <unistd.h>
     #include <sys/uio.h> // Needed for writev
@@ -60,8 +58,6 @@ namespace GGUI{
         converter::input::base*  inputManager;
         converter::output::base* inputConverter; 
 
-        sig_atomic_t requestTermination;
-
         /**
          * @brief Temporary function to return the current date and time in a string.
          * @return A string of the current date and time in the format "DD.MM.YYYY: HH.MM.SS"
@@ -91,7 +87,7 @@ namespace GGUI{
 
         void SignalThreadTermination(){
             // Gracefully shutdown event and rendering threads.
-            requestTermination = true;
+            thread::concurrency::requestTermination = true;
 
             thread::concurrency::condition.notify_all();
         }
@@ -313,7 +309,12 @@ namespace GGUI{
          * @return The main window of the GGUI system.
          */
         element* initGGUI(){
+            std::thread Logging_Scheduler([](){
+                logger::loggerThread();
+            });
+
             logger::log("Starting GGUI Core initialization...");
+            Logging_Scheduler.detach();
 
             // Create the input poller pairs
             inputManager   = new converter::input::base();
@@ -334,18 +335,10 @@ namespace GGUI{
             std::thread renderingThread([](){
                 thread::renderer();
             });
-            renderingThread.detach();  // Let the rendering thread able to std::exit.
             
             std::thread eventThread([](){
                 thread::eventThread();
             });
-            eventThread.detach();  // Let the rendering thread able to std::exit.
-
-            std::thread Logging_Scheduler([](){
-                logger::loggerThread();
-            });
-            
-            Logging_Scheduler.detach();
 
             logger::log("GGUI Core initialization complete.");
 
@@ -355,6 +348,10 @@ namespace GGUI{
                 // Remove NOT_INITALIZED from the render thread flag.
                 thread::concurrency::pauseRenderThread = thread::status::PAUSED;
             }
+            
+            renderingThread.detach();  // Let the rendering thread able to std::exit.
+            eventThread.detach();  // Let the rendering thread able to std::exit.
+            // Logging_Scheduler.detach();
 
             return main;
         }
@@ -440,7 +437,7 @@ namespace GGUI{
      */
     void waitForTermination() {
         std::unique_lock lock(thread::concurrency::mutex);
-        thread::concurrency::condition.wait(lock, [&](){ return core::requestTermination; });
+        thread::concurrency::condition.wait(lock, [&](){ return thread::concurrency::requestTermination; });
     }
 
     element* getRoot() {

@@ -27,12 +27,12 @@ namespace GGUI{
             
             int LOCKED = 0;
             status pauseRenderThread = status::NOT_INITIALIZED;
+
+            sig_atomic_t requestTermination = false;
         }
 
         std::chrono::steady_clock::time_point Previous_Time;
         std::chrono::steady_clock::time_point Current_Time;
-
-        sig_atomic_t requestTermination = false;
 
         bool identicalFrame = true;
 
@@ -60,10 +60,12 @@ namespace GGUI{
          * 9. Pauses the render thread and notifies all waiting threads.
          */
         void renderer(){
+            logger::log("Render thread starting...");
+
             while (true){
                 {
                     std::unique_lock lock(concurrency::mutex);
-                    concurrency::condition.wait(lock, [&](){ return concurrency::pauseRenderThread == status::REQUESTING_RENDERING || requestTermination; });
+                    concurrency::condition.wait(lock, [&](){ return concurrency::pauseRenderThread == status::REQUESTING_RENDERING || concurrency::requestTermination; });
 
                     concurrency::pauseRenderThread = status::RENDERING;
                 }
@@ -72,7 +74,7 @@ namespace GGUI{
                 Previous_Time = std::chrono::steady_clock::now();
 
                 // Check for carry signals if the rendering scheduler needs to be terminated.
-                if (requestTermination){
+                if (concurrency::requestTermination){
                     break;  // Break out of the loop if the terminate flag is set
                 }
 
@@ -168,15 +170,19 @@ namespace GGUI{
          * @note If uncapped FPS is desired, the sleep code can be disabled.
          */
         void eventThread(){
+            core::remember.delayConstruct();
+
+            logger::log("Event thread starting...");
+
             while (true){
                 {
                     std::unique_lock lock(concurrency::mutex);
 
                     concurrency::condition.wait(lock, [&](){ 
-                        return concurrency::pauseRenderThread == status::PAUSED || requestTermination; 
+                        return concurrency::pauseRenderThread == status::PAUSED || concurrency::requestTermination; 
                     });
 
-                    if (requestTermination){
+                    if (concurrency::requestTermination){
                         break;
                     }
                 }

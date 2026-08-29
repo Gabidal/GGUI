@@ -1,5 +1,6 @@
 #include "converter.h"
 #include "core.h"
+#include "thread.h"
 
 #include "backend/terminal.h"
 
@@ -31,7 +32,17 @@ namespace GGUI {
             * @brief polls input from terminal or DRM backend, and then converts it into events.
             */
             void base::inputThread(){
+                logger::log("Input thread starting...");
+
                 while (true){
+                    {
+                        std::unique_lock lock(thread::concurrency::mutex);
+
+                        if (thread::concurrency::requestTermination){
+                            break;
+                        }
+                    }
+
                     if (SETTINGS::enableDRM) {
                         DRM::pollInputs();
                     }

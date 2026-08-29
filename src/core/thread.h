@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <optional>
+#include <csignal>
 
 namespace GGUI {
     namespace thread {
@@ -28,6 +29,8 @@ namespace GGUI {
             extern std::condition_variable condition;
 
             extern status pauseRenderThread;
+
+            extern sig_atomic_t requestTermination;
         }
 
         template<typename T>

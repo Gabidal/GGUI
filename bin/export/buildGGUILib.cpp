@@ -24,6 +24,8 @@ std::vector<std::string> get_all_files(const std::string& directory) {
 void Compile_Headers(const std::string& destination, const std::string& source_root, bool ignore_autogen) {
     // Hardcoded header order based on dependencies
     std::vector<std::string> Header_Files_In_Order = {
+        "src/process/process.h",
+
         "src/core/thread.h",
         "src/core/utils/logger.h",
 

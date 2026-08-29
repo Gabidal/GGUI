@@ -30,6 +30,10 @@ lib_sources = [
   '../src/core/utils/logger.cpp',
   '../src/core/utils/settings.cpp',
   '../src/core/utils/drm.cpp',
+
+  # Process endpoints
+  '../src/core/process/linux.cpp',
+  '../src/core/process/windows.cpp',
   
   # Elements
   '../src/elements/element.cpp',
