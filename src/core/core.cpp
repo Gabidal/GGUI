@@ -75,17 +75,9 @@ namespace GGUI{
             return oss.str();
         }
 
-        void Cleanup(){
-            SignalThreadTermination();
-
-            logger::log("Reverting to normal console mode...");
-
-            terminal::deinit();
-
-            logger::log("GGUI shutdown successful.");
-        }
-
         void SignalThreadTermination(){
+            std::lock_guard<std::mutex> lock(thread::concurrency::mutex);
+
             // Gracefully shutdown event and rendering threads.
             thread::concurrency::requestTermination = true;
 
@@ -308,7 +300,7 @@ namespace GGUI{
          * 
          * @return The main window of the GGUI system.
          */
-        element* initGGUI(){
+        void init(){
             std::thread Logging_Scheduler([](){
                 logger::loggerThread();
             });
@@ -351,9 +343,13 @@ namespace GGUI{
             
             renderingThread.detach();  // Let the rendering thread able to std::exit.
             eventThread.detach();  // Let the rendering thread able to std::exit.
-            // Logging_Scheduler.detach();
+            Logging_Scheduler.detach();
+        }
 
-            return main;
+        void deinit(){
+            SignalThreadTermination();
+
+            logger::log("GGUI shutdown successful.");
         }
     
         /**
@@ -558,7 +554,7 @@ namespace GGUI{
      */
     void GGUI(STYLING_INTERNAL::styleBase& App, unsigned long long Sleep_For){
         pauseGGUI([&App](){
-            core::initGGUI();
+            core::init();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
             getRoot()->addStyling(App);

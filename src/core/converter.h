@@ -5,6 +5,7 @@
 #include <chrono>
 #include <array>
 #include <thread>
+#include <functional>
 
 #include "utils/utils.h"
 

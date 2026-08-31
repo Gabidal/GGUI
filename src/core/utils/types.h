@@ -4,6 +4,7 @@
 #include <string>
 #include <cassert>
 #include <span>
+#include <vector>
 
 namespace GGUI{
     

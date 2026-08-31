@@ -4,6 +4,8 @@
 #include <mutex>
 #include <optional>
 #include <csignal>
+#include <condition_variable>
+#include <stdexcept>
 
 namespace GGUI {
     namespace thread {

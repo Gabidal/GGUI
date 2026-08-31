@@ -318,7 +318,10 @@ namespace GGUI {
         }
 
         extern void platformDeinit();
+        
         void deinit() {
+            logger::log("Reverting to normal console mode...");
+
             // Calls based on feature flags correct public and/or private SGR or other extension CSI's.
 
             // Now cal platform specific de-initializers

@@ -55,8 +55,6 @@ namespace GGUI{
 
         extern std::string constructLoggerFileName();
 
-        extern void Cleanup();
-
         extern void SignalThreadTermination();
 
         /**
@@ -122,7 +120,9 @@ namespace GGUI{
          * 
          * @return The main window of the GGUI system.
          */
-        extern GGUI::element* initGGUI();
+        extern void init();
+
+        extern void deinit();
 
         /**
          * @brief Nests a text buffer into a parent buffer while considering the childs position and size.

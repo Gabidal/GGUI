@@ -3,6 +3,7 @@
 
 #include <string>
 #include <functional>
+#include <chrono>
 
 namespace GGUI {
     namespace SETTINGS{
