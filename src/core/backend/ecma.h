@@ -1291,7 +1291,7 @@ namespace GGUI {
                     /**
                      * @brief flashes the repertoire jump block map into the initial state.
                      */
-                    constexpr void flash(bitType mode) {
+                    constexpr void flash() {
                         // First unload all pages.
                         for (auto& p : pages) {
                             p.maybeUnload(true);
@@ -1309,7 +1309,7 @@ namespace GGUI {
                             lifetime::types::LOCKING
                         });
 
-                        enableC1(mode); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
+                        // enableC1(mode); // By ecma-35 only one of C1 layout can be loaded at a time, which is by default 7-bit and then at request switched into 8-bit mode.
 
                         // Write the initialized flash state.
                         flush();
@@ -1320,18 +1320,18 @@ namespace GGUI {
                      * Loads and overrides the columns where 7/8-bit C1 overlaps with the 8-bit graphical set.
                      * According to ecma-35, only one C1 layout can be loaded at a time.
                      */
-                    constexpr void enableC1(bitType mode) {
+                    // constexpr void enableC1(bitType mode) {
 
-                        layout::bounds location = layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
+                    //     layout::bounds location = layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
 
-                        if (mode == bitType::_8BIT) location = location.to8bit();
+                    //     if (mode == bitType::_8BIT) location = location.to8bit();
 
-                        // Load and override the columns where 8-bit C1 overlaps with the 8-bit graphical set
-                        pages[static_cast<size_t>(repertoire::C1)].load({
-                            location,
-                            lifetime::types::LOCKING
-                        });
-                    }
+                    //     // Load and override the columns where 8-bit C1 overlaps with the 8-bit graphical set
+                    //     pages[static_cast<size_t>(repertoire::C1)].load({
+                    //         location,
+                    //         lifetime::types::LOCKING
+                    //     });
+                    // }
 
                     /**
                      * @brief Updates the page states on each read-byte operation.
@@ -1339,11 +1339,11 @@ namespace GGUI {
                      * Should be called for each read-byte to maintain proper page state management.
                      */
                     constexpr void update() {
-                        flush();    // Flush current iteration of temporaries and other goodies, next iteration after interpretation temporary is unloaded fully.
-
                         for (auto& p : pages) {
                             p.maybeUnload(); // Affects temporary and to be unloaded pages only!
                         }
+                        
+                        flush();    // Flush current iteration of temporaries and other goodies, next iteration after interpretation temporary is unloaded fully.
                     }
 
                     /**

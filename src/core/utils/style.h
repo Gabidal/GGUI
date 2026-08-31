@@ -20,7 +20,7 @@ namespace GGUI{
     class styling;
     extern void EXIT(int signum);
     namespace types {
-        extern void reportStack(const std::string& problemDescription);
+        extern void log(const std::string& problemDescription);
 
         template <typename T>
         std::string getTypeName() {
@@ -177,7 +177,7 @@ namespace GGUI{
 
             constexpr value<T> operator+(const value<T>& other){
                 if (evaluationType != other.evaluationType){
-                    logger::reportStack("Cannot add two different eval type values!");
+                    logger::log("Cannot add two different eval type values!");
                     EXIT(1);
                     return false;   // for warnings.
                 }
@@ -189,7 +189,7 @@ namespace GGUI{
                     case types::EVALUATION_TYPE::PERCENTAGE:
                         return value<T>(percentage + other.percentage);
                     default:
-                        logger::reportStack("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
+                        logger::log("Evaluation type: " + std::to_string((int)evaluationType) + " not supported!");
                         EXIT(1);
                         return value<T>(0);
                     }

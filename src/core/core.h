@@ -160,7 +160,7 @@ namespace GGUI{
          * @param Child The child element.
          * @return A pair of pairs containing the fitting area for the child element within the parent element.
          */
-        types::fittingArea getFittingArea(GGUI::element* Parent, GGUI::element* Child);
+        std::pair<rectangle, rectangle> getFittingArea(GGUI::element* Parent, GGUI::element* Child);
 
         /**
          * @brief Nests a child element into a parent element.

@@ -6,10 +6,6 @@
 #include "../core/utils/style.h"
 
 namespace GGUI{
-    namespace INTERNAL {
-        extern void renderLogger(const std::string& problem);
-    }
-
     class listView : public element{
     protected:
         //We can always assume that the list starts from the upper left corner, right?
@@ -308,9 +304,6 @@ namespace GGUI{
 
             return (listView*)Style->Childs[0];
         }
-
-        // This is only needed until auto scrolling has been implemented.
-        friend void logger::renderLogger(const std::string&);
     };
 }
 

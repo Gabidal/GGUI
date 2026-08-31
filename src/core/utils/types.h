@@ -5,6 +5,7 @@
 #include <cassert>
 #include <span>
 #include <vector>
+#include <cstdint>
 
 namespace GGUI{
     
@@ -600,7 +601,7 @@ namespace GGUI{
                    point.y >= top()  && point.y < bottom();
         }
 
-        constexpr rectangle intersection(rectangle other) const {
+        constexpr rectangle intersection(const rectangle& other) const {
             int x1 = std::max(left(), other.left());
             int y1 = std::max(top(), other.top());
 
@@ -618,12 +619,6 @@ namespace GGUI{
     };
 
     namespace types{
-        struct fittingArea{
-            IVector2 negativeOffset;
-            IVector2 start;
-            IVector2 end;
-        };
-
         enum class borderConnection : uint8_t {
             NONE    = 0 << 0,
             UP      = 1 << 0,

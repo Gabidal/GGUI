@@ -138,7 +138,7 @@ namespace GGUI{
                             }
                         }
                         catch (std::exception& e){
-                            logger::reportStack("In memory: '" + rememberable.at(i).ID + "' Problem: " + std::string(e.what()));
+                            logger::log("In memory: '" + rememberable.at(i).ID + "' Problem: " + std::string(e.what()));
                         }
                     }
 
@@ -306,7 +306,6 @@ namespace GGUI{
             });
 
             logger::log("Starting GGUI Core initialization...");
-            Logging_Scheduler.detach();
 
             // Create the input poller pairs
             inputManager   = new converter::input::base();
@@ -353,39 +352,35 @@ namespace GGUI{
         }
     
         /**
-         * @brief Gets the fitting area for a child element in its parent.
-         * @details This function calculates the area where the child element should be rendered within the parent element.
-         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
+         * @brief Returns the dest buffer and src buffer information for copying data between parent and child elements
          * @param Parent The parent element.
          * @param Child The child element.
          */
-        types::fittingArea getFittingArea(element* Parent, element* Child){
+        std::pair<rectangle, rectangle> getFittingArea(element* Parent, element* Child){
             // If both dont have same border setup and parent has a border, then the child needs to be offsetted by one in every direction.
-            int Border_Offset = Parent->hasBorder() != Child->hasBorder() && Parent->hasBorder() ? 1 : 0;
+            int borderOffset = Parent->hasBorder() != Child->hasBorder() && Parent->hasBorder() ? 1 : 0;
             
             // Absolute bounding
-            IVector2 parentStart = {Border_Offset, Border_Offset};
-            IVector2 parentEnd = {Parent->getWidth() - Border_Offset, Parent->getHeight() - Border_Offset};
-
-            // This only contains value if the position of the child element has any negative positioning in it.
-            IVector2 negativeOffset = {
-                Child->getPosition().x < 0 ? -Child->getPosition().x : 0,
-                Child->getPosition().y < 0 ? -Child->getPosition().y : 0
+            rectangle bounds = {
+                {borderOffset, borderOffset},
+                {Parent->getWidth() - borderOffset, Parent->getHeight() - borderOffset}
             };
 
-            // Drawable box start, within the bounding box.
-            IVector2 childStart = IVector2{
-               std::max(Child->getPosition().x, 0),
-               std::max(Child->getPosition().y, 0)
-            } + parentStart;
-
-            // Drawable box end, within the bounding box.
-            IVector2 childEnd = {
-                std::min(childStart.x + Child->getWidth() - negativeOffset.x, parentEnd.x),
-                std::min(childStart.y + Child->getHeight() - negativeOffset.y, parentEnd.y)
+            rectangle childInfo = { TODO("Give element a direct getRectangle()")
+                Child->getPosition(),
+                {Child->getWidth(), Child->getHeight()}
             };
 
-            return {negativeOffset, childStart, childEnd };
+            // The written output is the intersection between the child and the bounds
+            rectangle dest = bounds.intersection(childInfo);
+
+            // The childs own relative buffer intersection of clipping while partially outside or completely inside the parent element
+            rectangle src = {
+                {dest.position.x - childInfo.position.x, dest.position.y - childInfo.position.y},
+                dest.size
+            };
+
+            return {dest, src};
         }
 
         /**
@@ -399,15 +394,17 @@ namespace GGUI{
          * @param Child_Buffer The child element's buffer.
          */
         void nestElement(element* parent, element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer){
-            types::fittingArea Limits = getFittingArea(parent, child);
+            auto [dest, src] = getFittingArea(parent, child);
 
-            for (int y = Limits.start.y; y < Limits.end.y; y++){
-                for (int x = Limits.start.x; x < Limits.end.x; x++){
-                    // Calculate the position of the child element in its own buffer.
-                    int Child_Buffer_Y = (y - Limits.start.y + Limits.negativeOffset.y) * child->getWidth();
-                    int Child_Buffer_X = (x - Limits.start.x + Limits.negativeOffset.x); 
-                    Parent_Buffer[y * parent->getWidth() + x] = Child_Buffer[Child_Buffer_Y + Child_Buffer_X];
-                }
+            for (int y = 0; y < dest.size.y; y++) {
+                int parentRowStart = (dest.position.y + y) * parent->getWidth() + dest.position.x;
+                int childRowStart  = (src.position.y  + y) * child->getWidth()  + src.position.x;
+
+                std::copy(
+                    Child_Buffer.begin() + childRowStart,
+                    Child_Buffer.begin() + childRowStart + dest.size.x,
+                    Parent_Buffer.begin() + parentRowStart
+                );
             }
         }
     }
@@ -539,7 +536,7 @@ namespace GGUI{
             std::string Given_Function_Label_Location = hex(reinterpret_cast<unsigned long long>(&f));
 
             // If an exception is thrown, report the stack trace and the exception message.
-            logger::reportStack("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: \n" + std::string(e.what()));
+            logger::log("In given function to Pause_GGUI: " + Given_Function_Label_Location + " arose problem: \n" + std::string(e.what()));
         }
 
         // Resume the render thread with the previous render status.

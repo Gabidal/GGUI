@@ -191,7 +191,7 @@ namespace GGUI {
 
             for (element* c : this->Style->Childs){
                 // check if the child is within the rendering area.
-                if (!c->isDisplayed() || !childIsShown(c))
+                if (!c || !c->isDisplayed() || !childIsShown(c))
                     continue;
 
                 if (c->hasBorder())
@@ -252,7 +252,7 @@ namespace GGUI {
     */
     void element::setOpacity(float Opacity){
         if (Opacity > 1.0f)
-            logger::reportStack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + getName());
+            logger::log("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + getName());
 
         Style->Opacity.Set(Opacity);
 
@@ -272,7 +272,7 @@ namespace GGUI {
         // Check if the provided opacity is within valid range (0-100)
         if (Opacity > MAX_OPACITY) {
             // Report an error if the opacity value is too high
-            logger::reportStack("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + getName());
+            logger::log("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + getName());
         }
 
         // Convert the opacity percentage to an 8-bit value (0..255) and set it.
@@ -961,7 +961,7 @@ namespace GGUI {
 
     void element::embedStyles(){
         // if (Parent == nullptr && INTERNAL::Main == nullptr){
-        //     logger::reportStack("OUTBOX not supported, cannot anchor: " + getName());
+        //     logger::log("OUTBOX not supported, cannot anchor: " + getName());
         // }
 
         Style->embedStyles(this);
@@ -1742,7 +1742,7 @@ namespace GGUI {
     bool element::childrenChanged() const {
         for (const auto* e : Style->Childs){
             if (e->getDirty().is(types::STAIN_TYPE::FINALIZE)){
-                logger::reportStack("Child element passthrough Finalization stage!");
+                logger::log("Child element passthrough Finalization stage!");
             }
 
             // Not counting State machine, if element is not being drawn return always false.
@@ -1961,21 +1961,19 @@ namespace GGUI {
     * @return True if the child element is visible within the bounds of the parent.
     */
     bool element::childIsShown(element* other){
+        rectangle self = {
+            getPosition(),
+            { getWidth(), getHeight() }
+        };
 
-        // Check if the element has a border
-        bool Border_Modifier = hasBorder() != other->hasBorder() && hasBorder() ? 1 : 0;
+        rectangle child = {
+            other->getPosition(),
+            { other->getWidth(), other->getHeight() }
+        };
 
-        // Calculate the minimum and maximum coordinates of the child element
-        int Minimum_X = other->Style->Position.get().x + other->getWidth();
-        int Minimum_Y = other->Style->Position.get().y + other->getHeight();
-        int Maximum_X = other->Style->Position.get().x;
-        int Maximum_Y = other->Style->Position.get().y;
+        rectangle result = self.intersection(child);
 
-        // Check if the child element is visible within the bounds of the parent
-        bool X_Is_Inside = Minimum_X >= Border_Modifier && Maximum_X < getWidth() - Border_Modifier;
-        bool Y_Is_Inside = Minimum_Y >= Border_Modifier && Maximum_Y < getHeight() - Border_Modifier;
-
-        // Return true if the child element is visible within the bounds of the parent
-        return X_Is_Inside && Y_Is_Inside;
+        if (result.empty()) return false;
+        else return true;
     }
 }

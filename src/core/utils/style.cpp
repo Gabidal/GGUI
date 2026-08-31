@@ -6,7 +6,7 @@
 
 #include "utils.h"
 
-TODO("add capability to call reportStack in Styles.h")
+TODO("add capability to call log in Styles.h")
 
 namespace GGUI{
 

@@ -266,7 +266,8 @@ namespace GGUI {
                 pageManager.add(G0, configuration::repertoire::G0);
 
                 // 7-bit layout is flashed during runtime with ESC as shift function.
-                pageManager.flash(configuration::bitType::_8BIT);
+                // pageManager.flash(configuration::bitType::_8BIT);
+                pageManager.flash();
             }
 
             namespace sequences {   TODO("add multi selectable types for parameters.")

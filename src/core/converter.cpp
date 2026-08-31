@@ -135,11 +135,11 @@ namespace GGUI {
                                         continue;
                                     }
                                     else{
-                                        logger::reportStack("Job '" + currentEventHandler.ID + "' failed!");
+                                        logger::log("Job '" + currentEventHandler.ID + "' failed!");
                                     }
                                 }
                                 catch(std::exception& problem){
-                                    logger::reportStack("In event: '" + currentEventHandler.ID + "' Problem: " + std::string(problem.what()));
+                                    logger::log("In event: '" + currentEventHandler.ID + "' Problem: " + std::string(problem.what()));
                                 }
                             }
 

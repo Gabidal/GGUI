@@ -16,12 +16,8 @@ namespace GGUI{
         extern thread::guard<std::basic_ofstream<char>> handle;
 
         extern void log(const std::string& Text);
-
-        extern void reportStack(const std::string& problemDescription);
     
         extern void loggerThread();
-
-        extern void renderLogger(const std::string& problem);
     }
 }
 
