@@ -15,7 +15,7 @@ namespace GGUI{
         unsigned char opacity = UINT8_MAX;
         RGB glyphColor        = {};
         RGB backgroundColor   = {};
-        types::linearMask<textAttributeTypes, uint64_t> textAttributes = textAttributeTypes::DEFAULT;
+        linearMask<textAttributeTypes, uint64_t> textAttributes = textAttributeTypes::DEFAULT;
     protected:
         constexpr std::pair<terminal::cell, ActiveStyle> render() {
             ActiveStyle styling;

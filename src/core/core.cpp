@@ -565,7 +565,7 @@ namespace GGUI{
         });
         
         // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
-        getRoot()->check(types::STATE::INIT);
+        getRoot()->check(STATE::INIT);
 
         // Sleep for the given amount of milliseconds.
         std::this_thread::sleep_for(std::chrono::milliseconds(Sleep_For));

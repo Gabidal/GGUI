@@ -131,64 +131,64 @@ namespace GGUI{
 
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
-            Dirty.Dirty(types::STAIN_TYPE::STRETCH);
+            Dirty |= (stain::types::STRETCH);
 
         if (Style->evaluateDynamicPosition(this))
-            Dirty.Dirty(types::STAIN_TYPE::MOVE);
+            Dirty |= (stain::types::MOVE);
 
         if (Style->evaluateDynamicGraphics(this))
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+            Dirty |= (stain::types::GRAPHICS);
 
         if (Style->evaluateDynamicBorder(this))
-            Dirty.Dirty(types::STAIN_TYPE::EDGE);
+            Dirty |= (stain::types::EDGE);
 
         // If the text field is clean, return the current render buffer
-        if (Dirty.is(types::STAIN_TYPE::CLEAN))
+        if (Dirty.isEmpty())
             return Result;
 
         // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
-        if (Dirty.is(types::STAIN_TYPE::DEEP)){
+        if (Dirty.has(stain::types::DEEP)){
             updateTextCache();
         }
 
-        if (Dirty.is(types::STAIN_TYPE::RESET)){
-            Dirty.Clean(types::STAIN_TYPE::RESET);
+        if (Dirty.has(stain::types::RESET)){
+            Dirty ^= (stain::types::RESET);
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::DEEP);
+            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
-        if (Dirty.is(types::STAIN_TYPE::STRETCH)) {
+        if (Dirty.has(stain::types::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
-            Dirty.Clean(types::STAIN_TYPE::STRETCH);
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::RESET | types::STAIN_TYPE::NOT_RENDERED);
+            Dirty ^= (stain::types::STRETCH);
+            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::RESET | stain::types::NOT_RENDERED);
         }
 
-        if (Dirty.is(types::STAIN_TYPE::NOT_RENDERED)) {
+        if (Dirty.has(stain::types::NOT_RENDERED)) {
             if (On_Render) On_Render(this);
 
             // Clean regardless of On_Render existing or not.
-            Dirty.Clean(types::STAIN_TYPE::NOT_RENDERED);
+            Dirty ^= (stain::types::NOT_RENDERED);
         }
 
         // Update the absolute position cache if the MOVE stain is detected.
-        if (Dirty.is(types::STAIN_TYPE::MOVE)) {
-            Dirty.Clean(types::STAIN_TYPE::MOVE);
+        if (Dirty.has(stain::types::MOVE)) {
+            Dirty ^= (stain::types::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Align text and add child windows to the Result buffer if the DEEP stain is detected
-        if (Dirty.is(types::STAIN_TYPE::DEEP)) {
-            Dirty.Clean(types::STAIN_TYPE::DEEP);
+        if (Dirty.has(stain::types::DEEP)) {
+            Dirty ^= (stain::types::DEEP);
 
             // clean reflection pool
             graphicalReflectionPool.clear();
             graphicalIdentityPool.clear();
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+            Dirty |= (stain::types::GRAPHICS);
 
             if (Style->Align.value == ANCHOR::LEFT)
                 alignTextLeft(Result);
@@ -199,16 +199,16 @@ namespace GGUI{
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.is(types::STAIN_TYPE::GRAPHICS)){        
+        if (Dirty.has(stain::types::GRAPHICS)){        
             // Clean the color stain after applying the color system.
-            Dirty.Clean(types::STAIN_TYPE::GRAPHICS);
+            Dirty ^= (stain::types::GRAPHICS);
 
             compileActiveGraphics();
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.is(types::STAIN_TYPE::EDGE)){
-            Dirty.Clean(types::STAIN_TYPE::EDGE);
+        if (Dirty.has(stain::types::EDGE)){
+            Dirty ^= (stain::types::EDGE);
 
             renderBorders(Result);
             renderTitle(Result);
@@ -228,7 +228,7 @@ namespace GGUI{
         if (hasEmptyName())
             setName(text);
 
-        Dirty.Dirty(types::STAIN_TYPE::DEEP | types::STAIN_TYPE::RESET);
+        Dirty |= (stain::base(stain::types::DEEP) | stain::types::RESET);
 
         updateTextCache();
 
@@ -392,7 +392,7 @@ namespace GGUI{
 
                         updateTextCache();
 
-                        Dirty.Dirty(types::STAIN_TYPE::DEEP | types::STAIN_TYPE::RESET);
+                        Dirty |= (stain::base(stain::types::DEEP) | stain::types::RESET);
                         updateFrame();
                     }
 

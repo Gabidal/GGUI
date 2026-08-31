@@ -399,7 +399,7 @@ namespace GGUI{
              * @details This function allows single style classes to incorporate their unique characteristics into a Styling object. 
              *          It should be implemented by derived classes to define how the style affects the Styling and Element objects.
              */
-            virtual types::STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return types::STAIN_TYPE::CLEAN; };
+            virtual stain::base embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return {}; };
         };
 
         class RGBValue : public styleBase{
@@ -502,10 +502,10 @@ namespace GGUI{
              * @brief Embeds the value of an RGB_VALUE object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+             * @return A stain::types indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns stain::base::empty.
              */
-            types::STAIN_TYPE embedValue([[maybe_unused]] styling* host, element* owner) override;
+            stain::base embedValue([[maybe_unused]] styling* host, element* owner) override;
 
             /**
              * @brief evaluate the RGB_VALUE.
@@ -591,10 +591,10 @@ namespace GGUI{
              * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+             * @return A stain::types indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns stain::base::empty.
              */
-            types::STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
+            stain::base embedValue([[maybe_unused]] styling* host,  element* owner) override;
         };
         
         class numberValue : public styleBase{
@@ -696,10 +696,10 @@ namespace GGUI{
              * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+             * @return A stain::types indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns stain::base::empty.
              */
-            types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+            stain::base embedValue(styling* host, element* owner) override;
             
             /**
              * @brief evaluate the RGB_VALUE.
@@ -802,7 +802,7 @@ namespace GGUI{
              *          It is used to support dynamic values like percentage depended values.
              *          The function does not do anything as of now.
              */
-            inline types::STAIN_TYPE embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) override { return types::STAIN_TYPE::CLEAN; };
+            inline stain::base embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) override { return {}; };
         };
         
         class vectorValue : public styleBase{
@@ -978,10 +978,10 @@ namespace GGUI{
              * @brief Embeds the value of a Vector object into a Styling object.
              * @param host The Styling object to embed the value into.
              * @param owner The Element that owns the Styling object.
-             * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-             * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+             * @return A stain::types indicating the type of stain that was embedded.
+             * @details This function does not actually embed any values and simply returns stain::base::empty.
              */
-            types::STAIN_TYPE embedValue([[maybe_unused]] styling* host,  element* owner) override;
+            stain::base embedValue([[maybe_unused]] styling* host,  element* owner) override;
         };
     
         /**
@@ -1129,7 +1129,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     protected:
         /**
          * @brief Transforms the position from center origin to top-left origin.
@@ -1170,7 +1170,7 @@ namespace GGUI{
 
         void evaluate(const styling* self, const styling* owner) override;
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
 
         constexpr int get() const { return number.get<int>(); }
 
@@ -1203,7 +1203,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
 
         constexpr int get() const { return number.get<int>(); }
 
@@ -1240,7 +1240,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class textColor : public STYLING_INTERNAL::RGBValue{
@@ -1264,7 +1264,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class backgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1288,7 +1288,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class borderColor : public STYLING_INTERNAL::RGBValue{
@@ -1312,7 +1312,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class borderBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1336,7 +1336,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class hoverBorderColor : public STYLING_INTERNAL::RGBValue{
@@ -1360,7 +1360,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class hoverTextColor : public STYLING_INTERNAL::RGBValue{
@@ -1384,7 +1384,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class hoverBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1408,7 +1408,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class hoverBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1432,7 +1432,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class focusBorderColor : public STYLING_INTERNAL::RGBValue{
@@ -1456,7 +1456,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class focusTextColor : public STYLING_INTERNAL::RGBValue{
@@ -1480,7 +1480,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class focusBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1504,7 +1504,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class focusBorderBackgroundColor : public STYLING_INTERNAL::RGBValue{
@@ -1528,7 +1528,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class styledBorder : public STYLING_INTERNAL::styleBase{
@@ -1545,6 +1545,14 @@ namespace GGUI{
         std::string_view horizontalTopConnector    = "┴";//"\e(0\x77\e(B";
         std::string_view crossConnector             = "┼";//"\e(0\x6e\e(B";
     
+        enum class connectionTypes : uint8_t {
+            NONE    = 0 << 0,
+            UP      = 1 << 0,
+            DOWN    = 1 << 1,
+            LEFT    = 1 << 2,
+            RIGHT   = 1 << 3
+        };
+
         /**
          * @brief A structure to hold the border style of a widget.
          *
@@ -1620,11 +1628,11 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
 
-        std::string_view getBorder(const types::borderConnection flags);
+        std::string_view getBorder(bitMask<connectionTypes> flags);
 
-        types::borderConnection getBorderType(std::string_view border);
+        bitMask<connectionTypes> getBorderType(std::string_view border);
     };
 
     class flowPriority : public STYLING_INTERNAL::enumValue<DIRECTION>{
@@ -1646,7 +1654,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class wrap : public STYLING_INTERNAL::boolValue{
@@ -1668,7 +1676,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class allowOverflow : public STYLING_INTERNAL::boolValue{
@@ -1690,7 +1698,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class allowDynamicSize : public STYLING_INTERNAL::boolValue{
@@ -1712,7 +1720,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class margin : public STYLING_INTERNAL::styleBase{
@@ -1753,7 +1761,7 @@ namespace GGUI{
         // - screen space
         void evaluate(const styling* self, const styling* owner) override;
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class opacity : public STYLING_INTERNAL::styleBase{
@@ -1794,7 +1802,7 @@ namespace GGUI{
         // Since opacity always represents an percentile of its self being displayed on top of its parent.
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
 
         constexpr unsigned char Get() const { return value; }
 
@@ -1828,7 +1836,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class anchor : public STYLING_INTERNAL::enumValue<ANCHOR>{
@@ -1850,7 +1858,7 @@ namespace GGUI{
         // - screen space
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
         
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class node : public STYLING_INTERNAL::styleBase{
@@ -1879,7 +1887,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class childs : public STYLING_INTERNAL::styleBase{
@@ -1913,7 +1921,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
 
         // -----< UTILS >-----
 
@@ -1958,7 +1966,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class onDestroy : public STYLING_INTERNAL::styleBase{
@@ -1987,7 +1995,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class onHide : public STYLING_INTERNAL::styleBase{
@@ -2016,7 +2024,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class onShow : public STYLING_INTERNAL::styleBase{
@@ -2045,7 +2053,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class onRender : public STYLING_INTERNAL::styleBase{
@@ -2074,7 +2082,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class name : public STYLING_INTERNAL::styleBase{
@@ -2103,7 +2111,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class title : public name{
@@ -2128,7 +2136,7 @@ namespace GGUI{
             return *this;
         }
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
 
         constexpr bool empty(){
             return value.empty();
@@ -2159,7 +2167,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     struct animationSprite;
@@ -2189,7 +2197,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class text : public STYLING_INTERNAL::styleBase{
@@ -2218,7 +2226,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class onClick : public STYLING_INTERNAL::styleBase{
@@ -2249,7 +2257,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class onInput : public STYLING_INTERNAL::styleBase{
@@ -2278,7 +2286,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     enum class textAttributeTypes : uint8_t {
@@ -2306,9 +2314,9 @@ namespace GGUI{
 
     class textAttribute : public STYLING_INTERNAL::styleBase{
     public:
-        types::linearMask<textAttributeTypes, uint64_t> value;
+        linearMask<textAttributeTypes, uint64_t> value;
 
-        constexpr textAttribute(const types::linearMask<textAttributeTypes, uint64_t>& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
+        constexpr textAttribute(const linearMask<textAttributeTypes, uint64_t>& Value, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default), value(Value){}
         
         constexpr textAttribute(const GGUI::textAttribute& other) : styleBase(other.status), value(other.value){}
 
@@ -2330,7 +2338,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     // This is what styling compiles during element::render().
@@ -2339,7 +2347,7 @@ namespace GGUI{
         RGB activeTextColor         = {};
         RGB activeBackgroundColor   = {};
         unsigned char opacity       = UINT8_MAX;
-        types::linearMask<textAttributeTypes, uint64_t> activeTextAttributes = textAttributeTypes::DEFAULT;
+        linearMask<textAttributeTypes, uint64_t> activeTextAttributes = textAttributeTypes::DEFAULT;
         element* origin             = nullptr;
 
         constexpr ActiveStyle computeColor(const ActiveStyle* other) const {

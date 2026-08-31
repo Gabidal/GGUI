@@ -65,8 +65,7 @@ GGUI::IVector3 GGUI::listView::getDimensionLimit(){
 void GGUI::listView::addChild(element* e) {
     pauseGGUI([this, e]() {
         // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
-        const types::STAIN& dirty = e->getDirty();
-        if (dirty.is(types::STAIN_TYPE::FINALIZE)){
+        if (e->getDirty().is(stain::types::FINALIZE)){
             // Finalize flag is cleaned Style Embedding with On_Init Call.
             // Give an early access to the parent, so that parent dependant attributes work properly.
             e->setParent(this);
@@ -99,7 +98,7 @@ void GGUI::listView::addChild(element* e) {
                 // Check if the parent allows stretching or overflow.
                 setHeight(std::min(limits.y, Proposed_Height));
                 setWidth(std::min(limits.x, Proposed_Width));
-                Dirty.Dirty(types::STAIN_TYPE::STRETCH);
+                Dirty |= (stain::types::STRETCH);
             }
 
             // Set positions for the child and last child elements.
@@ -116,7 +115,7 @@ void GGUI::listView::addChild(element* e) {
                 // Check if the parent allows stretching or overflow.
                 setWidth(std::min(limits.x, Proposed_Width));
                 setHeight(std::min(limits.y, Proposed_Height));
-                Dirty.Dirty(types::STAIN_TYPE::STRETCH);
+                Dirty |= (stain::types::STRETCH);
             }
 
             // Set positions for the child and last child elements.
@@ -129,7 +128,7 @@ void GGUI::listView::addChild(element* e) {
         Last_Child->showBorder(e->hasBorder());
 
         // Mark the list view as deeply dirty.
-        Dirty.Dirty(types::STAIN_TYPE::DEEP);
+        Dirty |= (stain::types::DEEP);
 
         // Add the child element to the internal structures.
         core::elementNames.insert({e->getNameAsRaw(), e});
@@ -149,7 +148,7 @@ void GGUI::listView::addChild(element* e) {
  */
 void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
     // If the childs are already clean then there is nothing to do here
-    if (Dirty.Type == types::STAIN_TYPE::CLEAN || Style->Childs.size() == 0)
+    if (Dirty.isEmpty() || Style->Childs.size() == 0)
         return;
 
     // Out mission is quite similar to the Remove(Element* c) like behaviour.
@@ -297,7 +296,7 @@ bool GGUI::listView::remove(element* remove){
  */
 void GGUI::scrollView::addChild(element* e) {
     // Mark the Scroll_View as dirty with the DEEP stain because we are adding a new child element.
-    Dirty.Dirty(types::STAIN_TYPE::DEEP);
+    Dirty |= (stain::types::DEEP);
 
     // Add the child element to the List_View that is being used as the container.
     getContainer()->addChild(e);

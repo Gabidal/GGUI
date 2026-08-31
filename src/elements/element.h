@@ -38,7 +38,7 @@ namespace GGUI{
         std::vector<const ActiveStyle*> graphicalReflectionPool;
 
         // State machine for render pipeline only focus on changed aspects.
-        types::STAIN Dirty;
+        stain::base Dirty;
 
         bool Focused = false;
         bool Hovered = false;
@@ -155,7 +155,7 @@ namespace GGUI{
          *          Element when it is asked to render.
          * @return A reference to the Dirty object.
          */
-        constexpr const types::STAIN& getDirty() const {
+        constexpr const stain::base& getDirty() const {
             return Dirty;
         }
 
@@ -204,18 +204,18 @@ namespace GGUI{
          *          If a handler exists, it invokes the handler function.
          * @param s The state for which the handler should be executed.
          */
-        constexpr void check(types::STATE s){
-            if (s == types::STATE::INIT && On_Init){
+        constexpr void check(STATE s){
+            if (s == STATE::INIT && On_Init){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
                 Style->evaluateDynamicAttributevalues(this);
 
                 On_Init(this);
             }
-            else if (s == types::STATE::DESTROYED && On_Destroy)
+            else if (s == STATE::DESTROYED && On_Destroy)
                 On_Destroy(this);
-            else if (s == types::STATE::HIDDEN && On_Hide)
+            else if (s == STATE::HIDDEN && On_Hide)
                 On_Hide(this);
-            else if (s == types::STATE::SHOWN && On_Show)
+            else if (s == STATE::SHOWN && On_Show)
                 On_Show(this);
         }
 
@@ -917,7 +917,7 @@ namespace GGUI{
          *
          * @note If the parent element does not have a valid render buffer (i.e., its
          *       `Is_Displayed()` function returns false), this function marks the parent
-         *       element as dirty with the `types::STAIN_TYPE::DEEP` and `types::STAIN_TYPE::COLOR` stains.
+         *       element as dirty with the `stain::types::DEEP` and `stain::types::COLOR` stains.
          *       This ensures that the parent element is re-rendered from scratch when the
          *       rendering thread is updated.
          */
@@ -1153,7 +1153,7 @@ namespace GGUI{
          * @param s The state for which the handler should be executed.
          * @param job The handler function to be executed
          */
-        void onState(types::STATE s, void (*job)(element* self));
+        void onState(STATE s, void (*job)(element* self));
 
         // Customization helper function
         //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -1165,8 +1165,8 @@ namespace GGUI{
          *          The function takes a STAIN_TYPE as a parameter and adds it to the list of stains.
          * @param s The stain to be added.
          */
-        void addStain(types::STAIN_TYPE s){
-            Dirty.Dirty(s);
+        void addStain(const stain::base& s){
+            Dirty |= s;
         }
 
         /**
@@ -1378,12 +1378,12 @@ namespace GGUI{
         constexpr void fullyStain(){
             // Mark the element as dirty for all possible stain types to ensure
             // complete re-evaluation and rendering.
-            this->Dirty.Dirty(
-                types::STAIN_TYPE::STRETCH | 
-                types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::DEEP | 
-                types::STAIN_TYPE::EDGE | types::STAIN_TYPE::MOVE
-                // types::STAIN_TYPE::FINALIZE // <- only constructors have the right to set this flag!
-                | types::STAIN_TYPE::NOT_RENDERED
+            Dirty |= (
+                stain::base(stain::types::STRETCH) | 
+                stain::types::GRAPHICS | stain::types::DEEP | 
+                stain::types::EDGE | stain::types::MOVE
+                // stain::types::FINALIZE // <- only constructors have the right to set this flag!
+                | stain::types::NOT_RENDERED
             );
         }
         

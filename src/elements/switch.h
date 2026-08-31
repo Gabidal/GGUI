@@ -85,7 +85,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class singleSelect : public STYLING_INTERNAL::styleBase {
@@ -153,7 +153,7 @@ namespace GGUI{
 
         inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
 
-        types::STAIN_TYPE embedValue(styling* host, element* owner) override;
+        stain::base embedValue(styling* host, element* owner) override;
     };
 
     class switchBox : public element{

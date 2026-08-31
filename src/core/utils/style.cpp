@@ -97,45 +97,45 @@ namespace GGUI{
      * @brief Embeds the value of an RGB_VALUE object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+     * @return A stain::types indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns stain::base::empty.
      */
-    types::STAIN_TYPE STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return types::STAIN_TYPE::CLEAN; }
+    stain::base STYLING_INTERNAL::RGBValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return {}; }
 
     /**
      * @brief Embeds the value of a BOOL_VALUE object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+     * @return A stain::types indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns stain::base::empty.
      */
-    types::STAIN_TYPE STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return types::STAIN_TYPE::CLEAN; }
+    stain::base STYLING_INTERNAL::boolValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return {}; }
 
     /**
      * @brief Embeds the value of a NUMBER_VALUE object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+     * @return A stain::types indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns stain::base::empty.
      */
-    types::STAIN_TYPE STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return types::STAIN_TYPE::CLEAN; }
+    stain::base STYLING_INTERNAL::numberValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return {}; }
 
     /**
      * @brief Embeds the value of a Vector object into a Styling object.
      * @param host The Styling object to embed the value into.
      * @param owner The Element that owns the Styling object.
-     * @return A types::STAIN_TYPE indicating the type of stain that was embedded.
-     * @details This function does not actually embed any values and simply returns types::STAIN_TYPE::CLEAN.
+     * @return A stain::types indicating the type of stain that was embedded.
+     * @details This function does not actually embed any values and simply returns stain::base::empty.
      */
-    types::STAIN_TYPE STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return types::STAIN_TYPE::CLEAN; }
+    stain::base STYLING_INTERNAL::vectorValue::embedValue([[maybe_unused]] styling* host, [[maybe_unused]] element* owner) { return {}; }
 
-    types::STAIN_TYPE position::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base position::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Position = *this;
 
-        return types::STAIN_TYPE::MOVE;
+        return stain::types::MOVE;
     }
 
-    types::STAIN_TYPE width::embedValue(styling* host, element* owner){
+    stain::base width::embedValue(styling* host, element* owner){
         host->Width = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
@@ -144,10 +144,10 @@ namespace GGUI{
             tmp.embedValue(host, owner);
         }
 
-        return types::STAIN_TYPE::STRETCH;
+        return stain::types::STRETCH;
     }
 
-    types::STAIN_TYPE height::embedValue(styling* host, element* owner){
+    stain::base height::embedValue(styling* host, element* owner){
         host->Height = *this;
 
         // Since dynamic size and percentage based size are two incompatible systems.
@@ -156,10 +156,10 @@ namespace GGUI{
             tmp.embedValue(host, owner);
         }
         
-        return types::STAIN_TYPE::STRETCH;
+        return stain::types::STRETCH;
     }
 
-    types::STAIN_TYPE enableBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base enableBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
         owner->showBorder(this->value);
 
         // If border background value has not been given, then set this background color inverted.
@@ -168,153 +168,153 @@ namespace GGUI{
             host->Border_Color.color.set(!host->Background_Color.color.get<RGB>());
         }
 
-        return types::STAIN_TYPE::EDGE;
+        return stain::types::EDGE;
     }
 
-    types::STAIN_TYPE textColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base textColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Text_Color = *this;
 
         if (host->Border_Color.status < VALUE_STATE::VALUE)
             host->Border_Color.color = this->color;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE backgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base backgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Background_Color = *this;
 
         // If border background value has not been given, then set this background color as it.
         if (host->Border_Background_Color.status < VALUE_STATE::VALUE)
             host->Border_Background_Color.color = this->color;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE borderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base borderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE borderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base borderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Background_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE hoverBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base hoverBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE hoverTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base hoverTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Text_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE hoverBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base hoverBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Background_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE hoverBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base hoverBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Hover_Border_Background_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE focusBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base focusBorderColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE focusTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base focusTextColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Text_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE focusBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base focusBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Background_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE focusBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base focusBorderBackgroundColor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Focus_Border_Background_Color = *this;
 
-        return types::STAIN_TYPE::GRAPHICS;
+        return stain::types::GRAPHICS;
     }
 
-    types::STAIN_TYPE styledBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base styledBorder::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Border_Style = *this;
 
-        return types::STAIN_TYPE::EDGE;
+        return stain::types::EDGE;
     }
 
-    types::STAIN_TYPE flowPriority::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base flowPriority::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Flow_Priority = *this;
 
-        return types::STAIN_TYPE::DEEP;
+        return stain::types::DEEP;
     }
 
-    types::STAIN_TYPE wrap::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base wrap::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Wrap = *this;
 
-        return types::STAIN_TYPE::DEEP;
+        return stain::types::DEEP;
     }
 
-    types::STAIN_TYPE allowOverflow::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base allowOverflow::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Overflow = *this;
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE allowDynamicSize::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base allowDynamicSize::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Dynamic_Size = *this;
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE margin::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base margin::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Margin = *this;
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE opacity::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base opacity::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Opacity = *this;
 
-        return types::STAIN_TYPE::STRETCH;
+        return stain::types::STRETCH;
     }
 
-    types::STAIN_TYPE allowScrolling::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base allowScrolling::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Allow_Scrolling = *this;
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE anchor::embedValue(styling* host, [[maybe_unused]] element* owner){
+    stain::base anchor::embedValue(styling* host, [[maybe_unused]] element* owner){
         host->Align = *this;
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE node::embedValue(styling* host, [[maybe_unused]]  element* owner){
+    stain::base node::embedValue(styling* host, [[maybe_unused]]  element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         // Since the value is typically given as an stack allocated local object, we need to transfer it into heap
         value = value->copy();
 
         host->Childs.push_back(value);
 
-        return types::STAIN_TYPE::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
+        return stain::types::DEEP;    // This also could just be a CLEAN value, since the Add_Child is determined to set the correct Stains.
     }
     
-    types::STAIN_TYPE childs::embedValue(styling* host, [[maybe_unused]]  element* owner){
+    stain::base childs::embedValue(styling* host, [[maybe_unused]]  element* owner){
         for (auto* c : *this){
             // Since the value is typically given as an stack allocated local object, we need to transfer it into heap
             c = c->copy();
@@ -322,46 +322,46 @@ namespace GGUI{
             host->Childs.push_back(c);
         }
 
-        return types::STAIN_TYPE::DEEP;
+        return stain::types::DEEP;
     }
 
-    types::STAIN_TYPE onInit::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onInit::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnInit(value);
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE onDestroy::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onDestroy::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnDestroy(value);
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE onHide::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onHide::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnHide(value);
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE onShow::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onShow::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnShow(value);
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE onRender::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onRender::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setOnRender(value);
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE name::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base name::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setName(value);
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE title::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base title::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->setTitle(value);
 
         if (owner->hasEmptyName()){
@@ -369,26 +369,26 @@ namespace GGUI{
             owner->setName(value);
         }
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE display::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base display::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->display(value);
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE onDraw::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onDraw::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Terminal_Canvas element.
         if (dynamic_cast<canvas*>(owner))
             ((canvas*)owner)->setOnDraw(value);
         else
             throw std::runtime_error("The on_draw attribute can only be used on Terminal_Canvas type elements.");
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE text::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base text::embedValue([[maybe_unused]] styling* host, element* owner){
         // first make sure that the element is an Text_Field element.
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->setText(value);
@@ -397,10 +397,10 @@ namespace GGUI{
         else
             throw std::runtime_error("The text attribute can only be used on textField type elements.");
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE onClick::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onClick::embedValue([[maybe_unused]] styling* host, element* owner){
         owner->onClick([this, owner](converter::output::event::base*){
             // The default, on_click wont do anything.
             // It will call the provided lambda (if any) and return true (allowing the event to propagate).
@@ -410,83 +410,85 @@ namespace GGUI{
             return this->value(owner);
         });
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE onInput::embedValue([[maybe_unused]] styling* host, element* owner){
+    stain::base onInput::embedValue([[maybe_unused]] styling* host, element* owner){
         if (dynamic_cast<textField*>(owner))
             ((textField*)owner)->input(value);
         else
             throw std::runtime_error("The on_input attribute can only be used on textField type elements.");
 
-        return types::STAIN_TYPE::CLEAN;
+        return {};
     }
 
-    types::STAIN_TYPE textAttribute::embedValue(styling* host, [[maybe_unused]] element* owner) {
+    stain::base textAttribute::embedValue(styling* host, [[maybe_unused]] element* owner) {
         host->TextAttributes = *this;
         
-        return types::STAIN_TYPE::GRAPHICS;     // color manages all stylings, including textual styles.
+        return stain::types::GRAPHICS;     // color manages all stylings, including textual styles.
     }   
 
-    std::string_view styledBorder::getBorder(const types::borderConnection flags){
+
+
+    std::string_view styledBorder::getBorder(bitMask<connectionTypes> flags){
         // Corners
-        if (flags == (types::borderConnection::DOWN | types::borderConnection::RIGHT))
+        if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::RIGHT))
             return topLeftCorner;
-        else if (flags == (types::borderConnection::DOWN | types::borderConnection::LEFT))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::LEFT))
             return topRightCorner;
-        else if (flags == (types::borderConnection::UP | types::borderConnection::RIGHT))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::RIGHT))
             return bottomLeftCorner;
-        else if (flags == (types::borderConnection::UP | types::borderConnection::LEFT))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::LEFT))
             return bottomRightCorner;
         // Vertical lines
-        else if (flags == (types::borderConnection::DOWN | types::borderConnection::UP))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP))
             return verticalLine;
 
         // Horizontal lines
-        else if (flags == (types::borderConnection::LEFT | types::borderConnection::RIGHT))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT))
             return horizontalLine;
 
         // connectors
-        else if (flags == (types::borderConnection::DOWN | types::borderConnection::UP | types::borderConnection::RIGHT))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::RIGHT))
             return verticalRightConnector;
-        else if (flags == (types::borderConnection::DOWN | types::borderConnection::UP | types::borderConnection::LEFT))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::LEFT))
             return verticalLeftConnector;
-        else if (flags == (types::borderConnection::LEFT | types::borderConnection::RIGHT | types::borderConnection::DOWN))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::DOWN))
             return horizontalBottomConnector;
-        else if (flags == (types::borderConnection::LEFT | types::borderConnection::RIGHT | types::borderConnection::UP))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP))
             return horizontalTopConnector;
 
         // cross connectors
-        else if (flags == (types::borderConnection::LEFT | types::borderConnection::RIGHT | types::borderConnection::UP | types::borderConnection::DOWN))
+        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP | connectionTypes::DOWN))
             return crossConnector;
         else
             return "";
     }
 
-    types::borderConnection styledBorder::getBorderType(std::string_view border){
+    bitMask<styledBorder::connectionTypes> styledBorder::getBorderType(std::string_view border){
         if (border == topLeftCorner)
-            return types::borderConnection::DOWN | types::borderConnection::RIGHT;
+            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::RIGHT;
         else if (border == topRightCorner)
-            return types::borderConnection::DOWN | types::borderConnection::LEFT;
+            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::LEFT;
         else if (border == bottomLeftCorner)
-            return types::borderConnection::UP | types::borderConnection::RIGHT;
+            return bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::RIGHT;
         else if (border == bottomRightCorner)
-            return types::borderConnection::UP | types::borderConnection::LEFT;
+            return bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::LEFT;
         else if (border == verticalLine)
-            return types::borderConnection::DOWN | types::borderConnection::UP;
+            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP;
         else if (border == horizontalLine)
-            return types::borderConnection::LEFT | types::borderConnection::RIGHT;
+            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT;
         else if (border == verticalRightConnector)
-            return types::borderConnection::DOWN | types::borderConnection::UP | types::borderConnection::RIGHT;
+            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::RIGHT;
         else if (border == verticalLeftConnector)
-            return types::borderConnection::DOWN | types::borderConnection::UP | types::borderConnection::LEFT;
+            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::LEFT;
         else if (border == horizontalBottomConnector)
-            return types::borderConnection::LEFT | types::borderConnection::RIGHT | types::borderConnection::DOWN;
+            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::DOWN;
         else if (border == horizontalTopConnector)
-            return types::borderConnection::LEFT | types::borderConnection::RIGHT | types::borderConnection::UP;
+            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP;
         else if (border == crossConnector)
-            return types::borderConnection::LEFT | types::borderConnection::RIGHT | types::borderConnection::UP | types::borderConnection::DOWN;
-        else return types::borderConnection::NONE;
+            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP | connectionTypes::DOWN;
+        else return bitMask<connectionTypes>(connectionTypes::NONE);
     }
 
     STYLING_INTERNAL::styleBase* node::copy() const {
@@ -775,7 +777,7 @@ namespace GGUI{
     void styling::embedStyles(element* owner){
         STYLING_INTERNAL::styleBase* current_attribute = unParsedStyles;
 
-        types::STAIN changes;
+        stain::base changes;
 
         // This is the first pass for the INSTANT ordered style_bases:
         // Loop until no further nested attributes.
@@ -783,7 +785,7 @@ namespace GGUI{
 
             if (current_attribute->order == types::EMBED_ORDER::INSTANT)
                 // First embed the current attribute
-                changes.Dirty(current_attribute->embedValue(this, owner));
+                changes |= current_attribute->embedValue(this, owner);
 
             // Then set the current_attribute into the nested one
             current_attribute = current_attribute->next;
@@ -797,7 +799,7 @@ namespace GGUI{
 
             if (current_attribute->order == types::EMBED_ORDER::DELAYED)
                 // First embed the current attribute
-                changes.Dirty(current_attribute->embedValue(this, owner));
+                changes |= current_attribute->embedValue(this, owner);
 
             // Then set the current_attribute into the nested one
             current_attribute = current_attribute->next;
@@ -836,7 +838,7 @@ namespace GGUI{
             owner->addChild(c);
         }
 
-        owner->addStain(changes.Type);
+        owner->addStain(changes);
     }
 
 }

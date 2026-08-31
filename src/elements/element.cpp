@@ -28,17 +28,17 @@ namespace GGUI {
     element::element(STYLING_INTERNAL::styleBase& style, bool Embed_Styles_On_Construct){
         fullyStain();
 
-        Dirty.Dirty(types::STAIN_TYPE::FINALIZE);
+        Dirty |= (stain::types::FINALIZE);
 
         Style = new styling(style);
 
         if (Embed_Styles_On_Construct){
             Style->embedStyles(this);
 
-            check(types::STATE::INIT);
+            check(STATE::INIT);
 
             // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
-            Dirty.Clean(types::STAIN_TYPE::FINALIZE);
+            Dirty ^= (stain::types::FINALIZE);
         }
         else{
             // if the styles are to be embedded later on, then we need to make an deep copy of the whole list because the stack is about to be cleared.
@@ -57,7 +57,7 @@ namespace GGUI {
     */
     element::~element(){
         // Call handler for on destroying moment.
-        check(types::STATE::DESTROYED);
+        check(STATE::DESTROYED);
 
         // Make sure this element is not listed in the parent element.
         // And if it does, then remove it from the parent element.
@@ -68,7 +68,7 @@ namespace GGUI {
                     Parent->Style->Childs.erase(Parent->Style->Childs.begin() + i);
 
                     // This may not be enough for the parent to know where to resample the buffer where this child used to be.
-                    Parent->Dirty.Dirty(types::STAIN_TYPE::DEEP);
+                    Parent->Dirty |= (stain::types::DEEP);
 
                     break;  // There should be no possibility, that there are appended two or more of this exact same element, they should be copied!!!
                 }
@@ -112,82 +112,82 @@ namespace GGUI {
     std::vector<terminal::cell>& element::render(){
         // Check for Dynamic attributes
         if(Style->evaluateDynamicDimensions(this))
-            Dirty.Dirty(types::STAIN_TYPE::STRETCH);
+            Dirty |= (stain::types::STRETCH);
 
         if (Style->evaluateDynamicPosition(this))
-            Dirty.Dirty(types::STAIN_TYPE::MOVE);
+            Dirty |= (stain::types::MOVE);
 
         if (Style->evaluateDynamicGraphics(this))
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+            Dirty |= (stain::types::GRAPHICS);
 
         if (Style->evaluateDynamicBorder(this))
-            Dirty.Dirty(types::STAIN_TYPE::EDGE);
+            Dirty |= (stain::types::EDGE);
 
         calculateChildsHitboxes();    // Normally elements will NOT order their content by hitbox system.
 
         computeDynamicSize();
 
         //if inned children have changed without this changing, then this will trigger.
-        if (!Dirty.has(types::STAIN_TYPE::STRETCH | types::STAIN_TYPE::RESET)){
+        if (!Dirty.has(stain::base(stain::types::STRETCH) | stain::types::RESET)){
             bool tmp = childrenChanged();
 
-            if (!tmp && Dirty.is(types::STAIN_TYPE::CLEAN)){
+            if (!tmp && Dirty.isEmpty()){
                 return cellBuffer;
             }
             else if (tmp || hasTransparentChildren()){
-                Dirty.Dirty(types::STAIN_TYPE::RESET);
+                Dirty |= (stain::types::RESET);
             }
         }
 
         // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
-        if (this == getRoot() && !Dirty.is(types::STAIN_TYPE::CLEAN)){
+        if (this == getRoot() && !Dirty.isEmpty()){
             thread::identicalFrame = false;
         }
 
-        if (Dirty.is(types::STAIN_TYPE::CLEAN))
+        if (Dirty.isEmpty())
             return cellBuffer;
 
-        if (Dirty.is(types::STAIN_TYPE::MOVE)){
-            Dirty.Clean(types::STAIN_TYPE::MOVE);
+        if (Dirty.has(stain::types::MOVE)){
+            Dirty ^= stain::types::MOVE;
 
             updateAbsolutePositionCache();
         }
 
-        if (Dirty.is(types::STAIN_TYPE::RESET)){
-            Dirty.Clean(types::STAIN_TYPE::RESET);
+        if (Dirty.has(stain::types::RESET)){
+            Dirty ^= (stain::types::RESET);
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::DEEP);
+            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
         }
 
-        if (Dirty.is(types::STAIN_TYPE::STRETCH)){
-            Dirty.Clean(types::STAIN_TYPE::STRETCH);
+        if (Dirty.has(stain::types::STRETCH)){
+            Dirty ^= (stain::types::STRETCH);
             
             cellBuffer.clear();
             cellBuffer.resize(getWidth() * getHeight(), ' ');
 
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE | types::STAIN_TYPE::DEEP | types::STAIN_TYPE::NOT_RENDERED);
+            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
         }
 
-        if (Dirty.is(types::STAIN_TYPE::NOT_RENDERED)) {
+        if (Dirty.has(stain::types::NOT_RENDERED)) {
             if (On_Render) On_Render(this);
 
             // Clean regardless of On_Render existing or not.
-            Dirty.Clean(types::STAIN_TYPE::NOT_RENDERED);
+            Dirty ^= (stain::types::NOT_RENDERED);
         }
 
         bool Connect_Borders_With_Parent = hasBorder();
         unsigned int Childs_With_Borders = 0;
 
         //This will add the child windows to the Result buffer
-        if (Dirty.is(types::STAIN_TYPE::DEEP)){
-            Dirty.Clean(types::STAIN_TYPE::DEEP);
+        if (Dirty.has(stain::types::DEEP)){
+            Dirty ^= (stain::types::DEEP);
 
             // clean reflection pool
             graphicalReflectionPool.clear();
             graphicalIdentityPool.clear();
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+            Dirty |= (stain::types::GRAPHICS);
 
             for (element* c : this->Style->Childs){
                 // check if the child is within the rendering area.
@@ -206,18 +206,18 @@ namespace GGUI {
             }
         }
 
-        if (Dirty.is(types::STAIN_TYPE::GRAPHICS)) {     // Resets baked graphics and reserves for child*2+2, for the incoming deep stains.
-            Dirty.Clean(types::STAIN_TYPE::GRAPHICS);
+        if (Dirty.has(stain::types::GRAPHICS)) {     // Resets baked graphics and reserves for child*2+2, for the incoming deep stains.
+            Dirty ^= (stain::types::GRAPHICS);
 
             compileActiveGraphics();    // compiles identifying graphics pools
         }
 
         if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
-            Dirty.Dirty(types::STAIN_TYPE::EDGE);
+            Dirty |= (stain::types::EDGE);
 
         //This will add the borders if necessary and the title of the window.
-        if (Dirty.is(types::STAIN_TYPE::EDGE)){
-            Dirty.Clean(types::STAIN_TYPE::EDGE);
+        if (Dirty.has(stain::types::EDGE)){
+            Dirty ^= (stain::types::EDGE);
 
             renderBorders(cellBuffer);
             renderTitle(cellBuffer);
@@ -256,7 +256,7 @@ namespace GGUI {
 
         Style->Opacity.Set(Opacity);
 
-        Dirty.Dirty(types::STAIN_TYPE::RESET);
+        Dirty |= (stain::types::RESET);
         updateFrame();
     }
 
@@ -287,7 +287,7 @@ namespace GGUI {
         }
 
         // Mark the element as dirty to trigger a visual update
-        Dirty.Dirty(types::STAIN_TYPE::RESET);
+        Dirty |= (stain::types::RESET);
         updateFrame(); // Update the frame to reflect the changes
     }
 
@@ -341,7 +341,7 @@ namespace GGUI {
     void element::setFocus(bool f){
         if (f != Focused){
             // If the focus state has changed, dirty the element and update the frame.
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE);
+            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
 
             Focused = f;
 
@@ -358,7 +358,7 @@ namespace GGUI {
     void element::setHoverState(bool h){
         if (h != Hovered){
             // If the hover state has changed, dirty the element and update the frame.
-            Dirty.Dirty(types::STAIN_TYPE::GRAPHICS | types::STAIN_TYPE::EDGE);
+            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
 
             Hovered = h;
 
@@ -418,7 +418,7 @@ namespace GGUI {
     void element::showBorder(bool b){
         if (b != Style->Border_Enabled.value){
             Style->Border_Enabled = b;
-            Dirty.Dirty(types::STAIN_TYPE::EDGE);
+            Dirty |= (stain::types::EDGE);
             updateFrame();
         }
     }
@@ -437,7 +437,7 @@ namespace GGUI {
             Style->Border_Enabled = b;
 
             // Mark the element as dirty for border changes
-            Dirty.Dirty(types::STAIN_TYPE::EDGE);
+            Dirty |= (stain::types::EDGE);
 
             // Refresh the element's frame to reflect changes
             updateFrame();
@@ -465,7 +465,7 @@ namespace GGUI {
     */
     void element::addChild(element* Child){
         // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
-        if (Child->Dirty.is(types::STAIN_TYPE::FINALIZE)){
+        if (Child->Dirty.has(stain::types::FINALIZE)){
             // Finalize flag is cleaned Style Embedding with On_Init Call.
             // Give an early access to the parent, so that parent dependant attributes work properly.
             Child->Parent = this;
@@ -503,7 +503,7 @@ namespace GGUI {
         }
 
         // Mark the parent element as dirty with the DEEP stain
-        Dirty.Dirty(types::STAIN_TYPE::DEEP);
+        Dirty |= (stain::types::DEEP);
 
         // Add the child element to the parent's child list
         core::elementNames.insert({Child->getNameAsRaw(), Child});
@@ -529,7 +529,7 @@ namespace GGUI {
             for (auto& Child : childs){
                 addChild(Child);
             }
-            Dirty.Dirty(types::STAIN_TYPE::DEEP);
+            Dirty |= (stain::types::DEEP);
         });
     }
 
@@ -617,7 +617,7 @@ namespace GGUI {
 
                 delete handle;
 
-                Dirty.Dirty(types::STAIN_TYPE::DEEP | types::STAIN_TYPE::GRAPHICS);
+                Dirty |= (stain::base(stain::types::DEEP) | stain::types::GRAPHICS);
 
                 return true;
             }
@@ -634,21 +634,21 @@ namespace GGUI {
     *
     * @note If the parent element does not have a valid render buffer (i.e., its
     *       `Is_Displayed()` function returns false), this function marks the parent
-    *       element as dirty with the `types::STAIN_TYPE::DEEP` and `types::STAIN_TYPE::COLOR` stains.
+    *       element as dirty with the `stain::types::DEEP` and `stain::types::COLOR` stains.
     *       This ensures that the parent element is re-rendered from scratch when the
     *       rendering thread is updated.
     */
     void element::updateParent(element* New_Element){
         // Normally elements don't do anything
         if (!New_Element->isDisplayed()){
-            // Mark the parent element as dirty with the types::STAIN_TYPE::DEEP and types::STAIN_TYPE::COLOR stains
+            // Mark the parent element as dirty with the stain::types::DEEP and stain::types::COLOR stains
             fullyStain();
         }
 
         // When the child is unable to flag changes on parent Render(), like on removal-
         // Then ask the parent to discard the previous buffer and render from scratch.
         if (Parent){
-            // Mark the parent element as dirty with the types::STAIN_TYPE::DEEP and types::STAIN_TYPE::COLOR stains
+            // Mark the parent element as dirty with the stain::types::DEEP and stain::types::COLOR stains
             fullyStain();
             // Request a render update
             updateFrame();
@@ -668,14 +668,14 @@ namespace GGUI {
             Show = f;
             
             if (f){
-                check(types::STATE::SHOWN);
+                check(STATE::SHOWN);
             }
             else{
-                check(types::STATE::HIDDEN);
+                check(STATE::HIDDEN);
                 
                 // Ask the parent to flush its buffer from this.
                 if (Parent){
-                    Parent->Dirty.Dirty(types::STAIN_TYPE::RESET);
+                    Parent->Dirty |= (stain::types::RESET);
                 }
             }
 
@@ -723,7 +723,7 @@ namespace GGUI {
         delete tmp;
 
         // Mark the element as dirty, so that it will be re-rendered on the next frame.
-        Dirty.Dirty(types::STAIN_TYPE::DEEP | types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::base(stain::types::DEEP) | stain::types::GRAPHICS);
 
         return true;
     }
@@ -774,7 +774,7 @@ namespace GGUI {
         if (width != getWidth()){
             Style->Width.Set(width);
             // Set the STRETCH stain if the width is changed
-            Dirty.Dirty(types::STAIN_TYPE::STRETCH);
+            Dirty |= (stain::types::STRETCH);
             // Update the frame after resizing
             updateFrame();
         }
@@ -791,7 +791,7 @@ namespace GGUI {
         if (height != getHeight()){
             Style->Height.Set(height);
             // Set the STRETCH stain if the height is changed
-            Dirty.Dirty(types::STAIN_TYPE::STRETCH);
+            Dirty |= (stain::types::STRETCH);
             // Update the frame after resizing
             updateFrame();
         }
@@ -809,7 +809,7 @@ namespace GGUI {
         Style->Position.set(c);
         
         // Mark the element as dirty for movement updates
-        this->Dirty.Dirty(types::STAIN_TYPE::MOVE);
+        this->Dirty |= (stain::types::MOVE);
 
         // Update the frame to reflect the position change
         updateFrame();
@@ -839,7 +839,7 @@ namespace GGUI {
     void element::updatePosition(IVector3 v){
         Style->Position += v;
 
-        Dirty.Dirty(types::STAIN_TYPE::MOVE);
+        Dirty |= (stain::types::MOVE);
 
         updateFrame();
     }
@@ -937,7 +937,7 @@ namespace GGUI {
         new_element->Hovered = false;
 
         // Call the potentially un_parsed_styles to clone them too if not initialized yet.
-        if (Dirty.is(types::STAIN_TYPE::FINALIZE)){
+        if (Dirty.has(stain::types::FINALIZE)){
             new_element->Style->copyUnParsedStyles();
         }
 
@@ -960,16 +960,12 @@ namespace GGUI {
     }
 
     void element::embedStyles(){
-        // if (Parent == nullptr && INTERNAL::Main == nullptr){
-        //     logger::log("OUTBOX not supported, cannot anchor: " + getName());
-        // }
-
         Style->embedStyles(this);
         
-        if (Dirty.is(types::STAIN_TYPE::FINALIZE)){
-            Dirty.Clean(types::STAIN_TYPE::FINALIZE);
+        if (Dirty.has(stain::types::FINALIZE)){
+            Dirty ^= (stain::types::FINALIZE);
 
-            check(types::STATE::INIT);
+            check(STATE::INIT);
         }
     }
 
@@ -1084,7 +1080,7 @@ namespace GGUI {
         }
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1102,7 +1098,7 @@ namespace GGUI {
         Style->Border_Color = color;
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1121,7 +1117,7 @@ namespace GGUI {
         Style->Border_Background_Color = color;
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1138,7 +1134,7 @@ namespace GGUI {
     void element::setTextColor(RGB color){
         Style->Text_Color = color;
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         // Update the frame to reflect the new color
         updateFrame();
     }
@@ -1186,7 +1182,7 @@ namespace GGUI {
     void element::setHoverBorderColor(RGB color){
         Style->Hover_Border_Color = color;
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         // Update the frame to reflect the new color
         updateFrame();
     }
@@ -1205,7 +1201,7 @@ namespace GGUI {
         Style->Hover_Background_Color = color;
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1225,7 +1221,7 @@ namespace GGUI {
         Style->Hover_Text_Color = color;
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1245,7 +1241,7 @@ namespace GGUI {
         Style->Hover_Border_Background_Color = color;
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1262,7 +1258,7 @@ namespace GGUI {
         Style->Focus_Border_Color = color;
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1280,7 +1276,7 @@ namespace GGUI {
         Style->Focus_Background_Color = color;
         
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         
         // Update the frame to reflect the new color
         updateFrame();
@@ -1296,7 +1292,7 @@ namespace GGUI {
     void element::setFocusTextColor(RGB color){
         Style->Focus_Text_Color = color;
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         // Update the frame to reflect the new color
         updateFrame();
     }
@@ -1312,7 +1308,7 @@ namespace GGUI {
     void element::setFocusBorderBackgroundColor(RGB color){
         Style->Focus_Border_Background_Color = color;
         // Mark the element as dirty for color updates
-        Dirty.Dirty(types::STAIN_TYPE::GRAPHICS);
+        Dirty |= (stain::types::GRAPHICS);
         // Update the frame to reflect the new color
         updateFrame();
     }
@@ -1406,7 +1402,7 @@ namespace GGUI {
                 if (New_Width != getWidth() || New_Height != getHeight()){
                     setHeight(New_Height);
                     setWidth(New_Width);
-                    Dirty.Dirty(types::STAIN_TYPE::STRETCH);
+                    Dirty |= (stain::types::STRETCH);
                 }
             }
         }
@@ -1530,7 +1526,7 @@ namespace GGUI {
         Style->Border_Style = style;
         
         // Mark the border as needing an update
-        Dirty.Dirty(types::STAIN_TYPE::EDGE);
+        Dirty |= (stain::types::EDGE);
 
         // Ensure the border is visible
         showBorder(true);
@@ -1627,43 +1623,43 @@ namespace GGUI {
             IVector3 Left = { c.x - 1, c.y };
             IVector3 Right = { c.x + 1, c.y };
 
-            types::borderConnection Current_Masks = types::borderConnection::NONE;
+            bitMask<styledBorder::connectionTypes> Current_Masks = styledBorder::connectionTypes::NONE;
 
             // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
             if (Is_In_Bounds(Above, this)){
                 // Since the border above can be already processed we need to check all possible border variations.
-                types::borderConnection borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getGlyphs()) | 
+                bitMask<styledBorder::connectionTypes> borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getGlyphs()) | 
                                                          B->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getGlyphs());
                 
-                if (borderAbove != types::borderConnection::NONE)
-                    Current_Masks |= types::borderConnection::UP;
+                if (borderAbove != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::UP;
             }
 
             if (Is_In_Bounds(Below, this)){
                 // Since the border below can be already processed we need to check all possible border variations.
-                types::borderConnection borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getGlyphs()) | 
+                bitMask<styledBorder::connectionTypes> borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getGlyphs()) | 
                                                          B->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getGlyphs());
                 
-                if (borderBelow != types::borderConnection::NONE)
-                    Current_Masks |= types::borderConnection::DOWN;
+                if (borderBelow != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::DOWN;
             }
 
             if (Is_In_Bounds(Left, this)){
                 // Since the border left can be already processed we need to check all possible border variations.
-                types::borderConnection borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getGlyphs()) | 
+                bitMask<styledBorder::connectionTypes> borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getGlyphs()) | 
                                                         B->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getGlyphs());
                 
-                if (borderLeft != types::borderConnection::NONE)
-                    Current_Masks |= types::borderConnection::LEFT;
+                if (borderLeft != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::LEFT;
             }
 
             if (Is_In_Bounds(Right, this)){
                 // Since the border right can be already processed we need to check all possible border variations.
-                types::borderConnection borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getGlyphs()) | 
+                bitMask<styledBorder::connectionTypes> borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getGlyphs()) | 
                                                          B->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getGlyphs());
                 
-                if (borderRight != types::borderConnection::NONE)
-                    Current_Masks |= types::borderConnection::RIGHT;
+                if (borderRight != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::RIGHT;
             }
 
             std::string_view finalBorder = A->getBorderStyle().getBorder(Current_Masks);
@@ -1741,7 +1737,7 @@ namespace GGUI {
     */
     bool element::childrenChanged() const {
         for (const auto* e : Style->Childs){
-            if (e->getDirty().is(types::STAIN_TYPE::FINALIZE)){
+            if (e->getDirty().is(stain::types::FINALIZE)){
                 logger::log("Child element passthrough Finalization stage!");
             }
 
@@ -1749,7 +1745,7 @@ namespace GGUI {
             if (!e->Show)
                 return false;
 
-            if (e->getDirty().Type != types::STAIN_TYPE::CLEAN)
+            if (!e->getDirty().isEmpty())
                 return true;
 
             if (e->childrenChanged())
@@ -1901,14 +1897,14 @@ namespace GGUI {
     * @param s The state for which the handler should be executed.
     * @param job The handler function to be executed
     */
-    void element::onState(types::STATE s, void (*job)(element* self)){
-        if (s == types::STATE::INIT)
+    void element::onState(STATE s, void (*job)(element* self)){
+        if (s == STATE::INIT)
             On_Init = job;
-        else if (s == types::STATE::DESTROYED)
+        else if (s == STATE::DESTROYED)
             On_Destroy = job;
-        else if (s == types::STATE::HIDDEN)
+        else if (s == STATE::HIDDEN)
             On_Hide = job;
-        else if (s == types::STATE::SHOWN)
+        else if (s == STATE::SHOWN)
             On_Show = job;
     }
 
