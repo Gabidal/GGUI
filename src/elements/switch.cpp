@@ -45,7 +45,7 @@ namespace GGUI{
         Text.updatePosition({2, 0});    // 1 + 1, symbol + space
 
         // Mark the element as needing a deep state update
-        Dirty |= (stain::base(stain::types::DEEP) | stain::types::STATE);
+        flags |= (stain::base(stain::types::DEEP) | stain::types::STATE);
     }
 
     /**
@@ -63,7 +63,7 @@ namespace GGUI{
         On = on;
 
         // Mark the switch as needing a state update
-        Dirty |= (stain::types::STATE);
+        flags |= (stain::types::STATE);
 
         updateFrame();
     }
@@ -76,7 +76,7 @@ namespace GGUI{
     void switchBox::setText(std::string_view text) { 
         pauseGGUI([this, &text](){
             // Mark the element as needing a deep state update
-            Dirty |= (stain::types::DEEP);
+            flags |= (stain::types::DEEP);
             
             // Set the text with a space character added to the beginning
             Text.setText(text);
@@ -101,20 +101,20 @@ namespace GGUI{
      *          enabled (true) or disabled (false).
      */
     void switchBox::showBorder(bool b){
-        if (b != Style->Border_Enabled.value) {
-            Style->Border_Enabled = b;
+        if (b != style->Border_Enabled.value) {
+            style->Border_Enabled = b;
 
             // Adjust the width and height of the progress bar based on the border state
             if (b) {
-                Style->Width.direct() += 2;
-                Style->Height.direct() += 2;
+                style->Width.direct() += 2;
+                style->Height.direct() += 2;
             }else {
-                Style->Width.direct() -= 2;
-                Style->Height.direct() -= 2;
+                style->Width.direct() -= 2;
+                style->Height.direct() -= 2;
             }
 
             // Mark the element as dirty for border changes
-            Dirty |= (stain::types::EDGE);
+            flags |= (stain::types::EDGE);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
@@ -131,85 +131,85 @@ namespace GGUI{
         std::vector<terminal::cell>& Result = cellBuffer;
         
         // Check for Dynamic attributes
-        if(Style->evaluateDynamicDimensions(this))
-            Dirty |= (stain::types::STRETCH);
+        if(style->evaluateDynamicDimensions(this))
+            flags |= (stain::types::STRETCH);
 
-        if (Style->evaluateDynamicPosition(this))
-            Dirty |= (stain::types::MOVE);
+        if (style->evaluateDynamicPosition(this))
+            flags |= (stain::types::MOVE);
 
-        if (Style->evaluateDynamicGraphics(this))
-            Dirty |= (stain::types::GRAPHICS);
+        if (style->evaluateDynamicGraphics(this))
+            flags |= (stain::types::GRAPHICS);
 
-        if (Style->evaluateDynamicBorder(this))
-            Dirty |= (stain::types::EDGE);
+        if (style->evaluateDynamicBorder(this))
+            flags |= (stain::types::EDGE);
 
-        if (Dirty.isEmpty())
+        if (flags.isEmpty())
             return Result;
 
-        if (Dirty.has(stain::types::RESET)){
-            Dirty ^= (stain::types::RESET);
+        if (flags.has(stain::types::RESET)){
+            flags ^= (stain::types::RESET);
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             
-            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
-        if (Dirty.has(stain::types::STRETCH)){
+        if (flags.has(stain::types::STRETCH)){
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
-            Dirty ^= (stain::types::STRETCH);
+            flags ^= (stain::types::STRETCH);
             
-            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
         }
 
-        if (Dirty.has(stain::types::NOT_RENDERED)) {
-            if (On_Render) On_Render(this);
+        if (flags.has(stain::types::NOT_RENDERED)) {
+            if (onRender) onRender(this);
 
             // Clean regardless of On_Render existing or not.
-            Dirty ^= (stain::types::NOT_RENDERED);
+            flags ^= (stain::types::NOT_RENDERED);
         }
 
         // Update the absolute position cache if the MOVE stain is detected.
-        if (Dirty.has(stain::types::MOVE)) {
-            Dirty ^= (stain::types::MOVE);
+        if (flags.has(stain::types::MOVE)) {
+            flags ^= (stain::types::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Check if the text has been changed.
-        if (Dirty.has(stain::types::DEEP)){
+        if (flags.has(stain::types::DEEP)){
             core::nestElement(this, &Text, Result, Text.render());
 
             // Clean text update notice and state change notice.
             // NOTE: Cleaning STATE flag without checking it's existence might lead to unexpected results.
-            Dirty ^= (stain::types::DEEP);
+            flags ^= (stain::types::DEEP);
 
-            Dirty |= (stain::types::GRAPHICS);
+            flags |= (stain::types::GRAPHICS);
         }
 
         // Update the state of the switch.
-        if (Dirty.has(stain::types::STATE)){
+        if (flags.has(stain::types::STATE)){
             int State_Location_X = hasBorder();
             int State_Location_Y = hasBorder();
             
             Result[State_Location_Y * getWidth() + State_Location_X] = getStateString();
 
-            Dirty ^= (stain::types::STATE);
-            Dirty |= (stain::types::GRAPHICS);
+            flags ^= (stain::types::STATE);
+            flags |= (stain::types::GRAPHICS);
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.has(stain::types::GRAPHICS)){        
+        if (flags.has(stain::types::GRAPHICS)){        
             // Clean the color stain after applying the color system.
-            Dirty ^= (stain::types::GRAPHICS);
+            flags ^= (stain::types::GRAPHICS);
 
             compileActiveGraphics();
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.has(stain::types::EDGE)){
-            Dirty ^= (stain::types::EDGE);
+        if (flags.has(stain::types::EDGE)){
+            flags ^= (stain::types::EDGE);
 
             renderBorders(Result);
             renderTitle(Result);
@@ -223,7 +223,7 @@ namespace GGUI{
         State = !State;
 
         // Mark the switch as needing a state update
-        Dirty |= (stain::types::STATE);
+        flags |= (stain::types::STATE);
 
         updateFrame();
     }
@@ -241,7 +241,7 @@ namespace GGUI{
     void switchBox::setState(bool b){
         State = b;
 
-        Dirty |= (stain::types::STATE);
+        flags |= (stain::types::STATE);
 
         updateFrame();
     }

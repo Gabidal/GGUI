@@ -38,7 +38,7 @@ namespace GGUI{
          */
         ~listView() override {
             // Delete all child elements to avoid memory leaks.
-            for (element* e : Style->Childs) {
+            for (element* e : style->Childs) {
                 delete e;
             }
         }
@@ -78,7 +78,7 @@ namespace GGUI{
          * @param gd The direction to set as the flow priority.
          */
         void setFlowDirection(DIRECTION gd){
-            Style->Flow_Priority = gd;
+            style->Flow_Priority = gd;
         }
 
         /**
@@ -87,7 +87,7 @@ namespace GGUI{
          * @return The flow direction of the list view.
          */
         DIRECTION getFlowDirection(){
-            return Style->Flow_Priority.value;
+            return style->Flow_Priority.value;
         }
 
         /**
@@ -99,13 +99,13 @@ namespace GGUI{
          */
         template<typename  T>
         T* get(int index){
-            if (index > (signed)Style->Childs.size() - 1)
+            if (index > (signed)style->Childs.size() - 1)
                 return nullptr;
 
             if (index < 0)
-                index = (signed)Style->Childs.size() + index - 1;
+                index = (signed)style->Childs.size() + index - 1;
 
-            return (T*)this->Style->Childs[index];
+            return (T*)this->style->Childs[index];
         }
 
 
@@ -200,7 +200,7 @@ namespace GGUI{
          * @return A boolean indicating whether the scrolling is enabled for the Scroll_View.
          */
         bool isScrollingEnabled(){
-            return Style->Allow_Scrolling.value;
+            return style->Allow_Scrolling.value;
         }
 
         /**
@@ -238,7 +238,7 @@ namespace GGUI{
          * @param gd The direction value to set as the growth direction.
          */
         void setGrowthDirection(DIRECTION gd){
-            ((listView*)Style->Childs[0])->setFlowDirection(gd);
+            ((listView*)style->Childs[0])->setFlowDirection(gd);
         }
 
         /**
@@ -247,7 +247,7 @@ namespace GGUI{
          * @return The current growth direction of the scroll view.
          */
         DIRECTION getGrowthDirection(){
-            return ((listView*)Style->Childs[0])->getFlowDirection();
+            return ((listView*)style->Childs[0])->getFlowDirection();
         }
 
         /**
@@ -258,7 +258,7 @@ namespace GGUI{
          */
         template<typename  T>
         T* get(int index){
-            return ((listView*)Style->Childs[0])->get<T>(index);
+            return ((listView*)style->Childs[0])->get<T>(index);
         }
 
         /**
@@ -302,7 +302,7 @@ namespace GGUI{
                 ));
             }
 
-            return (listView*)Style->Childs[0];
+            return (listView*)style->Childs[0];
         }
     };
 }

@@ -22,7 +22,7 @@ namespace GGUI {
         void renderer();
     }
 
-    struct ActiveStyle;
+    struct activeStyle;
 
     class element;
 
@@ -61,7 +61,7 @@ namespace GGUI {
             IVector2 getDimensions() const;
             IVector2 getCursor() const;
         protected:
-            std::pair<bool, ActiveStyle> trace(IVector2 point, element* currentContainer);
+            std::pair<bool, activeStyle> trace(IVector2 point, element* currentContainer);
             size_t getIndexOf(IVector2) const;
         public:
             // ===                  ===

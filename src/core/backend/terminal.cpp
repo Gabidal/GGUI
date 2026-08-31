@@ -33,7 +33,7 @@ namespace GGUI {
         }
 
         // Used as an helper tool to easily transform between the two identities.
-        constexpr ecma::activeSGRStyle rasterize(ActiveStyle point) {
+        constexpr ecma::activeSGRStyle rasterize(activeStyle point) {
             ecma::activeSGRStyle result;
 
             if (point.opacity != UINT8_MAX) {
@@ -50,11 +50,11 @@ namespace GGUI {
         }
 
         // first we go recursively inside the container and the child that contains this point.
-        std::pair<bool, ActiveStyle> outputCapture::trace(IVector2 point, element* currentContainer) {
+        std::pair<bool, activeStyle> outputCapture::trace(IVector2 point, element* currentContainer) {
             // since overflow content inside a container only is allowed is the container is dynamic in size, otherwise overflow content is always hidden, so the lowest identity pool is always the largest. 
             if (!currentContainer->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
 
-            std::pair<bool, ActiveStyle> handle = {false, {} };
+            std::pair<bool, activeStyle> handle = {false, {} };
             
             // now check if any of the childs inside this area is closer via hit
             for (auto* child : currentContainer->getVisibleChilds()) {  // should return via z-priority
@@ -93,7 +93,7 @@ namespace GGUI {
 
             // First find the index of the handle
             for (; start < currentContainer->graphicalReflectionPool.size(); start++) {
-                const ActiveStyle* current = currentContainer->graphicalReflectionPool[start];
+                const activeStyle* current = currentContainer->graphicalReflectionPool[start];
                 if (current->origin == handle.second.origin && current->area.hits(point)) break;    // we found the handle, now we can start processing from this index onwards.
             }
             

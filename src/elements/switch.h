@@ -262,7 +262,7 @@ namespace GGUI{
          * @return The name of the Switch object.
          */
         std::string getName() const override{
-            return "switchBox<" + Name + ">";
+            return "switchBox<" + ID + ">";
         }
 
         /**
@@ -365,7 +365,7 @@ namespace GGUI{
          */
         std::string getName() const override{
             // Return the formatted name of the Radio_Button.
-            return "radioButton<" + Name + ">";
+            return "radioButton<" + ID + ">";
         }
 
         // Diabled, use the switchBox class type for search
@@ -417,7 +417,7 @@ namespace GGUI{
          * @return The name of the Check_Box object.
          */
         std::string getName() const override{
-            return "checkBox<" + Name + ">";
+            return "checkBox<" + ID + ">";
         }
 
         // Disabled, use the switchBox class type.

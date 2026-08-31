@@ -82,13 +82,13 @@ void GGUI::listView::addChild(element* e) {
         int Child_Needs_Minimum_Width_Of = e->getWidth() + Offset * 2;
 
         // Check if overflow wrapping is supported.
-        if (Style->Wrap.value) {
+        if (style->Wrap.value) {
             logger::log("Overflow wrapping is not supported!");
             return;
         }
 
         // Determine the flow direction for the list view.
-        if (Style->Flow_Priority.value == DIRECTION::ROW) {
+        if (style->Flow_Priority.value == DIRECTION::ROW) {
             // Adjust for minimum width needed when borders are present.
             signed int Width_Modifier = e->hasBorder() && Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
@@ -98,7 +98,7 @@ void GGUI::listView::addChild(element* e) {
                 // Check if the parent allows stretching or overflow.
                 setHeight(std::min(limits.y, Proposed_Height));
                 setWidth(std::min(limits.x, Proposed_Width));
-                Dirty |= (stain::types::STRETCH);
+                flags |= (stain::types::STRETCH);
             }
 
             // Set positions for the child and last child elements.
@@ -115,7 +115,7 @@ void GGUI::listView::addChild(element* e) {
                 // Check if the parent allows stretching or overflow.
                 setWidth(std::min(limits.x, Proposed_Width));
                 setHeight(std::min(limits.y, Proposed_Height));
-                Dirty |= (stain::types::STRETCH);
+                flags |= (stain::types::STRETCH);
             }
 
             // Set positions for the child and last child elements.
@@ -128,11 +128,11 @@ void GGUI::listView::addChild(element* e) {
         Last_Child->showBorder(e->hasBorder());
 
         // Mark the list view as deeply dirty.
-        Dirty |= (stain::types::DEEP);
+        flags |= (stain::types::DEEP);
 
         // Add the child element to the internal structures.
         core::elementNames.insert({e->getNameAsRaw(), e});
-        Style->Childs.push_back(e);
+        style->Childs.push_back(e);
     });
 }
 
@@ -148,19 +148,19 @@ void GGUI::listView::addChild(element* e) {
  */
 void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
     // If the childs are already clean then there is nothing to do here
-    if (Dirty.isEmpty() || Style->Childs.size() == 0)
+    if (flags.isEmpty() || style->Childs.size() == 0)
         return;
 
     // Out mission is quite similar to the Remove(Element* c) like behaviour.
     // Since there are two different flow directions we need to slice the code into 2 separate algorithms.
-    element* Current = Style->Childs[Starting_Offset];
+    element* Current = style->Childs[Starting_Offset];
     int Max_Width = Current->getWidth();
     int Max_Height = Current->getHeight();
 
-    if (Style->Flow_Priority.value == DIRECTION::ROW){
+    if (style->Flow_Priority.value == DIRECTION::ROW){
 
-        for (size_t i = Starting_Offset + 1; i < Style->Childs.size(); i++){
-            element* Next = Style->Childs[i];
+        for (size_t i = Starting_Offset + 1; i < style->Childs.size(); i++){
+            element* Next = style->Childs[i];
 
             // Affect minimum width needed, when current child has borders as well as the previous one.
             int Width_Modifier = Next->hasBorder() && Current->hasBorder();
@@ -174,8 +174,8 @@ void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
         }
     }
     else{
-        for (size_t i = Starting_Offset + 1; i < Style->Childs.size(); i++){
-            element* Next = Style->Childs[i];
+        for (size_t i = Starting_Offset + 1; i < style->Childs.size(); i++){
+            element* Next = style->Childs[i];
 
             // Affect minimum height needed, when current child has borders as well as the previous one.
             int Height_Modifier = Next->hasBorder() && Current->hasBorder();
@@ -191,7 +191,7 @@ void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
 
     if (
         (
-        Style->Width.number.getType() != types::EVALUATION_TYPE::PERCENTAGE && Style->Height.number.getType() != types::EVALUATION_TYPE::PERCENTAGE
+        style->Width.number.getType() != types::EVALUATION_TYPE::PERCENTAGE && style->Height.number.getType() != types::EVALUATION_TYPE::PERCENTAGE
         ) && isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()
     ){
         setDimensions(Max_Width, Max_Height);
@@ -204,7 +204,7 @@ void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
  * @return The name of the list view.
  */
 std::string GGUI::listView::getName() const{
-    return "listView<" + Name + ">";
+    return "listView<" + ID + ">";
 }
 
 /**
@@ -220,10 +220,10 @@ bool GGUI::listView::remove(element* remove){
         unsigned int Index = 0;
 
         //first find the removable element index.
-        for (;Index < Style->Childs.size() && Style->Childs[Index] != remove; Index++);
+        for (;Index < style->Childs.size() && style->Childs[Index] != remove; Index++);
         
         // Check if there was no element by that ptr value.
-        if (Index == Style->Childs.size()){
+        if (Index == style->Childs.size()){
             logger::log("Internal: no element with ptr value: " + remove->getName() + " was found in the list view: " + getName());
             
             // Removal action failed.
@@ -231,20 +231,20 @@ bool GGUI::listView::remove(element* remove){
         }
 
         // now sadly we need to branch the code into the vertical and horizontal calculations.
-        if (Style->Flow_Priority.value == DIRECTION::ROW){
+        if (style->Flow_Priority.value == DIRECTION::ROW){
             // represents the horizontal list
             int Gap = remove->getWidth();
             int New_Stretched_Height = 0;
 
             // all elements after the index, need to be removed from their x position the gap value.
-            for (size_t i = Index + 1; i < Style->Childs.size(); i++){
+            for (size_t i = Index + 1; i < style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().x - Gap, Style->Childs[i]->getPosition().y});
+                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x - Gap, style->Childs[i]->getPosition().y});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
-                if (Style->Childs[i]->getHeight() > New_Stretched_Height)
-                    New_Stretched_Height = Style->Childs[i]->getHeight();
+                if (style->Childs[i]->getHeight() > New_Stretched_Height)
+                    New_Stretched_Height = style->Childs[i]->getHeight();
             }
 
             if (isDynamicSizeAllowed()){
@@ -257,14 +257,14 @@ bool GGUI::listView::remove(element* remove){
             int New_Stretched_Width = 0;
 
             // all elements after the index, need to be removed from their y position the gap value.
-            for (size_t i = Index + 1; i < Style->Childs.size(); i++){
+            for (size_t i = Index + 1; i < style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                Style->Childs[i]->setPosition({Style->Childs[i]->getPosition().x, Style->Childs[i]->getPosition().y - Gap});
+                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x, style->Childs[i]->getPosition().y - Gap});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
-                if (Style->Childs[i]->getWidth() > New_Stretched_Width)
-                    New_Stretched_Width = Style->Childs[i]->getWidth();
+                if (style->Childs[i]->getWidth() > New_Stretched_Width)
+                    New_Stretched_Width = style->Childs[i]->getWidth();
             }
 
             if (isDynamicSizeAllowed()){
@@ -275,8 +275,8 @@ bool GGUI::listView::remove(element* remove){
         delete remove;
 
         // NOTE: Last_Child is NOT an ptr to the latest child added !!!
-        if (Style->Childs.size() > 0){
-            element* tmp = Style->Childs[Style->Childs.size() - 1];
+        if (style->Childs.size() > 0){
+            element* tmp = style->Childs[style->Childs.size() - 1];
 
             Last_Child->setPosition({Last_Child->getPosition().x - tmp->getWidth(), Last_Child->getPosition().y - tmp->getHeight()});
 
@@ -296,7 +296,7 @@ bool GGUI::listView::remove(element* remove){
  */
 void GGUI::scrollView::addChild(element* e) {
     // Mark the Scroll_View as dirty with the DEEP stain because we are adding a new child element.
-    Dirty |= (stain::types::DEEP);
+    flags |= (stain::types::DEEP);
 
     // Add the child element to the List_View that is being used as the container.
     getContainer()->addChild(e);
@@ -310,11 +310,11 @@ void GGUI::scrollView::addChild(element* e) {
  */
 void GGUI::scrollView::allowScrolling(bool allow) {
     // Check the previous scrolling state
-    bool previous = Style->Allow_Scrolling.value;
+    bool previous = style->Allow_Scrolling.value;
     
     // Update the scrolling state if it has changed
     if (allow != previous) {
-        Style->Allow_Scrolling = allow;
+        style->Allow_Scrolling = allow;
         // No need to dirty or update frame, this feature is a non-passive change
         // so it needs the user to do something after enabling.
     }
@@ -425,7 +425,7 @@ void GGUI::scrollView::scrollDown() {
  * @return The name of the scroll view.
  */
 std::string GGUI::scrollView::getName() const{
-    return "scrollView<" + Name + ">";
+    return "scrollView<" + ID + ">";
 }
 
 /**

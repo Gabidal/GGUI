@@ -31,7 +31,7 @@ namespace GGUI{
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
         // The textField::render() will take care of this if percentage is used.
-        if (innerWidth == 0 && Style->Width.number.getType() == types::EVALUATION_TYPE::PERCENTAGE){
+        if (innerWidth == 0 && style->Width.number.getType() == types::EVALUATION_TYPE::PERCENTAGE){
             return;
         }
 
@@ -96,7 +96,7 @@ namespace GGUI{
                 textLineCache.size() == 0 ||
                 (
                     Last_Line_Exceeds_Width_With_Current_Line &&
-                    !Style->Allow_Dynamic_Size.value
+                    !style->Allow_Dynamic_Size.value
                 ) ||
                 previousLineReason == lineReason::NEWLINE
             ){
@@ -130,85 +130,85 @@ namespace GGUI{
         std::vector<terminal::cell>& Result = cellBuffer;
 
         // Check for Dynamic attributes
-        if(Style->evaluateDynamicDimensions(this))
-            Dirty |= (stain::types::STRETCH);
+        if(style->evaluateDynamicDimensions(this))
+            flags |= (stain::types::STRETCH);
 
-        if (Style->evaluateDynamicPosition(this))
-            Dirty |= (stain::types::MOVE);
+        if (style->evaluateDynamicPosition(this))
+            flags |= (stain::types::MOVE);
 
-        if (Style->evaluateDynamicGraphics(this))
-            Dirty |= (stain::types::GRAPHICS);
+        if (style->evaluateDynamicGraphics(this))
+            flags |= (stain::types::GRAPHICS);
 
-        if (Style->evaluateDynamicBorder(this))
-            Dirty |= (stain::types::EDGE);
+        if (style->evaluateDynamicBorder(this))
+            flags |= (stain::types::EDGE);
 
         // If the text field is clean, return the current render buffer
-        if (Dirty.isEmpty())
+        if (flags.isEmpty())
             return Result;
 
         // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
-        if (Dirty.has(stain::types::DEEP)){
+        if (flags.has(stain::types::DEEP)){
             updateTextCache();
         }
 
-        if (Dirty.has(stain::types::RESET)){
-            Dirty ^= (stain::types::RESET);
+        if (flags.has(stain::types::RESET)){
+            flags ^= (stain::types::RESET);
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             
-            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
-        if (Dirty.has(stain::types::STRETCH)) {
+        if (flags.has(stain::types::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
-            Dirty ^= (stain::types::STRETCH);
-            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::RESET | stain::types::NOT_RENDERED);
+            flags ^= (stain::types::STRETCH);
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::RESET | stain::types::NOT_RENDERED);
         }
 
-        if (Dirty.has(stain::types::NOT_RENDERED)) {
-            if (On_Render) On_Render(this);
+        if (flags.has(stain::types::NOT_RENDERED)) {
+            if (onRender) onRender(this);
 
             // Clean regardless of On_Render existing or not.
-            Dirty ^= (stain::types::NOT_RENDERED);
+            flags ^= (stain::types::NOT_RENDERED);
         }
 
         // Update the absolute position cache if the MOVE stain is detected.
-        if (Dirty.has(stain::types::MOVE)) {
-            Dirty ^= (stain::types::MOVE);
+        if (flags.has(stain::types::MOVE)) {
+            flags ^= (stain::types::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Align text and add child windows to the Result buffer if the DEEP stain is detected
-        if (Dirty.has(stain::types::DEEP)) {
-            Dirty ^= (stain::types::DEEP);
+        if (flags.has(stain::types::DEEP)) {
+            flags ^= (stain::types::DEEP);
 
             // clean reflection pool
             graphicalReflectionPool.clear();
             graphicalIdentityPool.clear();
-            Dirty |= (stain::types::GRAPHICS);
+            flags |= (stain::types::GRAPHICS);
 
-            if (Style->Align.value == ANCHOR::LEFT)
+            if (style->Align.value == ANCHOR::LEFT)
                 alignTextLeft(Result);
-            else if (Style->Align.value == ANCHOR::RIGHT)
+            else if (style->Align.value == ANCHOR::RIGHT)
                 alignTextRight(Result);
-            else if (Style->Align.value == ANCHOR::CENTER)
+            else if (style->Align.value == ANCHOR::CENTER)
                 alignTextCenter(Result);
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.has(stain::types::GRAPHICS)){        
+        if (flags.has(stain::types::GRAPHICS)){        
             // Clean the color stain after applying the color system.
-            Dirty ^= (stain::types::GRAPHICS);
+            flags ^= (stain::types::GRAPHICS);
 
             compileActiveGraphics();
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.has(stain::types::EDGE)){
-            Dirty ^= (stain::types::EDGE);
+        if (flags.has(stain::types::EDGE)){
+            flags ^= (stain::types::EDGE);
 
             renderBorders(Result);
             renderTitle(Result);
@@ -228,7 +228,7 @@ namespace GGUI{
         if (hasEmptyName())
             setName(text);
 
-        Dirty |= (stain::base(stain::types::DEEP) | stain::types::RESET);
+        flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
 
         updateTextCache();
 
@@ -337,8 +337,8 @@ namespace GGUI{
     void textField::input(std::function<void(textField*, char)> Then) {
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ALL_LETTERS},
-            [this, Then](converter::output::event::base* input) {
-                if (Focused) {
+            [this, Then](converter::output::event::base*) { TODO("Going through all pressed keys seems very inefficient!")
+                if (focused) {
                     // go through all enabled keyboards between space and delete and check what letter was turned on
                     char letter = '\0';
 
@@ -369,7 +369,7 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ENTER},
             [this, Then](converter::output::event::base*) {
-                if (Focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
+                if (focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
                     //First call the function with the user's input
                     Then(this, '\n');
                     updateFrame();
@@ -385,14 +385,14 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::BACKSPACE},
             [this](converter::output::event::base*) {
-                if (Focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
+                if (focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
                     //If the text field is empty, there is nothing to do
                     if (text.size() > 0) {
                         text.pop_back();
 
                         updateTextCache();
 
-                        Dirty |= (stain::base(stain::types::DEEP) | stain::types::RESET);
+                        flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
                         updateFrame();
                     }
 

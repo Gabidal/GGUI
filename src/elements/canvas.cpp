@@ -42,7 +42,7 @@ namespace GGUI{
 
         buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty |= (stain::types::GRAPHICS); // Mark the canvas as dirty for color updates.
+        flags |= (stain::types::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -69,7 +69,7 @@ namespace GGUI{
 
         buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
 
-        Dirty |= (stain::types::GRAPHICS); // Mark the canvas as dirty for color updates.
+        flags |= (stain::types::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -95,7 +95,7 @@ namespace GGUI{
             multiFrame = true;
         }
 
-        Dirty |= (stain::types::GRAPHICS); // Mark the canvas as dirty for color updates.
+        flags |= (stain::types::GRAPHICS); // Mark the canvas as dirty for color updates.
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
@@ -109,7 +109,7 @@ namespace GGUI{
      */
     void canvas::flush(bool Force_Flush){
         if (Force_Flush){
-            Dirty |= (stain::types::GRAPHICS);
+            flags |= (stain::types::GRAPHICS);
         }
 
         updateFrame();
@@ -126,29 +126,29 @@ namespace GGUI{
         std::vector<terminal::cell>& Result = cellBuffer;
 
         // Check for Dynamic attributes
-        if(Style->evaluateDynamicDimensions(this))
-            Dirty |= (stain::types::STRETCH);
+        if(style->evaluateDynamicDimensions(this))
+            flags |= (stain::types::STRETCH);
 
-        if (Style->evaluateDynamicPosition(this))
-            Dirty |= (stain::types::MOVE);
+        if (style->evaluateDynamicPosition(this))
+            flags |= (stain::types::MOVE);
 
-        if (Style->evaluateDynamicGraphics(this))
-            Dirty |= (stain::types::GRAPHICS);
+        if (style->evaluateDynamicGraphics(this))
+            flags |= (stain::types::GRAPHICS);
 
-        if (Style->evaluateDynamicBorder(this))
-            Dirty |= (stain::types::EDGE);
+        if (style->evaluateDynamicBorder(this))
+            flags |= (stain::types::EDGE);
 
         // Since canvas does not utilize DEEP flag, we can just clean it away
-        if (Dirty.has(stain::types::DEEP))
-            Dirty ^= (stain::types::DEEP);
+        if (flags.has(stain::types::DEEP))
+            flags ^= (stain::types::DEEP);
 
-        if (Dirty.isEmpty())
+        if (flags.isEmpty())
             return Result;
 
         unsigned int fittingWidth = getWidth() - hasBorder()*2;
         unsigned int fittingHeight = getHeight() - hasBorder()*2;
         
-        if (Dirty.has(stain::types::STRETCH)) {
+        if (flags.has(stain::types::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
 
@@ -156,20 +156,20 @@ namespace GGUI{
             buffer.clear();
             buffer.resize(fittingWidth * fittingHeight);
 
-            Dirty ^= (stain::types::STRETCH);
+            flags ^= (stain::types::STRETCH);
 
-            Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::RESET | stain::types::NOT_RENDERED);
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::RESET | stain::types::NOT_RENDERED);
         }
 
-        if (Dirty.has(stain::types::NOT_RENDERED)) {
-            if (On_Render) On_Render(this);
+        if (flags.has(stain::types::NOT_RENDERED)) {
+            if (onRender) onRender(this);
 
             // Clean regardless of On_Render existing or not.
-            Dirty ^= (stain::types::NOT_RENDERED);
+            flags ^= (stain::types::NOT_RENDERED);
         }
 
-        if (Dirty.has(stain::types::RESET)){
-            Dirty ^= (stain::types::RESET);
+        if (flags.has(stain::types::RESET)){
+            flags ^= (stain::types::RESET);
 
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
@@ -181,15 +181,15 @@ namespace GGUI{
             }
         }
 
-        if (Dirty.has(stain::types::MOVE)) {
-            Dirty ^= (stain::types::MOVE);
+        if (flags.has(stain::types::MOVE)) {
+            flags ^= (stain::types::MOVE);
 
             updateAbsolutePositionCache();
         }
 
         // Apply the color system to the resized result list
-        if (Dirty.has(stain::types::GRAPHICS)) {
-            Dirty ^= (stain::types::GRAPHICS);
+        if (flags.has(stain::types::GRAPHICS)) {
+            flags ^= (stain::types::GRAPHICS);
             
             graphicalIdentityPool.clear();
 
@@ -217,8 +217,8 @@ namespace GGUI{
         }
 
         // Add borders and titles if the EDGE stain is detected.
-        if (Dirty.has(stain::types::EDGE)){
-            Dirty ^= (stain::types::EDGE);
+        if (flags.has(stain::types::EDGE)){
+            flags ^= (stain::types::EDGE);
 
             renderBorders(Result);
             renderTitle(Result);

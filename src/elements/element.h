@@ -26,7 +26,7 @@ namespace GGUI{
         // Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
         IVector3 absolutePositionCache;
 
-        class element* Parent = nullptr;
+        class element* parent = nullptr;
 
         std::vector<converter::output::event::action> handlers;
 
@@ -34,26 +34,26 @@ namespace GGUI{
         bool Show = true;
         
         std::vector<terminal::cell> cellBuffer;
-        std::vector<ActiveStyle> graphicalIdentityPool;
-        std::vector<const ActiveStyle*> graphicalReflectionPool;
+        std::vector<activeStyle> graphicalIdentityPool;
+        std::vector<const activeStyle*> graphicalReflectionPool;
 
         // State machine for render pipeline only focus on changed aspects.
-        stain::base Dirty;
+        stain::base flags;
 
-        bool Focused = false;
-        bool Hovered = false;
+        bool focused = false;
+        bool hovered = false;
 
         // Human readable ID.
-        std::string Name = "";
+        std::string ID = "";
 
         // For long term support made this a pointer to avoid size mismatch.
-        styling* Style = nullptr;
+        styling* style = nullptr;
 
-        void (*On_Init)(element*) = nullptr;
-        void (*On_Destroy)(element*) = nullptr;
-        void (*On_Hide)(element*) = nullptr;
-        void (*On_Show)(element*) = nullptr;
-        void (*On_Render)(element*) = nullptr;
+        void (*onInit)(element*) = nullptr;
+        void (*onDestroy)(element*) = nullptr;
+        void (*onHide)(element*) = nullptr;
+        void (*onShow)(element*) = nullptr;
+        void (*onRender)(element*) = nullptr;
     public:
 
         /**
@@ -71,7 +71,7 @@ namespace GGUI{
          * 
          * @todo Implement the deep copy functionality for unparsed styles in `Style->copyUnParsedStyles()`.
          */
-        element(STYLING_INTERNAL::styleBase& style = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
+        element(STYLING_INTERNAL::styleBase& Style = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
 
         /**
          * @brief Constructs an element with the given style and optional embedding of styles.
@@ -79,7 +79,7 @@ namespace GGUI{
          * @param style A rvalue reference to a `STYLING_INTERNAL::styleBase` object representing the style to be applied to the element.
          * @param Embed_Styles_On_Construct A boolean flag indicating whether to embed styles during construction. Defaults to `false`.
          */
-        element(STYLING_INTERNAL::styleBase&& style, bool Embed_Styles_On_Construct = false) : element(style, Embed_Styles_On_Construct) {}
+        element(STYLING_INTERNAL::styleBase&& Style, bool Embed_Styles_On_Construct = false) : element(Style, Embed_Styles_On_Construct) {}
 
         /**
          * @brief For correctly copying data between elements, try the Copy() function.
@@ -118,7 +118,7 @@ namespace GGUI{
          * @param s Reference to a styling object containing the new style properties to apply.
          */
         void addStyling(styling& s){
-            Style->copy(s);
+            style->copy(s);
         }
 
         /**
@@ -131,8 +131,8 @@ namespace GGUI{
          * @param s Reference to a style_base object containing the styling information to add.
          */
         void addStyling(STYLING_INTERNAL::styleBase& s){
-            Style->add(s);
-            Style->embedStyles(this);
+            style->add(s);
+            style->embedStyles(this);
         }
         
         /**
@@ -156,7 +156,7 @@ namespace GGUI{
          * @return A reference to the Dirty object.
          */
         constexpr const stain::base& getDirty() const {
-            return Dirty;
+            return flags;
         }
 
 
@@ -171,7 +171,7 @@ namespace GGUI{
          * @return A boolean indicating whether the element is focused.
          */
         constexpr bool isFocused() const {
-            return Focused;
+            return focused;
         }
 
         /**
@@ -187,7 +187,7 @@ namespace GGUI{
          * @return A boolean indicating whether the element is hovered.
          */
         constexpr bool isHovered() const {
-            return Hovered;
+            return hovered;
         }
 
         /**
@@ -205,18 +205,18 @@ namespace GGUI{
          * @param s The state for which the handler should be executed.
          */
         constexpr void check(STATE s){
-            if (s == STATE::INIT && On_Init){
+            if (s == STATE::INIT && onInit){
                 // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
-                Style->evaluateDynamicAttributevalues(this);
+                style->evaluateDynamicAttributevalues(this);
 
-                On_Init(this);
+                onInit(this);
             }
-            else if (s == STATE::DESTROYED && On_Destroy)
-                On_Destroy(this);
-            else if (s == STATE::HIDDEN && On_Hide)
-                On_Hide(this);
-            else if (s == STATE::SHOWN && On_Show)
-                On_Show(this);
+            else if (s == STATE::DESTROYED && onDestroy)
+                onDestroy(this);
+            else if (s == STATE::HIDDEN && onHide)
+                onHide(this);
+            else if (s == STATE::SHOWN && onShow)
+                onShow(this);
         }
 
         /**
@@ -265,7 +265,7 @@ namespace GGUI{
          * @return The current border style of the element.
          */
         styledBorder getBorderStyle() const {
-            return Style->Border_Style;
+            return style->Border_Style;
         }
 
         /**
@@ -300,7 +300,7 @@ namespace GGUI{
          * @return A pointer to the parent element.
          */
         constexpr element* getParent() const noexcept {
-            return Parent;
+            return parent;
         }
 
         /**
@@ -432,14 +432,14 @@ namespace GGUI{
          * @details This function returns the width of the element.
          * @return The width of the element.
          */
-        constexpr int getWidth() const { return Style->Width.get(); }
+        constexpr int getWidth() const { return style->Width.get(); }
 
         /**
          * @brief Get the height of the element.
          * @details This function returns the height of the element.
          * @return The height of the element.
          */
-        constexpr int getHeight() const { return Style->Height.get(); }
+        constexpr int getHeight() const { return style->Height.get(); }
 
         /**
          * @brief Set the width of the element.
@@ -467,7 +467,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the width property.
          */
-        constexpr types::EVALUATION_TYPE getWidthType() const { return Style->Width.number.getType(); }
+        constexpr types::EVALUATION_TYPE getWidthType() const { return style->Width.number.getType(); }
 
         /**
          * @brief Retrieves the evaluation type of the height value.
@@ -476,7 +476,7 @@ namespace GGUI{
          * 
          * @return EVALUATION_TYPE The evaluation type of the height value.
          */
-        constexpr types::EVALUATION_TYPE getHeightType() const { return Style->Height.number.getType(); }
+        constexpr types::EVALUATION_TYPE getHeightType() const { return style->Height.number.getType(); }
 
         /**
          * @brief Set the position of the element.
@@ -510,7 +510,7 @@ namespace GGUI{
          * @details This function retrieves the position of the element from its style.
          * @return The position of the element as an IVector3 object.
          */
-        constexpr IVector3 getPosition() const { return Style->Position.get(); }
+        constexpr IVector3 getPosition() const { return style->Position.get(); }
 
         /**
          * @brief Get the absolute position of the element.
@@ -550,7 +550,7 @@ namespace GGUI{
          * @details This function retrieves the margin of the element from its style.
          * @return The margin of the element as a GGUI::margin object.
          */
-        margin getMargin() const { return Style->Margin; }
+        margin getMargin() const { return style->Margin; }
         
         /**
          * @brief Sets the background color of the element.
@@ -572,7 +572,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's background.
          */
-        constexpr RGB getBackgroundColor() const { return Style->Background_Color.color.get<RGB>(); }
+        constexpr RGB getBackgroundColor() const { return style->Background_Color.color.get<RGB>(); }
         
         /**
          * @brief Sets the border color of the element.
@@ -591,7 +591,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border.
          */
-        constexpr RGB getBorderColor() const { return Style->Border_Color.color.get<RGB>(); }
+        constexpr RGB getBorderColor() const { return style->Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the border background color of the element.
@@ -611,7 +611,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's border background.
          */
-        constexpr RGB getBorderBackgroundColor() const { return Style->Border_Background_Color.color.get<RGB>(); }
+        constexpr RGB getBorderBackgroundColor() const { return style->Border_Background_Color.color.get<RGB>(); }
         
         /**
          * @brief Sets the text color of the element.
@@ -631,7 +631,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's text.
          */
-        constexpr RGB getTextColor() const { return Style->Text_Color.color.get<RGB>(); }
+        constexpr RGB getTextColor() const { return style->Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover border color of the element.
@@ -652,7 +652,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border.
          */
-        constexpr RGB getHoverBorderColor() const { return Style->Hover_Border_Color.color.get<RGB>(); }
+        constexpr RGB getHoverBorderColor() const { return style->Hover_Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover background color of the element.
@@ -673,7 +673,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover background.
          */
-        constexpr RGB getHoverBackgroundColor() const { return Style->Hover_Background_Color.color.get<RGB>(); }
+        constexpr RGB getHoverBackgroundColor() const { return style->Hover_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover text color of the element.
@@ -694,7 +694,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover text.
          */
-        constexpr RGB getHoverTextColor() const { return Style->Hover_Text_Color.color.get<RGB>(); }
+        constexpr RGB getHoverTextColor() const { return style->Hover_Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the hover border background color of the element.
@@ -715,7 +715,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's hover border background.
          */
-        constexpr RGB getHoverBorderBackgroundColor() const { return Style->Hover_Border_Background_Color.color.get<RGB>(); }
+        constexpr RGB getHoverBorderBackgroundColor() const { return style->Hover_Border_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus border color of the element.
@@ -734,7 +734,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border.
          */
-        constexpr RGB getFocusBorderColor() const { return Style->Focus_Border_Color.color.get<RGB>(); }
+        constexpr RGB getFocusBorderColor() const { return style->Focus_Border_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus background color of the element.
@@ -753,7 +753,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus background.
          */
-        constexpr RGB getFocusBackgroundColor() const { return Style->Focus_Background_Color.color.get<RGB>(); }
+        constexpr RGB getFocusBackgroundColor() const { return style->Focus_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus text color of the element.
@@ -772,7 +772,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus text.
          */
-        constexpr RGB getFocusTextColor() const { return Style->Focus_Text_Color.color.get<RGB>(); }
+        constexpr RGB getFocusTextColor() const { return style->Focus_Text_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the focus border background color of the element.
@@ -792,7 +792,7 @@ namespace GGUI{
          * 
          * @return The RGB color of the element's focus border background.
          */
-        constexpr RGB getFocusBorderBackgroundColor() const { return Style->Focus_Border_Background_Color.color.get<RGB>(); }
+        constexpr RGB getFocusBorderBackgroundColor() const { return style->Focus_Border_Background_Color.color.get<RGB>(); }
 
         /**
          * @brief Sets the alignment of the element.
@@ -810,7 +810,7 @@ namespace GGUI{
          * 
          * @param Align The alignment value to set for the element.
          */
-        constexpr ANCHOR getAlign() const { return Style->Align.value; }
+        constexpr ANCHOR getAlign() const { return style->Align.value; }
 
         /**
          * @brief Sets the flow priority of the element.
@@ -830,7 +830,7 @@ namespace GGUI{
          * 
          * @return The flow priority value of the element.
          */
-        constexpr DIRECTION getFlowPriority() const { return Style->Flow_Priority.value; }
+        constexpr DIRECTION getFlowPriority() const { return style->Flow_Priority.value; }
 
         /**
          * @brief Sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
@@ -851,7 +851,7 @@ namespace GGUI{
          * 
          * @return True if the element will wrap its contents, false otherwise.
          */
-        constexpr bool getWrap() const { return Style->Wrap.value; }
+        constexpr bool getWrap() const { return style->Wrap.value; }
 
         /**
          * @brief Sets whether the element is allowed to dynamically resize.
@@ -871,7 +871,7 @@ namespace GGUI{
          * 
          * @return True if the element is allowed to dynamically resize, false otherwise.
          */
-        constexpr bool isDynamicSizeAllowed() const { return Style->Allow_Dynamic_Size.value; }
+        constexpr bool isDynamicSizeAllowed() const { return style->Allow_Dynamic_Size.value; }
 
         /**
          * @brief Sets whether the element allows overflow.
@@ -891,7 +891,7 @@ namespace GGUI{
          * 
          * @return True if the element allows overflow, false otherwise.
          */
-        constexpr bool isOverflowAllowed() const { return Style->Allow_Overflow.value; }
+        constexpr bool isOverflowAllowed() const { return style->Allow_Overflow.value; }
         
         /**
          * @brief Recursively computes the size of the element based on its children.
@@ -949,7 +949,7 @@ namespace GGUI{
          * @brief Gets the custom border style of the element.
          * @return The custom border style of the element.
          */
-        GGUI::styledBorder getCustomBorderStyle() const { return Style->Border_Style; }
+        GGUI::styledBorder getCustomBorderStyle() const { return style->Border_Style; }
 
         /**
          * @brief Composes the RGB values of the text color and background color of the element.
@@ -966,14 +966,14 @@ namespace GGUI{
          * @return A pair of RGB values representing the text color and background color of the element.
          */
         constexpr std::pair<RGB, RGB>  getActiveTextColor() const {
-            if (Focused){
-                return {Style->Focus_Text_Color.color.get<RGB>(), Style->Focus_Background_Color.color.get<RGB>()};
+            if (focused){
+                return {style->Focus_Text_Color.color.get<RGB>(), style->Focus_Background_Color.color.get<RGB>()};
             }
-            else if (Hovered){
-                return {Style->Hover_Text_Color.color.get<RGB>(), Style->Hover_Background_Color.color.get<RGB>()};
+            else if (hovered){
+                return {style->Hover_Text_Color.color.get<RGB>(), style->Hover_Background_Color.color.get<RGB>()};
             }
             else{
-                return {Style->Text_Color.color.get<RGB>(), Style->Background_Color.color.get<RGB>()};
+                return {style->Text_Color.color.get<RGB>(), style->Background_Color.color.get<RGB>()};
             }
         }
 
@@ -986,14 +986,14 @@ namespace GGUI{
          * @return A pair of RGB values representing the border color and background color of the element.
          */
         constexpr std::pair<RGB, RGB> getActiveBorderColor() const {
-            if (Focused){
-                return {Style->Focus_Border_Color.color.get<RGB>(), Style->Focus_Border_Background_Color.color.get<RGB>()};
+            if (focused){
+                return {style->Focus_Border_Color.color.get<RGB>(), style->Focus_Border_Background_Color.color.get<RGB>()};
             }
-            else if (Hovered){
-                return {Style->Hover_Border_Color.color.get<RGB>(), Style->Hover_Border_Background_Color.color.get<RGB>()};
+            else if (hovered){
+                return {style->Hover_Border_Color.color.get<RGB>(), style->Hover_Border_Background_Color.color.get<RGB>()};
             }
             else{
-                return {Style->Border_Color.color.get<RGB>(), Style->Border_Background_Color.color.get<RGB>()};
+                return {style->Border_Color.color.get<RGB>(), style->Border_Background_Color.color.get<RGB>()};
             }
         }
 
@@ -1096,7 +1096,7 @@ namespace GGUI{
             }
 
             // Go through the child AST, and check if any of the child elements are of the same type as the template T.
-            for (auto e : Style->Childs){
+            for (auto e : style->Childs){
                 // Recursively go through the child AST, and check if any of the child elements are of the same type as the template T.
                 std::vector<T*> child_result = e->getElements<T>();
 
@@ -1166,7 +1166,7 @@ namespace GGUI{
          * @param s The stain to be added.
          */
         void addStain(const stain::base& s){
-            Dirty |= s;
+            flags |= s;
         }
 
         /**
@@ -1186,7 +1186,7 @@ namespace GGUI{
          *             initialization phase of the element.
          */
         inline void setOnInit(void (*func)(element* self)){
-            On_Init = func;
+            onInit = func;
         }
 
         /**
@@ -1197,7 +1197,7 @@ namespace GGUI{
          *             during the destruction process of the element.
          */
         inline void setOnDestroy(void (*func)(element* self)){
-            On_Destroy = func;
+            onDestroy = func;
         }
 
         /**
@@ -1208,7 +1208,7 @@ namespace GGUI{
          *             be called when the element is hidden.
          */
         inline void setOnHide(void (*func)(element* self)){
-            On_Hide = func;
+            onHide = func;
         }
 
         /**
@@ -1219,7 +1219,7 @@ namespace GGUI{
          *             will be called when the element is shown.
          */
         inline void setOnShow(void (*func)(element* self)){
-            On_Show = func;
+            onShow = func;
         }
 
         /**
@@ -1231,7 +1231,7 @@ namespace GGUI{
          * @param func Pointer to a function that takes an element* as its argument and returns void.
          */
         inline void setOnRender(void (*func)(element* self)){
-            On_Render = func;
+            onRender = func;
         }
 
         /**
@@ -1245,8 +1245,8 @@ namespace GGUI{
          * up-to-date, especially when dynamic attributes are involved.
          */
         inline void forceStyleEvaluation(){
-            if (Style)
-                Style->evaluateDynamicAttributevalues(this);
+            if (style)
+                style->evaluateDynamicAttributevalues(this);
         }
         
     protected:
@@ -1378,7 +1378,7 @@ namespace GGUI{
         constexpr void fullyStain(){
             // Mark the element as dirty for all possible stain types to ensure
             // complete re-evaluation and rendering.
-            Dirty |= (
+            flags |= (
                 stain::base(stain::types::STRETCH) | 
                 stain::types::GRAPHICS | stain::types::DEEP | 
                 stain::types::EDGE | stain::types::MOVE

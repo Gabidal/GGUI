@@ -2342,7 +2342,7 @@ namespace GGUI{
     };
 
     // This is what styling compiles during element::render().
-    struct ActiveStyle {
+    struct activeStyle {
         rectangle area              = {};    // absolute position
         RGB activeTextColor         = {};
         RGB activeBackgroundColor   = {};
@@ -2350,8 +2350,8 @@ namespace GGUI{
         linearMask<textAttributeTypes, uint64_t> activeTextAttributes = textAttributeTypes::DEFAULT;
         element* origin             = nullptr;
 
-        constexpr ActiveStyle computeColor(const ActiveStyle* other) const {
-            ActiveStyle result = *other;
+        constexpr activeStyle computeColor(const activeStyle* other) const {
+            activeStyle result = *other;
             result.activeTextColor.add(activeTextColor, opacity);
             result.activeBackgroundColor.add(activeBackgroundColor, opacity);
             result.activeTextAttributes = activeTextAttributes;

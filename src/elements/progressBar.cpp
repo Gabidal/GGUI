@@ -52,29 +52,62 @@ namespace GGUI{
             return floor(Progress * (getWidth() - hasBorder() * 2));
         }
 
-        /**
-         * @brief Colors the bar with the current progress value.
-         * @details
-         * This function colors the progress bar with the current progress value. It first colors the empty part of the bar, then fills in the progressed part, and finally replaces the head and tail parts.
-         */
         void Bar::colorBar(){
-            // if (Content.empty() || (signed)Content.size() != getWidth() - hasBorder() * 2){
-            //     // Resize the content to fit the width of the progress bar minus the borders
-            //     Content.clear();
-            //     Content.resize(getWidth() - hasBorder() * 2, UTF(Body, { Empty_Color, getBackgroundColor() }));
-            // }
+            IVector2 start = {hasBorder(), hasBorder()};
+            IVector2 end = {getWidth() - hasBorder(), getHeight() - hasBorder()};
 
-            // // First color the progressed part of the bar
-            // std::fill(Content.begin(), Content.begin() + getIndexofHead(), UTF(Body, { Body_Color , getBackgroundColor() }));
+            size_t borderedOffset = hasBorder() * getHeight() + hasBorder();    // the final + hasBorder is for the +1 x offset for the left side wall
+            auto beginAfterOffset = cellBuffer.begin() + borderedOffset;
+            auto endBeforeOffset = cellBuffer.end() - borderedOffset;
 
-            // // Now fill in the empty part
-            // std::fill(Content.begin() + getIndexofHead(), Content.end(), UTF(Empty, { Empty_Color, getBackgroundColor() }));
+            // First color the progressed part of the bar
+            std::fill(beginAfterOffset, beginAfterOffset + getIndexofHead(), Body);
 
-            // // now replace the head part
-            // Content[getIndexofHead()] = UTF(Head, { Head_Color, getBackgroundColor() });
+            // Add identity for progressed part
+            graphicalIdentityPool.push_back(activeStyle{
+                {   // rectangle 
+                    start, 
+                    {getIndexofHead(), start.y}
+                },
+                Body_Color,
+                getBackgroundColor()
+            });
 
-            // // now replace the tail part
-            // Content.front() = UTF(Tail, { Tail_Color, getBackgroundColor() });
+            // Now fill in the empty part
+            std::fill(beginAfterOffset + getIndexofHead(), endBeforeOffset, Empty);
+
+            graphicalIdentityPool.push_back(activeStyle{
+                {   // rectangle 
+                    {start.x + getIndexofHead(), start.y}, 
+                    {end.x - start.x - getIndexofHead(), start.y}
+                },
+                Empty_Color,
+                getBackgroundColor()
+            });
+
+            // now replace the head part
+            cellBuffer[borderedOffset + getIndexofHead()] = Head;
+
+            graphicalIdentityPool.push_back(activeStyle{
+                {   // rectangle 
+                    {start.x + getIndexofHead(), start.y}, 
+                    {1, start.y}
+                },
+                Head_Color,
+                getBackgroundColor()
+            });
+
+            // now replace the tail part
+            cellBuffer[borderedOffset] = Tail;
+
+            graphicalIdentityPool.push_back(activeStyle{
+                {   // rectangle 
+                    {start.x, start.y}, 
+                    {1, start.y}
+                },
+                Tail_Color,
+                getBackgroundColor()
+            });
         }
 
         /**
@@ -87,76 +120,71 @@ namespace GGUI{
             std::vector<terminal::cell>& Result = cellBuffer;
 
             // Check for Dynamic attributes
-            if(Style->evaluateDynamicDimensions(this))
-                Dirty |= (stain::types::STRETCH);
+            if(style->evaluateDynamicDimensions(this))
+                flags |= (stain::types::STRETCH);
 
-            if (Style->evaluateDynamicPosition(this))
-                Dirty |= (stain::types::MOVE);
+            if (style->evaluateDynamicPosition(this))
+                flags |= (stain::types::MOVE);
 
-            if (Style->evaluateDynamicGraphics(this))
-                Dirty |= (stain::types::GRAPHICS);
+            if (style->evaluateDynamicGraphics(this))
+                flags |= (stain::types::GRAPHICS);
 
-            if (Style->evaluateDynamicBorder(this))
-                Dirty |= (stain::types::EDGE);
+            if (style->evaluateDynamicBorder(this))
+                flags |= (stain::types::EDGE);
 
             // If the progress bar is clean, return the current render buffer.
-            if (Dirty.isEmpty())
+            if (flags.isEmpty())
                 return Result;
 
-            if (Dirty.has(stain::types::RESET)){
-                Dirty ^= (stain::types::RESET);
+            if (flags.has(stain::types::RESET)){
+                flags ^= (stain::types::RESET);
 
                 std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
                 
-                Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+                flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
             }
 
             // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer.
-            if (Dirty.has(stain::types::STRETCH)) {
+            if (flags.has(stain::types::STRETCH)) {
                 Result.clear();
                 Result.resize(getWidth() * getHeight(), ' ');
-                colorBar();
-                Dirty ^= (stain::types::STRETCH);
-                Dirty |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
+
+                flags ^= (stain::types::STRETCH);
+                flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
             }
 
-            if (Dirty.has(stain::types::NOT_RENDERED)) {
-                if (On_Render) On_Render(this);
+            if (flags.has(stain::types::NOT_RENDERED)) {
+                if (onRender) onRender(this);
 
                 // Clean regardless of On_Render existing or not.
-                Dirty ^= (stain::types::NOT_RENDERED);
+                flags ^= (stain::types::NOT_RENDERED);
             }
 
-            if (Dirty.has(stain::types::MOVE)) {
-                Dirty ^= (stain::types::MOVE);
+            if (flags.has(stain::types::MOVE)) {
+                flags ^= (stain::types::MOVE);
 
                 updateAbsolutePositionCache();
             }
 
-            // Add child windows to the Result buffer if the DEEP stain is detected.
-            if (Dirty.has(stain::types::DEEP)) {
-                Dirty ^= (stain::types::DEEP);
-                int Starting_Y = hasBorder();
-                int Starting_X = hasBorder();
-                int Ending_Y = getHeight() - hasBorder();
-                int Ending_X = getWidth() - hasBorder();
-
-                // for (int y = Starting_Y; y < Ending_Y; y++)
-                //     for (int x = Starting_X; x < Ending_X; x++)
-                //         Result[y * getWidth() + x] = Content[x - Starting_X];
-            }
+            // Nothing to do here
+            flags ^= (stain::types::DEEP);
 
             // Apply the color system to the resized result list
-            if (Dirty.has(stain::types::GRAPHICS)){        
+            if (flags.has(stain::types::GRAPHICS)){        
                 // Clean the color stain after applying the color system.
-                Dirty ^= (stain::types::GRAPHICS);
+                flags ^= (stain::types::GRAPHICS);
+
+                graphicalIdentityPool.clear();
+                graphicalReflectionPool.clear();
+
+                colorBar();
 
                 compileActiveGraphics();
             }
 
             // Add borders and titles if the EDGE stain is detected.
-            if (Dirty.has(stain::types::EDGE)){
-                Dirty ^= (stain::types::EDGE);
+            if (flags.has(stain::types::EDGE)){
+                flags ^= (stain::types::EDGE);
 
                 renderBorders(Result);
                 renderTitle(Result);
@@ -183,11 +211,8 @@ namespace GGUI{
             // Update the progress value
             Progress = New_Progress;
 
-            // Update the color of the progress bar based on the new progress value
-            colorBar();
-
             // Mark the render buffer as dirty to reflect changes
-            Dirty |= (stain::types::DEEP);
+            flags |= (stain::types::GRAPHICS);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
@@ -223,10 +248,8 @@ namespace GGUI{
 
             Progress += add;
 
-            colorBar();
-
             // Mark the render buffer as dirty to reflect changes
-            Dirty |= (stain::base(stain::types::DEEP) | stain::types::GRAPHICS);
+            flags |= (stain::types::GRAPHICS);
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
@@ -239,15 +262,15 @@ namespace GGUI{
          * @param b The desired state of the border visibility.
          */
         void Bar::showBorder(bool b) {
-            if (b != Style->Border_Enabled.value) {
-                Style->Border_Enabled = b;
+            if (b != style->Border_Enabled.value) {
+                style->Border_Enabled = b;
 
                 // Adjust the width and height of the progress bar based on the border state
-                if (b) Style->Width.direct() += 2;
-                else Style->Height.direct() -= 2;
+                if (b) style->Width.direct() += 2;
+                else style->Height.direct() -= 2;
 
                 // Mark the element as dirty for border changes
-                Dirty |= (stain::types::EDGE);
+                flags |= (stain::types::EDGE);
 
                 // Trigger a frame update to re-render the progress bar
                 updateFrame();

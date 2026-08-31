@@ -17,8 +17,8 @@ namespace GGUI{
         RGB backgroundColor   = {};
         linearMask<textAttributeTypes, uint64_t> textAttributes = textAttributeTypes::DEFAULT;
     protected:
-        constexpr std::pair<terminal::cell, ActiveStyle> render() {
-            ActiveStyle styling;
+        constexpr std::pair<terminal::cell, activeStyle> render() {
+            activeStyle styling;
             styling.area = {
                 {}, {1, 1}
             };
@@ -165,7 +165,7 @@ namespace GGUI{
          */
         std::string getName() const override {
             // Concatenate class name and Name property to form the full name.
-            return "canvas<" + Name + ">";
+            return "canvas<" + ID + ">";
         }
     
         /**
